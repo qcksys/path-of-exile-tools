@@ -1,0 +1,60 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "account_id": "923e3a86a572d6d6d05230ccadbbbe34",
+  "compatibility_date": "2026-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "./workers/app.ts",
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "invocation_logs": false,
+    },
+  },
+  "placement": {
+    "region": "aws:ap-southeast-2",
+  },
+  "vars": {
+    "URL": "",
+    "ENVIRONMENT": "local",
+  },
+  "env": {
+    "worker-prod": {
+      "name": "poe-dot-boats-prod",
+      "observability": {
+        "enabled": true,
+        "logs": {
+          "invocation_logs": false,
+        },
+      },
+      "vars": {
+        "URL": "",
+        "ENVIRONMENT": "prod",
+      },
+      "routes": [
+        {
+          "pattern": "poe.boats",
+          "custom_domain": true,
+        },
+      ],
+    },
+    "worker-dev": {
+      "name": "poe-dot-boats-dev",
+      "observability": {
+        "enabled": true,
+        "logs": {
+          "invocation_logs": false,
+        },
+      },
+      "vars": {
+        "URL": "",
+        "ENVIRONMENT": "dev",
+      },
+      "routes": [
+        {
+          "pattern": "dev.poe.boats",
+          "custom_domain": true,
+        },
+      ],
+    },
+  },
+}
