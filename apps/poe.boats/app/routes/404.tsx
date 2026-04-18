@@ -1,13 +1,13 @@
 export const action = () => {
-  return null;
+    return null;
 };
 
 export const loader = () => {
-  return null;
+    return null;
 };
 
 const NotFound = () => {
-  return <div>404</div>;
+    return <div>404</div>;
 };
 
 export default NotFound;

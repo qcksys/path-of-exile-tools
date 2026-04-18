@@ -1,0 +1,96 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string"
+        },
+        "name": {
+            "type": "object",
+            "propertyNames": {
+                "type": "string",
+                "enum": ["en", "zh-TW", "zh-CN", "ko", "ja", "ru", "pt-BR", "de", "fr", "es"]
+            },
+            "additionalProperties": {
+                "type": "string"
+            },
+            "required": ["en", "zh-TW", "zh-CN", "ko", "ja", "ru", "pt-BR", "de", "fr", "es"]
+        },
+        "baseType": {
+            "type": "string",
+            "enum": ["Minor", "Kamasan", "Totemic", "Noble", "Burial", "Conqueror"]
+        },
+        "modifiers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "object",
+                        "propertyNames": {
+                            "type": "string",
+                            "enum": [
+                                "en",
+                                "zh-TW",
+                                "zh-CN",
+                                "ko",
+                                "ja",
+                                "ru",
+                                "pt-BR",
+                                "de",
+                                "fr",
+                                "es"
+                            ]
+                        },
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "required": [
+                            "en",
+                            "zh-TW",
+                            "zh-CN",
+                            "ko",
+                            "ja",
+                            "ru",
+                            "pt-BR",
+                            "de",
+                            "fr",
+                            "es"
+                        ]
+                    },
+                    "values": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "min": {
+                                    "type": "number"
+                                },
+                                "max": {
+                                    "type": "number"
+                                }
+                            },
+                            "required": ["min", "max"],
+                            "additionalProperties": false
+                        }
+                    }
+                },
+                "required": ["text", "values"],
+                "additionalProperties": false
+            }
+        },
+        "flavourText": {
+            "type": "object",
+            "propertyNames": {
+                "type": "string",
+                "enum": ["en", "zh-TW", "zh-CN", "ko", "ja", "ru", "pt-BR", "de", "fr", "es"]
+            },
+            "additionalProperties": {
+                "type": "string"
+            },
+            "required": ["en", "zh-TW", "zh-CN", "ko", "ja", "ru", "pt-BR", "de", "fr", "es"]
+        }
+    },
+    "required": ["id", "name", "baseType", "modifiers"],
+    "additionalProperties": false
+}

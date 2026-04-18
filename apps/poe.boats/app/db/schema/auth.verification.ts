@@ -5,16 +5,16 @@ import { DB_TABLE_PREFIX } from "~/const";
 import { timestampCols } from "~/db/helpers/schema.ts";
 
 export const tAuthVerification = mysqlTable(
-  `${DB_TABLE_PREFIX}auth_verification`,
-  {
-    id: varchar({ length: 36 }).primaryKey(),
-    identifier: varchar({ length: 255 }).notNull(),
-    value: text().notNull(),
-    expiresAt: timestamp({ fsp: 3 }).notNull(),
-    createdAt: timestampCols.rowCreatedAt,
-    updatedAt: timestampCols.rowUpdatedAt,
-  },
-  (table) => [index("verification_identifier_idx").on(table.identifier)],
+    `${DB_TABLE_PREFIX}auth_verification`,
+    {
+        id: varchar({ length: 36 }).primaryKey(),
+        identifier: varchar({ length: 255 }).notNull(),
+        value: text().notNull(),
+        expiresAt: timestamp({ fsp: 3 }).notNull(),
+        createdAt: timestampCols.rowCreatedAt,
+        updatedAt: timestampCols.rowUpdatedAt,
+    },
+    (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
 export type TAuthVerificationS = InferSelectModel<typeof tAuthVerification>;

@@ -1,0 +1,27 @@
+import Markdown from "react-markdown";
+import changelogRaw from "~/../../CHANGELOG-idol-planner.md?raw";
+import { AppHeader } from "~/components/idol-planner/app-header";
+import type { Route } from "./+types/changelog";
+
+export function meta(): Route.MetaDescriptors {
+    return [
+        { title: "Changelog | Idol Planner - POE.BOATS" },
+        {
+            name: "description",
+            content: "View the changelog for POE Idol Planner",
+        },
+    ];
+}
+
+export default function Changelog(_props: Route.ComponentProps) {
+    return (
+        <>
+            <AppHeader />
+            <main className="mx-auto max-w-3xl px-4 py-8">
+                <article className="prose prose-neutral dark:prose-invert max-w-none">
+                    <Markdown>{changelogRaw}</Markdown>
+                </article>
+            </main>
+        </>
+    );
+}

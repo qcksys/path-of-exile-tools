@@ -1,0 +1,24 @@
+{
+    "result": [
+        {
+            "id": "Phrecia 2.0",
+            "realm": "pc",
+            "text": "Phrecia 2.0"
+        },
+        {
+            "id": "Hardcore Phrecia 2.0",
+            "realm": "pc",
+            "text": "Hardcore Phrecia 2.0"
+        },
+        {
+            "id": "Standard",
+            "realm": "pc",
+            "text": "Standard"
+        },
+        {
+            "id": "Hardcore",
+            "realm": "pc",
+            "text": "Hardcore"
+        }
+    ]
+}

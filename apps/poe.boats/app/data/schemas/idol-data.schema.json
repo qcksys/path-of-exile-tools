@@ -1,0 +1,297 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "modifiers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": ["prefix", "suffix"]
+                    },
+                    "name": {
+                        "type": "object",
+                        "propertyNames": {
+                            "type": "string",
+                            "enum": [
+                                "en",
+                                "zh-TW",
+                                "zh-CN",
+                                "ko",
+                                "ja",
+                                "ru",
+                                "pt-BR",
+                                "de",
+                                "fr",
+                                "es"
+                            ]
+                        },
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "required": [
+                            "en",
+                            "zh-TW",
+                            "zh-CN",
+                            "ko",
+                            "ja",
+                            "ru",
+                            "pt-BR",
+                            "de",
+                            "fr",
+                            "es"
+                        ]
+                    },
+                    "tiers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "tier": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 10
+                                },
+                                "levelReq": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                },
+                                "text": {
+                                    "type": "object",
+                                    "propertyNames": {
+                                        "type": "string",
+                                        "enum": [
+                                            "en",
+                                            "zh-TW",
+                                            "zh-CN",
+                                            "ko",
+                                            "ja",
+                                            "ru",
+                                            "pt-BR",
+                                            "de",
+                                            "fr",
+                                            "es"
+                                        ]
+                                    },
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "required": [
+                                        "en",
+                                        "zh-TW",
+                                        "zh-CN",
+                                        "ko",
+                                        "ja",
+                                        "ru",
+                                        "pt-BR",
+                                        "de",
+                                        "fr",
+                                        "es"
+                                    ]
+                                },
+                                "values": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "min": {
+                                                "type": "number"
+                                            },
+                                            "max": {
+                                                "type": "number"
+                                            }
+                                        },
+                                        "required": ["min", "max"],
+                                        "additionalProperties": false
+                                    }
+                                },
+                                "weight": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                },
+                                "tradeStatId": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": ["tier", "levelReq", "text", "values", "weight"],
+                            "additionalProperties": false
+                        }
+                    },
+                    "mechanic": {
+                        "type": "string"
+                    },
+                    "applicableIdols": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": ["Minor", "Kamasan", "Totemic", "Noble", "Burial", "Conqueror"]
+                        }
+                    }
+                },
+                "required": ["id", "type", "name", "tiers", "mechanic", "applicableIdols"],
+                "additionalProperties": false
+            }
+        },
+        "uniqueIdols": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "object",
+                        "propertyNames": {
+                            "type": "string",
+                            "enum": [
+                                "en",
+                                "zh-TW",
+                                "zh-CN",
+                                "ko",
+                                "ja",
+                                "ru",
+                                "pt-BR",
+                                "de",
+                                "fr",
+                                "es"
+                            ]
+                        },
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "required": [
+                            "en",
+                            "zh-TW",
+                            "zh-CN",
+                            "ko",
+                            "ja",
+                            "ru",
+                            "pt-BR",
+                            "de",
+                            "fr",
+                            "es"
+                        ]
+                    },
+                    "baseType": {
+                        "type": "string",
+                        "enum": ["Minor", "Kamasan", "Totemic", "Noble", "Burial", "Conqueror"]
+                    },
+                    "modifiers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "text": {
+                                    "type": "object",
+                                    "propertyNames": {
+                                        "type": "string",
+                                        "enum": [
+                                            "en",
+                                            "zh-TW",
+                                            "zh-CN",
+                                            "ko",
+                                            "ja",
+                                            "ru",
+                                            "pt-BR",
+                                            "de",
+                                            "fr",
+                                            "es"
+                                        ]
+                                    },
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "required": [
+                                        "en",
+                                        "zh-TW",
+                                        "zh-CN",
+                                        "ko",
+                                        "ja",
+                                        "ru",
+                                        "pt-BR",
+                                        "de",
+                                        "fr",
+                                        "es"
+                                    ]
+                                },
+                                "values": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "min": {
+                                                "type": "number"
+                                            },
+                                            "max": {
+                                                "type": "number"
+                                            }
+                                        },
+                                        "required": ["min", "max"],
+                                        "additionalProperties": false
+                                    }
+                                }
+                            },
+                            "required": ["text", "values"],
+                            "additionalProperties": false
+                        }
+                    },
+                    "flavourText": {
+                        "type": "object",
+                        "propertyNames": {
+                            "type": "string",
+                            "enum": [
+                                "en",
+                                "zh-TW",
+                                "zh-CN",
+                                "ko",
+                                "ja",
+                                "ru",
+                                "pt-BR",
+                                "de",
+                                "fr",
+                                "es"
+                            ]
+                        },
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "required": [
+                            "en",
+                            "zh-TW",
+                            "zh-CN",
+                            "ko",
+                            "ja",
+                            "ru",
+                            "pt-BR",
+                            "de",
+                            "fr",
+                            "es"
+                        ]
+                    }
+                },
+                "required": ["id", "name", "baseType", "modifiers"],
+                "additionalProperties": false
+            }
+        },
+        "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        },
+        "version": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+        }
+    },
+    "required": ["modifiers", "uniqueIdols", "generatedAt", "version"],
+    "additionalProperties": false
+}

@@ -1,0 +1,2871 @@
+[
+    {
+        "id": "Eye_of_the_Djinn",
+        "name": {
+            "en": "Eye of the Djinn",
+            "zh-TW": "巨靈之眼",
+            "zh-CN": "巨灵之目",
+            "ko": "진의 눈",
+            "ja": "ジンの目",
+            "ru": "Око Джинна",
+            "pt-BR": "Olho do Djinn",
+            "de": "Auge der Dschinn",
+            "fr": "Œil du Djinn",
+            "es": "Ojo del djinn"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Scarabs have 50% increased Effect on your Maps per empty Map Device slot",
+                    "zh-TW": "你的地圖上的聖甲蟲效果會根據每個空地圖裝置欄位增加 50%",
+                    "zh-CN": "每个空的地图装置栏位使圣甲虫对地图产生的效果提高 50%",
+                    "ko": "빈 지도 장치 슬롯 하나당 지도에 적용되는 갑충석 효과 50% 증가",
+                    "ja": "スカラベは空のマップデバイススロットごとにマップに対する効果が50%増加する",
+                    "ru": "50% усиление эффекта скарабеев на ваших картах за каждую пустую ячейку в машине картоходца",
+                    "pt-BR": "Escaravelhos em seus Mapas têm Efeito aumentado em 50% por espaço vazio no Dispositivo de Mapas",
+                    "de": "Skarabäen haben 50% erhöhte Wirkung auf Eure Karten pro leerem Platz im Kartenapparat",
+                    "fr": "Les Scarabées ont 50% d'Augmentation d'Effet sur vos Cartes par emplacement vide du Dispositif cartographique",
+                    "es": "El efecto de los escarabajos en tus mapas aumenta un 50% por cada espacio vacío en el artefacto de mapas"
+                },
+                "values": []
+            }
+        ]
+    },
+    {
+        "id": "Lone_Adventurer",
+        "name": {
+            "en": "Lone Adventurer",
+            "zh-TW": "孤獨冒險者",
+            "zh-CN": "独行冒险家",
+            "ko": "고독한 모험가",
+            "ja": "孤独な冒険者",
+            "ru": "Одинокий приключенец",
+            "pt-BR": "Aventureiro Solitário",
+            "de": "Einsamer Abenteurer",
+            "fr": "Aventurier solitaire",
+            "es": "Aventurero solitario"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "10% increased Pack Size in your Maps",
+                    "zh-TW": "增加 10% 地圖怪群大小",
+                    "zh-CN": "你地图内的怪物群规模提高 10%",
+                    "ko": "지도 내 무리 규모 10% 증가",
+                    "ja": "マップのパックサイズが10%増加する",
+                    "ru": "10% увеличение размера групп монстров на ваших картах",
+                    "pt-BR": "Aumento de 10% no tamanho de grupos em seus mapas",
+                    "de": "10% erhöhte Gruppengröße in Euren Karten",
+                    "fr": "10% d'Augmentation de la taille des Groupes dans vos Cartes",
+                    "es": "Tamaño de los grupos de monstruos en tus mapas aumentado 10%"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_2017682521"
+            },
+            {
+                "text": {
+                    "en": "Only 1 Portal is opened to each of your Maps",
+                    "zh-TW": "你的每張地圖只會開啟 1 個傳送門",
+                    "zh-CN": "你的每个地图只能打开1个时空之门",
+                    "ko": "포탈이 지도 하나당 1개만 열림",
+                    "ja": "マップへのポータルは1個のみ開く",
+                    "ru": "Только 1 портал открывается на каждую из ваших карт",
+                    "pt-BR": "Apenas 1 Portal é aberto em cada um dos Seus Mapas",
+                    "de": "Nur 1 Portal wird für jede Eurer Karten geöffnet",
+                    "fr": "Vos Cartes ne peuvent ouvrir que 1 Portail",
+                    "es": "Solo se abre 1 portal hacia cada uno de tus mapas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3418377329"
+            }
+        ]
+    },
+    {
+        "id": "Twist_of_Fate",
+        "name": {
+            "en": "Twist of Fate",
+            "zh-TW": "命運的轉折",
+            "zh-CN": "扭转命运",
+            "ko": "운명의 뒤틀림",
+            "ja": "運命のいたずら",
+            "ru": "Каприз судьбы",
+            "pt-BR": "Reviravolta do Destino",
+            "de": "Wendung des Schicksals",
+            "fr": "Aléas du sort",
+            "es": "Giro del destino"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Your Corrupted Rare Maps and any Map Crafting options applying to them are modified unpredictably when opened",
+                    "zh-TW": "你的已汙染稀有地圖和任何套用的地圖工藝選項 在打開時會隨機調整",
+                    "zh-CN": "你的已腐化的稀有地图和对其施加的任意 地图工艺选项在打开地图时获得无法预测的修改",
+                    "ko": "타락한 희귀 지도를 열면 해당 지도와 이에 적용되는 모든 지도 제작 옵션을 예측 불가능하게 변경",
+                    "ja": "コラプト状態のレアマップとそのマップに適用された全てのマップクラフトオプションは マップが開かれた時に予測不可能にに改変される",
+                    "ru": "Ваши оскверненные редкие карты и любые применяемые к ним ремесленные свойства карт изменяются непредсказуемым образом при открытии",
+                    "pt-BR": "Seus Mapas Raros Corrompidos e qualquer opção de Forja de Mapas aplicada neles são modificados de forma imprevisível quando abertos",
+                    "de": "Eure verderbten seltenen Karten und jegliche darauf angewendeten Karten-Anfertigungsoptionen werden beim Öffnen auf unvorhersehbare Weise modifiziert",
+                    "fr": "Lorsqu'elles sont ouvertes, vos Cartes Rares Corrompus et options d'artisanat de Carte les affectant sont modifiées de façon imprévisible",
+                    "es": "Tus mapas raros corruptos y cualquier opción de fabricación de mapas que tengan aplicada se modificarán de modo impredecible al abrirse"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3936990754"
+            },
+            {
+                "text": {
+                    "en": "Maps modified in this way have 1-3 additional random Map Modifiers",
+                    "zh-TW": "因此受影響的地圖會有 1 到 3 個隨機地圖詞綴",
+                    "zh-CN": "以该方式修改的地图具有 1-3 个额外的随机地图词缀",
+                    "ko": "이렇게 변경된 지도는 무작위 지도 속성 1~3개를 추가로 보유",
+                    "ja": "この方法で改変されたマップは1-3個のランダムなマップモッドを追加で持つ",
+                    "ru": "Карты, изменённые таким образом, имеют 1-3 дополнительных случайных свойства карт",
+                    "pt-BR": "Mapas modificados desta forma têm 1-3 Modificadores de Mapa aleatorios adicionais",
+                    "de": "Auf diese Weise modifizierte Karten haben 1-3 zusätzliche zufällige Kartenmodifikatoren",
+                    "fr": "Les Cartes modifiées de cette manière ont 1 à 3 Modificateurs de Carte supplémentaires aléatoires",
+                    "es": "Los mapas modificados de esta forma tienen de 1 a 3 modificadores de mapa aleatorios adicionales"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_812317919"
+            }
+        ]
+    },
+    {
+        "id": "Wellspring_of_Creation",
+        "name": {
+            "en": "Wellspring of Creation",
+            "zh-TW": "創造之泉",
+            "zh-CN": "创造源泉",
+            "ko": "창조의 원천",
+            "ja": "創造の源泉",
+            "ru": "Источник созидания",
+            "pt-BR": "Fonte da Criação",
+            "de": "Quelle der Schöpfung",
+            "fr": "Source de création",
+            "es": "Fuente de la creación"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Monsters in your Maps deal (25—30)% less Damage",
+                    "zh-TW": "你地圖中的怪物造成 (25—30)% 更少傷害",
+                    "zh-CN": "你的地图中的怪物造成的伤害总降 (25—30)%",
+                    "ko": "지도 내 몬스터가 주는 피해 (25—30)% 감폭",
+                    "ja": "マップに出現するモンスターのダメージが(25—30)%低下する",
+                    "ru": "Монстры на ваших картах наносят на (25—30)% меньше урона",
+                    "pt-BR": "Monstros em seus Mapas causam (25—30)% menos Dano",
+                    "de": "Monster in Euren Karten verursachen (25—30)% weniger Schaden",
+                    "fr": "Dans vos Cartes, les Monstres ont (25—30)% de Perte de Dégâts",
+                    "es": "Los monstruos de tus mapas infligen un (25—30)% menos de daño"
+                },
+                "values": [
+                    {
+                        "min": 25,
+                        "max": 30
+                    }
+                ],
+                "tradeStatId": "explicit.stat_3516276449"
+            },
+            {
+                "text": {
+                    "en": "Monsters in your Maps have (40—50)% more Life",
+                    "zh-TW": "你地圖中的怪物有 (40—50)% 更多生命",
+                    "zh-CN": "你地图中的怪物生命总增 (40—50)%",
+                    "ko": "지도 내 몬스터의 생명력 (40—50)% 증폭",
+                    "ja": "マップに出現するモンスターのライフが(40—50)%上昇する",
+                    "ru": "Монстры на ваших картах имеют на (40—50)% больше здоровья",
+                    "pt-BR": "Monstros em seus Mapas têm (40—50)% mais Vida",
+                    "de": "Monster in Euren Karten haben (40—50)% mehr Leben",
+                    "fr": "Dans vos Cartes, les Monstres ont (40—50)% Davantage de Vie",
+                    "es": "Los monstruos de tus mapas tienen un (40—50)% más de vida"
+                },
+                "values": [
+                    {
+                        "min": 40,
+                        "max": 50
+                    }
+                ],
+                "tradeStatId": "explicit.stat_4190580879"
+            }
+        ]
+    },
+    {
+        "id": "Dance_of_Destruction",
+        "name": {
+            "en": "Dance of Destruction",
+            "zh-TW": "毀滅之舞",
+            "zh-CN": "毁灭之舞",
+            "ko": "파괴의 춤",
+            "ja": "破壊の舞",
+            "ru": "Танец разрушения",
+            "pt-BR": "Dança da Destruição",
+            "de": "Tanz der Zerstörung",
+            "fr": "Danse de la destruction",
+            "es": "Danza de destrucción"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Monsters in your Maps deal (20—25)% more Damage",
+                    "zh-TW": "你地圖中的怪物造成 (20—25)% 更多傷害",
+                    "zh-CN": "你的地图中的怪物造成的伤害总增 (20—25)%",
+                    "ko": "지도 내 몬스터가 주는 피해 (20—25)% 증폭",
+                    "ja": "マップに出現するモンスターのダメージが(20—25)%上昇する",
+                    "ru": "Монстры на ваших картах наносят на (20—25)% больше урона",
+                    "pt-BR": "Monstros em seus Mapas causam (20—25)% mais Dano",
+                    "de": "Monster in Euren Karten verursachen (20—25)% mehr Schaden",
+                    "fr": "Dans vos Cartes, les Monstres ont (20—25)% Davantage de Dégâts",
+                    "es": "Los monstruos de tus mapas infligen un (20—25)% más de daño"
+                },
+                "values": [
+                    {
+                        "min": 20,
+                        "max": 25
+                    }
+                ],
+                "tradeStatId": "explicit.stat_3516276449"
+            },
+            {
+                "text": {
+                    "en": "Monsters in your Maps have (25—30)% less Life",
+                    "zh-TW": "你地圖中的怪物有 (25—30)% 更少生命",
+                    "zh-CN": "你地图中的怪物生命总降 (25—30)%",
+                    "ko": "지도 내 몬스터의 생명력 (25—30)% 감폭",
+                    "ja": "マップに出現するモンスターのライフが(25—30)%低下する",
+                    "ru": "Монстры на ваших картах имеют на (25—30)% меньше здоровья",
+                    "pt-BR": "Monstros em seus Mapas têm (25—30)% menos Vida",
+                    "de": "Monster in Euren Karten haben (25—30)% weniger Leben",
+                    "fr": "Dans vos Cartes, les Monstres ont (25—30)% de Perte de Vie",
+                    "es": "Los monstruos de tus mapas tienen un (25—30)% menos de vida"
+                },
+                "values": [
+                    {
+                        "min": 25,
+                        "max": 30
+                    }
+                ],
+                "tradeStatId": "explicit.stat_4190580879"
+            }
+        ]
+    },
+    {
+        "id": "Singular_Focus",
+        "name": {
+            "en": "Singular Focus",
+            "zh-TW": "單一焦點",
+            "zh-CN": "奇焦点",
+            "ko": "비범한 집중",
+            "ja": "唯一の焦点",
+            "ru": "Единственная цель",
+            "pt-BR": "Foco Singular",
+            "de": "Klarer Fokus",
+            "fr": "Volonté singulière",
+            "es": "Foco singular"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Maps found have (200—220)% more chance to be Favoured Maps",
+                    "zh-TW": "掉落的地圖有 (200—220)% 更多機率為幸運地圖",
+                    "zh-CN": "掉落的地图为偏好地图的几率总增 (200—220)%",
+                    "ko": "발견하는 지도가 선호 지도일 확률 (200—220)% 증폭",
+                    "ja": "マップで見つかるマップがお気に入りマップである確率が(200—220)%上昇する",
+                    "ru": "Найденные карты с (200—220)% шансом могут оказаться предпочитаемыми картами",
+                    "pt-BR": "Mapas encontrados têm (200—220)% mais chance de serem Mapas Favorecidos",
+                    "de": "Gefundene Karten haben (200—220)% mehr Chance, Lieblingskarten zu sein",
+                    "fr": "Les Cartes trouvées ont (200—220)% Davantage de chances d'être des Cartes Préférées",
+                    "es": "Los mapas que encuentras tienen un (200—220)% más de probabilidad de ser mapas favoritos"
+                },
+                "values": [
+                    {
+                        "min": 200,
+                        "max": 220
+                    }
+                ],
+                "tradeStatId": "explicit.stat_3527275979"
+            },
+            {
+                "text": {
+                    "en": "Non-Favoured Maps found in your Maps drop as Basic Currency Items instead",
+                    "zh-TW": "你地圖中掉落的非幸運地圖改為掉落基礎通貨",
+                    "zh-CN": "地图中掉落的非恩典地图将改为掉落基础通货物品",
+                    "ko": "지도에서 발견한 비-선호 지도가 기본 화폐 아이템으로 대신 떨어짐",
+                    "ja": "マップで見つかったお気に入り以外のマップの代わりに基礎カレンシーアイテムがドロップする",
+                    "ru": "Найденные на ваших картах не-предпочитаемые карты выпадают в виде обычной валюты",
+                    "pt-BR": "Mapas Não Favorecidos encontrados em seus Mapas caem como Itens Monetários Básicos ao invés",
+                    "de": "Gefundene Karten (Lieblingskarten ausgenommen) in Euren Karten werden stattdessen als Basiswährungsgegenstände fallen gelassen",
+                    "fr": "Dans vos Cartes, les Cartes non Préférées trouvées sont cédées sous forme d'Objets monétaires basiques",
+                    "es": "Los mapas que no sean de tus favoritos que encuentras en tus mapas caen como objetos monetarios básicos"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3764294022"
+            }
+        ]
+    },
+    {
+        "id": "Eldritch_Gaze",
+        "name": {
+            "en": "Eldritch Gaze",
+            "zh-TW": "異能凝視",
+            "zh-CN": "古神凝视",
+            "ko": "섬뜩한 응시",
+            "ja": "不気味な眼差し",
+            "ru": "Мистический взор",
+            "pt-BR": "Olhar Ancestral",
+            "de": "Unheimlicher Blick",
+            "fr": "Regard surnaturel",
+            "es": "Mirada sobrenatural"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Eldritch Altars Influenced by The Eater of Worlds have an additional Downside",
+                    "zh-TW": "被吞噬天地影響的異能祭壇有 1 個額外劣勢",
+                    "zh-CN": "受灭界者影响的古灵祭坛会有额外的负面效果",
+                    "ko": "세계 포식자의 영향을 받는 섬뜩한 제단이 부정적 효과 1개 추가 보유",
+                    "ja": "世界を喰らうもののインフルエンスを受けているエルドリッチの祭壇は追加のデメリットを持つ",
+                    "ru": "Мистические алтари под влиянием Пожирателя миров имеют дополнительное отрицательное свойство",
+                    "pt-BR": "Altares Ancestrais Influenciados pelo Devorador de Muntos têm um Lado Ruim adicional",
+                    "de": "Übernatürliche Altäre des Weltenfressers haben einen zusätzlichen Nachteil",
+                    "fr": "Les Autels surnaturels Influencés par le Mangeur de mondes ont un effet négatif supplémentaire",
+                    "es": "Los altares sobrenaturales influenciados por el Devorador de mundos tienen una desventaja adicional"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1488839433"
+            },
+            {
+                "text": {
+                    "en": "Eldritch Altars Influenced by The Eater of Worlds have (50—60)% increased Effect of Upsides",
+                    "zh-TW": "被吞噬天地影響的異能祭壇增加 (50—60)% 優勢效果",
+                    "zh-CN": "受灭界者影响的古灵祭坛的正面效果的力度提高 (50—60)%",
+                    "ko": "세계 포식자의 영향을 받는 섬뜩한 제단의 긍정적 효과의 효과 (50—60)% 증가",
+                    "ja": "世界を喰らうもののインフルエンスを受けているエルドリッチの祭壇のメリットの効果が(50—60)%増加する",
+                    "ru": "Мистические алтари под влиянием Пожирателя миров имеют (50—60)% усиление эффекта положительных свойств",
+                    "pt-BR": "Altares Ancestrais Influenciados pelo Devorador de Muntos têm Efeito do Lado Bom aumentado em (50—60)%",
+                    "de": "Übernatürliche Altäre des Weltenfressers haben (50—60)% erhöhte Wirkung der Vorteile",
+                    "fr": "Les Autels surnaturels Influencés par le Mangeur de mondes ont (50—60)% d'Augmentation de leurs Effets positifs",
+                    "es": "Los altares sobrenaturales influenciados por el Devorador de mundos tienen el efecto de sus ventajas aumentado un (50—60)%"
+                },
+                "values": [
+                    {
+                        "min": 50,
+                        "max": 60
+                    }
+                ],
+                "tradeStatId": "explicit.stat_3619368685"
+            }
+        ]
+    },
+    {
+        "id": "Wrath_of_the_Cosmos",
+        "name": {
+            "en": "Wrath of the Cosmos",
+            "zh-TW": "宇宙之怒",
+            "zh-CN": "宇宙之怒",
+            "ko": "우주의 진노",
+            "ja": "宇宙の怒り",
+            "ru": "Ярость космоса",
+            "pt-BR": "Ira do Cosmos",
+            "de": "Zorn des Kosmos",
+            "fr": "Fureur du cosmos",
+            "es": "Ira del cosmos"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Eldritch Altars Influenced by The Searing Exarch have (50—60)% chance to have an additional Upside",
+                    "zh-TW": "被灼烙總督影響的異能祭壇有 (50—60)% 機率有 1 個額外優勢",
+                    "zh-CN": "受焚界者影响的古灵祭坛有 (50—60)% 几率获得一个额外的正面效果。",
+                    "ko": "작열의 총주교의 영향을 받는 섬뜩한 제단이 (50—60)%의 확률로 긍정적 효과 1개 추가 보유",
+                    "ja": "灼熱の代行者のインフルエンスを受けているエルドリッチの祭壇は(50—60)%の確率で追加のメリットを持つ",
+                    "ru": "Мистические алтари под влияние Пламенного экзарха с (50—60)% шансом будут иметь дополнительное положительное свойство",
+                    "pt-BR": "Altares Ancestrais Influenciados pelo Exarca Cauterizado têm (50—60)% de chance de ter um Lado Bom adicional",
+                    "de": "Übernatürliche Altäre des Brennenden Exarchen haben (50—60)% Chance, einen zusätzlichen Vorteil zu haben",
+                    "fr": "Les Autels surnaturels influencés par l'Exarque ardent ont (50—60)% de chances d'avoir un effet positif supplémentaire",
+                    "es": "Los altares sobrenaturales influenciados por el Exarca abrasador tienen un (50—60)% de probabilidad de tener una ventaja adicional"
+                },
+                "values": [
+                    {
+                        "min": 50,
+                        "max": 60
+                    }
+                ],
+                "tradeStatId": "explicit.stat_2348590020"
+            },
+            {
+                "text": {
+                    "en": "Eldritch Altars Influenced by The Searing Exarch which have an additional Upside have (80—100)% increased Effect of Downsides",
+                    "zh-TW": "被灼烙總督影響且有 1 個額外優勢的異能祭壇，增加 (80—100)% 劣勢的效果",
+                    "zh-CN": "受焚界者影响的古灵祭坛具有一个额外的正面效果时，负面效果提高 (80—100)%",
+                    "ko": "작열의 총주교의 영향을 받는 섬뜩한 제단이 긍정적 효과 1개를 추가 보유할 때 부정적 효과의 효과 (80—100)% 증가",
+                    "ja": "灼熱の代行者のインフルエンスを受けている追加のメリットを持つエルドリッチの祭壇はデメリットの影響が(80—100)%増加する",
+                    "ru": "(80—100)% усиление эффекта отрицательных свойств у мистических алтарей под влиянием Пламенного экзарха с дополнительным положительным свойством",
+                    "pt-BR": "Altares Ancestrais Influenciados pelo Exarca Cauterizado que possuem um Lado Bom adicional têm Efeito dos Contras aumentado em (80—100)%",
+                    "de": "Übernatürliche Altäre des Brennenden Exarchen, die einen zusätzlichen Vorteil haben, haben (80—100)% erhöhte Wirkung der Nachteile",
+                    "fr": "Les Autels surnaturels Influencés par l'Exarque ardent qui ont un Effet positif supplémentaire ont (80—100)% d'Augmentation de leurs Effets négatifs",
+                    "es": "Los altares sobrenaturales influenciados por el Exarca abrasador que tengan una ventaja adicional tienen el efecto de sus desventajas aumentado un (80—100)%"
+                },
+                "values": [
+                    {
+                        "min": 80,
+                        "max": 100
+                    }
+                ],
+                "tradeStatId": "explicit.stat_1804970439"
+            }
+        ]
+    },
+    {
+        "id": "Shadow_Shaping",
+        "name": {
+            "en": "Shadow Shaping",
+            "zh-TW": "陰影塑造",
+            "zh-CN": "暗影塑形",
+            "ko": "그림자 형성",
+            "ja": "影の実体化",
+            "ru": "Плетение теней",
+            "pt-BR": "Molde Sombrio",
+            "de": "Schattenformung",
+            "fr": "Façonnage des ombres",
+            "es": "Moldear las sombras"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Maps found cannot be your Favoured Maps",
+                    "zh-TW": "掉落的地圖不是你的幸運地圖",
+                    "zh-CN": "掉落的地图不会是偏好地图",
+                    "ko": "선호 지도는 발견할 수 없음",
+                    "ja": "見つかるマップがお気に入りマップになることがない",
+                    "ru": "Найденные карты не могут быть вашими предпочитаемыми картами",
+                    "pt-BR": "Mapas encontrados não podem ser seus Mapas Favorecidos",
+                    "de": "Gefundene Karten können nicht eure Lieblingskarten sein",
+                    "fr": "Les Cartes trouvées ne peuvent pas être vos Cartes Préférées",
+                    "es": "Los mapas que encuentras no pueden ser tus mapas favoritos"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_441900529"
+            },
+            {
+                "text": {
+                    "en": "Maps found in your Maps have +1% chance to have a special Implicit Modifier for each different Map you have Favoured",
+                    "zh-TW": "你的每個不同幸運地圖，使你地圖中掉落的地圖 +1% 機率有 1 個特殊固定詞綴",
+                    "zh-CN": "你每拥有一个不同的恩典地图，你的地图中找到的地图就有+1%的几率拥有特殊基底属性",
+                    "ko": "선호 지도로 선택한 서로 다른 지도 하나당 지도에서 발견하는 지도에 특별한 고정 속성 1개가 부여될 확률 +1%",
+                    "ja": "マップで見つかるマップは異なったお気に入りマップの種類ごとに1%の確率で特別な暗黙モッドを持つ",
+                    "ru": "Найденные на ваших картах карты могут иметь специальное собственное свойство с +1% шансом за каждую отдельную предпочитаемую карту",
+                    "pt-BR": "Mapas encontrados em seus Mapas têm +1% de chance de terem um Modificador Implícito especial para cada Mapa diferente que você tenha Favorecido",
+                    "de": "Gefundene Karten in Euren Karten haben +1% Chance, für jede unterschiedliche Lieblingskarte einen speziellen impliziten Modifikator zu haben",
+                    "fr": "Dans vos Cartes, les Cartes trouvées ont +1% de chances d'avoir un Implicite spécial par Carte que vous Préférez",
+                    "es": "Los mapas que encuentras en tus mapas tienen +1% de probabilidad de tener un modificador implícito especial por cada mapa diferente que tengas como favorito"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1363247141"
+            }
+        ]
+    },
+    {
+        "id": "Extreme_Archaeology",
+        "name": {
+            "en": "Extreme Archaeology",
+            "zh-TW": "極限考古學",
+            "zh-CN": "极限考古",
+            "ko": "극단적인 고고학",
+            "ja": "極限の考古学",
+            "ru": "Экстремальная археология",
+            "pt-BR": "Arqueologia Extrema",
+            "de": "Extreme Archäologie",
+            "fr": "Archéologie extrême",
+            "es": "Arqueología extrema"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "(200—250)% increased Explosive Radius in your Maps",
+                    "zh-TW": "增加 (200—250)% 你的地圖內的爆炸範圍",
+                    "zh-CN": "地图内的爆炸范围扩大 (200—250)%",
+                    "ko": "지도 내 폭발 반경 (200—250)% 증가",
+                    "ja": "マップにある爆発物の半径が(200—250)%増加する",
+                    "ru": "(200—250)% увеличение радиуса взрыва",
+                    "pt-BR": "Raio dos Explosivos em seus Mapas aumentado em (200—250)%",
+                    "de": "(200—250)% vergrößerter Explosionsradius in Euren Karten",
+                    "fr": "Vos Cartes ont (200—250)% d'Augmentation du Rayon d'explosion",
+                    "es": "Radio de los explosivos aumentado un (200—250)% en tus mapas"
+                },
+                "values": [
+                    {
+                        "min": 200,
+                        "max": 250
+                    }
+                ],
+                "tradeStatId": "explicit.stat_3289828378"
+            },
+            {
+                "text": {
+                    "en": "(100—150)% increased Explosive Placement Range in your Maps",
+                    "zh-TW": "增加 (100—150)% 你地圖中爆裂物的放置距離",
+                    "zh-CN": "地图内炸药放置范围扩大 (100—150)%",
+                    "ko": "지도 내 폭발물 설치 범위 (100—150)% 증가",
+                    "ja": "マップでは爆発物の設置間隔が(100—150)%増加する",
+                    "ru": "(100—150)% увеличение радиуса размещения взрывчатки",
+                    "pt-BR": "Alcance dos Explosivos Plantados aumentado em (100—150)%",
+                    "de": "(100—150)% erhöhte Sprengstoff-Platzierungsreichweite in Euren Karten",
+                    "fr": "Vos Cartes ont (100—150)% d'Augmentation du Rayon de placement des explosifs",
+                    "es": "Distancia de colocación de explosivos aumentada un (100—150)% en tus mapas"
+                },
+                "values": [
+                    {
+                        "min": 100,
+                        "max": 150
+                    }
+                ],
+                "tradeStatId": "explicit.stat_1539368271"
+            },
+            {
+                "text": {
+                    "en": "Expedition Monsters in your Maps spawn with an additional (10—15)% of Life missing",
+                    "zh-TW": "你地圖中的探險怪物以額外 (10—15)% 失去的生命產生",
+                    "zh-CN": "你地图中产生的先祖秘藏怪物额外失去 (10—15)% 生命值",
+                    "ko": "지도 내 탐험 몬스터가 (10—15)%의 생명력을 추가 상실한 상태로 생성",
+                    "ja": "マップに出現するエクスペディションモンスターは追加で(10—15)%のライフを失った状態でスポーンする",
+                    "ru": "Монстры Экспедиции на ваших картах появляются с дополнительным уменьшением здоровья на (10—15)%",
+                    "pt-BR": "Monstros de Expedições em seus Mapas aparecem faltando uma quantidade de Vida de (10—15)% adicional",
+                    "de": "Expedition-Monster in Euren Karten erscheinen mit zusätzlich (10—15)% fehlendem Leben",
+                    "fr": "Dans vos Cartes, les Monstres d'Expédition sont générés avec (10—15)% de Vie manquante en plus",
+                    "es": "Los monstruos de Expedition de tus mapas se generan con un (10—15)% de vida faltante adicional"
+                },
+                "values": [
+                    {
+                        "min": 10,
+                        "max": 15
+                    }
+                ],
+                "tradeStatId": "explicit.stat_2684644644"
+            },
+            {
+                "text": {
+                    "en": "Number of Explosives is one",
+                    "zh-TW": "爆裂物數量為 1",
+                    "zh-CN": "炸药数量为一个",
+                    "ko": "폭발물 수가 1개임",
+                    "ja": "爆発物の数は1個",
+                    "ru": "Количество взрывчатки: 1",
+                    "pt-BR": "Explosivos Limitados a um",
+                    "de": "Die Anzahl der Sprengladungen beträgt 1",
+                    "fr": "Le nombre d'Explosifs est un",
+                    "es": "Solo dispones de un explosivo"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_353291915"
+            }
+        ]
+    },
+    {
+        "id": "Crop_Rotation",
+        "name": {
+            "en": "Crop Rotation",
+            "zh-TW": "作物輪作",
+            "zh-CN": "轮作",
+            "ko": "윤작",
+            "ja": "輪作",
+            "ru": "Севооборот",
+            "pt-BR": "Rotação de Plantações",
+            "de": "Fruchtwechsel",
+            "fr": "Rotation de récoltes",
+            "es": "Rotación de cultivos"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Harvest Crops in your Maps contain only Tier 1 Plants Harvesting Crops in your Maps has a chance to upgrade the Tier of Plants of different colours",
+                    "zh-TW": "你地圖中的豐收作物只會含有階級 1 的作物 豐收你地圖中的作物，有機率升級不同顏色的作物階級",
+                    "zh-CN": "你地图中的庄园农作物只包含 1 级植物 在你的地图中收割作物有几率升级与其不同颜色的作物等级",
+                    "ko": "지도 내 수확 작물에 1등급 식물만 등장 지도 내 작물 수확 시 일정 확률로 식물 등급이 다른 색상으로 업그레이드",
+                    "ja": "マップに出現するハーベストの畑にはティア1の作物だけが出現する マップで畑を収穫すると一定確率で他の色の作物のティアをアップグレードする",
+                    "ru": "Грядки Жатвы на ваших картах содержат только растения 1 уровня Сбор урожая на ваших картах может повысить уровень растений других цветов",
+                    "pt-BR": "Plantações Harvest em seus Mapas contêm apenas Plantas Tier 1 Plantações Harvest em seus Mapas têm uma chance de aprimorar o Tier das Plantas de cores diferentes",
+                    "de": "Harvest-Parzellen in Euren Karten enthalten nur Pflanzen des Levels 1 Das Ernten von Parzellen in Euren Karten gewährt eine Chance, den Level von Pflanzen verschiedener Farben zu erhöhen",
+                    "fr": "Dans vos Cartes, les Cultures ne contiennent que des Plantes de Palier 1 Dans vos Cartes, la Récolte a des chances d'améliorer le Palier des Plantes de couleurs différentes",
+                    "es": "Los cultivos de Harvest de tus mapas solo contienen plantas de grado 1 Al cosechar los cultivos de tus mapas, hay una probabilidad de que aumente el grado de las plantas de colores diferentes"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_2765997141"
+            }
+        ]
+    },
+    {
+        "id": "Timeless_Conflict",
+        "name": {
+            "en": "Timeless Conflict",
+            "zh-TW": "永恆鬥爭",
+            "zh-CN": "永战无休",
+            "ko": "끝없는 분쟁",
+            "ja": "永劫の対立",
+            "ru": "Конфликт вне времени",
+            "pt-BR": "Conflito Atemporal",
+            "de": "Immerwährender Konflikt",
+            "fr": "Conflit intemporel",
+            "es": "Conflicto atemporal"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Legion Encounters in your Maps have no Timer Breaking out Monsters and Chests that are in stasis progressively causes a Schism Legion Encounters in your Maps begin once the Schism has occurred",
+                    "zh-TW": "你地圖中的戰亂事件沒有計時器 打破處於靜止狀態的怪物和保險箱會導致碎裂 你地圖中的戰亂事件開始於碎裂發生",
+                    "zh-CN": "你地图中的战乱之殇遭遇战没有计时 击破静滞中的怪物或宝箱会逐渐引发分裂 你地图中的战乱之殇遭遇战会在分裂出现时开始",
+                    "ko": "지도 내 군단 인카운터에 제한 시간 없음 정체 상태의 몬스터 및 상자를 깨우면 점차적으로 분립 유발 지도 내 군단 인카운터가 분립 발생 후 시작",
+                    "ja": "マップに出現するリージョンエンカウンターはタイマーを持たない 静止状態のモンスターやチェストを破壊するたびに徐々に分裂が進行する マップに出現するリージョンエンカウンターは分裂が起こった際に開始される",
+                    "ru": "У событий Легиона на ваших картах отсутствует таймер Разрушение стазиса, сковывающего монстров и сундуки, постепенно приводит к Расколу Схватки с Легионом на ваших картах начинаются сразу после активации Раскола",
+                    "pt-BR": "Encontros Legionários em seus Mapas não tem Contador Quebrar os Monstros e Baús que estiverem em estasis causa uma Separação progressiva Encontros Legion em seus Mapas começam uma vez que a Separação acontecer",
+                    "de": "Legion-Begegnungen in Euren Karten haben kein Zeitlimit Das Befreien von Monstern und Truhen aus der Stase löst eine schrittweise Spaltung aus Legion-Begegnungen in Euren Karten beginnen, sobald die Spaltung stattgefunden hat",
+                    "fr": "Dans vos Cartes, le temps des Rencontres de Légion n'est pas limité Libérer des Monstres et coffres qui sont en stase génère peu à peu un Schisme Dans vos Cartes, les Rencontres de Légion commencent lorsqu'un Schisme a lieu",
+                    "es": "Los encuentros de Legion de tus mapas no tienen contador Al liberar a los monstruos y cofres que están inmovilizados se irá produciendo progresivamente una escisión Los encuentros de Legion de tus mapas comienzan una vez que se haya producido la escisión"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_222333372"
+            }
+        ]
+    },
+    {
+        "id": "Unending_Nightmare",
+        "name": {
+            "en": "Unending Nightmare",
+            "zh-TW": "無盡惡夢",
+            "zh-CN": "无尽梦魇",
+            "ko": "끊임없는 악몽",
+            "ja": "終わらない悪夢",
+            "ru": "Бесконечный кошмар",
+            "pt-BR": "Pesadelo Sem Fim",
+            "de": "Unendlicher Albtraum",
+            "fr": "Cauchemar interminable",
+            "es": "Pesadilla sin fin"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Delirium Fog in your Maps never dissipates Delirium in your Maps has doubled difficulty scaling with distance from the mirror Simulacrum Splinters cannot be found in your Maps Delirium Orbs cannot be found in your Maps",
+                    "zh-TW": "你地圖中的譫妄迷霧永不消散 你地圖中的譫妄難度為雙倍，且隨著與鏡子的距離增加 你的地圖不會掉落幻像斷片 你的地圖不會掉落譫妄玉",
+                    "zh-CN": "你地图中的惊悸迷雾永不消散 根据与镜子的距离，区域内的惊悸迷雾的难度翻倍 你的地图中无法找到梦魇拟像裂片 你的地图中无法找到雾魇宝珠",
+                    "ko": "지도 내 환영 안개가 사라지지 않음 거울과의 거리가 지도 내 환영 난이도에 미치는 영향 2배 지도에서 복제된 영토 파편 발견 불가 지도에서 환영의 오브 발견 불가",
+                    "ja": "デリリウムの霧が晴れることがない マップに出現するデリリウムは鏡からの距離に応じて難易度が二倍にスケールする シミュラクラムスプリンターがマップで見つかることがない デリリウムオーブがマップで見つかることがない",
+                    "ru": "Туман Делириума на ваших картах никогда не рассеивается Сложность Делириума на ваших картах возрастает вдвое быстрее по мере удаления от Зеркала Вы не будете находить осколки Симулякра на ваших картах Вы не будете находить сферы Делириума на ваших картах",
+                    "pt-BR": "Névoa Delirante em seus Mapas nunca se dissipa Névoa Delirante em seus Mapas tem escalonamento de dificuldade dobrado de acordo com a distância do espelho Fragmentos de Simulacro não podem ser encontrados em seus Mapas Orbes Delirantes não podem cair em seus Mapas",
+                    "de": "Delirium-Nebel in Euren Karten löst sich nie auf Die Schwierigkeit von Delirium in Euren Karten skaliert doppelt mit der Distanz zum Spiegel Simulacrum-Splitter können nicht in Euren Karten gefunden werden Sphären des Deliriums können nicht in Euren Karten gefunden werden",
+                    "fr": "Dans vos Cartes, les Brumes du Délire ne se dissipent jamais Dans vos Cartes, la difficulté du Délire progresse deux fois plus vite en fonction de l'éloignement du miroir Les Esquilles du Simulacre ne peuvent être trouvées dans vos Cartes Les Orbes du Délire ne peuvent pas être trouvé dans vos Cartes",
+                    "es": "La niebla de delirio de tus mapas nunca se disipa El aumento de dificultad del delirio de tus mapas por la distancia hasta el espejo está duplicado No puedes encontrar orbes de delirio en tus mapas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_4222365107"
+            }
+        ]
+    },
+    {
+        "id": "Immutable_Dogma",
+        "name": {
+            "en": "Immutable Dogma",
+            "zh-TW": "不變教義",
+            "zh-CN": "恒常教条",
+            "ko": "불변의 교리",
+            "ja": "変わらない教義",
+            "ru": "Незыблемая догма",
+            "pt-BR": "Dogma Imutável",
+            "de": "Unumstößliches Dogma",
+            "fr": "Dogme immuable",
+            "es": "Dogma inmutable"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Cannot Reroll Favours at Ritual Altars in your Maps",
+                    "zh-TW": "不能重骰你地圖中祭祀神壇的恩賜之物",
+                    "zh-CN": "无法在你地图中的驱灵祭坛处重置恩典",
+                    "ko": "지도 내 의식 제단에서 헌정품 무작위 변경 불가",
+                    "ja": "マップに出現するリチュアルの祭壇では恩寵をリロールすることができない",
+                    "ru": "Вы не можете обновлять награды на алтарях Ритуала на ваших картах",
+                    "pt-BR": "Não Pode Redefinir Favores em Altares Ritualísticos em seus Mapas",
+                    "de": "Gaben an Ritual-Altären in Euren Karten können nicht neu gewürfelt werden",
+                    "fr": "Dans vos Cartes, les Faveurs des Autels de Rituel ne peuvent pas être tirées à nouveau",
+                    "es": "No puedes aleatorizar los favores en los altares de Ritual de tus mapas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_164133604"
+            },
+            {
+                "text": {
+                    "en": "Monsters Sacrificed at Ritual Altars in your Maps grant (100—150)% more Tribute",
+                    "zh-TW": "你地圖中被獻祭至祭祀神壇的怪物，獲得 (100—150)% 更多貢禮",
+                    "zh-CN": "在你地图中的驱灵祭坛处献祭怪物获得的贡品总增 (100—150)%",
+                    "ko": "지도 내 의식 제단에서 희생되는 몬스터가 주는 공물 점수 (100—150)% 증폭",
+                    "ja": "マップに出現するリチュアルの祭壇で捧げられたモンスターが付与するトリビュートが(100—150)%上昇する",
+                    "ru": "Монстры, принесенные в жертву на алтарях Ритуала на ваших картах даруют на (100—150)% больше дани",
+                    "pt-BR": "Monstros Sacrificados em Altares Ritualísticos em seus Mapas concedem (100—150)% mais Tributo",
+                    "de": "Bei Ritual-Altären geopferte Monster in Euren Karten gewähren (100—150)% mehr Tribut",
+                    "fr": "Dans vos Cartes, les Monstres Sacrifiés sur les Autels de Rituel octroient (100—150)% Davantage de Tribut",
+                    "es": "Los monstruos sacrificados en los altares de Ritual de tus mapas otorgan un (100—150)% más de tributo"
+                },
+                "values": [
+                    {
+                        "min": 100,
+                        "max": 150
+                    }
+                ],
+                "tradeStatId": "explicit.stat_2590915311"
+            }
+        ]
+    },
+    {
+        "id": "Arbitrary_Tenets",
+        "name": {
+            "en": "Arbitrary Tenets",
+            "zh-TW": "武斷原則",
+            "zh-CN": "专断信条",
+            "ko": "독단적인 교의",
+            "ja": "気まぐれな信条",
+            "ru": "Произвольные постулаты",
+            "pt-BR": "Princípios Arbitrários",
+            "de": "Willkürliche Grundsätze",
+            "fr": "Principes arbitraires",
+            "es": "Principios arbitrarios"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Favours at Ritual Altars in your Maps randomly cost between 90% less and 80% more",
+                    "zh-TW": "你地圖中祭祀神壇的恩賜之物花費，隨機 90% 更少至 80% 更多",
+                    "zh-CN": "你地图中的驱灵祭坛恩典成本在总降 90% 和总增 80% 之间随机波动",
+                    "ko": "지도 내 의식 제단에서 헌정품의 비용이 90% 감폭~80% 증폭 사이에서 무작위 변경",
+                    "ja": "マップのリチュアルの祭壇での恩寵のコストは90%低下した値から80%上昇した値の間の数値になる",
+                    "ru": "Награды на алтарях Ритуала на ваших картах имеют случаемую цену от 90% меньше до 80% больше по сравнению с оригинальной ценой",
+                    "pt-BR": "Favores em Altares Ritualísticos em seus Mapas custam, aleatoriamente, entre 90% menos e 80% mais",
+                    "de": "Gaben an Ritual-Altären in Euren Karten kosten zufällig zwischen 90% weniger und 80% mehr",
+                    "fr": "Dans vos Cartes, les Faveurs des Autels de Rituel Coûtent entre 90% de Perte et 80% Davantage de leur Coût initial",
+                    "es": "Los favores de los altares de Ritual de tus mapas cuestan al azar entre un 90% menos y un 80% más"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1276541261"
+            }
+        ]
+    },
+    {
+        "id": "Endless_Tide",
+        "name": {
+            "en": "Endless Tide",
+            "zh-TW": "無盡潮汐",
+            "zh-CN": "无尽之潮",
+            "ko": "끝없는 파도",
+            "ja": "終わりなき流れ",
+            "ru": "Бесконечный поток",
+            "pt-BR": "Maré Infinita",
+            "de": "Endlose Flut",
+            "fr": "Marée implacable",
+            "es": "Marea interminable"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Beyond Portals in your Maps cannot spawn Unique Bosses",
+                    "zh-TW": "你地圖中的超越傳送門不能產生傳奇頭目",
+                    "zh-CN": "地图中的穿越传送门无法生成传奇首领",
+                    "ko": "지도 내 이계 포탈에서 고유 보스 생성 불가",
+                    "ja": "マップに出現するビヨンドポータルはユニークボスを出現させない",
+                    "ru": "Порталы Иномирья на ваших картах не могут порождать уникальных боссов",
+                    "pt-BR": "Portais do Além em seus Mapas não podem criar Chefes Únicos",
+                    "de": "Jenseits-Portale in Euren Karten können keine einzigartigen Bosse beschwören",
+                    "fr": "Dans vos Cartes, les Portails vers Ailleurs ne peuvent pas générer de Boss Uniques",
+                    "es": "Los portales del Más allá de tus mapas no pueden generar jefes únicos"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1280481887"
+            },
+            {
+                "text": {
+                    "en": "Beyond Portals in your Maps have (40—50)% less Merging Radius",
+                    "zh-TW": "你地圖中的超越傳送門，有 (40—50)% 更小合併範圍",
+                    "zh-CN": "你地图中的穿越传送门的融合范围总降 (40—50)%",
+                    "ko": "지도 내 이계 포탈의 병합 범위 (40—50)% 감폭",
+                    "ja": "マップに出現するビヨンドポータルのマージ半径が(40—50)%低下する",
+                    "ru": "Порталы Иномирья на ваших картах обладают на (40—50)% меньшим радиусом слияния",
+                    "pt-BR": "Portais do Além em seus Mapas têm (40—50)% menos Raio de Fusão",
+                    "de": "Jenseits-Portale in Euren Karten haben (40—50)% weniger Überlappungsradius",
+                    "fr": "Dans vos Cartes, les Portails vers Ailleurs ont (40—50)% de Perte de Rayon d'Assimilation",
+                    "es": "Los portales del Más allá de tus mapas tienen un (40—50)% menos de radio de fusión"
+                },
+                "values": [
+                    {
+                        "min": 40,
+                        "max": 50
+                    }
+                ],
+                "tradeStatId": "explicit.stat_3009539307"
+            }
+        ]
+    },
+    {
+        "id": "Speaker_of_the_Dead",
+        "name": {
+            "en": "Speaker of the Dead",
+            "zh-TW": "死者之言",
+            "zh-CN": "亡者代言人",
+            "ko": "망자의 대변인",
+            "ja": "死者の話し手",
+            "ru": "Говорящий с мёртвыми",
+            "pt-BR": "Portavoz dos Mortos",
+            "de": "Fürsprecher der Toten",
+            "fr": "Porte-parole des morts",
+            "es": "Portavoz de los muertos"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Tormented Spirits in your Maps can Possess Players for 20 seconds Tormented Spirits in your Maps cannot Possess Monsters",
+                    "zh-TW": "你地圖中的罪魂可以附身玩家 20 秒 你地圖中的罪魂不能附身怪物",
+                    "zh-CN": "你地图中的罪魂可以附身玩家，持续 20 秒 你地图中的罪魂无法附身怪物",
+                    "ko": "지도 내 고통받는 혼백이 20초 동안 플레이어를 사로잡을 수 있음 지도 내 고통받는 혼백이 몬스터를 사로잡을 수 없음",
+                    "ja": "マップに出現する拷問された幽霊は20秒間プレイヤーに憑依できる マップに出現する拷問された幽霊はモンスターに憑依できない",
+                    "ru": "Страдающие духи на ваших картах могут вселяться в игроков на 20 секунд Страдающие духи на ваших картах не могут вселяться в монстров",
+                    "pt-BR": "Espíritos Atormentados em seus Mapas podem Possuir Jogadores por 20 segundos Espíritos Atormentados em seus Mapas não podem Possuir Monstros",
+                    "de": "Gequälte Seelen in Euren Karten können von Spielern für 20 Sekunden Besitz ergreifen Gequälte Seelen in Euren Karten können kein Besitz von Monstern ergreifen",
+                    "fr": "Dans vos Cartes, les Esprits tourmentés peuvent posséder les Joueurs pendant 20 secondes Dans vos Cartes, les Esprits tourmentés ne peuvent pas posséder les Monstres",
+                    "es": "Los espíritus atormentados de tus mapas pueden poseer a los jugadores durante 20 segundos Los espíritus atormentados de tus mapas no pueden poseer a los monstruos"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1582162479"
+            }
+        ]
+    },
+    {
+        "id": "Cassias_Pride",
+        "name": {
+            "en": "Cassia's Pride",
+            "zh-TW": "卡西亞的驕傲",
+            "zh-CN": "卡西娅之傲",
+            "ko": "카시아의 긍지",
+            "ja": "カッシアのプライド",
+            "ru": "Гордость Кассии",
+            "pt-BR": "Orgulho de Cassia",
+            "de": "Cassias Stolz",
+            "fr": "Fierté de Cassia",
+            "es": "Orgullo de Cassia"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Blight Monsters in your Maps take (65—75)% less Damage from Players and their Minions",
+                    "zh-TW": "你地圖中的凋落怪物，承受 (65—75)% 更少來自玩家和他們召喚物的傷害",
+                    "zh-CN": "你地图中的菌潮怪物受到玩家及其召唤生物的伤害总降 (65—75)%",
+                    "ko": "지도 내 역병 몬스터가 플레이어 및 플레이어의 소환수로부터 받는 피해 (65—75)% 감폭",
+                    "ja": "マップに出現するブライトモンスターがプレイヤーおよびそのミニオンから受けるダメージが(65—75)%低下する",
+                    "ru": "Монстры Скверны на ваших картах получают на (65—75)% меньше урона от игроков и их приспешников",
+                    "pt-BR": "Monstros Infestados em seus Mapas sofrem (65—75)% menos Dano dos Jogadores e seus Lacaios",
+                    "de": "Blight-Monster in Euren Karten erleiden (65—75)% weniger Schaden von Spielern und ihren Kreaturen",
+                    "fr": "Dans vos Cartes, les Monstres Infestés ont (65—75)% de Perte de Dégâts subis de la part des Joueurs et de leurs Créatures",
+                    "es": "Los monstruos de Blight de tus mapas reciben un (65—75)% menos de daño de los jugadores y sus esbirros"
+                },
+                "values": [
+                    {
+                        "min": 65,
+                        "max": 75
+                    }
+                ],
+                "tradeStatId": "explicit.stat_2460639269"
+            },
+            {
+                "text": {
+                    "en": "Blight Towers and their Minions in your Maps deal (300—400)% more Damage",
+                    "zh-TW": "你地圖中的凋落防守塔和它們的召喚物造成 (300—400)% 更多傷害",
+                    "zh-CN": "你地图中菌潮防御塔和它们的召唤生物伤害总增 (300—400)%",
+                    "ko": "지도 내 역병 탑과 탑의 소환수가 주는 피해 (300—400)% 증폭",
+                    "ja": "マップではブライトタワーおよびそのミニオンのダメージが(300—400)%上昇する",
+                    "ru": "Башни Скверны и их приспешники на ваших картах наносят на (300—400)% больше урона",
+                    "pt-BR": "Torres Infestadas e seus Lacaios em seus Mapas causam (300—400)% mais Dano",
+                    "de": "Blight-Türme und ihre Kreaturen in Euren Karten verursachen (300—400)% mehr Schaden",
+                    "fr": "Dans vos Cartes, les Tours de l'Infestation et leurs Créatures ont (300—400)% Davantage de Dégâts",
+                    "es": "Las torres de Blight de tus mapas y sus esbirros infligen un (300—400)% más de daño"
+                },
+                "values": [
+                    {
+                        "min": 300,
+                        "max": 400
+                    }
+                ],
+                "tradeStatId": "explicit.stat_3738423246"
+            }
+        ]
+    },
+    {
+        "id": "Meticulous_Appraiser",
+        "name": {
+            "en": "Meticulous Appraiser",
+            "zh-TW": "細膩鑑定師",
+            "zh-CN": "严谨鉴定师",
+            "ko": "세심한 감정인",
+            "ja": "緻密な鑑定士",
+            "ru": "Скрупулёзный оценщик",
+            "pt-BR": "Avaliador Meticuloso",
+            "de": "Akribischer Gutachter",
+            "fr": "Estimateur méticuleux",
+            "es": "Tasador meticuloso"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Modifiers to Quantity of Items found in your Maps instead apply to Rarity of Items found in your Maps at 300% of their value",
+                    "zh-TW": "你地圖的物品掉落數量詞綴，以 300% 它們的值套用至物品掉落稀有度",
+                    "zh-CN": "地图中掉落物品数量的修正改为以 300% 的效果作用于地图中掉落物品的稀有度",
+                    "ko": "지도에서 발견하는 아이템 수량 속성이 지도에서 발견하는 아이템 수량 이 아닌 지도에서 발견하는 아이템 희귀도 에 300%의 수치로 적용",
+                    "ja": "マップで見つかるアイテムの数量のモッドは代わりに見つかるアイテムのレアリティにその数値の300%が適用される",
+                    "ru": "Модификаторы количество находимых на ваших картах предметов вместо этого применяются к редкости находимых предметов в размере 300% от их значения",
+                    "pt-BR": "Modificadores de Quantidade de Itens encontrados em seus Mapas são aplicados à Raridade de Itens encontrados em seus Mapas, ao invés, em 300% de seu valor",
+                    "de": "Modifikatoren zur Menge gefundener Gegenstände im Gebiet gelten zu 300% ihres Werts stattdessen für deren Seltenheit",
+                    "fr": "Dans vos Cartes, les Modificateurs de Quantité d'Objets trouvés s'appliquent à la place à la Rareté des Objets trouvés, à 300% de leur valeur",
+                    "es": "Los modificadores de cantidad de objetos que encuentras en tus mapas se aplican a la rareza de objetos que encuentras en tus mapas al 300% de su valor"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3399892496"
+            }
+        ]
+    },
+    {
+        "id": "Lucid_Dreams",
+        "name": {
+            "en": "Lucid Dreams",
+            "zh-TW": "清醒夢境",
+            "zh-CN": "清明梦",
+            "ko": "깨끗한 꿈",
+            "ja": "明晰夢",
+            "ru": "Осознанные сны",
+            "pt-BR": "Sonhos Lúcidos",
+            "de": "Klartraum",
+            "fr": "Rêves lucides",
+            "es": "Sueños lúcidos"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Vaal Side Areas in your Maps are no longer Corrupted",
+                    "zh-TW": "你地區的瓦爾區域不再被汙染",
+                    "zh-CN": "你地图中的瓦尔区域不再被腐化",
+                    "ko": "지도 내 바알 부가 지역이 타락하지 않음",
+                    "ja": "マップに出現するヴァールサイドエリアはコラプト状態ではない",
+                    "ru": "Побочные области ваал на ваших картах больше не являются оскверненными",
+                    "pt-BR": "Áreas Paralelas Vaal em seus Mapas não são mais Corrompidas",
+                    "de": "Vaal-Nebengebiete in Euren Karten sind nicht länger verderbt",
+                    "fr": "Dans vos Cartes, les Zones annexes vaal ne sont plus Corrompues",
+                    "es": "Las áreas secundarias vaal de tus mapas ya no están corruptas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1516986886"
+            }
+        ]
+    },
+    {
+        "id": "Destructive_Play",
+        "name": {
+            "en": "Destructive Play",
+            "zh-TW": "毀滅遊戲",
+            "zh-CN": "毁灭游戏",
+            "ko": "파괴적인 놀이",
+            "ja": "破壊的な遊戯",
+            "ru": "Деструктивная игра",
+            "pt-BR": "Brincadeira Destrutiva",
+            "de": "Zerstörerisches Spiel",
+            "fr": "Jeu destructeur",
+            "es": "Juego destructivo"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "The Maven casts Up the Stakes, summoning 1 to 3 additional Atlas Bosses when Witnessing Map Bosses The number of additional Bosses summoned is higher if there are fewer monsters remaining in the Map Modifiers to the Final Map Boss in each Map also apply to these summoned Bosses",
+                    "zh-TW": "當見證地圖頭目時，釋界施放災害上升， 召喚 1 至 3 個額外輿圖頭目 地圖中剩餘的怪物較少時 召喚的額外頭目數量較多 每張地圖最終地圖頭目的詞綴，同時套用至這些召喚的頭目",
+                    "zh-CN": "贤主目睹地图首领时施放赌注加码 额外召唤 1 到 3 个异界首领 若地图中的剩余怪物数量较少 召唤额外首领的数量会提高 每张地图最终地图首领的修正也会作用于召唤的首领",
+                    "ko": "메이븐이 지도 보스를 목격할 때 담력 시험하기를 시전하여 아틀라스 보스 1~3마리를 추가로 소환 지도에 남은 몬스터가 적을수록 소환되는 추가 보스의 수가 늘어남 각 지도의 마지막 지도 보스에 부여된 속성이 이렇게 소환된 보스에게도 적용",
+                    "ja": "メイヴェンはマップボス観測中に掛け金を上げるをキャストし追加のアトラスボス1から3体を召喚する 召喚される追加ボスの数はマップの残りモンスターが少ないほど多くなる それぞれのマップの最終マップボスのモッドは召喚されたボスにも適用される",
+                    "ru": "Мейвен сотворяет Повышение ставок, призывая от 1 до 3 дополнительных боссов Атласа при наблюдении за боссами карт Число призываемых боссов повышается, если на карте осталось меньше врагов Свойства, влияющие на финального босса карты, также влияют на этих призванных боссов",
+                    "pt-BR": "A Maven conjura Aumentando o Risco, convocando 1 a 3 Chefes do Atlas adicionais ao Testemunhar Chefes de Mapas A quantidade de Chefes adicionais convocados é maior se houver menos monstros restantes no Mapa Modificadores do Chefe Final de cada Mapa também se aplicam aos Chefes Convocados",
+                    "de": "Die Seherin wirkt 'Zeit, den Einsatz zu erhöhen' und beschwört 1 bis 3 zusätzliche Atlasbosse, wenn sie Kartenbosse bezeugt Die Anzahl zusätzlich beschwörter Kartenbosse ist höher, wenn in der Karte wenige Monster verbleiben Modifikatoren des Endbosses in jeder Karte gelten auch für diese beschworenen Bosse",
+                    "fr": "Lorsqu'elle observe des Boss de Carte, la Prodige lance Monter les enchères, invoquant 1 à 3 Boss de l'Atlas supplémentaires Le nombre de Boss supplémentaires invoqués est plus élevé s'il y a moins de monstres restants dans la Carte Les modificateurs affectant le Boss de fin de chaque Carte s'appliquent également à ces Boss invoqués",
+                    "es": "La Especialista lanza Aumentar el riesgo e invocar de 1 a 3 jefes del atlas adicionales al observar a los jefes de los mapas La cantidad de jefes adicionales invocados es mayor cuantos menos monstruos queden en el mapa Los modificadores de los jefes finales del mapa de cada mapa también se aplican a estos jefes invocados"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_2960155368"
+            }
+        ]
+    },
+    {
+        "id": "Bold_Undertakings",
+        "name": {
+            "en": "Bold Undertakings",
+            "zh-TW": "大膽行動",
+            "zh-CN": "大胆尝试",
+            "ko": "대담한 과업",
+            "ja": "大胆な事業",
+            "ru": "Смелые начинания",
+            "pt-BR": "Empreendimentos Audaciosos",
+            "de": "Kühne Unternehmungen",
+            "fr": "Promesses audacieuses",
+            "es": "Emprendimientos audaces"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Fortune Favours the Brave applies an additional random Option 100% more cost of the Fortune Favours the Brave Map Crafting Option",
+                    "zh-TW": "天佑勇者套用 1 個額外隨機工藝 天佑勇者工藝選項 100% 更多消耗",
+                    "zh-CN": "天佑勇者额外使用一个随机选项 天佑勇者地图工艺选项的成本总增 100%",
+                    "ko": "행운은 용기 있는 사람에게 찾아온다 가 무작위 옵션 1개를 추가로 적용 행운은 용기 있는 사람에게 찾아온다 지도 제작 옵션의 비용 100% 증폭",
+                    "ja": "「幸運は勇者に微笑む」は追加で1個のオプションを適用する 「幸運は勇者に微笑む」マップクラフトオプションのコストが100%上昇する",
+                    "ru": "Удача благоволит смелым применяет дополнительную случайную опцию На 100% больше стоимость опции машины картоходца Удача благоволит смелым",
+                    "pt-BR": "A Sorte Favorece os Corajosos aplica uma Opção aleatória adicional 100% mais custo da Opção de Criação de Mapas A Sorte Favorece os Corajosos",
+                    "de": "'Dem Mutigen gehört die Welt' fügt Euren Karten eine zusätzliche zufällige Option hinzu 100% mehr Kosten der Karten-Anfertigungsoption 'Dem Mutigen gehört die Welt'",
+                    "fr": "La Fortune sourit aux audacieux applique une option aléatoire supplémentaire 100% Davantage de Coût de l'option d'artisanat cartographique La Fortune sourit aux audacieux",
+                    "es": "La fortuna favorece a los valientes aplica una opción aleatoria adicional 100% más de costo de la opción de fabricación de mapas La fortuna favorece a los valientes"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1944897696"
+            }
+        ]
+    },
+    {
+        "id": "Gruelling_Gauntlet",
+        "name": {
+            "en": "Gruelling Gauntlet",
+            "zh-TW": "困苦關卡",
+            "zh-CN": "煎熬试炼",
+            "ko": "가혹한 시련",
+            "ja": "過酷な挑戦",
+            "ru": "Изнурительное испытание",
+            "pt-BR": "Prova Exaustiva",
+            "de": "Mörderischer Spießrutenlauf",
+            "fr": "Épreuve éprouvante",
+            "es": "Desafío agotador"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Players cannot choose which Ultimatum Modifier is applied each Round",
+                    "zh-TW": "玩家不能選擇每回合套用的通牒詞綴",
+                    "zh-CN": "玩家无法选择每轮生效的致命贪婪词缀",
+                    "ko": "플레이어가 라운드마다 적용되는 결전 속성 선택 불가",
+                    "ja": "プレイヤーは各ラウンドに適用されるアルティメイタムモッドを選ぶことができない",
+                    "ru": "Игроки не могут выбирать, какой модификатор Ультиматума будет применяться каждый раунд",
+                    "pt-BR": "Jogadores não podem escolher quais Modificadores Ultimatum são aplicados em cada Rodada",
+                    "de": "Spieler können nicht auswählen, welcher Ultimatum-Modifikator für jede Runde angewendet wird",
+                    "fr": "Les Joueurs ne peuvent pas choisir quel Modificateur d'Ultimatum est appliqué à chaque Manche",
+                    "es": "Los jugadores no pueden elegir qué modificador de Ultimatum se aplicará en cada ronda"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3845167239"
+            },
+            {
+                "text": {
+                    "en": "Ultimatum Encounters in your Maps last up to 13 Rounds",
+                    "zh-TW": "你地圖中的通諜事件最多持續 13 回合",
+                    "zh-CN": "地图内的致命贪婪遭遇战最多持续 13 轮",
+                    "ko": "지도 내 결전 인카운터가 최대 13개 라운드 동안 지속",
+                    "ja": "マップに出現するアルティメイタムエンカウンターは最大13ラウンドまで続く",
+                    "ru": "Испытания Ультиматума на ваших картах длятся до 13 раундов",
+                    "pt-BR": "Encontros Ultimatum em seus Mapas duram até 13 Rodadas",
+                    "de": "Ultimatum-Begegnungen in Euren Karten dauern bis zu 13 Runden",
+                    "fr": "Dans vos Cartes, les Rencontres d'Ultimatum vont jusqu'à 13 Rounds",
+                    "es": "Los encuentros de Ultimatum de tus mapas duran hasta 13 rondas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3283585444"
+            },
+            {
+                "text": {
+                    "en": "Cannot have a Boss in the final Round",
+                    "zh-TW": "最終回合不會有頭目",
+                    "zh-CN": "最后一轮没有首领",
+                    "ko": "마지막 라운드에서 보스가 등장하지 않음",
+                    "ja": "最終ラウンドでボスが出現することがない",
+                    "ru": "Нельзя встретить босса в последнем раунде",
+                    "pt-BR": "Não pode ter um Chefe na Rodada final",
+                    "de": "Kann in der finalen Runde keinen Boss enthalten",
+                    "fr": "Il n'y a jamais de Boss lors du Round final",
+                    "es": "No puede haber un jefe en la ronda final"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_2694161522"
+            }
+        ]
+    },
+    {
+        "id": "Ruinous_Wager",
+        "name": {
+            "en": "Ruinous Wager",
+            "zh-TW": "毀滅賭注",
+            "zh-CN": "摧灭豪赌",
+            "ko": "파탄의 내기",
+            "ja": "崩壊した掛け",
+            "ru": "Гибельное пари",
+            "pt-BR": "Aposta Ruinosa",
+            "de": "Verheerende Wette",
+            "fr": "Pari désastreux",
+            "es": "Apuesta ruinosa"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Ultimatum Monsters in your Maps apply Ruin with their special abilities Fail on reaching 7 Ruin",
+                    "zh-TW": "你地圖中的通牒怪物使用它們特殊能力套用毀滅 到達 7 層毀滅時失敗",
+                    "zh-CN": "地图内的致命贪婪怪物会用特殊能力对你施加摧灭 积累 7 层摧灭时失效",
+                    "ko": "지도 내 결전 몬스터가 특수 능력으로 파탄 유발 파탄 7중첩 시 실패",
+                    "ja": "マップに出現するアルティメイタムモンスターは特殊アビリティーで崩壊を付与し 崩壊のスタックが7になると失敗になる",
+                    "ru": "Монстры Ультиматума на ваших картах накладывают Гибель своими особыми атаками Событие считается проваленным при достижении 7 зарядов Гибели",
+                    "pt-BR": "Monstros Ultimatum em seus Mapas aplicam Ruína com suas habilidades especiais\\Falhe ao atingir 7 Ruínas",
+                    "de": "Ultimatum-Monster in Euren Karten wenden mit ihren besonderen Fähigkeiten Verderben an Beim Erreichen von 7 Verderben schlägt das Ultimatum fehl",
+                    "fr": "Dans vos Cartes, les Monstres d'Ultimatum infligent Ruine avec leurs capacités spéciales Vous échouez lorsque vous atteignez 7 de Ruine",
+                    "es": "Los monstruos de Ultimatum de tus mapas aplican Ruina con sus habilidades especiales Fallas al alcanzar 7 de Ruina"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3645622851"
+            },
+            {
+                "text": {
+                    "en": "Ultimatum Monsters and Modifiers in your Maps deal (50—60)% less Damage",
+                    "zh-TW": "你地圖中的通牒怪物和詞綴，造成 (50—60)% 更少傷害",
+                    "zh-CN": "地图内的致命贪婪怪物和词缀造成的伤害总降 (50—60)%",
+                    "ko": "지도 내 결전 몬스터와 속성이 주는 피해 (50—60)% 감폭",
+                    "ja": "マップに出現するアルティメイタムモンスターとモッドのダメージが(50—60)%低下する",
+                    "ru": "Монстры и модификаторы Ультиматума на ваших картах наносят на (50—60)% меньше урона",
+                    "pt-BR": "Monstros e Modificadores Ultimatum em seus Mapas causam (50—60)% menos Dano",
+                    "de": "Ultimatum-Monster und -Modifikatoren in Euren Karten verursachen (50—60)% weniger Schaden",
+                    "fr": "Dans vos Cartes, les Monstres et Modificateurs d'Ultimatum ont (50—60)% de Perte de Dégâts",
+                    "es": "Los monstruos y modificadores de Ultimatum de tus mapas infligen un (50—60)% menos de daño"
+                },
+                "values": [
+                    {
+                        "min": 50,
+                        "max": 60
+                    }
+                ],
+                "tradeStatId": "explicit.stat_3683980805"
+            }
+        ]
+    },
+    {
+        "id": "Thorough_Exploration",
+        "name": {
+            "en": "Thorough Exploration",
+            "zh-TW": "整體勘探",
+            "zh-CN": "全面探险",
+            "ko": "철저한 원정",
+            "ja": "徹底的な探索",
+            "ru": "Тщательное исследование",
+            "pt-BR": "Exploração Minuciosa",
+            "de": "Gründliche Erkundung",
+            "fr": "Exploration minutieuse",
+            "es": "Exploración minuciosa"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "If there are fewer than 50 monsters remaining in your Maps, Final Map Bosses are Empowered by Wildwood Wisps",
+                    "zh-TW": "你地圖中剩餘的怪物少於 50 時， 最終地圖頭目受荒林妖精強化",
+                    "zh-CN": "若你的地图中的剩余怪物少于 50 个， 地图最终首领被荒林鬼灵强化",
+                    "ko": "지도에 남은 몬스터가 50마리 미만일 경우, 야생림 도깨비불이 지도의 마지막 보스를 강화",
+                    "ja": "マップに残っているモンスターが50体以下の時に、 最終マップボスは原生林のウィスプにより強化される",
+                    "ru": "Если на ваших картах осталось менее 50 монстров, финальные боссы карт усиливаются огоньками Диколесья",
+                    "pt-BR": "Se houver menos de 50 monstros restantes em seus Mapas, Chefes Finais dos Mapas são Empoderados por Espíritos da Selva",
+                    "de": "Wenn weniger als 50 Monster in Euren Karten verbleiben, werden die finalen Kartenbosse durch Finsterwald-Irrlichter verstärkt",
+                    "fr": "S'il y a moins de 50 monstres restants dans vos Cartes, les Boss de fin de la Carte sont Améliorés par des Flammeroles de la Sylve",
+                    "es": "Si hay menos de 50 monstruos restantes en tus mapas, los jefes finales del mapa están potenciados por fuegos fatuos del Bosque viridino"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_199329214"
+            }
+        ]
+    },
+    {
+        "id": "Black_Thumb",
+        "name": {
+            "en": "Black Thumb",
+            "zh-TW": "黑指",
+            "zh-CN": "寸草不生",
+            "ko": "검은 엄지",
+            "ja": "萎れの才",
+            "ru": "Никудышный садовод",
+            "pt-BR": "Dedo Podre",
+            "de": "Schwarzer Daumen",
+            "fr": "Terre infertile",
+            "es": "Jardinero negado"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have no chance to contain the Sacred Grove",
+                    "zh-TW": "你的地圖不會含有聖殿密園",
+                    "zh-CN": "你的地图不会包含古灵庄园",
+                    "ko": "지도에 신성한 숲이 등장할 확률 없음",
+                    "ja": "マップに聖なる木立が出現しない",
+                    "ru": "На ваших картах не будет встречаться Священная роща",
+                    "pt-BR": "Bosque Sagrado não aparece nos seus mapas",
+                    "de": "Eure Karten haben keine Chance, den Heiligen Hain zu enthalten",
+                    "fr": "Vos Cartes n'ont aucune chance de contenir le Bosquet sacré",
+                    "es": "Tus mapas no tienen ninguna probabilidad de contener el Huerto sagrado"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_328145899"
+            },
+            {
+                "text": {
+                    "en": "Scarabs found in your Maps cannot be Harvest Scarabs",
+                    "zh-TW": "你的地圖不會掉落豐收聖甲蟲",
+                    "zh-CN": "地图中找到的圣甲虫不会是庄园圣甲虫",
+                    "ko": "지도에서 발견하는 갑충석이 수확 갑충석일 수 없음",
+                    "ja": "マップで見つかるスカラベがハーベストスカラベになることがない",
+                    "ru": "Находимые на ваших картах скарабеи не могут быть скарабеями Жатвы",
+                    "pt-BR": "Escaravelhos encontrados em seus Mapas não podem ser Escaravelhos de Colheitas",
+                    "de": "In Euren Karten fallen gelassene Skarabäen können keine Hain-Skarabäen sein",
+                    "fr": "Les Scarabées trouvés dans vos Cartes ne peuvent pas être des Scarabées du Bosquet",
+                    "es": "Los escarabajos que encuentras en tus mapas no pueden ser escarabajos de Harvest"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_388787643"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have +5% chance to contain other Extra Content that can be turned off through Atlas Passives",
+                    "zh-TW": "你的地圖有 +5% 機率含有可以透過 輿圖天賦關閉的其他額外內容",
+                    "zh-CN": "你的地图包含可通过异界天赋关闭的 额外内容的几率 +5%",
+                    "ko": "지도에 아틀라스 패시브 스킬로 비활성화할 수 있는 다른 추가 콘텐츠가 등장할 확률 +5%",
+                    "ja": "マップでアトラスパッシブを通じて出現をオフにできる追加コンテンツが出現する確率 +5%",
+                    "ru": "Ваши карты с +5% шансом могут содержать другой дополнительный контент, который можно отключить с помощью пассивных умений Атласа",
+                    "pt-BR": "Seus Mapas têm +5% de chance de conter outro Conteúdo Extra que pode ser desligado através das Passivas do Atlas",
+                    "de": "Eure Karten haben +5% Chance, andere zusätzliche Inhalte zu enthalten, die durch Atlas-Passive deaktiviert werden können",
+                    "fr": "Vos Cartes ont +5% de chances de contenir du Contenu supplémentaire qui peut être désactivé avec les Talents de l'Atlas",
+                    "es": "Tus mapas tienen un +5% de probabilidad de contener otro contenido adicional que se puede desactivar mediante las pasivas del Atlas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_344979199"
+            }
+        ]
+    },
+    {
+        "id": "Loved_by_the_Sun",
+        "name": {
+            "en": "Loved by the Sun",
+            "zh-TW": "太陽寵愛",
+            "zh-CN": "太阳恩泽",
+            "ko": "태양의 총애",
+            "ja": "太陽の寵児",
+            "ru": "Любимец солнца",
+            "pt-BR": "Amado pelo Sol",
+            "de": "Von der Sonne geliebt",
+            "fr": "Grand soleil",
+            "es": "Amado por el sol"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have no chance to contain Abysses",
+                    "zh-TW": "你的地圖不會含有深淵",
+                    "zh-CN": "你的地图不会包含深渊",
+                    "ko": "지도에 심연이 등장할 확률 없음",
+                    "ja": "マップにアビスが出現しない",
+                    "ru": "На ваших картах не будут встречаться Бездны",
+                    "pt-BR": "Abismos não aparecem nos seus mapas",
+                    "de": "Eure Karten haben keine Chance, Abgründe zu enthalten",
+                    "fr": "Vos Cartes n'ont aucune chance de contenir des Abysses",
+                    "es": "Tus mapas no tienen ninguna probabilidad de contener abismos"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_2399560930"
+            },
+            {
+                "text": {
+                    "en": "Scarabs found in your Maps cannot be Abyss Scarabs",
+                    "zh-TW": "你的地圖不會掉落深淵聖甲蟲",
+                    "zh-CN": "地图中找到的圣甲虫不会是深渊圣甲虫",
+                    "ko": "지도에서 발견하는 갑충석이 심연 갑충석일 수 없음",
+                    "ja": "マップで見つかるスカラベがアビススカラベになることがない",
+                    "ru": "Находимые на ваших картах скарабеи не могут быть скарабеями Бездны",
+                    "pt-BR": "Escaravelhos encontrados em seus Mapas não podem ser Escaravelhos do Abismo",
+                    "de": "In Euren Karten fallen gelassene Skarabäen können keine Abgrund-Skarabäen sein",
+                    "fr": "Les Scarabées trouvés dans vos Cartes ne peuvent pas être des Scarabées d'Abysse",
+                    "es": "Los escarabajos que encuentras en tus mapas no pueden ser escarabajos de Abismo"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1978710645"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have +5% chance to contain other Extra Content that can be turned off through Atlas Passives",
+                    "zh-TW": "你的地圖有 +5% 機率含有可以透過 輿圖天賦關閉的其他額外內容",
+                    "zh-CN": "你的地图包含可通过异界天赋关闭的 额外内容的几率 +5%",
+                    "ko": "지도에 아틀라스 패시브 스킬로 비활성화할 수 있는 다른 추가 콘텐츠가 등장할 확률 +5%",
+                    "ja": "マップでアトラスパッシブを通じて出現をオフにできる追加コンテンツが出現する確率 +5%",
+                    "ru": "Ваши карты с +5% шансом могут содержать другой дополнительный контент, который можно отключить с помощью пассивных умений Атласа",
+                    "pt-BR": "Seus Mapas têm +5% de chance de conter outro Conteúdo Extra que pode ser desligado através das Passivas do Atlas",
+                    "de": "Eure Karten haben +5% Chance, andere zusätzliche Inhalte zu enthalten, die durch Atlas-Passive deaktiviert werden können",
+                    "fr": "Vos Cartes ont +5% de chances de contenir du Contenu supplémentaire qui peut être désactivé avec les Talents de l'Atlas",
+                    "es": "Tus mapas tienen un +5% de probabilidad de contener otro contenido adicional que se puede desactivar mediante las pasivas del Atlas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_344979199"
+            }
+        ]
+    },
+    {
+        "id": "Dimensional_Barrier",
+        "name": {
+            "en": "Dimensional Barrier",
+            "zh-TW": "次元壁壘",
+            "zh-CN": "维度壁垒",
+            "ko": "차원 장벽",
+            "ja": "次元障壁",
+            "ru": "Пространственный барьер",
+            "pt-BR": "Barreira Dimensional",
+            "de": "Dimensionale Barriere",
+            "fr": "Barrière dimensionnelle",
+            "es": "Barrera dimensional"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have no chance to contain Breaches",
+                    "zh-TW": "你的地圖不會含有裂痕",
+                    "zh-CN": "你的地图不会包含裂隙",
+                    "ko": "지도에 균열이 등장할 확률 없음",
+                    "ja": "マップにブリーチが出現しない",
+                    "ru": "На ваших картах не будут встречаться Разломы",
+                    "pt-BR": "Fendas não aparecem nos seus mapas",
+                    "de": "Eure Karten haben keine Chance, Risse zu enthalten",
+                    "fr": "Vos Cartes n'ont aucune chance de contenir des Brèches",
+                    "es": "Tus mapas no tienen ninguna probabilidad de contener fisuras"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1562449600"
+            },
+            {
+                "text": {
+                    "en": "Scarabs found in your Maps cannot be Breach Scarabs",
+                    "zh-TW": "你的地圖不會掉落裂痕聖甲蟲",
+                    "zh-CN": "地图中找到的圣甲虫不会是裂隙圣甲虫",
+                    "ko": "지도에서 발견하는 갑충석이 균열 갑충석일 수 없음",
+                    "ja": "マップで見つかるスカラベがブリーチスカラベになることがない",
+                    "ru": "Находимые на ваших картах скарабеи не могут быть скарабеями Разлома",
+                    "pt-BR": "Escaravelhos encontrados em seus Mapas não podem ser Escaravelhos de Fendas",
+                    "de": "In Euren Karten fallen gelassene Skarabäen können keine Riss-Skarabäen sein",
+                    "fr": "Les Scarabées trouvés dans vos Cartes ne peuvent pas être des Scarabées de Brèche",
+                    "es": "Los escarabajos que encuentras en tus mapas no pueden ser escarabajos de Fisura"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1089629910"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have +5% chance to contain other Extra Content that can be turned off through Atlas Passives",
+                    "zh-TW": "你的地圖有 +5% 機率含有可以透過 輿圖天賦關閉的其他額外內容",
+                    "zh-CN": "你的地图包含可通过异界天赋关闭的 额外内容的几率 +5%",
+                    "ko": "지도에 아틀라스 패시브 스킬로 비활성화할 수 있는 다른 추가 콘텐츠가 등장할 확률 +5%",
+                    "ja": "マップでアトラスパッシブを通じて出現をオフにできる追加コンテンツが出現する確率 +5%",
+                    "ru": "Ваши карты с +5% шансом могут содержать другой дополнительный контент, который можно отключить с помощью пассивных умений Атласа",
+                    "pt-BR": "Seus Mapas têm +5% de chance de conter outro Conteúdo Extra que pode ser desligado através das Passivas do Atlas",
+                    "de": "Eure Karten haben +5% Chance, andere zusätzliche Inhalte zu enthalten, die durch Atlas-Passive deaktiviert werden können",
+                    "fr": "Vos Cartes ont +5% de chances de contenir du Contenu supplémentaire qui peut être désactivé avec les Talents de l'Atlas",
+                    "es": "Tus mapas tienen un +5% de probabilidad de contener otro contenido adicional que se puede desactivar mediante las pasivas del Atlas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_344979199"
+            }
+        ]
+    },
+    {
+        "id": "Trade_Embargo",
+        "name": {
+            "en": "Trade Embargo",
+            "zh-TW": "貿易禁令",
+            "zh-CN": "贸易禁运",
+            "ko": "통상 금지",
+            "ja": "禁輸",
+            "ru": "Торговое эмбарго",
+            "pt-BR": "Embargo Comercial",
+            "de": "Handelsembargo",
+            "fr": "Embargo commercial",
+            "es": "Embargo comercial"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have no chance to contain Expedition Encounters",
+                    "zh-TW": "你的地圖不會含有探險事件",
+                    "zh-CN": "你的地图不会包含先祖秘藏遭遇战",
+                    "ko": "지도에 탐험 인카운터가 등장할 확률 없음",
+                    "ja": "マップにエクスペディションエンカウンターが出現しない",
+                    "ru": "На ваших картах не будут встречаться экспедиции",
+                    "pt-BR": "Encontros Expedition não aparecem nos seus mapas",
+                    "de": "Eure Karten haben keine Chance, Expedition-Begegnungen zu enthalten",
+                    "fr": "Vos Cartes n'ont aucune chance de contenir des Rencontres d'Expédition",
+                    "es": "Tus mapas no tienen ninguna probabilidad de contener encuentros de Expedition"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_2978599106"
+            },
+            {
+                "text": {
+                    "en": "Scarabs found in your Maps cannot be Expedition Scarabs",
+                    "zh-TW": "你的地圖不會掉落探險聖甲蟲",
+                    "zh-CN": "地图中找到的圣甲虫不会是先祖秘藏圣甲虫",
+                    "ko": "지도에서 발견하는 갑충석이 탐험 갑충석일 수 없음",
+                    "ja": "マップで見つかるスカラベがエクスペディションスカラベになることがない",
+                    "ru": "Находимые на ваших картах скарабеи не могут быть скарабеями Экспедиции",
+                    "pt-BR": "Escaravelhos encontrados em seus Mapas não podem ser Escaravelhos da Expedições",
+                    "de": "In Euren Karten fallen gelassene Skarabäen können keine Expedition-Skarabäen sein",
+                    "fr": "Les Scarabées trouvés dans vos Cartes ne peuvent pas être des Scarabées d'Expédition",
+                    "es": "Los escarabajos que encuentras en tus mapas no pueden ser escarabajos de Expedition"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3965835074"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have +5% chance to contain other Extra Content that can be turned off through Atlas Passives",
+                    "zh-TW": "你的地圖有 +5% 機率含有可以透過 輿圖天賦關閉的其他額外內容",
+                    "zh-CN": "你的地图包含可通过异界天赋关闭的 额外内容的几率 +5%",
+                    "ko": "지도에 아틀라스 패시브 스킬로 비활성화할 수 있는 다른 추가 콘텐츠가 등장할 확률 +5%",
+                    "ja": "マップでアトラスパッシブを通じて出現をオフにできる追加コンテンツが出現する確率 +5%",
+                    "ru": "Ваши карты с +5% шансом могут содержать другой дополнительный контент, который можно отключить с помощью пассивных умений Атласа",
+                    "pt-BR": "Seus Mapas têm +5% de chance de conter outro Conteúdo Extra que pode ser desligado através das Passivas do Atlas",
+                    "de": "Eure Karten haben +5% Chance, andere zusätzliche Inhalte zu enthalten, die durch Atlas-Passive deaktiviert werden können",
+                    "fr": "Vos Cartes ont +5% de chances de contenir du Contenu supplémentaire qui peut être désactivé avec les Talents de l'Atlas",
+                    "es": "Tus mapas tienen un +5% de probabilidad de contener otro contenido adicional que se puede desactivar mediante las pasivas del Atlas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_344979199"
+            }
+        ]
+    },
+    {
+        "id": "Sealed_Domain",
+        "name": {
+            "en": "Sealed Domain",
+            "zh-TW": "領域封鎖",
+            "zh-CN": "封印领域",
+            "ko": "봉인된 영토",
+            "ja": "封印されし領域",
+            "ru": "Закрытые владения",
+            "pt-BR": "Domínio Selado",
+            "de": "Versiegeltes Reich",
+            "fr": "Domaine clos",
+            "es": "Dominio sellado"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have no chance to contain Legion Encounters",
+                    "zh-TW": "你的地圖不會含有戰亂事件",
+                    "zh-CN": "你的地图不会包含战乱之殇遭遇战",
+                    "ko": "지도에 군단 인카운터가 등장할 확률 없음",
+                    "ja": "マップにリージョンエンカウンターが出現しない",
+                    "ru": "На ваших картах не будут встречаться монолиты Легиона",
+                    "pt-BR": "Encontros Legion não aparecem nos seus mapas",
+                    "de": "Eure Karten haben keine Chance, Legion-Begegnungen zu enthalten",
+                    "fr": "Vos Cartes n'ont aucune chance de contenir des Rencontres de Légion",
+                    "es": "Tus mapas no tienen ninguna probabilidad de contener encuentros de Legion"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1132162798"
+            },
+            {
+                "text": {
+                    "en": "Scarabs found in your Maps cannot be Legion Scarabs",
+                    "zh-TW": "你的地圖不會掉落戰亂聖甲蟲",
+                    "zh-CN": "地图中找到的圣甲虫不会是军团圣甲虫",
+                    "ko": "지도에서 발견하는 갑충석이 군단 갑충석일 수 없음",
+                    "ja": "マップで見つかるスカラベがリージョンスカラベになることがない",
+                    "ru": "Находимые на ваших картах скарабеи не могут быть скарабеями Легиона",
+                    "pt-BR": "Escaravelhos encontrados em seus Mapas não podem ser Escaravelhos de Legiões",
+                    "de": "In Euren Karten fallen gelassene Skarabäen können keine Legion-Skarabäen sein",
+                    "fr": "Les Scarabées trouvés dans vos Cartes ne peuvent pas être des Scarabées de Légion",
+                    "es": "Los escarabajos que encuentras en tus mapas no pueden ser escarabajos de Legion"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3777973541"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have +5% chance to contain other Extra Content that can be turned off through Atlas Passives",
+                    "zh-TW": "你的地圖有 +5% 機率含有可以透過 輿圖天賦關閉的其他額外內容",
+                    "zh-CN": "你的地图包含可通过异界天赋关闭的 额外内容的几率 +5%",
+                    "ko": "지도에 아틀라스 패시브 스킬로 비활성화할 수 있는 다른 추가 콘텐츠가 등장할 확률 +5%",
+                    "ja": "マップでアトラスパッシブを通じて出現をオフにできる追加コンテンツが出現する確率 +5%",
+                    "ru": "Ваши карты с +5% шансом могут содержать другой дополнительный контент, который можно отключить с помощью пассивных умений Атласа",
+                    "pt-BR": "Seus Mapas têm +5% de chance de conter outro Conteúdo Extra que pode ser desligado através das Passivas do Atlas",
+                    "de": "Eure Karten haben +5% Chance, andere zusätzliche Inhalte zu enthalten, die durch Atlas-Passive deaktiviert werden können",
+                    "fr": "Vos Cartes ont +5% de chances de contenir du Contenu supplémentaire qui peut être désactivé avec les Talents de l'Atlas",
+                    "es": "Tus mapas tienen un +5% de probabilidad de contener otro contenido adicional que se puede desactivar mediante las pasivas del Atlas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_344979199"
+            }
+        ]
+    },
+    {
+        "id": "Servant_of_Order",
+        "name": {
+            "en": "Servant of Order",
+            "zh-TW": "道德審查",
+            "zh-CN": "唯尊秩序",
+            "ko": "질서의 종복",
+            "ja": "秩序の従者",
+            "ru": "Слуга Порядка",
+            "pt-BR": "Servo da Ordem",
+            "de": "Diener der Ordnung",
+            "fr": "Serviteur de l'Ordre",
+            "es": "Sirviente del Orden"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have no chance to contain Ultimatum Encounters",
+                    "zh-TW": "你的地圖不會含有最後通牒",
+                    "zh-CN": "地图内不会有致命贪婪遭遇战",
+                    "ko": "지도에 결전 인카운터가 등장할 확률 없음",
+                    "ja": "マップにアルティメイタムエンカウンターが出現しない",
+                    "ru": "На ваших картах нельзя встретить события Ультиматума",
+                    "pt-BR": "Encontros Ultimatum não aparecem nos seus mapas",
+                    "de": "Eure Karten haben keine Chance, Ultimatum-Begegnungen zu enthalten",
+                    "fr": "Vos Cartes n'ont aucune chance de contenir des Rencontres d'Ultimatum",
+                    "es": "Tus mapas no tienen ninguna probabilidad de contener un encuentro de Ultimatum"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3819443367"
+            },
+            {
+                "text": {
+                    "en": "Scarabs found in your Maps cannot be Ultimatum Scarabs",
+                    "zh-TW": "你的地圖不會掉落通牒聖甲蟲",
+                    "zh-CN": "地图中找到的圣甲虫不会是致命贪婪圣甲虫",
+                    "ko": "지도에서 발견하는 갑충석이 결전 갑충석일 수 없음",
+                    "ja": "マップで見つかるスカラベがアルティメイタムスカラベになることがない",
+                    "ru": "Находимые на ваших картах скарабеи не могут быть скарабеями Ультиматума",
+                    "pt-BR": "Seus mapas não geram Escaravelhos do Ultimato",
+                    "de": "In Euren Karten fallen gelassene Skarabäen können keine Ultimatum-Skarabäen sein",
+                    "fr": "Les Scarabées trouvés dans vos Cartes ne peuvent pas être des Scarabées d'Ultimatum",
+                    "es": "Los escarabajos que encuentras en tus mapas no pueden ser escarabajos de Ultimatum"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_264552782"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have +5% chance to contain other Extra Content that can be turned off through Atlas Passives",
+                    "zh-TW": "你的地圖有 +5% 機率含有可以透過 輿圖天賦關閉的其他額外內容",
+                    "zh-CN": "你的地图包含可通过异界天赋关闭的 额外内容的几率 +5%",
+                    "ko": "지도에 아틀라스 패시브 스킬로 비활성화할 수 있는 다른 추가 콘텐츠가 등장할 확률 +5%",
+                    "ja": "マップでアトラスパッシブを通じて出現をオフにできる追加コンテンツが出現する確率 +5%",
+                    "ru": "Ваши карты с +5% шансом могут содержать другой дополнительный контент, который можно отключить с помощью пассивных умений Атласа",
+                    "pt-BR": "Seus Mapas têm +5% de chance de conter outro Conteúdo Extra que pode ser desligado através das Passivas do Atlas",
+                    "de": "Eure Karten haben +5% Chance, andere zusätzliche Inhalte zu enthalten, die durch Atlas-Passive deaktiviert werden können",
+                    "fr": "Vos Cartes ont +5% de chances de contenir du Contenu supplémentaire qui peut être désactivé avec les Talents de l'Atlas",
+                    "es": "Tus mapas tienen un +5% de probabilidad de contener otro contenido adicional que se puede desactivar mediante las pasivas del Atlas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_344979199"
+            }
+        ]
+    },
+    {
+        "id": "Fungal_Remission",
+        "name": {
+            "en": "Fungal Remission",
+            "zh-TW": "細菌解方",
+            "zh-CN": "菌体缓解",
+            "ko": "곰팡이 감소",
+            "ja": "真菌寛解",
+            "ru": "Грибная ремиссия",
+            "pt-BR": "Remissão Fúngica",
+            "de": "Pilzbefreiung",
+            "fr": "Rémission fongique",
+            "es": "Remisión fúngica"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have no chance to contain Blight Encounters",
+                    "zh-TW": "你的地圖不會含有凋落事件",
+                    "zh-CN": "你的地图不会包含菌潮遭遇战",
+                    "ko": "지도에 역병 인카운터가 등장할 확률 없음",
+                    "ja": "マップにブライトエンカウンターが出現しない",
+                    "ru": "На ваших картах не будут встречаться схватки со Скверной",
+                    "pt-BR": "Encontros Blight não aparecem nos seus mapas",
+                    "de": "Eure Karten haben keine Chance, Blight-Begegnungen zu enthalten",
+                    "fr": "Vos Cartes n'ont aucune chance de contenir des Rencontres d'Infestation",
+                    "es": "Tus mapas no tienen ninguna probabilidad de contener encuentros de Blight"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1981776737"
+            },
+            {
+                "text": {
+                    "en": "Scarabs found in your Maps cannot be Blight Scarabs",
+                    "zh-TW": "你的地圖不會掉落凋落聖甲蟲",
+                    "zh-CN": "地图中找到的圣甲虫不会是菌潮圣甲虫",
+                    "ko": "지도에서 발견하는 갑충석이 역병 갑충석일 수 없음",
+                    "ja": "マップで見つかるスカラベがブライトスカラベになることがない",
+                    "ru": "Находимые на ваших картах скарабеи не могут быть скарабеями Скверны",
+                    "pt-BR": "Escaravelhos encontrados em seus Mapas não podem ser Escaravelhos Infestados",
+                    "de": "In Euren Karten fallen gelassene Skarabäen können keine Befall-Skarabäen sein",
+                    "fr": "Les Scarabées trouvés dans vos Cartes ne peuvent pas être des Scarabées d'Infestation",
+                    "es": "Los escarabajos que encuentras en tus mapas no pueden ser escarabajos de Blight"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_785938790"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have +5% chance to contain other Extra Content that can be turned off through Atlas Passives",
+                    "zh-TW": "你的地圖有 +5% 機率含有可以透過 輿圖天賦關閉的其他額外內容",
+                    "zh-CN": "你的地图包含可通过异界天赋关闭的 额外内容的几率 +5%",
+                    "ko": "지도에 아틀라스 패시브 스킬로 비활성화할 수 있는 다른 추가 콘텐츠가 등장할 확률 +5%",
+                    "ja": "マップでアトラスパッシブを通じて出現をオフにできる追加コンテンツが出現する確率 +5%",
+                    "ru": "Ваши карты с +5% шансом могут содержать другой дополнительный контент, который можно отключить с помощью пассивных умений Атласа",
+                    "pt-BR": "Seus Mapas têm +5% de chance de conter outro Conteúdo Extra que pode ser desligado através das Passivas do Atlas",
+                    "de": "Eure Karten haben +5% Chance, andere zusätzliche Inhalte zu enthalten, die durch Atlas-Passive deaktiviert werden können",
+                    "fr": "Vos Cartes ont +5% de chances de contenir du Contenu supplémentaire qui peut être désactivé avec les Talents de l'Atlas",
+                    "es": "Tus mapas tienen un +5% de probabilidad de contener otro contenido adicional que se puede desactivar mediante las pasivas del Atlas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_344979199"
+            }
+        ]
+    },
+    {
+        "id": "Secular_Focus",
+        "name": {
+            "en": "Secular Focus",
+            "zh-TW": "世俗目光",
+            "zh-CN": "世俗焦点",
+            "ko": "세속적 집중",
+            "ja": "世俗への集中",
+            "ru": "Светские порядки",
+            "pt-BR": "Foco Secular",
+            "de": "Säkularer Fokus",
+            "fr": "Apostasie",
+            "es": "Foco secular"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have no chance to contain Ritual Altars",
+                    "zh-TW": "你的地圖不會含有祭祀神壇",
+                    "zh-CN": "你的地图不会包含驱灵祭坛",
+                    "ko": "지도에 의식 제단이 등장할 확률 없음",
+                    "ja": "マップにリチュアルの祭壇が出現しない",
+                    "ru": "На ваших картах не будут встречаться алтари Ритуала",
+                    "pt-BR": "Altares Ritualísticos não aparecem nos seus mapas",
+                    "de": "Eure Karten haben keine Chance, Ritual-Altäre zu enthalten",
+                    "fr": "Vos Cartes n'ont aucune chance de contenir des Autels de Rituel",
+                    "es": "Tus mapas no tienen ninguna probabilidad de contener altares de Ritual"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_847340197"
+            },
+            {
+                "text": {
+                    "en": "Scarabs found in your Maps cannot be Ritual Scarabs",
+                    "zh-TW": "你的地圖不會掉落祭祀聖甲蟲",
+                    "zh-CN": "地图中找到的圣甲虫不会是仪式圣甲虫",
+                    "ko": "지도에서 발견하는 갑충석이 의식 갑충석일 수 없음",
+                    "ja": "マップで見つかるスカラベがリチュアルスカラベになることがない",
+                    "ru": "Находимые на ваших картах скарабеи не могут быть скарабеями Ритуала",
+                    "pt-BR": "Escaravelhos encontrados em seus Mapas não podem ser Escaravelhos Ritualísticos",
+                    "de": "In Euren Karten fallen gelassene Skarabäen können keine Ritual-Skarabäen sein",
+                    "fr": "Les Scarabées trouvés dans vos Cartes ne peuvent pas être des Scarabées de Rituel",
+                    "es": "Los escarabajos que encuentras en tus mapas no pueden ser escarabajos de Ritual"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1693489030"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have +5% chance to contain other Extra Content that can be turned off through Atlas Passives",
+                    "zh-TW": "你的地圖有 +5% 機率含有可以透過 輿圖天賦關閉的其他額外內容",
+                    "zh-CN": "你的地图包含可通过异界天赋关闭的 额外内容的几率 +5%",
+                    "ko": "지도에 아틀라스 패시브 스킬로 비활성화할 수 있는 다른 추가 콘텐츠가 등장할 확률 +5%",
+                    "ja": "マップでアトラスパッシブを通じて出現をオフにできる追加コンテンツが出現する確率 +5%",
+                    "ru": "Ваши карты с +5% шансом могут содержать другой дополнительный контент, который можно отключить с помощью пассивных умений Атласа",
+                    "pt-BR": "Seus Mapas têm +5% de chance de conter outro Conteúdo Extra que pode ser desligado através das Passivas do Atlas",
+                    "de": "Eure Karten haben +5% Chance, andere zusätzliche Inhalte zu enthalten, die durch Atlas-Passive deaktiviert werden können",
+                    "fr": "Vos Cartes ont +5% de chances de contenir du Contenu supplémentaire qui peut être désactivé avec les Talents de l'Atlas",
+                    "es": "Tus mapas tienen un +5% de probabilidad de contener otro contenido adicional que se puede desactivar mediante las pasivas del Atlas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_344979199"
+            }
+        ]
+    },
+    {
+        "id": "Straight_and_Narrow",
+        "name": {
+            "en": "Straight and Narrow",
+            "zh-TW": "筆直窄道",
+            "zh-CN": "中规中矩",
+            "ko": "정도",
+            "ja": "正道",
+            "ru": "Путь истинный",
+            "pt-BR": "Reto e Estreito",
+            "de": "Geradlinig und Gesetzestreu",
+            "fr": "Sur le droit chemin",
+            "es": "Por el buen camino"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Rogue's Markers, Contracts and Blueprints cannot be found in Your Maps",
+                    "zh-TW": "你的地圖不會掉落盜賊之印、契約書和藍圖",
+                    "zh-CN": "你的地图不会掉落赏金猎人印记、契约和蓝图",
+                    "ko": "지도에서 도둑의 증표, 계약, 도면 발견 불가",
+                    "ja": "マップでローグマーカー、依頼書およびブループリントがドロップしない",
+                    "ru": "На ваших картах нельзя найти разбойничьи жетоны, контракты и чертежи",
+                    "pt-BR": "Insígnia do Renegado, Contratos e Plantas não podem ser encontrados em seus Mapas",
+                    "de": "In Euren Karten können keine Signa der Abtrünnigen, Aufträge und Grundrisse gefunden werden",
+                    "fr": "Les Pièces marquées, Contrats et Plans ne peuvent plus être trouvés dans vos Cartes",
+                    "es": "No hay monedas del renegado, contratos ni planos de Heist en tus mapas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1379148633"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have no chance to contain Smuggler's Caches",
+                    "zh-TW": "你的地圖不會含有走私者的祕寶",
+                    "zh-CN": "你的地图不会包含走私者秘藏",
+                    "ko": "지도에 밀수범의 은닉함이 등장할 확률 없음",
+                    "ja": "マップに密輸人の貯蔵箱が出現しない",
+                    "ru": "На ваших картах не будут встречаться тайники контрабандиста",
+                    "pt-BR": "Baús do Contrabandista não aparecem nos seus mapas",
+                    "de": "Eure Karten haben keine Chance, Räuber-Schatztruhen zu enthalten",
+                    "fr": "Vos Cartes n'ont aucune chance de contenir des Caches de contrebandier",
+                    "es": "Tus mapas no tienen ninguna probabilidad de contener Alijos del contrabandista"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3178985579"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have +5% chance to contain other Extra Content that can be turned off through Atlas Passives",
+                    "zh-TW": "你的地圖有 +5% 機率含有可以透過 輿圖天賦關閉的其他額外內容",
+                    "zh-CN": "你的地图包含可通过异界天赋关闭的 额外内容的几率 +5%",
+                    "ko": "지도에 아틀라스 패시브 스킬로 비활성화할 수 있는 다른 추가 콘텐츠가 등장할 확률 +5%",
+                    "ja": "マップでアトラスパッシブを通じて出現をオフにできる追加コンテンツが出現する確率 +5%",
+                    "ru": "Ваши карты с +5% шансом могут содержать другой дополнительный контент, который можно отключить с помощью пассивных умений Атласа",
+                    "pt-BR": "Seus Mapas têm +5% de chance de conter outro Conteúdo Extra que pode ser desligado através das Passivas do Atlas",
+                    "de": "Eure Karten haben +5% Chance, andere zusätzliche Inhalte zu enthalten, die durch Atlas-Passive deaktiviert werden können",
+                    "fr": "Vos Cartes ont +5% de chances de contenir du Contenu supplémentaire qui peut être désactivé avec les Talents de l'Atlas",
+                    "es": "Tus mapas tienen un +5% de probabilidad de contener otro contenido adicional que se puede desactivar mediante las pasivas del Atlas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_344979199"
+            }
+        ]
+    },
+    {
+        "id": "Ominous_Silence",
+        "name": {
+            "en": "Ominous Silence",
+            "zh-TW": "不祥的寂靜",
+            "zh-CN": "不祥寂静",
+            "ko": "불길한 침묵",
+            "ja": "不吉な沈黙",
+            "ru": "Зловещая тишина",
+            "pt-BR": "Silêncio Sinistro",
+            "de": "Beklemmende Stille",
+            "fr": "Silence de mauvais augure",
+            "es": "Silencio ominoso"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have no chance to contain Mirrors of Delirium",
+                    "zh-TW": "你的地圖不會含有譫妄之鏡",
+                    "zh-CN": "你的地图不会包含惊悚迷雾之镜",
+                    "ko": "지도에 환영의 거울이 등장할 확률 없음",
+                    "ja": "マップにデリリウムの鏡が出現しない",
+                    "ru": "На ваших картах не будут встречаться зеркала Делириума",
+                    "pt-BR": "Espelhos do Delírio não aparecem nos seus mapas",
+                    "de": "Eure Karten haben keine Chance, Spiegel des Deliriums zu enthalten",
+                    "fr": "Vos Cartes n'ont aucune chance de contenir des Miroirs du Délire",
+                    "es": "Tus mapas no tienen ninguna probabilidad de contener espejos de delirio"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_2400312255"
+            },
+            {
+                "text": {
+                    "en": "Scarabs found in your Maps cannot be Delirium Scarabs",
+                    "zh-TW": "你的地圖不會掉落譫妄聖甲蟲",
+                    "zh-CN": "地图中找到的圣甲虫不会是惊悸迷雾圣甲虫",
+                    "ko": "지도에서 발견하는 갑충석이 환영 갑충석일 수 없음",
+                    "ja": "マップで見つかるスカラベがデリリウムスカラベになることがない",
+                    "ru": "Находимые на ваших картах скарабеи не могут быть скарабеями Делириума",
+                    "pt-BR": "Escaravelhos encontrados em seus Mapas não podem ser Escaravelhos do Delírio",
+                    "de": "In Euren Karten fallen gelassene Skarabäen können keine Delirium-Skarabäen sein",
+                    "fr": "Les Scarabées trouvés dans vos Cartes ne peuvent pas être des Scarabées du Délire",
+                    "es": "Los escarabajos que encuentras en tus mapas no pueden ser escarabajos de Delirium"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_278421201"
+            },
+            {
+                "text": {
+                    "en": "Your Maps have +5% chance to contain other Extra Content that can be turned off through Atlas Passives",
+                    "zh-TW": "你的地圖有 +5% 機率含有可以透過 輿圖天賦關閉的其他額外內容",
+                    "zh-CN": "你的地图包含可通过异界天赋关闭的 额外内容的几率 +5%",
+                    "ko": "지도에 아틀라스 패시브 스킬로 비활성화할 수 있는 다른 추가 콘텐츠가 등장할 확률 +5%",
+                    "ja": "マップでアトラスパッシブを通じて出現をオフにできる追加コンテンツが出現する確率 +5%",
+                    "ru": "Ваши карты с +5% шансом могут содержать другой дополнительный контент, который можно отключить с помощью пассивных умений Атласа",
+                    "pt-BR": "Seus Mapas têm +5% de chance de conter outro Conteúdo Extra que pode ser desligado através das Passivas do Atlas",
+                    "de": "Eure Karten haben +5% Chance, andere zusätzliche Inhalte zu enthalten, die durch Atlas-Passive deaktiviert werden können",
+                    "fr": "Vos Cartes ont +5% de chances de contenir du Contenu supplémentaire qui peut être désactivé avec les Talents de l'Atlas",
+                    "es": "Tus mapas tienen un +5% de probabilidad de contener otro contenido adicional que se puede desactivar mediante las pasivas del Atlas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_344979199"
+            }
+        ]
+    },
+    {
+        "id": "Smash_and_Grab",
+        "name": {
+            "en": "Smash and Grab",
+            "zh-TW": "打砸搶",
+            "zh-CN": "奇袭劫掠",
+            "ko": "부수고 챙겨라",
+            "ja": "壊して盗む",
+            "ru": "Бей и хватай",
+            "pt-BR": "Arrebentar e Saquear",
+            "de": "Zerschlagen und Zugreifen",
+            "fr": "Frappe et Arrache",
+            "es": "Robo relámpago"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Each Legion in your Maps contains an additional War Hoard",
+                    "zh-TW": "你地圖中的每個戰亂含有 1 個額外征戰儲物箱",
+                    "zh-CN": "地图内每个战乱之殇军势都有一个战争秘术箱",
+                    "ko": "지도 내 각 군단에 전쟁비축물 1개 추가 등장",
+                    "ja": "マップに出現するリージョンにはウォーホードが追加で1個ある",
+                    "ru": "Каждая схватка с Легионом содержит дополнительные военные запасы",
+                    "pt-BR": "Cada Legião em seus Mapas contêm um Espólio de Guerra adicional",
+                    "de": "Jede Legion in Euren Karten enthält einen zusätzlichen Kriegshort",
+                    "fr": "Dans vos Cartes chaque Légion garde une Réserve de guerre supplémentaire",
+                    "es": "Todas las legiones de tus mapas contienen una Reserva de guerra adicional"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_95850091"
+            },
+            {
+                "text": {
+                    "en": "Legion Chests in your Maps contain an additional Random Reward",
+                    "zh-TW": "你地圖中的戰亂保險箱含有 1 個額外隨機獎勵",
+                    "zh-CN": "你地图中的军团宝箱包含一份额外的随机奖励",
+                    "ko": "지도 내 군단 상자에서 무작위 보상 1개 추가 등장",
+                    "ja": "マップに出現するリージョンチェストは追加のランダムな報酬を含む",
+                    "ru": "Сундуки Легиона на ваших картах содержат дополнительную случайную награду",
+                    "pt-BR": "Baús Legion em seus Mapas contêm uma Recompensa Aleatória adicional",
+                    "de": "Legion-Truhen in Euren Karten enthalten eine zusätzliche zufällige Belohnung",
+                    "fr": "Dans vos Cartes, les Coffres de Légion contiennent une Récompense aléatoire supplémentaire",
+                    "es": "Los cofres de Legion de tus mapas contienen una recompensas aleatoria adicional"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1088328219"
+            },
+            {
+                "text": {
+                    "en": "Legion Encounters in your Maps have (-80—-60)% increased Duration",
+                    "zh-TW": "你地圖中的戰亂事件增加 (-80—-60)% 持續時間",
+                    "zh-CN": "地图内的战乱之殇遭遇战持续时间延长 (-80—-60)%",
+                    "ko": "지도 내 군단 인카운터의 지속시간 (-80—-60)% 증가",
+                    "ja": "マップのリージョンエンカウンターの持続時間が(-80—-60)%増加する",
+                    "ru": "Схватки с Легионом имеют (-80—-60)% увеличение длительности",
+                    "pt-BR": "Encontros Legion em seus Mapas têm Duração aumentada em (-80—-60)%",
+                    "de": "Legion-Begegnungen in Euren Karten haben (-80—-60)% verlängerte Dauer",
+                    "fr": "Dans vos Cartes, les Rencontres de Légion ont (-80—-60)% d'Augmentation de Durée",
+                    "es": "Los encuentros de Legion de tus mapas tienen la duración aumentada un (-80—-60)%"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_699122342"
+            }
+        ]
+    },
+    {
+        "id": "Crystallised_Power",
+        "name": {
+            "en": "Crystallised Power",
+            "zh-TW": "晶化之力",
+            "zh-CN": "结晶之力",
+            "ko": "힘의 결정체",
+            "ja": "結晶化した力",
+            "ru": "Кристаллизованная мощь",
+            "pt-BR": "Poder Cristalizado",
+            "de": "Kristallisierte Macht",
+            "fr": "Pouvoir cristallisé",
+            "es": "Poder cristalizado"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "A Map Boss is granted a random Essence Modifier from any Imprisoned Monsters slain in your Maps",
+                    "zh-TW": "根據你地圖中殺死的任何被禁錮的怪物，給予地圖頭目 1 種隨機精髓詞綴",
+                    "zh-CN": "地图首领会获得你在地图中击败的任意禁锢怪物的一个随机精华词缀",
+                    "ko": "지도에서 처치한 갇힌 몬스터의 무작위 에센스 속성 1개를 지도 보스에 부여",
+                    "ja": "マップボスはマップで倒した閉じ込められたモンスターのいずれかが持っていたランダムなエッセンスモッドを1個付与される",
+                    "ru": "Боссу карты даруется случайное свойство Сущности от каждого плененного Сущностями монстра, убитого на ваших картах",
+                    "pt-BR": "Um Chefe de Mapa recebe um Modificador de Essência aleatório de qualquer Monstro Aprisionado morto em seus Mapas",
+                    "de": "Der Kartenboss erhält einen zufälligen Essence-Modifikator von einem beliebigen eingeschlossenen Monster, das in Euren Karten getötet wurde",
+                    "fr": "Dans vos Cartes, lorsque vous tuez des Monstres Emprisonnés, un Boss de Carte reçoit au hasard l'un de leurs Modificateurs d'Essence",
+                    "es": "Un jefe de mapa recibe un modificador de esencia adicional de alguno de los monstruos aprisionados que mates en tus mapas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_2623157736"
+            }
+        ]
+    },
+    {
+        "id": "Well_Supplied",
+        "name": {
+            "en": "Well Supplied",
+            "zh-TW": "補給充足",
+            "zh-CN": "补给充足",
+            "ko": "넉넉한 물자",
+            "ja": "十分な供給",
+            "ru": "Хорошее снабжение",
+            "pt-BR": "Bem Abastecido",
+            "de": "Gut versorgt",
+            "fr": "Richement approvisionné",
+            "es": "Bien abastecido"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Syndicate Members Obtain an additional Equipment Item when appearing in your Maps",
+                    "zh-TW": "密教成員出現在你的地圖中時會獲得一個額外裝備",
+                    "zh-CN": "辛迪加成员在你的地图中出现时额外获得一件装备物品",
+                    "ko": "연합 단원이 지도에 등장 시 장비 아이템 1개를 추가로 획득",
+                    "ja": "シンジケートメンバーはマップに出現する時に追加の装備を1個獲得する",
+                    "ru": "Члены Синдиката получают дополнительные предмет снаряжения при появлении на ваших картах",
+                    "pt-BR": "Membros do Sindicato recebem um Equipamento adicional quando aparecerem em seus Mapas",
+                    "de": "Syndikatsmitglieder erhalten einen zusätzlichen Ausrüstungsgegenstand, wenn sie in Euren Karten erscheinen",
+                    "fr": "Lorsqu'ils apparaissent dans vos Cartes, les Membres du Syndicat obtiennent un Objet d'équipement supplémentaire",
+                    "es": "Los miembros del Sindicato obtienen un objeto de equipamiento adicional cuando aparecen en tus mapas"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_623132242"
+            },
+            {
+                "text": {
+                    "en": "(30—50)% increased Intelligence gained from Immortal Syndicate targets encountered in your Maps",
+                    "zh-TW": "增加 (30—50)% 你地圖中永生密教目標事件獲取的情報",
+                    "zh-CN": "从你的地图上遭遇的不朽辛迪加目标处获得的情报提高(30—50)%",
+                    "ko": "지도에서 만나는 불멸자 연합 대상으로부터 얻는 정보 (30—50)% 증가",
+                    "ja": "マップでエンカウンターしたイモータルシンジケートのメンバーから得られる情報が(30—50)%増加する",
+                    "ru": "(30—50)% увеличение количества информации, получаемой от целей Бессмертного Синдиката во время схватках с ними на ваших картах",
+                    "pt-BR": "Informações recebidas dos alvos do Sindicado Imortal encontrados em seus Mapas aumentadas em (30—50)%",
+                    "de": "(30—50)% erhöhte erhaltene Information von Zielen des Unsterblichen Syndikats in Euren Karten",
+                    "fr": "Dans vos Cartes, les cibles du Syndicat immortel ont (30—50)% d'Augmentation des Renseignements fournis",
+                    "es": "Inteligencia otorgada por los miembros del Sindicato inmortal que encuentras en tus mapas aumentada un (30—50)%"
+                },
+                "values": [
+                    {
+                        "min": 30,
+                        "max": 50
+                    }
+                ],
+                "tradeStatId": "explicit.stat_1682417271"
+            },
+            {
+                "text": {
+                    "en": "Immortal Syndicate Leaders in your Maps drop an additional Veiled Item",
+                    "zh-TW": "你地圖中密教首領掉落 1 個額外隱匿物品",
+                    "zh-CN": "地图内不朽辛迪加首领额外掉落一个加密物品",
+                    "ko": "지도 내 불멸자 연합 지도자가 장막 아이템 1개를 추가로 떨어뜨림",
+                    "ja": "マップに出現するイモータルシンジケートのリーダーはヴェールアイテムを追加で1個ドロップする",
+                    "ru": "Из лидеров Бессмертного Синдиката На ваших картах выпадает дополнительный завуалированный предмет",
+                    "pt-BR": "Líderes do Sindicato Imortal em seus Mapas derrubam um Item Oculto adicional",
+                    "de": "Anführer des Unsterblichen Syndikats in Euren Karten lassen einen zusätzlichen verhüllten Gegenstand fallen",
+                    "fr": "Dans vos Cartes, les Dirigeants du Syndicat immortel cèdent un Objet Crypté supplémentaire",
+                    "es": "Los líderes del Sindicato inmortal de tus mapas arrojan un objeto encriptado adicional"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1856204587"
+            }
+        ]
+    },
+    {
+        "id": "Perceived_Greatness",
+        "name": {
+            "en": "Perceived Greatness",
+            "zh-TW": "感知的偉大",
+            "zh-CN": "感知的伟大",
+            "ko": "위대함의 허상",
+            "ja": "表向きの偉大さ",
+            "ru": "Мнимое величие",
+            "pt-BR": "Grandeza Percebida",
+            "de": "Wahrgenommene Größe",
+            "fr": "Grandeur apparente",
+            "es": "Grandeza percibida"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Delirium Reward Types in your Maps gain +1 to count on Map Completion",
+                    "zh-TW": "你地圖中的譫妄獎勵類型，在地圖完成時獲得 +1 數量",
+                    "zh-CN": "你地图中惊悸迷雾奖励类型获得 +1 地图完成度",
+                    "ko": "지도 내 환영 보상 유형이 지도 완료 시 +1 획득",
+                    "ja": "マップ完了時にデリリウムの報酬タイプは+1される",
+                    "ru": "Типы наград Делириума на ваших картах получают +1 к счету по завершению карты",
+                    "pt-BR": "Tipos de Recompensa Delirium em seus Mapas ganham +1 à contagem ao Completar o Mapa",
+                    "de": "Delirium-Belohnungstypen in Euren Karten erhalten +1 zur Anzahl bei Abschluss der Karte",
+                    "fr": "Dans vos Cartes, les Récompenses du Délire progressent de +1 lorsque la Carte est complétée",
+                    "es": "Los tipos de recompensas de Delirium de tus mapas ganan +1 al contador cuando completas el mapa"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3387171641"
+            },
+            {
+                "text": {
+                    "en": "Delirious Monsters Killed in your Maps provide (-30—-20)% increased Reward Progress",
+                    "zh-TW": "你地圖中擊殺的譫妄怪物。增加 (-30—-20)% 獎勵進度",
+                    "zh-CN": "你地图中击杀亢奋怪物提供的奖励进度提高 (-30—-20)%",
+                    "ko": "지도 내 환영 몬스터 처치 시 차는 보상 진행도 (-30—-20)% 증가",
+                    "ja": "マップに出現するデリリウムモンスターを倒した時に得られる報酬の進捗が(-30—-20)%増加する",
+                    "ru": "(-30—-20)% увеличение прогресса наград с убитых монстров под Делириумом на ваших картах",
+                    "pt-BR": "Monstros Delirantes Mortos em seus Mapas concedem Progresso de Recompensas aumentado em (-30—-20)%",
+                    "de": "Getötete deliriöse Monster in Euren Karten gewähren (-30—-20)% erhöhten Belohnungsfortschritt",
+                    "fr": "Les Monstres du Délire tués dans vos Cartes octroient (-30—-20)% d'Augmentation du Progrès des Récompenses",
+                    "es": "Los monstruos de delirio que matas en tus mapas otorgan el progreso de las recompensas aumentado un (-30—-20)%"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_3428124128"
+            }
+        ]
+    },
+    {
+        "id": "Twisted_Wish",
+        "name": {
+            "en": "Twisted Wish",
+            "zh-TW": "扭曲之願",
+            "zh-CN": "扭曲的心愿",
+            "ko": "뒤틀린 소망",
+            "ja": "捻じ曲げられた願い",
+            "ru": "Искаженное желание",
+            "pt-BR": "Desejo Distorcido",
+            "de": "Verworrener Wunsch",
+            "fr": "Souhait distordu",
+            "es": "Deseo retorcido"
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "2% увеличение количества находимых в области карт",
+                    "pt-BR": "Mapas encontrados na Área aumentados em 2%",
+                    "de": "2% erhöhte Anzahl gefundener Karten im Gebiet",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": "La cantidad de mapas que caen en el mapa está aumentada un 2%"
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Ultimatum Modifiers in your Maps start a Tier higher if possible",
+                    "zh-TW": "你地圖中的通牒詞綴，如果可能以高 1 階級開始",
+                    "zh-CN": "地图内的致命贪婪词缀尽可能以高一阶开始",
+                    "ko": "지도 내 결전 인카운터가 가능한 경우 1등급 높게 시작됨",
+                    "ja": "マップに出現するアルティメイタムモッドは可能ならば1ティア高い状態で開始する",
+                    "ru": "Модификаторы Ультиматума на ваших картах начинаются на уровень выше, если это возможно",
+                    "pt-BR": "Modificadores Ultimatum em seus Mapas começam com um Tier acima, se possível",
+                    "de": "Ultimatum-Modifikatoren in Euren Karten starten einen Level höher falls möglich",
+                    "fr": "Dans vos Cartes, les Modificateurs d'Ultimatum commencent un palier plus élevé si possible",
+                    "es": "Los modificadores de Ultimatum de tus mapas empiezan en un nivel más alto siempre que sea posible"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1901628087"
+            },
+            {
+                "text": {
+                    "en": "Ultimatum Encounters in your Maps get 3% reduced Radius each Round",
+                    "zh-TW": "你地圖中的最後通牒事件，每回合減少 3% 範圍",
+                    "zh-CN": "地图内的致命贪婪遭遇战每轮使范围缩小 3%",
+                    "ko": "지도 내 결전 인카운터의 반경이 라운드마다 3% 감소",
+                    "ja": "マップに出現するアルティメイタムエンカウンターはラウンドごとに半径が3%減少する",
+                    "ru": "3% уменьшение радиуса событий Ультиматума на ваших картах с каждым раундом",
+                    "pt-BR": "Encontros Ultimatum em seus Mapas têm o Raio reduzido em 3% a cada Rodada",
+                    "de": "Ultimatum-Begegnungen in Euren Karten erhalten jede Runde 3% verkleinerten Radius",
+                    "fr": "Dans vos Cartes, les Rencontres d'Ultimation ont 3% de Réduction de Rayon à chaque Round",
+                    "es": "El radio de los encuentros de Ultimatum de tus mapas se reduce un 3% en cada ronda"
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1602736646"
+            },
+            {
+                "text": {
+                    "en": "[3 Random Ultimatum Modifiers]",
+                    "zh-TW": "[3 Random Ultimatum Modifiers]",
+                    "zh-CN": "[3 Random Ultimatum Modifiers]",
+                    "ko": "[3 Random Ultimatum Modifiers]",
+                    "ja": "[3 Random Ultimatum Modifiers]",
+                    "ru": "[3 Random Ultimatum Modifiers]",
+                    "pt-BR": "[3 Random Ultimatum Modifiers]",
+                    "de": "[3 Random Ultimatum Modifiers]",
+                    "fr": "[3 Random Ultimatum Modifiers]",
+                    "es": "[3 Random Ultimatum Modifiers]"
+                },
+                "values": []
+            }
+        ]
+    },
+    {
+        "id": "Refiners_Bargain",
+        "name": {
+            "en": "Refiner's Bargain",
+            "zh-TW": "精煉廠的講價者",
+            "zh-CN": "Refiner's Bargain",
+            "ko": "정제사의 협상",
+            "ja": "精錬者の取引",
+            "ru": "",
+            "pt-BR": "",
+            "de": "",
+            "fr": "Aubaine du Raffineur",
+            "es": ""
+        },
+        "baseType": "Minor",
+        "modifiers": [
+            {
+                "text": {
+                    "en": "2% increased Maps found in Area",
+                    "zh-TW": "增加 2% 區域中掉落的地圖",
+                    "zh-CN": "该区域内找到的地图数量提高 2%",
+                    "ko": "지역에서 발견하는 지도 2% 증가",
+                    "ja": "エリアで見つかるマップの量が2%増加する",
+                    "ru": "",
+                    "pt-BR": "",
+                    "de": "",
+                    "fr": "2% d'Augmentation des Cartes trouvées dans la Zone",
+                    "es": ""
+                },
+                "values": [],
+                "tradeStatId": "implicit.stat_2777224821"
+            },
+            {
+                "text": {
+                    "en": "Equipment Items with Rarity dropped by Possessed Monsters in your Maps have 5% chance to be converted to Thaumaturgic Dust",
+                    "zh-TW": "在你的地圖中，被附身的怪物所掉落之具有稀有度的裝備物品有 5% 機率轉換為奇術魔塵",
+                    "zh-CN": "你地图中被附身的怪物掉落的具有稀有度的装备物品有 5% 的几率被转化为奇术之尘",
+                    "ko": "지도 내 사로잡힌 몬스터가 떨어뜨리는 희귀도 등급이 있는 장비 아이템이 5% 확률로 마석학 가루로 전환됨",
+                    "ja": "マップで憑依されたモンスターからドロップしたレアリティを持つ装備品は5%の確率で魔術の粉に変換される",
+                    "ru": "",
+                    "pt-BR": "",
+                    "de": "",
+                    "fr": "Dans vos Cartes, l'Équipement ayant de la Rareté qui est cédé par les Monstres Possédés a 5% de chances d'être converti en Poussière thaumaturgique",
+                    "es": ""
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_1813488582"
+            },
+            {
+                "text": {
+                    "en": "Sulphite found in your Maps is granted as a random Ore instead at 15% of the value",
+                    "zh-TW": "在你的地圖中找到的硫酸以其數值之 15% 賦予為隨機礦材",
+                    "zh-CN": "你地图中找到的亚硫酸改为提供 15% 数量的随机矿石",
+                    "ko": "지도에서 발견하는 아황산염을 대신 해당 수치의 15%에 해당하는 무작위 광석으로 획득",
+                    "ja": "マップに見つかるサルファイトはその数値の15%の代わりにランダムな鉱石として付与される",
+                    "ru": "",
+                    "pt-BR": "",
+                    "de": "",
+                    "fr": "Dans vos Cartes, le Sulfite trouvé est octroyé sous forme de Minerai aléatoire à 15% de sa valeur",
+                    "es": ""
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_2604629394"
+            },
+            {
+                "text": {
+                    "en": "Lifeforce found in your Maps is granted as a random Crop instead at 150% of the value",
+                    "zh-TW": "在你的地圖中找到的生靈之力以其數值之 150% 賦予為隨機作物",
+                    "zh-CN": "你地图中找到的命能改为提供 150% 数量的随机作物。",
+                    "ko": "지도에서 발견하는 생기를 대신 해당 수치의 150%에 해당하는 무작위 작물로 획득",
+                    "ja": "マップで見つかるライフフォースはその数値の150%の代わりにランダムな農作物として付与される",
+                    "ru": "",
+                    "pt-BR": "",
+                    "de": "",
+                    "fr": "Dans vos Cartes, la Force vitale trouvée est octroyée sous forme de Culture à 150% de sa valeur",
+                    "es": ""
+                },
+                "values": [],
+                "tradeStatId": "explicit.stat_2175879462"
+            }
+        ]
+    }
+]

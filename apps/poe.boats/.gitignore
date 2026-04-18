@@ -13,3 +13,5 @@ build
 .shopify
 *.tsbuildinfo
 /.claude/settings.local.json
+# Scripts cache
+scripts/**/.cache/

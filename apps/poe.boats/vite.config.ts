@@ -4,25 +4,25 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
-  resolve: {
-    tsconfigPaths: true,
-  },
-  plugins: [
-    cloudflare({
-      viteEnvironment: { name: "ssr" },
-    }),
-    tailwindcss(),
-    reactRouter(),
-  ],
-  ssr: {
     resolve: {
-      conditions: ["workerd", "worker", "browser"],
+        tsconfigPaths: true,
     },
-  },
-  server: {
-    cors: {
-      preflightContinue: true,
+    plugins: [
+        cloudflare({
+            viteEnvironment: { name: "ssr" },
+        }),
+        tailwindcss(),
+        reactRouter(),
+    ],
+    ssr: {
+        resolve: {
+            conditions: ["workerd", "worker", "browser"],
+        },
     },
-    hmr: true,
-  },
+    server: {
+        cors: {
+            preflightContinue: true,
+        },
+        hmr: true,
+    },
 });
