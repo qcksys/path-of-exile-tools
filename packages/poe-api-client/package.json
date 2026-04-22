@@ -1,0 +1,27 @@
+{
+  "name": "@poe-tools/api-client",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Typed client for the Path of Exile GGG Developer API (OAuth 2.1 + REST).",
+  "type": "module",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "vp pack",
+    "check": "vp check",
+    "test": "vp test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ky": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}
