@@ -354,7 +354,7 @@ function EmptyCell({
                         </svg>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
-                        <div className="font-medium">{t.grid.lockedSlot}</div>
+                        <div className="font-medium">{t("grid.lockedSlot")}</div>
                         {cell.lockReason && (
                             <div className="text-muted-foreground text-xs">{cell.lockReason}</div>
                         )}

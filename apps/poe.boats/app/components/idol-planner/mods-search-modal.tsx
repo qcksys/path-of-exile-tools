@@ -35,7 +35,6 @@ import {
     type LeagueMechanic,
 } from "~/data/idol-bases";
 import { useLocale, useTranslations } from "~/i18n";
-import type { Translations } from "~/i18n/types";
 import { generateTradeUrlForMod } from "~/lib/trade-search";
 import { cn } from "~/lib/utils";
 
@@ -51,7 +50,7 @@ interface ModifierRowProps {
     mod: ModifierOption;
     isFavorite: boolean;
     onToggleFavorite: (id: string) => void;
-    t: Translations;
+    t: ReturnType<typeof useTranslations>;
     league: string;
     tradeSettings: {
         maxWeight: number | null;
@@ -141,7 +140,7 @@ const MODIFIER_ROW = memo(function modifierRow({
                     />
                 </TooltipTrigger>
                 <TooltipContent>
-                    {isFavorite ? t.editor.removeFromFavorites : t.editor.addToFavorites}
+                    {isFavorite ? t("editor.removeFromFavorites") : t("editor.addToFavorites")}
                 </TooltipContent>
             </Tooltip>
             <div className="min-w-0 flex-1">
@@ -156,11 +155,11 @@ const MODIFIER_ROW = memo(function modifierRow({
                 <div className="flex items-center gap-1 text-muted-foreground text-xs">
                     <span>
                         {mod.type === "prefix"
-                            ? t.modsSearch?.prefix || "Prefix"
-                            : t.modsSearch?.suffix || "Suffix"}
+                            ? t("modsSearch.prefix")
+                            : t("modsSearch.suffix")}
                     </span>
                     <span>•</span>
-                    <span title={t.modsSearch?.weight || "Weight"}>{weight}</span>
+                    <span title={t("modsSearch.weight")}>{weight}</span>
                     <span>•</span>
                     {mod.applicableIdols.map((idol, index) => {
                         const key = idol.toLowerCase() as IdolBaseKey;
@@ -188,7 +187,7 @@ const MODIFIER_ROW = memo(function modifierRow({
                 >
                     <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                 </TooltipTrigger>
-                <TooltipContent>{t.modsSearch?.searchTrade || "Search Trade"}</TooltipContent>
+                <TooltipContent>{t("modsSearch.searchTrade")}</TooltipContent>
             </Tooltip>
         </div>
     );
@@ -199,7 +198,7 @@ interface MechanicSectionProps {
     mods: ModifierOption[];
     isFavorite: (id: string) => boolean;
     onToggleFavorite: (id: string) => void;
-    t: Translations;
+    t: ReturnType<typeof useTranslations>;
     league: string;
     tradeSettings: {
         maxWeight: number | null;
@@ -229,7 +228,7 @@ const MECHANIC_SECTION = memo(function mechanicSection({
     return (
         <div>
             <h4 className="mb-2 border-b pb-1 font-medium text-sm">
-                {t.mechanics[mechanic] || mechanic}
+                {t(`mechanics.${mechanic}`, { defaultValue: mechanic })}
             </h4>
             <div className="space-y-1">
                 {mods.map((mod) => (
@@ -346,10 +345,9 @@ export function ModsSearchModal({ open, onOpenChange }: ModsSearchModalProps) {
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="flex max-h-[85vh] w-[calc(100vw-2rem)] max-w-[800px] flex-col overflow-hidden">
                 <DialogHeader>
-                    <DialogTitle>{t.modsSearch?.title || "Search Modifiers"}</DialogTitle>
+                    <DialogTitle>{t("modsSearch.title")}</DialogTitle>
                     <DialogDescription>
-                        {t.modsSearch?.description ||
-                            "Browse and search all available idol modifiers."}
+                        {t("modsSearch.description")}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -357,7 +355,7 @@ export function ModsSearchModal({ open, onOpenChange }: ModsSearchModalProps) {
                     <div className="relative">
                         <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder={t.modsSearch?.searchPlaceholder || "Search by text..."}
+                            placeholder={t("modsSearch.searchPlaceholder")}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-8"
@@ -367,7 +365,7 @@ export function ModsSearchModal({ open, onOpenChange }: ModsSearchModalProps) {
                     <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1">
                             <span className="text-muted-foreground text-xs">
-                                {t.modsSearch?.typeFilter || "Type"}
+                                {t("modsSearch.typeFilter")}
                             </span>
                             <Select
                                 value={typeFilter}
@@ -378,13 +376,13 @@ export function ModsSearchModal({ open, onOpenChange }: ModsSearchModalProps) {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">
-                                        {t.modsSearch?.all || "All"}
+                                        {t("modsSearch.all")}
                                     </SelectItem>
                                     <SelectItem value="prefix">
-                                        {t.modsSearch?.prefix || "Prefix"}
+                                        {t("modsSearch.prefix")}
                                     </SelectItem>
                                     <SelectItem value="suffix">
-                                        {t.modsSearch?.suffix || "Suffix"}
+                                        {t("modsSearch.suffix")}
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
@@ -392,7 +390,7 @@ export function ModsSearchModal({ open, onOpenChange }: ModsSearchModalProps) {
 
                         <div className="space-y-1">
                             <span className="text-muted-foreground text-xs">
-                                {t.modsSearch?.favoriteFilter || "Favorites"}
+                                {t("modsSearch.favoriteFilter")}
                             </span>
                             <Select
                                 value={favoriteFilter}
@@ -403,13 +401,13 @@ export function ModsSearchModal({ open, onOpenChange }: ModsSearchModalProps) {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">
-                                        {t.modsSearch?.favoritesAll || "All"}
+                                        {t("modsSearch.favoritesAll")}
                                     </SelectItem>
                                     <SelectItem value="favorites">
-                                        {t.modsSearch?.favoritesOnly || "Favorites Only"}
+                                        {t("modsSearch.favoritesOnly")}
                                     </SelectItem>
                                     <SelectItem value="non-favorites">
-                                        {t.modsSearch?.favoritesExclude || "Non-Favorites Only"}
+                                        {t("modsSearch.favoritesExclude")}
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
@@ -417,7 +415,7 @@ export function ModsSearchModal({ open, onOpenChange }: ModsSearchModalProps) {
 
                         <div className="space-y-1">
                             <span className="text-muted-foreground text-xs">
-                                {t.filter?.idolType || "Idol Type"}
+                                {t("filter.idolType")}
                             </span>
                             <MultiIdolTypeFilter
                                 value={idolTypeFilter}
@@ -427,7 +425,7 @@ export function ModsSearchModal({ open, onOpenChange }: ModsSearchModalProps) {
 
                         <div className="space-y-1">
                             <span className="text-muted-foreground text-xs">
-                                {t.filter?.mechanic || "Mechanic"}
+                                {t("filter.mechanic")}
                             </span>
                             <MultiMechanicFilter
                                 value={mechanicFilter}
@@ -443,10 +441,7 @@ export function ModsSearchModal({ open, onOpenChange }: ModsSearchModalProps) {
                     />
 
                     <div className="text-muted-foreground text-xs">
-                        {(t.modsSearch?.modsFound || "{count} modifiers found").replace(
-                            "{count}",
-                            String(filteredModifiers.length),
-                        )}
+                        {t("modsSearch.modsFound", { count: filteredModifiers.length })}
                     </div>
                 </div>
 
@@ -474,7 +469,7 @@ export function ModsSearchModal({ open, onOpenChange }: ModsSearchModalProps) {
 
                         {filteredModifiers.length === 0 && (
                             <div className="py-8 text-center text-muted-foreground">
-                                {t.editor.noModsFound}
+                                {t("editor.noModsFound")}
                             </div>
                         )}
                     </div>
@@ -482,7 +477,7 @@ export function ModsSearchModal({ open, onOpenChange }: ModsSearchModalProps) {
 
                 <div className="flex justify-end">
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        {t.actions.cancel}
+                        {t("actions.cancel")}
                     </Button>
                 </div>
             </DialogContent>

@@ -43,7 +43,7 @@ export function LocaleSwitcher() {
                     </SelectContent>
                 </Select>
             </TooltipTrigger>
-            <TooltipContent>{t.actions.changeLanguage}</TooltipContent>
+            <TooltipContent>{t("actions.changeLanguage")}</TooltipContent>
         </Tooltip>
     );
 }

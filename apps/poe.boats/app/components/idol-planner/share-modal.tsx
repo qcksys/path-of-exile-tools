@@ -88,8 +88,8 @@ export function ShareModal({ open, onOpenChange, set, inventory }: ShareModalPro
         <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>{t.share.title}</DialogTitle>
-                    <DialogDescription>{t.share.description}</DialogDescription>
+                    <DialogTitle>{t("share.title")}</DialogTitle>
+                    <DialogDescription>{t("share.description")}</DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4">
@@ -103,7 +103,7 @@ export function ShareModal({ open, onOpenChange, set, inventory }: ShareModalPro
                                 </p>
                             </div>
                             <Button onClick={handleShare} className="w-full">
-                                {t.share.generateLink}
+                                {t("share.generateLink")}
                             </Button>
                         </div>
                     )}
@@ -111,7 +111,7 @@ export function ShareModal({ open, onOpenChange, set, inventory }: ShareModalPro
                     {shareState.status === "loading" && (
                         <div className="flex flex-col items-center py-6">
                             <div className="mb-3 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                            <p className="text-muted-foreground text-sm">{t.share.loading}</p>
+                            <p className="text-muted-foreground text-sm">{t("share.loading")}</p>
                         </div>
                     )}
 
@@ -120,11 +120,11 @@ export function ShareModal({ open, onOpenChange, set, inventory }: ShareModalPro
                             <div className="flex gap-2">
                                 <Input readOnly value={shareState.shareUrl} className="flex-1" />
                                 <Button onClick={handleCopy} variant="outline" className="shrink-0">
-                                    {copied ? t.actions.copied : t.actions.copy}
+                                    {copied ? t("actions.copied") : t("actions.copy")}
                                 </Button>
                             </div>
                             <p className="text-center text-muted-foreground text-xs">
-                                {t.share.linkExpiry}
+                                {t("share.linkExpiry")}
                             </p>
                         </div>
                     )}
@@ -135,7 +135,7 @@ export function ShareModal({ open, onOpenChange, set, inventory }: ShareModalPro
                                 <p className="text-destructive text-sm">{shareState.message}</p>
                             </div>
                             <Button onClick={handleShare} variant="outline" className="w-full">
-                                {t.actions.tryAgain}
+                                {t("actions.tryAgain")}
                             </Button>
                         </div>
                     )}

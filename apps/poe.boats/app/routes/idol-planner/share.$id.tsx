@@ -210,8 +210,8 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
             <div className="flex min-h-screen items-center justify-center bg-background">
                 <Card className="w-full max-w-md">
                     <CardHeader>
-                        <CardTitle>{t.actions.loading}</CardTitle>
-                        <CardDescription>{t.share.fetching}</CardDescription>
+                        <CardTitle>{t("actions.loading")}</CardTitle>
+                        <CardDescription>{t("share.fetching")}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="flex justify-center py-8">
@@ -228,12 +228,12 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
             <div className="flex min-h-screen items-center justify-center bg-background">
                 <Card className="w-full max-w-md">
                     <CardHeader>
-                        <CardTitle className="text-destructive">{t.errors.title}</CardTitle>
+                        <CardTitle className="text-destructive">{t("errors.title")}</CardTitle>
                         <CardDescription>{loadState.message}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button onClick={() => navigate("/idol-planner")} className="w-full">
-                            {t.share.goToPlanner}
+                            {t("share.goToPlanner")}
                         </Button>
                     </CardContent>
                 </Card>
@@ -250,9 +250,9 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
                 <Card className="w-full max-w-lg">
                     <CardHeader>
                         <CardTitle className="text-amber-600 dark:text-amber-400">
-                            {t.share.duplicateFound}
+                            {t("share.duplicateFound")}
                         </CardTitle>
-                        <CardDescription>{t.share.duplicateDescription}</CardDescription>
+                        <CardDescription>{t("share.duplicateDescription")}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
@@ -292,7 +292,7 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
                                 onClick={handleViewExisting}
                                 className="flex-1"
                             >
-                                {t.share.viewExisting}
+                                {t("share.viewExisting")}
                             </Button>
                             <Button
                                 onClick={() => {
@@ -301,7 +301,7 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
                                 disabled={importing}
                                 className="flex-1"
                             >
-                                {importing ? t.share.importing : t.share.importAnyway}
+                                {importing ? t("share.importing") : t("share.importAnyway")}
                             </Button>
                         </div>
                     </CardContent>
@@ -316,8 +316,8 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
         <div className="flex min-h-screen items-center justify-center bg-background p-4">
             <Card className="w-full max-w-lg">
                 <CardHeader>
-                    <CardTitle>{t.share.sharedSetTitle}</CardTitle>
-                    <CardDescription>{t.share.sharedSetDescription}</CardDescription>
+                    <CardTitle>{t("share.sharedSetTitle")}</CardTitle>
+                    <CardDescription>{t("share.sharedSetDescription")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="rounded-lg border border-border bg-muted/50 p-4">
@@ -335,7 +335,7 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
 
                     <div className="space-y-2">
                         <h4 className="font-medium text-foreground text-sm">
-                            {t.share.idolsInSet}
+                            {t("share.idolsInSet")}
                         </h4>
                         <ul className="max-h-40 space-y-1 overflow-y-auto">
                             {idols.map((idol) => (
@@ -354,7 +354,7 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
                             onClick={() => navigate("/idol-planner")}
                             className="flex-1"
                         >
-                            {t.actions.cancel}
+                            {t("actions.cancel")}
                         </Button>
                         <Button
                             onClick={() => {
@@ -363,7 +363,7 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
                             disabled={importing}
                             className="flex-1"
                         >
-                            {importing ? t.share.importing : t.share.importSet}
+                            {importing ? t("share.importing") : t("share.importSet")}
                         </Button>
                     </div>
                 </CardContent>

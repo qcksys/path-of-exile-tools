@@ -107,8 +107,8 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
         <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="flex max-h-[85vh] w-[calc(100vw-2rem)] max-w-[1000px] flex-col overflow-hidden">
                 <DialogHeader>
-                    <DialogTitle>{t.import.title}</DialogTitle>
-                    <DialogDescription>{t.import.description}</DialogDescription>
+                    <DialogTitle>{t("import.title")}</DialogTitle>
+                    <DialogDescription>{t("import.description")}</DialogDescription>
                 </DialogHeader>
 
                 <ScrollArea className="h-0 flex-1 pr-4">
@@ -116,10 +116,10 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
                         <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
                             <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                             <div className="text-foreground">
-                                <p className="font-medium">{t.import.howTo}</p>
+                                <p className="font-medium">{t("import.howTo")}</p>
                                 <ul className="mt-1 list-inside list-disc text-muted-foreground">
-                                    <li>{t.import.ctrlC}</li>
-                                    <li>{t.import.ctrlAltC}</li>
+                                    <li>{t("import.ctrlC")}</li>
+                                    <li>{t("import.ctrlAltC")}</li>
                                 </ul>
                             </div>
                         </div>
@@ -127,11 +127,11 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <label htmlFor="idol-text" className="font-medium text-sm">
-                                    {t.import.pasteHere}
+                                    {t("import.pasteHere")}
                                 </label>
                                 <Button variant="outline" size="sm" onClick={handlePaste}>
                                     <ClipboardPaste className="mr-1 h-4 w-4" />
-                                    {t.import.pasteFromClipboard}
+                                    {t("import.pasteFromClipboard")}
                                 </Button>
                             </div>
                             <Textarea
@@ -140,7 +140,7 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
                                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                                     handleTextChange(e.target.value)
                                 }
-                                placeholder={t.import.placeholder}
+                                placeholder={t("import.placeholder")}
                                 className="min-h-[150px] font-mono text-sm"
                             />
                         </div>
@@ -150,18 +150,12 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
                                 <div className="flex items-center gap-2 text-sm">
                                     {successCount > 0 && (
                                         <span className="text-success">
-                                            {t.import.parseSuccess.replace(
-                                                "{count}",
-                                                String(successCount),
-                                            )}
+                                            {t("import.parseSuccess", { count: successCount })}
                                         </span>
                                     )}
                                     {errorCount > 0 && (
                                         <span className="text-destructive">
-                                            {t.import.parseFailed.replace(
-                                                "{count}",
-                                                String(errorCount),
-                                            )}
+                                            {t("import.parseFailed", { count: errorCount })}
                                         </span>
                                     )}
                                 </div>
@@ -179,7 +173,7 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
                                                 key={`error-${index}`}
                                                 className="rounded border border-destructive/50 bg-destructive/10 p-2 text-destructive text-sm"
                                             >
-                                                {result.error || t.errors.unknown}
+                                                {result.error || t("errors.unknown")}
                                             </div>
                                         ),
                                     )}
@@ -191,10 +185,10 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
 
                 <DialogFooter>
                     <Button variant="ghost" onClick={handleClose}>
-                        {t.actions.cancel}
+                        {t("actions.cancel")}
                     </Button>
                     <Button onClick={handleImport} disabled={successCount === 0}>
-                        {t.import.importButton} ({successCount})
+                        {t("import.importButton")} ({successCount})
                     </Button>
                 </DialogFooter>
             </DialogContent>

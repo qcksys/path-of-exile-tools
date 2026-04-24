@@ -119,8 +119,7 @@ function IdolCardContent({
     const allMods = [...idol.prefixes, ...idol.suffixes];
     const imageSrc = idol.rarity === "unique" && base.uniqueImage ? base.uniqueImage : base.image;
 
-    const idolNameKey = `${idol.baseType}Idol` as keyof typeof t.idol;
-    const idolName = t.idol?.[idolNameKey] || base.name;
+    const idolName = t(`idol.${idol.baseType}Idol`, { defaultValue: base.name });
 
     return (
         <div className="space-y-1">
@@ -137,10 +136,7 @@ function IdolCardContent({
 
             {compact ? (
                 <div className="text-muted-foreground text-sm">
-                    {(t.idol?.modCount || "{count} mod(s)").replace(
-                        "{count}",
-                        String(allMods.length),
-                    )}
+                    {t("idol.modCount", { count: allMods.length })}
                 </div>
             ) : (
                 <div className="space-y-0.5">
@@ -306,7 +302,7 @@ export function IdolCardMini({
                                 >
                                     <Copy className="h-3 w-3" />
                                 </TooltipTrigger>
-                                <TooltipContent>{t.actions.copyToInventory}</TooltipContent>
+                                <TooltipContent>{t("actions.copyToInventory")}</TooltipContent>
                             </Tooltip>
                         )}
                         {onRemove && (
@@ -323,7 +319,7 @@ export function IdolCardMini({
                                 >
                                     <X className="h-3 w-3" />
                                 </TooltipTrigger>
-                                <TooltipContent>{t.grid.removeFromGrid}</TooltipContent>
+                                <TooltipContent>{t("grid.removeFromGrid")}</TooltipContent>
                             </Tooltip>
                         )}
                     </div>

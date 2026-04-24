@@ -34,11 +34,11 @@ export function WeightFilterAccordion({
                     <div className="flex items-center gap-2">
                         <Filter className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground text-xs">
-                            {t.trade?.weightFilter || "Weight Filter"}
+                            {t("trade.weightFilter")}
                         </span>
                         {tradeSettings.filterByMaxWeight && (
                             <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary text-xs">
-                                {t.trade?.weightFilterActive || "Active"}
+                                {t("trade.weightFilterActive")}
                             </span>
                         )}
                     </div>
@@ -55,7 +55,7 @@ export function WeightFilterAccordion({
                                 htmlFor="filter-by-weight"
                                 className="text-muted-foreground text-xs"
                             >
-                                {t.trade?.filterByMaxWeight || "Exclude mods from trade search"}
+                                {t("trade.filterByMaxWeight")}
                             </label>
                         </div>
 
@@ -75,8 +75,7 @@ export function WeightFilterAccordion({
                                         htmlFor="separate-weights"
                                         className="text-muted-foreground text-xs"
                                     >
-                                        {t.trade?.separateWeights ||
-                                            "Separate prefix/suffix weights"}
+                                        {t("trade.separateWeights")}
                                     </label>
                                 </div>
 
@@ -94,7 +93,7 @@ export function WeightFilterAccordion({
                                                 : "bg-muted text-muted-foreground"
                                         }`}
                                     >
-                                        ≥ {t.trade?.gte || "GTE"}
+                                        ≥ {t("trade.gte")}
                                     </button>
                                     <button
                                         type="button"
@@ -109,10 +108,10 @@ export function WeightFilterAccordion({
                                                 : "bg-muted text-muted-foreground"
                                         }`}
                                     >
-                                        ≤ {t.trade?.lte || "LTE"}
+                                        ≤ {t("trade.lte")}
                                     </button>
                                     <span className="text-muted-foreground text-xs">
-                                        {t.trade?.weightThreshold || "weight threshold"}
+                                        {t("trade.weightThreshold")}
                                     </span>
                                 </div>
 
@@ -123,7 +122,7 @@ export function WeightFilterAccordion({
                                                 htmlFor="max-prefix-weight"
                                                 className="text-muted-foreground text-xs"
                                             >
-                                                {t.trade?.prefixWeight || "Prefix"}:{" "}
+                                                {t("trade.prefixWeight")}:{" "}
                                                 <span className="font-medium text-foreground">
                                                     {tradeSettings.maxPrefixWeight ??
                                                         weightRange.max}
@@ -155,7 +154,7 @@ export function WeightFilterAccordion({
                                                 htmlFor="max-suffix-weight"
                                                 className="text-muted-foreground text-xs"
                                             >
-                                                {t.trade?.suffixWeight || "Suffix"}:{" "}
+                                                {t("trade.suffixWeight")}:{" "}
                                                 <span className="font-medium text-foreground">
                                                     {tradeSettings.maxSuffixWeight ??
                                                         weightRange.max}
@@ -189,7 +188,7 @@ export function WeightFilterAccordion({
                                             htmlFor="max-weight"
                                             className="text-muted-foreground text-xs"
                                         >
-                                            {t.trade?.maxWeight || "Weight"}:{" "}
+                                            {t("trade.maxWeight")}:{" "}
                                             <span className="font-medium text-foreground">
                                                 {tradeSettings.maxWeight ?? weightRange.max}
                                             </span>
@@ -225,8 +224,7 @@ export function WeightFilterAccordion({
                                             htmlFor="match-affix-type"
                                             className="text-muted-foreground text-xs"
                                         >
-                                            {t.trade?.matchAffixType ||
-                                                "Only exclude matching affix type (prefix/suffix)"}
+                                            {t("trade.matchAffixType")}
                                         </label>
                                     </div>
                                 )}

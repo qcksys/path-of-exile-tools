@@ -176,7 +176,7 @@ function ScarabSlot({
                                             {getScarabEffect(scarab, locale)}
                                         </div>
                                         <div className="text-muted-foreground text-xs">
-                                            {t.mapDevice?.limitLabel || "Limit:"} {scarab.limit}
+                                            {t("mapDevice.limitLabel")} {scarab.limit}
                                         </div>
                                     </div>
                                 </TooltipContent>
@@ -197,7 +197,7 @@ function ScarabSlot({
                                     <X className="h-3 w-3" />
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    {t.mapDevice?.clearSlot || "Clear slot"}
+                                    {t("mapDevice.clearSlot")}
                                 </TooltipContent>
                             </Tooltip>
                         )}
@@ -207,7 +207,7 @@ function ScarabSlot({
                 <PopoverContent className="w-[400px] p-0" align="start">
                     <Command>
                         <CommandInput
-                            placeholder={t.mapDevice?.searchScarabs || "Search scarabs..."}
+                            placeholder={t("mapDevice.searchScarabs")}
                         />
                         <div className="flex max-h-24 flex-wrap gap-1 overflow-y-auto border-b p-2">
                             <Button
@@ -216,7 +216,7 @@ function ScarabSlot({
                                 className="h-6 text-xs"
                                 onClick={() => onCategoryFilterChange(null)}
                             >
-                                {t.filter?.selectAll || "All"}
+                                {t("filter.selectAll")}
                             </Button>
                             {SCARAB_CATEGORIES.map((cat) => (
                                 <Button
@@ -226,21 +226,18 @@ function ScarabSlot({
                                     className="h-6 text-xs"
                                     onClick={() => onCategoryFilterChange(cat)}
                                 >
-                                    {t.mechanics?.[cat as keyof typeof t.mechanics] || cat}
+                                    {t(`mechanics.${cat}`, { defaultValue: cat })}
                                 </Button>
                             ))}
                         </div>
                         <CommandList className="max-h-[300px]">
                             <CommandEmpty>
-                                {t.mapDevice?.noScarabsFound || "No scarabs found."}
+                                {t("mapDevice.noScarabsFound")}
                             </CommandEmpty>
                             {Object.entries(groupedScarabs).map(([category, scarabs]) => (
                                 <CommandGroup
                                     key={category}
-                                    heading={
-                                        t.mechanics?.[category as keyof typeof t.mechanics] ||
-                                        category
-                                    }
+                                    heading={t(`mechanics.${category}`, { defaultValue: category })}
                                 >
                                     {scarabs.map((s) => {
                                         const usage = scarabUsageCount.get(s.id) ?? 0;
@@ -350,14 +347,13 @@ function CraftingOptionSelector({
                 <div className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-sm">
                         {selectedOption?.name ||
-                            t.mapDevice?.selectCraftingOption ||
-                            "Select crafting option..."}
+                            t("mapDevice.selectCraftingOption")}
                     </span>
                     {selectedOption && (
                         <span className="truncate text-muted-foreground text-xs">
                             {selectedOption.cost > 0
                                 ? `${selectedOption.cost}c`
-                                : t.mapDevice?.costFree || "Free"}
+                                : t("mapDevice.costFree")}
                             {selectedOption.imbued && " (Imbued)"}
                         </span>
                     )}
@@ -368,14 +364,14 @@ function CraftingOptionSelector({
                 <Command>
                     <CommandInput
                         placeholder={
-                            t.mapDevice?.searchCraftingOptions || "Search crafting options..."
+                            t("mapDevice.searchCraftingOptions")
                         }
                     />
                     <CommandList className="max-h-[300px]">
                         <CommandEmpty>
-                            {t.mapDevice?.noCraftingOptionsFound || "No crafting options found."}
+                            {t("mapDevice.noCraftingOptionsFound")}
                         </CommandEmpty>
-                        <CommandGroup heading={t.mapDevice?.standardOptions || "Standard Options"}>
+                        <CommandGroup heading={t("mapDevice.standardOptions")}>
                             {standardOptions.map((opt) => (
                                 <CraftingOptionItem
                                     key={opt.id}
@@ -389,7 +385,7 @@ function CraftingOptionSelector({
                             ))}
                         </CommandGroup>
                         {imbuedOptions.length > 0 && (
-                            <CommandGroup heading={t.mapDevice?.imbuedOptions || "Imbued Options"}>
+                            <CommandGroup heading={t("mapDevice.imbuedOptions")}>
                                 {imbuedOptions.map((opt) => (
                                     <CraftingOptionItem
                                         key={opt.id}
@@ -429,7 +425,7 @@ function CraftingOptionItem({
                 <div className="flex items-center gap-2">
                     <span className="text-sm">{option.name}</span>
                     <span className="text-muted-foreground text-xs">
-                        {option.cost > 0 ? `${option.cost}c` : t.mapDevice?.costFree || "Free"}
+                        {option.cost > 0 ? `${option.cost}c` : t("mapDevice.costFree")}
                     </span>
                 </div>
                 <span className="line-clamp-2 text-muted-foreground text-xs">{option.effect}</span>
@@ -481,14 +477,11 @@ export function MapDeviceComponent({
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                         <CardTitle className="text-lg">
-                            {t.mapDevice?.title || "Map Device"}
+                            {t("mapDevice.title")}
                         </CardTitle>
                     </div>
                     <span className="text-muted-foreground text-sm">
-                        {(t.mapDevice?.scarabCount || "{count}/5 scarabs").replace(
-                            "{count}",
-                            String(selectedScarabs.length),
-                        )}
+                        {t("mapDevice.scarabCount", { count: selectedScarabs.length })}
                     </span>
                 </div>
                 <div className="flex items-center justify-between gap-3">

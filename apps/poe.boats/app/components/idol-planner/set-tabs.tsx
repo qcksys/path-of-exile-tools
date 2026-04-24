@@ -95,7 +95,7 @@ export function SetTabs({
             setImportError("");
             navigate(`/share/${shareMatch[1]}`);
         } else {
-            setImportError(t.idolSet.invalidShareUrl);
+            setImportError(t("idolSet.invalidShareUrl"));
         }
     };
 
@@ -136,23 +136,23 @@ export function SetTabs({
                                         >
                                             <MoreVertical className="h-3 w-3" />
                                         </TooltipTrigger>
-                                        <TooltipContent>{t.actions.moreOptions}</TooltipContent>
+                                        <TooltipContent>{t("actions.moreOptions")}</TooltipContent>
                                     </Tooltip>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem onClick={() => handleRenameClick(set)}>
                                             <Pencil className="mr-2 h-4 w-4" />
-                                            {t.idolSet.rename}
+                                            {t("idolSet.rename")}
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => onDuplicateSet(set.id)}>
                                             <Copy className="mr-2 h-4 w-4" />
-                                            {t.idolSet.duplicate}
+                                            {t("idolSet.duplicate")}
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             className="text-destructive"
                                             onClick={() => handleDeleteClick(set.id)}
                                         >
                                             <Trash2 className="mr-2 h-4 w-4" />
-                                            {t.idolSet.delete}
+                                            {t("idolSet.delete")}
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
@@ -175,9 +175,9 @@ export function SetTabs({
                         }
                     >
                         <Plus className="h-4 w-4 sm:mr-1" />
-                        <span className="hidden sm:inline">{t.idolSet.newSet}</span>
+                        <span className="hidden sm:inline">{t("idolSet.newSet")}</span>
                     </TooltipTrigger>
-                    <TooltipContent>{t.actions.newSet}</TooltipContent>
+                    <TooltipContent>{t("actions.newSet")}</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -192,28 +192,28 @@ export function SetTabs({
                         }
                     >
                         <Download className="h-4 w-4 sm:mr-1" />
-                        <span className="hidden sm:inline">{t.idolSet.importShare}</span>
+                        <span className="hidden sm:inline">{t("idolSet.importShare")}</span>
                     </TooltipTrigger>
-                    <TooltipContent>{t.idolSet.importShareTitle}</TooltipContent>
+                    <TooltipContent>{t("idolSet.importShareTitle")}</TooltipContent>
                 </Tooltip>
             </div>
 
             <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{t.idolSet.rename}</DialogTitle>
+                        <DialogTitle>{t("idolSet.rename")}</DialogTitle>
                     </DialogHeader>
                     <Input
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
-                        placeholder={t.idolSet.defaultName}
+                        placeholder={t("idolSet.defaultName")}
                         onKeyDown={(e) => e.key === "Enter" && handleRenameConfirm()}
                     />
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setRenameDialogOpen(false)}>
-                            {t.actions.cancel}
+                            {t("actions.cancel")}
                         </Button>
-                        <Button onClick={handleRenameConfirm}>{t.actions.save}</Button>
+                        <Button onClick={handleRenameConfirm}>{t("actions.save")}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -221,15 +221,15 @@ export function SetTabs({
             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{t.idolSet.delete}</DialogTitle>
-                        <DialogDescription>{t.idolSet.confirmDelete}</DialogDescription>
+                        <DialogTitle>{t("idolSet.delete")}</DialogTitle>
+                        <DialogDescription>{t("idolSet.confirmDelete")}</DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)}>
-                            {t.actions.cancel}
+                            {t("actions.cancel")}
                         </Button>
                         <Button variant="destructive" onClick={handleDeleteConfirm}>
-                            {t.idolSet.delete}
+                            {t("idolSet.delete")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -238,8 +238,8 @@ export function SetTabs({
             <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{t.idolSet.importShareTitle}</DialogTitle>
-                        <DialogDescription>{t.idolSet.importShareDescription}</DialogDescription>
+                        <DialogTitle>{t("idolSet.importShareTitle")}</DialogTitle>
+                        <DialogDescription>{t("idolSet.importShareDescription")}</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-2">
                         <Input
@@ -248,17 +248,17 @@ export function SetTabs({
                                 setShareUrl(e.target.value);
                                 setImportError("");
                             }}
-                            placeholder={t.idolSet.shareLinkPlaceholder}
+                            placeholder={t("idolSet.shareLinkPlaceholder")}
                             onKeyDown={(e) => e.key === "Enter" && handleImportConfirm()}
                         />
                         {importError && <p className="text-destructive text-sm">{importError}</p>}
                     </div>
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setImportDialogOpen(false)}>
-                            {t.actions.cancel}
+                            {t("actions.cancel")}
                         </Button>
                         <Button onClick={handleImportConfirm} disabled={!shareUrl.trim()}>
-                            {t.idolSet.importShare}
+                            {t("idolSet.importShare")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

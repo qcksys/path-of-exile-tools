@@ -177,7 +177,7 @@ export function ModSearch({
     const selectedMod = selectedModId ? allModifiers.find((m) => m.id === selectedModId) : null;
 
     const displayText =
-        selectedMod?.tiers[0]?.text || selectedMod?.name || placeholder || t.editor.selectMod;
+        selectedMod?.tiers[0]?.text || selectedMod?.name || placeholder || t("editor.selectMod");
 
     const selectedWeight = selectedMod?.tiers[0]?.weight;
 
@@ -205,7 +205,7 @@ export function ModSearch({
             </PopoverTrigger>
             <PopoverContent className="w-[500px] p-0" align="start">
                 <Command>
-                    <CommandInput placeholder={t.editor.searchMods} />
+                    <CommandInput placeholder={t("editor.searchMods")} />
                     <div className="flex items-center gap-2 border-b px-3 py-2">
                         <Checkbox
                             id="favorites-filter"
@@ -213,11 +213,11 @@ export function ModSearch({
                             onCheckedChange={(checked) => setShowFavoritesOnly(checked === true)}
                         />
                         <label htmlFor="favorites-filter" className="cursor-pointer text-sm">
-                            {t.editor.favoritesOnly}
+                            {t("editor.favoritesOnly")}
                         </label>
                     </div>
                     <CommandList className="max-h-[300px]">
-                        <CommandEmpty>{t.editor.noModsFound}</CommandEmpty>
+                        <CommandEmpty>{t("editor.noModsFound")}</CommandEmpty>
                         {LEAGUE_MECHANICS.map((mechanic) => {
                             const mods = groupedModifiers[mechanic];
                             if (!mods || mods.length === 0) return null;
@@ -225,7 +225,7 @@ export function ModSearch({
                             return (
                                 <CommandGroup
                                     key={mechanic}
-                                    heading={t.mechanics[mechanic] || mechanic}
+                                    heading={t(`mechanics.${mechanic}`, { defaultValue: mechanic })}
                                 >
                                     {mods.map((mod) => {
                                         const modIsFavorite = isFavorite(mod.id);
@@ -280,8 +280,8 @@ export function ModSearch({
                                                     </TooltipTrigger>
                                                     <TooltipContent>
                                                         {modIsFavorite
-                                                            ? t.editor.removeFromFavorites
-                                                            : t.editor.addToFavorites}
+                                                            ? t("editor.removeFromFavorites")
+                                                            : t("editor.addToFavorites")}
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </CommandItem>
@@ -319,14 +319,14 @@ export function MechanicFilter({ value, onChange, showAll = true }: MechanicFilt
                     />
                 }
             >
-                <span>{value ? t.mechanics[value] : t.editor.allMechanics}</span>
+                <span>{value ? t(`mechanics.${value}`, { defaultValue: value }) : t("editor.allMechanics")}</span>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0" align="start">
                 <Command>
-                    <CommandInput placeholder={t.editor.searchMechanic} />
+                    <CommandInput placeholder={t("editor.searchMechanic")} />
                     <CommandList className="max-h-[200px]">
-                        <CommandEmpty>{t.editor.noMechanicsFound}</CommandEmpty>
+                        <CommandEmpty>{t("editor.noMechanicsFound")}</CommandEmpty>
                         <CommandGroup>
                             {showAll && (
                                 <CommandItem
@@ -342,11 +342,11 @@ export function MechanicFilter({ value, onChange, showAll = true }: MechanicFilt
                                             value === null ? "opacity-100" : "opacity-0",
                                         )}
                                     />
-                                    {t.editor.allMechanics}
+                                    {t("editor.allMechanics")}
                                 </CommandItem>
                             )}
                             {LEAGUE_MECHANICS.map((mechanic) => {
-                                const displayText = t.mechanics[mechanic] || mechanic;
+                                const displayText = t(`mechanics.${mechanic}`, { defaultValue: mechanic });
                                 return (
                                     <CommandItem
                                         key={mechanic}
@@ -403,11 +403,13 @@ export function MultiMechanicFilter({ value, onChange }: MultiMechanicFilterProp
 
     const displayText =
         value.length === 0
-            ? t.editor.allMechanics
+            ? t("editor.allMechanics")
             : value.length === 1
-              ? t.mechanics[value[0]]
-              : t.filter?.mechanicsSelected?.replace("{count}", String(value.length)) ||
-                `${value.length} selected`;
+              ? t(`mechanics.${value[0]}`, { defaultValue: value[0] })
+              : t("filter.mechanicsSelected", {
+                    count: value.length,
+                    defaultValue: `${value.length} selected`,
+                });
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -426,7 +428,7 @@ export function MultiMechanicFilter({ value, onChange }: MultiMechanicFilterProp
             </PopoverTrigger>
             <PopoverContent className="w-[250px] p-0" align="start">
                 <Command>
-                    <CommandInput placeholder={t.editor.searchMechanic} />
+                    <CommandInput placeholder={t("editor.searchMechanic")} />
                     <div className="flex items-center justify-between border-b px-3 py-2">
                         <span className="text-muted-foreground text-xs">
                             {value.length}/{LEAGUE_MECHANICS.length}
@@ -438,7 +440,7 @@ export function MultiMechanicFilter({ value, onChange }: MultiMechanicFilterProp
                                 className="h-6 px-2 text-xs"
                                 onClick={handleSelectAll}
                             >
-                                {t.filter?.selectAll || "All"}
+                                {t("filter.selectAll")}
                             </Button>
                             <Button
                                 variant="ghost"
@@ -446,15 +448,15 @@ export function MultiMechanicFilter({ value, onChange }: MultiMechanicFilterProp
                                 className="h-6 px-2 text-xs"
                                 onClick={handleClearAll}
                             >
-                                {t.filter?.selectNone || "None"}
+                                {t("filter.selectNone")}
                             </Button>
                         </div>
                     </div>
                     <CommandList className="max-h-[250px]">
-                        <CommandEmpty>{t.editor.noMechanicsFound}</CommandEmpty>
+                        <CommandEmpty>{t("editor.noMechanicsFound")}</CommandEmpty>
                         <CommandGroup>
                             {LEAGUE_MECHANICS.map((mechanic) => {
-                                const displayText = t.mechanics[mechanic] || mechanic;
+                                const displayText = t(`mechanics.${mechanic}`, { defaultValue: mechanic });
                                 const isSelected = selectedSet.has(mechanic);
                                 return (
                                     <CommandItem
@@ -507,20 +509,15 @@ export function MultiIdolTypeFilter({ value, onChange }: MultiIdolTypeFilterProp
         onChange([]);
     };
 
-    const getIdolName = (key: IdolBaseKey) => {
-        const idolNameKey = `${key}Idol` as keyof typeof t.idol;
-        return t.idol?.[idolNameKey] || IDOL_BASES[key].name;
-    };
+    const getIdolName = (key: IdolBaseKey) =>
+        t(`idol.${key}Idol`, { defaultValue: IDOL_BASES[key].name });
 
     const displayText =
         value.length === 0
-            ? t.filter?.allIdolTypes || "All Idol Types"
+            ? t("filter.allIdolTypes")
             : value.length === 1
               ? getIdolName(value[0])
-              : (t.filter?.idolTypesSelected || "{count} idol types").replace(
-                    "{count}",
-                    String(value.length),
-                );
+              : t("filter.idolTypesSelected", { count: value.length });
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -539,7 +536,7 @@ export function MultiIdolTypeFilter({ value, onChange }: MultiIdolTypeFilterProp
             </PopoverTrigger>
             <PopoverContent className="w-[250px] p-0" align="start">
                 <Command>
-                    <CommandInput placeholder={t.filter?.searchIdolType || "Search idol type..."} />
+                    <CommandInput placeholder={t("filter.searchIdolType")} />
                     <div className="flex items-center justify-between border-b px-3 py-2">
                         <span className="text-muted-foreground text-xs">
                             {value.length}/{IDOL_BASE_KEYS.length}
@@ -551,7 +548,7 @@ export function MultiIdolTypeFilter({ value, onChange }: MultiIdolTypeFilterProp
                                 className="h-6 px-2 text-xs"
                                 onClick={handleSelectAll}
                             >
-                                {t.filter?.selectAll || "All"}
+                                {t("filter.selectAll")}
                             </Button>
                             <Button
                                 variant="ghost"
@@ -559,13 +556,13 @@ export function MultiIdolTypeFilter({ value, onChange }: MultiIdolTypeFilterProp
                                 className="h-6 px-2 text-xs"
                                 onClick={handleClearAll}
                             >
-                                {t.filter?.selectNone || "None"}
+                                {t("filter.selectNone")}
                             </Button>
                         </div>
                     </div>
                     <CommandList className="max-h-[250px]">
                         <CommandEmpty>
-                            {t.filter?.noIdolTypesFound || "No idol types found."}
+                            {t("filter.noIdolTypesFound")}
                         </CommandEmpty>
                         <CommandGroup>
                             {IDOL_BASE_KEYS.map((idolType) => {

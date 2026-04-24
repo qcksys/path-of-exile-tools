@@ -86,3 +86,14 @@ For GitHub Actions, consider using [`voidzero-dev/setup-vp`](https://github.com/
 - [ ] Run `vp install` after pulling remote changes and before getting started.
 - [ ] Run `vp check` and `vp test` to validate changes.
 <!--VITE PLUS END-->
+
+## Project-Specific Tooling
+
+This project uses **Biome** (not Oxlint/Oxfmt) for linting and formatting. The root `package.json` exposes Biome-backed scripts:
+
+- `vp run lint` → `biome check` (lint only, no writes)
+- `vp run format` → `biome check --write --unsafe` (lint + format, applies fixes)
+- `vp run ready` → `biome check && vp run test -r && vp run build -r` (full pre-commit gate)
+
+Do **not** use `vp lint` / `vp fmt` / `vp check` for this repo — those invoke Vite+'s built-in Oxlint/Oxfmt and will disagree with Biome's rules. The `vp run <script>` form is required to hit the custom Biome scripts (per the "Running scripts" pitfall above).
+

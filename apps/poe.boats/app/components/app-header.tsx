@@ -45,7 +45,7 @@ export function AppHeader({ section, sectionBadge, tools }: AppHeaderProps = {})
                         to="/changelog"
                         className="hidden text-muted-foreground text-sm hover:text-foreground md:inline"
                     >
-                        {t.nav.changelog}
+                        {t("nav.changelog")}
                     </Link>
                 </div>
 
@@ -65,7 +65,7 @@ export function AppHeader({ section, sectionBadge, tools }: AppHeaderProps = {})
                         >
                             <Mail className="h-5 w-5" />
                         </TooltipTrigger>
-                        <TooltipContent>{t.footer.emailMe}</TooltipContent>
+                        <TooltipContent>{t("footer.emailMe")}</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                         <TooltipTrigger
@@ -92,7 +92,7 @@ export function AppHeader({ section, sectionBadge, tools }: AppHeaderProps = {})
                                 <path d={siGithub.path} />
                             </svg>
                         </TooltipTrigger>
-                        <TooltipContent>{t.nav.github}</TooltipContent>
+                        <TooltipContent>{t("nav.github")}</TooltipContent>
                     </Tooltip>
                 </div>
             </div>

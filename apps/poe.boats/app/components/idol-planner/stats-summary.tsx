@@ -269,7 +269,7 @@ function aggregateStats(
 
 function MechanicSection({ data }: { data: StatsByMechanic }) {
     const t = useTranslations();
-    const mechanicName = t.mechanics[data.mechanic] || data.mechanic;
+    const mechanicName = t(`mechanics.${data.mechanic}`, { defaultValue: data.mechanic });
 
     return (
         <div className="mb-4">
@@ -283,7 +283,7 @@ function MechanicSection({ data }: { data: StatsByMechanic }) {
                     );
                     const contributionText = formatContributions(
                         stat.contributions,
-                        t.idol as Record<string, string> | undefined,
+                        t("idol", { returnObjects: true }) as Record<string, string>,
                     );
                     return (
                         <div
@@ -325,7 +325,7 @@ function UniqueIdolSection({ stats }: { stats: UniqueIdolStat[] }) {
     return (
         <div className="mb-4">
             <h4 className="mb-2 font-semibold text-primary text-sm">
-                {t.editor?.uniqueIdols || "Unique Idols"}
+                {t("editor.uniqueIdols")}
             </h4>
             <div className="space-y-1">
                 {stats.map((stat, index) => (
@@ -349,7 +349,7 @@ function CraftingOptionSection({ craftingOption }: { craftingOption: MapCrafting
     return (
         <div className="mb-4 border-border border-t pt-4">
             <h4 className="mb-2 font-semibold text-primary text-sm">
-                {t.mapDevice?.craftingOptionEffect || "Map Device"}
+                {t("mapDevice.craftingOptionEffect")}
             </h4>
             <div className="mb-1 text-muted-foreground text-xs">
                 {craftingOption.name}
@@ -384,12 +384,12 @@ function ScarabsSection({ scarabs, locale }: { scarabs: Scarab[]; locale: Suppor
     return (
         <div className="mb-4 border-border border-t pt-4">
             <h4 className="mb-2 font-semibold text-primary text-sm">
-                {t.mapDevice?.scarabEffects || "Scarab Effects"}
+                {t("mapDevice.scarabEffects")}
             </h4>
             {Object.entries(scarabsByCategory).map(([category, catScarabs]) => (
                 <div key={category} className="mb-2">
                     <div className="mb-1 text-muted-foreground text-xs">
-                        {t.mechanics?.[category as keyof typeof t.mechanics] || category}
+                        {t(`mechanics.${category}`, { defaultValue: category })}
                     </div>
                     <div className="space-y-1">
                         {catScarabs.map((scarab) => (
@@ -475,19 +475,16 @@ export function StatsSummary({ placements, inventory, mapDevice }: StatsSummaryP
             <CardHeader className="pb-2">
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{t.stats.totalStats}</CardTitle>
+                        <CardTitle className="text-lg">{t("stats.totalStats")}</CardTitle>
                         <span className="text-muted-foreground text-sm">
-                            {(t.stats?.modifierCount || "{count} modifier(s)").replace(
-                                "{count}",
-                                String(totalStats),
-                            )}
+                            {t("stats.modifierCount", { count: totalStats })}
                             {selectedScarabs.length > 0 &&
-                                ` + ${(t.stats?.scarabCount || "{count} scarab(s)").replace("{count}", String(selectedScarabs.length))}`}
+                                ` + ${t("stats.scarabCount", { count: selectedScarabs.length })}`}
                         </span>
                     </div>
                     {totalCost > 0 && (
                         <div className="text-right text-sm text-yellow-600 dark:text-yellow-400">
-                            {t.stats?.totalCost || "Total Cost:"} {formatChaosPrice(totalCost)}c
+                            {t("stats.totalCost")} {formatChaosPrice(totalCost)}c
                         </div>
                     )}
                 </div>
@@ -495,7 +492,7 @@ export function StatsSummary({ placements, inventory, mapDevice }: StatsSummaryP
 
             <CardContent className="min-h-0 flex-1 overflow-hidden">
                 {!hasContent ? (
-                    <div className="py-8 text-center text-muted-foreground">{t.stats.noStats}</div>
+                    <div className="py-8 text-center text-muted-foreground">{t("stats.noStats")}</div>
                 ) : (
                     <ScrollArea className="h-full">
                         <div className="space-y-2 pr-2">

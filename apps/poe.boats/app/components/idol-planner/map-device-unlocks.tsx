@@ -54,15 +54,13 @@ export function MapDeviceUnlocks({
                     <Lock className="h-4 w-4" />
                 )}
                 <span>
-                    {t.mapDevice.unlocksCount
-                        .replace("{unlocked}", String(unlockedCount))
-                        .replace("{total}", String(totalCount))}
+                    {t("mapDevice.unlocksCount", { unlocked: unlockedCount, total: totalCount })}
                 </span>
                 <ChevronDown className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-80">
                 <DropdownMenuLabel className="flex items-center justify-between">
-                    <span>{t.mapDevice.unlocksTitle}</span>
+                    <span>{t("mapDevice.unlocksTitle")}</span>
                     <div className="flex gap-1">
                         <Button
                             variant="ghost"
@@ -70,7 +68,7 @@ export function MapDeviceUnlocks({
                             className="h-6 px-2 text-xs"
                             onClick={unlockAll}
                         >
-                            {t.filter.selectAll}
+                            {t("filter.selectAll")}
                         </Button>
                         <Button
                             variant="ghost"
@@ -78,7 +76,7 @@ export function MapDeviceUnlocks({
                             className="h-6 px-2 text-xs"
                             onClick={lockAll}
                         >
-                            {t.filter.selectNone}
+                            {t("filter.selectNone")}
                         </Button>
                     </div>
                 </DropdownMenuLabel>

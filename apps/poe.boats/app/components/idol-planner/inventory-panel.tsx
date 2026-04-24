@@ -120,7 +120,7 @@ function DraggableIdolCard({
                     >
                         <ShoppingCart className="h-3 w-3" />
                     </TooltipTrigger>
-                    <TooltipContent>{t.trade.findSimilar}</TooltipContent>
+                    <TooltipContent>{t("trade.findSimilar")}</TooltipContent>
                 </Tooltip>
                 {onIdolClick && (
                     <Tooltip>
@@ -139,7 +139,7 @@ function DraggableIdolCard({
                         >
                             <PenLine className="h-3 w-3" />
                         </TooltipTrigger>
-                        <TooltipContent>{t.inventory.edit}</TooltipContent>
+                        <TooltipContent>{t("inventory.edit")}</TooltipContent>
                     </Tooltip>
                 )}
                 {onDuplicateIdol && (
@@ -159,7 +159,7 @@ function DraggableIdolCard({
                         >
                             <Copy className="h-3 w-3" />
                         </TooltipTrigger>
-                        <TooltipContent>{t.inventory.duplicate}</TooltipContent>
+                        <TooltipContent>{t("inventory.duplicate")}</TooltipContent>
                     </Tooltip>
                 )}
                 {onRemoveIdol && (
@@ -179,13 +179,13 @@ function DraggableIdolCard({
                         >
                             <Trash2 className="h-3 w-3" />
                         </TooltipTrigger>
-                        <TooltipContent>{t.inventory.removeFromInventory}</TooltipContent>
+                        <TooltipContent>{t("inventory.removeFromInventory")}</TooltipContent>
                     </Tooltip>
                 )}
             </div>
             {item.usageCount > 0 && (
                 <span className="absolute right-1 bottom-1 rounded bg-primary px-1 text-primary-foreground text-xs">
-                    {t.inventory.usedInSets.replace("{count}", String(item.usageCount))}
+                    {t("inventory.usedInSets", { count: item.usageCount })}
                 </span>
             )}
         </li>
@@ -250,9 +250,9 @@ export function InventoryPanel({
         <Card className="flex min-h-0 flex-1 flex-col">
             <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{t.inventory.title}</CardTitle>
+                    <CardTitle className="text-lg">{t("inventory.title")}</CardTitle>
                     <span className="text-muted-foreground text-sm">
-                        {t.inventory.idolCount.replace("{count}", String(inventory.length))}
+                        {t("inventory.idolCount", { count: inventory.length })}
                     </span>
                 </div>
             </CardHeader>
@@ -261,7 +261,7 @@ export function InventoryPanel({
                 <div className="relative">
                     <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder={t.inventory.search}
+                        placeholder={t("inventory.search")}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-8"
@@ -271,7 +271,7 @@ export function InventoryPanel({
                 <div className="flex flex-wrap gap-2">
                     <Button onClick={onImportClick} className="flex-1" size="sm">
                         <Plus className="mr-1 h-4 w-4" />
-                        {t.inventory.import}
+                        {t("inventory.import")}
                     </Button>
                     {onCreateClick && (
                         <Button
@@ -281,7 +281,7 @@ export function InventoryPanel({
                             size="sm"
                         >
                             <PenLine className="mr-1 h-4 w-4" />
-                            {t.inventory.create}
+                            {t("inventory.create")}
                         </Button>
                     )}
                     {hasClipboardIdol && onPasteIdol && (
@@ -292,7 +292,7 @@ export function InventoryPanel({
                             className="flex-1"
                         >
                             <ClipboardPaste className="mr-1 h-4 w-4" />
-                            {t.inventory.paste}
+                            {t("inventory.paste")}
                         </Button>
                     )}
                     {onClearAll && inventory.length > 0 && (
@@ -310,7 +310,7 @@ export function InventoryPanel({
                             >
                                 <Trash2 className="h-4 w-4" />
                             </TooltipTrigger>
-                            <TooltipContent>{t.inventory.clear}</TooltipContent>
+                            <TooltipContent>{t("inventory.clear")}</TooltipContent>
                         </Tooltip>
                     )}
                 </div>
@@ -318,7 +318,7 @@ export function InventoryPanel({
                 <ScrollArea className="h-0 flex-1">
                     {filteredInventory.length === 0 ? (
                         <div className="py-8 text-center text-muted-foreground">
-                            {inventory.length === 0 ? t.inventory.empty : t.inventory.noMatches}
+                            {inventory.length === 0 ? t("inventory.empty") : t("inventory.noMatches")}
                         </div>
                     ) : (
                         <ul className="space-y-2 px-2 py-1 pr-3">
@@ -346,27 +346,25 @@ export function InventoryPanel({
                     <DialogHeader>
                         <DialogTitle>
                             {idsToDelete.length === 1
-                                ? t.inventory.confirmDelete
-                                : t.inventory.confirmDeleteMultiple.replace(
-                                      "{count}",
-                                      String(idsToDelete.length),
-                                  )}
+                                ? t("inventory.confirmDelete")
+                                : t("inventory.confirmDeleteMultiple", {
+                                      count: idsToDelete.length,
+                                  })}
                         </DialogTitle>
                         <DialogDescription>
                             {idsToDelete.length === 1
-                                ? t.inventory.confirmDeleteMessage
-                                : t.inventory.confirmDeleteMultipleMessage.replace(
-                                      "{count}",
-                                      String(idsToDelete.length),
-                                  )}
+                                ? t("inventory.confirmDeleteMessage")
+                                : t("inventory.confirmDeleteMultipleMessage", {
+                                      count: idsToDelete.length,
+                                  })}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)}>
-                            {t.actions.cancel}
+                            {t("actions.cancel")}
                         </Button>
                         <Button variant="destructive" onClick={handleConfirmDelete}>
-                            {t.idolSet.delete}
+                            {t("idolSet.delete")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

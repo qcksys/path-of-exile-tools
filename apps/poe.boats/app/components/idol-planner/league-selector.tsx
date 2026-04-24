@@ -19,7 +19,7 @@ export function LeagueSelector() {
             <Select disabled>
                 <SelectTrigger className="w-full">
                     <Trophy className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder={t.actions.loading} />
+                    <SelectValue placeholder={t("actions.loading")} />
                 </SelectTrigger>
             </Select>
         );
@@ -47,7 +47,7 @@ export function LeagueSelector() {
                     </SelectContent>
                 </Select>
             </TooltipTrigger>
-            <TooltipContent>{t.actions.selectLeague}</TooltipContent>
+            <TooltipContent>{t("actions.selectLeague")}</TooltipContent>
         </Tooltip>
     );
 }

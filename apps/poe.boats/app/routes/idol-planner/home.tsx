@@ -81,7 +81,7 @@ function HomeContent() {
     if (!isHydrated) {
         return (
             <div className="flex h-screen items-center justify-center">
-                <div className="text-muted-foreground">{t.actions.loading}</div>
+                <div className="text-muted-foreground">{t("actions.loading")}</div>
             </div>
         );
     }
@@ -92,8 +92,8 @@ function HomeContent() {
     return (
         <div className="flex h-screen flex-col overflow-hidden">
             <AppHeader
-                section={t.app.idolPlanner}
-                sectionBadge={t.app.subtitle}
+                section={t("app.idolPlanner")}
+                sectionBadge={t("app.subtitle")}
                 tools={
                     <span className="hidden sm:inline">
                         <LocaleSwitcher />
@@ -106,7 +106,7 @@ function HomeContent() {
                     sets={sets.sets}
                     activeSetId={sets.activeSetId}
                     onSelectSet={sets.selectSet}
-                    onCreateSet={() => sets.createSet(t.idolSet.defaultName)}
+                    onCreateSet={() => sets.createSet(t("idolSet.defaultName"))}
                     onRenameSet={sets.renameSet}
                     onDuplicateSet={sets.duplicateSet}
                     onDeleteSet={sets.deleteSet}
@@ -123,7 +123,7 @@ function HomeContent() {
                                     onClick={() => setModsSearchOpen(true)}
                                 >
                                     <BookOpen className="mr-1 h-4 w-4" />
-                                    {t.inventory.browseMods || "Browse Mods"}
+                                    {t("inventory.browseMods")}
                                 </Button>
                                 <LeagueSelector />
                             </CardContent>
@@ -145,7 +145,7 @@ function HomeContent() {
                     <section className="flex flex-col items-center gap-4 overflow-x-auto">
                         <Button variant="outline" size="sm" onClick={() => setShareModalOpen(true)}>
                             <Share2 className="mr-1 h-4 w-4" />
-                            {t.actions.share}
+                            {t("actions.share")}
                         </Button>
                         {activeSet && (
                             <>

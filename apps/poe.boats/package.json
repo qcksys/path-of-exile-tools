@@ -16,6 +16,7 @@
         "types:cf": "wrangler types --env-interface CloudflareBindings",
         "types:rr": "react-router typegen",
         "types:tsc": "tsc -b",
+        "check:locales": "node scripts/check-locales.mjs",
         "precommit": "pnpm run biome:ci && pnpm run types"
     },
     "dependencies": {
@@ -33,6 +34,9 @@
         "cmdk": "catalog:",
         "date-fns": "^4.1.0",
         "drizzle-orm": "catalog:",
+        "i18next": "catalog:",
+        "i18next-browser-languagedetector": "catalog:",
+        "i18next-resources-to-backend": "catalog:",
         "isbot": "^5.1.39",
         "ky": "catalog:",
         "lucide-react": "^1.9.0",
@@ -41,6 +45,7 @@
         "pino": "catalog:",
         "react": "^19.2.5",
         "react-dom": "^19.2.5",
+        "react-i18next": "catalog:",
         "react-router": "^7.14.2",
         "remix-themes": "catalog:",
         "shadcn": "catalog:",

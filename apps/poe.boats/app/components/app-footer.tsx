@@ -7,7 +7,7 @@ export function AppFooter() {
         <footer className="border-border border-t bg-background/50 py-3">
             <div className="container mx-auto flex items-center justify-center px-4">
                 <p className="text-muted-foreground text-sm">
-                    {t.footer.dataFrom}{" "}
+                    {t("footer.dataFrom")}{" "}
                     <a
                         href="https://poe.ninja"
                         target="_blank"

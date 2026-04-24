@@ -90,7 +90,7 @@ function ModSlot({
     onValueChange,
 }: ModSlotProps) {
     const t = useTranslations();
-    const selectedTier = mod?.modOption.tiers.find((t) => t.tier === mod.tier);
+    const selectedTier = mod?.modOption.tiers.find((tier) => tier.tier === mod.tier);
     const valueRange = selectedTier?.values?.[0];
 
     const handleModSelect = (modOption: ModifierOption | null) => {
@@ -109,8 +109,8 @@ function ModSlot({
 
     const slotLabel =
         type === "prefix"
-            ? (t.editor?.prefixSlot || "Prefix {index}").replace("{index}", String(index + 1))
-            : (t.editor?.suffixSlot || "Suffix {index}").replace("{index}", String(index + 1));
+            ? t("editor.prefixSlot", { index: index + 1 })
+            : t("editor.suffixSlot", { index: index + 1 });
 
     return (
         <div className="space-y-2 rounded-lg border p-3">
@@ -140,7 +140,7 @@ function ModSlot({
                         >
                             <X className="h-4 w-4" />
                         </TooltipTrigger>
-                        <TooltipContent>{t.actions.clear}</TooltipContent>
+                        <TooltipContent>{t("actions.clear")}</TooltipContent>
                     </Tooltip>
                 )}
             </div>
@@ -156,15 +156,12 @@ function ModSlot({
                                 }}
                             >
                                 <SelectTrigger className="w-24">
-                                    <SelectValue placeholder={t.editor.tier} />
+                                    <SelectValue placeholder={t("editor.tier")} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {mod.modOption.tiers.map((tier) => (
                                         <SelectItem key={tier.tier} value={String(tier.tier)}>
-                                            {(t.editor?.tierLabel || "T{tier}").replace(
-                                                "{tier}",
-                                                String(tier.tier),
-                                            )}
+                                            {t("editor.tierLabel", { tier: tier.tier })}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -318,7 +315,7 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
             const next = [...prev];
             const mod = next[index];
             if (mod) {
-                const tierData = mod.modOption.tiers.find((t) => t.tier === tier);
+                const tierData = mod.modOption.tiers.find((td) => td.tier === tier);
                 next[index] = {
                     ...mod,
                     tier,
@@ -353,7 +350,7 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
     }, []);
 
     const convertToIdolModifier = (mod: SelectedMod): IdolModifier => {
-        const tierData = mod.modOption.tiers.find((t) => t.tier === mod.tier);
+        const tierData = mod.modOption.tiers.find((tier) => tier.tier === mod.tier);
         return {
             modId: mod.modOption.id,
             type: mod.modOption.type,
@@ -439,16 +436,16 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
             <DialogContent className="flex max-h-[85vh] max-w-250 flex-col overflow-hidden">
                 <DialogHeader>
                     <DialogTitle>
-                        {initialIdol ? t.editor.editIdol : t.editor.createIdol}
+                        {initialIdol ? t("editor.editIdol") : t("editor.createIdol")}
                     </DialogTitle>
-                    <DialogDescription>{t.editor.description}</DialogDescription>
+                    <DialogDescription>{t("editor.description")}</DialogDescription>
                 </DialogHeader>
 
                 <ScrollArea className="h-0 flex-1 pr-4">
                     <div className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <span className="font-medium text-sm">{t.editor.baseType}</span>
+                                <span className="font-medium text-sm">{t("editor.baseType")}</span>
                                 <Select
                                     value={editorMode === "unique" ? "unique" : baseType}
                                     onValueChange={(v: string | null) => {
@@ -462,7 +459,7 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
                                         }
                                     }}
                                 >
-                                    <SelectTrigger aria-label={t.editor.baseType}>
+                                    <SelectTrigger aria-label={t("editor.baseType")}>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -486,7 +483,7 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
                                                     className="h-5 w-5 object-contain"
                                                 />
                                                 <span>
-                                                    {t.editor.uniqueIdols || "Unique Idols"}
+                                                    {t("editor.uniqueIdols")}
                                                 </span>
                                             </div>
                                         </SelectItem>
@@ -499,13 +496,13 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
                                         htmlFor="idol-editor-name"
                                         className="font-medium text-sm"
                                     >
-                                        {t.editor.name} ({t.editor.optional})
+                                        {t("editor.name")} ({t("editor.optional")})
                                     </label>
                                     <Input
                                         id="idol-editor-name"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        placeholder={t.editor.namePlaceholder}
+                                        placeholder={t("editor.namePlaceholder")}
                                     />
                                 </div>
                             )}
@@ -515,7 +512,7 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
                             <>
                                 <div className="space-y-2">
                                     <span className="font-medium text-sm">
-                                        {t.editor.selectUniqueIdol || "Select a unique idol"}
+                                        {t("editor.selectUniqueIdol")}
                                     </span>
                                     <Popover open={uniqueIdolOpen} onOpenChange={setUniqueIdolOpen}>
                                         <PopoverTrigger
@@ -530,8 +527,7 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
                                         >
                                             {selectedUniqueIdol
                                                 ? getUniqueIdolName(selectedUniqueIdol, locale)
-                                                : t.editor.selectUniqueIdol ||
-                                                  "Select a unique idol..."}
+                                                : t("editor.selectUniqueIdol")}
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </PopoverTrigger>
                                         <PopoverContent className="w-[500px] p-0">
@@ -552,8 +548,7 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
                                                 <CommandInput placeholder="Search unique idols..." />
                                                 <CommandList className="max-h-80">
                                                     <CommandEmpty>
-                                                        {t.editor.noUniqueIdolsFound ||
-                                                            "No unique idols found."}
+                                                        {t("editor.noUniqueIdolsFound")}
                                                     </CommandEmpty>
                                                     {UNIQUE_IDOLS.map((idol) => {
                                                         const base =
@@ -643,7 +638,7 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
                             <>
                                 <div className="space-y-2">
                                     <span className="font-medium text-sm">
-                                        {t.editor.filterByMechanic}
+                                        {t("editor.filterByMechanic")}
                                     </span>
                                     <MultiMechanicFilter
                                         value={mechanicFilter}
@@ -654,7 +649,7 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
                                 <WeightFilterAccordion />
 
                                 <div className="space-y-4">
-                                    <h4 className="font-medium text-sm">{t.editor.prefixes}</h4>
+                                    <h4 className="font-medium text-sm">{t("editor.prefixes")}</h4>
                                     {prefixes.map((mod, i) => (
                                         <ModSlot
                                             key={`prefix-${i}`}
@@ -676,7 +671,7 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
                                 </div>
 
                                 <div className="space-y-4">
-                                    <h4 className="font-medium text-sm">{t.editor.suffixes}</h4>
+                                    <h4 className="font-medium text-sm">{t("editor.suffixes")}</h4>
                                     {suffixes.map((mod, i) => (
                                         <ModSlot
                                             key={`suffix-${i}`}
@@ -703,10 +698,10 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        {t.actions.cancel}
+                        {t("actions.cancel")}
                     </Button>
                     <Button onClick={handleSave} disabled={!canSave}>
-                        {t.actions.save}
+                        {t("actions.save")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

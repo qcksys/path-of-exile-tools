@@ -1,115 +1,63 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
-import deTranslations from "~/i18n/locales/de.json";
-import enTranslations from "~/i18n/locales/en.json";
-import esTranslations from "~/i18n/locales/es.json";
-import frTranslations from "~/i18n/locales/fr.json";
-import jaTranslations from "~/i18n/locales/ja.json";
-import koTranslations from "~/i18n/locales/ko.json";
-import ptBRTranslations from "~/i18n/locales/pt-BR.json";
-import ruTranslations from "~/i18n/locales/ru.json";
-import zhCNTranslations from "~/i18n/locales/zh-CN.json";
-import zhTWTranslations from "~/i18n/locales/zh-TW.json";
-import type { SupportedLocale, Translations } from "~/i18n/types";
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "~/i18n/types";
-
-const translations: Record<SupportedLocale, Translations> = {
-    en: enTranslations,
-    "zh-TW": zhTWTranslations,
-    "zh-CN": zhCNTranslations,
-    ko: koTranslations,
-    ja: jaTranslations,
-    ru: ruTranslations,
-    "pt-BR": ptBRTranslations,
-    de: deTranslations,
-    fr: frTranslations,
-    es: esTranslations,
-};
+import i18n, { type TFunction } from "i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
+import resourcesToBackend from "i18next-resources-to-backend";
+import { useTranslation, initReactI18next } from "react-i18next";
+import en from "~/i18n/locales/en.json";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from "~/i18n/types";
 
 const STORAGE_KEY = "poe-idol-planner-locale";
 
-function detectLocale(): SupportedLocale {
-    if (typeof window === "undefined") return DEFAULT_LOCALE;
+// `en` is bundled statically so SSR and the fallback chain are synchronous.
+// Other locales are loaded on demand — Vite turns each `locales/*.json` into
+// its own chunk, so a user visiting in English never pays for Japanese, etc.
+const lazyBackend = resourcesToBackend(async (language: string) => {
+    if (language === "en") return en;
+    if (!(SUPPORTED_LOCALES as readonly string[]).includes(language)) return {};
+    const mod = await import(`./locales/${language}.json`);
+    return mod.default;
+});
 
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored && SUPPORTED_LOCALES.includes(stored as SupportedLocale)) {
-        return stored as SupportedLocale;
-    }
+if (!i18n.isInitialized) {
+    const chain =
+        typeof window === "undefined"
+            ? i18n.use(lazyBackend).use(initReactI18next)
+            : i18n.use(lazyBackend).use(LanguageDetector).use(initReactI18next);
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlLocale = urlParams.get("lang");
-    if (urlLocale && SUPPORTED_LOCALES.includes(urlLocale as SupportedLocale)) {
-        return urlLocale as SupportedLocale;
-    }
-
-    const browserLocale = navigator.language;
-    const exactMatch = SUPPORTED_LOCALES.find((l) => l === browserLocale);
-    if (exactMatch) return exactMatch;
-
-    const langPrefix = browserLocale.split("-")[0];
-    const prefixMatch = SUPPORTED_LOCALES.find((l) => l.split("-")[0] === langPrefix);
-    if (prefixMatch) return prefixMatch;
-
-    return DEFAULT_LOCALE;
+    chain.init({
+        resources: { en: { translation: en } },
+        fallbackLng: DEFAULT_LOCALE,
+        supportedLngs: [...SUPPORTED_LOCALES],
+        partialBundledLanguages: true,
+        detection: {
+            order: ["querystring", "localStorage", "navigator"],
+            lookupQuerystring: "lang",
+            lookupLocalStorage: STORAGE_KEY,
+            caches: ["localStorage"],
+        },
+        interpolation: { escapeValue: false },
+        react: { useSuspense: false },
+        returnNull: false,
+    });
 }
 
-interface I18nContextValue {
-    locale: SupportedLocale;
-    setLocale: (locale: SupportedLocale) => void;
-    t: Translations;
-}
+export { i18n };
 
-const I18N_CONTEXT = createContext<I18nContextValue | null>(null);
-
-export function I18nProvider({ children }: { children: ReactNode }) {
-    const [locale, setLocaleState] = useState<SupportedLocale>(DEFAULT_LOCALE);
-    const [isHydrated, setIsHydrated] = useState(false);
-
-    useEffect(() => {
-        setLocaleState(detectLocale());
-        setIsHydrated(true);
-    }, []);
-
-    const setLocale = useCallback((newLocale: SupportedLocale) => {
-        setLocaleState(newLocale);
-        localStorage.setItem(STORAGE_KEY, newLocale);
-    }, []);
-
-    const t = translations[locale];
-
-    if (!isHydrated) {
-        return (
-            <I18N_CONTEXT.Provider
-                value={{
-                    locale: DEFAULT_LOCALE,
-                    setLocale,
-                    t: translations[DEFAULT_LOCALE],
-                }}
-            >
-                {children}
-            </I18N_CONTEXT.Provider>
-        );
-    }
-
-    return (
-        <I18N_CONTEXT.Provider value={{ locale, setLocale, t }}>{children}</I18N_CONTEXT.Provider>
-    );
-}
-
-export function useI18n(): I18nContextValue {
-    const context = useContext(I18N_CONTEXT);
-    if (!context) {
-        throw new Error("useI18n must be used within an I18nProvider");
-    }
-    return context;
-}
-
-export function useTranslations(): Translations {
-    return useI18n().t;
+export function useTranslations(): TFunction {
+    return useTranslation().t;
 }
 
 export function useLocale(): SupportedLocale {
-    return useI18n().locale;
+    return useTranslation().i18n.language as SupportedLocale;
 }
 
-export type { SupportedLocale, Translations };
+export function useI18n() {
+    const { t, i18n: inst } = useTranslation();
+    return {
+        t,
+        locale: inst.language as SupportedLocale,
+        setLocale: (next: SupportedLocale) => inst.changeLanguage(next),
+    };
+}
+
+export type { SupportedLocale };
 export { DEFAULT_LOCALE, SUPPORTED_LOCALES };
