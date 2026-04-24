@@ -97,3 +97,14 @@ This project uses **Biome** (not Oxlint/Oxfmt) for linting and formatting. The r
 
 Do **not** use `vp lint` / `vp fmt` / `vp check` for this repo — those invoke Vite+'s built-in Oxlint/Oxfmt and will disagree with Biome's rules. The `vp run <script>` form is required to hit the custom Biome scripts (per the "Running scripts" pitfall above).
 
+## Always use Vite+ (`vp`) for all tooling
+
+**Never** invoke `npx`, `pnpm exec`, `pnpm dlx`, `yarn`, or a raw package binary directly. Always go through Vite+:
+
+- To run a local binary (e.g. `biome`, `tsc`, `vitest` directly) use `vp exec <bin> [args]`.
+- To run a binary that isn't installed, use `vp dlx <pkg>`.
+- To run a package-manager command, use `vp pm <cmd>`; dependency operations go through `vp add` / `vp remove` / `vp update`.
+- To run a project script, use `vp run <script>`.
+
+This applies even for read-only/diagnostic commands — e.g. use `vp exec biome check --max-diagnostics=200`, not `npx biome`.
+
