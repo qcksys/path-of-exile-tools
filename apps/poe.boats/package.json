@@ -35,7 +35,6 @@
         "date-fns": "^4.1.0",
         "drizzle-orm": "catalog:",
         "i18next": "catalog:",
-        "i18next-browser-languagedetector": "catalog:",
         "i18next-resources-to-backend": "catalog:",
         "isbot": "^5.1.39",
         "ky": "catalog:",

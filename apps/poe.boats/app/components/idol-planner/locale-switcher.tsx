@@ -22,14 +22,28 @@ const LOCALE_NAMES: Record<SupportedLocale, string> = {
     es: "Español",
 };
 
+const LOCALE_COOKIE_NAME = "poe-locale";
+const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+
+function persistLocaleCookie(locale: SupportedLocale) {
+    if (typeof document === "undefined") return;
+    document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(locale)}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
+}
+
 export function LocaleSwitcher() {
     const { locale, setLocale } = useI18n();
     const t = useTranslations();
 
+    const handleChange = (value: SupportedLocale | null) => {
+        if (!value) return;
+        persistLocaleCookie(value);
+        setLocale(value);
+    };
+
     return (
         <Tooltip>
             <TooltipTrigger render={<div />}>
-                <Select value={locale} onValueChange={(v) => setLocale(v as SupportedLocale)}>
+                <Select value={locale} onValueChange={handleChange}>
                     <SelectTrigger className="w-[140px]">
                         <Globe className="mr-2 h-4 w-4" />
                         <SelectValue />

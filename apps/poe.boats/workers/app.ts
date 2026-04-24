@@ -1,6 +1,7 @@
 import { createRequestHandler, RouterContextProvider } from "react-router";
-import { dbContext, envContext, exeContext, serverTimingContext } from "~/context";
+import { dbContext, envContext, exeContext, localeContext, serverTimingContext } from "~/context";
 import { createDbConnection } from "~/db/client.ts";
+import { detectLocale } from "~/lib/locale.server.ts";
 import { handleScheduled } from "~/scheduled/index.ts";
 import { ServerTiming } from "~/services/server_timing.server.ts";
 
@@ -26,6 +27,7 @@ export default {
         context.set(exeContext, executionContext);
         context.set(dbContext, db);
         context.set(serverTimingContext, timing);
+        context.set(localeContext, detectLocale(request));
 
         // Strip body from GET/HEAD requests to work around Cloudflare Workers + React Router issue
         // Some bots send GET requests with Content-Length headers, which causes React Router's
