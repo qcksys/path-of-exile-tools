@@ -5,10 +5,10 @@ export default [
     route("login", "routes/login.tsx"),
     route("account", "routes/account.tsx"),
     route("action/set-theme", "routes/action.set-theme.ts"),
+    route("changelog", "routes/changelog.tsx"),
     ...prefix("api", [route("auth/*", "routes/api.auth.$.ts")]),
     ...prefix("idol-planner", [
         index("routes/idol-planner/home.tsx"),
-        route("changelog", "routes/idol-planner/changelog.tsx"),
         route("share/:id", "routes/idol-planner/share.$id.tsx"),
         route("api/share", "routes/idol-planner/api.share.ts"),
         route("api/share/:id", "routes/idol-planner/api.share.$id.ts"),

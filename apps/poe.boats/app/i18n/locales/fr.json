@@ -1,6 +1,6 @@
 {
     "app": {
-        "title": "POE Planificateur d'Idoles",
+        "idolPlanner": "Planificateur d'Idoles",
         "subtitle": "Héritage de Phrecia"
     },
     "nav": {

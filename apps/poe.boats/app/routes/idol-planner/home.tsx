@@ -1,12 +1,13 @@
 import { BookOpen, Share2 } from "lucide-react";
 import { useState } from "react";
-import { AppFooter } from "~/components/idol-planner/app-footer";
-import { AppHeader } from "~/components/idol-planner/app-header";
+import { AppFooter } from "~/components/app-footer";
+import { AppHeader } from "~/components/app-header";
 import { IdolEditor } from "~/components/idol-planner/idol-editor";
 import { IdolGrid } from "~/components/idol-planner/idol-grid";
 import { ImportModal } from "~/components/idol-planner/import-modal";
 import { InventoryPanel } from "~/components/idol-planner/inventory-panel";
 import { LeagueSelector } from "~/components/idol-planner/league-selector";
+import { LocaleSwitcher } from "~/components/idol-planner/locale-switcher";
 import { MapDeviceComponent } from "~/components/idol-planner/map-device";
 import { ModsSearchModal } from "~/components/idol-planner/mods-search-modal";
 import { SetTabs } from "~/components/idol-planner/set-tabs";
@@ -21,7 +22,7 @@ import { LeagueProvider } from "~/context/league-context";
 import { ScarabPricesProvider } from "~/context/scarab-prices-context";
 import { TradeSettingsProvider } from "~/context/trade-settings-context";
 import { usePlannerState } from "~/hooks/use-planner-state";
-import { I18nProvider, useTranslations } from "~/i18n";
+import { useTranslations } from "~/i18n";
 import type { IdolInstance } from "~/schemas/idol";
 import type { InventoryIdol } from "~/schemas/inventory";
 import type { Route } from "./+types/home";
@@ -90,7 +91,15 @@ function HomeContent() {
 
     return (
         <div className="flex h-screen flex-col overflow-hidden">
-            <AppHeader />
+            <AppHeader
+                section={t.app.idolPlanner}
+                sectionBadge={t.app.subtitle}
+                tools={
+                    <span className="hidden sm:inline">
+                        <LocaleSwitcher />
+                    </span>
+                }
+            />
 
             <main className="container mx-auto flex min-h-0 flex-1 flex-col p-4">
                 <SetTabs
@@ -204,20 +213,18 @@ function HomeContent() {
 
 export default function IdolPlannerHome(_props: Route.ComponentProps) {
     return (
-        <I18nProvider>
-            <LeagueProvider>
-                <ScarabPricesProvider>
-                    <TradeSettingsProvider>
-                        <FavoritesProvider>
-                            <ClipboardProvider>
-                                <DndProvider>
-                                    <HomeContent />
-                                </DndProvider>
-                            </ClipboardProvider>
-                        </FavoritesProvider>
-                    </TradeSettingsProvider>
-                </ScarabPricesProvider>
-            </LeagueProvider>
-        </I18nProvider>
+        <LeagueProvider>
+            <ScarabPricesProvider>
+                <TradeSettingsProvider>
+                    <FavoritesProvider>
+                        <ClipboardProvider>
+                            <DndProvider>
+                                <HomeContent />
+                            </DndProvider>
+                        </ClipboardProvider>
+                    </FavoritesProvider>
+                </TradeSettingsProvider>
+            </ScarabPricesProvider>
+        </LeagueProvider>
     );
 }

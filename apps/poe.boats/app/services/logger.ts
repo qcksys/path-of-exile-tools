@@ -1,7 +1,6 @@
 import { env } from "cloudflare:workers";
-import pino from "pino";
+import { createLogger } from "@qcksys/pino-cloudflare";
 
-export const logger = pino({
+export const logger = createLogger({
     level: env.LOG_LEVEL ?? "warn",
-    browser: { asObject: true },
 });

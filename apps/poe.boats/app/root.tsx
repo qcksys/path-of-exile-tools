@@ -13,6 +13,7 @@ import { PreventFlashOnWrongTheme, Theme, ThemeProvider, useTheme } from "remix-
 import type { Route } from "./+types/root";
 import "./app.css";
 import { Toaster } from "~/components/ui/sonner";
+import { I18nProvider } from "~/i18n";
 import { themeSessionResolver } from "~/sessions.server";
 
 export const links: Route.LinksFunction = () => [
@@ -53,7 +54,9 @@ export function Layout({ children }: { children: ReactNode }) {
 
     return (
         <ThemeProvider specifiedTheme={theme} themeAction="/action/set-theme">
-            <InnerLayout>{children}</InnerLayout>
+            <I18nProvider>
+                <InnerLayout>{children}</InnerLayout>
+            </I18nProvider>
         </ThemeProvider>
     );
 }

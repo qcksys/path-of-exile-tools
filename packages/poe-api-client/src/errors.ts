@@ -5,11 +5,11 @@ import type { RateLimitInfo } from "./rate_limit.ts";
  * responses. Not all endpoints populate every field.
  */
 export interface PoeErrorBody {
-  error?: {
-    code?: number;
-    message?: string;
-  };
-  [key: string]: unknown;
+    error?: {
+        code?: number;
+        message?: string;
+    };
+    [key: string]: unknown;
 }
 
 /**
@@ -19,31 +19,31 @@ export interface PoeErrorBody {
  * rate-limit headers so callers can decide whether to retry.
  */
 export class PoeApiError extends Error {
-  override readonly name = "PoeApiError";
-  readonly status: number;
-  readonly statusText: string;
-  readonly response: Response;
-  readonly body: PoeErrorBody | string | undefined;
-  readonly rateLimit: RateLimitInfo;
+    override readonly name = "PoeApiError";
+    readonly status: number;
+    readonly statusText: string;
+    readonly response: Response;
+    readonly body: PoeErrorBody | string | undefined;
+    readonly rateLimit: RateLimitInfo;
 
-  constructor(init: {
-    status: number;
-    statusText: string;
-    response: Response;
-    body: PoeErrorBody | string | undefined;
-    rateLimit: RateLimitInfo;
-  }) {
-    const codeMessage =
-      typeof init.body === "object" && init.body?.error?.message
-        ? init.body.error.message
-        : init.statusText;
-    super(`PoE API ${init.status} ${init.statusText}: ${codeMessage}`);
-    this.status = init.status;
-    this.statusText = init.statusText;
-    this.response = init.response;
-    this.body = init.body;
-    this.rateLimit = init.rateLimit;
-  }
+    constructor(init: {
+        status: number;
+        statusText: string;
+        response: Response;
+        body: PoeErrorBody | string | undefined;
+        rateLimit: RateLimitInfo;
+    }) {
+        const codeMessage =
+            typeof init.body === "object" && init.body?.error?.message
+                ? init.body.error.message
+                : init.statusText;
+        super(`PoE API ${init.status} ${init.statusText}: ${codeMessage}`);
+        this.status = init.status;
+        this.statusText = init.statusText;
+        this.response = init.response;
+        this.body = init.body;
+        this.rateLimit = init.rateLimit;
+    }
 }
 
 /**
@@ -51,8 +51,8 @@ export class PoeApiError extends Error {
  * Returns `true` for HTTP 429 or any response that advertised `Retry-After`.
  */
 export function isRateLimited(err: unknown): err is PoeApiError {
-  return (
-    err instanceof PoeApiError &&
-    (err.status === 429 || err.rateLimit.retryAfterSeconds !== undefined)
-  );
+    return (
+        err instanceof PoeApiError &&
+        (err.status === 429 || err.rateLimit.retryAfterSeconds !== undefined)
+    );
 }
