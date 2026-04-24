@@ -27,6 +27,7 @@ const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 function persistLocaleCookie(locale: SupportedLocale) {
     if (typeof document === "undefined") return;
+    // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API lacks Safari support; a synchronous document.cookie write is intentional here
     document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(locale)}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
 }
 

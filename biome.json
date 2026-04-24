@@ -83,7 +83,8 @@
         {
             "includes": [
                 "packages/poe-api-client/src/types.ts",
-                "packages/poe-api-client/src/oauth.ts"
+                "packages/poe-api-client/src/oauth.ts",
+                "apps/poe.boats/scripts/**"
             ],
             "linter": {
                 "rules": {

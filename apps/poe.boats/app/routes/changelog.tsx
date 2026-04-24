@@ -21,6 +21,7 @@ export default function Changelog(_props: Route.ComponentProps) {
                 <article
                     className="prose prose-neutral dark:prose-invert max-w-none"
                     // biome-ignore lint/security/noDangerouslySetInnerHtml: HTML is compiled from a trusted markdown file at build time
+                    // biome-ignore lint/style/useNamingConvention: React's dangerouslySetInnerHTML requires __html
                     dangerouslySetInnerHTML={{ __html: changelogHtml }}
                 />
             </main>
