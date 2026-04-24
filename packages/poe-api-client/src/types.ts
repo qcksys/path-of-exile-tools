@@ -505,7 +505,12 @@ export interface CurrencyMarket {
  * > Be aware that we may, at a later date, remove old history entries.
  */
 export interface CurrencyExchangeSnapshot {
-  /** Unix timestamp truncated to the hour. */
+  /**
+   * Unix timestamp (seconds, hour-aligned) of the *next* hour to fetch.
+   * Feed this back as the `id` query parameter on the next request to
+   * paginate forward. When `next_change_id` equals the `id` you sent, the
+   * stream has no newer hour yet — wait for the next hourly boundary.
+   */
   next_change_id: number;
   markets: CurrencyMarket[];
 }

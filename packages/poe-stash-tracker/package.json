@@ -1,0 +1,28 @@
+{
+  "name": "@poe-tools/stash-tracker",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Boss-drop price/availability tracker — psapi + cxapi ingestor with local SQLite.",
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*"
+  },
+  "scripts": {
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "ingest:cx": "node src/ingest_cx.ts",
+    "ingest:ps": "node src/ingest_ps.ts",
+    "leagues": "node src/list_leagues.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@poe-tools/api-client": "workspace:*",
+    "better-sqlite3": "^12.4.1",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "drizzle-kit": "catalog:",
+    "typescript": "catalog:"
+  }
+}
