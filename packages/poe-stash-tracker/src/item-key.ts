@@ -12,11 +12,11 @@ import type { Item } from "@poe-tools/api-client";
  * back to baseType only when the icon URL can't be decoded.
  */
 export function itemKey(item: Item, iconAsset?: string | null): string {
-  if (!item.identified) {
-    return `unid:${iconAsset ?? item.baseType}`;
-  }
-  const parts = [item.name];
-  if (item.corrupted) parts.push("corrupted");
-  if (item.foilVariation !== undefined) parts.push(`foil:${item.foilVariation}`);
-  return parts.join("|");
+    if (!item.identified) {
+        return `unid:${iconAsset ?? item.baseType}`;
+    }
+    const parts = [item.name];
+    if (item.corrupted) parts.push("corrupted");
+    if (item.foilVariation !== undefined) parts.push(`foil:${item.foilVariation}`);
+    return parts.join("|");
 }

@@ -1,2 +1,1 @@
 vp exec biome check --staged --no-errors-on-unmatched
-vp staged
