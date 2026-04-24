@@ -2,6 +2,7 @@ import { Mail } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { siGithub } from "simple-icons";
+import { LocaleSwitcher } from "~/components/idol-planner/locale-switcher";
 import { ModeToggle } from "~/components/idol-planner/mode-toggle";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
@@ -45,6 +46,9 @@ export function AppHeader({ section, sectionBadge, tools }: AppHeaderProps = {})
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           {tools}
+          <span className="hidden sm:inline">
+            <LocaleSwitcher />
+          </span>
           <ModeToggle />
           <Tooltip>
             <TooltipTrigger

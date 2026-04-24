@@ -1,7 +1,6 @@
 packages:
-  - apps/poe.boats
   - packages/*
-  #  - apps/*
+  - apps/*
 allowBuilds:
   esbuild: true
   msw: true
