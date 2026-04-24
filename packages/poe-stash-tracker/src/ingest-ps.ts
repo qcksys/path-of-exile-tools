@@ -3,7 +3,7 @@ import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { createPoeClient, LEAGUE, REALM } from "#src/auth.ts";
 import { type Db, openDb } from "#src/db.ts";
 import { decodeIconAsset } from "#src/icon.ts";
-import { itemKey } from "#src/item_key.ts";
+import { itemKey } from "#src/item-key.ts";
 import { extractListingPrice } from "#src/price.ts";
 import { tIconBasemap, tListing, tStreamCursor } from "#src/schema.ts";
 import { matches } from "#src/watchlist.ts";

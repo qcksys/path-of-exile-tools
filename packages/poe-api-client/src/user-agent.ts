@@ -11,17 +11,17 @@
  * @see https://www.pathofexile.com/developer/docs/index
  */
 export interface UserAgentParts {
-    /** OAuth `client_id` registered with GGG. */
-    clientId: string;
-    /** Semver-ish version of your application. */
-    version: string;
-    /** Contact email or URL GGG can reach you at. */
-    contact: string;
-    /** Optional trailing token (e.g. build SHA, platform). */
-    extra?: string;
+  /** OAuth `client_id` registered with GGG. */
+  clientId: string;
+  /** Semver-ish version of your application. */
+  version: string;
+  /** Contact email or URL GGG can reach you at. */
+  contact: string;
+  /** Optional trailing token (e.g. build SHA, platform). */
+  extra?: string;
 }
 
 export function buildUserAgent(parts: UserAgentParts): string {
-    const { clientId, version, contact, extra } = parts;
-    return `OAuth ${clientId}/${version} (contact: ${contact})${extra ? ` ${extra}` : ""}`;
+  const { clientId, version, contact, extra } = parts;
+  return `OAuth ${clientId}/${version} (contact: ${contact})${extra ? ` ${extra}` : ""}`;
 }

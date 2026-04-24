@@ -1,6 +1,6 @@
 import ky, { HTTPError, type KyInstance } from "ky";
 import { PoeApiError, type PoeErrorBody } from "./errors.ts";
-import { parseRateLimit, type RateLimitInfo } from "./rate_limit.ts";
+import { parseRateLimit, type RateLimitInfo } from "./rate-limit.ts";
 import type {
   AccountLeaguesResponse,
   CharacterClassFilter,
@@ -33,7 +33,7 @@ import type {
   StashResponse,
   StashTab,
 } from "./types.ts";
-import { buildUserAgent, type UserAgentParts } from "./user_agent.ts";
+import { buildUserAgent, type UserAgentParts } from "./user-agent.ts";
 
 /**
  * Base URL of the Path of Exile Developer API.

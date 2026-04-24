@@ -2,7 +2,7 @@ import type { Item } from "@poe-tools/api-client";
 import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { openDb } from "#src/db.ts";
 import { decodeIconAsset } from "#src/icon.ts";
-import { itemKey } from "#src/item_key.ts";
+import { itemKey } from "#src/item-key.ts";
 import { tIconBasemap, tListing } from "#src/schema.ts";
 
 /**

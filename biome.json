@@ -89,6 +89,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["apps/poe.boats/app/routes/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": "off"
+          }
+        }
+      }
     }
   ]
 }
