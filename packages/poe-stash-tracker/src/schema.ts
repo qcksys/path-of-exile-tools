@@ -1,3 +1,4 @@
+import type { Item } from "@poe-tools/api-client";
 import { index, integer, primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const tListing = sqliteTable(
@@ -16,6 +17,8 @@ export const tListing = sqliteTable(
     foilVariation: integer(),
     priceAmount: real(),
     priceCurrency: text(),
+    iconAsset: text(),
+    rawItem: text({ mode: "json" }).$type<Item>(),
     firstSeenAt: integer({ mode: "timestamp_ms" }).notNull(),
     lastSeenAt: integer({ mode: "timestamp_ms" }).notNull(),
     removedAt: integer({ mode: "timestamp_ms" }),
@@ -24,8 +27,22 @@ export const tListing = sqliteTable(
     primaryKey({ columns: [t.accountName, t.stashId, t.itemId] }),
     index("listing_item_key_idx").on(t.itemKey, t.league),
     index("listing_active_idx").on(t.removedAt),
+    index("listing_icon_asset_idx").on(t.iconAsset),
   ],
 );
+
+// Asset-path → canonical unique identity. Built from identified uniques
+// observed in the stream; used to resolve unidentified drops that share a
+// baseType with many different uniques (e.g. Cobalt Jewel → Forbidden Flesh
+// vs That Which Was Taken vs Uber Cortex).
+export const tIconBasemap = sqliteTable("icon_basemap", {
+  iconAsset: text().primaryKey(),
+  name: text().notNull(),
+  baseType: text().notNull(),
+  seenCount: integer().notNull().default(1),
+  firstSeenAt: integer({ mode: "timestamp_ms" }).notNull(),
+  lastSeenAt: integer({ mode: "timestamp_ms" }).notNull(),
+});
 
 export const tCurrencyRate = sqliteTable(
   "currency_rate",

@@ -13,6 +13,7 @@
     "ingest:cx": "node src/ingest_cx.ts",
     "ingest:ps": "node src/ingest_ps.ts",
     "leagues": "node src/list_leagues.ts",
+    "build:basemap": "node src/build_basemap.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
