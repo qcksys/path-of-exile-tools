@@ -18,7 +18,7 @@
         "ENVIRONMENT": "local"
     },
     "env": {
-        "worker-prod": {
+        "prod": {
             "name": "poe-dot-boats-prod",
             "observability": {
                 "enabled": true,
@@ -40,7 +40,7 @@
                 "crons": ["*/15 * * * *"]
             }
         },
-        "worker-dev": {
+        "dev": {
             "name": "poe-dot-boats-dev",
             "observability": {
                 "enabled": true,

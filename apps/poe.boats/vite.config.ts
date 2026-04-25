@@ -31,29 +31,34 @@ function embeddedMarkdown(entries: Record<string, string>): Plugin {
     };
 }
 
-export default defineConfig({
-    resolve: {
-        tsconfigPaths: true,
-    },
-    plugins: [
-        embeddedMarkdown({
-            changelog: resolve(import.meta.dirname, "CHANGELOG.md"),
-        }),
-        cloudflare({
-            viteEnvironment: { name: "ssr" },
-        }),
-        tailwindcss(),
-        reactRouter(),
-    ],
-    ssr: {
+export default defineConfig(({ mode }) => {
+    if (mode === "dev" || mode === "prod") {
+        process.env.CLOUDFLARE_ENV = mode;
+    }
+    return {
         resolve: {
-            conditions: ["workerd", "worker", "browser"],
+            tsconfigPaths: true,
         },
-    },
-    server: {
-        cors: {
-            preflightContinue: true,
+        plugins: [
+            embeddedMarkdown({
+                changelog: resolve(import.meta.dirname, "CHANGELOG.md"),
+            }),
+            cloudflare({
+                viteEnvironment: { name: "ssr" },
+            }),
+            tailwindcss(),
+            reactRouter(),
+        ],
+        ssr: {
+            resolve: {
+                conditions: ["workerd", "worker", "browser"],
+            },
         },
-        hmr: true,
-    },
+        server: {
+            cors: {
+                preflightContinue: true,
+            },
+            hmr: true,
+        },
+    };
 });
