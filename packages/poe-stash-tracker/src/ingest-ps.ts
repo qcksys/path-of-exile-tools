@@ -10,7 +10,7 @@ import { matches } from "#src/watchlist.ts";
 
 const STREAM = "psapi";
 const DEFAULT_PAGES = 3;
-const PAGE_DELAY_MS = 1200;
+const PAGE_DELAY_MS = 0;
 
 // When POE_INGEST_ALL=1, the watchlist is bypassed and every item in every
 // matching-league stash is persisted. Useful for exploring raw stream data;
