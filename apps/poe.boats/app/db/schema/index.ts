@@ -8,16 +8,22 @@ import { tIdolPlannerPriceCache } from "~/db/schema/idol-planner.price-cache";
 import { tIdolPlannerSet } from "~/db/schema/idol-planner.set";
 import { tIdolPlannerSharedSet } from "~/db/schema/idol-planner.shared-set";
 import { tIdolPlannerUserPrefs } from "~/db/schema/idol-planner.user-prefs";
+import { tStashBasemapSnapshot } from "~/db/schema/stash.basemap-snapshot";
+import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
+import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 
 export const schema = {
-    tAuthAccount,
-    tAuthSession,
-    tAuthUser,
-    tAuthVerification,
-    tIdolPlannerSet,
-    tIdolPlannerIdol,
-    tIdolPlannerPlacement,
-    tIdolPlannerUserPrefs,
-    tIdolPlannerSharedSet,
-    tIdolPlannerPriceCache,
+  tAuthAccount,
+  tAuthSession,
+  tAuthUser,
+  tAuthVerification,
+  tIdolPlannerSet,
+  tIdolPlannerIdol,
+  tIdolPlannerPlacement,
+  tIdolPlannerUserPrefs,
+  tIdolPlannerSharedSet,
+  tIdolPlannerPriceCache,
+  tStashUniqueHourly,
+  tStashCurrencyHourly,
+  tStashBasemapSnapshot,
 };

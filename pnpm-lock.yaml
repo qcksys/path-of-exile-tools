@@ -24,6 +24,9 @@ catalogs:
     '@testing-library/react':
       specifier: ^16.3.2
       version: 16.3.2
+    '@types/node':
+      specifier: ^24
+      version: 24.12.2
     class-variance-authority:
       specifier: ^0.7.1
       version: 0.7.1
@@ -285,6 +288,25 @@ importers:
         specifier: 'catalog:'
         version: 0.1.19(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(jsdom@29.0.2(@noble/hashes@2.2.0))(tsx@4.21.0)(typescript@5.9.3)(vite@8.0.1(@emnapi/core@1.9.1)(@emnapi/runtime@1.10.0)(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
 
+  packages/poe-stash-ingest:
+    dependencies:
+      '@duckdb/node-api':
+        specifier: ^1.4.0-r.1
+        version: 1.4.0-r.2
+      '@poe-tools/api-client':
+        specifier: workspace:*
+        version: link:../poe-api-client
+      commander:
+        specifier: ^14.0.0
+        version: 14.0.3
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.12.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
   packages/poe-stash-tracker:
     dependencies:
       '@poe-tools/api-client':
@@ -303,9 +325,6 @@ importers:
       drizzle-kit:
         specifier: 'catalog:'
         version: 1.0.0-beta.21
-      tsx:
-        specifier: ^4.19.2
-        version: 4.21.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -861,6 +880,37 @@ packages:
 
   '@drizzle-team/brocli@0.11.0':
     resolution: {integrity: sha512-hD3pekGiPg0WPCCGAZmusBBJsDqGUR66Y452YgQsZOnkdQ7ViEPKuyP4huUGEZQefp8g34RRodXYmJ2TbCH+tg==}
+
+  '@duckdb/node-api@1.4.0-r.2':
+    resolution: {integrity: sha512-kt5598+3L1TiSUCyNZ5Zh12hHIQeAzUj51CXKXycQaobEf3KooXZJhjiM1RkELKoGW+GeRotgPw2QUoIyeaWVg==}
+
+  '@duckdb/node-bindings-darwin-arm64@1.4.0-r.2':
+    resolution: {integrity: sha512-WaTZhpodKIKROqPC5b3l00rSa1xdnZUmPqngGEJlRSR/YeOGnh1J1ONx5o3q9vkbbzSbsk7POtFwTbmJCvrIDw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@duckdb/node-bindings-darwin-x64@1.4.0-r.2':
+    resolution: {integrity: sha512-dSCGn4ZV8R7vCdnlJpOfadNtf9YqvpdAGo4CC48O7uRbargDIGQ4lpRJUSAoKsvxC63p3aG3p19regFpRbJqMA==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@duckdb/node-bindings-linux-arm64@1.4.0-r.2':
+    resolution: {integrity: sha512-xB3xI5QcUC7LiyKPFZOYam5nV31SkgGTHazC58sACBB7OSpjBTxD0+EKdTOOA3IymR+mZ7WCPCLfKhyemreqbQ==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@duckdb/node-bindings-linux-x64@1.4.0-r.2':
+    resolution: {integrity: sha512-t1tuDc2FBdj1hRuP1rtoPoIhnDgMYSMFh1R/OmNbtbvI2K4RIMICp8ya6/RiP2NGyXk9A+NMDooi9kLuNQmlvQ==}
+    cpu: [x64]
+    os: [linux]
+
+  '@duckdb/node-bindings-win32-x64@1.4.0-r.2':
+    resolution: {integrity: sha512-aoJHj+EumU2bLKMxk5OpJrD12KREt/o3FF3GaAkhFsQZc95AKWqdOkp3BWGaMqGq7A7cWoqSKBHxMHAlZI9z0A==}
+    cpu: [x64]
+    os: [win32]
+
+  '@duckdb/node-bindings@1.4.0-r.2':
+    resolution: {integrity: sha512-FZEWyV16aQix8rD2BZtcnY3EFw4i+1xP8WRbo1UampJve7krrLV4t9jMSmh4r+Nc5BRJ006A4/jwD6OpNhbR2g==}
 
   '@ecies/ciphers@0.2.6':
     resolution: {integrity: sha512-patgsRPKGkhhoBjETV4XxD0En4ui5fbX0hzayqI3M8tvNMGUoUvmyYAIWwlxBc1KX5cturfqByYdj5bYGRpN9g==}
@@ -6067,6 +6117,33 @@ snapshots:
       yocto-spinner: 1.1.0
 
   '@drizzle-team/brocli@0.11.0': {}
+
+  '@duckdb/node-api@1.4.0-r.2':
+    dependencies:
+      '@duckdb/node-bindings': 1.4.0-r.2
+
+  '@duckdb/node-bindings-darwin-arm64@1.4.0-r.2':
+    optional: true
+
+  '@duckdb/node-bindings-darwin-x64@1.4.0-r.2':
+    optional: true
+
+  '@duckdb/node-bindings-linux-arm64@1.4.0-r.2':
+    optional: true
+
+  '@duckdb/node-bindings-linux-x64@1.4.0-r.2':
+    optional: true
+
+  '@duckdb/node-bindings-win32-x64@1.4.0-r.2':
+    optional: true
+
+  '@duckdb/node-bindings@1.4.0-r.2':
+    optionalDependencies:
+      '@duckdb/node-bindings-darwin-arm64': 1.4.0-r.2
+      '@duckdb/node-bindings-darwin-x64': 1.4.0-r.2
+      '@duckdb/node-bindings-linux-arm64': 1.4.0-r.2
+      '@duckdb/node-bindings-linux-x64': 1.4.0-r.2
+      '@duckdb/node-bindings-win32-x64': 1.4.0-r.2
 
   '@ecies/ciphers@0.2.6(@noble/ciphers@1.3.0)':
     dependencies:

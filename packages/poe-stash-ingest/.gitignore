@@ -1,0 +1,4 @@
+data.duckdb
+data.duckdb.wal
+data.duckdb.tmp/
+.env
