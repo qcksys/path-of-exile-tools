@@ -28,10 +28,14 @@ export async function ingestCx(
   opts: { fromHour?: number; catchUp: boolean },
 ): Promise<CxIngestResult[]> {
   const results: CxIngestResult[] = [];
-  let id =
-    opts.fromHour ??
-    Number((await getCursor(conn, STREAM)) ?? String(previousHour())) ??
-    previousHour();
+  let id: number;
+  if (opts.fromHour !== undefined) {
+    id = opts.fromHour;
+  } else {
+    const cursorStr = await getCursor(conn, STREAM);
+    const cursorNum = cursorStr !== undefined ? Number(cursorStr) : Number.NaN;
+    id = Number.isFinite(cursorNum) ? cursorNum : previousHour();
+  }
 
   while (true) {
     const snap = await client.public.currencyExchange({ realm: REALM, id });

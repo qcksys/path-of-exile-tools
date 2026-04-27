@@ -198,8 +198,9 @@ export async function ingestPs(
 
   for (let i = 0; i < opts.pages; i++) {
     if (i > 0) await sleep(PAGE_DELAY_MS);
+    const requestCursor = cursor;
     const page = await client.public.stashTabs(
-      cursor ? { realm: REALM, id: cursor } : { realm: REALM },
+      requestCursor ? { realm: REALM, id: requestCursor } : { realm: REALM },
     );
 
     for (const change of page.stashes) {
@@ -228,6 +229,13 @@ export async function ingestPs(
         `ins=${result.inserted} upd=${result.updated} rem=${result.removed} ` +
         `next=${cursor.slice(0, 12)}…`,
     );
+
+    // Caught up: API echoed the cursor we sent. No new pages exist;
+    // refetching would burn rate-limit budget for identical content.
+    if (requestCursor !== undefined && page.next_change_id === requestCursor) {
+      console.log("psapi: caught up; stopping early");
+      break;
+    }
   }
 
   return result;
