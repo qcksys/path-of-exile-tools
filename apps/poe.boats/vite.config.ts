@@ -55,6 +55,9 @@ export default defineConfig(({ mode }) => {
             },
         },
         server: {
+            host: process.env.HOST,
+            port: process.env.PORT ? Number(process.env.PORT) : undefined,
+            allowedHosts: [".localhost"],
             cors: {
                 preflightContinue: true,
             },
