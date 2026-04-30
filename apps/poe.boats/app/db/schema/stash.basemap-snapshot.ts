@@ -10,11 +10,11 @@ import { timestampCols } from "~/db/helpers/schema.ts";
  * to a private DB.
  */
 export const tStashBasemapSnapshot = mysqlTable(`${DB_TABLE_PREFIX}stash_basemap_snapshot`, {
-  iconAsset: varchar({ length: 255 }).primaryKey(),
-  name: varchar({ length: 100 }).notNull(),
-  baseType: varchar({ length: 100 }).notNull(),
-  seenCount: bigint({ mode: "number" }).notNull(),
-  ...timestampCols,
+    iconAsset: varchar({ length: 255 }).primaryKey(),
+    name: varchar({ length: 100 }).notNull(),
+    baseType: varchar({ length: 100 }).notNull(),
+    seenCount: bigint({ mode: "number" }).notNull(),
+    ...timestampCols,
 });
 
 export type TStashBasemapSnapshotS = InferSelectModel<typeof tStashBasemapSnapshot>;

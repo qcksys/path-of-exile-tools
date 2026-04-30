@@ -1,13 +1,13 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import {
-  bigint,
-  boolean,
-  index,
-  int,
-  json,
-  mysqlTable,
-  primaryKey,
-  varchar,
+    bigint,
+    boolean,
+    index,
+    int,
+    json,
+    mysqlTable,
+    primaryKey,
+    varchar,
 } from "drizzle-orm/mysql-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
 import { DB_TABLE_PREFIX } from "~/const";
@@ -40,50 +40,51 @@ import { timestampCols } from "~/db/helpers/schema.ts";
  * history.
  */
 export const tStashUniqueHourly = mysqlTable(
-  `${DB_TABLE_PREFIX}stash_unique_hourly`,
-  {
-    league: varchar({ length: 100 }).notNull(),
-    hour: bigint({ mode: "number" }).notNull(),
-    itemKey: varchar({ length: 255 }).notNull(),
-    identified: boolean().notNull(),
-    corrupted: boolean().notNull().default(false),
-    foilVariation: int().notNull().default(-1),
-    signatureKind: varchar({ length: 32 }).notNull().default(""),
-    signatureValue: varchar({ length: 255 }).notNull().default(""),
+    `${DB_TABLE_PREFIX}stash_unique_hourly`,
+    {
+        league: varchar({ length: 100 }).notNull(),
+        hour: bigint({ mode: "number" }).notNull(),
+        itemKey: varchar({ length: 255 }).notNull(),
+        identified: boolean().notNull(),
+        corrupted: boolean().notNull().default(false),
+        foilVariation: int().notNull().default(-1),
+        signatureKind: varchar({ length: 32 }).notNull().default(""),
+        signatureValue: varchar({ length: 255 }).notNull().default(""),
 
-    iconAsset: varchar({ length: 255 }),
-    name: varchar({ length: 100 }),
-    baseType: varchar({ length: 100 }).notNull(),
-    frameType: int().notNull(),
+        iconAsset: varchar({ length: 255 }),
+        name: varchar({ length: 100 }),
+        baseType: varchar({ length: 100 }).notNull(),
+        frameType: int().notNull(),
 
-    listingCount: int().notNull(),
-    uniqueSellers: int().notNull(),
-    prices:
-      json().$type<Record<string, { count: number; min: number; median: number; max: number }>>(),
-    signatureData: json().$type<Record<string, unknown>>(),
+        listingCount: int().notNull(),
+        uniqueSellers: int().notNull(),
+        prices: json().$type<
+            Record<string, { count: number; min: number; median: number; max: number }>
+        >(),
+        signatureData: json().$type<Record<string, unknown>>(),
 
-    firstSeenAt: varchar({ length: 32 }).notNull(),
-    lastSeenAt: varchar({ length: 32 }).notNull(),
-    ...timestampCols,
-  },
-  (table) => [
-    primaryKey({
-      columns: [
-        table.league,
-        table.hour,
-        table.itemKey,
-        table.identified,
-        table.corrupted,
-        table.foilVariation,
-        table.signatureKind,
-        table.signatureValue,
-      ],
-    }),
-    index("idx_stash_unique_league_hour").on(table.league, table.hour),
-    index("idx_stash_unique_item").on(table.league, table.itemKey),
-    index("idx_stash_unique_sig").on(table.signatureKind, table.signatureValue),
-    index("idx_stash_unique_icon").on(table.iconAsset),
-  ],
+        firstSeenAt: varchar({ length: 32 }).notNull(),
+        lastSeenAt: varchar({ length: 32 }).notNull(),
+        ...timestampCols,
+    },
+    (table) => [
+        primaryKey({
+            columns: [
+                table.league,
+                table.hour,
+                table.itemKey,
+                table.identified,
+                table.corrupted,
+                table.foilVariation,
+                table.signatureKind,
+                table.signatureValue,
+            ],
+        }),
+        index("idx_stash_unique_league_hour").on(table.league, table.hour),
+        index("idx_stash_unique_item").on(table.league, table.itemKey),
+        index("idx_stash_unique_sig").on(table.signatureKind, table.signatureValue),
+        index("idx_stash_unique_icon").on(table.iconAsset),
+    ],
 );
 
 export type TStashUniqueHourlyS = InferSelectModel<typeof tStashUniqueHourly>;

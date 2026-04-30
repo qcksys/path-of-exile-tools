@@ -7,7 +7,7 @@ import { queryAll } from "#src/shared/db.ts";
  * after the ingest's incremental learning has gaps.
  */
 export async function rebuildBasemap(conn: DuckDBConnection): Promise<{ entries: number }> {
-  await conn.run(/* sql */ `
+    await conn.run(/* sql */ `
         INSERT INTO icon_basemap (icon_asset, name, base_type, seen_count, first_seen_at, last_seen_at)
         SELECT
             icon_asset,
@@ -27,8 +27,8 @@ export async function rebuildBasemap(conn: DuckDBConnection): Promise<{ entries:
             last_seen_at = excluded.last_seen_at
     `);
 
-  const rows = await queryAll<{ n: number }>(conn, "SELECT COUNT(*) AS n FROM icon_basemap");
-  const entries = Number(rows[0]?.n ?? 0);
-  console.log(`icon_basemap rebuilt: ${entries} entries`);
-  return { entries };
+    const rows = await queryAll<{ n: number }>(conn, "SELECT COUNT(*) AS n FROM icon_basemap");
+    const entries = Number(rows[0]?.n ?? 0);
+    console.log(`icon_basemap rebuilt: ${entries} entries`);
+    return { entries };
 }

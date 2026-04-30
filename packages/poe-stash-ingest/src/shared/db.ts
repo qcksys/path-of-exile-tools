@@ -70,34 +70,34 @@ CREATE TABLE IF NOT EXISTS rollup_state (
 `;
 
 export interface DbHandle {
-  conn: DuckDBConnection;
-  close: () => Promise<void>;
+    conn: DuckDBConnection;
+    close: () => Promise<void>;
 }
 
 export async function openDb(path = process.env.PS_LOCAL_DB ?? "./data.duckdb"): Promise<DbHandle> {
-  const instance = await DuckDBInstance.fromCache(path);
-  const conn = await instance.connect();
-  // Pin the session to UTC so TIMESTAMP columns store UTC clock-time and
-  // `epoch(date_trunc('hour', ts))` agrees with JS `Date.now()/3.6e6` unix-hour math.
-  await conn.run("SET TimeZone='UTC'");
-  await conn.run(SCHEMA_SQL);
-  return {
-    conn,
-    close: async () => {
-      conn.closeSync();
-      instance.closeSync();
-    },
-  };
+    const instance = await DuckDBInstance.fromCache(path);
+    const conn = await instance.connect();
+    // Pin the session to UTC so TIMESTAMP columns store UTC clock-time and
+    // `epoch(date_trunc('hour', ts))` agrees with JS `Date.now()/3.6e6` unix-hour math.
+    await conn.run("SET TimeZone='UTC'");
+    await conn.run(SCHEMA_SQL);
+    return {
+        conn,
+        close: async () => {
+            conn.closeSync();
+            instance.closeSync();
+        },
+    };
 }
 
 /** Convenience: read all rows of a query as plain objects. */
 export async function queryAll<T = Record<string, unknown>>(
-  conn: DuckDBConnection,
-  sql: string,
-  params?: unknown[] | Record<string, unknown>,
+    conn: DuckDBConnection,
+    sql: string,
+    params?: unknown[] | Record<string, unknown>,
 ): Promise<T[]> {
-  const reader = params
-    ? await conn.runAndReadAll(sql, params as Parameters<typeof conn.runAndReadAll>[1])
-    : await conn.runAndReadAll(sql);
-  return reader.getRowObjectsJson() as T[];
+    const reader = params
+        ? await conn.runAndReadAll(sql, params as Parameters<typeof conn.runAndReadAll>[1])
+        : await conn.runAndReadAll(sql);
+    return reader.getRowObjectsJson() as T[];
 }

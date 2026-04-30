@@ -1,28 +1,28 @@
 {
-  "name": "@poe-tools/stash-ingest",
-  "version": "0.0.0",
-  "private": true,
-  "description": "PoE public-stash + currency-exchange ingestor. Local DuckDB raw store, hourly summaries pushed to poe.boats over HTTP.",
-  "bin": {
-    "poe-stash-cx": "./src/cx/cli.ts",
-    "poe-stash-ps": "./src/ps/cli.ts"
-  },
-  "type": "module",
-  "imports": {
-    "#src/*": "./src/*"
-  },
-  "scripts": {
-    "ps": "node src/ps/cli.ts",
-    "cx": "node src/cx/cli.ts",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@duckdb/node-api": "^1.4.0-r.1",
-    "@poe-tools/api-client": "workspace:*",
-    "commander": "^14.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "catalog:",
-    "typescript": "catalog:"
-  }
+    "name": "@poe-tools/stash-ingest",
+    "version": "0.0.0",
+    "private": true,
+    "description": "PoE public-stash + currency-exchange ingestor. Local DuckDB raw store, hourly summaries pushed to poe.boats over HTTP.",
+    "bin": {
+        "poe-stash-cx": "./src/cx/cli.ts",
+        "poe-stash-ps": "./src/ps/cli.ts"
+    },
+    "type": "module",
+    "imports": {
+        "#src/*": "./src/*"
+    },
+    "scripts": {
+        "ps": "node src/ps/cli.ts",
+        "cx": "node src/cx/cli.ts",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@duckdb/node-api": "^1.4.0-r.1",
+        "@poe-tools/api-client": "workspace:*",
+        "commander": "^14.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "catalog:",
+        "typescript": "catalog:"
+    }
 }

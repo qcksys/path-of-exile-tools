@@ -9,22 +9,22 @@ import { timestampCols } from "~/db/helpers/schema.ts";
  * digest verbatim per market. Written by @poe-tools/stash-ingest.
  */
 export const tStashCurrencyHourly = mysqlTable(
-  `${DB_TABLE_PREFIX}stash_currency_hourly`,
-  {
-    league: varchar({ length: 100 }).notNull(),
-    marketId: varchar({ length: 100 }).notNull(),
-    hour: bigint({ mode: "number" }).notNull(),
-    lowestRatio: json().$type<Record<string, number>>(),
-    highestRatio: json().$type<Record<string, number>>(),
-    volumeTraded: json().$type<Record<string, number>>(),
-    lowestStock: json().$type<Record<string, number>>(),
-    highestStock: json().$type<Record<string, number>>(),
-    ...timestampCols,
-  },
-  (table) => [
-    primaryKey({ columns: [table.league, table.marketId, table.hour] }),
-    index("idx_stash_cx_league_hour").on(table.league, table.hour),
-  ],
+    `${DB_TABLE_PREFIX}stash_currency_hourly`,
+    {
+        league: varchar({ length: 100 }).notNull(),
+        marketId: varchar({ length: 100 }).notNull(),
+        hour: bigint({ mode: "number" }).notNull(),
+        lowestRatio: json().$type<Record<string, number>>(),
+        highestRatio: json().$type<Record<string, number>>(),
+        volumeTraded: json().$type<Record<string, number>>(),
+        lowestStock: json().$type<Record<string, number>>(),
+        highestStock: json().$type<Record<string, number>>(),
+        ...timestampCols,
+    },
+    (table) => [
+        primaryKey({ columns: [table.league, table.marketId, table.hour] }),
+        index("idx_stash_cx_league_hour").on(table.league, table.hour),
+    ],
 );
 
 export type TStashCurrencyHourlyS = InferSelectModel<typeof tStashCurrencyHourly>;

@@ -2,7 +2,7 @@ import { defineConfig } from "vite-plus";
 
 export default defineConfig({
     staged: {
-        "*": "vp check --fix",
+        "*": "biome check --write",
     },
     resolve: {
         tsconfigPaths: true,

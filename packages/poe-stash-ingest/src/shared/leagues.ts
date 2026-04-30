@@ -7,10 +7,10 @@ import { REALM } from "#src/shared/auth.ts";
  *   - explicit league name → returned as-is
  */
 export function parseLeagueFilter(arg: string | undefined): string | null {
-  if (!arg || arg === "all") return null;
-  return arg;
+    if (!arg || arg === "all") return null;
+    return arg;
 }
 
 export async function listLeagues(client: PoeApiClient): Promise<League[]> {
-  return client.league.list({ realm: REALM });
+    return client.league.list({ realm: REALM });
 }

@@ -6,24 +6,24 @@ import type { UniqueHourlyRow } from "#src/shared/remote/types.ts";
 const STREAM = "psapi";
 
 interface AggregateRow {
-  league: string;
-  hour: number;
-  itemKey: string;
-  corrupted: boolean;
-  foilVariation: number;
-  signatureKind: string;
-  signatureValue: string;
-  signatureData: string | null;
-  iconAsset: string | null;
-  baseType: string;
-  name: string | null;
-  frameType: number;
-  identified: boolean;
-  listingCount: number;
-  uniqueSellers: number;
-  pricesJson: string;
-  firstSeenAt: string;
-  lastSeenAt: string;
+    league: string;
+    hour: number;
+    itemKey: string;
+    corrupted: boolean;
+    foilVariation: number;
+    signatureKind: string;
+    signatureValue: string;
+    signatureData: string | null;
+    iconAsset: string | null;
+    baseType: string;
+    name: string | null;
+    frameType: number;
+    identified: boolean;
+    listingCount: number;
+    uniqueSellers: number;
+    pricesJson: string;
+    firstSeenAt: string;
+    lastSeenAt: string;
 }
 
 /**
@@ -141,62 +141,64 @@ ORDER BY w.league, w.item_key, w.signature_kind, w.signature_value
 `;
 
 function unixHour(d: Date = new Date()): number {
-  return Math.floor(d.getTime() / 3_600_000) * 3600;
+    return Math.floor(d.getTime() / 3_600_000) * 3600;
 }
 
 export async function rollupPs(
-  conn: DuckDBConnection,
-  opts: { hour?: number; league?: string | null; dryRun?: boolean },
+    conn: DuckDBConnection,
+    opts: { hour?: number; league?: string | null; dryRun?: boolean },
 ): Promise<{ hours: number[]; rows: number }> {
-  const hour = opts.hour ?? unixHour() - 3600;
-  const league = opts.league ?? null;
+    const hour = opts.hour ?? unixHour() - 3600;
+    const league = opts.league ?? null;
 
-  const aggregates = await queryAll<AggregateRow>(conn, ROLLUP_SQL, [hour, league]);
+    const aggregates = await queryAll<AggregateRow>(conn, ROLLUP_SQL, [hour, league]);
 
-  const rows: UniqueHourlyRow[] = aggregates.map((a) => ({
-    league: a.league,
-    hour: Number(a.hour),
-    itemKey: a.itemKey,
-    corrupted: a.corrupted,
-    foilVariation: Number(a.foilVariation),
-    signatureKind: a.signatureKind,
-    signatureValue: a.signatureValue,
-    signatureData: a.signatureData
-      ? (JSON.parse(a.signatureData) as Record<string, unknown>)
-      : null,
-    iconAsset: a.iconAsset,
-    name: a.name,
-    baseType: a.baseType,
-    frameType: a.frameType,
-    identified: a.identified,
-    listingCount: Number(a.listingCount),
-    uniqueSellers: Number(a.uniqueSellers),
-    prices: JSON.parse(a.pricesJson) as UniqueHourlyRow["prices"],
-    firstSeenAt: a.firstSeenAt,
-    lastSeenAt: a.lastSeenAt,
-  }));
+    const rows: UniqueHourlyRow[] = aggregates.map((a) => ({
+        league: a.league,
+        hour: Number(a.hour),
+        itemKey: a.itemKey,
+        corrupted: a.corrupted,
+        foilVariation: Number(a.foilVariation),
+        signatureKind: a.signatureKind,
+        signatureValue: a.signatureValue,
+        signatureData: a.signatureData
+            ? (JSON.parse(a.signatureData) as Record<string, unknown>)
+            : null,
+        iconAsset: a.iconAsset,
+        name: a.name,
+        baseType: a.baseType,
+        frameType: a.frameType,
+        identified: a.identified,
+        listingCount: Number(a.listingCount),
+        uniqueSellers: Number(a.uniqueSellers),
+        prices: JSON.parse(a.pricesJson) as UniqueHourlyRow["prices"],
+        firstSeenAt: a.firstSeenAt,
+        lastSeenAt: a.lastSeenAt,
+    }));
 
-  if (rows.length === 0) {
-    console.log(`psapi rollup hour=${hour} league=${league ?? "all"}: no rows; nothing to push.`);
-    return { hours: [hour], rows: 0 };
-  }
+    if (rows.length === 0) {
+        console.log(
+            `psapi rollup hour=${hour} league=${league ?? "all"}: no rows; nothing to push.`,
+        );
+        return { hours: [hour], rows: 0 };
+    }
 
-  await push({ stream: "psapi", rows }, { dryRun: opts.dryRun });
+    await push({ stream: "psapi", rows }, { dryRun: opts.dryRun });
 
-  if (!opts.dryRun) {
-    const byLeague = new Map<string, number>();
-    for (const r of rows) byLeague.set(r.league, (byLeague.get(r.league) ?? 0) + 1);
-    for (const [lg, n] of byLeague) {
-      await conn.run(
-        `INSERT INTO rollup_state (stream_name, league, hour, pushed_at, row_count)
+    if (!opts.dryRun) {
+        const byLeague = new Map<string, number>();
+        for (const r of rows) byLeague.set(r.league, (byLeague.get(r.league) ?? 0) + 1);
+        for (const [lg, n] of byLeague) {
+            await conn.run(
+                `INSERT INTO rollup_state (stream_name, league, hour, pushed_at, row_count)
                  VALUES ($1, $2, $3, current_timestamp, $4)
                  ON CONFLICT (stream_name, league, hour) DO UPDATE
                  SET pushed_at = now(), row_count = excluded.row_count`,
-        [STREAM, lg, hour, n],
-      );
+                [STREAM, lg, hour, n],
+            );
+        }
     }
-  }
 
-  console.log(`psapi rollup hour=${hour}: ${rows.length} rows pushed.`);
-  return { hours: [hour], rows: rows.length };
+    console.log(`psapi rollup hour=${hour}: ${rows.length} rows pushed.`);
+    return { hours: [hour], rows: rows.length };
 }
