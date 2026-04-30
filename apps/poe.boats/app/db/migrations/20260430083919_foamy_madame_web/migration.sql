@@ -137,24 +137,26 @@ CREATE TABLE `qsPoeBoats__stash_currency_hourly` (
 CREATE TABLE `qsPoeBoats__stash_unique_hourly` (
 	`league` varchar(100) NOT NULL,
 	`hour` bigint NOT NULL,
-	`bucketKey` varchar(255) NOT NULL,
+	`itemKey` varchar(255) NOT NULL,
+	`identified` boolean NOT NULL,
+	`corrupted` boolean NOT NULL DEFAULT false,
+	`foilVariation` int NOT NULL DEFAULT -1,
+	`signatureKind` varchar(32) NOT NULL DEFAULT '',
+	`signatureValue` varchar(255) NOT NULL DEFAULT '',
 	`iconAsset` varchar(255),
 	`name` varchar(100),
 	`baseType` varchar(100) NOT NULL,
 	`frameType` int NOT NULL,
-	`identified` boolean NOT NULL,
-	`corrupted` boolean NOT NULL DEFAULT false,
-	`foilVariation` int,
 	`listingCount` int NOT NULL,
 	`uniqueSellers` int NOT NULL,
 	`prices` json,
-	`modSignatureCounts` json,
+	`signatureData` json,
 	`firstSeenAt` varchar(32) NOT NULL,
 	`lastSeenAt` varchar(32) NOT NULL,
 	`rowCreatedAt` datetime NOT NULL DEFAULT (now()),
 	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	`rowDeletedAt` datetime,
-	CONSTRAINT PRIMARY KEY(`league`,`hour`,`bucketKey`)
+	CONSTRAINT PRIMARY KEY(`league`,`hour`,`itemKey`,`identified`,`corrupted`,`foilVariation`,`signatureKind`,`signatureValue`)
 );
 --> statement-breakpoint
 CREATE INDEX `account_userId_idx` ON `qsPoeBoats__auth_account` (`userId`);--> statement-breakpoint
@@ -165,4 +167,6 @@ CREATE INDEX `idx_placement_set` ON `qsPoeBoats__idol_planner_placement` (`setId
 CREATE INDEX `idx_idol_set_user` ON `qsPoeBoats__idol_planner_set` (`userId`);--> statement-breakpoint
 CREATE INDEX `idx_stash_cx_league_hour` ON `qsPoeBoats__stash_currency_hourly` (`league`,`hour`);--> statement-breakpoint
 CREATE INDEX `idx_stash_unique_league_hour` ON `qsPoeBoats__stash_unique_hourly` (`league`,`hour`);--> statement-breakpoint
+CREATE INDEX `idx_stash_unique_item` ON `qsPoeBoats__stash_unique_hourly` (`league`,`itemKey`);--> statement-breakpoint
+CREATE INDEX `idx_stash_unique_sig` ON `qsPoeBoats__stash_unique_hourly` (`signatureKind`,`signatureValue`);--> statement-breakpoint
 CREATE INDEX `idx_stash_unique_icon` ON `qsPoeBoats__stash_unique_hourly` (`iconAsset`);

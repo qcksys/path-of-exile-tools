@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "mysql",
-    "id": "e3fd56f5-c430-4dd9-9c95-435eefaa6a3c",
+    "id": "88b944e0-bd2d-4bb7-b2fe-7cc249646e75",
     "prevIds": ["00000000-0000-0000-0000-000000000000"],
     "ddl": [
         {
@@ -1452,7 +1452,77 @@
             "charSet": null,
             "collation": null,
             "generated": null,
-            "name": "bucketKey",
+            "name": "itemKey",
+            "entityType": "columns",
+            "table": "qsPoeBoats__stash_unique_hourly"
+        },
+        {
+            "type": "boolean",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "name": "identified",
+            "entityType": "columns",
+            "table": "qsPoeBoats__stash_unique_hourly"
+        },
+        {
+            "type": "boolean",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "false",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "name": "corrupted",
+            "entityType": "columns",
+            "table": "qsPoeBoats__stash_unique_hourly"
+        },
+        {
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "-1",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "name": "foilVariation",
+            "entityType": "columns",
+            "table": "qsPoeBoats__stash_unique_hourly"
+        },
+        {
+            "type": "varchar(32)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "''",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "name": "signatureKind",
+            "entityType": "columns",
+            "table": "qsPoeBoats__stash_unique_hourly"
+        },
+        {
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "''",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "name": "signatureValue",
             "entityType": "columns",
             "table": "qsPoeBoats__stash_unique_hourly"
         },
@@ -1513,48 +1583,6 @@
             "table": "qsPoeBoats__stash_unique_hourly"
         },
         {
-            "type": "boolean",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "name": "identified",
-            "entityType": "columns",
-            "table": "qsPoeBoats__stash_unique_hourly"
-        },
-        {
-            "type": "boolean",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "false",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "name": "corrupted",
-            "entityType": "columns",
-            "table": "qsPoeBoats__stash_unique_hourly"
-        },
-        {
-            "type": "int",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "name": "foilVariation",
-            "entityType": "columns",
-            "table": "qsPoeBoats__stash_unique_hourly"
-        },
-        {
             "type": "int",
             "notNull": true,
             "autoIncrement": false,
@@ -1606,7 +1634,7 @@
             "charSet": null,
             "collation": null,
             "generated": null,
-            "name": "modSignatureCounts",
+            "name": "signatureData",
             "entityType": "columns",
             "table": "qsPoeBoats__stash_unique_hourly"
         },
@@ -1687,7 +1715,16 @@
             "entityType": "pks"
         },
         {
-            "columns": ["league", "hour", "bucketKey"],
+            "columns": [
+                "league",
+                "hour",
+                "itemKey",
+                "identified",
+                "corrupted",
+                "foilVariation",
+                "signatureKind",
+                "signatureValue"
+            ],
             "name": "PRIMARY",
             "table": "qsPoeBoats__stash_unique_hourly",
             "entityType": "pks"
@@ -1923,6 +1960,46 @@
             "lock": null,
             "nameExplicit": true,
             "name": "idx_stash_unique_league_hour",
+            "entityType": "indexes",
+            "table": "qsPoeBoats__stash_unique_hourly"
+        },
+        {
+            "columns": [
+                {
+                    "value": "league",
+                    "isExpression": false
+                },
+                {
+                    "value": "itemKey",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "name": "idx_stash_unique_item",
+            "entityType": "indexes",
+            "table": "qsPoeBoats__stash_unique_hourly"
+        },
+        {
+            "columns": [
+                {
+                    "value": "signatureKind",
+                    "isExpression": false
+                },
+                {
+                    "value": "signatureValue",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "name": "idx_stash_unique_sig",
             "entityType": "indexes",
             "table": "qsPoeBoats__stash_unique_hourly"
         },
