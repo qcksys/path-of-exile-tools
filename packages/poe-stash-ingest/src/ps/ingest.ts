@@ -138,7 +138,7 @@ async function applyStashChange(
                 stack_size = excluded.stack_size,
                 mod_signature = excluded.mod_signature,
                 raw_item = excluded.raw_item,
-                last_seen_at = current_timestamp,
+                last_seen_at = now(),
                 removed_at = NULL`,
       [
         row.accountName,

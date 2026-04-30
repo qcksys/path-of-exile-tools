@@ -29,7 +29,7 @@ interface AggregateRow {
 /**
  * Two-stage aggregate:
  *
- *   1. `window` — every captured listing observed in the target hour,
+ *   1. `windowed` — every captured listing observed in the target hour,
  *      enriched with the resolved name (basemap join) and a deterministic
  *      `signature_value` projection of `mod_signature` keyed by `kind`.
  *   2. Top-level GROUP BY (league, hour, item_key, corrupted,
@@ -41,7 +41,7 @@ interface AggregateRow {
  * in a NOT NULL primary key.
  */
 const ROLLUP_SQL = /* sql */ `
-WITH window AS (
+WITH windowed AS (
     SELECT
         l.league,
         epoch(date_trunc('hour', l.last_seen_at))::BIGINT AS hour,
@@ -93,7 +93,7 @@ prices AS (
         MIN(price_amount) AS min,
         MEDIAN(price_amount) AS median,
         MAX(price_amount) AS max
-    FROM window
+    FROM windowed
     WHERE price_amount IS NOT NULL AND price_currency IS NOT NULL
     GROUP BY league, hour, item_key, corrupted, foil_variation,
              signature_kind, signature_value, price_currency
@@ -129,7 +129,7 @@ SELECT
     COALESCE(p.prices_json, '{}') AS "pricesJson",
     MIN(w.first_seen_at)::VARCHAR AS "firstSeenAt",
     MAX(w.last_seen_at)::VARCHAR AS "lastSeenAt"
-FROM window w
+FROM windowed w
 LEFT JOIN prices_agg p USING (
     league, hour, item_key, corrupted, foil_variation,
     signature_kind, signature_value
@@ -191,7 +191,7 @@ export async function rollupPs(
         `INSERT INTO rollup_state (stream_name, league, hour, pushed_at, row_count)
                  VALUES ($1, $2, $3, current_timestamp, $4)
                  ON CONFLICT (stream_name, league, hour) DO UPDATE
-                 SET pushed_at = current_timestamp, row_count = excluded.row_count`,
+                 SET pushed_at = now(), row_count = excluded.row_count`,
         [STREAM, lg, hour, n],
       );
     }

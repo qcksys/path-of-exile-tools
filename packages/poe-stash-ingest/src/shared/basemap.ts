@@ -17,7 +17,7 @@ export async function learnBasemap(
          VALUES ($1, $2, $3, 1, current_timestamp, current_timestamp)
          ON CONFLICT (icon_asset) DO UPDATE
          SET seen_count = icon_basemap.seen_count + 1,
-             last_seen_at = current_timestamp`,
+             last_seen_at = now()`,
     [iconAsset, item.name, item.baseType],
   );
 }

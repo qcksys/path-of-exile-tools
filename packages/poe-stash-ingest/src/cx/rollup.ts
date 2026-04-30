@@ -66,7 +66,7 @@ export async function rollupCx(
         `INSERT INTO rollup_state (stream_name, league, hour, pushed_at, row_count)
                  VALUES ($1, $2, $3, current_timestamp, $4)
                  ON CONFLICT (stream_name, league, hour) DO UPDATE
-                 SET pushed_at = current_timestamp, row_count = excluded.row_count`,
+                 SET pushed_at = now(), row_count = excluded.row_count`,
         [STREAM, lg, hour, n],
       );
     }

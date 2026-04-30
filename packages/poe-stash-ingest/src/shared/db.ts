@@ -77,6 +77,9 @@ export interface DbHandle {
 export async function openDb(path = process.env.PS_LOCAL_DB ?? "./data.duckdb"): Promise<DbHandle> {
   const instance = await DuckDBInstance.fromCache(path);
   const conn = await instance.connect();
+  // Pin the session to UTC so TIMESTAMP columns store UTC clock-time and
+  // `epoch(date_trunc('hour', ts))` agrees with JS `Date.now()/3.6e6` unix-hour math.
+  await conn.run("SET TimeZone='UTC'");
   await conn.run(SCHEMA_SQL);
   return {
     conn,
