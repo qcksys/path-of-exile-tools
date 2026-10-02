@@ -38,7 +38,7 @@ export function ShareModal({ open, onOpenChange, set, inventory }: ShareModalPro
         setShareState({ status: "loading" });
 
         try {
-            const response = await fetch("/idol-planner/api/share", {
+            const response = await fetch("/1/idol-planner/api/share", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ set, inventory }),
