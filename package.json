@@ -4,10 +4,10 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "ready": "biome check && vp run test -r && vp run build -r",
+        "ready": "biome check && vp run -r build && vp run -r typecheck && vp run -r test",
         "lint": "biome check",
         "format": "biome check --write --unsafe",
-        "dev": "vp run website#dev",
+        "dev": "vp run poe-boats#dev",
         "prepare": "vp config"
     },
     "devDependencies": {

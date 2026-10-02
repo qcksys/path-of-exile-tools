@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { dbContext } from "~/context";
-import { buildShareUrl, saveShare } from "~/lib/share";
+import { buildShareUrl } from "~/lib/share";
+import { saveShare } from "~/lib/share.server";
 import { IdolSetSchema } from "~/schemas/idol-set";
 import { InventoryIdolSchema } from "~/schemas/inventory";
 import { logger } from "~/services/logger";

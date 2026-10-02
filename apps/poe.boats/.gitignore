@@ -15,3 +15,5 @@ build
 /.claude/settings.local.json
 # Scripts cache
 scripts/**/.cache/
+.vitest/
+env.d.ts

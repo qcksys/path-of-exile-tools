@@ -1,6 +1,7 @@
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth/minimal";
 import { admin, bearer, openAPI, twoFactor } from "better-auth/plugins";
+import { ENV } from "varlock/env";
 import { SYSTEM } from "~/const";
 import type { TDatabase } from "~/db/client";
 import { tAuthAccount } from "~/db/schema/auth.account";
@@ -10,7 +11,7 @@ import { tAuthVerification } from "~/db/schema/auth.verification";
 
 export const authServer = ({ env, db }: { env: CloudflareBindings; db: TDatabase }) => {
     return betterAuth({
-        appName: SYSTEM[env.ENVIRONMENT].name,
+        appName: SYSTEM[ENV.ENVIRONMENT].name,
         basePath: "/api/auth",
         socialProviders: {
             google: {

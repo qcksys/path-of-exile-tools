@@ -1,8 +1,6 @@
-import { loadEnvFile } from "node:process";
+import "varlock/auto-load";
 import type { Config } from "drizzle-kit";
 import { DB_TABLE_PREFIX } from "~/const";
-
-loadEnvFile(".dev.vars");
 
 const env = process.env as { DATABASE_URL: string };
 
