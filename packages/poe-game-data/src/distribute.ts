@@ -5,6 +5,7 @@ import { join, relative, resolve } from "node:path";
 import { promisify } from "node:util";
 import { z } from "zod";
 import { assetPath, digest, missing, readJson, writeBytes, writeJson } from "./io.ts";
+import { generateJsonSchemas, jsonSchemaPath } from "./json-schema.ts";
 import {
     type DataPackageManifest,
     dataFileSchemas,
@@ -49,6 +50,14 @@ async function generatedSources(
     return {
         "src/schemas.ts": model,
         "src/release.ts": release,
+        "types/json_schema.d.ts":
+            "declare const schema: Record<string, unknown>;\nexport default schema;\n",
+        ...Object.fromEntries(
+            Object.entries(generateJsonSchemas(manifest)).map(([path, schema]) => [
+                path,
+                `${JSON.stringify(schema, null, 2)}\n`,
+            ]),
+        ),
         ...Object.fromEntries(
             Object.entries(fileTypes).map(([name, type]) => [
                 `types/${name}.d.ts`,
@@ -93,7 +102,7 @@ export async function materializePackage(
         version,
         client_build: manifest.patch,
     });
-    const files: Record<string, { sha256: string; bytes: number }> = {};
+    const files: DataPackageManifest["files"] = {};
     const outputs = new Map<string, Buffer>();
     for (const source of Object.keys(manifest.files).sort()) {
         if (
@@ -105,7 +114,7 @@ export async function materializePackage(
         const path = source.slice("normalized/".length);
         const bytes = await readFile(assetPath(snapshot, source));
         schemaForDataFile(path).parse(JSON.parse(bytes.toString("utf8")));
-        files[path] = { sha256: digest(bytes), bytes: bytes.length };
+        files[path] = { sha256: digest(bytes), bytes: bytes.length, schema: jsonSchemaPath(path) };
         outputs.set(path, bytes);
     }
     for (const path of Object.keys(dataFileSchemas))
@@ -132,6 +141,9 @@ export async function materializePackage(
         join(directory, "THIRD_PARTY_NOTICES.md"),
         await readFile(join(packageDirectory, "THIRD_PARTY_NOTICES.md")),
     );
+    for (const old of await listFiles(join(directory, "json-schema")))
+        if (!Object.hasOwn(sources, `json-schema/${old}`))
+            await rm(assetPath(join(directory, "json-schema"), old));
     await writeJson(join(directory, "manifest.json"), provenance);
     await writeBytes(
         join(directory, "package.json"),
@@ -166,11 +178,21 @@ export async function verifyDataPackage(directory: string) {
     }
     for (const path of Object.keys(dataFileSchemas))
         if (!manifest.files[path]) throw new Error(`Package is missing required dataset: ${path}`);
+    const expectedSchemas = Object.keys(generateJsonSchemas(manifest))
+        .map((path) => path.slice("json-schema/".length))
+        .sort();
+    if (
+        JSON.stringify(await listFiles(join(directory, "json-schema"))) !==
+        JSON.stringify(expectedSchemas)
+    )
+        throw new Error("Package JSON Schema files differ from generated schemas");
     const listed = Object.keys(manifest.files).sort();
     if (JSON.stringify(await listFiles(join(directory, "data"))) !== JSON.stringify(listed))
         throw new Error("Package data files differ from manifest");
     const core: Record<string, unknown> = {};
     for (const [path, expected] of Object.entries(manifest.files)) {
+        if (expected.schema !== jsonSchemaPath(path))
+            throw new Error(`Incorrect JSON Schema reference: ${path}`);
         const bytes = await readFile(assetPath(join(directory, "data"), path));
         if (bytes.length !== expected.bytes || digest(bytes) !== expected.sha256)
             throw new Error(`Package data hash mismatch: ${path}`);

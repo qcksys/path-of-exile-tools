@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { Command, runCli } from "@poe-tools/cli";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const localesDir = path.resolve(here, "../app/i18n/locales");
@@ -35,46 +36,53 @@ function collectPlaceholders(obj, prefix = "") {
     return out;
 }
 
-const files = fs.readdirSync(localesDir).filter((f) => f.endsWith(".json"));
-const reference = JSON.parse(
-    fs.readFileSync(path.join(localesDir, `${referenceLocale}.json`), "utf8"),
-);
-const refPaths = new Set(collectPaths(reference));
-const refPlaceholders = collectPlaceholders(reference);
+function main() {
+    const files = fs.readdirSync(localesDir).filter((f) => f.endsWith(".json"));
+    const reference = JSON.parse(
+        fs.readFileSync(path.join(localesDir, `${referenceLocale}.json`), "utf8"),
+    );
+    const refPaths = new Set(collectPaths(reference));
+    const refPlaceholders = collectPlaceholders(reference);
 
-let failures = 0;
-for (const file of files) {
-    const locale = file.replace(/\.json$/, "");
-    if (locale === referenceLocale) continue;
-    const data = JSON.parse(fs.readFileSync(path.join(localesDir, file), "utf8"));
-    const paths = new Set(collectPaths(data));
-    const missing = [...refPaths].filter((p) => !paths.has(p));
-    const extra = [...paths].filter((p) => !refPaths.has(p));
-    const placeholders = collectPlaceholders(data);
-    const placeholderMismatches = [];
-    for (const [key, refNames] of refPlaceholders) {
-        const names = placeholders.get(key);
-        if (!names) continue;
-        const refList = [...refNames].sort();
-        const list = [...names].sort();
-        if (refList.length !== list.length || refList.some((n, i) => n !== list[i])) {
-            placeholderMismatches.push(
-                `${key}: en=${JSON.stringify(refList)} ${locale}=${JSON.stringify(list)}`,
-            );
+    let failures = 0;
+    for (const file of files) {
+        const locale = file.replace(/\.json$/, "");
+        if (locale === referenceLocale) continue;
+        const data = JSON.parse(fs.readFileSync(path.join(localesDir, file), "utf8"));
+        const paths = new Set(collectPaths(data));
+        const missing = [...refPaths].filter((p) => !paths.has(p));
+        const extra = [...paths].filter((p) => !refPaths.has(p));
+        const placeholders = collectPlaceholders(data);
+        const placeholderMismatches = [];
+        for (const [key, refNames] of refPlaceholders) {
+            const names = placeholders.get(key);
+            if (!names) continue;
+            const refList = [...refNames].sort();
+            const list = [...names].sort();
+            if (refList.length !== list.length || refList.some((n, i) => n !== list[i])) {
+                placeholderMismatches.push(
+                    `${key}: en=${JSON.stringify(refList)} ${locale}=${JSON.stringify(list)}`,
+                );
+            }
+        }
+        if (missing.length || extra.length || placeholderMismatches.length) {
+            failures++;
+            console.error(`[${locale}] drift vs ${referenceLocale}:`);
+            for (const p of missing) console.error(`  missing: ${p}`);
+            for (const p of extra) console.error(`  extra:   ${p}`);
+            for (const m of placeholderMismatches) console.error(`  placeholder: ${m}`);
+        } else {
+            console.log(`[${locale}] ok`);
         }
     }
-    if (missing.length || extra.length || placeholderMismatches.length) {
-        failures++;
-        console.error(`[${locale}] drift vs ${referenceLocale}:`);
-        for (const p of missing) console.error(`  missing: ${p}`);
-        for (const p of extra) console.error(`  extra:   ${p}`);
-        for (const m of placeholderMismatches) console.error(`  placeholder: ${m}`);
-    } else {
-        console.log(`[${locale}] ok`);
+
+    if (failures > 0) {
+        console.error(`\n${failures} locale(s) drifted from ${referenceLocale}.`);
+        process.exit(1);
     }
 }
-
-if (failures > 0) {
-    console.error(`\n${failures} locale(s) drifted from ${referenceLocale}.`);
-    process.exit(1);
-}
+const program = new Command()
+    .name("check-locales")
+    .description("Check translation keys and placeholders")
+    .action(main);
+process.exitCode = await runCli(program);

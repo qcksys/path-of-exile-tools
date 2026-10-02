@@ -17,6 +17,8 @@ vp run @poe-tools/game-data#extract versions
 vp run @poe-tools/game-data#extract run --config pipeline.example.json
 ```
 
+Use `--help` on any command or add `--interactive` to enter omitted values with Clack. Explicit flags remain suitable for automation; `--no-interactive` disables prompts. See [repository CLI conventions](../poe-cli/README.md).
+
 Vite+ runs this package's scripts from `packages/poe-game-data`, so command paths and the default `data/` output are relative to that directory. `versions` performs a read-only handshake with GGG's patch servers. Copy its result into a config before a new extraction. The example pins the builds verified on 2026-10-02; old CDN versions can disappear.
 
 Append `--game poe1` or `--game poe2` to select one game. The default processes every configured game, in order. After extraction succeeds for all selected games, `run` updates their tracked data packages. A failure stops the command; a game already published keeps its snapshot. Progress goes to stderr; snapshot paths and package results are JSON on stdout. Bundles download on demand and are cached by game and patch under `.cache/bundles/`. Allow several gigabytes of disk space for cached bundles, raw assets, and images.
@@ -66,6 +68,7 @@ flowchart LR
 | `metadata.ts`, `normalize.ts` | Inherit item tags; join bases, requirements, properties, classes, modifiers, and stats |
 | `translations.ts` | Parse English descriptions, includes, conditions, numeric handlers, and relational values |
 | `images.ts` | Resolve DDS aliases/Brotli, export PNG/WebP, compose PoE 2 flask icons |
+| `json-schema.ts` | Generate Draft 2020-12 schemas from the canonical Zod output schemas |
 | `model.ts` | Canonical Zod data contract, relationship validation, diagnostic mod pools |
 | `pipeline.ts`, `cli.ts`, `distribute.ts` | Record provenance, publish, verify, replay, inspect, generate packages, and optionally commit |
 
@@ -89,6 +92,7 @@ data/<game>/
     config.json / schema.json
     pipeline/src/...                  # pipeline source at invocation
     pipeline/package.json
+    pipeline/cli/src/... / cli/package.json  # shared CLI source
     pipeline/pnpm-lock.yaml / pnpm-workspace.yaml
     inputs.json / transport.json
     validation.json

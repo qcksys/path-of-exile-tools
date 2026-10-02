@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { parseArgs } from "node:util";
+import { Command, runCli } from "@poe-tools/cli";
 import { clearCache, downloadImage, fetchScarabPage, listCachedFiles } from "./fetcher.ts";
 import { parseScarabPage } from "./parser.ts";
 import {
@@ -12,35 +12,6 @@ import {
 } from "./types.ts";
 
 const OUTPUT_DIR = path.join(import.meta.dirname, "../../app/data");
-
-const { values: args } = parseArgs({
-    allowPositionals: true,
-    options: {
-        cached: { type: "boolean", default: false },
-        "clear-cache": { type: "boolean", default: false },
-        "skip-images": { type: "boolean", default: false },
-        help: { type: "boolean", short: "h", default: false },
-    },
-});
-
-function printHelp(): void {
-    console.log(`
-scarab-converter - Fetch and convert POE scarab data from poedb.tw
-
-Usage: pnpm run data:scarabs [options]
-
-Options:
-  --cached           Use cached HTML files if available
-  --clear-cache      Clear the cache before fetching
-  --skip-images      Skip downloading images (use existing local images only)
-  -h, --help         Show this help message
-
-Examples:
-  pnpm run data:scarabs
-  pnpm run data:scarabs --cached
-  pnpm run data:scarabs --cached --skip-images
-`);
-}
 
 function getImageFilename(imageUrl: string, scarabId: string): string {
     // Extract extension from URL
@@ -147,21 +118,20 @@ function writeOutput(data: ConvertedScarabData): void {
     console.log(`  Written to ${outputPath}`);
 }
 
-async function main(): Promise<void> {
-    if (args.help || process.argv.includes("--help") || process.argv.includes("-h")) {
-        printHelp();
-        process.exit(0);
-    }
-
+async function main(args: {
+    cached: boolean;
+    clearCache: boolean;
+    skipImages: boolean;
+}): Promise<void> {
     console.log("=== POE Scarab Data Converter ===\n");
 
-    if (args["clear-cache"]) {
+    if (args.clearCache) {
         console.log("Clearing cache...");
         clearCache();
     }
 
     console.log(`Use cache: ${args.cached}`);
-    console.log(`Skip images: ${args["skip-images"]}`);
+    console.log(`Skip images: ${args.skipImages}`);
     console.log("");
 
     // Fetch and parse HTML for all locales
@@ -191,7 +161,7 @@ async function main(): Promise<void> {
 
     // Download images (unless skipped) - use English scarabs for images
     let imageMap: Map<string, string | null>;
-    if (args["skip-images"]) {
+    if (args.skipImages) {
         console.log("\nSkipping image downloads, using local paths if available...");
         imageMap = new Map(
             enScarabs.map((s) => {
@@ -233,7 +203,11 @@ async function main(): Promise<void> {
     }
 }
 
-main().catch((error) => {
-    console.error("Fatal error:", error);
-    process.exit(1);
-});
+const program = new Command()
+    .name("poedb-scarab-converter")
+    .description("Fetch and convert PoEDB scarab data")
+    .option("--cached", "use cached HTML if available", false)
+    .option("--clear-cache", "clear cached HTML before fetching", false)
+    .option("--skip-images", "use existing local images", false)
+    .action(main);
+process.exitCode = await runCli(program);
