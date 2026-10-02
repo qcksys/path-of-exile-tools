@@ -46,6 +46,10 @@
         "./data/Metadata/*.json": {
             "types": "./types/item_metadata.d.ts",
             "default": "./data/Metadata/*.json"
+        },
+        "./json-schema/*.json": {
+            "types": "./types/json_schema.d.ts",
+            "default": "./json-schema/*.json"
         }
     },
     "files": [
@@ -55,7 +59,8 @@
         "types",
         "manifest.json",
         "README.md",
-        "THIRD_PARTY_NOTICES.md"
+        "THIRD_PARTY_NOTICES.md",
+        "json-schema"
     ],
     "type": "module",
     "description": "Static Path of Exile 2 client data with TypeScript types and Zod schemas.",
