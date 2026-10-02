@@ -1,0 +1,46 @@
+import type { ManualVendorRecipe } from "~/schemas/arbitrage";
+
+const recipes: [string, string, 3 | 5, string, string, string, string][] = [
+    ["magic", "5-for-1 magic items", 5, "item (magic)", "Item (magic, unidentified)", "Basic_item_production",
+        "Use the same base type. The output uses the lowest input item level and loses influence. Modifiers are rerolled."],
+    ["rare", "5-for-1 rare items", 5, "item (rare)", "Item (rare, unidentified)", "Basic_item_production",
+        "Use the same base type. The output uses the lowest input item level and loses influence. Cluster jewel passive count and small passive type are random."],
+    ["corrupted", "5-for-1 corrupted items", 5, "item (magic/rare, corrupted)", "Item (magic/rare, corrupted/uncorrupted)", "Basic_item_production",
+        "Use the same base type. The output uses the lowest item level and loses influence. It is normally uncorrupted, except inherently corrupted bases such as legacy Breach Rings and Thief's Trinkets. Cluster jewel passives are random."],
+    ["life-flasks", "3-for-1 life flasks", 3, "Life Flask", "Life Flask of next base type", "Flasks",
+        "Use the same base type, up to Hallowed → Sanctified. Cannot produce Divine or Eternal flasks. The lowest input item level is retained; three magic inputs produce a magic, unidentified result."],
+    ["mana-flasks", "3-for-1 mana flasks", 3, "Mana Flask", "Mana Flask of next base type", "Flasks",
+        "Use the same base type, up to Hallowed → Sanctified. Cannot produce Divine or Eternal flasks. The lowest input item level is retained; three magic inputs produce a magic, unidentified result."],
+    ["hybrid-flasks", "3-for-1 hybrid flasks", 3, "Hybrid Flask", "Hybrid Flask of next base type", "Flasks",
+        "Use the same base type with an available next tier. The lowest input item level is retained; three magic inputs produce a magic, unidentified result."],
+    ["unique", "3-for-1 unique rerolls", 3, "unique item (same name, not corrupted)", "unique item", "Rerolling",
+        "Use uncorrupted copies of the same unique variant, including matching variable explicit modifier types. Foulborn uniques are excluded. Values are rerolled; synthesised implicits can also reroll."],
+    ["maps", "3-for-1 maps", 3, "map of the same tier", "map, one tier higher", "Atlas_of_Worlds_utility",
+        "Use three maps of the same tier. The output is a normal map one tier higher; Blighted inputs still return a regular map. Inspect the vendor preview to price the actual output."],
+    ["scarabs", "3-for-1 scarabs", 3, "scarabs (any type)", "random scarab of a different type", "Atlas_of_Worlds_utility",
+        "The random result is a different type from the input scarabs. Output probabilities are not assumed."],
+    ["catalysts", "3-for-1 catalysts", 3, "Catalysts, all of same type", "random Catalyst", "Ultimatum",
+        "Use three of the same catalyst. Cannot return Tainted, Sinistral, or Dextral Catalysts. Output probabilities are not assumed."],
+    ["ultimatums", "5-for-1 Inscribed Ultimatums", 5, "Inscribed Ultimatum, any reward or encounter type", "random Inscribed Ultimatum", "Ultimatum",
+        "The output uses the lowest input area level. Reward and encounter are random; five of the same tier preserve reward tier."],
+    ["tattoos", "3-for-1 tattoos", 3, "tattoos from same tribe", "random tattoo from same tribe", "Settlers_of_Kalguur",
+        "Match the tribe, not the attribute. The result can be the same tattoo type as an input. Output probabilities are not assumed."],
+    ["runegrafts", "3-for-1 runegrafts", 3, "runegraft, any", "random runegraft", "Settlers_of_Kalguur",
+        "Any three runegrafts produce one random runegraft. Output probabilities are not assumed."],
+    ["idols", "3-for-1 idols", 3, "Idols, all of same type", "Idol of same type", "Legacy_of_Phrecia_(idols)",
+        "Requires a league with idols. Use three non-unique idols of the same type; price the actual resulting modifiers."],
+    ["wombgifts", "5-for-1 wombgifts", 5, "wombgifts, any type", "random wombgift", "Breach",
+        "The output uses the lowest input item level. Output probabilities are not assumed."],
+];
+
+export const MANUAL_VENDOR_RECIPES: ManualVendorRecipe[] = recipes.map(
+    ([id, name, quantity, input, output, section, conditions]) => ({
+        id: `1:manual:${id}`,
+        name,
+        input: { id: "manual-input", name: input, quantity },
+        output: { id: "manual-output", name: output, quantity: 1 },
+        conditions,
+        outcome: ["life-flasks", "mana-flasks", "hybrid-flasks", "maps"].includes(id) ? "item-dependent" : "random",
+        source: `https://www.poewiki.net/wiki/Vendor_recipe_system#${section}`,
+    }),
+);

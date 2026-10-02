@@ -28,7 +28,7 @@ const ExchangeResponseSchema = z.object({
 const ExchangeLineSchema = z.object({ id: z.string().min(1), primaryValue: z.number().positive() });
 
 const CATEGORY_TYPES: Record<ArbitrageGame, Partial<Record<RecipeCategory, string>>> = {
-    "1": { oils: "Oil", essences: "Essence" },
+    "1": { oils: "Oil", essences: "Essence", currency: "Currency" },
     "2": { emotions: "Delirium", essences: "Essences", runes: "Runes" },
 };
 const CACHE_TTL_MS = 5 * 60 * 1000;

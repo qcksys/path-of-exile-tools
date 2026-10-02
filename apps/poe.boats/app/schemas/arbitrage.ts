@@ -3,7 +3,7 @@ import { z } from "zod";
 export const ArbitrageGameSchema = z.enum(["1", "2"]);
 export type ArbitrageGame = z.infer<typeof ArbitrageGameSchema>;
 
-export const RecipeCategorySchema = z.enum(["oils", "essences", "emotions", "runes"]);
+export const RecipeCategorySchema = z.enum(["oils", "essences", "emotions", "runes", "currency"]);
 export type RecipeCategory = z.infer<typeof RecipeCategorySchema>;
 
 const RecipeItemSchema = z.object({
@@ -19,6 +19,8 @@ export const VendorRecipeSchema = z.object({
     input: RecipeItemSchema,
     output: RecipeItemSchema,
     source: z.url(),
+    method: z.enum(["purchase", "sell"]).optional(),
+    notes: z.string().optional(),
 });
 export type VendorRecipe = z.infer<typeof VendorRecipeSchema>;
 
@@ -30,6 +32,23 @@ export const ArbitrageOptionsSchema = z.object({
     showUnprofitable: z.boolean(),
 });
 export type ArbitrageOptions = z.infer<typeof ArbitrageOptionsSchema>;
+
+export const ManualVendorRecipeSchema = VendorRecipeSchema.pick({
+    id: true,
+    input: true,
+    output: true,
+    source: true,
+}).extend({
+    name: z.string().min(1),
+    conditions: z.string().min(1),
+    outcome: z.enum(["random", "item-dependent"]),
+});
+export type ManualVendorRecipe = z.infer<typeof ManualVendorRecipeSchema>;
+
+export const RecipeScenarioSchema = ArbitrageOptionsSchema.pick({ buffer: true }).extend({
+    inputCost: z.number().positive(),
+    outputValue: z.number().nonnegative(),
+});
 
 export const DEFAULT_ARBITRAGE_OPTIONS: ArbitrageOptions = {
     buffer: 0,
