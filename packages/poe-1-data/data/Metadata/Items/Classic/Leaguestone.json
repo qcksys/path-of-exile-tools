@@ -1,0 +1,23 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "default"
+    ],
+    "description_text": "LeagueStonePopupHelperText"
+  },
+  "Mods": {
+    "stat_description_list": "Metadata/StatDescriptions/leaguestone_stat_descriptions.txt",
+    "inventory_type": "Leaguestone",
+    "enable_rarity": [
+      "normal",
+      "magic",
+      "unique"
+    ],
+    "disable_rarity": "rare"
+  },
+  "Charges": {
+    "max_charges": 5,
+    "charges_per_use": 1
+  }
+}

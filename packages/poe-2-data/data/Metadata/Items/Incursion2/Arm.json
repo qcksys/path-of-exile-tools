@@ -1,0 +1,12 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "default"
+    ]
+  },
+  "Mods": {
+    "stat_description_list": "Data/StatDescriptions/stat_descriptions.csd",
+    "inventory_type": "IncursionArm"
+  }
+}

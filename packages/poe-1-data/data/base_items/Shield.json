@@ -1,0 +1,6310 @@
+{
+  "Metadata/Items/Armours/Shields/ShieldStr1": {
+    "domain": "item",
+    "drop_level": 1,
+    "implicits": [],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Splintered Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 9,
+        "max": 12
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr1.dds",
+      "id": "ShieldStr1"
+    },
+    "requirements": {
+      "strength": 11,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 1
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr2": {
+    "domain": "item",
+    "drop_level": 5,
+    "implicits": [
+      "IncreasedLifeImplicitShield1"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Corroded Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 36,
+        "max": 47
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 23,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr2.dds",
+      "id": "ShieldStr2"
+    },
+    "requirements": {
+      "strength": 20,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 5
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr3": {
+    "domain": "item",
+    "drop_level": 11,
+    "implicits": [
+      "IncreasedLifeImplicitShield1"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Rawhide Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 53,
+        "max": 66
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr3.dds",
+      "id": "ShieldStr3"
+    },
+    "requirements": {
+      "strength": 33,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 11
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr4": {
+    "domain": "item",
+    "drop_level": 17,
+    "implicits": [
+      "IncreasedLifeImplicitShield2"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Cedar Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 94,
+        "max": 113
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr4.dds",
+      "id": "ShieldStr4"
+    },
+    "requirements": {
+      "strength": 47,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 17
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr5": {
+    "domain": "item",
+    "drop_level": 24,
+    "implicits": [
+      "IncreasedLifeImplicitShield3"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Copper Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 151,
+        "max": 173
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr5.dds",
+      "id": "ShieldStr5"
+    },
+    "requirements": {
+      "strength": 62,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 24
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr6": {
+    "domain": "item",
+    "drop_level": 30,
+    "implicits": [
+      "IncreasedLifeImplicitShield1"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Reinforced Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 237,
+        "max": 260
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 23,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr6.dds",
+      "id": "ShieldStr6"
+    },
+    "requirements": {
+      "strength": 76,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 30
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr7": {
+    "domain": "item",
+    "drop_level": 35,
+    "implicits": [
+      "IncreasedLifeImplicitShield2"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Painted Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 188,
+        "max": 216
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr7.dds",
+      "id": "ShieldStr7"
+    },
+    "requirements": {
+      "strength": 87,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 35
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr8": {
+    "domain": "item",
+    "drop_level": 39,
+    "implicits": [
+      "IncreasedLifeImplicitShield1"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Buckskin Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 177,
+        "max": 209
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr3.dds",
+      "id": "ShieldStr3"
+    },
+    "requirements": {
+      "strength": 96,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 39
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr9": {
+    "domain": "item",
+    "drop_level": 43,
+    "implicits": [
+      "IncreasedLifeImplicitShield2"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Mahogany Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 230,
+        "max": 265
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr4.dds",
+      "id": "ShieldStr4"
+    },
+    "requirements": {
+      "strength": 105,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 43
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr10": {
+    "domain": "item",
+    "drop_level": 47,
+    "implicits": [
+      "IncreasedLifeImplicitShield3"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Bronze Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 290,
+        "max": 324
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr5.dds",
+      "id": "ShieldStr5"
+    },
+    "requirements": {
+      "strength": 114,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 47
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr11": {
+    "domain": "item",
+    "drop_level": 51,
+    "implicits": [
+      "IncreasedLifeImplicitShield1"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Girded Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 397,
+        "max": 437
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 23,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr6.dds",
+      "id": "ShieldStr6"
+    },
+    "requirements": {
+      "strength": 123,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 51
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr12": {
+    "domain": "item",
+    "drop_level": 55,
+    "implicits": [
+      "IncreasedLifeImplicitShield2"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Crested Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 293,
+        "max": 337
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr7.dds",
+      "id": "ShieldStr7"
+    },
+    "requirements": {
+      "strength": 132,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 55
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr13": {
+    "domain": "item",
+    "drop_level": 58,
+    "implicits": [
+      "IncreasedLifeImplicitShield1"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Shagreen Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 261,
+        "max": 308
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr3.dds",
+      "id": "ShieldStr3"
+    },
+    "requirements": {
+      "strength": 139,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 58
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr14": {
+    "domain": "item",
+    "drop_level": 61,
+    "implicits": [
+      "IncreasedLifeImplicitShield2"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Ebony Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 357,
+        "max": 411
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr4.dds",
+      "id": "ShieldStr4"
+    },
+    "requirements": {
+      "strength": 159,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 61
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr15": {
+    "domain": "item",
+    "drop_level": 64,
+    "implicits": [
+      "IncreasedLifeImplicitShield3"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Ezomyte Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 412,
+        "max": 474
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr5.dds",
+      "id": "ShieldStr5"
+    },
+    "requirements": {
+      "strength": 159,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 64
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr16": {
+    "domain": "item",
+    "drop_level": 67,
+    "implicits": [
+      "IncreasedLifeImplicitShield1"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Colossal Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 522,
+        "max": 601
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 23,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr6.dds",
+      "id": "ShieldStr6"
+    },
+    "requirements": {
+      "strength": 159,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 67
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStr17": {
+    "domain": "item",
+    "drop_level": 70,
+    "implicits": [
+      "IncreasedLifeImplicitShield2"
+    ],
+    "inventory_height": 4,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Pinnacle Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 467,
+        "max": 537
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStr7.dds",
+      "id": "ShieldStr7"
+    },
+    "requirements": {
+      "strength": 159,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 70
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrE1": {
+    "domain": "item",
+    "drop_level": 30,
+    "implicits": [
+      "ChanceToInflictScorchOnEnemyOnBlockImplicitE1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Exothermic Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 87,
+        "max": 100
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "not_for_sale",
+      "experimental_base",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/HeistShield.dds",
+      "id": "StrShieldExperimented1_"
+    },
+    "requirements": {
+      "strength": 76,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 30
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrE2": {
+    "domain": "item",
+    "drop_level": 50,
+    "implicits": [
+      "ChanceToInflictScorchOnEnemyOnBlockImplicitE1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Magmatic Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 144,
+        "max": 165
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 27,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "not_for_sale",
+      "experimental_base",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/HeistShield.dds",
+      "id": "StrShieldExperimented1_"
+    },
+    "requirements": {
+      "strength": 121,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 50
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrE3": {
+    "domain": "item",
+    "drop_level": 70,
+    "implicits": [
+      "ChanceToInflictScorchOnEnemyOnBlockImplicitE1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Heat-attuned Tower Shield",
+    "properties": {
+      "armour": {
+        "min": 220,
+        "max": 253
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 29,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "str_shield",
+      "not_for_sale",
+      "experimental_base",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/HeistShield.dds",
+      "id": "StrShieldExperimented1_"
+    },
+    "requirements": {
+      "strength": 159,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 70
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex1": {
+    "domain": "item",
+    "drop_level": 2,
+    "implicits": [
+      "MovementVelocityImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Goathide Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 14,
+        "max": 20
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex1.dds",
+      "id": "ShieldDex1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 13,
+      "intelligence": 0,
+      "level": 2
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex2": {
+    "domain": "item",
+    "drop_level": 8,
+    "implicits": [
+      "MovementVelocityImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Pine Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 51,
+        "max": 66
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex2.dds",
+      "id": "ShieldDex2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 26,
+      "intelligence": 0,
+      "level": 8
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex3": {
+    "domain": "item",
+    "drop_level": 16,
+    "implicits": [
+      "MovementVelocityImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Painted Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 123,
+        "max": 154
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex3.dds",
+      "id": "ShieldDex3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 44,
+      "intelligence": 0,
+      "level": 16
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex4": {
+    "domain": "item",
+    "drop_level": 23,
+    "implicits": [
+      "MovementVelocityImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Hammered Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 116,
+        "max": 139
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 27,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex4.dds",
+      "id": "ShieldDex4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 60,
+      "intelligence": 0,
+      "level": 23
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex5": {
+    "domain": "item",
+    "drop_level": 29,
+    "implicits": [
+      "MovementVelocityImplicitShield3"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "War Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 169,
+        "max": 194
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex5.dds",
+      "id": "ShieldDex5"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 74,
+      "intelligence": 0,
+      "level": 29
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex6": {
+    "domain": "item",
+    "drop_level": 34,
+    "implicits": [
+      "MovementVelocityImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Gilded Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 225,
+        "max": 259
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex6.dds",
+      "id": "ShieldDex6"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 85,
+      "intelligence": 0,
+      "level": 34
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex7": {
+    "domain": "item",
+    "drop_level": 38,
+    "implicits": [
+      "MovementVelocityImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Oak Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 220,
+        "max": 259
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex2.dds",
+      "id": "ShieldDex2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 94,
+      "intelligence": 0,
+      "level": 38
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex8": {
+    "domain": "item",
+    "drop_level": 42,
+    "implicits": [
+      "MovementVelocityImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Enameled Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 311,
+        "max": 349
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex3.dds",
+      "id": "ShieldDex3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 103,
+      "intelligence": 0,
+      "level": 42
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex9": {
+    "domain": "item",
+    "drop_level": 46,
+    "implicits": [
+      "MovementVelocityImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Corrugated Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 227,
+        "max": 272
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 27,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex4.dds",
+      "id": "ShieldDex4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 112,
+      "intelligence": 0,
+      "level": 46
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex10": {
+    "domain": "item",
+    "drop_level": 50,
+    "implicits": [
+      "MovementVelocityImplicitShield3"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Battle Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 287,
+        "max": 330
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex5.dds",
+      "id": "ShieldDex5"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 121,
+      "intelligence": 0,
+      "level": 50
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex11": {
+    "domain": "item",
+    "drop_level": 54,
+    "implicits": [
+      "MovementVelocityImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Golden Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 354,
+        "max": 407
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex6.dds",
+      "id": "ShieldDex6"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 130,
+      "intelligence": 0,
+      "level": 54
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex12": {
+    "domain": "item",
+    "drop_level": 57,
+    "implicits": [
+      "MovementVelocityImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Ironwood Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 327,
+        "max": 385
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex2.dds",
+      "id": "ShieldDex2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 137,
+      "intelligence": 0,
+      "level": 57
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex13": {
+    "domain": "item",
+    "drop_level": 60,
+    "implicits": [
+      "MovementVelocityImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Lacquered Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 477,
+        "max": 549
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex3.dds",
+      "id": "ShieldDex3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 154,
+      "intelligence": 0,
+      "level": 60
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex14": {
+    "domain": "item",
+    "drop_level": 63,
+    "implicits": [
+      "MovementVelocityImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Vaal Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 330,
+        "max": 379
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 27,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex4.dds",
+      "id": "ShieldDex4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 159,
+      "intelligence": 0,
+      "level": 63
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex15": {
+    "domain": "item",
+    "drop_level": 66,
+    "implicits": [
+      "MovementVelocityImplicitShield3"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Crusader Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 385,
+        "max": 442
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex5.dds",
+      "id": "ShieldDex5"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 159,
+      "intelligence": 0,
+      "level": 66
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDex16": {
+    "domain": "item",
+    "drop_level": 69,
+    "implicits": [
+      "MovementVelocityImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Imperial Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 440,
+        "max": 506
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDex6.dds",
+      "id": "ShieldDex6"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 159,
+      "intelligence": 0,
+      "level": 69
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexE1": {
+    "domain": "item",
+    "drop_level": 30,
+    "implicits": [
+      "ChanceToInflictBrittleOnEnemyOnBlockImplicitE1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Endothermic Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 75,
+        "max": 86
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "not_for_sale",
+      "experimental_base",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/DexHeistShield.dds",
+      "id": "DexShieldExperimented1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 76,
+      "intelligence": 0,
+      "level": 30
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexE2": {
+    "domain": "item",
+    "drop_level": 50,
+    "implicits": [
+      "ChanceToInflictBrittleOnEnemyOnBlockImplicitE1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Polar Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 123,
+        "max": 142
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "not_for_sale",
+      "experimental_base",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/DexHeistShield.dds",
+      "id": "DexShieldExperimented1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 121,
+      "intelligence": 0,
+      "level": 50
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexE3": {
+    "domain": "item",
+    "drop_level": 70,
+    "implicits": [
+      "ChanceToInflictBrittleOnEnemyOnBlockImplicitE1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Cold-attuned Buckler",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 206,
+        "max": 237
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 28,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "dex_shield",
+      "not_for_sale",
+      "experimental_base",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/DexHeistShield.dds",
+      "id": "DexShieldExperimented1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 159,
+      "intelligence": 0,
+      "level": 70
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt1": {
+    "domain": "item",
+    "drop_level": 3,
+    "implicits": [
+      "SpellDamageImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Twig Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 6,
+        "max": 8
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 22,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt1.dds",
+      "id": "ShieldInt1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 15,
+      "level": 3
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt2": {
+    "domain": "item",
+    "drop_level": 9,
+    "implicits": [
+      "SpellDamageImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Yew Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 11,
+        "max": 14
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt2.dds",
+      "id": "ShieldInt2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 29,
+      "level": 9
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt3": {
+    "domain": "item",
+    "drop_level": 15,
+    "implicits": [
+      "MinionDamageImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Bone Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 15,
+        "max": 19
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 22,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "focus_can_roll_minion_modifiers",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt3.dds",
+      "id": "ShieldInt3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 42,
+      "level": 15
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt4": {
+    "domain": "item",
+    "drop_level": 23,
+    "implicits": [
+      "SpellDamageImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Tarnished Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 21,
+        "max": 25
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt4.dds",
+      "id": "ShieldInt4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 60,
+      "level": 23
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt5": {
+    "domain": "item",
+    "drop_level": 28,
+    "implicits": [
+      "SpellDamageImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Jingling Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 25,
+        "max": 29
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 23,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt5.dds",
+      "id": "ShieldInt5"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 71,
+      "level": 28
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt6": {
+    "domain": "item",
+    "drop_level": 33,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Brass Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 35,
+        "max": 40
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt6.dds",
+      "id": "ShieldInt6"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 83,
+      "level": 33
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt7": {
+    "domain": "item",
+    "drop_level": 37,
+    "implicits": [
+      "SpellDamageImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Walnut Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 32,
+        "max": 38
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt2.dds",
+      "id": "ShieldInt2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 92,
+      "level": 37
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt8": {
+    "domain": "item",
+    "drop_level": 41,
+    "implicits": [
+      "MinionDamageImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Ivory Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 35,
+        "max": 40
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 22,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "focus_can_roll_minion_modifiers",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt3.dds",
+      "id": "ShieldInt3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 101,
+      "level": 41
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt9": {
+    "domain": "item",
+    "drop_level": 45,
+    "implicits": [
+      "SpellDamageImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Ancient Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 38,
+        "max": 45
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt4.dds",
+      "id": "ShieldInt4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 110,
+      "level": 45
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt10": {
+    "domain": "item",
+    "drop_level": 49,
+    "implicits": [
+      "SpellDamageImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Chiming Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 42,
+        "max": 48
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 23,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt5.dds",
+      "id": "ShieldInt5"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 119,
+      "level": 49
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt11": {
+    "domain": "item",
+    "drop_level": 53,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Thorium Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 54,
+        "max": 62
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt6.dds",
+      "id": "ShieldInt6"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 128,
+      "level": 53
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt12": {
+    "domain": "item",
+    "drop_level": 56,
+    "implicits": [
+      "SpellDamageImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Lacewood Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 47,
+        "max": 55
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt2.dds",
+      "id": "ShieldInt2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 134,
+      "level": 56
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt13": {
+    "domain": "item",
+    "drop_level": 59,
+    "implicits": [
+      "MinionDamageImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Fossilised Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 49,
+        "max": 55
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 22,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "focus_can_roll_minion_modifiers",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt3.dds",
+      "id": "ShieldInt3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 141,
+      "level": 59
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt14": {
+    "domain": "item",
+    "drop_level": 62,
+    "implicits": [
+      "SpellDamageImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Vaal Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 56,
+        "max": 64
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt4.dds",
+      "id": "ShieldInt4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 159,
+      "level": 62
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt15": {
+    "domain": "item",
+    "drop_level": 65,
+    "implicits": [
+      "SpellDamageImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Harmonic Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 58,
+        "max": 66
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 23,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt5.dds",
+      "id": "ShieldInt5"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 159,
+      "level": 65
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldInt16": {
+    "domain": "item",
+    "drop_level": 68,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Titanium Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 67,
+        "max": 77
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldInt6.dds",
+      "id": "ShieldInt6"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 159,
+      "level": 68
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldIntE1": {
+    "domain": "item",
+    "drop_level": 30,
+    "implicits": [
+      "ChanceToInflictSapOnEnemyOnBlockImplicitE1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Exhausting Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 16,
+        "max": 19
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 22,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "not_for_sale",
+      "experimental_base",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/IntHeistShield.dds",
+      "id": "IntShieldExperimented1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 76,
+      "level": 30
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldIntE2": {
+    "domain": "item",
+    "drop_level": 50,
+    "implicits": [
+      "ChanceToInflictSapOnEnemyOnBlockImplicitE1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Subsuming Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 25,
+        "max": 29
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "not_for_sale",
+      "experimental_base",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/IntHeistShield.dds",
+      "id": "IntShieldExperimented1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 121,
+      "level": 50
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldIntE3": {
+    "domain": "item",
+    "drop_level": 70,
+    "implicits": [
+      "ChanceToInflictSapOnEnemyOnBlockImplicitE1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Transfer-attuned Spirit Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 39,
+        "max": 45
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "focus",
+      "not_for_sale",
+      "experimental_base",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/IntHeistShield.dds",
+      "id": "IntShieldExperimented1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 159,
+      "level": 70
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex1": {
+    "domain": "item",
+    "drop_level": 5,
+    "implicits": [
+      "BlockRecoveryImplicitShield1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Rotted Round Shield",
+    "properties": {
+      "armour": {
+        "min": 13,
+        "max": 18
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 13,
+        "max": 18
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex1.dds",
+      "id": "ShieldStrDex1"
+    },
+    "requirements": {
+      "strength": 11,
+      "dexterity": 11,
+      "intelligence": 0,
+      "level": 5
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex2": {
+    "domain": "item",
+    "drop_level": 12,
+    "implicits": [
+      "BlockRecoveryImplicitShield3"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Fir Round Shield",
+    "properties": {
+      "armour": {
+        "min": 29,
+        "max": 37
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 29,
+        "max": 37
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex2.dds",
+      "id": "ShieldStrDex2"
+    },
+    "requirements": {
+      "strength": 19,
+      "dexterity": 19,
+      "intelligence": 0,
+      "level": 12
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex3": {
+    "domain": "item",
+    "drop_level": 20,
+    "implicits": [
+      "BlockRecoveryImplicitShield1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Studded Round Shield",
+    "properties": {
+      "armour": {
+        "min": 46,
+        "max": 58
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 46,
+        "max": 58
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 27,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex3.dds",
+      "id": "ShieldStrDex3"
+    },
+    "requirements": {
+      "strength": 29,
+      "dexterity": 29,
+      "intelligence": 0,
+      "level": 20
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex4": {
+    "domain": "item",
+    "drop_level": 27,
+    "implicits": [],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Scarlet Round Shield",
+    "properties": {
+      "armour": {
+        "min": 87,
+        "max": 100
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 87,
+        "max": 100
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex4.dds",
+      "id": "ShieldStrDex4"
+    },
+    "requirements": {
+      "strength": 37,
+      "dexterity": 37,
+      "intelligence": 0,
+      "level": 27
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex5": {
+    "domain": "item",
+    "drop_level": 33,
+    "implicits": [
+      "BlockRecoveryImplicitShield2"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Splendid Round Shield",
+    "properties": {
+      "armour": {
+        "min": 75,
+        "max": 86
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 75,
+        "max": 86
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex5.dds",
+      "id": "ShieldStrDex5"
+    },
+    "requirements": {
+      "strength": 44,
+      "dexterity": 44,
+      "intelligence": 0,
+      "level": 33
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex6": {
+    "domain": "item",
+    "drop_level": 39,
+    "implicits": [
+      "BlockRecoveryImplicitShield3"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Maple Round Shield",
+    "properties": {
+      "armour": {
+        "min": 88,
+        "max": 99
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 88,
+        "max": 99
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex2.dds",
+      "id": "ShieldStrDex2"
+    },
+    "requirements": {
+      "strength": 52,
+      "dexterity": 52,
+      "intelligence": 0,
+      "level": 39
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex7": {
+    "domain": "item",
+    "drop_level": 45,
+    "implicits": [
+      "BlockRecoveryImplicitShield1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Spiked Round Shield",
+    "properties": {
+      "armour": {
+        "min": 102,
+        "max": 120
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 102,
+        "max": 120
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 27,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex3.dds",
+      "id": "ShieldStrDex3"
+    },
+    "requirements": {
+      "strength": 59,
+      "dexterity": 59,
+      "intelligence": 0,
+      "level": 45
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex8": {
+    "domain": "item",
+    "drop_level": 49,
+    "implicits": [],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Crimson Round Shield",
+    "properties": {
+      "armour": {
+        "min": 155,
+        "max": 178
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 155,
+        "max": 178
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex4.dds",
+      "id": "ShieldStrDex4"
+    },
+    "requirements": {
+      "strength": 64,
+      "dexterity": 64,
+      "intelligence": 0,
+      "level": 49
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex9": {
+    "domain": "item",
+    "drop_level": 54,
+    "implicits": [
+      "BlockRecoveryImplicitShield2"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Baroque Round Shield",
+    "properties": {
+      "armour": {
+        "min": 122,
+        "max": 140
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 122,
+        "max": 140
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex5.dds",
+      "id": "ShieldStrDex5"
+    },
+    "requirements": {
+      "strength": 70,
+      "dexterity": 70,
+      "intelligence": 0,
+      "level": 54
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex10": {
+    "domain": "item",
+    "drop_level": 58,
+    "implicits": [
+      "BlockRecoveryImplicitShield3"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Teak Round Shield",
+    "properties": {
+      "armour": {
+        "min": 131,
+        "max": 146
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 131,
+        "max": 146
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex2.dds",
+      "id": "ShieldStrDex2"
+    },
+    "requirements": {
+      "strength": 74,
+      "dexterity": 74,
+      "intelligence": 0,
+      "level": 58
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex11": {
+    "domain": "item",
+    "drop_level": 62,
+    "implicits": [
+      "BlockRecoveryImplicitShield1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Spiny Round Shield",
+    "properties": {
+      "armour": {
+        "min": 154,
+        "max": 177
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 154,
+        "max": 177
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 27,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex3.dds",
+      "id": "ShieldStrDex3"
+    },
+    "requirements": {
+      "strength": 85,
+      "dexterity": 85,
+      "intelligence": 0,
+      "level": 62
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex12": {
+    "domain": "item",
+    "drop_level": 66,
+    "implicits": [],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Cardinal Round Shield",
+    "properties": {
+      "armour": {
+        "min": 209,
+        "max": 240
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 209,
+        "max": 240
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex4.dds",
+      "id": "ShieldStrDex4"
+    },
+    "requirements": {
+      "strength": 85,
+      "dexterity": 85,
+      "intelligence": 0,
+      "level": 66
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrDex13": {
+    "domain": "item",
+    "drop_level": 70,
+    "implicits": [
+      "BlockRecoveryImplicitShield2"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Elegant Round Shield",
+    "properties": {
+      "armour": {
+        "min": 148,
+        "max": 170
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 148,
+        "max": 170
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "str_dex_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrDex5.dds",
+      "id": "ShieldStrDex5"
+    },
+    "requirements": {
+      "strength": 85,
+      "dexterity": 85,
+      "intelligence": 0,
+      "level": 70
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt1": {
+    "domain": "item",
+    "drop_level": 7,
+    "implicits": [
+      "AllResistancesImplicitShield1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Plank Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 18,
+        "max": 25
+      },
+      "energy_shield": {
+        "min": 5,
+        "max": 7
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 22,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt1.dds",
+      "id": "ShieldStrInt1"
+    },
+    "requirements": {
+      "strength": 13,
+      "dexterity": 0,
+      "intelligence": 13,
+      "level": 7
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt2": {
+    "domain": "item",
+    "drop_level": 13,
+    "implicits": [
+      "AllResistancesImplicitShield1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Linden Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 43,
+        "max": 56
+      },
+      "energy_shield": {
+        "min": 11,
+        "max": 14
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt2.dds",
+      "id": "ShieldStrInt2"
+    },
+    "requirements": {
+      "strength": 20,
+      "dexterity": 0,
+      "intelligence": 20,
+      "level": 13
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt3": {
+    "domain": "item",
+    "drop_level": 20,
+    "implicits": [],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Reinforced Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 65,
+        "max": 81
+      },
+      "energy_shield": {
+        "min": 15,
+        "max": 18
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt4.dds",
+      "id": "ShieldStrInt3"
+    },
+    "requirements": {
+      "strength": 29,
+      "dexterity": 0,
+      "intelligence": 29,
+      "level": 20
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt4": {
+    "domain": "item",
+    "drop_level": 27,
+    "implicits": [
+      "AllResistancesImplicitShield2"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Layered Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 62,
+        "max": 73
+      },
+      "energy_shield": {
+        "min": 13,
+        "max": 16
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt3.dds",
+      "id": "ShieldStrInt4"
+    },
+    "requirements": {
+      "strength": 37,
+      "dexterity": 0,
+      "intelligence": 37,
+      "level": 27
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt5": {
+    "domain": "item",
+    "drop_level": 34,
+    "implicits": [
+      "AllResistancesImplicitShield3"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Ceremonial Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 77,
+        "max": 89
+      },
+      "energy_shield": {
+        "min": 16,
+        "max": 19
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 22,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt5.dds",
+      "id": "ShieldStrInt5"
+    },
+    "requirements": {
+      "strength": 46,
+      "dexterity": 0,
+      "intelligence": 46,
+      "level": 34
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt6": {
+    "domain": "item",
+    "drop_level": 40,
+    "implicits": [
+      "AllResistancesImplicitShield1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Etched Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 127,
+        "max": 142
+      },
+      "energy_shield": {
+        "min": 27,
+        "max": 30
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt2.dds",
+      "id": "ShieldStrInt2"
+    },
+    "requirements": {
+      "strength": 53,
+      "dexterity": 0,
+      "intelligence": 53,
+      "level": 40
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt7": {
+    "domain": "item",
+    "drop_level": 46,
+    "implicits": [],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Steel Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 146,
+        "max": 167
+      },
+      "energy_shield": {
+        "min": 30,
+        "max": 35
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt4.dds",
+      "id": "ShieldStrInt3"
+    },
+    "requirements": {
+      "strength": 60,
+      "dexterity": 0,
+      "intelligence": 60,
+      "level": 46
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt8": {
+    "domain": "item",
+    "drop_level": 50,
+    "implicits": [
+      "AllResistancesImplicitShield2"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Laminated Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 113,
+        "max": 133
+      },
+      "energy_shield": {
+        "min": 23,
+        "max": 27
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt3.dds",
+      "id": "ShieldStrInt4"
+    },
+    "requirements": {
+      "strength": 65,
+      "dexterity": 0,
+      "intelligence": 65,
+      "level": 50
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt9": {
+    "domain": "item",
+    "drop_level": 55,
+    "implicits": [
+      "AllResistancesImplicitShield3"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Angelic Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 124,
+        "max": 142
+      },
+      "energy_shield": {
+        "min": 25,
+        "max": 29
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 22,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt5.dds",
+      "id": "ShieldStrInt5"
+    },
+    "requirements": {
+      "strength": 71,
+      "dexterity": 0,
+      "intelligence": 71,
+      "level": 55
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt10": {
+    "domain": "item",
+    "drop_level": 59,
+    "implicits": [
+      "AllResistancesImplicitShield1"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Branded Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 186,
+        "max": 208
+      },
+      "energy_shield": {
+        "min": 38,
+        "max": 43
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt2.dds",
+      "id": "ShieldStrInt2"
+    },
+    "requirements": {
+      "strength": 76,
+      "dexterity": 0,
+      "intelligence": 76,
+      "level": 59
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt11": {
+    "domain": "item",
+    "drop_level": 62,
+    "implicits": [],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Champion Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 215,
+        "max": 247
+      },
+      "energy_shield": {
+        "min": 44,
+        "max": 50
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt4.dds",
+      "id": "ShieldStrInt3"
+    },
+    "requirements": {
+      "strength": 85,
+      "dexterity": 0,
+      "intelligence": 85,
+      "level": 62
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt12": {
+    "domain": "item",
+    "drop_level": 65,
+    "implicits": [
+      "AllResistancesImplicitShield2"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Mosaic Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 147,
+        "max": 169
+      },
+      "energy_shield": {
+        "min": 30,
+        "max": 34
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt3.dds",
+      "id": "ShieldStrInt4"
+    },
+    "requirements": {
+      "strength": 85,
+      "dexterity": 0,
+      "intelligence": 85,
+      "level": 65
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldStrInt13": {
+    "domain": "item",
+    "drop_level": 68,
+    "implicits": [
+      "AllResistancesImplicitShield3"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Archon Kite Shield",
+    "properties": {
+      "armour": {
+        "min": 156,
+        "max": 179
+      },
+      "energy_shield": {
+        "min": 32,
+        "max": 37
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 22,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "str_int_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldStrInt5.dds",
+      "id": "ShieldStrInt5"
+    },
+    "requirements": {
+      "strength": 85,
+      "dexterity": 0,
+      "intelligence": 85,
+      "level": 68
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt1": {
+    "domain": "item",
+    "drop_level": 5,
+    "implicits": [
+      "ChanceToDodgeImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Spiked Bundle",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 4,
+        "max": 6
+      },
+      "evasion": {
+        "min": 13,
+        "max": 18
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt1.dds",
+      "id": "ShieldDexInt1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 11,
+      "intelligence": 11,
+      "level": 5
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt2": {
+    "domain": "item",
+    "drop_level": 12,
+    "implicits": [
+      "ChanceToDodgeImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Driftwood Spiked Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 11,
+        "max": 15
+      },
+      "evasion": {
+        "min": 46,
+        "max": 60
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt2.dds",
+      "id": "ShieldDexInt2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 19,
+      "intelligence": 19,
+      "level": 12
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt3": {
+    "domain": "item",
+    "drop_level": 20,
+    "implicits": [
+      "ChanceToDodgeSpellsImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Alloyed Spiked Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 13,
+        "max": 16
+      },
+      "evasion": {
+        "min": 56,
+        "max": 70
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt3.dds",
+      "id": "ShieldDexInt3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 29,
+      "intelligence": 29,
+      "level": 20
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt4": {
+    "domain": "item",
+    "drop_level": 27,
+    "implicits": [
+      "ChanceToDodgeImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Burnished Spiked Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 13,
+        "max": 16
+      },
+      "evasion": {
+        "min": 62,
+        "max": 73
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt4.dds",
+      "id": "ShieldDexInt4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 37,
+      "intelligence": 37,
+      "level": 27
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt5": {
+    "domain": "item",
+    "drop_level": 33,
+    "implicits": [
+      "ChanceToDodgeSpellsImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Ornate Spiked Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 26,
+        "max": 29
+      },
+      "evasion": {
+        "min": 120,
+        "max": 135
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt5.dds",
+      "id": "ShieldDexInt5"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 44,
+      "intelligence": 44,
+      "level": 33
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt6": {
+    "domain": "item",
+    "drop_level": 39,
+    "implicits": [
+      "ChanceToDodgeImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Redwood Spiked Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 30,
+        "max": 34
+      },
+      "evasion": {
+        "min": 142,
+        "max": 163
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt2.dds",
+      "id": "ShieldDexInt2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 52,
+      "intelligence": 52,
+      "level": 39
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt7": {
+    "domain": "item",
+    "drop_level": 45,
+    "implicits": [
+      "ChanceToDodgeSpellsImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Compound Spiked Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 25,
+        "max": 30
+      },
+      "evasion": {
+        "min": 122,
+        "max": 144
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt3.dds",
+      "id": "ShieldDexInt3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 59,
+      "intelligence": 59,
+      "level": 45
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt8": {
+    "domain": "item",
+    "drop_level": 49,
+    "implicits": [
+      "ChanceToDodgeImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Polished Spiked Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 23,
+        "max": 27
+      },
+      "evasion": {
+        "min": 111,
+        "max": 131
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt4.dds",
+      "id": "ShieldDexInt4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 64,
+      "intelligence": 64,
+      "level": 49
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt9": {
+    "domain": "item",
+    "drop_level": 54,
+    "implicits": [
+      "ChanceToDodgeSpellsImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Sovereign Spiked Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 40,
+        "max": 45
+      },
+      "evasion": {
+        "min": 195,
+        "max": 218
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt5.dds",
+      "id": "ShieldDexInt5"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 70,
+      "intelligence": 70,
+      "level": 54
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt10": {
+    "domain": "item",
+    "drop_level": 58,
+    "implicits": [
+      "ChanceToDodgeImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Alder Spiked Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 43,
+        "max": 49
+      },
+      "evasion": {
+        "min": 209,
+        "max": 240
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt2.dds",
+      "id": "ShieldDexInt2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 74,
+      "intelligence": 74,
+      "level": 58
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt11": {
+    "domain": "item",
+    "drop_level": 62,
+    "implicits": [
+      "ChanceToDodgeSpellsImplicitShield1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Ezomyte Spiked Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 37,
+        "max": 43
+      },
+      "evasion": {
+        "min": 181,
+        "max": 209
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 25,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt3.dds",
+      "id": "ShieldDexInt3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 85,
+      "intelligence": 85,
+      "level": 62
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt12": {
+    "domain": "item",
+    "drop_level": 66,
+    "implicits": [
+      "ChanceToDodgeImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Mirrored Spiked Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 31,
+        "max": 35
+      },
+      "evasion": {
+        "min": 151,
+        "max": 174
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 26,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt4.dds",
+      "id": "ShieldDexInt4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 85,
+      "intelligence": 85,
+      "level": 66
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDexInt13": {
+    "domain": "item",
+    "drop_level": 70,
+    "implicits": [
+      "ChanceToDodgeSpellsImplicitShield2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Supreme Spiked Shield",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 49,
+        "max": 57
+      },
+      "evasion": {
+        "min": 242,
+        "max": 278
+      },
+      "ward": null,
+      "movement_speed": -3,
+      "block": 24,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "dex_int_shield",
+      "top_tier_base_item_type",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/ShieldDexInt5.dds",
+      "id": "ShieldDexInt5"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 85,
+      "intelligence": 85,
+      "level": 70
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Shields/ShieldDemigods": {
+    "domain": "item",
+    "drop_level": 15,
+    "implicits": [
+      "ChaosResistDemigodsTorchImplicit"
+    ],
+    "inventory_height": 3,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Shields/AbstractShield",
+    "item_class": "Shield",
+    "name": "Golden Flame",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": -3,
+      "block": 20,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "unique_only",
+    "tags": [
+      "not_for_sale",
+      "demigods",
+      "shield",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Shields/DemigodsShield.dds",
+      "id": "DemigodsTorch"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 15
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  }
+}

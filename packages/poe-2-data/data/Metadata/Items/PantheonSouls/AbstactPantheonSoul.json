@@ -1,0 +1,13 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "default"
+    ],
+    "description_text": "ItemDescriptionPantheonSoul"
+  },
+  "Usable": {
+    "use_type": "Usable",
+    "action": "unlock_pantheon_power"
+  }
+}

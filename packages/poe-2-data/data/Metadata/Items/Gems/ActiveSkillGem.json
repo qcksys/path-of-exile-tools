@@ -1,0 +1,18 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "gem",
+      "default"
+    ],
+    "x_size": 1,
+    "y_size": 1,
+    "description_text": "ItemDescriptionActiveSkillGem"
+  },
+  "Quality": {
+    "max_quality": 20
+  },
+  "Sockets": {
+    "socket_info": "2:0:100 3:5:30 4:30:5 5:50:1 6:9999:1"
+  }
+}

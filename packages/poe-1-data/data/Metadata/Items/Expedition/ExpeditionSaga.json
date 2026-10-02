@@ -1,0 +1,20 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "expedition_logbook",
+      "default"
+    ],
+    "description_text": "ItemDescriptionExpeditionLogbook"
+  },
+  "Mods": {
+    "stat_description_list": "Metadata/StatDescriptions/stat_descriptions.txt",
+    "mod_stat_description_list": "Metadata/StatDescriptions/advanced_mod_stat_descriptions.txt",
+    "enable_rarity": [
+      "normal",
+      "magic",
+      "rare",
+      "unique"
+    ]
+  }
+}

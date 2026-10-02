@@ -1,0 +1,19 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "default"
+    ],
+    "x_size": 1,
+    "y_size": 1,
+    "description_text": "WatchstoneDescriptionText"
+  },
+  "Mods": {
+    "stat_description_list": "Data/StatDescriptions/atlas_stat_descriptions.csd",
+    "enable_rarity": [
+      "normal",
+      "magic"
+    ],
+    "disable_rarity": "rare"
+  }
+}

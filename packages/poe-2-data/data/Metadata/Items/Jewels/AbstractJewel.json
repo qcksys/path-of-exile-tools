@@ -1,0 +1,21 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "default"
+    ],
+    "x_size": 1,
+    "y_size": 1,
+    "description_text": "ItemDescriptionPassiveJewel"
+  },
+  "Mods": {
+    "stat_description_list": "Data/StatDescriptions/stat_descriptions.csd",
+    "mod_stat_description_list": "Data/StatDescriptions/advanced_mod_stat_descriptions.csd",
+    "enable_rarity": [
+      "magic",
+      "rare",
+      "unique"
+    ],
+    "inventory_type": "passivejewels"
+  }
+}
