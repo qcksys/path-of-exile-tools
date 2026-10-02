@@ -22,6 +22,12 @@ export default function Poe1Home() {
                         Vendor Recipe Arbitrage
                     </Link>
                     <Link
+                        to="/1/recombinator"
+                        className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    >
+                        Recombinator Simulator
+                    </Link>
+                    <Link
                         to="/1/market"
                         className="rounded-lg border border-border px-6 py-3 font-medium transition-colors hover:bg-muted"
                     >
