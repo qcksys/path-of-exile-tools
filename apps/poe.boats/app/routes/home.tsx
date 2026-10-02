@@ -16,14 +16,20 @@ const Home = () => {
                 />
                 <h1 className="font-heading text-4xl font-bold tracking-tight">POE.BOATS</h1>
                 <p className="text-muted-foreground text-lg">
-                    Path of Exile tooling for the boat league.
+                    Tools for Path of Exile 1 and Path of Exile 2.
                 </p>
                 <nav className="flex gap-4">
                     <Link
-                        to="/idol-planner"
+                        to="/1/"
                         className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                     >
-                        Idol Planner
+                        Path of Exile 1
+                    </Link>
+                    <Link
+                        to="/2/"
+                        className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    >
+                        Path of Exile 2
                     </Link>
                 </nav>
             </main>

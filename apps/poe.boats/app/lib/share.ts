@@ -66,7 +66,7 @@ export async function loadShare(db: TDatabase, shareId: string): Promise<SharedS
 
 export function buildShareUrl(baseUrl: string, shareId: string): string {
     const url = new URL(baseUrl);
-    url.pathname = `/idol-planner/share/${shareId}`;
+    url.pathname = `/1/idol-planner/share/${shareId}`;
     return url.toString();
 }
 
