@@ -10,9 +10,11 @@ The local DuckDB file is the _transient_ hot store — bulk-write friendly, OLAP
 ## Setup
 
 ```bash
-cp .env.example .env       # fill in POE_*; set POE_BOATS_INGEST_URL + POE_BOATS_INGEST_TOKEN
 vp install
+vp run env:check
 ```
+
+Environment values are validated by Varlock and resolved from the 1Password dev item by default. Complete the [repository environment setup](../../README.md#environment-configuration) first. Copy `.env.example` to `.env.local` only when overriding non-secret settings. Set `APP_ENV=prod` locally to use the production item and endpoint. Authenticate through the 1Password desktop app.
 
 The DuckDB file (default `./data.duckdb`) is created on first run. No migrations to push — the schema is declared as `CREATE TABLE IF NOT EXISTS` and applied on every connection.
 
@@ -138,18 +140,14 @@ poe-stash-ps prune
 
 ## poe.boats secret
 
-The HTTP route at `/api/stash-ingest` requires `Authorization: Bearer $STASH_INGEST_TOKEN`. Add the secret in the worker:
+The HTTP route at `/api/stash-ingest` requires a bearer token. Store it in the environment's 1Password item as `POE_BOATS_INGEST_TOKEN`. Varlock maps that field to this package's `POE_BOATS_INGEST_TOKEN` and the worker's `STASH_INGEST_TOKEN`; deployment synchronizes the worker secret.
 
-```bash
-# from apps/poe.boats
-wrangler secret put STASH_INGEST_TOKEN -e worker-prod
-wrangler secret put STASH_INGEST_TOKEN -e worker-dev
-```
+The default push target is `https://dev.poe.boats/api/stash-ingest`. With `APP_ENV=prod`, it becomes `https://poe.boats/api/stash-ingest`.
 
-Then put the same value in this package's `.env` as `POE_BOATS_INGEST_TOKEN`.
+Generate and review database migration SQL in `apps/poe.boats` before applying it to the selected environment:
 
-After adding the schema files, regenerate types and the migration in `apps/poe.boats`:
-
-```bash
-pnpm types:cf && pnpm db:generate && pnpm db:migrate
+```sh
+vp run types:cf
+vp run db:generate
+vp run db:migrate
 ```

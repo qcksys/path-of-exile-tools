@@ -18,7 +18,7 @@
         "resolveJsonModule": true,
         "allowImportingTsExtensions": true,
         "lib": ["DOM", "DOM.Iterable", "ESNext"],
-        "types": ["vite-plus/client", "@types/node", "@cloudflare/vitest-pool-workers"],
+        "types": ["vite-plus/client", "@types/node"],
         "target": "ES2022",
         "module": "ESNext",
         "moduleResolution": "bundler",

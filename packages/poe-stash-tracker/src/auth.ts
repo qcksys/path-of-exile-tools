@@ -1,4 +1,4 @@
-import { loadEnvFile } from "node:process";
+import "varlock/auto-load";
 import {
     createClient,
     createOAuthClient,
@@ -6,16 +6,10 @@ import {
     type Realm,
 } from "@poe-tools/api-client";
 
-try {
-    loadEnvFile(".env");
-} catch {
-    // .env is optional — env vars may already be set in the shell
-}
-
 function requireEnv(key: string): string {
     const v = process.env[key];
     if (!v) {
-        throw new Error(`Missing required env var: ${key}. Copy .env.example to .env.`);
+        throw new Error(`Missing required env var: ${key}. Run vp run env:check.`);
     }
     return v;
 }

@@ -12,6 +12,7 @@
         "#src/*": "./src/*"
     },
     "scripts": {
+        "env:check": "varlock load",
         "ps": "node src/ps/cli.ts",
         "cx": "node src/cx/cli.ts",
         "typecheck": "tsc --noEmit"
@@ -19,7 +20,9 @@
     "dependencies": {
         "@duckdb/node-api": "^1.4.0-r.1",
         "@poe-tools/api-client": "workspace:*",
-        "commander": "^14.0.0"
+        "@varlock/1password-plugin": "catalog:",
+        "commander": "^14.0.0",
+        "varlock": "catalog:"
     },
     "devDependencies": {
         "@types/node": "catalog:",

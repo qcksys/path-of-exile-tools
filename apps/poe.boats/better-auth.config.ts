@@ -3,7 +3,7 @@
  *
  * Docs: https://www.better-auth.com/docs/concepts/cli
  */
-import "./env";
+import "varlock/auto-load";
 import { createDbConnection } from "~/db/client";
 import { authServer as betterAuthApp } from "~/lib/auth.server";
 
