@@ -1,4 +1,5 @@
-import { Star, Unplug } from "lucide-react";
+import { Star, Unplug, X } from "lucide-react";
+import { Button } from "~/components/ui/button";
 import { draftAffixes } from "~/lib/recombinator-tree";
 import type { RecombinatorAffix } from "~/schemas/recombinator";
 
@@ -55,25 +56,33 @@ export function ModifierLegend() {
 
 export function ModifierFlags({
     text,
+    selected = [],
     onToggle,
+    onRemove,
 }: {
-    text: string;
+    text?: string;
+    selected?: RecombinatorAffix[];
     onToggle: (id: string, flag: "exclusive" | "nonNative", enabled: boolean) => void;
+    onRemove?: (id: string) => void;
 }) {
-    const affixes = [...new Map(draftAffixes(text).map((affix) => [affix.id, affix])).values()];
+    const affixes = [
+        ...new Map(
+            [...draftAffixes(text ?? ""), ...selected].map((affix) => [affix.id, affix]),
+        ).values(),
+    ];
     return affixes.length ? (
         <ul className="space-y-1 text-xs">
             {affixes.map((affix) => (
                 <li key={affix.id} className="flex min-w-0 items-center gap-2">
                     <span
-                        className="min-w-0 flex-1 truncate text-muted-foreground"
-                        title={affix.id}
+                        className={`min-w-0 flex-1 ${onRemove ? "" : "truncate text-muted-foreground"}`}
+                        title={affix.label ?? affix.id}
                     >
-                        {affix.id}
+                        {affix.label ?? affix.id}
                     </span>
                     <button
                         type="button"
-                        aria-label={`Exclusive: ${affix.id}`}
+                        aria-label={`Exclusive: ${affix.label ?? affix.id}`}
                         aria-pressed={affix.exclusive}
                         title={exclusiveDescription}
                         onClick={() => onToggle(affix.id, "exclusive", !affix.exclusive)}
@@ -83,7 +92,7 @@ export function ModifierFlags({
                     </button>
                     <button
                         type="button"
-                        aria-label={`NNN: ${affix.id}`}
+                        aria-label={`NNN: ${affix.label ?? affix.id}`}
                         aria-pressed={affix.nonNative}
                         title={nonNativeDescription}
                         onClick={() => onToggle(affix.id, "nonNative", !affix.nonNative)}
@@ -91,6 +100,16 @@ export function ModifierFlags({
                     >
                         <Unplug className="size-3.5" />
                     </button>
+                    {onRemove ? (
+                        <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            aria-label={`Remove ${affix.label ?? affix.id}`}
+                            onClick={() => onRemove(affix.id)}
+                        >
+                            <X />
+                        </Button>
+                    ) : null}
                 </li>
             ))}
         </ul>

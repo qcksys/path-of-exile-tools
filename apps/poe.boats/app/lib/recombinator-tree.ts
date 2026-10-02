@@ -40,6 +40,19 @@ export function toggleDraftAffixFlag(
             ...entry,
             prefixes: update(entry.prefixes),
             suffixes: update(entry.suffixes),
+            ...(entry.catalog
+                ? {
+                      catalog: {
+                          ...entry.catalog,
+                          prefixes: entry.catalog.prefixes.map((affix) =>
+                              affix.id === id ? { ...affix, [flag]: enabled } : affix,
+                          ),
+                          suffixes: entry.catalog.suffixes.map((affix) =>
+                              affix.id === id ? { ...affix, [flag]: enabled } : affix,
+                          ),
+                      },
+                  }
+                : {}),
         })),
     };
 }
@@ -78,12 +91,18 @@ export function connectTreeStep(
 export function layoutRecombinatorTree(draft: RecombinatorDraft) {
     const itemNodes = draft.items.map((item, index) => {
         const affixes: TreeAffix[] = [
-            ...draftAffixes(item.prefixes).map((affix) => ({ affix, side: "prefixes" as const })),
-            ...draftAffixes(item.suffixes).map((affix) => ({ affix, side: "suffixes" as const })),
+            ...[...(item.catalog?.prefixes ?? []), ...draftAffixes(item.prefixes)].map((affix) => ({
+                affix,
+                side: "prefixes" as const,
+            })),
+            ...[...(item.catalog?.suffixes ?? []), ...draftAffixes(item.suffixes)].map((affix) => ({
+                affix,
+                side: "suffixes" as const,
+            })),
         ];
         return {
             id: item.id,
-            name: item.name,
+            name: item.catalog ? `${item.name} · ${item.catalog.base.name}` : item.name,
             kind: "item" as const,
             index,
             affixes,

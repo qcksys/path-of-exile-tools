@@ -3,8 +3,10 @@ import { z } from "zod";
 const labelSchema = z.string().trim().min(1).max(80);
 
 export const recombinatorAffixSchema = z.object({
-    id: labelSchema,
-    group: labelSchema,
+    id: z.string().trim().min(1).max(256),
+    label: z.string().min(1).max(2000).optional(),
+    group: z.string().trim().min(1).max(256),
+    groups: z.array(z.string().min(1).max(256)).min(1).optional(),
     exclusive: z.boolean(),
     nonNative: z.boolean().default(false),
 });
@@ -18,7 +20,7 @@ export const recombinatorItemSchema = z
     })
     .superRefine((item, ctx) => {
         for (const side of ["prefixes", "suffixes"] as const) {
-            const groups = item[side].map((affix) => affix.group);
+            const groups = item[side].flatMap(affixGroups);
             if (new Set(groups).size !== groups.length) {
                 ctx.addIssue({
                     code: "custom",
@@ -74,6 +76,7 @@ export const recombinatorPlanSchema = z
                     const definition = JSON.stringify([
                         side,
                         affix.group,
+                        affixGroups(affix).toSorted(),
                         affix.exclusive,
                         affix.nonNative,
                     ]);
@@ -94,6 +97,15 @@ export type RecombinatorAffix = z.infer<typeof recombinatorAffixSchema>;
 export type RecombinatorItem = z.infer<typeof recombinatorItemSchema>;
 export type RecombinatorPlan = z.infer<typeof recombinatorPlanSchema>;
 
+export function affixGroups(affix: RecombinatorAffix): string[] {
+    return [...new Set([affix.group, ...(affix.groups ?? [])])];
+}
+
+export function sharesAffixGroup(left: RecombinatorAffix, right: RecombinatorAffix): boolean {
+    const groups = new Set(affixGroups(left));
+    return affixGroups(right).some((group) => groups.has(group));
+}
+
 export function parseAffixes(text: string): RecombinatorAffix[] {
     return text
         .split(/\r?\n/)
@@ -106,6 +118,11 @@ export function parseAffixes(text: string): RecombinatorAffix[] {
             const parts = value.split("|");
             if (parts.length > 2) throw new Error("Use one optional | group after each modifier.");
             const [id, group] = parts.map((part) => part.trim());
-            return recombinatorAffixSchema.parse({ id, group: group ?? id, exclusive, nonNative });
+            return recombinatorAffixSchema.parse({
+                id: labelSchema.parse(id),
+                group: labelSchema.parse(group ?? id),
+                exclusive,
+                nonNative,
+            });
         });
 }
