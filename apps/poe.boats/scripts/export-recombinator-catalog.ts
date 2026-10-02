@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { Command, runCli } from "@poe-tools/cli";
 import { z } from "zod";
 import { availableCatalogMods } from "../app/lib/recombinator-catalog";
 import { recombinatorCatalogSchema } from "../app/schemas/recombinator-catalog";
@@ -141,20 +142,28 @@ export async function exportRecombinatorCatalog(snapshot: string, output: string
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-    const data = resolve("../../packages/poe-game-data/data/poe1");
-    const snapshot =
-        process.argv[2] ??
-        resolve(
-            data,
-            z
-                .object({ snapshot: z.string() })
-                .parse(JSON.parse(await readFile(resolve(data, "latest.json"), "utf8"))).snapshot,
-        );
-    const catalog = await exportRecombinatorCatalog(
-        snapshot,
-        resolve("public/game-data/recombinator-poe1.json"),
-    );
-    console.log(
-        `PoE 1 ${catalog.patch}: ${catalog.bases.length} bases, ${catalog.mods.length} mods`,
-    );
+    const program = new Command()
+        .name("export-recombinator-catalog")
+        .description("Export the PoE 1 recombinator catalog from a saved snapshot")
+        .argument("[snapshot]", "snapshot directory; defaults to the latest PoE 1 snapshot")
+        .action(async (selected?: string) => {
+            const data = resolve("../../packages/poe-game-data/data/poe1");
+            const snapshot =
+                selected ??
+                resolve(
+                    data,
+                    z
+                        .object({ snapshot: z.string() })
+                        .parse(JSON.parse(await readFile(resolve(data, "latest.json"), "utf8")))
+                        .snapshot,
+                );
+            const catalog = await exportRecombinatorCatalog(
+                snapshot,
+                resolve("public/game-data/recombinator-poe1.json"),
+            );
+            console.log(
+                `PoE 1 ${catalog.patch}: ${catalog.bases.length} bases, ${catalog.mods.length} mods`,
+            );
+        });
+    process.exitCode = await runCli(program);
 }

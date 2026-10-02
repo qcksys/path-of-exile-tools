@@ -11,6 +11,7 @@ allowBuilds:
 catalog:
   "@base-ui/react": ^1.4.1
   "@biomejs/biome": 2.4.8
+  '@clack/prompts': ^1.8.1
   "@fontsource-variable/geist": ^5.2.8
   '@imagemagick/magick-wasm': ^0.0.44
   "@tailwindcss/typography": ^0.5.19
@@ -21,8 +22,10 @@ catalog:
   '@varlock/1password-plugin': ^2.0.4
   '@varlock/cloudflare-integration': ^1.6.0
   '@xyflow/react': ^12.12.0
+  ajv: ^8.20.0
   class-variance-authority: ^0.7.1
   cmdk: ^1.1.1
+  commander: ^14.0.3
   cross-env: ^10.1.0
   drizzle-kit: 1.0.0-beta.21
   drizzle-orm: 1.0.0-beta.21

@@ -1,5 +1,3 @@
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { PublicStashChange } from "@poe-tools/api-client";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { createPoeClient, LEAGUE, REALM } from "#src/auth.ts";
@@ -209,9 +207,7 @@ export async function ingestPage(
     };
 }
 
-async function main() {
-    const pages = Math.max(1, Number(process.argv[2] ?? DEFAULT_PAGES));
-    const cursorOverride = process.argv[3];
+export async function runIngestPs(pages = DEFAULT_PAGES, cursorOverride?: string) {
     const db = openDb();
     const client = createPoeClient();
 
@@ -275,11 +271,4 @@ async function main() {
             );
         }
     }
-}
-
-if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
-    main().catch((err) => {
-        console.error(err);
-        process.exit(1);
-    });
 }

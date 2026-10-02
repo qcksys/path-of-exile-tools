@@ -1,22 +1,10 @@
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { PoeApiClient } from "@poe-tools/api-client";
 import { eq } from "drizzle-orm";
-import { createPoeClient, LEAGUE, REALM } from "#src/auth.ts";
-import { type Db, openDb } from "#src/db.ts";
+import { LEAGUE, REALM } from "#src/auth.ts";
+import type { Db } from "#src/db.ts";
 import { tCurrencyRate, tStreamCursor } from "#src/schema.ts";
 
 const STREAM = "cxapi";
-
-function parseFromArg(): number | null {
-    const arg = process.argv[2];
-    if (!arg) return null;
-    const n = Number(arg);
-    if (!Number.isFinite(n) || n <= 0) {
-        throw new Error(`Invalid from-hour arg: ${arg}. Expected a unix timestamp in seconds.`);
-    }
-    return Math.floor(n / 3600) * 3600;
-}
 
 function previousHour(): number {
     return Math.floor(Date.now() / 3_600_000) * 3600 - 3600;
@@ -77,11 +65,4 @@ export async function ingestCx(db: Db, client: PoeApiClient, fromHour?: number) 
             `no markets matched POE_LEAGUE=${JSON.stringify(LEAGUE)}. Leagues in this hour:\n  ${seen.join("\n  ")}`,
         );
     }
-}
-
-if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
-    ingestCx(openDb(), createPoeClient(), parseFromArg() ?? undefined).catch((err) => {
-        console.error(err);
-        process.exit(1);
-    });
 }
