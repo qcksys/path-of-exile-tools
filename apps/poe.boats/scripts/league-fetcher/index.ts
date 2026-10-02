@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { Command, runCli } from "@poe-tools/cli";
 import ky from "ky";
 
 const OUTPUT_DIR = path.join(import.meta.dirname, "../../app/data");
@@ -57,4 +58,8 @@ async function main() {
     }
 }
 
-main();
+const program = new Command()
+    .name("league-fetcher")
+    .description("Fetch league data from the official trade API")
+    .action(main);
+process.exitCode = await runCli(program);

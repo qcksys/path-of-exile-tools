@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "minItems": 1,
+  "type": "array",
+  "items": {
+    "type": "string"
+  },
+  "$id": "urn:qcksys:poe2:4.5.5-build.4:tags.schema.json",
+  "$comment": "Generated from Zod. Cross-field refinements (such as min <= max) and dataset reference checks remain in the Zod validators."
+}

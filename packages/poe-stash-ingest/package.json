@@ -20,8 +20,8 @@
     "dependencies": {
         "@duckdb/node-api": "^1.4.0-r.1",
         "@poe-tools/api-client": "workspace:*",
+        "@poe-tools/cli": "workspace:*",
         "@varlock/1password-plugin": "catalog:",
-        "commander": "^14.0.0",
         "varlock": "catalog:"
     },
     "devDependencies": {

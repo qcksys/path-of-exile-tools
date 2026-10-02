@@ -7,7 +7,8 @@
             "!manifest.json",
             "!src/schemas.ts",
             "!src/release.ts",
-            "!types"
+            "!types",
+            "!json-schema"
         ]
     }
 }

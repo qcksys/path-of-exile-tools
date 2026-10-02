@@ -27,6 +27,14 @@ Import only the JSON datasets you need. The package root exports schemas, types,
 
 `schemaForDataFile(path)` selects a schema for a path relative to `data/`. `validateDataset` checks relationships between the five core datasets. All extracted normalized JSON is included once; duplicate minified JSON, raw binaries, and images remain in the local extraction snapshot. This is the pipeline's bases/mods/stats dataset, not every game table or a complete crafting simulator.
 
+Draft 2020-12 JSON Schemas are included under `json-schema/` and exported as JSON subpaths:
+
+```ts
+import modsJsonSchema from "@qcksys/poe-2-data/json-schema/mods.schema.json" with { type: "json" };
+```
+
+Each `manifest.files[path].schema` points to the matching schema relative to the package root. The eight schema files cover all data shapes and the release manifest. They are generated from Zod's output schemas, so defaulted fields are required. Cross-field range comparisons and dataset references still require Zod/`validateDataset`; JSON Schema validates the document structure. See [schema generation and verification](../poe-game-data/DISTRIBUTION.md#json-schema-exports).
+
 Versions are derived from client builds: three components stay unchanged; remaining components become `-build.<components>` (for example `3.29.3.3` becomes `3.29.3-build.3`). Pin an exact version: this follows client releases, not an independent promise of schema compatibility. The exact build remains in `clientBuild` and the manifest. npm treats `-build.N` as a prerelease identifier.
 
 PoE 2 client spawn weights represent client eligibility. They are not Craft of Exile's empirical relative weights.

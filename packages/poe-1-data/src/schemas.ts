@@ -94,7 +94,10 @@ export const itemClassSchema = z.strictObject({
     influence_tags: z.array(z.string()).nullable().default(null),
 });
 const nonemptyRecord = <T extends z.ZodType>(schema: T) =>
-    z.record(z.string(), schema).refine((value) => Object.keys(value).length > 0, "Empty dataset");
+    z
+        .record(z.string(), schema)
+        .refine((value) => Object.keys(value).length > 0, "Empty dataset")
+        .meta({ minProperties: 1 });
 export const baseItemsSchema = nonemptyRecord(baseSchema);
 export const modsSchema = nonemptyRecord(modSchema);
 export const statsSchema = nonemptyRecord(statSchema);
@@ -157,9 +160,14 @@ export const dataPackageManifestSchema = z
         files: z
             .record(
                 z.string(),
-                z.strictObject({ sha256: sha256Schema, bytes: z.number().int().positive() }),
+                z.strictObject({
+                    sha256: sha256Schema,
+                    bytes: z.number().int().positive(),
+                    schema: z.string().regex(/^json-schema\/[a-z_]+\.schema\.json$/),
+                }),
             )
-            .refine((files) => Object.keys(files).length > 0),
+            .refine((files) => Object.keys(files).length > 0)
+            .meta({ minProperties: 1 }),
     })
     .superRefine((manifest, ctx) => {
         if (

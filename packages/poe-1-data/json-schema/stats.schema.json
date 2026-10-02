@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "propertyNames": {
+    "type": "string"
+  },
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "alias": {
+        "type": "object",
+        "properties": {
+          "when_in_main_hand": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "when_in_off_hand": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "when_in_main_hand",
+          "when_in_off_hand"
+        ],
+        "additionalProperties": false
+      },
+      "is_aliased": {
+        "type": "boolean"
+      },
+      "is_local": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "alias",
+      "is_aliased",
+      "is_local"
+    ],
+    "additionalProperties": false
+  },
+  "minProperties": 1,
+  "$id": "urn:qcksys:poe1:3.29.3-build.3:stats.schema.json",
+  "$comment": "Generated from Zod. Cross-field refinements (such as min <= max) and dataset reference checks remain in the Zod validators."
+}

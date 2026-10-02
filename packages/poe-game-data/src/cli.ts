@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
-import { parseArgs } from "node:util";
+import { fileURLToPath } from "node:url";
+import { Command, Option, positiveInteger, runCli } from "@poe-tools/cli";
 import { z } from "zod";
 import { gameSchema, loadConfig } from "./config.ts";
 import {
@@ -12,108 +13,132 @@ import { modPool } from "./model.ts";
 import { counts, packageDirectory, replay, run, verify } from "./pipeline.ts";
 import { discoverVersion } from "./versions.ts";
 
-async function main() {
-    const { values, positionals } = parseArgs({
-        allowPositionals: true,
-        options: {
-            game: { type: "string", default: "both" },
-            config: { type: "string" },
-            output: { type: "string", default: "data" },
-            schema: { type: "string" },
-            snapshot: { type: "string" },
-            base: { type: "string" },
-            "item-level": { type: "string", default: "100" },
-            existing: { type: "string", multiple: true, default: [] },
-            help: { type: "boolean", short: "h" },
-            commit: { type: "boolean", default: false },
-        },
-    });
-    if (values.help || !positionals.length) {
-        console.log(
-            "Usage: extract <versions|run|package|verify|verify-packages|replay|inspect> [options]\n\nversions --game poe1|poe2|both\nrun --config pipeline.local.json [--game both] [--schema schema.json] [--output data] [--commit]\npackage --snapshot <path> [--commit]\nverify-packages [--game poe1|poe2|both]\nverify --snapshot data/poe1/snapshots/<id>\nreplay --snapshot <path> [--output data]\ninspect --snapshot <path> --base Metadata/Items/... [--item-level 100] [--existing ModId]",
-        );
-        return;
-    }
-    if (positionals.length !== 1) throw new Error("Expected one command");
-    const selected = values.game === "both" ? gameSchema.options : [gameSchema.parse(values.game)];
-    const required = (value: string | undefined, option: string) => {
-        if (!value) throw new Error(`Missing --${option}`);
-        return value;
-    };
-    if (values.commit && !["run", "package"].includes(positionals[0]!))
-        throw new Error("--commit is only supported for run and package");
-    let result: unknown;
-    switch (positionals[0]) {
-        case "versions":
-            result = Object.fromEntries(
-                await Promise.all(
-                    selected.map(async (game) => [game, { patch: await discoverVersion(game) }]),
+const gamesOption = () =>
+    new Option("--game <game>", "game to process")
+        .choices(["poe1", "poe2", "both"])
+        .default("both");
+const selectedGames = (value: string) =>
+    value === "both" ? gameSchema.options : [gameSchema.parse(value)];
+const print = (result: unknown) => console.log(JSON.stringify(result, null, 2));
+function required(value: string | undefined, name: string) {
+    if (!value) throw new Error(`Missing --${name}`);
+    return value;
+}
+
+export function createProgram() {
+    const program = new Command()
+        .name("extract")
+        .description("Extract, package, and inspect PoE client data");
+    program
+        .command("versions")
+        .description("Discover current client builds")
+        .addOption(gamesOption())
+        .action(async (options) => {
+            print(
+                Object.fromEntries(
+                    await Promise.all(
+                        selectedGames(options.game).map(async (game) => [
+                            game,
+                            { patch: await discoverVersion(game) },
+                        ]),
+                    ),
                 ),
             );
-            break;
-        case "run": {
-            const config = await loadConfig(required(values.config, "config"));
+        });
+    program
+        .command("run")
+        .description("Extract snapshots and generate tracked data packages")
+        .option("--config <path>", "pipeline configuration file")
+        .addOption(gamesOption())
+        .option("--schema <path>", "saved DAT schema; omit to download")
+        .option("--output <path>", "snapshot output directory", "data")
+        .option("--commit", "commit generated data packages", false)
+        .action(async (options) => {
+            const config = await loadConfig(required(options.config, "config"));
+            const selected = selectedGames(options.game);
             const games =
-                values.game === "both" ? selected.filter((game) => config[game]) : selected;
-            const snapshots = await run(config, values.output, games, values.schema);
+                options.game === "both" ? selected.filter((game) => config[game]) : selected;
+            const snapshots = await run(config, options.output, games, options.schema);
             const packages = [];
             for (const snapshot of snapshots) packages.push(await materializePackage(snapshot));
-            result = {
+            print({
                 snapshots,
                 packages,
-                ...(values.commit ? await commitDataPackages(packages) : {}),
-            };
-            break;
-        }
-        case "package": {
-            const packaged = await materializePackage(required(values.snapshot, "snapshot"));
-            result = {
-                ...packaged,
-                ...(values.commit ? await commitDataPackages([packaged]) : {}),
-            };
-            break;
-        }
-        case "verify-packages":
-            result = Object.fromEntries(
-                await Promise.all(
-                    selected.map(async (game) => [
-                        game,
-                        await verifyDataPackage(
-                            resolve(packageDirectory, "..", dataPackages[game]),
-                        ),
-                    ]),
+                ...(options.commit ? await commitDataPackages(packages) : {}),
+            });
+        });
+    program
+        .command("package")
+        .description("Generate a data package from a verified snapshot")
+        .option("--snapshot <path>", "snapshot directory")
+        .option("--commit", "commit the generated package", false)
+        .action(async (options) => {
+            const packaged = await materializePackage(required(options.snapshot, "snapshot"));
+            print({ ...packaged, ...(options.commit ? await commitDataPackages([packaged]) : {}) });
+        });
+    program
+        .command("verify-packages")
+        .description("Verify committed JSON, schemas, and release metadata")
+        .addOption(gamesOption())
+        .action(async (options) => {
+            print(
+                Object.fromEntries(
+                    await Promise.all(
+                        selectedGames(options.game).map(async (game) => [
+                            game,
+                            await verifyDataPackage(
+                                resolve(packageDirectory, "..", dataPackages[game]),
+                            ),
+                        ]),
+                    ),
                 ),
             );
-            break;
-        case "verify":
-            result = counts((await verify(required(values.snapshot, "snapshot"))).data);
-            break;
-        case "replay":
-            result = await replay(required(values.snapshot, "snapshot"), values.output);
-            break;
-        case "inspect": {
-            const { manifest, data } = await verify(required(values.snapshot, "snapshot"));
-            const id = required(values.base, "base");
+        });
+    program
+        .command("verify")
+        .description("Verify a saved extraction snapshot")
+        .option("--snapshot <path>", "snapshot directory")
+        .action(async (options) =>
+            print(counts((await verify(required(options.snapshot, "snapshot"))).data)),
+        );
+    program
+        .command("replay")
+        .description("Replay extraction offline using saved inputs")
+        .option("--snapshot <path>", "snapshot directory")
+        .option("--output <path>", "snapshot output directory", "data")
+        .action(async (options) =>
+            print(await replay(required(options.snapshot, "snapshot"), options.output)),
+        );
+    program
+        .command("inspect")
+        .description("Inspect the eligible modifier pool for an item base")
+        .option("--snapshot <path>", "snapshot directory")
+        .option("--base <id>", "base metadata path")
+        .option("--item-level <level>", "item level (1–100)", positiveInteger, 100)
+        .option(
+            "--existing <id>",
+            "existing modifier ID; repeat for multiple modifiers",
+            (value: string, previous: string[]) => [...previous, value],
+            [],
+        )
+        .action(async (options) => {
+            const level = z.number().int().min(1).max(100).parse(options.itemLevel);
+            const id = required(options.base, "base");
+            const { manifest, data } = await verify(required(options.snapshot, "snapshot"));
             const base = data.base_items[id];
             if (!base) throw new Error(`Unknown base: ${id}`);
-            const level = z.coerce.number().int().min(1).max(100).parse(values["item-level"]);
-            result = {
+            print({
                 game: manifest.game,
                 patch: manifest.patch,
                 base: { id, ...base },
                 item_level: level,
                 weight_provenance: manifest.weight_provenance,
-                pool: modPool(base, data.mods, level, values.existing),
-            };
-            break;
-        }
-        default:
-            throw new Error(`Unknown command: ${positionals[0]}`);
-    }
-    console.log(JSON.stringify(result, null, 2));
+                pool: modPool(base, data.mods, level, options.existing),
+            });
+        });
+    return program;
 }
 
-main().catch((error: unknown) => {
-    console.error(error);
-    process.exitCode = 1;
-});
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+    process.exitCode = await runCli(createProgram());
+}

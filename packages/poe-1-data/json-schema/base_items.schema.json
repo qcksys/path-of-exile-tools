@@ -1,0 +1,611 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "propertyNames": {
+    "type": "string"
+  },
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "domain": {
+        "type": "string"
+      },
+      "drop_level": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "implicits": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "inventory_height": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "inventory_width": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "inherits_from": {
+        "default": null,
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "item_class": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "properties": {
+        "type": "object",
+        "properties": {
+          "armour": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "min": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "max": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "energy_shield": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "min": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "max": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evasion": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "min": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "max": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ward": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "min": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "max": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "movement_speed": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "block": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "directions": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stack_size": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stack_size_currency_tab": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "full_stack_turns_into": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "charges_max": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "charges_per_use": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "duration": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "life_per_use": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mana_per_use": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attack_time": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "critical_strike_chance": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "physical_damage_max": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "physical_damage_min": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "range": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mana_burn_ms": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cooldown_ms": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "monster_id": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "monster_ability_text": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "monster_category": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "armour",
+          "energy_shield",
+          "evasion",
+          "ward",
+          "movement_speed",
+          "block",
+          "description",
+          "directions",
+          "stack_size",
+          "stack_size_currency_tab",
+          "full_stack_turns_into",
+          "charges_max",
+          "charges_per_use",
+          "duration",
+          "life_per_use",
+          "mana_per_use",
+          "attack_time",
+          "critical_strike_chance",
+          "physical_damage_max",
+          "physical_damage_min",
+          "range",
+          "mana_burn_ms",
+          "cooldown_ms",
+          "monster_id",
+          "monster_ability_text",
+          "monster_category"
+        ],
+        "additionalProperties": false
+      },
+      "release_state": {
+        "type": "string",
+        "enum": [
+          "released",
+          "unique_only",
+          "unreleased",
+          "legacy"
+        ]
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "visual_identity": {
+        "type": "object",
+        "properties": {
+          "dds_file": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "dds_file",
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "requirements": {
+        "default": null,
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "strength": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "dexterity": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "intelligence": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "level": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "strength",
+              "dexterity",
+              "intelligence",
+              "level"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "grants_buff": {
+        "default": null,
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "stats": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              }
+            },
+            "required": [
+              "id",
+              "stats"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "skills_granted": {
+        "default": null,
+        "anyOf": [
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "domain",
+      "drop_level",
+      "implicits",
+      "inventory_height",
+      "inventory_width",
+      "inherits_from",
+      "item_class",
+      "name",
+      "properties",
+      "release_state",
+      "tags",
+      "visual_identity",
+      "requirements",
+      "grants_buff",
+      "skills_granted"
+    ],
+    "additionalProperties": false
+  },
+  "minProperties": 1,
+  "$id": "urn:qcksys:poe1:3.29.3-build.3:base_items.schema.json",
+  "$comment": "Generated from Zod. Cross-field refinements (such as min <= max) and dataset reference checks remain in the Zod validators."
+}
