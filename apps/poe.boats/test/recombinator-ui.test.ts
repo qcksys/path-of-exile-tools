@@ -71,6 +71,9 @@ describe("recombinator editor", () => {
         fireEvent.keyDown(lowLevelInput, { key: "ArrowDown" });
         expect(screen.queryByRole("option", { name: /Fecund/ })).toBeNull();
         fireEvent.keyDown(lowLevelInput, { key: "Escape" });
+        fireEvent.click(screen.getByRole("button", { name: "Load example" }));
+        expect(screen.getByRole("combobox", { name: "Item 1 base" })).toHaveProperty("value", "");
+        expect(screen.queryByLabelText("Item 1 level")).toBeNull();
     });
 
     it("selects a tree step to inspect its outcome distribution", () => {

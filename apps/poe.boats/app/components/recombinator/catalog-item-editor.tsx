@@ -24,7 +24,6 @@ function CatalogPicker({
     options,
     value,
     disabled,
-    clearOnSelect = false,
     onSelect,
 }: {
     id: string;
@@ -32,13 +31,12 @@ function CatalogPicker({
     options: Option[];
     value?: Option;
     disabled?: boolean;
-    clearOnSelect?: boolean;
     onSelect: (id: string) => void;
 }) {
-    const [query, setQuery] = useState(value?.label ?? "");
+    const [query, setQuery] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const matches = useMemo(() => {
-        const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+        const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
         return options.filter((option) =>
             words.every((word) => option.label.toLowerCase().includes(word)),
         );
@@ -51,15 +49,18 @@ function CatalogPicker({
                 filteredItems={matches.slice(0, 60)}
                 filter={null}
                 value={value ?? null}
-                inputValue={query}
+                inputValue={query ?? value?.label ?? ""}
                 onInputValueChange={setQuery}
                 itemToStringLabel={(option: Option) => option.label}
                 isItemEqualToValue={(a, b) => a.id === b.id}
                 open={open}
-                onOpenChange={setOpen}
+                onOpenChange={(next) => {
+                    setOpen(next);
+                    if (!next) setQuery(null);
+                }}
                 onValueChange={(option) => {
                     if (option) onSelect(option.id);
-                    setQuery(clearOnSelect ? "" : (option?.label ?? ""));
+                    setQuery(null);
                     setOpen(false);
                 }}
                 disabled={disabled}
@@ -68,7 +69,7 @@ function CatalogPicker({
                     id={id}
                     aria-label={label}
                     placeholder="Search…"
-                    onBlur={() => setQuery(value?.label ?? "")}
+                    onBlur={() => setQuery(null)}
                 />
                 <ComboboxContent>
                     <ComboboxEmpty>No eligible matches.</ComboboxEmpty>
@@ -208,7 +209,6 @@ export function CatalogItemEditor({
                                     label={`Item ${index + 1} add ${side === "prefixes" ? "prefix" : "suffix"} (${count}/3)`}
                                     options={options}
                                     disabled={count >= 3}
-                                    clearOnSelect
                                     onSelect={(id) => {
                                         const mod = catalog.mods.find(
                                             (candidate) => candidate.id === id,
