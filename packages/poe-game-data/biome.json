@@ -1,0 +1,8 @@
+{
+    "extends": "//",
+    "linter": {
+        "rules": {
+            "style": { "useNamingConvention": "off" }
+        }
+    }
+}

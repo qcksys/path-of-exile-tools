@@ -2,9 +2,22 @@
     "name": "@poe-tools/game-data",
     "version": "0.0.0",
     "private": true,
+    "type": "module",
     "description": "Local, versioned PoE 1 and PoE 2 client-data extraction pipeline.",
     "scripts": {
-        "extract": "uv run --locked python pipeline.py",
-        "test": "uv run --locked python -m unittest discover -s tests"
+        "extract": "tsx src/cli.ts",
+        "test": "vp test run",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@imagemagick/magick-wasm": "catalog:",
+        "pathofexile-dat": "catalog:",
+        "zod": "catalog:"
+    },
+    "devDependencies": {
+        "@types/node": "catalog:",
+        "tsx": "catalog:",
+        "typescript": "catalog:",
+        "vite-plus": "catalog:"
     }
 }

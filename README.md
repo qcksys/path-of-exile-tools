@@ -22,7 +22,7 @@ The model follows [the linked 3.26 recombinator guide](https://codeberg.org/poe_
 
 ## Install and validate
 
-Install [Vite+](https://viteplus.dev/guide/) and use the Node version in `.node-version` (Node 24). The game-data package also requires [uv](https://docs.astral.sh/uv/getting-started/installation/), which manages its Python 3.13 environment.
+Install [Vite+](https://viteplus.dev/guide/) and use the Node version in `.node-version` (Node 24). The game-data pipeline uses TypeScript, Zod, and locally loaded WASM codecs through the same workspace toolchain.
 
 ```sh
 vp install --frozen-lockfile

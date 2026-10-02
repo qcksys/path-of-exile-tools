@@ -1,16 +1,14 @@
 # Local game-data pipeline
 
-Extract PoE 1 and PoE 2 client assets into separate, versioned datasets of item bases, modifiers, ordered weight rules, stats, tags, item classes, English modifier text, and inventory images. Inputs can be a local installation (`Content.ggpk` or `Bundles2`), previously extracted raw files, or GGG's patch CDN. No account, game API credentials, or website scraping is needed.
+Extract PoE 1 and PoE 2 client assets into separate, versioned datasets of item bases, modifiers, ordered weight rules, stats, tags, item classes, English modifier text, and PNG/WebP inventory images. Inputs can be an installed game (`Content.ggpk` or `Bundles2`), previously extracted raw files, or GGG's patch CDN. No account or website scraping is needed.
 
-The pipeline uses commit-pinned [RePoE](https://github.com/repoe-fork/repoe) and its compatible [PyPoE fork](https://github.com/repoe-fork/pypoe). Their Python dependencies are locked in `uv.lock`. This fork matters: the original PyPoE and the wiki fork have different schemas and interfaces. The [research report](../../docs/research/poe-game-data-extraction.md) documents other tools and the evidence for PoEDB/Craft of Exile's data sources.
+The implementation is TypeScript with shared Zod schemas. It uses `pathofexile-dat` for bundle/DAT decoding, its `ooz-wasm` dependency for decompression, and `@imagemagick/magick-wasm` for images. GGPK access, joins, item metadata, stat-description translation, validation, and snapshot management live in this package. Python, uv, native compiler toolchains, and an external ImageMagick installation are no longer required.
 
-RePoE declares PyPoE through a sibling directory (`../PyPoE`). The wrapper supplies [static dependency metadata](https://docs.astral.sh/uv/reference/settings/#dependency-metadata) matching that pinned RePoE revision and resolves PyPoE through the archive override. This avoids embedding a temporary cache directory in the lockfile, which otherwise breaks `--locked` on another machine or an empty cache. Keep this metadata synchronized when updating the RePoE pin. CI uses uv 0.12.22; maintainers can check portability with `uv lock --check --cache-dir <empty-directory>` through `vp exec` from this package.
+The [research report](../../docs/research/poe-game-data-extraction.md) explains GGPK, the extraction tools, and the evidence for PoEDB and Craft of Exile's data sources. The JSON contract and curated release states follow [RePoE](https://github.com/repoe-fork/repoe); see [third-party notices](THIRD_PARTY_NOTICES.md).
 
 ## Run it
 
-Install [Vite+](https://viteplus.dev/guide/) and [uv](https://docs.astral.sh/uv/getting-started/installation/). `uv` creates the package's `.venv` and obtains Python 3.13 when needed. Dependency installation uses the network; the tests themselves do not. Windows was used for the live verification below; Linux CI runs the fixture suite.
-
-From the repository root:
+Install [Vite+](https://viteplus.dev/guide/) and the Node version in `.node-version` (Node 24). From the repository root:
 
 ```sh
 vp install --frozen-lockfile
@@ -19,56 +17,18 @@ vp run @poe-tools/game-data#extract versions
 vp run @poe-tools/game-data#extract run --config pipeline.example.json
 ```
 
-Vite+ runs this package's scripts from `packages/poe-game-data`, so the config and default `data/` output paths above are relative to that directory. All subsequent commands use that same convention. `versions` performs a read-only handshake directly with GGG's patch servers; copy its JSON into your config before a new extraction. The example pins the versions verified on 2026-10-02, not a permanent “latest” alias. Old CDN versions can disappear.
+Vite+ runs this package's scripts from `packages/poe-game-data`, so command paths and the default `data/` output are relative to that directory. `versions` performs a read-only handshake with GGG's patch servers. Copy its result into a config before a new extraction. The example pins the builds verified on 2026-10-02; old CDN versions can disappear.
 
-To extract one game, append `--game poe1` or `--game poe2`. The default processes every game in the config, in order. A failure stops the command; any game already completed keeps its successful snapshot. To retry the other game, select it explicitly.
+Append `--game poe1` or `--game poe2` to select one game. The default processes every configured game, in order. A failure stops the command; a game already published keeps its snapshot. Progress goes to stderr and the final snapshot paths are JSON on stdout. Bundles download on demand and are cached by game and patch under `.cache/bundles/`. Allow several gigabytes of disk space for cached bundles, raw assets, and images.
 
-Each run prints its staging directory. Progress and upstream warnings are written to that directory's `extract.log`. The first run downloads bundles on demand and can use several gigabytes of disk and memory; repeated runs reuse the per-game, per-patch bundle cache. It does not download the entire game.
+## Use an installed game or saved raw files
 
-## Refresh the recombinator catalog
-
-The PoE 1 recombinator consumes a compact projection of a successful snapshot. After extraction, run from the repository root:
-
-```sh
-vp run poe-boats#game-data:recombinator
-```
-
-The exporter follows `data/poe1/latest.json`. To select an older snapshot, pass its path relative to `apps/poe.boats`:
-
-```sh
-vp run poe-boats#game-data:recombinator ../../packages/poe-game-data/data/poe1/snapshots/3.29.3.3-pyd2ngrj
-```
-
-It verifies the manifest's SHA-256 hashes for `normalized/base_items.json` and `normalized/mods.json`, validates their required fields with Zod, and atomically replaces `apps/poe.boats/public/game-data/recombinator-poe1.json`. The output records the client patch, manifest hash, and both source-table hashes. Corrupt inputs or PoE 2 snapshots fail without replacing the published catalog. This verifies consistency with the local manifest, not authenticity of an untrusted snapshot.
-
-Commit this small application catalog when refreshing the data; the much larger source snapshots remain ignored. The app fetches it only on the recombinator page, validates it with the same catalog schema used by the exporter, and retains custom input with a retry button if loading fails. Deployments and normal app tests need neither Python nor a game installation. The initial catalog from client `3.29.3.3` contains 1,016 equipment bases and 1,204 modifiers (555 KB uncompressed).
-
-The projection includes released weapon, armour, quiver and jewellery bases, plus `item`-domain prefixes/suffixes that can roll naturally on at least one included base. It excludes essence-only and non-rollable special mods. Ordered spawn weights, generation rules, level bounds, added tags and every mod group are preserved. Missing translations fall back to the modifier ID; no tier number or stat range is invented. Jewel, flask, influence, essence, crafted and other special selection modes are outside this catalog. Custom modifiers remain available for the simulator's existing supported cases.
-
-In the editor, choose a base, set item level (1–100), then search prefixes and suffixes by translated stats or mod name. Selected and custom modifiers share the three-per-side limit. Changing a base or item level clears its selected catalog mods; custom input remains visible in the numbered custom-modifier section. Selected mod IDs remain stable through the tree, target filters and worker results. Different tiers retain different IDs, while overlapping groups prevent them from surviving together. A group occurring on both affix sides is rejected because the current probability model does not handle that case.
-
-**Selection data and recombination odds have different scopes.** The source patch is shown independently of the simulator's existing 3.26 probability model. Spawn/generation weights determine which mods appear in the picker; they do not replace the simulator's equal-per-copy selection model. Base compatibility, output-base inheritance, output item level and transfer restrictions remain outside that model. The pipeline still supports both games; this application export deliberately accepts PoE 1 only because the existing recombinator is a PoE 1 tool.
-
-Validate a refresh with:
-
-```sh
-vp run poe-boats#test test/recombinator-catalog.test.ts test/recombinator-export.test.ts test/recombinator-ui.test.ts test/recombinator-page.test.ts
-```
-
-## Use an installed game
-
-Create `pipeline.local.json` in this package:
+Create ignored `pipeline.local.json` in this package:
 
 ```json
 {
-    "poe1": {
-        "patch": "3.29.3.3",
-        "directory": "F:/Games/Path of Exile"
-    },
-    "poe2": {
-        "patch": "4.5.5.4",
-        "directory": "F:/Games/Path of Exile 2"
-    }
+    "poe1": { "patch": "3.29.3.3", "directory": "F:/Games/Path of Exile" },
+    "poe2": { "patch": "4.5.5.4", "directory": "F:/Games/Path of Exile 2" }
 }
 ```
 
@@ -76,51 +36,64 @@ Create `pipeline.local.json` in this package:
 vp run @poe-tools/game-data#extract run --config pipeline.local.json
 ```
 
-Use the installation root containing `Content.ggpk` or `Bundles2/_.index.bin`, not the archive filename or `Bundles2` itself. Paths may be absolute or relative to the config file. An unpacked directory with logical `Data`, `Metadata`, and `Art` paths also works. PyPoE reads the archive and bundles without modifying them. Keep the patcher closed during a local run so the inputs stay consistent.
+Use the installation root containing `Content.ggpk` or `Bundles2/_.index.bin`, not the archive filename or `Bundles2` directory itself. An unpacked directory with logical `Data`, `Metadata`, and `Art` paths also works. Directory paths resolve relative to the config file. The source is read-only; keep the patcher closed during extraction so inputs remain consistent.
 
-For local sources, `patch` is a label supplied by you, not a version independently verified from the archive. Use the full client build/CDN version from the game's log, which may differ from the public patch name. Do not label an older installation using the current online version.
+For local sources, `patch` is your label, not a version verified from the archive. Use the full client build/CDN version from the game's log, which can differ from the public patch name.
 
-The default schema is downloaded from [poe-tool-dev/dat-schema's latest release](https://github.com/poe-tool-dev/dat-schema/releases). To match an older installation or reuse a known schema, supply `--schema path/to/schema.json`. A schema is community reverse-engineered information, not an official GGG database specification.
+The default schema downloads from [poe-tool-dev/dat-schema's latest release](https://github.com/poe-tool-dev/dat-schema/releases). To match an older client or work offline, supply `--schema path/to/schema.json`. The schema is a community interpretation of binary records. A row-size mismatch stops extraction rather than guessing offsets. Schema formats 7 and 8 are supported; a newer format needs an explicit compatibility review.
 
-## What happens
+## Architecture
 
 ```mermaid
 flowchart LR
-    A[GGPK / local bundles / pinned CDN] --> B[PyPoE bundle index and decompression]
-    B --> C[Saved raw tables, metadata, descriptions, DDS]
-    S[Saved dat-schema JSON] --> D[Game-specific Python specification]
-    C --> E[RelationalReader joins]
-    D --> E
-    E --> F[RePoE normalization and translation]
-    F --> G[JSON and PNG/WebP images]
-    G --> H[Validation, hashes, manifest]
-    H --> I[Publish snapshot and update latest.json]
+    A[GGPK / local bundles / pinned CDN] --> B[Bundle index and WASM decompression]
+    B --> C[Saved raw DAT, metadata, descriptions, DDS]
+    S[Saved dat-schema JSON] --> D[TypeScript table readers and joins]
+    C --> D
+    D --> E[Zod-validated normalized records]
+    C --> F[English stat translation and WASM image conversion]
+    E --> G[JSON and PNG/WebP]
+    F --> G
+    G --> H[Hashes and snapshot manifest]
+    H --> I[Publish and replace latest.json]
 ```
 
-1. Resolve a local source or the configured game's versioned CDN URL. CDN bundles are cached beneath `.cache/bundles/<game>/<patch>/`. The wrapper uses URL paths consistently on Windows and records the compressed files' hashes in `transport.json`.
-2. Download or read the schema. Generate separate PoE 1/2 specifications through PyPoE's `import_dat_schema`, including upstream compatibility aliases and virtual fields. The specifications are saved in the snapshot, without modifying the installed library.
-3. Decode `Data/*.datc64` for PoE 1 and `Data/Balance/*.datc64` for PoE 2. PyPoE resolves foreign-table references. Every consumed logical file is preserved under `raw/` with its SHA-256 and byte size in `inputs.json`.
-4. Run RePoE's tags, stats, mods, bases, and item-class exporters. The shared stats exporter is compatible with both generated specifications. Base extraction includes component requirements/properties and inherited metadata tags; modifier extraction includes stat-description translation. DDS assets become PNG and WebP. English is the current output language.
-5. Preserve the raw `Mods.MaxLevel` as the additional `maximum_level` field. Check both weight-array pair lengths, schema row sizes, foreign references, normalized models, implicit/mod/stat references, and numeric ranges. Missing text and images are reported in `validation.json`; they are not replaced with fabricated values. Upstream translation warnings remain in the log.
-6. Hash snapshot files and publish only after validation succeeds. A temporary directory is renamed to its final name, then the game's `latest.json` pointer is replaced atomically. Failed runs retain `.incomplete-*` and their logs without replacing the previous successful pointer. Publication is independent for each game.
+| Module | Responsibility |
+| --- | --- |
+| `config.ts`, `versions.ts` | Validate game/build selection; discover versions via the patch protocol |
+| `ggpk.ts`, `source.ts` | Read GGPK, resolve bundle slices, cache downloads, record input hashes |
+| `dat-reader.ts`, `tables.ts` | Decode DAT columns, enforce row sizes, resolve foreign keys |
+| `metadata.ts`, `normalize.ts` | Inherit item tags; join bases, requirements, properties, classes, modifiers, and stats |
+| `translations.ts` | Parse English descriptions, includes, conditions, numeric handlers, and relational values |
+| `images.ts` | Resolve DDS aliases/Brotli, export PNG/WebP, compose PoE 2 flask icons |
+| `model.ts` | Canonical Zod data contract, relationship validation, diagnostic mod pools |
+| `pipeline.ts`, `cli.ts` | Record provenance, publish, verify, replay, and inspect |
 
-The client contains unused, legacy, monster, unique, and other non-crafting records. Dataset counts are not counts of currently obtainable items or ordinarily rollable modifiers. RePoE also applies curated interpretation, including release-state lists and some domain corrections; `raw/` is the source evidence for those transformations.
+PoE 1 tables live at `Data/*.datc64`; PoE 2 uses `Data/Balance/*.datc64`. PoE 1 stat descriptions are `Metadata/StatDescriptions/*.txt`. PoE 2 uses `Data/StatDescriptions/*.csd`: these are UTF-16LE text and use the same description parser. Both games keep inherited item tags in `.it` files.
+
+The decoder is pinned to `pathofexile-dat` 15.2.0. Its public DAT barrel initializes a browser analysis WASM module through `fetch(file:)`, which Node does not support. `dat-reader.ts` imports only the installed decoder/header/field-reader modules. This isolates the compatibility workaround; changing the dependency version requires testing that adapter. WASM decompression and image conversion load locally and do not require runtime network access.
+
+Each consumed logical file is saved under `raw/`, with SHA-256 and byte count in `inputs.json`. `transport.json` records the compressed index/bundles or loose source files. The exact schema, pipeline sources, package metadata, workspace catalog, and dependency lock are saved with every snapshot.
+
+Zod validates the shared normalized contract, including stat ranges and weight values. The pipeline checks paired tag/weight-array lengths, DAT row sizes, references it resolves, and normalized base/class/implicit/stat/weight-tag relationships. Missing text and images are reported separately; unused records can legitimately have neither text nor a positive spawn weight.
+
+A successful run renames its staging directory, then atomically replaces the game's `latest.json`. Failed extraction retains `.incomplete-*` evidence and `extract.log` without advancing the pointer. Publication is independent for each game.
 
 ## Outputs and inspection
 
 ```text
 data/<game>/
-  latest.json                         # relative path to the last successful snapshot
+  latest.json
   snapshots/<patch>-<run-id>/
-    manifest.json                     # game, source, patch label, dependency pins, file hashes
-    source.json
-    schema.json / schema.py
-    uv.lock / pipeline.py             # dependency lock and wrapper source at invocation
+    manifest.json                     # format 2, game, patch, source and hashes
+    config.json / schema.json
+    pipeline/src/...                  # pipeline source at invocation
+    pipeline/package.json
+    pipeline/pnpm-lock.yaml / pnpm-workspace.yaml
     inputs.json / transport.json
-    validation.json / extract.log
-    raw/Data/...                      # binary tables, including referenced tables
-    raw/Metadata/...                  # .it files, stat descriptions and includes
-    raw/Art/...                       # consumed source art
+    validation.json
+    translation-errors.json / image-errors.json
+    raw/Data/... / raw/Metadata/... / raw/Art/...
     normalized/base_items.json
     normalized/mods.json
     normalized/stats.json
@@ -129,9 +102,9 @@ data/<game>/
     normalized/Art/...                # PNG and WebP
 ```
 
-RePoE additionally emits compact `.min.json` variants, per-class bases, tag details, and parsed item metadata. Use metadata paths for base keys and raw modifier IDs for mod keys. Paths in `visual_identity.dds_file` identify the source DDS; replace `.dds` with `.png` or `.webp` under `normalized/` for display.
+Outputs retain the existing snake_case JSON contract, compact `.min.json` variants, per-class base files, tag details, and parsed item metadata. Base keys are metadata paths; mod keys are raw modifier IDs. Replace `.dds` in `visual_identity.dds_file` with `.png` or `.webp` under `normalized/` for display.
 
-Use the actual snapshot path printed by the run, or resolve `latest.json`. For example, in PowerShell:
+Resolve the actual snapshot path in PowerShell from the repository root:
 
 ```powershell
 $pointer = Get-Content packages/poe-game-data/data/poe1/latest.json | ConvertFrom-Json
@@ -140,43 +113,51 @@ vp run @poe-tools/game-data#extract verify --snapshot $snapshot
 vp run @poe-tools/game-data#extract inspect --snapshot $snapshot --base Metadata/Items/Belts/Belt3 --item-level 85
 ```
 
-`verify` checks recorded SHA-256 hashes and normalized relationships. These hashes detect changes against the local manifest; they are not signatures authenticating the client or schema publisher. `extract.log` is excluded from hashing. `inspect` returns the base plus candidate prefixes/suffixes and their selected client weights. Add `--existing <mod-id>` repeatedly to incorporate added tags and exclusion groups.
+`verify` checks file hashes and normalized relationships, including missing or unrecorded files. These local hashes detect changes; they do not authenticate the publisher. `extract.log` is excluded from hashing. `inspect` returns the base and eligible prefixes/suffixes with selected client weights. Repeat `--existing ModId` to incorporate added tags and exclusion groups.
 
-Candidate selection respects domain, minimum/maximum level, essence-only status, groups, and ordered tag rules. The first matching spawn tag wins, including zero; the first matching generation weight is a percentage multiplier, defaulting to 100. No matching spawn rule means zero. This is a diagnostic candidate list, not a full crafting simulator: it does not implement rarity/affix caps, influences, fossils, bench recipes, omens, or complete method-specific probabilities.
+The diagnostic pool respects domain, minimum/maximum level, essence-only status, groups, and ordered tag rules. The first matching spawn tag wins, including zero; the first matching generation weight is a percentage multiplier, defaulting to 100. No matching spawn rule means zero. This is not a complete crafting simulator: rarity/affix caps, influences, fossils, bench recipes, omens, and method-specific probabilities need separate logic.
 
-**PoE 2 client values must not be treated as relative crafting probabilities.** In the verified `4.5.5.4` extraction, all 17,058 spawn-weight entries were either 0 (9,125 entries) or 1 (7,933 entries). These values distinguish eligibility but provide no unequal weighting among eligible mods. The output preserves those values and labels their provenance; it does not substitute Craft of Exile's [empirical weight estimates](https://www.craftofexile.com/weightings?game=poe2). PoE 1's extracted relative weights likewise do not by themselves implement a complete server crafting method.
+**PoE 2 client values are not Craft of Exile's relative weight estimates.** Build `4.5.5.4` has 17,058 spawn-weight entries: 9,125 zeros and 7,933 ones. These values provide eligibility without unequal weighting among eligible mods. The manifest and inspection output identify that provenance. Craft of Exile documents its [empirical weighting methodology](https://www.craftofexile.com/weightings?game=poe2) separately.
 
-## Reproduce an extraction offline
+## Offline replay and migration
 
 ```sh
 vp run @poe-tools/game-data#extract replay --snapshot data/poe1/snapshots/<patch>-<run-id>
 ```
 
-Replay first verifies the original snapshot and checks that the current dependency lock matches. It then extracts from the saved `raw/` directory with the saved schema into a new snapshot. The extraction stage makes no network requests. The initial `uv run --locked` may still need network access if its locked Python environment is not installed; use an already synchronized environment for offline operation. Use the same repository revision for the same wrapper behavior. On Windows, PyPoE's application data is kept within this package's `.cache/appdata`.
+Replay verifies the original snapshot and requires the current pipeline source, package metadata, catalog, and dependency lock to match its fingerprint. It then runs against saved raw assets and the saved schema. With dependencies already installed, replay makes no network requests. Restore the recorded repository revision and use `vp install --frozen-lockfile` before going offline. A root lockfile change, even outside this package, intentionally invalidates the fingerprint.
 
-To recover from a failed run, read its log, correct the source/schema/dependency incompatibility, and rerun. Do not promote a partial directory manually. A CDN 404 can mean the patch has been retired; run `versions` and create a new pinned config, or use a preserved installation/raw snapshot. The pipeline does not silently switch versions during an extraction. A failed schema/reference check needs investigation rather than a guessed field mapping.
+The former Python format-1 snapshots remain useful raw inputs, but are not accepted by format-2 `verify` or `replay`. To migrate one, configure `directory` as its `raw/` directory, retain its game and patch, and run with `--schema <old-snapshot>/schema.json`. The new snapshot records the TypeScript implementation and lock. Do not overwrite the old snapshot.
 
-Keep `data/` for as long as you need its provenance and replay inputs. `.cache/` is disposable download/runtime cache; clearing it causes downloads again. Both it and `.venv/` are ignored by Git, as is `pipeline.local.json`. Generated game data is not committed or published by this package.
+Keep `data/` while you need its provenance and replay inputs. `.cache/` is disposable; clearing it causes CDN downloads again. Both directories and `pipeline.local.json` are ignored. Generated game data is not committed or published by this package. A CDN 404 can mean a retired patch; choose a new explicit version or a saved source. The pipeline never silently switches patches.
 
-## Verified results and website alignment
+## Verification and compatibility
 
-Live GGG CDN extraction on 2026-10-02 produced:
+The TypeScript pipeline was verified on Windows with saved client assets from these builds:
 
-| Game / client build | Bases | Mods | Stats | Tags | Mods without rendered text | Missing base PNGs |
+| Game / build | Bases | Mods | Stats | Tags | Mods without text | Missing base images |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | PoE 1 / `3.29.3.3` | 5,461 | 40,355 | 23,346 | 1,389 | 3,952 | 0 |
 | PoE 2 / `4.5.5.4` | 5,496 | 16,784 | 27,281 | 1,339 | 3,420 | 0 |
 
-The Leather Belt extracted locally has ID `Metadata/Items/Belts/Belt3`, drop level 10, dimensions 2×1, tags `belt/default`, and implicit `IncreasedLifeImplicitBelt1` (+25–40 life), matching the record checked on [PoEDB](https://poedb.tw/us/Leather_Belt) and [Craft of Exile](https://beta.craftofexile.com/data?mode=items&dataItemSearchInput=Leather+Belt). Locally extracted `IncreasedLife1` has level 5, range 10–24 life, and ordered weights `fishing_rod:0`, `weapon:0`, `default:1000`, matching the [CoE metadata example](https://beta.craftofexile.com/data?mode=mods&dataModSearchInput=IncreasedLife1). A fixture tests that selection behavior. These comparisons establish agreement for those records, not full-site equivalence.
+Both patch handshakes and direct bundle extraction of `BaseItemTypes` were also checked against GGG. Offline replay with `fetch` disabled reproduced all 6,588 PoE 1 and 5,872 PoE 2 normalized files byte-for-byte, including PNG and WebP. PNG output excludes ImageMagick's volatile date/time metadata. No installed archive was supplied: GGPK coverage uses synthetic UTF-16/UTF-32 fixtures and verifies read-only behavior. CI runs 28 offline pipeline fixtures, not downloads of game assets.
 
-PoE 2's `IncreasedLife1` instead has level 1, range 10–19 life, and eligible item-class weights of 1. It must remain in the separate PoE 2 namespace. The stale `4.5.5.2` returned by the third-party version service was unavailable at GGG during verification; the direct patch handshake resolved `4.5.5.4`.
+An optional full-reference test compares every normalized record with the prior RePoE/PyPoE export. It preserves three reviewed corrections: production text renders all eight stat slots instead of six; the PoE 2 gold join resolves values (for example `Strength1 = 134`); signed Ultimatum hashes resolve correctly and unresolved passive references use a descriptive placeholder instead of `[]`. The reference comparison restricts text to six stats to test legacy parity, while separate fixtures require all eight in production translation.
 
-The live checks exercised CDN extraction and local raw-file replay for both games. Every normalized file from each replay had the same SHA-256 as its CDN extraction. No installed game or real `Content.ggpk` was supplied for a live archive test. Synthetic GGPK fixtures verify UTF-16 and UTF-32 filenames, direct archive-file reads, raw-byte recording, and leaving the archive unchanged. The wrapper normalizes PyPoE's stream return value for unbundled GGPK records. The 13-test suite also covers weight ordering/filtering, schema/model and relationship validation, patch protocol fragmentation, safe paths, checksums, separate game manifests, and preserving the last successful snapshot on failure.
+The checked Leather Belt (`Metadata/Items/Belts/Belt3`) has drop level 10, dimensions 2×1, `belt/default` tags, and implicit `IncreasedLifeImplicitBelt1` (+25–40 life), matching [PoEDB](https://poedb.tw/us/Leather_Belt) and [Craft of Exile](https://beta.craftofexile.com/data?mode=items&dataItemSearchInput=Leather+Belt). `IncreasedLife1` has level 5, life range 10–24, and ordered weights `fishing_rod:0`, `weapon:0`, `default:1000`, matching [CoE's metadata](https://beta.craftofexile.com/data?mode=mods&dataModSearchInput=IncreasedLife1). These are sample checks, not claims of complete website equivalence. PoE 2's same mod ID instead means level 1, life 10–19, and eligible class weights of 1.
 
-## Dependency maintenance
+Run the optional integration checks from the repository root (the snapshot environment path resolves from this package):
 
-The two extractor archives are pinned to immutable Git commits, with archive hashes in `uv.lock`. To update RePoE, use `vp exec --filter @poe-tools/game-data uv add "repoe @ https://github.com/repoe-fork/repoe/archive/<commit>.tar.gz"`. The compatible PyPoE commit is an override in `pyproject.toml`; update that override together with RePoE, then run `vp exec --filter @poe-tools/game-data uv lock`. Review and commit both the project and lock changes. Do not edit the installed `.venv` as a fix.
+```powershell
+$env:POE_REFERENCE_SNAPSHOT = "path/to/old-snapshot"
+$env:POE_REFERENCE_GAME = "poe1"
+vp run @poe-tools/game-data#test
+Remove-Item Env:POE_REFERENCE_SNAPSHOT, Env:POE_REFERENCE_GAME
+$env:POE_CDN_PATCH = "4.5.5.4"
+vp run @poe-tools/game-data#test tests/cdn.test.ts
+Remove-Item Env:POE_CDN_PATCH
+```
 
-Run the package tests, extract both current patches, and check logs, counts, row sizes, references, and sample website records after any dependency/schema update. `vp run ready` includes the package tests. CI installs uv and runs them separately from Vitest, without downloading game data.
+After schema/dependency changes, run the fixture suite, type checking, extraction for both games, verification/replay, and the reference comparison. Review missing text/images and sample website records. Translation failures are recorded per modifier, so a future unsupported handler does not invent display text. Curated release states are interpretations inherited from RePoE, not proof an item is currently obtainable.
 
-The patch handshake follows [LibGGPK3's protocol implementation](https://github.com/aianlinb/LibGGPK3/blob/master/LibGGPK3/PatchClient.cs): protocol 6, opcode 1 request, opcode 2 response, big-endian URL character count, UTF-16LE URL. The wrapper handles fragmented TCP responses and checks the expected game's CDN host.
+TypeScript fits the joins, validation, CLI, and shared app contract. Keep binary decompression and image codecs in maintained WASM dependencies; consider Rust only if profiling or format-support requirements justify replacing those components.
