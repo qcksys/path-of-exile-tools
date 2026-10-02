@@ -1,0 +1,17 @@
+[project]
+name = "poe-game-data"
+version = "0.0.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "repoe",
+]
+
+[tool.uv]
+package = false
+cache-dir = ".cache/uv"
+override-dependencies = [
+    "pypoe @ https://github.com/repoe-fork/pypoe/archive/66d1d7442c5718260e1a8efd24989d22987e91af.tar.gz",
+]
+
+[tool.uv.sources]
+repoe = { url = "https://github.com/repoe-fork/repoe/archive/1c72e40a99aa8c8f70e9a3526155f455d5eedd43.tar.gz" }
