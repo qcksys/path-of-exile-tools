@@ -33,6 +33,7 @@ export async function push(payload: IngestPayload, opts?: { dryRun?: boolean }):
                 authorization: `Bearer ${token}`,
             },
             body: JSON.stringify(batch),
+            signal: AbortSignal.timeout(30_000),
         });
         if (!res.ok) {
             const body = await res.text().catch(() => "");
@@ -41,6 +42,9 @@ export async function push(payload: IngestPayload, opts?: { dryRun?: boolean }):
                     `${res.status} ${res.statusText} ${body.slice(0, 200)}`,
             );
         }
+        const receipt = (await res.json()) as { written?: number };
+        if (receipt.written !== batch.rows.length)
+            throw new Error(`push ${batch.stream}: receiver did not acknowledge the full batch`);
         console.log(
             `pushed ${batch.stream} batch ${i + 1}/${batches.length} (${batch.rows.length} rows)`,
         );

@@ -1,4 +1,4 @@
-data.duckdb
-data.duckdb.wal
-data.duckdb.tmp/
+*.duckdb
+*.duckdb.wal
+*.duckdb.tmp/
 .env

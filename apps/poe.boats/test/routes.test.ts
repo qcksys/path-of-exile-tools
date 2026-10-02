@@ -12,6 +12,7 @@ describe("game routes", () => {
         ["/1/", "routes/poe1-home.tsx"],
         ["/2/", "routes/poe2-home.tsx"],
         ["/1/arbitrage", "routes/arbitrage/poe1.tsx"],
+        ["/1/market", "routes/market.tsx"],
         ["/2/arbitrage", "routes/arbitrage/poe2.tsx"],
         ["/3/arbitrage", "routes/404.tsx"],
         ["/1/idol-planner", "routes/idol-planner/home.tsx"],

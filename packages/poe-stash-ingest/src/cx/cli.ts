@@ -20,6 +20,7 @@ program
     .description("Pull one cxapi hour. With --catch-up, walk forward until tail.")
     .option("-h, --from-hour <unix>", "explicit unix-hour seconds; overrides saved cursor")
     .option("--catch-up", "walk forward until next_change_id stops advancing")
+    .option("-l, --league <name>", "season to capture", "all")
     .action(async (opts) => {
         const db = await openDb();
         try {
@@ -27,6 +28,7 @@ program
             const results = await ingestCx(db.conn, client, {
                 fromHour: opts.fromHour ? Number(opts.fromHour) : undefined,
                 catchUp: !!opts.catchUp,
+                league: parseLeagueFilter(opts.league),
             });
             console.log(`done — ${results.length} hour(s) ingested.`);
         } finally {

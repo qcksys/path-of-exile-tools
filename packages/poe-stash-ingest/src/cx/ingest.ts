@@ -3,6 +3,7 @@ import type { PoeApiClient } from "@poe-tools/api-client";
 import { REALM } from "#src/shared/auth.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
 import { withTransaction } from "#src/shared/db.ts";
+import { configureSource } from "#src/shared/source.ts";
 
 const STREAM = "cxapi";
 
@@ -26,8 +27,9 @@ function previousHour(): number {
 export async function ingestCx(
     conn: DuckDBConnection,
     client: PoeApiClient,
-    opts: { fromHour?: number; catchUp: boolean },
+    opts: { fromHour?: number; catchUp: boolean; league?: string | null },
 ): Promise<CxIngestResult[]> {
+    await configureSource(conn, REALM ?? "pc", opts.league ?? null);
     const results: CxIngestResult[] = [];
     let id: number;
     if (opts.fromHour !== undefined) {
@@ -44,6 +46,7 @@ export async function ingestCx(
 
         await withTransaction(conn, async () => {
             for (const m of snap.markets) {
+                if (opts.league && m.league !== opts.league) continue;
                 leaguesSeen.add(m.league);
                 await conn.run(
                     `INSERT INTO cx_market_hour (
