@@ -1,4 +1,5 @@
 import type { ArbitrageGame, RecipeCategory, VendorRecipe } from "~/schemas/arbitrage";
+import { CURRENCY_VENDOR_RECIPES } from "./currency-vendor-recipes";
 
 function upgradeChain(
     game: ArbitrageGame,
@@ -44,6 +45,7 @@ export const VENDOR_RECIPES: VendorRecipe[] = [
         families.flatMap((family) => upgradeChain("1", "essences",
             essenceTiers.slice(firstTier).map((tier) => `${tier} Essence of ${family}`))),
     ),
+    ...CURRENCY_VENDOR_RECIPES,
     ...upgradeChain("2", "emotions", [
         "Diluted Liquid Ire", "Diluted Liquid Guilt", "Diluted Liquid Greed",
         "Liquid Paranoia", "Liquid Envy", "Liquid Disgust", "Liquid Despair",
@@ -65,6 +67,7 @@ export const VENDOR_RECIPES: VendorRecipe[] = [
 ];
 
 export const RECIPE_CATEGORY_LABELS: Record<RecipeCategory, string> = {
+    currency: "Currency exchanges",
     oils: "Oils",
     essences: "Essences",
     emotions: "Liquid emotions",

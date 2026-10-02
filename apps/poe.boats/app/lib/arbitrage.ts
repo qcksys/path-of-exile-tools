@@ -3,6 +3,7 @@ import {
     ArbitrageOptionsSchema,
     MarketQuoteSchema,
     type MarketSnapshot,
+    RecipeScenarioSchema,
     type VendorRecipe,
 } from "~/schemas/arbitrage";
 
@@ -63,6 +64,21 @@ export function findArbitrage(
         (a, b) => b[settings.sort] - a[settings.sort] || a.recipe.id.localeCompare(b.recipe.id),
     );
     return { opportunities, missingPrices, pricedCount };
+}
+
+export function calculateRecipeScenario(input: {
+    inputCost: number;
+    outputValue: number;
+    buffer: number;
+}) {
+    const { inputCost, outputValue, buffer } = RecipeScenarioSchema.parse(input);
+    const cost = inputCost * (1 + buffer / 100);
+    const revenue = outputValue * (1 - buffer / 100);
+    const profit = revenue - cost;
+    const breakEven = cost / (1 - buffer / 100);
+    const roi = (profit / cost) * 100;
+    if (![cost, revenue, profit, breakEven, roi].every(Number.isFinite)) return null;
+    return { cost, revenue, profit, breakEven, roi };
 }
 
 export function buildRecipeTradeUrl(game: MarketSnapshot["game"], league: string, itemId: string) {

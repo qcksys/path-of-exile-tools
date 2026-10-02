@@ -67,6 +67,11 @@ describe("market loading", () => {
         const urls = fetchMock.mock.calls.map(([url]) => new URL(String(url)));
         expect(
             urls
+                .filter((url) => url.pathname.includes("poe1"))
+                .map((url) => url.searchParams.get("type")),
+        ).toEqual([null, "Oil", "Essence", "Currency"]);
+        expect(
+            urls
                 .filter((url) => url.pathname.includes("poe2"))
                 .map((url) => url.searchParams.get("type")),
         ).toEqual([null, "Delirium", "Essences", "Runes"]);
@@ -122,13 +127,13 @@ describe("market loading", () => {
         const first = await loadArbitrageMarket("1", "Standard");
         vi.setSystemTime(new Date("2026-10-02T00:02:00Z"));
         const cached = await loadArbitrageMarket("1", "Standard");
-        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect(fetchMock).toHaveBeenCalledTimes(4);
         expect(cached.snapshot?.fetchedAt).toBe(first.snapshot?.fetchedAt);
         await loadArbitrageMarket("1", "Current League");
-        expect(fetchMock).toHaveBeenCalledTimes(5);
+        expect(fetchMock).toHaveBeenCalledTimes(7);
         vi.setSystemTime(new Date("2026-10-02T00:06:00Z"));
         const refreshed = await loadArbitrageMarket("1", "Standard");
-        expect(fetchMock).toHaveBeenCalledTimes(8);
+        expect(fetchMock).toHaveBeenCalledTimes(11);
         expect(refreshed.snapshot?.fetchedAt).not.toBe(first.snapshot?.fetchedAt);
     });
 });

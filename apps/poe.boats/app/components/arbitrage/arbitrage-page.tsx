@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Form, Link, useNavigation } from "react-router";
 import { AppFooter } from "~/components/app-footer";
 import { AppHeader } from "~/components/app-header";
+import { ManualRecipeCalculator } from "~/components/arbitrage/manual-recipe-calculator";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button, buttonVariants } from "~/components/ui/button";
@@ -84,7 +85,7 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
                         </h1>
                         <p className="text-muted-foreground">
                             {game === "1"
-                                ? "Buy ingredients, sell them to a vendor, then trade the result."
+                                ? "Compare vendor recipes and NPC purchases with player trade prices."
                                 : "Buy ingredients, combine them at the Reforging Bench, then trade the result."}
                         </p>
                     </div>
@@ -323,6 +324,19 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
                                                                 ]
                                                             }
                                                         </span>
+                                                        {recipe.method ? (
+                                                            <Badge variant="secondary">
+                                                                {recipe.method === "purchase"
+                                                                    ? "NPC purchase"
+                                                                    : "Sell to vendor"}{" "}
+                                                                · Fixed currency amount
+                                                            </Badge>
+                                                        ) : null}
+                                                        {recipe.notes ? (
+                                                            <p className="max-w-sm text-xs text-muted-foreground">
+                                                                {recipe.notes}
+                                                            </p>
+                                                        ) : null}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -421,6 +435,8 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
                     </section>
                 ) : null}
 
+                {game === "1" ? <ManualRecipeCalculator /> : null}
+
                 <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                     <p>
                         These are market estimates, not executable offers. Check both sides of the
@@ -429,7 +445,7 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
                     </p>
                     <p>
                         {game === "1"
-                            ? "Covers standard oil upgrades through Golden and essence upgrades through Deafening. Special oils and random-output recipes are excluded."
+                            ? "Automatic estimates cover standard oils through Golden, essences through Deafening, NPC currency purchases, and currency-to-wisdom exchanges. Item-dependent and random 3-for-1 / 5-for-1 recipes use the separate calculator. Special oils are excluded."
                             : "Covers regular liquid emotions through Isolation, Lesser/regular essences, and Lesser/regular runes. Unlock the Reforging Bench in Act 3. Random rerolls, Ancient/Potent emotions, and equipment recipes are excluded."}
                     </p>
                     <p>

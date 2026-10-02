@@ -1,5 +1,5 @@
 {
-    "checkedAt": "2026-10-02T03:34:22.029Z",
+    "checkedAt": "2026-10-02T03:54:25.375Z",
     "recipes": [
         {
             "id": "1:amber-oil",
@@ -48,6 +48,212 @@
             "quantity": 3,
             "revision": 1683012,
             "source": "https://www.poewiki.net/w/index.php?title=Violet%20Oil&oldid=1683012"
+        },
+        {
+            "id": "1:manual:catalysts",
+            "input": "Catalysts, all of same type",
+            "output": "random Catalyst",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x random Catalyst",
+                "3x Catalysts, all of same type",
+                "Cannot return a Tainted Catalyst, Sinistral Catalyst, or Dextral Catalyst."
+            ]
+        },
+        {
+            "id": "1:manual:corrupted",
+            "input": "item (magic/rare, corrupted)",
+            "output": "Item (magic/rare, corrupted/uncorrupted)",
+            "quantity": 5,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "Item (magic/rare, corrupted/uncorrupted)",
+                "5x item (magic/rare, corrupted)",
+                "Components must all be of the same base item type (e.g. Coral Ring). Resulting item level - lowest of all components, and normal art, not corrupted except basetype list below. The recipe works with item that are naturally corrupted: e.g. legacy Breach Rings and Thief's Trinket etc. The resulting item is also corrupted. Legacy Talismans could only historically be directly obtained corrupted, but this recipe returns an uncorrupted copy as talismans are no longer corrupted by default. Cluster jewels - randomizes the number of passives and type of small passives on resulting item The recipe does not transfer influence to the resulting item, even if all five components are from the same influence. This recipe can be used to obtain craftable versions of basetypes that only exist as Unique items, such as Prismatic Jewels, by using uniques that have been corrupted into rares."
+            ]
+        },
+        {
+            "id": "1:manual:hybrid-flasks",
+            "input": "Hybrid Flask",
+            "output": "Hybrid Flask of next base type",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x Hybrid Flask of next base type",
+                "3x Hybrid Flask",
+                "The components must all be of the same base item type (e.g. Small Hybrid Flask). The result will have the lowest item level of all components. If all three are magic, the result will be magic and unidentified."
+            ]
+        },
+        {
+            "id": "1:manual:idols",
+            "input": "Idols, all of same type",
+            "output": "Idol of same type",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x Idol of same type",
+                "3x Idols, all of same type",
+                "Cannot use Unique idols"
+            ]
+        },
+        {
+            "id": "1:manual:life-flasks",
+            "input": "Life Flask",
+            "output": "Life Flask of next base type",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x Life Flask of next base type",
+                "3x Life Flask",
+                "The components must all be of the same base item type (e.g. Small Life Flask). The result will have the lowest item level of all components. If all three are magic, the result will be magic and unidentified. NOTE: This works only up to combining Hallowed (Level 42) Flasks into Sanctified (Level 50). Divine and Eternal Flasks cannot be produced through combination."
+            ]
+        },
+        {
+            "id": "1:manual:magic",
+            "input": "item (magic)",
+            "output": "Item (magic, unidentified)",
+            "quantity": 5,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "Item (magic, unidentified)",
+                "5x item (magic)",
+                "The components must all be of the same base item type (e.g., Coral Ring). The result will have the lowest item level of all components. This vendor recipe doesn't transfer influence to the resulting item, even if all five components are from the same influence."
+            ]
+        },
+        {
+            "id": "1:manual:mana-flasks",
+            "input": "Mana Flask",
+            "output": "Mana Flask of next base type",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x Mana Flask of next base type",
+                "3x Mana Flask",
+                "The components must all be of the same base item type (e.g. Small Mana Flask). The result will have the lowest item level of all components. If all three are magic, the result will be magic and unidentified. NOTE: This works only up to combining Hallowed (Level 42) Flasks into Sanctified (Level 50). Divine and Eternal Flasks cannot be produced through combination."
+            ]
+        },
+        {
+            "id": "1:manual:maps",
+            "input": "map of the same tier",
+            "output": "map, one tier higher",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x map, one tier higher",
+                "3x map of the same tier",
+                "The resulting map is always normal rarity. Can mix and match with Blighted maps, but will still return a regular map."
+            ]
+        },
+        {
+            "id": "1:manual:rare",
+            "input": "item (rare)",
+            "output": "Item (rare, unidentified)",
+            "quantity": 5,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "Item (rare, unidentified)",
+                "5x item (rare)",
+                "Components must all be of the same base item type (e.g. Coral Ring). Resulting item level - lowest of all components, and normal art. Cluster jewels - random number of passives and type of small passives on resulting item The recipe does not transfer influence to the resulting item, even if all five components are from the same influence."
+            ]
+        },
+        {
+            "id": "1:manual:runegrafts",
+            "input": "runegraft, any",
+            "output": "random runegraft",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": ["1x random runegraft", "3x runegraft, any", ""]
+        },
+        {
+            "id": "1:manual:scarabs",
+            "input": "scarabs (any type)",
+            "output": "random scarab of a different type",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x random scarab of a different type",
+                "3x scarabs (any type)",
+                "The random scarab will be of a different type from the scarabs used for the recipe."
+            ]
+        },
+        {
+            "id": "1:manual:tattoos",
+            "input": "tattoos from same tribe",
+            "output": "random tattoo from same tribe",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x random tattoo from same tribe",
+                "3x tattoos from same tribe",
+                "There are 10 Tribes (Arohongui, Hinekora, etc.). Not to be confused with the Attribute type (Strength/Dexterity/Intelligence) of the Tattoo. It is possible to receive back the same type of Tattoo that you just sold 3 copies of."
+            ]
+        },
+        {
+            "id": "1:manual:ultimatums",
+            "input": "Inscribed Ultimatum, any reward or encounter type",
+            "output": "random Inscribed Ultimatum",
+            "quantity": 5,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x random Inscribed Ultimatum",
+                "5x Inscribed Ultimatum, any reward or encounter type",
+                "The returned Inscribed Ultimatum's area level is the lowest of the 5 Inscribed Ultimatums used in the recipe. The reward and encounter type is random.Note: if all 5 Inscribed Ultimatums are the same tier (damage/life% modifier), the resulting Inscribed Ultimatum's reward will also be of the same tier."
+            ]
+        },
+        {
+            "id": "1:manual:unique",
+            "input": "unique item (same name, not corrupted)",
+            "output": "unique item",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x unique item",
+                "3x unique item (same name, not corrupted)",
+                "The unique items used as recipe components must not only have the same name, but also be of the same unique item variant; if they can generate with variable explicit modifier, all modifiers must be the same between the three items. The resulting item will be of the same variant as the components. This rule also applies to legacy variants. The resulting unique item will have its natural implicit modifier, if any. As of version 3.23.0d, unique synthesised item instead return a synthesised unique item with randomised synthesised implicit modifiers instead. Synthesis \"Circle\" Rings also require that they have the same random explicit modifiers. Foulborn unique items cannot be used as components in the 3 to 1 vendor recipe as of version 3.27.0c, and are not interchangeable for their regular versions."
+            ]
+        },
+        {
+            "id": "1:manual:wombgifts",
+            "input": "wombgifts, any type",
+            "output": "random wombgift",
+            "quantity": 5,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x random wombgift",
+                "5x wombgifts, any type",
+                "Output item has the lowest item level among the input items."
+            ]
         },
         {
             "id": "1:muttering-essence-of-anger",
@@ -120,6 +326,126 @@
             "quantity": 3,
             "revision": 1683016,
             "source": "https://www.poewiki.net/w/index.php?title=Silver%20Oil&oldid=1683016"
+        },
+        {
+            "id": "1:purchase:alt:jewellers",
+            "input": "Orb of Alteration",
+            "output": "Jeweller's Orb",
+            "quantity": 2,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Jeweller's Orb", "2x Orb of Alteration", "Act 2 (Yeena)"]
+        },
+        {
+            "id": "1:purchase:aug:alt",
+            "input": "Orb of Augmentation",
+            "output": "Orb of Alteration",
+            "quantity": 4,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Alteration", "4x Orb of Augmentation", "Act 1 (Nessa)"]
+        },
+        {
+            "id": "1:purchase:chance:scour",
+            "input": "Orb of Chance",
+            "output": "Orb of Scouring",
+            "quantity": 4,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Scouring", "4x Orb of Chance", "Act 2 (Yeena)"]
+        },
+        {
+            "id": "1:purchase:fusing:chance",
+            "input": "Orb of Fusing",
+            "output": "Orb of Chance",
+            "quantity": 1,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Chance", "1x Orb of Fusing", "Act 3 (Clarissa)"]
+        },
+        {
+            "id": "1:purchase:jewellers:fusing",
+            "input": "Jeweller's Orb",
+            "output": "Orb of Fusing",
+            "quantity": 4,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Fusing", "4x Jeweller's Orb", "Act 2 (Yeena)"]
+        },
+        {
+            "id": "1:purchase:portal:transmute",
+            "input": "Portal Scroll",
+            "output": "Orb of Transmutation",
+            "quantity": 7,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Transmutation", "7x Portal Scroll", "Act 1 (Nessa)"]
+        },
+        {
+            "id": "1:purchase:regret:alch",
+            "input": "Orb of Regret",
+            "output": "Orb of Alchemy",
+            "quantity": 1,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Alchemy", "1x Orb of Regret", "Act 3 (Clarissa)"]
+        },
+        {
+            "id": "1:purchase:scour:regret",
+            "input": "Orb of Scouring",
+            "output": "Orb of Regret",
+            "quantity": 2,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Regret", "2x Orb of Scouring", "Act 2 (Yeena)"]
+        },
+        {
+            "id": "1:purchase:scrap:whetstone",
+            "input": "Armourer's Scrap",
+            "output": "Blacksmith's Whetstone",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Blacksmith's Whetstone", "3x Armourer's Scrap", "Act 2 (Greust)"]
+        },
+        {
+            "id": "1:purchase:transmute:aug",
+            "input": "Orb of Transmutation",
+            "output": "Orb of Augmentation",
+            "quantity": 4,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Augmentation", "4x Orb of Transmutation", "Act 1 (Nessa)"]
+        },
+        {
+            "id": "1:purchase:whetstone:scrap",
+            "input": "Blacksmith's Whetstone",
+            "output": "Armourer's Scrap",
+            "quantity": 1,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Armourer's Scrap", "1x Blacksmith's Whetstone", "Act 1 (Tarkleigh)"]
+        },
+        {
+            "id": "1:purchase:wisdom:portal",
+            "input": "Scroll of Wisdom",
+            "output": "Portal Scroll",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Portal Scroll", "3x Scroll of Wisdom", "Act 1 (Nessa)"]
         },
         {
             "id": "1:screaming-essence-of-anger",
@@ -280,6 +606,56 @@
             "quantity": 3,
             "revision": 1681305,
             "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Zeal&oldid=1681305"
+        },
+        {
+            "id": "1:sell:alt:wisdom",
+            "input": "Orb of Alteration",
+            "output": "Scroll of Wisdom",
+            "quantity": 1,
+            "outputQuantity": 4,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": ["4x Scroll of Wisdom", "1x Orb of Alteration"]
+        },
+        {
+            "id": "1:sell:portal:wisdom",
+            "input": "Portal Scroll",
+            "output": "Scroll of Wisdom",
+            "quantity": 1,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": ["1x Scroll of Wisdom", "1x Portal Scroll"]
+        },
+        {
+            "id": "1:sell:scrap:wisdom",
+            "input": "Armourer's Scrap",
+            "output": "Scroll of Wisdom",
+            "quantity": 1,
+            "outputQuantity": 2,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": ["2x Scroll of Wisdom", "1x Armourer's Scrap"]
+        },
+        {
+            "id": "1:sell:transmute:wisdom",
+            "input": "Orb of Transmutation",
+            "output": "Scroll of Wisdom",
+            "quantity": 1,
+            "outputQuantity": 4,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": ["4x Scroll of Wisdom", "1x Orb of Transmutation"]
+        },
+        {
+            "id": "1:sell:whetstone:wisdom",
+            "input": "Blacksmith's Whetstone",
+            "output": "Scroll of Wisdom",
+            "quantity": 1,
+            "outputQuantity": 4,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": ["4x Scroll of Wisdom", "1x Blacksmith's Whetstone"]
         },
         {
             "id": "1:sepia-oil",
