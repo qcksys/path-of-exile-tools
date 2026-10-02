@@ -4,6 +4,7 @@ import { REALM } from "#src/shared/auth.ts";
 import { learnBasemap } from "#src/shared/basemap.ts";
 import { shouldCapture } from "#src/shared/capture.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
+import { withTransaction } from "#src/shared/db.ts";
 import { decodeIconAsset } from "#src/shared/icon.ts";
 import { itemKey } from "#src/shared/item-key.ts";
 import { extractModSignature } from "#src/shared/mod-extractors/index.ts";
@@ -51,6 +52,14 @@ async function applyStashChange(
     conn: DuckDBConnection,
     change: PublicStashChange,
 ): Promise<{ inserted: number; updated: number; removed: number }> {
+    if (!change.public) {
+        const removed = await conn.runAndReadAll(
+            `UPDATE ps_listing SET removed_at = current_timestamp
+             WHERE stash_id = $1 AND removed_at IS NULL RETURNING item_id`,
+            [change.id],
+        );
+        return { inserted: 0, updated: 0, removed: removed.getRowObjects().length };
+    }
     if (!change.accountName || !change.league) {
         return { inserted: 0, updated: 0, removed: 0 };
     }
@@ -175,6 +184,15 @@ async function applyStashChange(
         );
     }
 
+    await conn.run(
+        `INSERT OR REPLACE INTO ps_listing_hour
+         SELECT * EXCLUDE (removed_at, raw_item),
+                epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
+         FROM ps_listing
+         WHERE account_name = $1 AND stash_id = $2 AND removed_at IS NULL`,
+        [accountName, stashId],
+    );
+
     return { inserted, updated, removed: goneIds.length };
 }
 
@@ -203,24 +221,26 @@ export async function ingestPs(
             requestCursor ? { realm: REALM, id: requestCursor } : { realm: REALM },
         );
 
-        for (const change of page.stashes) {
-            result.stashes++;
-            if (change.public) {
-                result.publicStashes++;
-                const lg = change.league ?? "<missing>";
-                const acc = result.leagues.get(lg) ?? { stashes: 0, items: 0 };
-                acc.stashes++;
-                acc.items += change.items.length;
-                result.leagues.set(lg, acc);
+        await withTransaction(conn, async () => {
+            for (const change of page.stashes) {
+                result.stashes++;
+                if (change.public) {
+                    result.publicStashes++;
+                    const lg = change.league ?? "<missing>";
+                    const acc = result.leagues.get(lg) ?? { stashes: 0, items: 0 };
+                    acc.stashes++;
+                    acc.items += change.items.length;
+                    result.leagues.set(lg, acc);
+                }
+                const r = await applyStashChange(conn, change);
+                result.inserted += r.inserted;
+                result.updated += r.updated;
+                result.removed += r.removed;
             }
-            const r = await applyStashChange(conn, change);
-            result.inserted += r.inserted;
-            result.updated += r.updated;
-            result.removed += r.removed;
-        }
+            await setCursor(conn, STREAM, page.next_change_id);
+        });
 
         cursor = page.next_change_id;
-        await setCursor(conn, STREAM, cursor);
         result.pages++;
         result.finalCursor = cursor;
 

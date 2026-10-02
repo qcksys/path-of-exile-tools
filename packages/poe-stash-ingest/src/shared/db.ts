@@ -32,6 +32,15 @@ CREATE INDEX IF NOT EXISTS ps_listing_league_itemkey ON ps_listing(league, item_
 CREATE INDEX IF NOT EXISTS ps_listing_icon ON ps_listing(icon_asset);
 CREATE INDEX IF NOT EXISTS ps_listing_removed ON ps_listing(removed_at);
 
+CREATE TABLE IF NOT EXISTS ps_listing_hour AS
+    SELECT * EXCLUDE (removed_at, raw_item),
+           epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
+    FROM ps_listing;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ps_listing_hour_pk
+    ON ps_listing_hour(account_name, stash_id, item_id, observed_hour);
+CREATE INDEX IF NOT EXISTS ps_listing_hour_time ON ps_listing_hour(observed_hour, league);
+
 CREATE TABLE IF NOT EXISTS icon_basemap (
     icon_asset VARCHAR PRIMARY KEY,
     name VARCHAR NOT NULL,
@@ -100,4 +109,19 @@ export async function queryAll<T = Record<string, unknown>>(
         ? await conn.runAndReadAll(sql, params as Parameters<typeof conn.runAndReadAll>[1])
         : await conn.runAndReadAll(sql);
     return reader.getRowObjectsJson() as T[];
+}
+
+export async function withTransaction<T>(
+    conn: DuckDBConnection,
+    action: () => Promise<T>,
+): Promise<T> {
+    await conn.run("BEGIN TRANSACTION");
+    try {
+        const result = await action();
+        await conn.run("COMMIT");
+        return result;
+    } catch (error) {
+        await conn.run("ROLLBACK");
+        throw error;
+    }
 }

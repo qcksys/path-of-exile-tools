@@ -2,6 +2,7 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import type { PoeApiClient } from "@poe-tools/api-client";
 import { REALM } from "#src/shared/auth.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
+import { withTransaction } from "#src/shared/db.ts";
 
 const STREAM = "cxapi";
 
@@ -41,29 +42,31 @@ export async function ingestCx(
         const snap = await client.public.currencyExchange({ realm: REALM, id });
         const leaguesSeen = new Set<string>();
 
-        for (const m of snap.markets) {
-            leaguesSeen.add(m.league);
-            await conn.run(
-                `INSERT INTO cx_market_hour (
-                    league, market_id, observed_hour,
-                    lowest_ratio, highest_ratio, volume_traded, lowest_stock, highest_stock
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                ON CONFLICT (league, market_id, observed_hour) DO NOTHING`,
-                [
-                    m.league,
-                    m.market_id,
-                    id,
-                    JSON.stringify(m.lowest_ratio),
-                    JSON.stringify(m.highest_ratio),
-                    JSON.stringify(m.volume_traded),
-                    JSON.stringify(m.lowest_stock),
-                    JSON.stringify(m.highest_stock),
-                ],
-            );
-        }
+        await withTransaction(conn, async () => {
+            for (const m of snap.markets) {
+                leaguesSeen.add(m.league);
+                await conn.run(
+                    `INSERT INTO cx_market_hour (
+                        league, market_id, observed_hour,
+                        lowest_ratio, highest_ratio, volume_traded, lowest_stock, highest_stock
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    ON CONFLICT (league, market_id, observed_hour) DO NOTHING`,
+                    [
+                        m.league,
+                        m.market_id,
+                        id,
+                        JSON.stringify(m.lowest_ratio),
+                        JSON.stringify(m.highest_ratio),
+                        JSON.stringify(m.volume_traded),
+                        JSON.stringify(m.lowest_stock),
+                        JSON.stringify(m.highest_stock),
+                    ],
+                );
+            }
+            await setCursor(conn, STREAM, String(snap.next_change_id));
+        });
 
         const caughtUp = snap.next_change_id === id;
-        await setCursor(conn, STREAM, String(snap.next_change_id));
 
         results.push({
             hour: id,

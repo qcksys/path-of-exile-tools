@@ -5,6 +5,7 @@ import {
     upsertStashCurrencyHourly,
     upsertStashUniqueHourly,
 } from "~/db/queries/stash-ingest.queries";
+import { sStashCurrencyHourlyI } from "~/db/schema/stash.currency-hourly";
 import { logger } from "~/services/logger";
 import type { Route } from "./+types/api.stash-ingest";
 
@@ -35,7 +36,7 @@ const UNIQUE_ROW_SCHEMA = z.object({
 const CURRENCY_ROW_SCHEMA = z.object({
     league: z.string().min(1).max(100),
     hour: z.number().int().nonnegative(),
-    marketId: z.string().min(1).max(100),
+    marketId: sStashCurrencyHourlyI.shape.marketId.min(1),
     lowestRatio: z.record(z.string(), z.number()),
     highestRatio: z.record(z.string(), z.number()),
     volumeTraded: z.record(z.string(), z.number()),

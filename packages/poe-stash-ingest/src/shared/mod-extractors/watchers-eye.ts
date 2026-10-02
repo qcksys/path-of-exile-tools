@@ -22,16 +22,17 @@ const AURAS = [
 ] as const;
 
 /**
- * Watcher's Eye explicit mods are "While affected by {Aura}, …{stat phrase}".
- * The stat phrase is the categorisation we want — it identifies which of the
- * many possible per-aura modifiers rolled.
+ * The aura condition can precede or follow the stat, sometimes across a newline.
  */
 function parseLine(line: string): { aura: string; stat: string } | null {
-    const m = line.match(/^While affected by ([A-Za-z ]+?),\s*(.+)$/);
-    if (!m?.[1] || !m?.[2]) return null;
-    const aura = m[1].trim();
+    const text = line.replace(/\s+/g, " ").trim();
+    const prefix = text.match(/^While affected by ([A-Za-z ]+?),\s*(.+)$/i);
+    const suffix = text.match(/^(.+?) while affected by ([A-Za-z ]+)$/i);
+    const aura = (prefix?.[1] ?? suffix?.[2])?.trim();
+    const stat = (prefix?.[2] ?? suffix?.[1])?.trim();
+    if (!aura || !stat) return null;
     if (!AURAS.includes(aura as (typeof AURAS)[number])) return null;
-    return { aura, stat: m[2].trim() };
+    return { aura, stat };
 }
 
 export const watchersEyeExtractor: ModExtractor = {
@@ -42,7 +43,8 @@ export const watchersEyeExtractor: ModExtractor = {
     extract(item: Item): ModSignature | null {
         const mods = (item.explicitMods ?? [])
             .map(parseLine)
-            .filter((m): m is { aura: string; stat: string } => m !== null);
+            .filter((m): m is { aura: string; stat: string } => m !== null)
+            .sort((a, b) => a.aura.localeCompare(b.aura) || a.stat.localeCompare(b.stat));
         if (mods.length === 0) return null;
         return { kind: "watchers-eye", mods };
     },

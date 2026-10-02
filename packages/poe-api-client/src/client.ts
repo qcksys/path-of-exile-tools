@@ -119,42 +119,21 @@ function buildKy(options: ClientOptions): KyInstance {
                 },
             ],
             afterResponse: [
-                async ({ response }) => {
+                ({ response }) => {
                     const info = parseRateLimit(response.headers);
                     options.onRateLimit?.(info);
-                    if (!response.ok) {
-                        let body: PoeErrorBody | string | undefined;
-                        try {
-                            body = (await response.clone().json()) as PoeErrorBody;
-                        } catch {
-                            try {
-                                body = await response.clone().text();
-                            } catch {
-                                body = undefined;
-                            }
-                        }
-                        throw new PoeApiError({
-                            status: response.status,
-                            statusText: response.statusText,
-                            response,
-                            body,
-                            rateLimit: info,
-                        });
-                    }
                     return response;
                 },
             ],
             beforeError: [
                 ({ error }) => {
-                    // Translate any residual ky HTTPError (e.g. body-parse failures
-                    // that bypassed the afterResponse hook) into a PoeApiError.
                     if (error instanceof HTTPError) {
                         const info = parseRateLimit(error.response.headers);
                         return new PoeApiError({
                             status: error.response.status,
                             statusText: error.response.statusText,
                             response: error.response,
-                            body: undefined,
+                            body: error.data as PoeErrorBody | string | undefined,
                             rateLimit: info,
                         });
                     }

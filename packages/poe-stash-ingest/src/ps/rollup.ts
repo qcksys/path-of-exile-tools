@@ -44,7 +44,7 @@ const ROLLUP_SQL = /* sql */ `
 WITH windowed AS (
     SELECT
         l.league,
-        epoch(date_trunc('hour', l.last_seen_at))::BIGINT AS hour,
+        l.observed_hour AS hour,
         l.item_key,
         COALESCE(l.corrupted, FALSE) AS corrupted,
         COALESCE(l.foil_variation, -1) AS foil_variation,
@@ -59,7 +59,7 @@ WITH windowed AS (
                     json_extract_string(l.mod_signature, '$.skill') || '@' ||
                         json_extract_string(l.mod_signature, '$.level'), '')
             WHEN json_extract_string(l.mod_signature, '$.kind') = 'watchers-eye'
-                THEN COALESCE(l.mod_signature::VARCHAR, '')
+                THEN sha256(COALESCE(l.mod_signature::VARCHAR, ''))
             ELSE ''
         END AS signature_value,
         l.mod_signature::VARCHAR AS signature_data,
@@ -73,12 +73,12 @@ WITH windowed AS (
         l.price_currency,
         l.first_seen_at,
         l.last_seen_at
-    FROM ps_listing l
+    FROM ps_listing_hour l
     LEFT JOIN icon_basemap b ON l.icon_asset = b.icon_asset
-    WHERE epoch(date_trunc('hour', l.last_seen_at))::BIGINT = $1
+    WHERE l.observed_hour = $1
         AND ($2 IS NULL OR l.league = $2)
         -- Defer rolling up unidentified items whose icon_asset has not
-        -- been basemapped yet. They stay in ps_listing and become eligible
+        -- been basemapped yet. They stay in ps_listing_hour and become eligible
         -- once an identified instance teaches the basemap.
         AND (
             l.identified
