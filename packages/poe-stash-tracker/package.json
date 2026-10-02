@@ -8,6 +8,7 @@
         "#src/*": "./src/*"
     },
     "scripts": {
+        "env:check": "varlock load",
         "db:push": "drizzle-kit push",
         "db:studio": "drizzle-kit studio",
         "ingest:cx": "node src/ingest-cx.ts",
@@ -18,8 +19,10 @@
     },
     "dependencies": {
         "@poe-tools/api-client": "workspace:*",
+        "@varlock/1password-plugin": "catalog:",
         "better-sqlite3": "^12.4.1",
-        "drizzle-orm": "catalog:"
+        "drizzle-orm": "catalog:",
+        "varlock": "catalog:"
     },
     "devDependencies": {
         "@types/better-sqlite3": "^7.6.12",

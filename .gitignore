@@ -8,6 +8,17 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.pnpm-store
+.varlock
+.env
+.env.*
+!.env.schema
+!.env.example
+!.env.dev
+!.env.prod
+!.env.test
+.dev.vars
+.dev.vars.*
 dist
 dist-ssr
 *.local

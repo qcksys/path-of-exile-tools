@@ -5,9 +5,11 @@ Local SQLite ingestor for the Path of Exile public stash stream (psapi) and curr
 ## Setup
 
 ```bash
-cp .env.example .env          # fill in POE_CLIENT_ID / POE_CLIENT_SECRET / POE_USER_AGENT_CONTACT / POE_LEAGUE
+vp run env:check
 vp run db:push                # create data.db and apply schema
 ```
+
+Complete the [repository environment setup](../../README.md#environment-configuration) first. Varlock resolves credentials and User-Agent contact from the 1Password dev item by default. Copy `.env.example` to `.env.local` to override non-secret settings. Set `APP_ENV=prod` locally to use the production item. Authenticate through the 1Password desktop app.
 
 `POE_REALM` defaults to pc. Set `poe2` for PoE2, or `xbox` / `sony` for console realms. GGG rejects `/pc` as a path segment, so when the realm is pc the client omits it automatically.
 
