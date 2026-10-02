@@ -6,5 +6,7 @@ export default defineConfig({
     },
     test: {
         environment: "node",
+        include: ["test/**/*.test.{ts,mjs}"],
+        exclude: ["test/e2e/**"],
     },
 });

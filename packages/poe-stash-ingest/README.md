@@ -16,7 +16,7 @@ vp run env:check
 
 Environment values are validated by Varlock and resolved from the 1Password dev item by default. Complete the [repository environment setup](../../README.md#environment-configuration) first. Copy `.env.example` to `.env.local` only when overriding non-secret settings. Set `APP_ENV=prod` locally to use the production item and endpoint. Authenticate through the 1Password desktop app.
 
-The DuckDB file (default `./data.duckdb`) is created on first run. No migrations to push — the schema is declared as `CREATE TABLE IF NOT EXISTS` and applied on every connection.
+The DuckDB file (default `./data.duckdb`) is created on first run. The schema is applied on every connection. Existing databases seed `ps_listing_hour` from their latest stored listing observations when that table is first created; observations already overwritten by earlier ingests cannot be recovered.
 
 ## Commands
 
@@ -46,7 +46,7 @@ Identified uniques are run through a registry of structured mod-extractors. The 
 | column            | example for Forbidden Flame                                      | example for Watcher's Eye              |
 | ----------------- | ---------------------------------------------------------------- | -------------------------------------- |
 | `signature_kind`  | `forbidden-jewel`                                                | `watchers-eye`                         |
-| `signature_value` | `Glancing Blows`                                                 | `Anger=...;Hatred=...` (sorted)        |
+| `signature_value` | `Glancing Blows`                                                 | SHA-256 of the sorted mod signature   |
 | `signature_data`  | `{"kind":"forbidden-jewel","allocatedNotable":"Glancing Blows"}` | `{"kind":"watchers-eye","mods":[...]}` |
 
 `(signature_kind, signature_value)` are PK components alongside `(league, hour, item_key, corrupted, foil_variation)`, so each tradable variant gets its own permanent hourly row. `signature_data` is the lossless payload — query into it with MySQL's JSON path operators when you need a specific field.
@@ -55,14 +55,14 @@ Rows with no extracted signature use `signature_kind = ''` and `signature_value 
 
 #### Deferred rollup for unmapped unids
 
-Unidentified items whose `icon_asset` is not yet present in `icon_basemap` are **excluded from rollup**. They stay in the local `ps_listing` and become eligible once an identified instance with the same `icon_asset` flows through and teaches the basemap. This keeps the remote table from accumulating `unid:<icon>` rows that can never be resolved to a unique name. Identified rows are always eligible.
+Unidentified items whose `icon_asset` is not yet present in `icon_basemap` are **excluded from rollup**. Their observations stay in `ps_listing_hour` and become eligible once an identified instance with the same `icon_asset` flows through and teaches the basemap. Rerun rollup for the affected hours to deliver them. Identified rows are always eligible.
 
 Built-in extractors:
 
 | kind                                        | example bucket key in remote `modSignatureCounts` |
 | ------------------------------------------- | ------------------------------------------------- |
 | `forbidden-jewel` (Forbidden Flame / Flesh) | `forbidden-jewel:Glancing Blows`                  |
-| `watchers-eye` (Watcher's Eye)              | `watchers-eye:{...full mod array...}`             |
+| `watchers-eye` (Watcher's Eye)              | `watchers-eye:<SHA-256>`                         |
 | `impossible-escape`                         | `impossible-escape:Pain Attunement`               |
 | `forbidden-shako`                           | `forbidden-shako:Spell Echo`                      |
 
@@ -83,10 +83,15 @@ cx is already hourly; rollup is a passthrough that POSTs cached `cx_market_hour`
 | table            | one row per                                                                                         |
 | ---------------- | --------------------------------------------------------------------------------------------------- |
 | `ps_listing`     | `(account_name, stash_id, item_id)` — full lifecycle: `first_seen_at`, `last_seen_at`, `removed_at` |
+| `ps_listing_hour` | `(account_name, stash_id, item_id, observed_hour)` — last observed state within each UTC hour |
 | `icon_basemap`   | `icon_asset` — global, learned from identified uniques flowing through                              |
 | `cx_market_hour` | `(league, market_id, observed_hour)` — cxapi snapshots                                              |
 | `stream_cursor`  | `psapi` / `cxapi`                                                                                   |
 | `rollup_state`   | `(stream, league, hour)` — idempotency for the remote push                                          |
+
+Each source response and its cursor are committed in one transaction. Public stash rollups use hourly observations, so later price changes and unlisting events do not rewrite earlier hours. These are counts of listings observed during the hour, rather than a census of all active listings.
+
+Pruning applies the row cap to `ps_listing`. It also deletes hourly observations older than `keepDays` once they have been included in a successful push. Pending and unresolved observations remain available for replay and can exceed the listing row cap.
 
 ## Remote schema (poe.boats — MySQL, prefixed `qsPoeBoats__stash_`)
 
@@ -137,6 +142,17 @@ poe-stash-cx rollup
 # Daily — keep the local file from growing without bound
 poe-stash-ps prune
 ```
+
+## Tests
+
+From the repository root, with Docker running:
+
+```sh
+vp run poe-boats#test
+vp run poe-boats#test:e2e
+```
+
+The Vitest end-to-end suite starts an isolated MySQL 8.4 container with Testcontainers and applies the app's migrations. Seeded HTTP responses flow through the real API client, DuckDB ingestors, rollups, HTTP receiver and MySQL queries. It covers replay, updates, unlisting, failed pages, failed delivery, long market IDs and Watcher's Eye variants. Separate seeded SQLite checks cover the tracker. No Path of Exile credentials or production database are used. CI runs both suites.
 
 ## poe.boats secret
 
