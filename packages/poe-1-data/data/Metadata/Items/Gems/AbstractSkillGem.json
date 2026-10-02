@@ -1,0 +1,15 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "gem",
+      "default"
+    ],
+    "x_size": 1,
+    "y_size": 1,
+    "description_text": "ItemDescriptionSkillGem"
+  },
+  "Quality": {
+    "max_quality": 20
+  }
+}

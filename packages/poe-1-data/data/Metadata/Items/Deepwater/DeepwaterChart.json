@@ -1,0 +1,21 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "default"
+    ],
+    "description_text": "ItemDescriptionDeepwaterChart"
+  },
+  "Mods": {
+    "stat_description_list": "Metadata/StatDescriptions/deepwater_stat_descriptions.txt",
+    "mod_stat_description_list": "Metadata/StatDescriptions/advanced_mod_stat_descriptions.txt",
+    "enable_rarity": [
+      "normal",
+      "magic",
+      "rare",
+      "unique"
+    ],
+    "implicit_stat_description_list": "Metadata/StatDescriptions/deepwater_implicit_stat_descriptions.txt",
+    "explicit_stat_description_list": "Metadata/StatDescriptions/deepwater_explicit_stat_descriptions.txt"
+  }
+}

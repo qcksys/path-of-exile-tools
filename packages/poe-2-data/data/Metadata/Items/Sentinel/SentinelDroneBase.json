@@ -1,0 +1,21 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "sentinel_drone",
+      "default"
+    ],
+    "x_size": 2,
+    "y_size": 2
+  },
+  "Mods": {
+    "stat_description_list": "Data/StatDescriptions/sentinel_stat_descriptions.csd",
+    "inventory_type": "SentinelDroneInventory",
+    "enable_rarity": [
+      "normal",
+      "magic",
+      "rare",
+      "unique"
+    ]
+  }
+}

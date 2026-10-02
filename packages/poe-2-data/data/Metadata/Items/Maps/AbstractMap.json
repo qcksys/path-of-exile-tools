@@ -1,0 +1,23 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "map",
+      "default"
+    ],
+    "description_text": "ItemDescriptionMap"
+  },
+  "Mods": {
+    "stat_description_list": "Data/StatDescriptions/stat_descriptions.csd",
+    "mod_stat_description_list": "Data/StatDescriptions/advanced_mod_stat_descriptions.csd",
+    "enable_rarity": [
+      "normal",
+      "magic",
+      "rare",
+      "unique"
+    ]
+  },
+  "Quality": {
+    "max_quality": 20
+  }
+}

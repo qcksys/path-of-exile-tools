@@ -1,0 +1,18 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "default"
+    ],
+    "description_text": "ItemDescriptionSanctumRelic"
+  },
+  "Mods": {
+    "stat_description_list": "Metadata/StatDescriptions/sanctum_relic_stat_descriptions.txt",
+    "inventory_type": "Relics",
+    "enable_rarity": [
+      "magic",
+      "unique"
+    ],
+    "no_level_requirement": "true"
+  }
+}

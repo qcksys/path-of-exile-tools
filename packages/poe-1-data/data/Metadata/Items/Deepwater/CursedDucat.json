@@ -1,0 +1,14 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "default"
+    ],
+    "x_size": 1,
+    "y_size": 1
+  },
+  "Mods": {
+    "stat_description_list": "Metadata/StatDescriptions/map_stat_descriptions.txt",
+    "disable_rarity": "unique"
+  }
+}

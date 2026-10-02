@@ -1,0 +1,20 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "default"
+    ],
+    "x_size": 1,
+    "y_size": 2,
+    "description_text": "ItemDescriptionSanctumSpecialRelic",
+    "always_account_bound": "true",
+    "propagates_account_bound_when_vendored": "false"
+  },
+  "Mods": {
+    "stat_description_list": "Data/StatDescriptions/sanctum_relic_stat_descriptions.csd",
+    "enable_rarity": [
+      "magic"
+    ],
+    "inventory_type": "SanctumSpecialRelic"
+  }
+}

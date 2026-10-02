@@ -1,0 +1,13 @@
+{
+    "extends": "//",
+    "files": {
+        "includes": [
+            "**",
+            "!data",
+            "!manifest.json",
+            "!src/schemas.ts",
+            "!src/release.ts",
+            "!types"
+        ]
+    }
+}

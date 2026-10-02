@@ -1,0 +1,4169 @@
+{
+  "default": {
+    "name": ""
+  },
+  "shield": {
+    "name": ""
+  },
+  "ring": {
+    "name": ""
+  },
+  "amulet": {
+    "name": ""
+  },
+  "boots": {
+    "name": ""
+  },
+  "bow": {
+    "name": ""
+  },
+  "equipment": {
+    "name": ""
+  },
+  "armour": {
+    "name": ""
+  },
+  "weapon": {
+    "name": ""
+  },
+  "wand": {
+    "name": ""
+  },
+  "staff": {
+    "name": ""
+  },
+  "mace": {
+    "name": ""
+  },
+  "sword": {
+    "name": ""
+  },
+  "dagger": {
+    "name": ""
+  },
+  "claw": {
+    "name": ""
+  },
+  "axe": {
+    "name": ""
+  },
+  "body_armour": {
+    "name": ""
+  },
+  "life_flask": {
+    "name": ""
+  },
+  "mana_flask": {
+    "name": ""
+  },
+  "hybrid_flask": {
+    "name": ""
+  },
+  "flask": {
+    "name": ""
+  },
+  "quiver": {
+    "name": ""
+  },
+  "gloves": {
+    "name": ""
+  },
+  "onehand": {
+    "name": ""
+  },
+  "twohand": {
+    "name": ""
+  },
+  "helmet": {
+    "name": ""
+  },
+  "belt": {
+    "name": ""
+  },
+  "gem": {
+    "name": ""
+  },
+  "relic": {
+    "name": ""
+  },
+  "not_str": {
+    "name": ""
+  },
+  "not_dex": {
+    "name": ""
+  },
+  "not_int": {
+    "name": ""
+  },
+  "ranged": {
+    "name": ""
+  },
+  "not_for_sale": {
+    "name": ""
+  },
+  "caster": {
+    "name": ""
+  },
+  "magic": {
+    "name": ""
+  },
+  "rare": {
+    "name": ""
+  },
+  "sceptre": {
+    "name": ""
+  },
+  "str_armour": {
+    "name": ""
+  },
+  "dex_armour": {
+    "name": ""
+  },
+  "int_armour": {
+    "name": ""
+  },
+  "str_dex_armour": {
+    "name": ""
+  },
+  "str_int_armour": {
+    "name": ""
+  },
+  "dex_int_armour": {
+    "name": ""
+  },
+  "str_dex_int_armour": {
+    "name": ""
+  },
+  "focus": {
+    "name": ""
+  },
+  "utility_flask": {
+    "name": ""
+  },
+  "critical_utility_flask": {
+    "name": ""
+  },
+  "humanoid": {
+    "name": ""
+  },
+  "mammal_beast": {
+    "name": ""
+  },
+  "reptile_beast": {
+    "name": ""
+  },
+  "skeleton": {
+    "name": ""
+  },
+  "zombie": {
+    "name": ""
+  },
+  "ghost": {
+    "name": ""
+  },
+  "earth_elemental": {
+    "name": ""
+  },
+  "water_elemental": {
+    "name": ""
+  },
+  "demon": {
+    "name": ""
+  },
+  "map": {
+    "name": ""
+  },
+  "rapier": {
+    "name": ""
+  },
+  "necromancer_raisable": {
+    "name": ""
+  },
+  "lots_of_life": {
+    "name": ""
+  },
+  "indoors_area": {
+    "name": ""
+  },
+  "beach": {
+    "name": ""
+  },
+  "dungeon": {
+    "name": ""
+  },
+  "cave": {
+    "name": ""
+  },
+  "forest": {
+    "name": ""
+  },
+  "swamp": {
+    "name": ""
+  },
+  "mountain": {
+    "name": ""
+  },
+  "temple": {
+    "name": ""
+  },
+  "urban": {
+    "name": ""
+  },
+  "high_level_map": {
+    "name": ""
+  },
+  "human": {
+    "name": ""
+  },
+  "beast": {
+    "name": ""
+  },
+  "undead": {
+    "name": ""
+  },
+  "construct": {
+    "name": ""
+  },
+  "insect": {
+    "name": ""
+  },
+  "spider": {
+    "name": ""
+  },
+  "undying": {
+    "name": ""
+  },
+  "goatman": {
+    "name": ""
+  },
+  "stone_construct": {
+    "name": ""
+  },
+  "fishing_rod": {
+    "name": ""
+  },
+  "one_hand_weapon": {
+    "name": ""
+  },
+  "two_hand_weapon": {
+    "name": ""
+  },
+  "atziri1": {
+    "name": ""
+  },
+  "atziri2": {
+    "name": ""
+  },
+  "drops_no_mods": {
+    "name": ""
+  },
+  "drops_no_rares": {
+    "name": ""
+  },
+  "drops_no_quality": {
+    "name": ""
+  },
+  "drops_no_sockets": {
+    "name": ""
+  },
+  "drops_not_dupeable": {
+    "name": ""
+  },
+  "shore": {
+    "name": ""
+  },
+  "darkshore": {
+    "name": ""
+  },
+  "inland": {
+    "name": ""
+  },
+  "prison": {
+    "name": ""
+  },
+  "axis": {
+    "name": ""
+  },
+  "cavern": {
+    "name": ""
+  },
+  "southernforest": {
+    "name": ""
+  },
+  "southernforest2": {
+    "name": ""
+  },
+  "church": {
+    "name": ""
+  },
+  "sins": {
+    "name": ""
+  },
+  "forestdark": {
+    "name": ""
+  },
+  "weavers": {
+    "name": ""
+  },
+  "inca": {
+    "name": ""
+  },
+  "city1": {
+    "name": ""
+  },
+  "city2": {
+    "name": ""
+  },
+  "city3": {
+    "name": ""
+  },
+  "crematorium": {
+    "name": ""
+  },
+  "catacombs": {
+    "name": ""
+  },
+  "solaris": {
+    "name": ""
+  },
+  "docks": {
+    "name": ""
+  },
+  "sewers": {
+    "name": ""
+  },
+  "barracks": {
+    "name": ""
+  },
+  "lunaris": {
+    "name": ""
+  },
+  "gardens": {
+    "name": ""
+  },
+  "library": {
+    "name": ""
+  },
+  "scepter": {
+    "name": ""
+  },
+  "secret_area": {
+    "name": ""
+  },
+  "limited_strongbox_benefits": {
+    "name": ""
+  },
+  "red_blood": {
+    "name": ""
+  },
+  "ghost_blood": {
+    "name": ""
+  },
+  "mud_blood": {
+    "name": ""
+  },
+  "insect_blood": {
+    "name": ""
+  },
+  "bones": {
+    "name": ""
+  },
+  "water": {
+    "name": ""
+  },
+  "noblood": {
+    "name": ""
+  },
+  "unusable_corpse": {
+    "name": ""
+  },
+  "hidden_monster": {
+    "name": ""
+  },
+  "devourer": {
+    "name": ""
+  },
+  "wb_basic": {
+    "name": ""
+  },
+  "wb_support": {
+    "name": ""
+  },
+  "wb_elite": {
+    "name": ""
+  },
+  "wb_leader": {
+    "name": ""
+  },
+  "rare_minion": {
+    "name": ""
+  },
+  "undeletable_corpse": {
+    "name": ""
+  },
+  "jewel": {
+    "name": ""
+  },
+  "strjewel": {
+    "name": ""
+  },
+  "dexjewel": {
+    "name": ""
+  },
+  "intjewel": {
+    "name": ""
+  },
+  "gladiator": {
+    "name": ""
+  },
+  "karui": {
+    "name": ""
+  },
+  "flying": {
+    "name": ""
+  },
+  "large_model": {
+    "name": ""
+  },
+  "specific_weapon": {
+    "name": ""
+  },
+  "two_handed_mod": {
+    "name": ""
+  },
+  "dual_wielding_mod": {
+    "name": ""
+  },
+  "shield_mod": {
+    "name": ""
+  },
+  "one_handed_mod": {
+    "name": ""
+  },
+  "melee_mod": {
+    "name": ""
+  },
+  "twostonering": {
+    "name": ""
+  },
+  "poison_zombie": {
+    "name": ""
+  },
+  "divination_card": {
+    "name": ""
+  },
+  "currency": {
+    "name": ""
+  },
+  "no_divine": {
+    "name": ""
+  },
+  "unique_map": {
+    "name": ""
+  },
+  "low_tier_map": {
+    "name": ""
+  },
+  "mid_tier_map": {
+    "name": ""
+  },
+  "top_tier_map": {
+    "name": ""
+  },
+  "old_map": {
+    "name": ""
+  },
+  "act_boss_area": {
+    "name": ""
+  },
+  "no_tempests": {
+    "name": ""
+  },
+  "cannot_be_twinned": {
+    "name": ""
+  },
+  "no_shroud_walker": {
+    "name": ""
+  },
+  "no_echo": {
+    "name": ""
+  },
+  "immobile": {
+    "name": ""
+  },
+  "limited_tempests": {
+    "name": ""
+  },
+  "small_staff": {
+    "name": ""
+  },
+  "support_gem": {
+    "name": ""
+  },
+  "level_capped_gem": {
+    "name": ""
+  },
+  "no_effect_flask_mod": {
+    "name": ""
+  },
+  "area_with_water": {
+    "name": ""
+  },
+  "no_bloodlines": {
+    "name": ""
+  },
+  "has_caster_mod": {
+    "name": ""
+  },
+  "has_attack_mod": {
+    "name": ""
+  },
+  "maraketh": {
+    "name": ""
+  },
+  "uses_suicide_explode": {
+    "name": ""
+  },
+  "cannot_be_monolith": {
+    "name": ""
+  },
+  "no_zana_quests": {
+    "name": ""
+  },
+  "atlas_base_type": {
+    "name": ""
+  },
+  "ringatlas1": {
+    "name": ""
+  },
+  "ringatlas2": {
+    "name": ""
+  },
+  "amuletatlas1": {
+    "name": ""
+  },
+  "amuletatlas2": {
+    "name": ""
+  },
+  "beltatlas1": {
+    "name": ""
+  },
+  "beltatlas2": {
+    "name": ""
+  },
+  "helmetatlas1": {
+    "name": ""
+  },
+  "bootsatlas1": {
+    "name": ""
+  },
+  "bootsatlas2": {
+    "name": ""
+  },
+  "bootsatlas3": {
+    "name": ""
+  },
+  "glovesatlasstr": {
+    "name": ""
+  },
+  "glovesatlasdex": {
+    "name": ""
+  },
+  "glovesatlasint": {
+    "name": ""
+  },
+  "shaped_map": {
+    "name": ""
+  },
+  "no_boss": {
+    "name": ""
+  },
+  "no_monster_packs": {
+    "name": ""
+  },
+  "no_strongboxes": {
+    "name": ""
+  },
+  "hall_of_grandmasters": {
+    "name": ""
+  },
+  "vaults_of_atziri": {
+    "name": ""
+  },
+  "cowards_trial": {
+    "name": ""
+  },
+  "breach_map": {
+    "name": ""
+  },
+  "breach_commander": {
+    "name": ""
+  },
+  "breach_leaguestone": {
+    "name": ""
+  },
+  "breachstone": {
+    "name": ""
+  },
+  "breachstone_splinter": {
+    "name": ""
+  },
+  "essence_leaguestone": {
+    "name": ""
+  },
+  "prophecy_leaguestone": {
+    "name": ""
+  },
+  "perandus_leaguestone": {
+    "name": ""
+  },
+  "talisman_leaguestone": {
+    "name": ""
+  },
+  "warbands_leaguestone": {
+    "name": ""
+  },
+  "torment_leaguestone": {
+    "name": ""
+  },
+  "rampage_leaguestone": {
+    "name": ""
+  },
+  "domination_leaguestone": {
+    "name": ""
+  },
+  "tempest_leaguestone": {
+    "name": ""
+  },
+  "bloodlines_leaguestone": {
+    "name": ""
+  },
+  "beyond_leaguestone": {
+    "name": ""
+  },
+  "ambush_leaguestone": {
+    "name": ""
+  },
+  "invasion_leaguestone": {
+    "name": ""
+  },
+  "nemesis_leaguestone": {
+    "name": ""
+  },
+  "anarchy_leaguestone": {
+    "name": ""
+  },
+  "onslaught_leaguestone": {
+    "name": ""
+  },
+  "god": {
+    "name": ""
+  },
+  "unset_ring": {
+    "name": ""
+  },
+  "no_leaguestone": {
+    "name": ""
+  },
+  "chaos_warband": {
+    "name": ""
+  },
+  "templar": {
+    "name": ""
+  },
+  "cultist": {
+    "name": ""
+  },
+  "female": {
+    "name": ""
+  },
+  "str_shield": {
+    "name": ""
+  },
+  "dex_shield": {
+    "name": ""
+  },
+  "str_dex_shield": {
+    "name": ""
+  },
+  "str_int_shield": {
+    "name": ""
+  },
+  "dex_int_shield": {
+    "name": ""
+  },
+  "currency_shard": {
+    "name": ""
+  },
+  "harbinger_orb_shard": {
+    "name": ""
+  },
+  "not_harbinger_minion": {
+    "name": ""
+  },
+  "abyss_jewel_melee": {
+    "name": ""
+  },
+  "abyss_jewel_ranged": {
+    "name": ""
+  },
+  "abyss_jewel_caster": {
+    "name": ""
+  },
+  "abyss_jewel_summoner": {
+    "name": ""
+  },
+  "abyss_jewel_special": {
+    "name": ""
+  },
+  "abyss_jewel": {
+    "name": ""
+  },
+  "abyssal": {
+    "name": ""
+  },
+  "unarmed": {
+    "name": ""
+  },
+  "worlds_map": {
+    "name": ""
+  },
+  "shaper_item": {
+    "name": ""
+  },
+  "elder_item": {
+    "name": ""
+  },
+  "boots_shaper": {
+    "name": ""
+  },
+  "boots_elder": {
+    "name": ""
+  },
+  "sword_shaper": {
+    "name": ""
+  },
+  "sword_elder": {
+    "name": ""
+  },
+  "gloves_shaper": {
+    "name": ""
+  },
+  "gloves_elder": {
+    "name": ""
+  },
+  "helmet_shaper": {
+    "name": ""
+  },
+  "helmet_elder": {
+    "name": ""
+  },
+  "body_armour_shaper": {
+    "name": ""
+  },
+  "body_armour_elder": {
+    "name": ""
+  },
+  "amulet_shaper": {
+    "name": ""
+  },
+  "amulet_elder": {
+    "name": ""
+  },
+  "ring_shaper": {
+    "name": ""
+  },
+  "ring_elder": {
+    "name": ""
+  },
+  "belt_shaper": {
+    "name": ""
+  },
+  "belt_elder": {
+    "name": ""
+  },
+  "quiver_shaper": {
+    "name": ""
+  },
+  "quiver_elder": {
+    "name": ""
+  },
+  "shield_shaper": {
+    "name": ""
+  },
+  "shield_elder": {
+    "name": ""
+  },
+  "2h_sword_shaper": {
+    "name": ""
+  },
+  "2h_sword_elder": {
+    "name": ""
+  },
+  "axe_shaper": {
+    "name": ""
+  },
+  "axe_elder": {
+    "name": ""
+  },
+  "mace_shaper": {
+    "name": ""
+  },
+  "mace_elder": {
+    "name": ""
+  },
+  "claw_shaper": {
+    "name": ""
+  },
+  "claw_elder": {
+    "name": ""
+  },
+  "bow_shaper": {
+    "name": ""
+  },
+  "bow_elder": {
+    "name": ""
+  },
+  "dagger_shaper": {
+    "name": ""
+  },
+  "dagger_elder": {
+    "name": ""
+  },
+  "2h_axe_shaper": {
+    "name": ""
+  },
+  "2h_axe_elder": {
+    "name": ""
+  },
+  "2h_mace_shaper": {
+    "name": ""
+  },
+  "2h_mace_elder": {
+    "name": ""
+  },
+  "staff_shaper": {
+    "name": ""
+  },
+  "staff_elder": {
+    "name": ""
+  },
+  "sceptre_shaper": {
+    "name": ""
+  },
+  "sceptre_elder": {
+    "name": ""
+  },
+  "wand_shaper": {
+    "name": ""
+  },
+  "wand_elder": {
+    "name": ""
+  },
+  "rune_dagger_shaper": {
+    "name": ""
+  },
+  "rune_dagger_elder": {
+    "name": ""
+  },
+  "warstaff_shaper": {
+    "name": ""
+  },
+  "warstaff_elder": {
+    "name": ""
+  },
+  "grants_crit_chance_support": {
+    "name": ""
+  },
+  "no_legacy_of_zeal": {
+    "name": ""
+  },
+  "bestiary_beast_boss": {
+    "name": ""
+  },
+  "elder_occupied_map": {
+    "name": ""
+  },
+  "bestiary_wilds": {
+    "name": ""
+  },
+  "bestiary_sands": {
+    "name": ""
+  },
+  "bestiary_caverns": {
+    "name": ""
+  },
+  "bestiary_deep": {
+    "name": ""
+  },
+  "no_cannot_die_aura": {
+    "name": ""
+  },
+  "bestiary_net": {
+    "name": ""
+  },
+  "essence": {
+    "name": ""
+  },
+  "talisman": {
+    "name": ""
+  },
+  "armour_divination": {
+    "name": ""
+  },
+  "weapon_divination": {
+    "name": ""
+  },
+  "jewellery_divination": {
+    "name": ""
+  },
+  "delve_chest": {
+    "name": ""
+  },
+  "incursion_monster": {
+    "name": ""
+  },
+  "fire": {
+    "name": ""
+  },
+  "cold": {
+    "name": ""
+  },
+  "lightning": {
+    "name": ""
+  },
+  "chaos": {
+    "name": ""
+  },
+  "physical": {
+    "name": ""
+  },
+  "poison": {
+    "name": ""
+  },
+  "bleed": {
+    "name": ""
+  },
+  "life": {
+    "name": ""
+  },
+  "defences": {
+    "name": ""
+  },
+  "elemental": {
+    "name": ""
+  },
+  "attack": {
+    "name": ""
+  },
+  "minion": {
+    "name": ""
+  },
+  "aura": {
+    "name": ""
+  },
+  "vaal": {
+    "name": ""
+  },
+  "mana": {
+    "name": ""
+  },
+  "speed": {
+    "name": ""
+  },
+  "flat_life_regen": {
+    "name": ""
+  },
+  "einharbeast": {
+    "name": ""
+  },
+  "einharmonkey": {
+    "name": ""
+  },
+  "einharcavespiders": {
+    "name": ""
+  },
+  "einhardropbear": {
+    "name": ""
+  },
+  "einharsnake": {
+    "name": ""
+  },
+  "einharthornspiders": {
+    "name": ""
+  },
+  "einharrhoa": {
+    "name": ""
+  },
+  "einharbonerhoa": {
+    "name": ""
+  },
+  "einharinsectspawner": {
+    "name": ""
+  },
+  "einharspiker": {
+    "name": ""
+  },
+  "einharkiweth": {
+    "name": ""
+  },
+  "einharchimeral": {
+    "name": ""
+  },
+  "einharvultureparasite": {
+    "name": ""
+  },
+  "einharsandleaper": {
+    "name": ""
+  },
+  "einharfuryhound": {
+    "name": ""
+  },
+  "einharbull": {
+    "name": ""
+  },
+  "einhargoatman": {
+    "name": ""
+  },
+  "einharmountaingoat": {
+    "name": ""
+  },
+  "einharshieldcrab": {
+    "name": ""
+  },
+  "einharcrabparasite": {
+    "name": ""
+  },
+  "einharparasite": {
+    "name": ""
+  },
+  "einharscorpion": {
+    "name": ""
+  },
+  "quality_currency": {
+    "name": ""
+  },
+  "einharmaps": {
+    "name": ""
+  },
+  "rusted_scarab": {
+    "name": ""
+  },
+  "old_map_series": {
+    "name": ""
+  },
+  "map_not_on_atlas": {
+    "name": ""
+  },
+  "warehouse_area": {
+    "name": ""
+  },
+  "act6_karui_area": {
+    "name": ""
+  },
+  "kaom_area": {
+    "name": ""
+  },
+  "daresso_area": {
+    "name": ""
+  },
+  "library_area": {
+    "name": ""
+  },
+  "marketplace_area": {
+    "name": ""
+  },
+  "belly_area": {
+    "name": ""
+  },
+  "solaris_area": {
+    "name": ""
+  },
+  "prison_area": {
+    "name": ""
+  },
+  "fields_area": {
+    "name": ""
+  },
+  "chamber_of_sins_area": {
+    "name": ""
+  },
+  "has_road_area": {
+    "name": ""
+  },
+  "garden_area": {
+    "name": ""
+  },
+  "dock_area": {
+    "name": ""
+  },
+  "sewer_area": {
+    "name": ""
+  },
+  "crossroad_area": {
+    "name": ""
+  },
+  "catacomb_area": {
+    "name": ""
+  },
+  "lunaris_outer_area": {
+    "name": ""
+  },
+  "crypt_area": {
+    "name": ""
+  },
+  "vaal_pyramid_area": {
+    "name": ""
+  },
+  "forest_map_area": {
+    "name": ""
+  },
+  "urban_sarn_area": {
+    "name": ""
+  },
+  "aqueduct_area": {
+    "name": ""
+  },
+  "thicket_area": {
+    "name": ""
+  },
+  "bandit_area": {
+    "name": ""
+  },
+  "pitfight_area": {
+    "name": ""
+  },
+  "slums_area": {
+    "name": ""
+  },
+  "lunaris_area": {
+    "name": ""
+  },
+  "vaal_ruin_area": {
+    "name": ""
+  },
+  "reef_area": {
+    "name": ""
+  },
+  "mine_area": {
+    "name": ""
+  },
+  "has_foxes_area": {
+    "name": ""
+  },
+  "flooded_area": {
+    "name": ""
+  },
+  "fetid_area": {
+    "name": ""
+  },
+  "necropolis_area": {
+    "name": ""
+  },
+  "sceptre_of_god_area": {
+    "name": ""
+  },
+  "graveyard_area": {
+    "name": ""
+  },
+  "den_area": {
+    "name": ""
+  },
+  "river_area": {
+    "name": ""
+  },
+  "ship_graveyard_area": {
+    "name": ""
+  },
+  "tower_area": {
+    "name": ""
+  },
+  "relic_area": {
+    "name": ""
+  },
+  "dark_forest_area": {
+    "name": ""
+  },
+  "parapet_area": {
+    "name": ""
+  },
+  "cave_area": {
+    "name": ""
+  },
+  "desert_area": {
+    "name": ""
+  },
+  "arena_area": {
+    "name": ""
+  },
+  "lightning_area": {
+    "name": ""
+  },
+  "rain_area": {
+    "name": ""
+  },
+  "snow_area": {
+    "name": ""
+  },
+  "fire_area": {
+    "name": ""
+  },
+  "mausoleum_area": {
+    "name": ""
+  },
+  "wealthy_area": {
+    "name": ""
+  },
+  "otherworldly_story_area": {
+    "name": ""
+  },
+  "harvest_area": {
+    "name": ""
+  },
+  "triple_boss_map": {
+    "name": ""
+  },
+  "lighthouse_area": {
+    "name": ""
+  },
+  "lunaris_blood_area": {
+    "name": ""
+  },
+  "ruined_vaal_city_area": {
+    "name": ""
+  },
+  "coast_boat_area": {
+    "name": ""
+  },
+  "snow_mountain_area": {
+    "name": ""
+  },
+  "synthesised_monster": {
+    "name": "<rgb(175,238,238)>{Synthesised}"
+  },
+  "polished_scarab": {
+    "name": ""
+  },
+  "gilded_scarab": {
+    "name": ""
+  },
+  "high_gardens_area": {
+    "name": ""
+  },
+  "crystal_ore_area": {
+    "name": ""
+  },
+  "tropical_island_area": {
+    "name": ""
+  },
+  "jungle_valley_area": {
+    "name": ""
+  },
+  "wasteland_area": {
+    "name": ""
+  },
+  "desert_map_area": {
+    "name": ""
+  },
+  "mud_geyser_area": {
+    "name": ""
+  },
+  "southern_forest_area": {
+    "name": ""
+  },
+  "northern_forest_area": {
+    "name": ""
+  },
+  "dried_lake_area": {
+    "name": ""
+  },
+  "labyrinth_end_area": {
+    "name": ""
+  },
+  "old_fields_area": {
+    "name": ""
+  },
+  "archives_area": {
+    "name": ""
+  },
+  "labyrinth_OH_area": {
+    "name": ""
+  },
+  "temple_of_decay_area": {
+    "name": ""
+  },
+  "arachnid_tomb_map_area": {
+    "name": ""
+  },
+  "cemetery_map_area": {
+    "name": ""
+  },
+  "quay_area": {
+    "name": ""
+  },
+  "synthesised_monster2": {
+    "name": "<rgb(175,238,238)>{Synthesised}"
+  },
+  "core_map_area": {
+    "name": ""
+  },
+  "breachstone2": {
+    "name": ""
+  },
+  "breachstone3": {
+    "name": ""
+  },
+  "breachstone4": {
+    "name": ""
+  },
+  "breach_blessing": {
+    "name": ""
+  },
+  "corrupted_vaal": {
+    "name": "<rgb(212, 0, 0)>{Corrupted}"
+  },
+  "shaper_divination": {
+    "name": ""
+  },
+  "elder_divination": {
+    "name": ""
+  },
+  "fire_prison_area": {
+    "name": ""
+  },
+  "synthesis_area": {
+    "name": ""
+  },
+  "attack_staff": {
+    "name": ""
+  },
+  "attack_dagger": {
+    "name": ""
+  },
+  "legion_monster": {
+    "name": ""
+  },
+  "ringatlas3": {
+    "name": ""
+  },
+  "ringatlas4": {
+    "name": ""
+  },
+  "rare_monster_pack": {
+    "name": "<rgb(255, 255, 0)>{Minion}"
+  },
+  "weapon_can_roll_minion_modifiers": {
+    "name": ""
+  },
+  "wandatlas1": {
+    "name": ""
+  },
+  "has_atlas_mission": {
+    "name": ""
+  },
+  "legion_splinter": {
+    "name": ""
+  },
+  "unique_shard": {
+    "name": ""
+  },
+  "unique_shard_base": {
+    "name": ""
+  },
+  "infected_map": {
+    "name": ""
+  },
+  "can_be_infected_map": {
+    "name": ""
+  },
+  "mushrune": {
+    "name": ""
+  },
+  "blight_death_fire": {
+    "name": ""
+  },
+  "blight_death_cold": {
+    "name": ""
+  },
+  "blight_death_lightning": {
+    "name": ""
+  },
+  "blight_death_physical": {
+    "name": ""
+  },
+  "blight_death_chaos": {
+    "name": ""
+  },
+  "blight_doesnt_engage": {
+    "name": "Doesn't engage nearby Enemies"
+  },
+  "map_area_with_open_water": {
+    "name": ""
+  },
+  "vile_areas": {
+    "name": ""
+  },
+  "no_frenzy_charge_on_death": {
+    "name": ""
+  },
+  "no_soul_conduit": {
+    "name": ""
+  },
+  "no_fractured": {
+    "name": ""
+  },
+  "boots_crusader": {
+    "name": ""
+  },
+  "boots_adjudicator": {
+    "name": ""
+  },
+  "boots_eyrie": {
+    "name": ""
+  },
+  "boots_basilisk": {
+    "name": ""
+  },
+  "gloves_crusader": {
+    "name": ""
+  },
+  "gloves_adjudicator": {
+    "name": ""
+  },
+  "gloves_eyrie": {
+    "name": ""
+  },
+  "gloves_basilisk": {
+    "name": ""
+  },
+  "helmet_crusader": {
+    "name": ""
+  },
+  "helmet_adjudicator": {
+    "name": ""
+  },
+  "helmet_eyrie": {
+    "name": ""
+  },
+  "helmet_basilisk": {
+    "name": ""
+  },
+  "body_armour_crusader": {
+    "name": ""
+  },
+  "body_armour_adjudicator": {
+    "name": ""
+  },
+  "body_armour_eyrie": {
+    "name": ""
+  },
+  "body_armour_basilisk": {
+    "name": ""
+  },
+  "shield_crusader": {
+    "name": ""
+  },
+  "shield_adjudicator": {
+    "name": ""
+  },
+  "shield_eyrie": {
+    "name": ""
+  },
+  "shield_basilisk": {
+    "name": ""
+  },
+  "belt_crusader": {
+    "name": ""
+  },
+  "belt_adjudicator": {
+    "name": ""
+  },
+  "belt_eyrie": {
+    "name": ""
+  },
+  "belt_basilisk": {
+    "name": ""
+  },
+  "amulet_crusader": {
+    "name": ""
+  },
+  "amulet_adjudicator": {
+    "name": ""
+  },
+  "amulet_eyrie": {
+    "name": ""
+  },
+  "amulet_basilisk": {
+    "name": ""
+  },
+  "ring_crusader": {
+    "name": ""
+  },
+  "ring_adjudicator": {
+    "name": ""
+  },
+  "ring_eyrie": {
+    "name": ""
+  },
+  "ring_basilisk": {
+    "name": ""
+  },
+  "quiver_crusader": {
+    "name": ""
+  },
+  "quiver_adjudicator": {
+    "name": ""
+  },
+  "quiver_eyrie": {
+    "name": ""
+  },
+  "quiver_basilisk": {
+    "name": ""
+  },
+  "claw_crusader": {
+    "name": ""
+  },
+  "dagger_crusader": {
+    "name": ""
+  },
+  "wand_crusader": {
+    "name": ""
+  },
+  "sword_crusader": {
+    "name": ""
+  },
+  "axe_crusader": {
+    "name": ""
+  },
+  "mace_crusader": {
+    "name": ""
+  },
+  "sceptre_crusader": {
+    "name": ""
+  },
+  "bow_crusader": {
+    "name": ""
+  },
+  "staff_crusader": {
+    "name": ""
+  },
+  "2h_sword_crusader": {
+    "name": ""
+  },
+  "2h_axe_crusader": {
+    "name": ""
+  },
+  "2h_mace_crusader": {
+    "name": ""
+  },
+  "rune_dagger_crusader": {
+    "name": ""
+  },
+  "warstaff_crusader": {
+    "name": ""
+  },
+  "claw_eyrie": {
+    "name": ""
+  },
+  "dagger_eyrie": {
+    "name": ""
+  },
+  "wand_eyrie": {
+    "name": ""
+  },
+  "sword_eyrie": {
+    "name": ""
+  },
+  "axe_eyrie": {
+    "name": ""
+  },
+  "mace_eyrie": {
+    "name": ""
+  },
+  "sceptre_eyrie": {
+    "name": ""
+  },
+  "bow_eyrie": {
+    "name": ""
+  },
+  "staff_eyrie": {
+    "name": ""
+  },
+  "2h_sword_eyrie": {
+    "name": ""
+  },
+  "2h_axe_eyrie": {
+    "name": ""
+  },
+  "2h_mace_eyrie": {
+    "name": ""
+  },
+  "rune_dagger_eyrie": {
+    "name": ""
+  },
+  "warstaff_eyrie": {
+    "name": ""
+  },
+  "claw_basilisk": {
+    "name": ""
+  },
+  "dagger_basilisk": {
+    "name": ""
+  },
+  "wand_basilisk": {
+    "name": ""
+  },
+  "sword_basilisk": {
+    "name": ""
+  },
+  "axe_basilisk": {
+    "name": ""
+  },
+  "mace_basilisk": {
+    "name": ""
+  },
+  "sceptre_basilisk": {
+    "name": ""
+  },
+  "bow_basilisk": {
+    "name": ""
+  },
+  "staff_basilisk": {
+    "name": ""
+  },
+  "2h_sword_basilisk": {
+    "name": ""
+  },
+  "2h_axe_basilisk": {
+    "name": ""
+  },
+  "2h_mace_basilisk": {
+    "name": ""
+  },
+  "rune_dagger_basilisk": {
+    "name": ""
+  },
+  "warstaff_basilisk": {
+    "name": ""
+  },
+  "claw_adjudicator": {
+    "name": ""
+  },
+  "dagger_adjudicator": {
+    "name": ""
+  },
+  "wand_adjudicator": {
+    "name": ""
+  },
+  "sword_adjudicator": {
+    "name": ""
+  },
+  "axe_adjudicator": {
+    "name": ""
+  },
+  "mace_adjudicator": {
+    "name": ""
+  },
+  "sceptre_adjudicator": {
+    "name": ""
+  },
+  "bow_adjudicator": {
+    "name": ""
+  },
+  "staff_adjudicator": {
+    "name": ""
+  },
+  "2h_sword_adjudicator": {
+    "name": ""
+  },
+  "2h_axe_adjudicator": {
+    "name": ""
+  },
+  "2h_mace_adjudicator": {
+    "name": ""
+  },
+  "rune_dagger_adjudicator": {
+    "name": ""
+  },
+  "warstaff_adjudicator": {
+    "name": ""
+  },
+  "grants_2h_support": {
+    "name": ""
+  },
+  "no_prophecies": {
+    "name": ""
+  },
+  "warstaff": {
+    "name": ""
+  },
+  "expansion_jewel_large": {
+    "name": ""
+  },
+  "expansion_jewel_medium": {
+    "name": ""
+  },
+  "expansion_jewel_small": {
+    "name": ""
+  },
+  "affliction_axe_and_sword_damage": {
+    "name": ""
+  },
+  "affliction_mace_and_staff_damage": {
+    "name": ""
+  },
+  "affliction_dagger_and_claw_damage": {
+    "name": ""
+  },
+  "affliction_bow_damage": {
+    "name": ""
+  },
+  "affliction_wand_damage": {
+    "name": ""
+  },
+  "affliction_damage_with_two_handed_melee_weapons": {
+    "name": ""
+  },
+  "affliction_attack_damage_while_dual_wielding_": {
+    "name": ""
+  },
+  "affliction_attack_damage_while_holding_a_shield": {
+    "name": ""
+  },
+  "affliction_attack_damage_": {
+    "name": ""
+  },
+  "affliction_spell_damage": {
+    "name": ""
+  },
+  "affliction_elemental_damage": {
+    "name": ""
+  },
+  "affliction_physical_damage": {
+    "name": ""
+  },
+  "affliction_fire_damage": {
+    "name": ""
+  },
+  "affliction_lightning_damage": {
+    "name": ""
+  },
+  "affliction_cold_damage": {
+    "name": ""
+  },
+  "affliction_chaos_damage": {
+    "name": ""
+  },
+  "affliction_minion_damage": {
+    "name": ""
+  },
+  "affliction_fire_damage_over_time_multiplier": {
+    "name": ""
+  },
+  "affliction_chaos_damage_over_time_multiplier": {
+    "name": ""
+  },
+  "affliction_physical_damage_over_time_multiplier": {
+    "name": ""
+  },
+  "affliction_cold_damage_over_time_multiplier": {
+    "name": ""
+  },
+  "affliction_damage_over_time_multiplier": {
+    "name": ""
+  },
+  "affliction_effect_of_non-damaging_ailments": {
+    "name": ""
+  },
+  "old_do_not_use_affliction_aura_effect": {
+    "name": ""
+  },
+  "old_do_not_use_affliction_curse_effect": {
+    "name": ""
+  },
+  "affliction_damage_while_you_have_a_herald": {
+    "name": ""
+  },
+  "affliction_minion_damage_while_you_have_a_herald": {
+    "name": ""
+  },
+  "affliction_warcry_buff_effect": {
+    "name": ""
+  },
+  "affliction_critical_chance": {
+    "name": ""
+  },
+  "affliction_minion_life": {
+    "name": ""
+  },
+  "affliction_area_damage": {
+    "name": ""
+  },
+  "affliction_projectile_damage": {
+    "name": ""
+  },
+  "affliction_trap_and_mine_damage": {
+    "name": ""
+  },
+  "affliction_totem_damage": {
+    "name": ""
+  },
+  "affliction_brand_damage": {
+    "name": ""
+  },
+  "affliction_channelling_skill_damage": {
+    "name": ""
+  },
+  "affliction_flask_duration": {
+    "name": ""
+  },
+  "affliction_life_and_mana_recovery_from_flasks": {
+    "name": ""
+  },
+  "affliction_maximum_life": {
+    "name": ""
+  },
+  "affliction_maximum_energy_shield": {
+    "name": ""
+  },
+  "affliction_maximum_mana": {
+    "name": ""
+  },
+  "affliction_armour": {
+    "name": ""
+  },
+  "affliction_evasion": {
+    "name": ""
+  },
+  "affliction_chance_to_block": {
+    "name": ""
+  },
+  "affliction_fire_resistance": {
+    "name": ""
+  },
+  "affliction_cold_resistance": {
+    "name": ""
+  },
+  "affliction_lightning_resistance": {
+    "name": ""
+  },
+  "affliction_chaos_resistance": {
+    "name": ""
+  },
+  "affliction_chance_to_dodge_attacks": {
+    "name": ""
+  },
+  "affliction_strength": {
+    "name": ""
+  },
+  "affliction_dexterity": {
+    "name": ""
+  },
+  "affliction_intelligence": {
+    "name": ""
+  },
+  "has_affliction_notable": {
+    "name": ""
+  },
+  "map_device": {
+    "name": ""
+  },
+  "jewelled_scarab": {
+    "name": ""
+  },
+  "critical": {
+    "name": ""
+  },
+  "heist_contract": {
+    "name": ""
+  },
+  "evasion": {
+    "name": ""
+  },
+  "energy_shield": {
+    "name": ""
+  },
+  "power_charge": {
+    "name": ""
+  },
+  "frenzy_charge": {
+    "name": ""
+  },
+  "endurance_charge": {
+    "name": ""
+  },
+  "damage": {
+    "name": ""
+  },
+  "resistance": {
+    "name": ""
+  },
+  "attribute": {
+    "name": ""
+  },
+  "block": {
+    "name": ""
+  },
+  "ailment": {
+    "name": ""
+  },
+  "blue_herring": {
+    "name": ""
+  },
+  "skill": {
+    "name": ""
+  },
+  "support": {
+    "name": ""
+  },
+  "curse": {
+    "name": ""
+  },
+  "green_herring": {
+    "name": ""
+  },
+  "red_herring": {
+    "name": ""
+  },
+  "heist_coin": {
+    "name": ""
+  },
+  "heist_equipment_utility": {
+    "name": ""
+  },
+  "heist_equipment_reward": {
+    "name": ""
+  },
+  "heist_equipment_weapon": {
+    "name": ""
+  },
+  "heist_equipment_lockpick": {
+    "name": ""
+  },
+  "heist_equipment_bruteforce": {
+    "name": ""
+  },
+  "heist_equipment_perception": {
+    "name": ""
+  },
+  "heist_equipment_demolition": {
+    "name": ""
+  },
+  "heist_equipment_counterthaumaturge": {
+    "name": ""
+  },
+  "heist_equipment_trapdisarmament": {
+    "name": ""
+  },
+  "heist_equipment_agility": {
+    "name": ""
+  },
+  "heist_equipment_deception": {
+    "name": ""
+  },
+  "heist_equipment_engineering": {
+    "name": ""
+  },
+  "trinket": {
+    "name": ""
+  },
+  "heist_equipment_tool": {
+    "name": ""
+  },
+  "elemental_damage": {
+    "name": ""
+  },
+  "physical_damage": {
+    "name": ""
+  },
+  "resource": {
+    "name": ""
+  },
+  "caster_damage": {
+    "name": ""
+  },
+  "heist_equipment_melee": {
+    "name": ""
+  },
+  "heist_equipment_ranged": {
+    "name": ""
+  },
+  "heist_equipment_caster": {
+    "name": ""
+  },
+  "heist_blueprint": {
+    "name": ""
+  },
+  "affliction_orb": {
+    "name": ""
+  },
+  "affliction_splinter": {
+    "name": ""
+  },
+  "catalyst": {
+    "name": ""
+  },
+  "sextant": {
+    "name": ""
+  },
+  "heist_job_level_1": {
+    "name": ""
+  },
+  "heist_job_level_2": {
+    "name": ""
+  },
+  "heist_job_level_3": {
+    "name": ""
+  },
+  "heist_job_level_4": {
+    "name": ""
+  },
+  "heist_job_level_5": {
+    "name": ""
+  },
+  "heist_guard": {
+    "name": ""
+  },
+  "heist_equipment": {
+    "name": ""
+  },
+  "watchstone_item": {
+    "name": ""
+  },
+  "watchstone_league": {
+    "name": ""
+  },
+  "watchstone_environment": {
+    "name": ""
+  },
+  "watchstone": {
+    "name": ""
+  },
+  "no_maven": {
+    "name": ""
+  },
+  "allow_maven": {
+    "name": ""
+  },
+  "no_tangle": {
+    "name": ""
+  },
+  "no_cleansing_fire": {
+    "name": ""
+  },
+  "shaper_monster": {
+    "name": ""
+  },
+  "elder_monster": {
+    "name": ""
+  },
+  "eyrie_monster": {
+    "name": ""
+  },
+  "basilisk_monster": {
+    "name": ""
+  },
+  "crusader_monster": {
+    "name": ""
+  },
+  "adjudicator_monster": {
+    "name": ""
+  },
+  "maven_map": {
+    "name": ""
+  },
+  "maven_void_map": {
+    "name": ""
+  },
+  "maven_void_map_feared": {
+    "name": ""
+  },
+  "maven_void_map_hidden": {
+    "name": ""
+  },
+  "abyss_monster": {
+    "name": ""
+  },
+  "influence_monster": {
+    "name": ""
+  },
+  "blight_boss": {
+    "name": ""
+  },
+  "no_possessed_foe": {
+    "name": ""
+  },
+  "vaal_gem": {
+    "name": ""
+  },
+  "weapon_can_roll_totem_modifiers": {
+    "name": ""
+  },
+  "staffatlas1": {
+    "name": ""
+  },
+  "quiveratlas1": {
+    "name": ""
+  },
+  "ringatlas5": {
+    "name": ""
+  },
+  "amuletatlas3": {
+    "name": ""
+  },
+  "glovesatlasstrint": {
+    "name": ""
+  },
+  "bootsatlasdexint": {
+    "name": ""
+  },
+  "chaos_damage": {
+    "name": ""
+  },
+  "no_proximity_shield": {
+    "name": ""
+  },
+  "no_final_gasp": {
+    "name": ""
+  },
+  "demigods": {
+    "name": ""
+  },
+  "dot_multi": {
+    "name": ""
+  },
+  "no_forced_item_drops": {
+    "name": ""
+  },
+  "unveiled_mod": {
+    "name": ""
+  },
+  "ultimatum_trial": {
+    "name": ""
+  },
+  "expedition_templar_remnant": {
+    "name": ""
+  },
+  "expedition_vaal_remnant": {
+    "name": ""
+  },
+  "expedition_vaal_remnant2": {
+    "name": ""
+  },
+  "expedition_karui_remnant": {
+    "name": ""
+  },
+  "expedition_eternalempire_remnant": {
+    "name": ""
+  },
+  "expedition_eternalempire_remnant2": {
+    "name": ""
+  },
+  "expedition_eternalempire_remnant3": {
+    "name": ""
+  },
+  "expedition_eternalempire_remnant4": {
+    "name": ""
+  },
+  "expedition_maraketh_remnant": {
+    "name": ""
+  },
+  "expedition_maraketh_remnant2": {
+    "name": ""
+  },
+  "expedition_sirens_remnant": {
+    "name": ""
+  },
+  "expedition_monkeytribe_remnant": {
+    "name": ""
+  },
+  "expedition_lostmen_remnant": {
+    "name": ""
+  },
+  "expedition_logbook": {
+    "name": ""
+  },
+  "ward_armour": {
+    "name": ""
+  },
+  "adaptation_armour": {
+    "name": ""
+  },
+  "disallowed_in_generic_currency_stash_slots": {
+    "name": ""
+  },
+  "expedition_common_remnant": {
+    "name": ""
+  },
+  "expedition_common_remnant_logbook": {
+    "name": ""
+  },
+  "expedition_flask": {
+    "name": ""
+  },
+  "expedition_currency_faction1": {
+    "name": ""
+  },
+  "expedition_currency_faction2": {
+    "name": ""
+  },
+  "expedition_currency_faction3": {
+    "name": ""
+  },
+  "expedition_currency_faction4": {
+    "name": ""
+  },
+  "expedition_monster": {
+    "name": "<outlinecolour:rgb(14,46,85)>{<rgb(116,177,255)>{Runic}}"
+  },
+  "expedition_faction_druids_of_the_broken_circle": {
+    "name": ""
+  },
+  "expedition_faction_black_scythe": {
+    "name": ""
+  },
+  "expedition_faction_order_of_the_chalice": {
+    "name": ""
+  },
+  "expedition_faction_knights_of_the_sun": {
+    "name": ""
+  },
+  "map_has_blight_encounter": {
+    "name": ""
+  },
+  "breachstone5": {
+    "name": ""
+  },
+  "no_delve_nodes": {
+    "name": ""
+  },
+  "delve_city_biome": {
+    "name": ""
+  },
+  "affliction_reservation_efficiency_small": {
+    "name": ""
+  },
+  "affliction_curse_effect_small": {
+    "name": ""
+  },
+  "fake_currency": {
+    "name": ""
+  },
+  "bandit": {
+    "name": ""
+  },
+  "military": {
+    "name": ""
+  },
+  "eldritch": {
+    "name": ""
+  },
+  "exile": {
+    "name": ""
+  },
+  "crustacean_beast": {
+    "name": ""
+  },
+  "avian_beast": {
+    "name": ""
+  },
+  "canine_beast": {
+    "name": ""
+  },
+  "feline_beast": {
+    "name": ""
+  },
+  "amphibian_beast": {
+    "name": ""
+  },
+  "rodent_beast": {
+    "name": ""
+  },
+  "primate_beast": {
+    "name": ""
+  },
+  "ursine_beast": {
+    "name": ""
+  },
+  "golem": {
+    "name": ""
+  },
+  "rodent": {
+    "name": ""
+  },
+  "melee": {
+    "name": ""
+  },
+  "physical_affinity": {
+    "name": ""
+  },
+  "fire_affinity": {
+    "name": ""
+  },
+  "cold_affinity": {
+    "name": ""
+  },
+  "lightning_affinity": {
+    "name": ""
+  },
+  "chaos_affinity": {
+    "name": ""
+  },
+  "aura_bearer": {
+    "name": ""
+  },
+  "cursing_monster": {
+    "name": ""
+  },
+  "summoner": {
+    "name": ""
+  },
+  "raises_dead": {
+    "name": ""
+  },
+  "has_one_handed_melee": {
+    "name": ""
+  },
+  "has_dual_wield_melee": {
+    "name": ""
+  },
+  "has_two_handed_melee": {
+    "name": ""
+  },
+  "has_one_hand_sword": {
+    "name": ""
+  },
+  "has_thrusting_one_hand_sword": {
+    "name": ""
+  },
+  "has_two_hand_sword": {
+    "name": ""
+  },
+  "has_one_hand_mace": {
+    "name": ""
+  },
+  "has_two_hand_mace": {
+    "name": ""
+  },
+  "has_sceptre": {
+    "name": ""
+  },
+  "has_wand": {
+    "name": ""
+  },
+  "has_one_hand_axe": {
+    "name": ""
+  },
+  "has_two_hand_axe": {
+    "name": ""
+  },
+  "has_bow": {
+    "name": ""
+  },
+  "has_dagger": {
+    "name": ""
+  },
+  "has_staff": {
+    "name": ""
+  },
+  "has_claw": {
+    "name": ""
+  },
+  "has_shield": {
+    "name": ""
+  },
+  "is_unarmed": {
+    "name": ""
+  },
+  "extra_extra_small_height": {
+    "name": ""
+  },
+  "extra_small_height": {
+    "name": ""
+  },
+  "small_height": {
+    "name": ""
+  },
+  "medium_small_height": {
+    "name": ""
+  },
+  "medium_height": {
+    "name": ""
+  },
+  "large_height": {
+    "name": ""
+  },
+  "extra_large_height": {
+    "name": ""
+  },
+  "extra_extra_large_height": {
+    "name": ""
+  },
+  "kitava_height": {
+    "name": ""
+  },
+  "very_slow_movement": {
+    "name": ""
+  },
+  "slow_movement": {
+    "name": ""
+  },
+  "medium_movement": {
+    "name": ""
+  },
+  "fast_movement": {
+    "name": ""
+  },
+  "very_fast_movement": {
+    "name": ""
+  },
+  "flesh_armour": {
+    "name": ""
+  },
+  "light_armour": {
+    "name": ""
+  },
+  "hard_armour": {
+    "name": ""
+  },
+  "mail_armour": {
+    "name": ""
+  },
+  "plate_armour": {
+    "name": ""
+  },
+  "stone_armour": {
+    "name": ""
+  },
+  "energy_armour": {
+    "name": ""
+  },
+  "bone_armour": {
+    "name": ""
+  },
+  "ghost_armour": {
+    "name": ""
+  },
+  "metal_armour": {
+    "name": ""
+  },
+  "liquid_armour": {
+    "name": ""
+  },
+  "wood_armour": {
+    "name": ""
+  },
+  "is_daemon": {
+    "name": ""
+  },
+  "cleaving_weapon": {
+    "name": ""
+  },
+  "slashing_weapon": {
+    "name": ""
+  },
+  "bludgeoning_weapon": {
+    "name": ""
+  },
+  "puncturing_weapon": {
+    "name": ""
+  },
+  "animal_claw_weapon": {
+    "name": ""
+  },
+  "unique_map_boss": {
+    "name": ""
+  },
+  "non_unique_map_boss": {
+    "name": ""
+  },
+  "standalone_map_boss": {
+    "name": ""
+  },
+  "elder_map_boss": {
+    "name": ""
+  },
+  "rogue_exile": {
+    "name": ""
+  },
+  "is_clone": {
+    "name": ""
+  },
+  "non_attacking": {
+    "name": ""
+  },
+  "no_tier_1_eldritch_implicit": {
+    "name": ""
+  },
+  "no_tier_2_eldritch_implicit": {
+    "name": ""
+  },
+  "no_tier_3_eldritch_implicit": {
+    "name": ""
+  },
+  "no_tier_4_eldritch_implicit": {
+    "name": ""
+  },
+  "no_tier_5_eldritch_implicit": {
+    "name": ""
+  },
+  "no_tier_6_eldritch_implicit": {
+    "name": ""
+  },
+  "scarab": {
+    "name": ""
+  },
+  "alira_area": {
+    "name": ""
+  },
+  "ocean_area": {
+    "name": ""
+  },
+  "voll_monster_story": {
+    "name": ""
+  },
+  "voll_monster_map": {
+    "name": ""
+  },
+  "military_area": {
+    "name": ""
+  },
+  "thaumaturgy_area": {
+    "name": ""
+  },
+  "piety_area": {
+    "name": ""
+  },
+  "summoner_area": {
+    "name": ""
+  },
+  "gold_pile_area": {
+    "name": ""
+  },
+  "undying_boss_area": {
+    "name": ""
+  },
+  "merveil_area": {
+    "name": ""
+  },
+  "sea_witch_boss_area": {
+    "name": ""
+  },
+  "golem_boss_area": {
+    "name": ""
+  },
+  "chaos_golem_boss_area": {
+    "name": ""
+  },
+  "windy_area": {
+    "name": ""
+  },
+  "templar_boss_area": {
+    "name": ""
+  },
+  "doedre_monster_story": {
+    "name": ""
+  },
+  "doedre_monster_map": {
+    "name": ""
+  },
+  "shavronne_monster_story": {
+    "name": ""
+  },
+  "shavronne_monster_map": {
+    "name": ""
+  },
+  "maligaro_monster_story": {
+    "name": ""
+  },
+  "maligaro_monste_map": {
+    "name": ""
+  },
+  "unholy_trio_monster_story": {
+    "name": ""
+  },
+  "unholy_trio_monster_map": {
+    "name": ""
+  },
+  "voll_area": {
+    "name": ""
+  },
+  "doedre_area": {
+    "name": ""
+  },
+  "shavronne_area": {
+    "name": ""
+  },
+  "maligaro_area": {
+    "name": ""
+  },
+  "unholy_trio_area": {
+    "name": ""
+  },
+  "kitava_area": {
+    "name": ""
+  },
+  "atziri_area": {
+    "name": ""
+  },
+  "trap_exile": {
+    "name": ""
+  },
+  "kraityn_area": {
+    "name": ""
+  },
+  "toxic_pool_area": {
+    "name": ""
+  },
+  "dominus_monster_story": {
+    "name": ""
+  },
+  "dominus_monster_map": {
+    "name": ""
+  },
+  "dominus_area": {
+    "name": ""
+  },
+  "necromancer_boss": {
+    "name": ""
+  },
+  "necromancer_area": {
+    "name": ""
+  },
+  "bestiary_spirit_boss": {
+    "name": ""
+  },
+  "archer_boss": {
+    "name": ""
+  },
+  "archer_boss_area": {
+    "name": ""
+  },
+  "bameth": {
+    "name": ""
+  },
+  "dishonoured_queen": {
+    "name": ""
+  },
+  "rigwald_area": {
+    "name": ""
+  },
+  "ruined_area": {
+    "name": ""
+  },
+  "spider_boss_area": {
+    "name": ""
+  },
+  "beyond_demon": {
+    "name": ""
+  },
+  "female_rogue_exile": {
+    "name": ""
+  },
+  "scavenger_boss_area": {
+    "name": ""
+  },
+  "goatman_bear_boss_area": {
+    "name": ""
+  },
+  "totem_lightning_boss_area": {
+    "name": ""
+  },
+  "kitava_cultist_area": {
+    "name": ""
+  },
+  "abyss_commander_monster": {
+    "name": ""
+  },
+  "solaris_boss_story": {
+    "name": ""
+  },
+  "solaris_boss_map": {
+    "name": ""
+  },
+  "elder_portal_monster": {
+    "name": ""
+  },
+  "shaper_void_entity_monster": {
+    "name": ""
+  },
+  "abaxoth_monster": {
+    "name": ""
+  },
+  "beyond_commander_monster": {
+    "name": ""
+  },
+  "unholy_trio_combined_boss_story": {
+    "name": ""
+  },
+  "unholy_trio_combined_boss_map": {
+    "name": ""
+  },
+  "crystalline_area": {
+    "name": ""
+  },
+  "rogue_exile_boss_area": {
+    "name": ""
+  },
+  "shaper_guardian_boss": {
+    "name": ""
+  },
+  "trio_soul_area": {
+    "name": ""
+  },
+  "abyss_lich_boss": {
+    "name": ""
+  },
+  "elder_guardian_boss": {
+    "name": ""
+  },
+  "chayula_boss": {
+    "name": ""
+  },
+  "harbinger_portal_monster": {
+    "name": ""
+  },
+  "harbinger_portal_monster_memory_line": {
+    "name": ""
+  },
+  "invasion_boss": {
+    "name": ""
+  },
+  "screeching_boss": {
+    "name": ""
+  },
+  "king_boss_story": {
+    "name": ""
+  },
+  "king_boss_map": {
+    "name": ""
+  },
+  "king_boss_area": {
+    "name": ""
+  },
+  "labyrinth_tileset_area": {
+    "name": ""
+  },
+  "betrayal_syndicate_member": {
+    "name": ""
+  },
+  "betrayal_janus": {
+    "name": ""
+  },
+  "necromancer_exile": {
+    "name": ""
+  },
+  "innocence_story": {
+    "name": ""
+  },
+  "innocence_map_area": {
+    "name": ""
+  },
+  "betrayal_catarina": {
+    "name": ""
+  },
+  "bridge_area": {
+    "name": ""
+  },
+  "incursion_architect_breach": {
+    "name": ""
+  },
+  "god_boss_map_area": {
+    "name": ""
+  },
+  "betrayal_breach": {
+    "name": ""
+  },
+  "kitava_map_boss": {
+    "name": ""
+  },
+  "vaal_architect_incursion": {
+    "name": ""
+  },
+  "vaal_architect_temple": {
+    "name": ""
+  },
+  "elder_boss": {
+    "name": ""
+  },
+  "betrayal_cameria": {
+    "name": ""
+  },
+  "crusader_conqueror_boss": {
+    "name": ""
+  },
+  "breachlord_boss_domain": {
+    "name": ""
+  },
+  "argus_labyrinth": {
+    "name": ""
+  },
+  "rigwald_map_boss": {
+    "name": ""
+  },
+  "warlord_conqueror_boss": {
+    "name": ""
+  },
+  "betrayal_guff": {
+    "name": ""
+  },
+  "hunter_conqueror_boss": {
+    "name": ""
+  },
+  "shaper_boss": {
+    "name": ""
+  },
+  "betrayal_haku": {
+    "name": ""
+  },
+  "betrayal_thane_jorgin": {
+    "name": ""
+  },
+  "betrayal_riker_maloney": {
+    "name": ""
+  },
+  "metamorph_boss": {
+    "name": ""
+  },
+  "nature_boss": {
+    "name": ""
+  },
+  "atziri_boss": {
+    "name": ""
+  },
+  "delve_protovaal_boss": {
+    "name": ""
+  },
+  "delve_vaal_boss": {
+    "name": ""
+  },
+  "delve_lich_boss": {
+    "name": ""
+  },
+  "heist_science_miniboss_monster": {
+    "name": ""
+  },
+  "chaos_breachlord": {
+    "name": ""
+  },
+  "elder_lightning_guardian": {
+    "name": ""
+  },
+  "redeemer_conqueror_boss": {
+    "name": ""
+  },
+  "incursion_architect_card_sharp": {
+    "name": ""
+  },
+  "malachai_boss_map": {
+    "name": ""
+  },
+  "simulacrum_boss": {
+    "name": ""
+  },
+  "incursion_temple_boss": {
+    "name": ""
+  },
+  "oshabi_boss": {
+    "name": ""
+  },
+  "exile_molten_shell": {
+    "name": ""
+  },
+  "rhoa_map_boss": {
+    "name": ""
+  },
+  "incursion_temple_area": {
+    "name": ""
+  },
+  "vaal_flesh_merchant": {
+    "name": ""
+  },
+  "primordial_map": {
+    "name": ""
+  },
+  "cleansing_fire_altar": {
+    "name": ""
+  },
+  "tangle_altar": {
+    "name": ""
+  },
+  "primordial_altar_upside": {
+    "name": ""
+  },
+  "primordial_altar_downside": {
+    "name": ""
+  },
+  "cannot_be_archnemesis": {
+    "name": ""
+  },
+  "pinnacle_boss": {
+    "name": "Pinnacle Atlas Boss"
+  },
+  "great_tangle_currency": {
+    "name": ""
+  },
+  "cleansing_fire_currency": {
+    "name": ""
+  },
+  "all_eldritch_currency": {
+    "name": ""
+  },
+  "cannot_be_map_archnemesis": {
+    "name": ""
+  },
+  "drops_in_maps_only": {
+    "name": ""
+  },
+  "eldritch_ember": {
+    "name": ""
+  },
+  "eldritch_ichor": {
+    "name": ""
+  },
+  "not_part_of_pack": {
+    "name": ""
+  },
+  "no_strider_mod": {
+    "name": ""
+  },
+  "trade_market_legacy_item": {
+    "name": ""
+  },
+  "blight_monster": {
+    "name": ""
+  },
+  "sentinel_drone": {
+    "name": ""
+  },
+  "sentinel_a": {
+    "name": ""
+  },
+  "sentinel_b": {
+    "name": ""
+  },
+  "sentinel_c": {
+    "name": ""
+  },
+  "cortex_boss": {
+    "name": ""
+  },
+  "vaalsidearea_boss": {
+    "name": ""
+  },
+  "special_sentinel_mod": {
+    "name": ""
+  },
+  "inventing_area": {
+    "name": ""
+  },
+  "elderslayer": {
+    "name": ""
+  },
+  "peaceful_map": {
+    "name": ""
+  },
+  "blood_mage_boss_map": {
+    "name": ""
+  },
+  "city_home_map": {
+    "name": ""
+  },
+  "karui_map": {
+    "name": ""
+  },
+  "sentinel_power_core": {
+    "name": ""
+  },
+  "cannot_possess_boss": {
+    "name": ""
+  },
+  "delve_monster": {
+    "name": ""
+  },
+  "memory_line_kirac": {
+    "name": ""
+  },
+  "memory_line_alva": {
+    "name": ""
+  },
+  "memory_line_niko": {
+    "name": ""
+  },
+  "memory_line_einhar": {
+    "name": ""
+  },
+  "all_sentinels": {
+    "name": ""
+  },
+  "no_common_monster_mods": {
+    "name": ""
+  },
+  "essence_monster": {
+    "name": ""
+  },
+  "hellscape_demon_boss": {
+    "name": ""
+  },
+  "hellscape_pale_boss": {
+    "name": ""
+  },
+  "hellscape_flesh_boss": {
+    "name": ""
+  },
+  "focus_can_roll_minion_modifiers": {
+    "name": ""
+  },
+  "ring_can_roll_minion_modifiers": {
+    "name": ""
+  },
+  "bear_boss_map": {
+    "name": ""
+  },
+  "dishonoured_queen_map": {
+    "name": ""
+  },
+  "no_spirit_walkers_archnemesis": {
+    "name": ""
+  },
+  "uber_elder": {
+    "name": ""
+  },
+  "infinite_hunger": {
+    "name": ""
+  },
+  "brute_boss": {
+    "name": ""
+  },
+  "uber_atziri_boss": {
+    "name": ""
+  },
+  "mirrored_monster": {
+    "name": "<outlinecolour:rgb(240,240,240)>{<rgb(20,20,20)>{Mirrored}}"
+  },
+  "sanctum_guard": {
+    "name": "Sanctum Guard"
+  },
+  "unique_divination": {
+    "name": ""
+  },
+  "unique_weapon_divination": {
+    "name": ""
+  },
+  "unique_armour_divination": {
+    "name": ""
+  },
+  "unique_jewellery_divination": {
+    "name": ""
+  },
+  "unique_corrupted_divination": {
+    "name": ""
+  },
+  "maps_divination": {
+    "name": ""
+  },
+  "maps_unique_divination": {
+    "name": ""
+  },
+  "gems_divination": {
+    "name": ""
+  },
+  "gems_levelled_divination": {
+    "name": ""
+  },
+  "gems_quality_divination": {
+    "name": ""
+  },
+  "corrupted_divination": {
+    "name": ""
+  },
+  "gives_other_cards_divination": {
+    "name": ""
+  },
+  "currency_divination": {
+    "name": ""
+  },
+  "currency_basic_divination": {
+    "name": ""
+  },
+  "currency_exotic_divination": {
+    "name": ""
+  },
+  "currency_league_divination": {
+    "name": ""
+  },
+  "small_sanctum_relic": {
+    "name": ""
+  },
+  "medium_sanctum_relic": {
+    "name": ""
+  },
+  "large_sanctum_relic": {
+    "name": ""
+  },
+  "eldritch_pinnacle_boss": {
+    "name": ""
+  },
+  "merveil_boss": {
+    "name": ""
+  },
+  "arakaali_area": {
+    "name": ""
+  },
+  "affliction_boss": {
+    "name": ""
+  },
+  "hillock_syndicate": {
+    "name": ""
+  },
+  "str_special_relic": {
+    "name": ""
+  },
+  "dex_special_relic": {
+    "name": ""
+  },
+  "int_special_relic": {
+    "name": ""
+  },
+  "breach_monster_cold": {
+    "name": ""
+  },
+  "breach_monster_fire": {
+    "name": ""
+  },
+  "breach_monster_lightning": {
+    "name": ""
+  },
+  "breach_monster_physical": {
+    "name": ""
+  },
+  "breach_monster_chaos": {
+    "name": ""
+  },
+  "sanctum_braom_boss": {
+    "name": "Grows or Shrinks based on Uzar's Life"
+  },
+  "sanctum_uzar_boss": {
+    "name": "Grows or Shrinks based on Braom's Life"
+  },
+  "top_tier_base_item_type": {
+    "name": ""
+  },
+  "no_mirror_image": {
+    "name": ""
+  },
+  "doedre_map_area": {
+    "name": ""
+  },
+  "unholy_trio_boss_map": {
+    "name": ""
+  },
+  "caster_unique_weapon": {
+    "name": ""
+  },
+  "minion_unique_weapon": {
+    "name": ""
+  },
+  "Forge_Area": {
+    "name": ""
+  },
+  "matryoshka_boss": {
+    "name": ""
+  },
+  "crucible_map": {
+    "name": ""
+  },
+  "crucible_map_low": {
+    "name": ""
+  },
+  "crucible_map_high": {
+    "name": ""
+  },
+  "crucible_unique_helmet": {
+    "name": ""
+  },
+  "experimental_base": {
+    "name": ""
+  },
+  "crucible_unique_staff": {
+    "name": ""
+  },
+  "RedbladeLeader": {
+    "name": "Redblade Warlord"
+  },
+  "sanctum_monster": {
+    "name": ""
+  },
+  "bird_boss": {
+    "name": ""
+  },
+  "sanctum_key": {
+    "name": ""
+  },
+  "undyingcultist_map": {
+    "name": ""
+  },
+  "sun_nature_area": {
+    "name": ""
+  },
+  "trialmaster_boss": {
+    "name": ""
+  },
+  "transform_boss_area": {
+    "name": ""
+  },
+  "tincture": {
+    "name": ""
+  },
+  "spawner_cannot_spawn_as_rare": {
+    "name": ""
+  },
+  "spawner_cannot_spawn_as_magic": {
+    "name": ""
+  },
+  "vaal_empowered": {
+    "name": ""
+  },
+  "animal_charm": {
+    "name": ""
+  },
+  "str_animal_charm": {
+    "name": ""
+  },
+  "dex_animal_charm": {
+    "name": ""
+  },
+  "int_animal_charm": {
+    "name": ""
+  },
+  "animal_charm_common_mod": {
+    "name": ""
+  },
+  "animal_charm_uncommmon_mod": {
+    "name": ""
+  },
+  "animal_charm_rare_mod": {
+    "name": ""
+  },
+  "animal_charm_mythic_mod": {
+    "name": ""
+  },
+  "I_see_brothers_card": {
+    "name": ""
+  },
+  "eldritch_perfection_monster": {
+    "name": ""
+  },
+  "assassins_gift_area": {
+    "name": ""
+  },
+  "legion_chest": {
+    "name": ""
+  },
+  "is_runic_monster": {
+    "name": ""
+  },
+  "azmeri_nameless_monster": {
+    "name": ""
+  },
+  "azmeri_cultist_monster": {
+    "name": ""
+  },
+  "azmeri_warden_dusted_monster": {
+    "name": "<rgb(240,198,72)>{Vivid Empowered}"
+  },
+  "azmeri_shaman_dusted_monster": {
+    "name": "<rgb(184,72,224)>{Wild Empowered}"
+  },
+  "azmeri_primalist_dusted_monster": {
+    "name": "<rgb(95,178,237)>{Primal Empowered}"
+  },
+  "uber_tier_map": {
+    "name": ""
+  },
+  "basic_scarab": {
+    "name": ""
+  },
+  "common_scarab": {
+    "name": ""
+  },
+  "uncommon_scarab": {
+    "name": ""
+  },
+  "rare_scarab": {
+    "name": ""
+  },
+  "mythic_scarab": {
+    "name": ""
+  },
+  "extreme_scarab": {
+    "name": ""
+  },
+  "abyss_scarab": {
+    "name": ""
+  },
+  "blight_scarab": {
+    "name": ""
+  },
+  "breach_scarab": {
+    "name": ""
+  },
+  "delirium_scarab": {
+    "name": ""
+  },
+  "expedition_scarab": {
+    "name": ""
+  },
+  "harvest_scarab": {
+    "name": ""
+  },
+  "legion_scarab": {
+    "name": ""
+  },
+  "ritual_scarab": {
+    "name": ""
+  },
+  "ultimatum_scarab": {
+    "name": ""
+  },
+  "bestiary_scarab": {
+    "name": ""
+  },
+  "maps_scarab": {
+    "name": ""
+  },
+  "uniques_scarab": {
+    "name": ""
+  },
+  "divination_scarab": {
+    "name": ""
+  },
+  "torment_scarab": {
+    "name": ""
+  },
+  "strongbox_scarab": {
+    "name": ""
+  },
+  "harbinger_scarab": {
+    "name": ""
+  },
+  "delve_scarab": {
+    "name": ""
+  },
+  "influence_scarab": {
+    "name": ""
+  },
+  "anarchy_scarab": {
+    "name": ""
+  },
+  "misc_scarab": {
+    "name": ""
+  },
+  "domination_scarab": {
+    "name": ""
+  },
+  "betrayal_scarab": {
+    "name": ""
+  },
+  "essence_scarab": {
+    "name": ""
+  },
+  "incursion_scarab": {
+    "name": ""
+  },
+  "beyond_scarab": {
+    "name": ""
+  },
+  "settlers_scarab": {
+    "name": ""
+  },
+  "necropolis_body_armour": {
+    "name": ""
+  },
+  "necropolis_helmet": {
+    "name": ""
+  },
+  "necropolis_boots": {
+    "name": ""
+  },
+  "necropolis_gloves": {
+    "name": ""
+  },
+  "drops_no_scarabs": {
+    "name": ""
+  },
+  "elder_nova": {
+    "name": ""
+  },
+  "ui_enable_popup_inventory_total_display": {
+    "name": ""
+  },
+  "enable_transfer_all_in_player_to_player_trade_window": {
+    "name": ""
+  },
+  "uber_scarab": {
+    "name": ""
+  },
+  "map_drops_can_upgrade_to_nightmare_boss": {
+    "name": ""
+  },
+  "boss_drop_card": {
+    "name": ""
+  },
+  "necropolis_exclusive_mod": {
+    "name": ""
+  },
+  "scarab_grants_extra_content": {
+    "name": ""
+  },
+  "no_pantheon_mod": {
+    "name": ""
+  },
+  "influence_mod": {
+    "name": ""
+  },
+  "all_eldritch_currency_except_lesser": {
+    "name": ""
+  },
+  "has_uber_map_prefix ": {
+    "name": ""
+  },
+  "has_uber_map_suffix": {
+    "name": ""
+  },
+  "rhoa_boss_maligaro_area": {
+    "name": ""
+  },
+  "screeching_boss_area": {
+    "name": ""
+  },
+  "nature_boss_area": {
+    "name": ""
+  },
+  "modest_request_area": {
+    "name": ""
+  },
+  "malachai_boss_map_area": {
+    "name": ""
+  },
+  "brute_boss_area": {
+    "name": ""
+  },
+  "matryoshka_boss_area": {
+    "name": ""
+  },
+  "I_see_brothers_card_area": {
+    "name": ""
+  },
+  "alira_doedre_map_area": {
+    "name": ""
+  },
+  "bear_woman_map_area": {
+    "name": ""
+  },
+  "slum_marketplace_area": {
+    "name": ""
+  },
+  "solaris_lunaris_area": {
+    "name": ""
+  },
+  "AAtlas_Map_Divination_Card": {
+    "name": ""
+  },
+  "Ceinture_area": {
+    "name": ""
+  },
+  "EyeOfTheDragon_area": {
+    "name": ""
+  },
+  "TheInnocent_area": {
+    "name": ""
+  },
+  "SevenYearsBadLuck_area": {
+    "name": ""
+  },
+  "LachrymalNecrosis_area": {
+    "name": ""
+  },
+  "drop": {
+    "name": ""
+  },
+  "avian_pursuit": {
+    "name": ""
+  },
+  "pantheon_daemon": {
+    "name": ""
+  },
+  "putrid_monster": {
+    "name": ""
+  },
+  "scour_crafting_option": {
+    "name": ""
+  },
+  "it_that_fled_crafting_option": {
+    "name": ""
+  },
+  "cameria_crafting_option": {
+    "name": ""
+  },
+  "thane_jorgin_crafting_option": {
+    "name": ""
+  },
+  "rikey_maloney_crafting_option": {
+    "name": ""
+  },
+  "flask_crafting_option": {
+    "name": ""
+  },
+  "meta_mod_crafting_option": {
+    "name": ""
+  },
+  "betrayal_crafting_option": {
+    "name": ""
+  },
+  "high_tier_crafting_option": {
+    "name": ""
+  },
+  "mid_tier_crafting_option": {
+    "name": ""
+  },
+  "village_miner": {
+    "name": ""
+  },
+  "village_smith": {
+    "name": ""
+  },
+  "village_farmer": {
+    "name": ""
+  },
+  "village_disenchanter": {
+    "name": ""
+  },
+  "village_mapper": {
+    "name": ""
+  },
+  "village_sailor": {
+    "name": ""
+  },
+  "village_fisher": {
+    "name": ""
+  },
+  "village_runesmithing_enchant": {
+    "name": ""
+  },
+  "lesser_currency": {
+    "name": ""
+  },
+  "karui_crafting_option": {
+    "name": ""
+  },
+  "lightning_crafting_option": {
+    "name": ""
+  },
+  "fire_crafting_option": {
+    "name": ""
+  },
+  "cold_crafting_option": {
+    "name": ""
+  },
+  "chaos_crafting_option": {
+    "name": ""
+  },
+  "atlas_relic_small": {
+    "name": ""
+  },
+  "atlas_relic_medium": {
+    "name": ""
+  },
+  "atlas_relic_large": {
+    "name": ""
+  },
+  "atlas_relic_very_large": {
+    "name": ""
+  },
+  "atlas_relic": {
+    "name": ""
+  },
+  "mercenary_noble_born": {
+    "name": ""
+  },
+  "mercenary_elemental_witch": {
+    "name": ""
+  },
+  "mercenary_elemental_witch_lightning": {
+    "name": ""
+  },
+  "mercenary_elemental_witch_lightning_noble": {
+    "name": ""
+  },
+  "mercenary_elemental_witch_cold": {
+    "name": ""
+  },
+  "mercenary_elemental_witch_cold_noble": {
+    "name": ""
+  },
+  "mercenary_elemental_witch_fire": {
+    "name": ""
+  },
+  "mercenary_elemental_witch_fire_noble": {
+    "name": ""
+  },
+  "mercenary_chaos_witch": {
+    "name": ""
+  },
+  "mercenary_chaos_witch_dot": {
+    "name": ""
+  },
+  "mercenary_chaos_witch_dot_noble": {
+    "name": ""
+  },
+  "mercenary_chaos_witch_instability": {
+    "name": ""
+  },
+  "mercenary_chaos_witch_instability_noble": {
+    "name": ""
+  },
+  "mercenary_chaos_witch_chaos_hit": {
+    "name": ""
+  },
+  "mercenary_chaos_witch_chaos_hit_noble": {
+    "name": ""
+  },
+  "mercenary_traps_mines_shadow": {
+    "name": ""
+  },
+  "mercenary_traps_mines_shadow_attack": {
+    "name": ""
+  },
+  "mercenary_traps_mines_shadow_attack_noble": {
+    "name": ""
+  },
+  "mercenary_traps_mines_shadow_lightning": {
+    "name": ""
+  },
+  "mercenary_traps_mines_shadow_lightning_noble": {
+    "name": ""
+  },
+  "mercenary_traps_mines_shadow_cold": {
+    "name": ""
+  },
+  "mercenary_traps_mines_shadow_cold_noble": {
+    "name": ""
+  },
+  "mercenary_crit_shadow": {
+    "name": ""
+  },
+  "mercenary_crit_shadow_spectral": {
+    "name": ""
+  },
+  "mercenary_crit_shadow_spectral_noble": {
+    "name": ""
+  },
+  "mercenary_crit_shadow_phys_spell": {
+    "name": ""
+  },
+  "mercenary_crit_shadow_phys_spell_noble": {
+    "name": ""
+  },
+  "mercenary_crit_shadow_poison": {
+    "name": ""
+  },
+  "mercenary_crit_shadow_poison_noble": {
+    "name": ""
+  },
+  "mercenary_melee_aoe_marauder": {
+    "name": ""
+  },
+  "mercenary_melee_aoe_marauder_fire": {
+    "name": ""
+  },
+  "mercenary_melee_aoe_marauder_fire_noble": {
+    "name": ""
+  },
+  "mercenary_melee_aoe_marauder_non_slam": {
+    "name": ""
+  },
+  "mercenary_melee_aoe_marauder_non_slam_noble": {
+    "name": ""
+  },
+  "mercenary_melee_aoe_marauder_phys": {
+    "name": ""
+  },
+  "mercenary_melee_aoe_marauder_phys_noble": {
+    "name": ""
+  },
+  "mercenary_strikes_marauder": {
+    "name": ""
+  },
+  "mercenary_strikes_marauder_fire": {
+    "name": ""
+  },
+  "mercenary_strikes_marauder_fire_noble": {
+    "name": ""
+  },
+  "mercenary_strikes_marauder_phys": {
+    "name": ""
+  },
+  "mercenary_strikes_marauder_phys_noble": {
+    "name": ""
+  },
+  "mercenary_misc_scion": {
+    "name": ""
+  },
+  "mercenary_misc_scion_phys_dot": {
+    "name": ""
+  },
+  "mercenary_misc_scion_phys_dot_noble": {
+    "name": ""
+  },
+  "mercenary_misc_scion_wand_attack": {
+    "name": ""
+  },
+  "mercenary_misc_scion_wand_attack_noble": {
+    "name": ""
+  },
+  "mercenary_aura_templar": {
+    "name": ""
+  },
+  "mercenary_aura_templar_smite": {
+    "name": ""
+  },
+  "mercenary_aura_templar_smite_noble": {
+    "name": ""
+  },
+  "mercenary_aura_templar_staff": {
+    "name": ""
+  },
+  "mercenary_aura_templar_staff_noble": {
+    "name": ""
+  },
+  "mercenary_aura_templar_spectre": {
+    "name": ""
+  },
+  "mercenary_aura_templar_spectre_noble": {
+    "name": ""
+  },
+  "mercenary_aura_templar_spectre_ruckus_noble": {
+    "name": ""
+  },
+  "mercenary_phys_convert_templar": {
+    "name": ""
+  },
+  "mercenary_phys_convert_templar_cold": {
+    "name": ""
+  },
+  "mercenary_phys_convert_templar_cold_noble": {
+    "name": ""
+  },
+  "mercenary_phys_convert_templar_fire": {
+    "name": ""
+  },
+  "mercenary_phys_convert_templar_fire_noble": {
+    "name": ""
+  },
+  "mercenary_phys_convert_templar_lightning": {
+    "name": ""
+  },
+  "mercenary_phys_convert_templar_lightning_noble": {
+    "name": ""
+  },
+  "mercenary_non_ele_ranger": {
+    "name": ""
+  },
+  "mercenary_non_ele_ranger_chaos": {
+    "name": ""
+  },
+  "mercenary_non_ele_ranger_chaos_noble": {
+    "name": ""
+  },
+  "mercenary_non_ele_ranger_phys": {
+    "name": ""
+  },
+  "mercenary_non_ele_ranger_phys_noble": {
+    "name": ""
+  },
+  "mercenary_ele_ranger": {
+    "name": ""
+  },
+  "mercenary_ele_ranger_lightning": {
+    "name": ""
+  },
+  "mercenary_ele_ranger_lightning_noble": {
+    "name": ""
+  },
+  "mercenary_ele_ranger_fire": {
+    "name": ""
+  },
+  "mercenary_ele_ranger_fire_noble": {
+    "name": ""
+  },
+  "mercenary_ele_ranger_clones": {
+    "name": ""
+  },
+  "mercenary_ele_ranger_clones_noble": {
+    "name": ""
+  },
+  "mercenary_phys_duelist": {
+    "name": ""
+  },
+  "mercenary_phys_duelist_shields": {
+    "name": ""
+  },
+  "mercenary_phys_duelist_shields_noble": {
+    "name": ""
+  },
+  "mercenary_phys_duelist_bleed": {
+    "name": ""
+  },
+  "mercenary_phys_duelist_bleed_noble": {
+    "name": ""
+  },
+  "mercenary_phys_duelist_steel": {
+    "name": ""
+  },
+  "mercenary_phys_duelist_steel_noble": {
+    "name": ""
+  },
+  "mercenary_melee_aoe_strike_duelist": {
+    "name": ""
+  },
+  "mercenary_melee_aoe_strike_duelist_cyclone": {
+    "name": ""
+  },
+  "mercenary_melee_aoe_strike_duelist_cyclone_noble": {
+    "name": ""
+  },
+  "mercenary_melee_aoe_strike_duelist_range_strikes": {
+    "name": ""
+  },
+  "mercenary_melee_aoe_strike_duelist_range_strikes_noble": {
+    "name": ""
+  },
+  "map_force_6_mods": {
+    "name": ""
+  },
+  "leo_veiled_prefix": {
+    "name": ""
+  },
+  "catarina_veiled_prefix": {
+    "name": ""
+  },
+  "elreon_veiled_prefix": {
+    "name": ""
+  },
+  "vorici_veiled_prefix": {
+    "name": ""
+  },
+  "haku_veiled_prefix": {
+    "name": ""
+  },
+  "tora_veiled_prefix": {
+    "name": ""
+  },
+  "vagan_veiled_prefix": {
+    "name": ""
+  },
+  "brinerot_veiled_prefix": {
+    "name": ""
+  },
+  "it_veiled_prefix": {
+    "name": ""
+  },
+  "gravicius_veiled_prefix": {
+    "name": ""
+  },
+  "keema_veiled_prefix": {
+    "name": ""
+  },
+  "rin_veiled_prefix": {
+    "name": ""
+  },
+  "janus_veiled_suffix": {
+    "name": ""
+  },
+  "hillock_veiled_suffix": {
+    "name": ""
+  },
+  "jorgin_veiled_suffix": {
+    "name": ""
+  },
+  "cameria_veiled_suffix": {
+    "name": ""
+  },
+  "aislin_veiled_suffix": {
+    "name": ""
+  },
+  "riker_veiled_suffix": {
+    "name": ""
+  },
+  "divination_touched_monster": {
+    "name": "<rgb(180,47,204)>{Divination Touched}"
+  },
+  "zana_memory": {
+    "name": ""
+  },
+  "memory_boss": {
+    "name": ""
+  },
+  "memory_infused_same_class_drops": {
+    "name": "<rgb(230,247,246)>{Dropped Items are of the same Type}"
+  },
+  "memory_infused_convert_to_gold": {
+    "name": "<rgb(230,247,246)>{Converts most dropped Items to Gold}"
+  },
+  "memory_infused_revive_on_death": {
+    "name": "<rgb(230,247,246)>{Revives on Death}"
+  },
+  "memory_infused_cannot_drop_equipment": {
+    "name": "<rgb(230,247,246)>{Drops cannot be Items that can have Rarity}"
+  },
+  "graft": {
+    "name": ""
+  },
+  "graft_uulnetol": {
+    "name": ""
+  },
+  "graft_esh": {
+    "name": ""
+  },
+  "graft_xoph": {
+    "name": ""
+  },
+  "graft_tul": {
+    "name": ""
+  },
+  "graft_tutorial": {
+    "name": ""
+  },
+  "graft_uulnetol_hand_slam": {
+    "name": ""
+  },
+  "graft_uulnetol_bone_spires": {
+    "name": ""
+  },
+  "graft_uulnetol_impale_buff": {
+    "name": ""
+  },
+  "graft_uulnetol_low_life_buff": {
+    "name": ""
+  },
+  "graft_xoph_molten_shell": {
+    "name": ""
+  },
+  "graft_xoph_cremations": {
+    "name": ""
+  },
+  "graft_xoph_flame_pillars": {
+    "name": ""
+  },
+  "graft_xoph_ailment_buff": {
+    "name": ""
+  },
+  "graft_esh_bolt_ring": {
+    "name": ""
+  },
+  "graft_esh_lightning_clones": {
+    "name": ""
+  },
+  "graft_esh_lightning_hands": {
+    "name": ""
+  },
+  "graft_esh_jolt_buff": {
+    "name": ""
+  },
+  "graft_tul_tornado": {
+    "name": ""
+  },
+  "graft_tul_ice_mortars": {
+    "name": ""
+  },
+  "graft_tul_summon": {
+    "name": ""
+  },
+  "graft_tul_aegis": {
+    "name": ""
+  },
+  "graft_damaging_skill": {
+    "name": ""
+  },
+  "brequel_monster": {
+    "name": ""
+  },
+  "boss": {
+    "name": ""
+  },
+  "itemisedcorpse_low": {
+    "name": ""
+  },
+  "itemisedcorpse_mid": {
+    "name": ""
+  },
+  "itemisedcorpse_high": {
+    "name": ""
+  },
+  "mutatedunique": {
+    "name": ""
+  },
+  "wand_can_roll_caster_modifiers": {
+    "name": ""
+  },
+  "zana_influenced_map": {
+    "name": ""
+  },
+  "breach_fodder": {
+    "name": ""
+  },
+  "incubator": {
+    "name": ""
+  },
+  "brequelfruit": {
+    "name": ""
+  },
+  "breach_wild_boss": {
+    "name": ""
+  },
+  "jewellery": {
+    "name": ""
+  },
+  "str_tattoo": {
+    "name": ""
+  },
+  "dex_tattoo": {
+    "name": ""
+  },
+  "int_tattoo": {
+    "name": ""
+  },
+  "str_runegraft": {
+    "name": ""
+  },
+  "dex_runegraft": {
+    "name": ""
+  },
+  "int_runegraft": {
+    "name": ""
+  },
+  "faridun_alt_environment": {
+    "name": ""
+  },
+  "captured_beast": {
+    "name": ""
+  },
+  "very_low_tier_currency": {
+    "name": ""
+  },
+  "low_tier_currency": {
+    "name": ""
+  },
+  "mid_tier_currency": {
+    "name": ""
+  },
+  "high_tier_currency": {
+    "name": ""
+  },
+  "extreme_tier_currency": {
+    "name": ""
+  },
+  "Ritual_Boss_Divination_Card": {
+    "name": ""
+  },
+  "quest_strongbox": {
+    "name": ""
+  },
+  "bismuth_tornado": {
+    "name": ""
+  },
+  "chart": {
+    "name": ""
+  },
+  "mercenaries_scarab": {
+    "name": ""
+  },
+  "abyssal_veiled_suffix": {
+    "name": ""
+  },
+  "abyssal_veiled_prefix": {
+    "name": ""
+  },
+  "divergentunique": {
+    "name": ""
+  },
+  "mercenary_diving_duelist": {
+    "name": ""
+  },
+  "abyss_blood": {
+    "name": ""
+  },
+  "mercenary_diving_duelist_noble": {
+    "name": ""
+  },
+  "deepwater_sword": {
+    "name": ""
+  },
+  "non_exchange_currency": {
+    "name": ""
+  },
+  "currency_mirror": {
+    "name": ""
+  },
+  "currency_lock": {
+    "name": ""
+  },
+  "deepwater_hazard_belt": {
+    "name": ""
+  },
+  "deepwater_str_tatt": {
+    "name": ""
+  },
+  "deepwater_dex_tatt": {
+    "name": ""
+  },
+  "deepwater_int_tatt": {
+    "name": ""
+  },
+  "deepwater_pantheon_aspect": {
+    "name": ""
+  },
+  "DivinationCardsCourtyardOfWasting": {
+    "name": ""
+  },
+  "DivinationCardsChambersOfImpurity": {
+    "name": ""
+  },
+  "DivinationCardsTheatreOfLies": {
+    "name": ""
+  },
+  "DivinationCardsSanctuary": {
+    "name": ""
+  },
+  "DivinationCardsCitadel": {
+    "name": ""
+  },
+  "DivinationCardsFortress": {
+    "name": ""
+  },
+  "DivinationCardsAbomination": {
+    "name": ""
+  },
+  "DivinationCardsZiggurat": {
+    "name": ""
+  },
+  "DivinationCardsChimera": {
+    "name": ""
+  },
+  "DivinationCardsHydra": {
+    "name": ""
+  },
+  "DivinationCardsPhoenix": {
+    "name": ""
+  },
+  "DivinationCardsMinotaur": {
+    "name": ""
+  },
+  "DivinationCardsSynthesis": {
+    "name": ""
+  },
+  "brequel_encounter_skill_daemon": {
+    "name": ""
+  }
+}

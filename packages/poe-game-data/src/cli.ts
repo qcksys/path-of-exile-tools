@@ -1,8 +1,15 @@
+import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { gameSchema, loadConfig } from "./config.ts";
+import {
+    commitDataPackages,
+    dataPackages,
+    materializePackage,
+    verifyDataPackage,
+} from "./distribute.ts";
 import { modPool } from "./model.ts";
-import { counts, replay, run, verify } from "./pipeline.ts";
+import { counts, packageDirectory, replay, run, verify } from "./pipeline.ts";
 import { discoverVersion } from "./versions.ts";
 
 async function main() {
@@ -18,11 +25,12 @@ async function main() {
             "item-level": { type: "string", default: "100" },
             existing: { type: "string", multiple: true, default: [] },
             help: { type: "boolean", short: "h" },
+            commit: { type: "boolean", default: false },
         },
     });
     if (values.help || !positionals.length) {
         console.log(
-            "Usage: extract <versions|run|verify|replay|inspect> [options]\n\nversions --game poe1|poe2|both\nrun --config pipeline.local.json [--game both] [--schema schema.json] [--output data]\nverify --snapshot data/poe1/snapshots/<id>\nreplay --snapshot <path> [--output data]\ninspect --snapshot <path> --base Metadata/Items/... [--item-level 100] [--existing ModId]",
+            "Usage: extract <versions|run|package|verify|verify-packages|replay|inspect> [options]\n\nversions --game poe1|poe2|both\nrun --config pipeline.local.json [--game both] [--schema schema.json] [--output data] [--commit]\npackage --snapshot <path> [--commit]\nverify-packages [--game poe1|poe2|both]\nverify --snapshot data/poe1/snapshots/<id>\nreplay --snapshot <path> [--output data]\ninspect --snapshot <path> --base Metadata/Items/... [--item-level 100] [--existing ModId]",
         );
         return;
     }
@@ -32,6 +40,8 @@ async function main() {
         if (!value) throw new Error(`Missing --${option}`);
         return value;
     };
+    if (values.commit && !["run", "package"].includes(positionals[0]!))
+        throw new Error("--commit is only supported for run and package");
     let result: unknown;
     switch (positionals[0]) {
         case "versions":
@@ -45,9 +55,36 @@ async function main() {
             const config = await loadConfig(required(values.config, "config"));
             const games =
                 values.game === "both" ? selected.filter((game) => config[game]) : selected;
-            result = await run(config, values.output, games, values.schema);
+            const snapshots = await run(config, values.output, games, values.schema);
+            const packages = [];
+            for (const snapshot of snapshots) packages.push(await materializePackage(snapshot));
+            result = {
+                snapshots,
+                packages,
+                ...(values.commit ? await commitDataPackages(packages) : {}),
+            };
             break;
         }
+        case "package": {
+            const packaged = await materializePackage(required(values.snapshot, "snapshot"));
+            result = {
+                ...packaged,
+                ...(values.commit ? await commitDataPackages([packaged]) : {}),
+            };
+            break;
+        }
+        case "verify-packages":
+            result = Object.fromEntries(
+                await Promise.all(
+                    selected.map(async (game) => [
+                        game,
+                        await verifyDataPackage(
+                            resolve(packageDirectory, "..", dataPackages[game]),
+                        ),
+                    ]),
+                ),
+            );
+            break;
         case "verify":
             result = counts((await verify(required(values.snapshot, "snapshot"))).data);
             break;
