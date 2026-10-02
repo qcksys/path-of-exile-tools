@@ -5,6 +5,7 @@ import { describe, expect, it } from "vite-plus/test";
 const appDir = resolve(import.meta.dirname, "..");
 const cli = resolve(appDir, "node_modules/varlock/bin/cli.js");
 const fixtures = {
+    LOG_LEVEL: "silent",
     DATABASE_URL: "mysql://test:test@localhost/poe_test",
     BETTER_AUTH_SECRET: "ci-only-not-a-real-secret-0000000000000000",
     GOOGLE_CLIENT_ID: "ci-only-client-id",

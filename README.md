@@ -32,20 +32,22 @@ In a POSIX shell, prefix each command with `APP_ENV=test`. The ready task runs B
 
 [Varlock](https://varlock.dev/) loads each package's `.env.schema`, validates values, and resolves secrets from [1Password](https://varlock.dev/plugins/1password/). `APP_ENV` selects `local` (the default), `test`, `dev`, or `prod`.
 
-| Environment | 1Password item | Worker | Host |
-| --- | --- | --- | --- |
-| local | dev item below | local development | `poe.boats.localhost` |
-| dev | `poe.boats dev` / `xjy43xo3efabt3ajhhr4ppp4o4` | `poe-dot-boats-dev` | `dev.poe.boats` |
-| prod | `poe.boats prod` / `kkfrsrvqnifcjeagnhuwkwpgoe` | `poe-dot-boats-prod` | `poe.boats` |
+Each package has separate dev and prod records in vault `cgq6s2pwrz5g3jcj6zoreqvjni`, tagged `QckSys/poe`:
 
-Both items are in vault `cgq6s2pwrz5g3jcj6zoreqvjni`, tagged `QckSys/poe`. Populate the appropriate item with:
+| Package | Dev record | Prod record |
+| --- | --- | --- |
+| App | `poe.boats app dev` / `xjy43xo3efabt3ajhhr4ppp4o4` | `poe.boats app prod` / `kkfrsrvqnifcjeagnhuwkwpgoe` |
+| Ingestor | `poe.boats ingest dev` / `w7ykovvpq4qlhmnqleicnjtmxa` | `poe.boats ingest prod` / `zgoprixk57vs3ymsfveckbseui` |
+| Tracker | `poe.boats tracker dev` / `nwju225vledjtkrfpv4m5dmra4` | `poe.boats tracker prod` / `mu2p7icozscnnpkzfqea7o7bza` |
 
-- `DATABASE_URL`: MySQL connection URL for that environment.
-- `BETTER_AUTH_SECRET`: existing auth secret, at least 32 characters.
-- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
-- `POE_CLIENT_ID`, `POE_CLIENT_SECRET`, and `POE_USER_AGENT_CONTACT`.
-- `POE_BOATS_INGEST_TOKEN`: the same token is resolved as the worker's `STASH_INGEST_TOKEN`.
-- `CLOUDFLARE_API_TOKEN`: deployment token with access to the configured Workers and custom domains.
+The default `local` environment uses each package's dev record. The web app's hostname is `poe.boats.localhost` locally, `dev.poe.boats` in dev, and `poe.boats` in prod.
+
+Populate the fields defined by each package's schema:
+
+- App: `DATABASE_URL`, `BETTER_AUTH_SECRET` (at least 32 characters), Google and PoE client credentials, `STASH_INGEST_TOKEN`, and `LOG_LEVEL`.
+- Ingestor and tracker: PoE client credentials, `POE_USER_AGENT_CONTACT`, `POE_CLIENT_VERSION`, and `POE_REALM`.
+- Ingestor: `POE_BOATS_INGEST_URL` and `POE_BOATS_INGEST_TOKEN`. Its token must match the app record's `STASH_INGEST_TOKEN` for the target environment.
+- Tracker: `POE_LEAGUE` and `POE_INGEST_ALL`.
 
 Preserve existing auth and ingest secrets when migrating. Confirm which database each existing credential targets before copying it to an environment. Once values are safely stored and validated, remove the app's old `.dev.vars`; the Varlock Cloudflare integration replaces that mechanism. Existing ingestor `.env` files override schema values, so remove migrated credentials from those files as well.
 
