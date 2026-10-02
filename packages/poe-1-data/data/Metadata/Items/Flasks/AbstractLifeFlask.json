@@ -1,0 +1,33 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "life_flask",
+      "flask",
+      "default"
+    ],
+    "x_size": 1,
+    "y_size": 2,
+    "description_text": "ItemDescriptionFlask"
+  },
+  "Quality": {
+    "max_quality": 20
+  },
+  "Charges": {
+    "max_charges": 2
+  },
+  "Mods": {
+    "stat_description_list": "Metadata/StatDescriptions/stat_descriptions.txt",
+    "enable_rarity": [
+      "normal",
+      "magic",
+      "unique"
+    ],
+    "disable_rarity": "rare",
+    "inventory_type": "Flask"
+  },
+  "Usable": {
+    "use_type": "Usable",
+    "action": "flask"
+  }
+}

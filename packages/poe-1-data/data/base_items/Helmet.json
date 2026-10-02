@@ -1,0 +1,5995 @@
+{
+  "Metadata/Items/Armours/Helmets/HelmetStr1": {
+    "domain": "item",
+    "drop_level": 1,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Iron Hat",
+    "properties": {
+      "armour": {
+        "min": 9,
+        "max": 13
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr1.dds",
+      "id": "HelmetStr1"
+    },
+    "requirements": {
+      "strength": 9,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 1
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr2": {
+    "domain": "item",
+    "drop_level": 7,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Cone Helmet",
+    "properties": {
+      "armour": {
+        "min": 38,
+        "max": 50
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr2.dds",
+      "id": "HelmetStr2"
+    },
+    "requirements": {
+      "strength": 21,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 7
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr3": {
+    "domain": "item",
+    "drop_level": 18,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Barbute Helmet",
+    "properties": {
+      "armour": {
+        "min": 92,
+        "max": 115
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr3.dds",
+      "id": "HelmetStr3"
+    },
+    "requirements": {
+      "strength": 42,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 18
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr4": {
+    "domain": "item",
+    "drop_level": 26,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Close Helmet",
+    "properties": {
+      "armour": {
+        "min": 130,
+        "max": 150
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr4.dds",
+      "id": "HelmetStr4"
+    },
+    "requirements": {
+      "strength": 58,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 26
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr5": {
+    "domain": "item",
+    "drop_level": 35,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Gladiator Helmet",
+    "properties": {
+      "armour": {
+        "min": 174,
+        "max": 195
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr5.dds",
+      "id": "HelmetStr5"
+    },
+    "requirements": {
+      "strength": 75,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 35
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr6": {
+    "domain": "item",
+    "drop_level": 40,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Reaver Helmet",
+    "properties": {
+      "armour": {
+        "min": 198,
+        "max": 233
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr6.dds",
+      "id": "HelmetStr6"
+    },
+    "requirements": {
+      "strength": 85,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 40
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr7": {
+    "domain": "item",
+    "drop_level": 48,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Siege Helmet",
+    "properties": {
+      "armour": {
+        "min": 237,
+        "max": 272
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr7.dds",
+      "id": "HelmetStr7"
+    },
+    "requirements": {
+      "strength": 101,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 48
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr8": {
+    "domain": "item",
+    "drop_level": 55,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Samnite Helmet",
+    "properties": {
+      "armour": {
+        "min": 276,
+        "max": 325
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr8.dds",
+      "id": "HelmetStr8"
+    },
+    "requirements": {
+      "strength": 114,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 55
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr9": {
+    "domain": "item",
+    "drop_level": 60,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Ezomyte Burgonet",
+    "properties": {
+      "armour": {
+        "min": 346,
+        "max": 381
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr9.dds",
+      "id": "HelmetStr9"
+    },
+    "requirements": {
+      "strength": 138,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 60
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr10": {
+    "domain": "item",
+    "drop_level": 65,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Royal Burgonet",
+    "properties": {
+      "armour": {
+        "min": 377,
+        "max": 434
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "top_tier_base_item_type",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr10.dds",
+      "id": "HelmetStr10"
+    },
+    "requirements": {
+      "strength": 148,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 65
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr11": {
+    "domain": "item",
+    "drop_level": 69,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Eternal Burgonet",
+    "properties": {
+      "armour": {
+        "min": 373,
+        "max": 429
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "top_tier_base_item_type",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr11.dds",
+      "id": "HelmetStr11"
+    },
+    "requirements": {
+      "strength": 138,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 69
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr12": {
+    "domain": "item",
+    "drop_level": 73,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "General's Helmet",
+    "properties": {
+      "armour": {
+        "min": 431,
+        "max": 496
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr9.dds",
+      "id": "HelmetStr9"
+    },
+    "requirements": {
+      "strength": 170,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 73
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr13": {
+    "domain": "item",
+    "drop_level": 78,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Conqueror's Helmet",
+    "properties": {
+      "armour": {
+        "min": 501,
+        "max": 576
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr10.dds",
+      "id": "HelmetStr10"
+    },
+    "requirements": {
+      "strength": 194,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 78
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStr14": {
+    "domain": "item",
+    "drop_level": 84,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Giantslayer Helmet",
+    "properties": {
+      "armour": {
+        "min": 582,
+        "max": 669
+      },
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStr11.dds",
+      "id": "HelmetStr11"
+    },
+    "requirements": {
+      "strength": 224,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 84
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex1": {
+    "domain": "item",
+    "drop_level": 3,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Leather Cap",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 19,
+        "max": 27
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex1.dds",
+      "id": "HelmetDex1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 13,
+      "intelligence": 0,
+      "level": 3
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex2": {
+    "domain": "item",
+    "drop_level": 10,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Tricorne",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 53,
+        "max": 69
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex2.dds",
+      "id": "HelmetDex2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 27,
+      "intelligence": 0,
+      "level": 10
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex3": {
+    "domain": "item",
+    "drop_level": 20,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Leather Hood",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 101,
+        "max": 127
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex3.dds",
+      "id": "HelmetDex3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 46,
+      "intelligence": 0,
+      "level": 20
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex4": {
+    "domain": "item",
+    "drop_level": 30,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Wolf Pelt",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 150,
+        "max": 172
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex4.dds",
+      "id": "HelmetDex4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 66,
+      "intelligence": 0,
+      "level": 30
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex5": {
+    "domain": "item",
+    "drop_level": 41,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Hunter Hood",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 203,
+        "max": 227
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex5.dds",
+      "id": "HelmetDex5"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 87,
+      "intelligence": 0,
+      "level": 41
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex6": {
+    "domain": "item",
+    "drop_level": 47,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Noble Tricorne",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 232,
+        "max": 266
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex6.dds",
+      "id": "HelmetDex6"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 99,
+      "intelligence": 0,
+      "level": 47
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex7": {
+    "domain": "item",
+    "drop_level": 55,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Ursine Pelt",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 276,
+        "max": 325
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex7.dds",
+      "id": "HelmetDex7"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 114,
+      "intelligence": 0,
+      "level": 55
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex8": {
+    "domain": "item",
+    "drop_level": 60,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Silken Hood",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 346,
+        "max": 381
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex8.dds",
+      "id": "HelmetDex8"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 138,
+      "intelligence": 0,
+      "level": 60
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex9": {
+    "domain": "item",
+    "drop_level": 64,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Sinner Tricorne",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 369,
+        "max": 425
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "top_tier_base_item_type",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex9.dds",
+      "id": "HelmetDex9"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 138,
+      "intelligence": 0,
+      "level": 64
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex10": {
+    "domain": "item",
+    "drop_level": 70,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Lion Pelt",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 380,
+        "max": 437
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "top_tier_base_item_type",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex10.dds",
+      "id": "HelmetDex10"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 150,
+      "intelligence": 0,
+      "level": 70
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex11": {
+    "domain": "item",
+    "drop_level": 73,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Dire Pelt",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 431,
+        "max": 496
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex4.dds",
+      "id": "HelmetDex4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 170,
+      "intelligence": 0,
+      "level": 73
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex12": {
+    "domain": "item",
+    "drop_level": 78,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Grizzly Pelt",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 501,
+        "max": 576
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex7.dds",
+      "id": "HelmetDex7"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 194,
+      "intelligence": 0,
+      "level": 78
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDex13": {
+    "domain": "item",
+    "drop_level": 84,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Majestic Pelt",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": {
+        "min": 582,
+        "max": 669
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDex10.dds",
+      "id": "HelmetDex10"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 224,
+      "intelligence": 0,
+      "level": 84
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt1": {
+    "domain": "item",
+    "drop_level": 3,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Vine Circlet",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 7,
+        "max": 10
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt1.dds",
+      "id": "HelmetInt1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 13,
+      "level": 3
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt2": {
+    "domain": "item",
+    "drop_level": 8,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Iron Circlet",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 12,
+        "max": 15
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt2.dds",
+      "id": "HelmetInt2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 23,
+      "level": 8
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt3": {
+    "domain": "item",
+    "drop_level": 17,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Torture Cage",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 20,
+        "max": 25
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt3.dds",
+      "id": "HelmetInt3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 40,
+      "level": 17
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt4": {
+    "domain": "item",
+    "drop_level": 26,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Tribal Circlet",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 28,
+        "max": 33
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt4.dds",
+      "id": "HelmetInt4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 58,
+      "level": 26
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt5": {
+    "domain": "item",
+    "drop_level": 34,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Bone Circlet",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 36,
+        "max": 40
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt5.dds",
+      "id": "HelmetInt5"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 73,
+      "level": 34
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt6": {
+    "domain": "item",
+    "drop_level": 39,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Lunaris Circlet",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 41,
+        "max": 48
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt6.dds",
+      "id": "HelmetInt6"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 83,
+      "level": 39
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt7": {
+    "domain": "item",
+    "drop_level": 48,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Steel Circlet",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 49,
+        "max": 55
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt7.dds",
+      "id": "HelmetInt7"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 101,
+      "level": 48
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt8": {
+    "domain": "item",
+    "drop_level": 54,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Necromancer Circlet",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 55,
+        "max": 64
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt8.dds",
+      "id": "HelmetInt8"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 112,
+      "level": 54
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt9": {
+    "domain": "item",
+    "drop_level": 59,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Solaris Circlet",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 60,
+        "max": 68
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt9.dds",
+      "id": "HelmetInt9"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 122,
+      "level": 59
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt10": {
+    "domain": "item",
+    "drop_level": 65,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Mind Cage",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 73,
+        "max": 84
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "top_tier_base_item_type",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt10.dds",
+      "id": "HelmetInt10"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 138,
+      "level": 65
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt11": {
+    "domain": "item",
+    "drop_level": 69,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Hubris Circlet",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 80,
+        "max": 92
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "top_tier_base_item_type",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt11.dds",
+      "id": "HelmetInt11"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 154,
+      "level": 69
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt12": {
+    "domain": "item",
+    "drop_level": 73,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Moonlit Circlet",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 87,
+        "max": 100
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt6.dds",
+      "id": "HelmetInt6"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 170,
+      "level": 73
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt13": {
+    "domain": "item",
+    "drop_level": 78,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Sunfire Circlet",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 101,
+        "max": 116
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt9.dds",
+      "id": "HelmetInt9"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 194,
+      "level": 78
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetInt14": {
+    "domain": "item",
+    "drop_level": 84,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Lich's Circlet",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 117,
+        "max": 134
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "int_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetInt8.dds",
+      "id": "HelmetInt8"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 224,
+      "level": 84
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex1": {
+    "domain": "item",
+    "drop_level": 4,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Battered Helm",
+    "properties": {
+      "armour": {
+        "min": 13,
+        "max": 18
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 13,
+        "max": 18
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex1.dds",
+      "id": "HelmetStrDex1"
+    },
+    "requirements": {
+      "strength": 8,
+      "dexterity": 8,
+      "intelligence": 0,
+      "level": 4
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex2": {
+    "domain": "item",
+    "drop_level": 13,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Sallet",
+    "properties": {
+      "armour": {
+        "min": 37,
+        "max": 48
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 37,
+        "max": 48
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex2.dds",
+      "id": "HelmetStrDex2"
+    },
+    "requirements": {
+      "strength": 18,
+      "dexterity": 18,
+      "intelligence": 0,
+      "level": 13
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex3": {
+    "domain": "item",
+    "drop_level": 23,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Visored Sallet",
+    "properties": {
+      "armour": {
+        "min": 64,
+        "max": 80
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 64,
+        "max": 80
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex3.dds",
+      "id": "HelmetStrDex3"
+    },
+    "requirements": {
+      "strength": 28,
+      "dexterity": 28,
+      "intelligence": 0,
+      "level": 23
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex4": {
+    "domain": "item",
+    "drop_level": 33,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Gilded Sallet",
+    "properties": {
+      "armour": {
+        "min": 90,
+        "max": 97
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 90,
+        "max": 97
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex4.dds",
+      "id": "HelmetStrDex4"
+    },
+    "requirements": {
+      "strength": 38,
+      "dexterity": 38,
+      "intelligence": 0,
+      "level": 33
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex5": {
+    "domain": "item",
+    "drop_level": 36,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Secutor Helm",
+    "properties": {
+      "armour": {
+        "min": 98,
+        "max": 116
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 98,
+        "max": 116
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex5.dds",
+      "id": "HelmetStrDex5"
+    },
+    "requirements": {
+      "strength": 42,
+      "dexterity": 42,
+      "intelligence": 0,
+      "level": 36
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex6": {
+    "domain": "item",
+    "drop_level": 43,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Fencer Helm",
+    "properties": {
+      "armour": {
+        "min": 117,
+        "max": 134
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 117,
+        "max": 134
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex6.dds",
+      "id": "HelmetStrDex6"
+    },
+    "requirements": {
+      "strength": 49,
+      "dexterity": 49,
+      "intelligence": 0,
+      "level": 43
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex7": {
+    "domain": "item",
+    "drop_level": 51,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Lacquered Helmet",
+    "properties": {
+      "armour": {
+        "min": 138,
+        "max": 155
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 138,
+        "max": 155
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex7.dds",
+      "id": "HelmetStrDex7"
+    },
+    "requirements": {
+      "strength": 57,
+      "dexterity": 57,
+      "intelligence": 0,
+      "level": 51
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex8": {
+    "domain": "item",
+    "drop_level": 58,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Fluted Bascinet",
+    "properties": {
+      "armour": {
+        "min": 160,
+        "max": 189
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 160,
+        "max": 189
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex8.dds",
+      "id": "HelmetStrDex8"
+    },
+    "requirements": {
+      "strength": 64,
+      "dexterity": 64,
+      "intelligence": 0,
+      "level": 58
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex9": {
+    "domain": "item",
+    "drop_level": 63,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Pig-Faced Bascinet",
+    "properties": {
+      "armour": {
+        "min": 229,
+        "max": 263
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 159,
+        "max": 183
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "top_tier_base_item_type",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex9.dds",
+      "id": "HelmetStrDex9"
+    },
+    "requirements": {
+      "strength": 85,
+      "dexterity": 62,
+      "intelligence": 0,
+      "level": 63
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex10": {
+    "domain": "item",
+    "drop_level": 67,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Nightmare Bascinet",
+    "properties": {
+      "armour": {
+        "min": 162,
+        "max": 187
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 233,
+        "max": 268
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "top_tier_base_item_type",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex10.dds",
+      "id": "HelmetStrDex10"
+    },
+    "requirements": {
+      "strength": 62,
+      "dexterity": 85,
+      "intelligence": 0,
+      "level": 67
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex11": {
+    "domain": "item",
+    "drop_level": 73,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Knight Helm",
+    "properties": {
+      "armour": {
+        "min": 268,
+        "max": 308
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 268,
+        "max": 308
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex6.dds",
+      "id": "HelmetStrDex6"
+    },
+    "requirements": {
+      "strength": 101,
+      "dexterity": 101,
+      "intelligence": 0,
+      "level": 73
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex12": {
+    "domain": "item",
+    "drop_level": 78,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Conquest Helmet",
+    "properties": {
+      "armour": {
+        "min": 308,
+        "max": 355
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 308,
+        "max": 355
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex7.dds",
+      "id": "HelmetStrDex7"
+    },
+    "requirements": {
+      "strength": 116,
+      "dexterity": 116,
+      "intelligence": 0,
+      "level": 78
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDex13": {
+    "domain": "item",
+    "drop_level": 84,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Haunted Bascinet",
+    "properties": {
+      "armour": {
+        "min": 355,
+        "max": 409
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 355,
+        "max": 409
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDex10.dds",
+      "id": "HelmetStrDex10"
+    },
+    "requirements": {
+      "strength": 132,
+      "dexterity": 132,
+      "intelligence": 0,
+      "level": 84
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDexRitual1": {
+    "domain": "item",
+    "drop_level": 15,
+    "implicits": [
+      "MaxChaosResistanceCrushedImplicitR1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Sorrow Mask",
+    "properties": {
+      "armour": {
+        "min": 42,
+        "max": 49
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 42,
+        "max": 49
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDexR.dds",
+      "id": "HelmetStrDexR1"
+    },
+    "requirements": {
+      "strength": 20,
+      "dexterity": 20,
+      "intelligence": 0,
+      "level": 15
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDexRitual2": {
+    "domain": "item",
+    "drop_level": 45,
+    "implicits": [
+      "MaxChaosResistanceCrushedImplicitR2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Atonement Mask",
+    "properties": {
+      "armour": {
+        "min": 122,
+        "max": 140
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 122,
+        "max": 140
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDexR.dds",
+      "id": "HelmetStrDexR2"
+    },
+    "requirements": {
+      "strength": 51,
+      "dexterity": 51,
+      "intelligence": 0,
+      "level": 45
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrDexRitual3": {
+    "domain": "item",
+    "drop_level": 75,
+    "implicits": [
+      "MaxChaosResistanceCrushedImplicitR3"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Penitent Mask",
+    "properties": {
+      "armour": {
+        "min": 185,
+        "max": 212
+      },
+      "energy_shield": null,
+      "evasion": {
+        "min": 185,
+        "max": 212
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_dex_armour",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrDexR.dds",
+      "id": "HelmetStrDexR3___"
+    },
+    "requirements": {
+      "strength": 79,
+      "dexterity": 79,
+      "intelligence": 0,
+      "level": 75
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt1": {
+    "domain": "item",
+    "drop_level": 5,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Rusted Coif",
+    "properties": {
+      "armour": {
+        "min": 16,
+        "max": 22
+      },
+      "energy_shield": {
+        "min": 5,
+        "max": 7
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt1.dds",
+      "id": "HelmetStrInt1"
+    },
+    "requirements": {
+      "strength": 9,
+      "dexterity": 0,
+      "intelligence": 9,
+      "level": 5
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt2": {
+    "domain": "item",
+    "drop_level": 12,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Soldier Helmet",
+    "properties": {
+      "armour": {
+        "min": 34,
+        "max": 45
+      },
+      "energy_shield": {
+        "min": 8,
+        "max": 11
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt2.dds",
+      "id": "HelmetStrInt2"
+    },
+    "requirements": {
+      "strength": 16,
+      "dexterity": 0,
+      "intelligence": 16,
+      "level": 12
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt3": {
+    "domain": "item",
+    "drop_level": 22,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Great Helmet",
+    "properties": {
+      "armour": {
+        "min": 61,
+        "max": 76
+      },
+      "energy_shield": {
+        "min": 14,
+        "max": 17
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt3.dds",
+      "id": "HelmetStrInt3"
+    },
+    "requirements": {
+      "strength": 27,
+      "dexterity": 0,
+      "intelligence": 27,
+      "level": 22
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt4": {
+    "domain": "item",
+    "drop_level": 31,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Crusader Helmet",
+    "properties": {
+      "armour": {
+        "min": 85,
+        "max": 95
+      },
+      "energy_shield": {
+        "min": 18,
+        "max": 20
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt4.dds",
+      "id": "HelmetStrInt4"
+    },
+    "requirements": {
+      "strength": 36,
+      "dexterity": 0,
+      "intelligence": 36,
+      "level": 31
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt5": {
+    "domain": "item",
+    "drop_level": 37,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Aventail Helmet",
+    "properties": {
+      "armour": {
+        "min": 101,
+        "max": 119
+      },
+      "energy_shield": {
+        "min": 21,
+        "max": 25
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt5.dds",
+      "id": "HelmetStrInt5"
+    },
+    "requirements": {
+      "strength": 42,
+      "dexterity": 0,
+      "intelligence": 42,
+      "level": 37
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt6": {
+    "domain": "item",
+    "drop_level": 44,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Zealot Helmet",
+    "properties": {
+      "armour": {
+        "min": 119,
+        "max": 137
+      },
+      "energy_shield": {
+        "min": 25,
+        "max": 29
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt6.dds",
+      "id": "HelmetStrInt6"
+    },
+    "requirements": {
+      "strength": 50,
+      "dexterity": 0,
+      "intelligence": 50,
+      "level": 44
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt7": {
+    "domain": "item",
+    "drop_level": 53,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Great Crown",
+    "properties": {
+      "armour": {
+        "min": 143,
+        "max": 161
+      },
+      "energy_shield": {
+        "min": 29,
+        "max": 33
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt7.dds",
+      "id": "HelmetStrInt7"
+    },
+    "requirements": {
+      "strength": 59,
+      "dexterity": 0,
+      "intelligence": 59,
+      "level": 53
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt8": {
+    "domain": "item",
+    "drop_level": 58,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Magistrate Crown",
+    "properties": {
+      "armour": {
+        "min": 160,
+        "max": 189
+      },
+      "energy_shield": {
+        "min": 33,
+        "max": 39
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt8.dds",
+      "id": "HelmetStrInt8"
+    },
+    "requirements": {
+      "strength": 64,
+      "dexterity": 0,
+      "intelligence": 64,
+      "level": 58
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt9": {
+    "domain": "item",
+    "drop_level": 63,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Prophet Crown",
+    "properties": {
+      "armour": {
+        "min": 224,
+        "max": 258
+      },
+      "energy_shield": {
+        "min": 32,
+        "max": 37
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "top_tier_base_item_type",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt9.dds",
+      "id": "HelmetStrInt9"
+    },
+    "requirements": {
+      "strength": 85,
+      "dexterity": 0,
+      "intelligence": 62,
+      "level": 63
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt10": {
+    "domain": "item",
+    "drop_level": 68,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Praetor Crown",
+    "properties": {
+      "armour": {
+        "min": 161,
+        "max": 185
+      },
+      "energy_shield": {
+        "min": 51,
+        "max": 58
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "top_tier_base_item_type",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt10.dds",
+      "id": "HelmetStrInt10"
+    },
+    "requirements": {
+      "strength": 62,
+      "dexterity": 0,
+      "intelligence": 91,
+      "level": 68
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt11": {
+    "domain": "item",
+    "drop_level": 73,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Faithful Helmet",
+    "properties": {
+      "armour": {
+        "min": 268,
+        "max": 308
+      },
+      "energy_shield": {
+        "min": 54,
+        "max": 62
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt4.dds",
+      "id": "HelmetStrInt4"
+    },
+    "requirements": {
+      "strength": 101,
+      "dexterity": 0,
+      "intelligence": 101,
+      "level": 73
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt12": {
+    "domain": "item",
+    "drop_level": 78,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Paladin Crown",
+    "properties": {
+      "armour": {
+        "min": 308,
+        "max": 355
+      },
+      "energy_shield": {
+        "min": 62,
+        "max": 71
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt7.dds",
+      "id": "HelmetStrInt7"
+    },
+    "requirements": {
+      "strength": 116,
+      "dexterity": 0,
+      "intelligence": 116,
+      "level": 78
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrInt13": {
+    "domain": "item",
+    "drop_level": 84,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Divine Crown",
+    "properties": {
+      "armour": {
+        "min": 355,
+        "max": 409
+      },
+      "energy_shield": {
+        "min": 71,
+        "max": 82
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetStrInt9.dds",
+      "id": "HelmetStrInt9"
+    },
+    "requirements": {
+      "strength": 132,
+      "dexterity": 0,
+      "intelligence": 132,
+      "level": 84
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrIntRitual1": {
+    "domain": "item",
+    "drop_level": 15,
+    "implicits": [
+      "SocketedActiveGemLevelSupportGemPenaltyImplicitR1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Imp Crown",
+    "properties": {
+      "armour": {
+        "min": 42,
+        "max": 49
+      },
+      "energy_shield": {
+        "min": 10,
+        "max": 12
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/MaskCrown.dds",
+      "id": "HelmetStrIntR1_"
+    },
+    "requirements": {
+      "strength": 20,
+      "dexterity": 0,
+      "intelligence": 20,
+      "level": 15
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrIntRitual2": {
+    "domain": "item",
+    "drop_level": 45,
+    "implicits": [
+      "SocketedActiveGemLevelSupportGemPenaltyImplicitR1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Demon Crown",
+    "properties": {
+      "armour": {
+        "min": 122,
+        "max": 140
+      },
+      "energy_shield": {
+        "min": 25,
+        "max": 29
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/MaskCrown.dds",
+      "id": "HelmetStrIntR2"
+    },
+    "requirements": {
+      "strength": 51,
+      "dexterity": 0,
+      "intelligence": 51,
+      "level": 45
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetStrIntRitual3": {
+    "domain": "item",
+    "drop_level": 75,
+    "implicits": [
+      "SocketedActiveGemLevelSupportGemPenaltyImplicitR2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Archdemon Crown",
+    "properties": {
+      "armour": {
+        "min": 185,
+        "max": 212
+      },
+      "energy_shield": {
+        "min": 38,
+        "max": 43
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "str_int_armour",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/MaskCrown.dds",
+      "id": "HelmetStrIntR3"
+    },
+    "requirements": {
+      "strength": 79,
+      "dexterity": 0,
+      "intelligence": 79,
+      "level": 75
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt1": {
+    "domain": "item",
+    "drop_level": 4,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Scare Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 4,
+        "max": 6
+      },
+      "evasion": {
+        "min": 13,
+        "max": 18
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt1.dds",
+      "id": "HelmetDexInt1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 8,
+      "intelligence": 8,
+      "level": 4
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt2": {
+    "domain": "item",
+    "drop_level": 10,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Plague Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 7,
+        "max": 10
+      },
+      "evasion": {
+        "min": 29,
+        "max": 38
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt2.dds",
+      "id": "HelmetDexInt2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 14,
+      "intelligence": 14,
+      "level": 10
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt3": {
+    "domain": "item",
+    "drop_level": 17,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Iron Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 11,
+        "max": 14
+      },
+      "evasion": {
+        "min": 48,
+        "max": 60
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt3.dds",
+      "id": "HelmetDexInt3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 21,
+      "intelligence": 21,
+      "level": 17
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt4": {
+    "domain": "item",
+    "drop_level": 28,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Festival Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 17,
+        "max": 19
+      },
+      "evasion": {
+        "min": 77,
+        "max": 88
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt4.dds",
+      "id": "HelmetDexInt4"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 33,
+      "intelligence": 33,
+      "level": 28
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt5": {
+    "domain": "item",
+    "drop_level": 35,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Golden Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 20,
+        "max": 22
+      },
+      "evasion": {
+        "min": 96,
+        "max": 103
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt5.dds",
+      "id": "HelmetDexInt5"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 40,
+      "intelligence": 40,
+      "level": 35
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt6": {
+    "domain": "item",
+    "drop_level": 38,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Raven Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 22,
+        "max": 25
+      },
+      "evasion": {
+        "min": 104,
+        "max": 119
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt6.dds",
+      "id": "HelmetDexInt6"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 44,
+      "intelligence": 44,
+      "level": 38
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt7": {
+    "domain": "item",
+    "drop_level": 45,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Callous Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 25,
+        "max": 28
+      },
+      "evasion": {
+        "min": 122,
+        "max": 137
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt7.dds",
+      "id": "HelmetDexInt7"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 51,
+      "intelligence": 51,
+      "level": 45
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt8": {
+    "domain": "item",
+    "drop_level": 52,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Regicide Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 29,
+        "max": 32
+      },
+      "evasion": {
+        "min": 141,
+        "max": 158
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt8.dds",
+      "id": "HelmetDexInt8"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 58,
+      "intelligence": 58,
+      "level": 52
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt9": {
+    "domain": "item",
+    "drop_level": 57,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Harlequin Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 32,
+        "max": 38
+      },
+      "evasion": {
+        "min": 157,
+        "max": 185
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt9.dds",
+      "id": "HelmetDexInt9"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 64,
+      "intelligence": 64,
+      "level": 57
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt10": {
+    "domain": "item",
+    "drop_level": 62,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Vaal Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 37,
+        "max": 43
+      },
+      "evasion": {
+        "min": 207,
+        "max": 239
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "top_tier_base_item_type",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt10.dds",
+      "id": "HelmetDexInt10"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 79,
+      "intelligence": 72,
+      "level": 62
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt11": {
+    "domain": "item",
+    "drop_level": 67,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Deicide Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 47,
+        "max": 54
+      },
+      "evasion": {
+        "min": 190,
+        "max": 219
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "top_tier_base_item_type",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt11.dds",
+      "id": "HelmetDexInt11"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 73,
+      "intelligence": 88,
+      "level": 67
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt12": {
+    "domain": "item",
+    "drop_level": 73,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Jester Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 54,
+        "max": 62
+      },
+      "evasion": {
+        "min": 268,
+        "max": 308
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt9.dds",
+      "id": "HelmetDexInt9"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 101,
+      "intelligence": 101,
+      "level": 73
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt13": {
+    "domain": "item",
+    "drop_level": 78,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Ancient Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 62,
+        "max": 71
+      },
+      "evasion": {
+        "min": 308,
+        "max": 355
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt10.dds",
+      "id": "HelmetDexInt10"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 116,
+      "intelligence": 116,
+      "level": 78
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexInt14": {
+    "domain": "item",
+    "drop_level": 84,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Torturer's Mask",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 71,
+        "max": 82
+      },
+      "evasion": {
+        "min": 355,
+        "max": 409
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "top_tier_base_item_type",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexInt11.dds",
+      "id": "HelmetDexInt11"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 132,
+      "intelligence": 132,
+      "level": 84
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexIntRitual1": {
+    "domain": "item",
+    "drop_level": 15,
+    "implicits": [
+      "AddedColdDamageColdPenetration1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Gale Crown",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 10,
+        "max": 12
+      },
+      "evasion": {
+        "min": 42,
+        "max": 49
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexIntR.dds",
+      "id": "HelmetDexIntR1_"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 20,
+      "intelligence": 20,
+      "level": 15
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexIntRitual2": {
+    "domain": "item",
+    "drop_level": 45,
+    "implicits": [
+      "AddedColdDamageColdPenetration2"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Winter Crown",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 25,
+        "max": 29
+      },
+      "evasion": {
+        "min": 122,
+        "max": 140
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexIntR.dds",
+      "id": "HelmetDexIntR2"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 51,
+      "intelligence": 51,
+      "level": 45
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDexIntRitual3": {
+    "domain": "item",
+    "drop_level": 75,
+    "implicits": [
+      "AddedColdDamageColdPenetration3"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Blizzard Crown",
+    "properties": {
+      "armour": null,
+      "energy_shield": {
+        "min": 38,
+        "max": 43
+      },
+      "evasion": {
+        "min": 185,
+        "max": 212
+      },
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "dex_int_armour",
+      "not_for_sale",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/HelmetDexIntR.dds",
+      "id": "HelmetDexIntR3"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 79,
+      "intelligence": 79,
+      "level": 75
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetWreath1": {
+    "domain": "item",
+    "drop_level": 12,
+    "implicits": [
+      "AllAttributesImplicitWreath1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Golden Wreath",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "unique_only",
+    "tags": [
+      "not_for_sale",
+      "demigods",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/Demigodstriumph.dds",
+      "id": "HelmetWreath1"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 12
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetDemigods1": {
+    "domain": "item",
+    "drop_level": 12,
+    "implicits": [
+      "AllResistancesImplictHelmetDemigods1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Golden Visage",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "unique_only",
+    "tags": [
+      "not_for_sale",
+      "demigods",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/DemigodsImmortality.dds",
+      "id": "HelmetDemigods1_"
+    },
+    "requirements": {
+      "strength": 0,
+      "dexterity": 0,
+      "intelligence": 0,
+      "level": 12
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetAtlas1": {
+    "domain": "item",
+    "drop_level": 73,
+    "implicits": [
+      "MinionDamageImplicitHelmet1"
+    ],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Bone Helmet",
+    "properties": {
+      "armour": {
+        "min": 197,
+        "max": 227
+      },
+      "energy_shield": {
+        "min": 40,
+        "max": 46
+      },
+      "evasion": null,
+      "ward": null,
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "not_for_sale",
+      "atlas_base_type",
+      "helmetatlas1",
+      "str_int_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/BoneHelm.dds",
+      "id": "HelmetAtlas1_"
+    },
+    "requirements": {
+      "strength": 76,
+      "dexterity": 0,
+      "intelligence": 76,
+      "level": 73
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetExpedition1": {
+    "domain": "item",
+    "drop_level": 25,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Runic Helm",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": null,
+      "ward": {
+        "min": 41,
+        "max": 47
+      },
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "not_for_sale",
+      "ward_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/SpiritHelmetBaseType.dds",
+      "id": "HelmetExpedition"
+    },
+    "requirements": {
+      "strength": 30,
+      "dexterity": 30,
+      "intelligence": 30,
+      "level": 25
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetExpedition2": {
+    "domain": "item",
+    "drop_level": 49,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Runic Crest",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": null,
+      "ward": {
+        "min": 97,
+        "max": 112
+      },
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "not_for_sale",
+      "ward_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/SpiritHelmetBaseType.dds",
+      "id": "HelmetExpedition"
+    },
+    "requirements": {
+      "strength": 55,
+      "dexterity": 55,
+      "intelligence": 55,
+      "level": 49
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  },
+  "Metadata/Items/Armours/Helmets/HelmetExpedition3": {
+    "domain": "item",
+    "drop_level": 68,
+    "implicits": [],
+    "inventory_height": 2,
+    "inventory_width": 2,
+    "inherits_from": "Metadata/Items/Armours/Helmets/AbstractHelmet",
+    "item_class": "Helmet",
+    "name": "Runic Crown",
+    "properties": {
+      "armour": null,
+      "energy_shield": null,
+      "evasion": null,
+      "ward": {
+        "min": 164,
+        "max": 189
+      },
+      "movement_speed": null,
+      "block": null,
+      "description": null,
+      "directions": null,
+      "stack_size": null,
+      "stack_size_currency_tab": null,
+      "full_stack_turns_into": null,
+      "charges_max": null,
+      "charges_per_use": null,
+      "duration": null,
+      "life_per_use": null,
+      "mana_per_use": null,
+      "attack_time": null,
+      "critical_strike_chance": null,
+      "physical_damage_max": null,
+      "physical_damage_min": null,
+      "range": null,
+      "mana_burn_ms": null,
+      "cooldown_ms": null,
+      "monster_id": null,
+      "monster_ability_text": null,
+      "monster_category": null
+    },
+    "release_state": "released",
+    "tags": [
+      "not_for_sale",
+      "ward_armour",
+      "helmet",
+      "armour",
+      "default"
+    ],
+    "visual_identity": {
+      "dds_file": "Art/2DItems/Armours/Helmets/SpiritHelmetBaseType.dds",
+      "id": "HelmetExpedition"
+    },
+    "requirements": {
+      "strength": 66,
+      "dexterity": 66,
+      "intelligence": 66,
+      "level": 68
+    },
+    "grants_buff": null,
+    "skills_granted": null
+  }
+}

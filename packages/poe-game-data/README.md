@@ -19,7 +19,7 @@ vp run @poe-tools/game-data#extract run --config pipeline.example.json
 
 Vite+ runs this package's scripts from `packages/poe-game-data`, so command paths and the default `data/` output are relative to that directory. `versions` performs a read-only handshake with GGG's patch servers. Copy its result into a config before a new extraction. The example pins the builds verified on 2026-10-02; old CDN versions can disappear.
 
-Append `--game poe1` or `--game poe2` to select one game. The default processes every configured game, in order. A failure stops the command; a game already published keeps its snapshot. Progress goes to stderr and the final snapshot paths are JSON on stdout. Bundles download on demand and are cached by game and patch under `.cache/bundles/`. Allow several gigabytes of disk space for cached bundles, raw assets, and images.
+Append `--game poe1` or `--game poe2` to select one game. The default processes every configured game, in order. After extraction succeeds for all selected games, `run` updates their tracked data packages. A failure stops the command; a game already published keeps its snapshot. Progress goes to stderr; snapshot paths and package results are JSON on stdout. Bundles download on demand and are cached by game and patch under `.cache/bundles/`. Allow several gigabytes of disk space for cached bundles, raw assets, and images.
 
 ## Use an installed game or saved raw files
 
@@ -67,7 +67,7 @@ flowchart LR
 | `translations.ts` | Parse English descriptions, includes, conditions, numeric handlers, and relational values |
 | `images.ts` | Resolve DDS aliases/Brotli, export PNG/WebP, compose PoE 2 flask icons |
 | `model.ts` | Canonical Zod data contract, relationship validation, diagnostic mod pools |
-| `pipeline.ts`, `cli.ts` | Record provenance, publish, verify, replay, and inspect |
+| `pipeline.ts`, `cli.ts`, `distribute.ts` | Record provenance, publish, verify, replay, inspect, generate packages, and optionally commit |
 
 PoE 1 tables live at `Data/*.datc64`; PoE 2 uses `Data/Balance/*.datc64`. PoE 1 stat descriptions are `Metadata/StatDescriptions/*.txt`. PoE 2 uses `Data/StatDescriptions/*.csd`: these are UTF-16LE text and use the same description parser. Both games keep inherited item tags in `.it` files.
 
@@ -129,7 +129,11 @@ Replay verifies the original snapshot and requires the current pipeline source, 
 
 The former Python format-1 snapshots remain useful raw inputs, but are not accepted by format-2 `verify` or `replay`. To migrate one, configure `directory` as its `raw/` directory, retain its game and patch, and run with `--schema <old-snapshot>/schema.json`. The new snapshot records the TypeScript implementation and lock. Do not overwrite the old snapshot.
 
-Keep `data/` while you need its provenance and replay inputs. `.cache/` is disposable; clearing it causes CDN downloads again. Both directories and `pipeline.local.json` are ignored. Generated game data is not committed or published by this package. A CDN 404 can mean a retired patch; choose a new explicit version or a saved source. The pipeline never silently switches patches.
+Keep this extractor's `data/` while you need its provenance and replay inputs. `.cache/` is disposable; clearing it causes CDN downloads again. Both directories and `pipeline.local.json` are ignored. Normalized JSON is also copied into tracked sibling packages. A CDN 404 can mean a retired patch; choose a new explicit version or a saved source. The pipeline never silently switches patches.
+
+## Committed data packages
+
+`run` writes the normalized JSON and standalone TypeScript/Zod schemas to `@qcksys/poe-1-data` and `@qcksys/poe-2-data`. Versions derive from exact client build IDs: `3.29.3.3` becomes `3.29.3-build.3`, and `4.5.5.4` becomes `4.5.5-build.4`. Add `--commit` to create a scoped local Git commit. Use `package --snapshot <path>` to regenerate from saved inputs, or `verify-packages` to check committed data without raw snapshots. See the [distribution guide](DISTRIBUTION.md) for commands, version rules, integrity checks, and local tarballs.
 
 ## Verification and compatibility
 
@@ -140,7 +144,7 @@ The TypeScript pipeline was verified on Windows with saved client assets from th
 | PoE 1 / `3.29.3.3` | 5,461 | 40,355 | 23,346 | 1,389 | 3,952 | 0 |
 | PoE 2 / `4.5.5.4` | 5,496 | 16,784 | 27,281 | 1,339 | 3,420 | 0 |
 
-Both patch handshakes and direct bundle extraction of `BaseItemTypes` were also checked against GGG. Offline replay with `fetch` disabled reproduced all 6,588 PoE 1 and 5,872 PoE 2 normalized files byte-for-byte, including PNG and WebP. PNG output excludes ImageMagick's volatile date/time metadata. No installed archive was supplied: GGPK coverage uses synthetic UTF-16/UTF-32 fixtures and verifies read-only behavior. CI runs 28 offline pipeline fixtures, not downloads of game assets.
+Both patch handshakes and direct bundle extraction of `BaseItemTypes` were also checked against GGG. Offline replay with `fetch` disabled reproduced all 6,588 PoE 1 and 5,872 PoE 2 normalized files byte-for-byte, including PNG and WebP. PNG output excludes ImageMagick's volatile date/time metadata. No installed archive was supplied: GGPK coverage uses synthetic UTF-16/UTF-32 fixtures and verifies read-only behavior. CI validates offline pipeline fixtures and every committed package JSON file without downloading game assets.
 
 An optional full-reference test compares every normalized record with the prior RePoE/PyPoE export. It preserves three reviewed corrections: production text renders all eight stat slots instead of six; the PoE 2 gold join resolves values (for example `Strength1 = 134`); signed Ultimatum hashes resolve correctly and unresolved passive references use a descriptive placeholder instead of `[]`. The reference comparison restricts text to six stats to test legacy parity, while separate fixtures require all eight in production translation.
 

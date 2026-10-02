@@ -1,0 +1,19 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "default"
+    ],
+    "description_text": "ItemDescriptionAtlasRelic"
+  },
+  "Mods": {
+    "stat_description_list": "Metadata/StatDescriptions/atlas_relic_stat_descriptions.txt",
+    "inventory_type": "MapRelics",
+    "enable_rarity": [
+      "magic",
+      "rare",
+      "unique"
+    ],
+    "no_level_requirement": "true"
+  }
+}

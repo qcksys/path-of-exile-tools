@@ -1,0 +1,13 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "default"
+    ],
+    "description_text": "ItemDescriptionItemisedCorpse"
+  },
+  "Usable": {
+    "use_type": "Usable",
+    "action": "spawn_itemised_corpse"
+  }
+}

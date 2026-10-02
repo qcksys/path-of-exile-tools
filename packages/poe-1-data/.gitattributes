@@ -1,0 +1,5 @@
+data/** text eol=lf linguist-generated=true
+src/schemas.ts text eol=lf linguist-generated=true
+src/release.ts text eol=lf linguist-generated=true
+types/** text eol=lf linguist-generated=true
+manifest.json text eol=lf linguist-generated=true
