@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowRight, FlaskConical, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CatalogItemEditor } from "~/components/recombinator/catalog-item-editor";
 import { CraftingTree } from "~/components/recombinator/crafting-tree";
 import {
     ModifierFlags,
@@ -22,8 +23,9 @@ import {
     parseRecombinatorDraft,
     type RecombinatorDraft,
 } from "~/lib/recombinator-plan";
-import { toggleDraftAffixFlag } from "~/lib/recombinator-tree";
+import { draftAffixes, toggleDraftAffixFlag } from "~/lib/recombinator-tree";
 import type { RecombinatorAffix, RecombinatorPlan } from "~/schemas/recombinator";
+import type { RecombinatorCatalog } from "~/schemas/recombinator-catalog";
 
 const examplePlan = parseRecombinatorDraft(exampleRecombinatorDraft);
 const exampleResults = calculateRecombinatorPlan(examplePlan);
@@ -44,7 +46,7 @@ function AffixList({ affixes, side }: { affixes: RecombinatorAffix[]; side: "pre
             {affixes.map((affix) => (
                 <li key={affix.id} className="flex items-center gap-1">
                     <ModifierIcons affix={affix} />
-                    <span>{affix.id}</span>
+                    <span>{affix.label ?? affix.id}</span>
                 </li>
             ))}
         </ul>
@@ -55,7 +57,7 @@ function AffixList({ affixes, side }: { affixes: RecombinatorAffix[]; side: "pre
 
 type Calculation = { plan: RecombinatorPlan; results: RecombinatorStepResult[] };
 
-export function RecombinatorSimulator() {
+export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatalog }) {
     const [draft, setDraft] = useState(exampleRecombinatorDraft);
     const [calculation, setCalculation] = useState<Calculation | null>({
         plan: examplePlan,
@@ -86,7 +88,7 @@ export function RecombinatorSimulator() {
         setError(null);
         let plan: RecombinatorPlan;
         try {
-            plan = parseRecombinatorDraft(draft);
+            plan = parseRecombinatorDraft(draft, catalog);
         } catch (caught) {
             const message = caught instanceof Error ? caught.message : "Check your inputs.";
             setError(message);
@@ -207,7 +209,7 @@ export function RecombinatorSimulator() {
                         <p>
                             At most one exclusive modifier is supported across each pair, including
                             duplicate copies. Fractured mods, base-specific transfer restrictions,
-                            base selection, item level, new modifiers, and gold/dust costs are
+                            output base and item level, new modifiers, and gold/dust costs are
                             outside this model. Use distinct labels for different tiers and a shared
                             group for conflicting mods.
                         </p>
@@ -289,10 +291,17 @@ export function RecombinatorSimulator() {
                             </Button>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            One modifier per line, up to 3 per side. Use identical labels for
-                            duplicate modifiers. Toggle the icons below a modifier to mark all its
-                            copies.
+                            Choose a base and item level to select its natural mods, or enter custom
+                            modifiers. Each item supports up to 3 prefixes and 3 suffixes in total.
                         </p>
+                        {catalog ? (
+                            <p className="text-xs text-muted-foreground">
+                                PoE 1 client {catalog.patch} ·{" "}
+                                {catalog.bases.length.toLocaleString()} equipment bases. The catalog
+                                covers natural, uninfluenced mods. Spawn weights filter eligibility;
+                                recombination uses the probability model above.
+                            </p>
+                        ) : null}
                         <ModifierLegend />
                         <p className="text-xs text-muted-foreground">
                             NNN markers are annotations. Odds assume these modifiers are eligible on
@@ -358,58 +367,90 @@ export function RecombinatorSimulator() {
                                             <Trash2 />
                                         </Button>
                                     </div>
-                                    <div className="space-y-3">
-                                        {(["prefixes", "suffixes"] as const).map((side) => (
-                                            <div key={side} className="space-y-1.5">
-                                                <label className="block space-y-1.5">
-                                                    <span
-                                                        className={`text-xs font-semibold uppercase tracking-wider ${side === "prefixes" ? "text-mod-prefix" : "text-mod-suffix"}`}
-                                                    >
-                                                        {side}
-                                                    </span>
-                                                    <textarea
-                                                        aria-label={`Item ${index + 1} ${side}`}
-                                                        className={textareaClass}
-                                                        value={entry[side]}
-                                                        maxLength={500}
-                                                        spellCheck={false}
-                                                        placeholder={
-                                                            side === "prefixes"
-                                                                ? "T1 life\nT1 armour"
-                                                                : "T1 fire resistance"
-                                                        }
-                                                        onChange={(event) =>
-                                                            edit({
-                                                                ...draft,
-                                                                items: draft.items.map((item) =>
-                                                                    item.id === entry.id
-                                                                        ? {
-                                                                              ...item,
-                                                                              [side]: event.target
-                                                                                  .value,
-                                                                          }
-                                                                        : item,
+                                    {catalog ? (
+                                        <CatalogItemEditor
+                                            entry={entry}
+                                            index={index}
+                                            catalog={catalog}
+                                            knownAffixes={draft.items.flatMap((item) => [
+                                                ...(item.catalog?.prefixes ?? []),
+                                                ...(item.catalog?.suffixes ?? []),
+                                            ])}
+                                            onChange={(next) =>
+                                                edit({
+                                                    ...draft,
+                                                    items: draft.items.map((item) =>
+                                                        item.id === entry.id ? next : item,
+                                                    ),
+                                                })
+                                            }
+                                            onToggle={(id, flag, enabled) =>
+                                                edit(toggleDraftAffixFlag(draft, id, flag, enabled))
+                                            }
+                                        />
+                                    ) : null}
+                                    <details open={!entry.catalog}>
+                                        <summary className="mb-3 cursor-pointer text-sm text-muted-foreground">
+                                            Custom modifiers (
+                                            {draftAffixes(entry.prefixes).length +
+                                                draftAffixes(entry.suffixes).length}
+                                            )
+                                        </summary>
+                                        <div className="space-y-3">
+                                            {(["prefixes", "suffixes"] as const).map((side) => (
+                                                <div key={side} className="space-y-1.5">
+                                                    <label className="block space-y-1.5">
+                                                        <span
+                                                            className={`text-xs font-semibold uppercase tracking-wider ${side === "prefixes" ? "text-mod-prefix" : "text-mod-suffix"}`}
+                                                        >
+                                                            {side}
+                                                        </span>
+                                                        <textarea
+                                                            aria-label={`Item ${index + 1} ${side}`}
+                                                            className={textareaClass}
+                                                            value={entry[side]}
+                                                            maxLength={500}
+                                                            spellCheck={false}
+                                                            placeholder={
+                                                                side === "prefixes"
+                                                                    ? "T1 life\nT1 armour"
+                                                                    : "T1 fire resistance"
+                                                            }
+                                                            onChange={(event) =>
+                                                                edit({
+                                                                    ...draft,
+                                                                    items: draft.items.map(
+                                                                        (item) =>
+                                                                            item.id === entry.id
+                                                                                ? {
+                                                                                      ...item,
+                                                                                      [side]: event
+                                                                                          .target
+                                                                                          .value,
+                                                                                  }
+                                                                                : item,
+                                                                    ),
+                                                                })
+                                                            }
+                                                        />
+                                                    </label>
+                                                    <ModifierFlags
+                                                        text={entry[side]}
+                                                        onToggle={(id, flag, enabled) =>
+                                                            edit(
+                                                                toggleDraftAffixFlag(
+                                                                    draft,
+                                                                    id,
+                                                                    flag,
+                                                                    enabled,
                                                                 ),
-                                                            })
+                                                            )
                                                         }
                                                     />
-                                                </label>
-                                                <ModifierFlags
-                                                    text={entry[side]}
-                                                    onToggle={(id, flag, enabled) =>
-                                                        edit(
-                                                            toggleDraftAffixFlag(
-                                                                draft,
-                                                                id,
-                                                                flag,
-                                                                enabled,
-                                                            ),
-                                                        )
-                                                    }
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </details>
                                 </article>
                             ))}
                         </div>
@@ -630,7 +671,7 @@ export function RecombinatorSimulator() {
                                             <input
                                                 type="checkbox"
                                                 className="accent-foreground"
-                                                aria-label={affix.id}
+                                                aria-label={affix.label ?? affix.id}
                                                 checked={required.includes(affix.id)}
                                                 onChange={(event) => {
                                                     setRequired((previous) =>
@@ -650,7 +691,8 @@ export function RecombinatorSimulator() {
                                                         : "text-mod-suffix"
                                                 }
                                             >
-                                                <ModifierIcons affix={affix} /> {affix.id}
+                                                <ModifierIcons affix={affix} />{" "}
+                                                {affix.label ?? affix.id}
                                             </span>
                                         </label>
                                     ))}
