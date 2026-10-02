@@ -1,0 +1,42 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "spear",
+      "one_hand_weapon",
+      "onehand",
+      "weapon",
+      "default"
+    ]
+  },
+  "Mods": {
+    "stat_description_list": "Data/StatDescriptions/stat_descriptions.csd",
+    "mod_stat_description_list": "Data/StatDescriptions/advanced_mod_stat_descriptions.csd",
+    "enable_rarity": [
+      "normal",
+      "magic",
+      "rare",
+      "unique"
+    ],
+    "inventory_type": "Weapon"
+  },
+  "AttributeRequirements": {
+    "strength_requirement": 100,
+    "dexterity_requirement": 0,
+    "intelligence_requirement": 0
+  },
+  "Weapon": {
+    "minimum_attack_distance": 0,
+    "maximum_attack_distance": 3,
+    "minimum_damage": 5,
+    "maximum_damage": 10,
+    "weapon_speed": 833,
+    "critical_chance": 500
+  },
+  "Quality": {
+    "max_quality": 20
+  },
+  "Sockets": {
+    "socket_info": "1:5:100"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "amulet",
+      "default"
+    ],
+    "x_size": 1,
+    "y_size": 1
+  },
+  "Mods": {
+    "stat_description_list": "Metadata/StatDescriptions/stat_descriptions.txt",
+    "mod_stat_description_list": "Metadata/StatDescriptions/advanced_mod_stat_descriptions.txt",
+    "enable_rarity": [
+      "normal",
+      "magic",
+      "rare",
+      "unique"
+    ],
+    "inventory_type": "Amulet"
+  }
+}

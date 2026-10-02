@@ -1,0 +1,25 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "belt",
+      "default"
+    ],
+    "x_size": 2,
+    "y_size": 1
+  },
+  "Mods": {
+    "stat_description_list": "Data/StatDescriptions/stat_descriptions.csd",
+    "mod_stat_description_list": "Data/StatDescriptions/advanced_mod_stat_descriptions.csd",
+    "enable_rarity": [
+      "normal",
+      "magic",
+      "rare",
+      "unique"
+    ],
+    "inventory_type": "Belt"
+  },
+  "Sockets": {
+    "socket_info": "0:1:1 1:9999:100 2:9999:90 3:9999:80 4:9999:30 5:9999:20 6:9999:5"
+  }
+}

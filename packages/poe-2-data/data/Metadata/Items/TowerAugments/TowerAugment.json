@@ -1,0 +1,19 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "tower_augment",
+      "default"
+    ],
+    "description_text": "ItemDescriptionPrecursorTablet"
+  },
+  "Mods": {
+    "stat_description_list": "Data/StatDescriptions/tablet_stat_descriptions.csd",
+    "enable_rarity": [
+      "normal",
+      "magic",
+      "rare",
+      "unique"
+    ]
+  }
+}

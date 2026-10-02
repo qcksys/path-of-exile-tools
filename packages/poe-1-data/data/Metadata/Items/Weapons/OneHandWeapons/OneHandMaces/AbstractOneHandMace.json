@@ -1,0 +1,44 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "mace",
+      "one_hand_weapon",
+      "onehand",
+      "weapon",
+      "default"
+    ]
+  },
+  "Mods": {
+    "stat_description_list": "Metadata/StatDescriptions/stat_descriptions.txt",
+    "mod_stat_description_list": "Metadata/StatDescriptions/advanced_mod_stat_descriptions.txt",
+    "enable_rarity": [
+      "normal",
+      "magic",
+      "rare",
+      "unique"
+    ],
+    "inventory_type": "Weapon"
+  },
+  "AttributeRequirements": {
+    "strength_requirement": 100,
+    "dexterity_requirement": 0,
+    "intelligence_requirement": 0
+  },
+  "Weapon": {
+    "minimum_attack_distance": 0,
+    "maximum_attack_distance": 3,
+    "minimum_damage": 5,
+    "maximum_damage": 10,
+    "weapon_speed": 833,
+    "critical_chance": 500,
+    "accuracy_rating": 20,
+    "weapon_class": "OneHandMace"
+  },
+  "Quality": {
+    "max_quality": 20
+  },
+  "Sockets": {
+    "socket_info": "1:1:50 2:1:120 3:2:100 4:9999:30 5:9999:20 6:9999:5"
+  }
+}

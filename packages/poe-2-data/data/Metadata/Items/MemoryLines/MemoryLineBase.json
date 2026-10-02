@@ -1,0 +1,21 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "default"
+    ],
+    "x_size": 1,
+    "y_size": 1,
+    "description_text": "MemoryLinesDescription"
+  },
+  "Mods": {
+    "stat_description_list": "Data/StatDescriptions/atlas_stat_descriptions.csd",
+    "enable_rarity": [
+      "magic"
+    ]
+  },
+  "Usable": {
+    "use_type": "ApplyToAtlas",
+    "action": "add_memory_line"
+  }
+}

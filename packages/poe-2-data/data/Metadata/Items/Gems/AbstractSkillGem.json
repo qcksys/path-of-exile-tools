@@ -1,0 +1,14 @@
+{
+  "Base": {
+    "base_level": 1,
+    "tag": [
+      "gem",
+      "default"
+    ],
+    "x_size": 1,
+    "y_size": 1
+  },
+  "Quality": {
+    "max_quality": 20
+  }
+}

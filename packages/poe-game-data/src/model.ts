@@ -95,13 +95,104 @@ export const itemClassSchema = z.strictObject({
 });
 const nonemptyRecord = <T extends z.ZodType>(schema: T) =>
     z.record(z.string(), schema).refine((value) => Object.keys(value).length > 0, "Empty dataset");
+export const baseItemsSchema = nonemptyRecord(baseSchema);
+export const modsSchema = nonemptyRecord(modSchema);
+export const statsSchema = nonemptyRecord(statSchema);
+export const tagsSchema = z.array(z.string()).min(1);
+export const itemClassesSchema = nonemptyRecord(itemClassSchema);
+export const tagDetailsSchema = z.record(
+    z.string(),
+    z.strictObject({ name: z.string(), used_in_crafting: z.boolean().optional() }),
+);
+export const itemMetadataSchema = z.record(
+    z.string(),
+    z.record(
+        z.string(),
+        z.union([z.string(), z.number().finite(), z.boolean(), z.array(z.string())]),
+    ),
+);
+export const dataFileSchemas = {
+    "base_items.json": baseItemsSchema,
+    "mods.json": modsSchema,
+    "stats.json": statsSchema,
+    "tags.json": tagsSchema,
+    "item_classes.json": itemClassesSchema,
+    "tag_details.json": tagDetailsSchema,
+};
+export function schemaForDataFile(path: string): z.ZodType {
+    if (Object.hasOwn(dataFileSchemas, path))
+        return dataFileSchemas[path as keyof typeof dataFileSchemas];
+    if (/^base_items\/[^/]+\.json$/.test(path)) return baseItemsSchema;
+    if (/^Metadata\/.+\.json$/.test(path) && !path.split("/").includes(".."))
+        return itemMetadataSchema;
+    throw new Error(`No schema for data file: ${path}`);
+}
+export const clientBuildSchema = z.string().regex(/^(0|[1-9]\d*)(?:\.(0|[1-9]\d*)){2,5}$/);
+export function packageVersionForBuild(build: string): string {
+    clientBuildSchema.parse(build);
+    const parts = build.split(".");
+    return (
+        parts.slice(0, 3).join(".") + (parts.length > 3 ? `-build.${parts.slice(3).join(".")}` : "")
+    );
+}
+export const dataPackageVersionSchema = z
+    .string()
+    .regex(
+        /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-build\.(0|[1-9]\d*)(?:\.(0|[1-9]\d*))*)?$/,
+    );
+const sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
+export const dataPackageManifestSchema = z
+    .strictObject({
+        format: z.literal(1),
+        game: z.enum(["poe1", "poe2"]),
+        version: dataPackageVersionSchema,
+        client_build: clientBuildSchema,
+        source_manifest_sha256: sha256Schema,
+        dat_schema_sha256: sha256Schema,
+        extractor_sha256: sha256Schema,
+        zod_schema_sha256: sha256Schema,
+        weight_provenance: z.literal(
+            "client-extracted; PoE 2 values are not Craft of Exile empirical weights",
+        ),
+        files: z
+            .record(
+                z.string(),
+                z.strictObject({ sha256: sha256Schema, bytes: z.number().int().positive() }),
+            )
+            .refine((files) => Object.keys(files).length > 0),
+    })
+    .superRefine((manifest, ctx) => {
+        if (
+            clientBuildSchema.safeParse(manifest.client_build).success &&
+            manifest.version !== packageVersionForBuild(manifest.client_build)
+        )
+            ctx.addIssue({
+                code: "custom",
+                path: ["version"],
+                message: "Package version must match the client build",
+            });
+        if (!manifest.client_build.startsWith(manifest.game === "poe1" ? "3." : "4."))
+            ctx.addIssue({
+                code: "custom",
+                path: ["client_build"],
+                message: "Client build does not match the game",
+            });
+    });
 export const datasetSchema = z.strictObject({
-    base_items: nonemptyRecord(baseSchema),
-    mods: nonemptyRecord(modSchema),
-    stats: nonemptyRecord(statSchema),
-    tags: z.array(z.string()).min(1),
-    item_classes: nonemptyRecord(itemClassSchema),
+    base_items: baseItemsSchema,
+    mods: modsSchema,
+    stats: statsSchema,
+    tags: tagsSchema,
+    item_classes: itemClassesSchema,
 });
+export type BaseItems = z.infer<typeof baseItemsSchema>;
+export type Mods = z.infer<typeof modsSchema>;
+export type Stats = z.infer<typeof statsSchema>;
+export type Tags = z.infer<typeof tagsSchema>;
+export type ItemClasses = z.infer<typeof itemClassesSchema>;
+export type TagDetails = z.infer<typeof tagDetailsSchema>;
+export type ItemMetadata = z.infer<typeof itemMetadataSchema>;
+export type DataPackageManifest = z.infer<typeof dataPackageManifestSchema>;
 export type Dataset = z.infer<typeof datasetSchema>;
 export type Mod = z.infer<typeof modSchema>;
 export type Base = z.infer<typeof baseSchema>;

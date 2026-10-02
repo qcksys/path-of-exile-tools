@@ -1,0 +1,83 @@
+{
+    "name": "@qcksys/poe-2-data",
+    "version": "4.5.5-build.4",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "./schemas": {
+            "types": "./dist/schemas.d.ts",
+            "default": "./dist/schemas.js"
+        },
+        "./manifest.json": {
+            "types": "./types/manifest.d.ts",
+            "default": "./manifest.json"
+        },
+        "./package.json": "./package.json",
+        "./data/base_items.json": {
+            "types": "./types/base_items.d.ts",
+            "default": "./data/base_items.json"
+        },
+        "./data/mods.json": {
+            "types": "./types/mods.d.ts",
+            "default": "./data/mods.json"
+        },
+        "./data/stats.json": {
+            "types": "./types/stats.d.ts",
+            "default": "./data/stats.json"
+        },
+        "./data/tags.json": {
+            "types": "./types/tags.d.ts",
+            "default": "./data/tags.json"
+        },
+        "./data/item_classes.json": {
+            "types": "./types/item_classes.d.ts",
+            "default": "./data/item_classes.json"
+        },
+        "./data/tag_details.json": {
+            "types": "./types/tag_details.d.ts",
+            "default": "./data/tag_details.json"
+        },
+        "./data/base_items/*.json": {
+            "types": "./types/base_items.d.ts",
+            "default": "./data/base_items/*.json"
+        },
+        "./data/Metadata/*.json": {
+            "types": "./types/item_metadata.d.ts",
+            "default": "./data/Metadata/*.json"
+        }
+    },
+    "files": [
+        "data",
+        "dist",
+        "src",
+        "types",
+        "manifest.json",
+        "README.md",
+        "THIRD_PARTY_NOTICES.md"
+    ],
+    "type": "module",
+    "description": "Static Path of Exile 2 client data with TypeScript types and Zod schemas.",
+    "license": "SEE LICENSE IN THIRD_PARTY_NOTICES.md",
+    "scripts": {
+        "build": "tsc",
+        "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+        "test": "vp exec node tests/consumer.ts",
+        "prepack": "vp run build"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/qcksys/path-of-exile-tools.git",
+        "directory": "packages/poe-2-data"
+    },
+    "dependencies": {
+        "zod": "catalog:"
+    },
+    "devDependencies": {
+        "typescript": "catalog:"
+    }
+}
