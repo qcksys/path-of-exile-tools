@@ -42,6 +42,7 @@ import { timestampCols } from "~/db/helpers/schema.ts";
 export const tStashUniqueHourly = mysqlTable(
     `${DB_TABLE_PREFIX}stash_unique_hourly`,
     {
+        realm: varchar({ length: 10 }).notNull().default("pc"),
         league: varchar({ length: 100 }).notNull(),
         hour: bigint({ mode: "number" }).notNull(),
         itemKey: varchar({ length: 255 }).notNull(),
@@ -58,6 +59,14 @@ export const tStashUniqueHourly = mysqlTable(
 
         listingCount: int().notNull(),
         uniqueSellers: int().notNull(),
+        removedCount: int().notNull().default(0),
+        likelySales: int().notNull().default(0),
+        relistedCount: int().notNull().default(0),
+        pendingCount: int().notNull().default(0),
+        salesPrices:
+            json().$type<
+                Record<string, { count: number; min: number; median: number; max: number }>
+            >(),
         prices: json().$type<
             Record<string, { count: number; min: number; median: number; max: number }>
         >(),
@@ -70,6 +79,7 @@ export const tStashUniqueHourly = mysqlTable(
     (table) => [
         primaryKey({
             columns: [
+                table.realm,
                 table.league,
                 table.hour,
                 table.itemKey,
