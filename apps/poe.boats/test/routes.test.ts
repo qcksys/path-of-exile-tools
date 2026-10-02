@@ -16,6 +16,8 @@ describe("game routes", () => {
         ["/2/arbitrage", "routes/arbitrage/poe2.tsx"],
         ["/3/arbitrage", "routes/404.tsx"],
         ["/1/idol-planner", "routes/idol-planner/home.tsx"],
+        ["/1/recombinator", "routes/recombinator.tsx"],
+        ["/2/recombinator", "routes/404.tsx"],
         ["/1/idol-planner/share/example", "routes/idol-planner/share.$id.tsx"],
         ["/1/idol-planner/api/share", "routes/idol-planner/api.share.ts"],
         ["/1/idol-planner/api/share/example", "routes/idol-planner/api.share.$id.ts"],
