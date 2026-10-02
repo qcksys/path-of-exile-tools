@@ -31,6 +31,6 @@ Versions are derived from client builds: three components stay unchanged; remain
 
 PoE 2 client spawn weights represent client eligibility. They are not Craft of Exile's empirical relative weights.
 
-Regenerate through [the extraction pipeline](../poe-game-data/README.md#committed-data-packages). Do not edit generated data, schemas, declarations, or manifests manually. Zod is the only runtime dependency. Build with `vp run @qcksys/poe-2-data#build`; create a local tarball with `vp pm --filter @qcksys/poe-2-data pack`. No registry publication is performed by extraction.
+Regenerate through [the extraction pipeline](../poe-game-data/README.md#committed-data-packages). Do not edit generated data, schemas, declarations, or manifests manually. Zod is the only runtime dependency. Build with `vp run @qcksys/poe-2-data#build`; create a local tarball with `vp pm pack --filter @qcksys/poe-2-data`. No registry publication is performed by extraction.
 
 Game content belongs to Grinding Gear Games. See [third-party notices](THIRD_PARTY_NOTICES.md).

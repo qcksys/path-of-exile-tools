@@ -47,6 +47,6 @@ CI validates every committed JSON file and its hash, checks relationships, compi
 
 ## Local tarballs
 
-Create a distributable tarball with `vp pm --filter @qcksys/poe-1-data pack` (or the PoE 2 name). Packing builds JavaScript and declarations and includes static JSON, TypeScript source, and notices. The repository contains data and schema source; `dist/` and tarballs are ignored. The package manager resolves workspace catalog dependencies when packing. No npm publication is part of this pipeline.
+Create a distributable tarball with `vp pm pack --filter @qcksys/poe-1-data` (or the PoE 2 name). Packing builds JavaScript and declarations and includes static JSON, TypeScript source, and notices. The repository contains data and schema source; `dist/` and tarballs are ignored. The package manager resolves workspace catalog dependencies when packing. No npm publication is part of this pipeline.
 
 Game content belongs to Grinding Gear Games. Third-party notices accompany both packages. PoE 2 client spawn weights are client eligibility data, not Craft of Exile's empirical relative weights.
