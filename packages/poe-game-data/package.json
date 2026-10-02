@@ -1,0 +1,10 @@
+{
+    "name": "@poe-tools/game-data",
+    "version": "0.0.0",
+    "private": true,
+    "description": "Local, versioned PoE 1 and PoE 2 client-data extraction pipeline.",
+    "scripts": {
+        "extract": "uv run --locked python pipeline.py",
+        "test": "uv run --locked python -m unittest discover -s tests"
+    }
+}

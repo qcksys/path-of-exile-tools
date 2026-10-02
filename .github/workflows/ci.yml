@@ -41,7 +41,14 @@ jobs:
       - name: Type check
         run: vp run -r typecheck
       - name: Unit tests
-        run: vp run -r test --exclude '**/env.test.ts'
+        run: vp run --filter '*' --filter '!@poe-tools/game-data' test --exclude '**/env.test.ts'
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          python-version: "3.13"
+          working-directory: packages/poe-game-data
+          enable-cache: false
+      - name: Game data pipeline tests
+        run: vp run @poe-tools/game-data#test
       - name: Ingest end-to-end tests (MySQL Testcontainers)
         run: vp run poe-boats#test:e2e
 
