@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { flushRollups, runPipeline } from "#src/pipeline.ts";
 import { rebuildBasemap } from "#src/ps/basemap-rebuild.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
 import { rollupPs } from "#src/ps/rollup.ts";
@@ -20,13 +21,15 @@ program
     .description("Walk N pages of psapi, upsert listings, learn basemap, extract mod signatures.")
     .option("-p, --pages <n>", "number of pages to fetch", "3")
     .option("-c, --cursor <id>", "explicit cursor (overrides saved); seed once, then omit")
+    .option("-l, --league <name>", "season to capture (use a separate database per season)", "all")
     .action(async (opts) => {
         const db = await openDb();
         try {
             const client = createPoeClient();
             const result = await ingestPs(db.conn, client, {
-                pages: Math.max(1, Number(opts.pages)),
+                pages: Number(opts.pages),
                 cursor: opts.cursor,
+                league: parseLeagueFilter(opts.league),
             });
             const top = [...result.leagues.entries()]
                 .sort((a, b) => b[1].stashes - a[1].stashes)
@@ -100,7 +103,7 @@ program
     )
     .option(
         "--max-rows <n>",
-        "hard row cap (default $PS_LOCAL_MAX_ROWS or 2_000_000)",
+        "target row cap; active listings and sale evidence are kept",
         process.env.PS_LOCAL_MAX_ROWS,
     )
     .option(
@@ -122,6 +125,62 @@ program
                     `before=${result.beforeRows} ageDrop=${result.droppedByAge} ` +
                     `capDrop=${result.droppedByCap} after=${result.afterRows} ` +
                     `hourlyDrop=${result.droppedHourlyRows}`,
+            );
+        } finally {
+            await db.close();
+        }
+    });
+
+program
+    .command("process")
+    .description("Ingest, evaluate sales, and retry all pending completed hours.")
+    .option("-p, --pages <n>", "maximum stash pages per cycle", "50")
+    .option("-l, --league <name>", "season to capture", "all")
+    .option("-c, --cursor <id>", "initial stash cursor; applied only on the first cycle")
+    .option("--no-currency", "skip the currency exchange source")
+    .option("--watch", "continue processing every minute; Ctrl+C to stop")
+    .action(async (opts) => {
+        const db = await openDb();
+        const client = createPoeClient();
+        let cursor = opts.cursor;
+        try {
+            do {
+                try {
+                    const result = await runPipeline(db.conn, client, {
+                        pages: Number(opts.pages),
+                        league: parseLeagueFilter(opts.league),
+                        cursor,
+                        currency: opts.currency,
+                    });
+                    console.log(JSON.stringify(result));
+                } catch (error) {
+                    if (!opts.watch) throw error;
+                    console.error(
+                        "Processing failed; saved cursors and pending deliveries will be retried.",
+                        error,
+                    );
+                }
+                if (await getCursor(db.conn, "psapi")) cursor = undefined;
+                if (opts.watch) await new Promise((resolve) => setTimeout(resolve, 60_000));
+            } while (opts.watch);
+        } finally {
+            await db.close();
+        }
+    });
+
+program
+    .command("flush")
+    .description("Replay pending completed hours, including late mappings and sale corrections.")
+    .option("-l, --league <name>", "season to deliver", "all")
+    .option("--dry-run", "do not POST or mark delivered")
+    .action(async (opts) => {
+        const db = await openDb();
+        try {
+            console.log(
+                await flushRollups(db.conn, {
+                    league: parseLeagueFilter(opts.league),
+                    dryRun: opts.dryRun,
+                }),
             );
         } finally {
             await db.close();

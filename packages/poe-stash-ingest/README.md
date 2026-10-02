@@ -18,6 +18,44 @@ Environment values are validated by Varlock and resolved from the 1Password dev 
 
 The DuckDB file (default `./data.duckdb`) is created on first run. The schema is applied on every connection. Existing databases seed `ps_listing_hour` from their latest stored listing observations when that table is first created; observations already overwritten by earlier ingests cannot be recovered.
 
+## Run the season pipeline
+
+Use a separate DuckDB file per realm and capture scope. The saved stream cursor is tied to that scope; changing the season on the same file is rejected. A new season starts a new database. Existing hourly data remains available in the app.
+
+From the repository root, in PowerShell:
+
+```powershell
+$env:APP_ENV = "dev"
+$env:PS_LOCAL_DB = "./allflame.duckdb"
+vp run '@poe-tools/stash-ingest#ps' process --league Allflame --pages 50 --watch
+```
+
+The dev endpoint is `https://dev.poe.boats/api/stash-ingest`; `local` retains the configured local endpoint. Match the ingestor token to the app's token. The receiving app's database migrations must be applied before starting the new ingestor.
+
+`process` runs stash ingestion, sale evaluation, currency ingestion and delivery of pending completed hours. `--no-currency` disables the exchange source. Omit `--watch` for one cycle. Failed stages are reported, saved cursors resume committed work, and delivery retries use idempotent upserts. Run only one writer per DuckDB file. Stop the watch process with Ctrl+C.
+
+For a fresh database, seed a recent public-stash cursor with `--cursor <id>`; without one the API begins at its oldest available changes. Stash timestamps are **observation times**, not the original listing or trade times. Historical seasons can only show observations captured while they were available; the stream cannot reconstruct past sales. Initial catch-up removals are excluded from likely-sale inference.
+
+`poe-stash-ps flush [--league <name>] [--dry-run]` replays up to 168 pending completed season-hours per call, oldest first. It includes failed deliveries, newly resolved unidentified items and later sale corrections. Repeat to drain a larger backlog. `rollup --hour <unix-seconds>` explicitly rebuilds a particular hour. Hours use UTC epoch seconds aligned to 3600.
+
+Browse `/1/market` in the app. Filters separate realm, season and variant. The page includes per-currency asking price history, sample sizes, pending removals and likely sales. Missing hours remain gaps. Counts represent observations during an hour, not a census of the market. Archived season periods end at the season's last available observation.
+
+## Likely-sale policy
+
+`src/ps/sales.ts` owns the policy. A removal is eligible only after the stream has already reached its current cursor and has been polled within five minutes. It then needs one hour of continuous caught-up coverage. A backlog or a longer polling gap restarts the grace period.
+
+The last asking price must be within 25% of the median of per-seller medians from at least three other sellers in the same season, variant and currency, observed within the last 24 hours. Market evidence is saved at removal time. Currency aliases and fractional bulk prices are normalized; currencies are never implicitly converted.
+
+Same-seller relists match the item ID across stashes, or an equivalent variant with a new ID. They suppress pending sales and retract earlier estimates regardless of the new asking price. Matching a replacement copy can suppress a real sale; this is intentionally conservative. Whole-stash withdrawals, insufficient market samples, unpriced items and out-of-range prices do not count. Partial stack reductions are not treated as item sales. Estimated sale prices are the **last asking prices**, not confirmed transaction prices.
+
+Removal events are retained locally in `ps_sale` for correction. Pruning protects active listings, pending or inferred sale evidence, and affected hourly observations. The row cap is therefore a target and can be exceeded. Monitor local disk usage and preserve this database to retain relisting evidence.
+
+## Extend item processing
+
+Ordinary uniques, currency and divination cards are captured automatically. Add another item family to `ITEM_CATEGORIES` in `src/shared/capture.ts`. Identity is defined in `src/shared/item-key.ts`.
+
+For a separately priced variant, add a `ModExtractor` under `src/shared/mod-extractors/` and register it in `EXTRACTORS`. Use `explicitModLines(item)` to support current modifier objects and legacy string modifiers. Implement `matches` and `extract`, returning a stable `kind` and deterministic JSON data; optionally provide `value` for a readable market key. Otherwise the signature is SHA-256 hashed. Sort unordered modifier collections before returning them. The ingestor persists the key, so adding an extractor requires no rollup SQL, receiver schema or UI changes. Add fixtures that prove equivalent variants group together and different variants remain separate. Existing historical observations keep the key under which they were captured.
+
 ## Commands
 
 ### `poe-stash-ps`
@@ -49,7 +87,7 @@ Identified uniques are run through a registry of structured mod-extractors. The 
 | `signature_value` | `Glancing Blows`                                                 | SHA-256 of the sorted mod signature   |
 | `signature_data`  | `{"kind":"forbidden-jewel","allocatedNotable":"Glancing Blows"}` | `{"kind":"watchers-eye","mods":[...]}` |
 
-`(signature_kind, signature_value)` are PK components alongside `(league, hour, item_key, corrupted, foil_variation)`, so each tradable variant gets its own permanent hourly row. `signature_data` is the lossless payload — query into it with MySQL's JSON path operators when you need a specific field.
+`(signature_kind, signature_value)` are PK components alongside `(realm, league, hour, item_key, identified, corrupted, foil_variation)`, so each tradable variant gets its own permanent hourly row. `signature_data` is the lossless payload — query into it with MySQL's JSON path operators when you need a specific field.
 
 Rows with no extracted signature use `signature_kind = ''` and `signature_value = ''` (empty strings, not NULL, so the PK works).
 
@@ -64,7 +102,7 @@ Built-in extractors:
 | `forbidden-jewel` (Forbidden Flame / Flesh) | `forbidden-jewel:Glancing Blows`                  |
 | `watchers-eye` (Watcher's Eye)              | `watchers-eye:<SHA-256>`                         |
 | `impossible-escape`                         | `impossible-escape:Pain Attunement`               |
-| `forbidden-shako`                           | `forbidden-shako:Spell Echo`                      |
+| `forbidden-shako`                           | `forbidden-shako:Spell Echo@35`                      |
 
 Add new extractors under `src/shared/mod-extractors/` and register them in `index.ts`.
 
@@ -91,14 +129,14 @@ cx is already hourly; rollup is a passthrough that POSTs cached `cx_market_hour`
 
 Each source response and its cursor are committed in one transaction. Public stash rollups use hourly observations, so later price changes and unlisting events do not rewrite earlier hours. These are counts of listings observed during the hour, rather than a census of all active listings.
 
-Pruning applies the row cap to `ps_listing`. It also deletes hourly observations older than `keepDays` once they have been included in a successful push. Pending and unresolved observations remain available for replay and can exceed the listing row cap.
+Pruning applies the row target to eligible removed listings in `ps_listing`. It also deletes hourly observations older than `keepDays` once delivered and no longer needed for sale corrections. Active, pending and unresolved observations remain available for replay and can exceed the row target.
 
 ## Remote schema (poe.boats — MySQL, prefixed `qsPoeBoats__stash_`)
 
 | table                    | retention   | one row per                                |
 | ------------------------ | ----------- | ------------------------------------------ |
-| `stash_unique_hourly`    | **forever** | `(league, hour, bucket_key)`               |
-| `stash_currency_hourly`  | **forever** | `(league, market_id, hour)`                |
+| `stash_unique_hourly`    | **forever** | `(realm, league, hour, item_key, identified, corrupted, foil_variation, signature_kind, signature_value)`               |
+| `stash_currency_hourly`  | **forever** | `(realm, league, market_id, hour)`                |
 | `stash_basemap_snapshot` | **forever** | `icon_asset` (public unid → name resolver) |
 
 ## Pricing unidentified vs identified
@@ -126,7 +164,7 @@ The same unique appears as `item_key='unid:<iconAsset>'` (the unid bucket) and a
 
 ## Scheduling
 
-No daemon. Run from cron / Task Scheduler / GH Actions:
+Use `process --watch` for a long-running worker, or run one `process` cycle from Task Scheduler/cron every minute. The individual stages remain available for manual recovery:
 
 ```bash
 # Every minute — keep psapi caught up
@@ -158,7 +196,7 @@ The Vitest end-to-end suite starts an isolated MySQL 8.4 container with Testcont
 
 The HTTP route at `/api/stash-ingest` requires a bearer token. Store it in the ingestor's environment-specific 1Password record as `POE_BOATS_INGEST_TOKEN` and the matching app record as `STASH_INGEST_TOKEN`. The values must match. Local app deployment synchronizes the worker secret.
 
-The push target comes from `POE_BOATS_INGEST_URL` in the ingestor's own 1Password record. The dev record preserves the local development endpoint; the prod record targets `https://poe.boats/api/stash-ingest`.
+The push target comes from `POE_BOATS_INGEST_URL`. Local development uses the ingestor's 1Password record, `APP_ENV=dev` selects `https://dev.poe.boats/api/stash-ingest`, and the prod record targets `https://poe.boats/api/stash-ingest`.
 
 Generate and review database migration SQL in `apps/poe.boats` before applying it to the selected environment:
 

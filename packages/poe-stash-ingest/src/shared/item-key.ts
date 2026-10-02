@@ -1,5 +1,5 @@
 import type { Item } from "@poe-tools/api-client";
-import type { ModSignature } from "#src/shared/mod-extractors/types.ts";
+import { type ModSignature, signatureValue } from "#src/shared/mod-extractors/index.ts";
 
 export interface SignatureBreakout {
     /** Stable category, same string as `ModSignature["kind"]`. */
@@ -18,22 +18,7 @@ export interface SignatureBreakout {
  * indexing. The full structured payload stays in `mod_signature` JSON.
  */
 export function signatureBreakout(sig: ModSignature): SignatureBreakout {
-    switch (sig.kind) {
-        case "forbidden-jewel":
-            return { kind: sig.kind, value: sig.allocatedNotable };
-        case "impossible-escape":
-            return { kind: sig.kind, value: sig.keystone };
-        case "forbidden-shako":
-            return { kind: sig.kind, value: `${sig.skill}@${sig.level}` };
-        case "watchers-eye": {
-            // Sort so {Anger:X, Hatred:Y} and {Hatred:Y, Anger:X} fold together.
-            const value = [...sig.mods]
-                .map((m) => `${m.aura}=${m.stat}`)
-                .sort()
-                .join(";");
-            return { kind: sig.kind, value };
-        }
-    }
+    return { kind: sig.kind, value: signatureValue(sig) };
 }
 
 /**

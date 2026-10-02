@@ -4,6 +4,7 @@
  */
 
 export interface UniqueHourlyRow {
+    realm?: string;
     league: string;
     hour: number; // unix-hour
     /** Identity key — `unid:<icon>` | unique name | baseType. */
@@ -27,6 +28,11 @@ export interface UniqueHourlyRow {
 
     listingCount: number;
     uniqueSellers: number;
+    removedCount?: number;
+    likelySales?: number;
+    relistedCount?: number;
+    pendingCount?: number;
+    salesPrices?: Record<string, { count: number; min: number; median: number; max: number }>;
     /** Per-currency price aggregates: { chaos: { count, min, median, max }, divine: {...} } */
     prices: Record<string, { count: number; min: number; median: number; max: number }>;
     firstSeenAt: string; // ISO
@@ -39,6 +45,7 @@ export interface UniqueHourlyPayload {
 }
 
 export interface CurrencyHourlyRow {
+    realm?: string;
     league: string;
     hour: number;
     marketId: string;

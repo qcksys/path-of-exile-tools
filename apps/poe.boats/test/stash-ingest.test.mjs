@@ -201,7 +201,9 @@ describe("currency ingestion and delivery", () => {
         await expect(rollupCx(db.conn, { hour: hour - 3600 })).resolves.toMatchObject({ rows: 1 });
     });
     it("splits remote pushes into batches of at most 500 rows", async () => {
-        network.mockImplementation(async () => Response.json({ written: 500 }));
+        network.mockImplementation(async (_url, init) =>
+            Response.json({ written: JSON.parse(init.body).rows.length }),
+        );
         const row = { iconAsset: "icon", name: "name", baseType: "base", seenCount: 1 };
         await push({ stream: "basemap", rows: Array.from({ length: 1001 }, () => row) });
         expect(

@@ -10,14 +10,17 @@ import { RouterContextProvider } from "react-router";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from "vite-plus/test";
 import { dbContext, envContext } from "~/context";
 import type { TDatabase } from "~/db/client";
+import { getMarketData } from "~/db/queries/market.queries";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { action } from "~/routes/api.stash-ingest";
+import { marketFiltersSchema } from "~/schemas/market";
 import { createClient } from "../../../../packages/poe-api-client/src/client.ts";
 import { ingestCx } from "../../../../packages/poe-stash-ingest/src/cx/ingest.ts";
 import { rollupCx } from "../../../../packages/poe-stash-ingest/src/cx/rollup.ts";
 import { ingestPs } from "../../../../packages/poe-stash-ingest/src/ps/ingest.ts";
 import { rollupPs } from "../../../../packages/poe-stash-ingest/src/ps/rollup.ts";
+import { evaluateSales } from "../../../../packages/poe-stash-ingest/src/ps/sales.ts";
 import { getCursor } from "../../../../packages/poe-stash-ingest/src/shared/cursor.ts";
 import {
     type DbHandle,
@@ -146,6 +149,59 @@ afterAll(async () => {
         );
     await connection?.end();
     await container?.stop();
+});
+
+it("delivers inferred sales through HTTP and exposes season-isolated price history", async () => {
+    const peers = [2, 3, 4].map((n) => ({
+        ...stash,
+        id: `stash-${n}`,
+        accountName: `seller-${n}`,
+        items: [{ ...item, id: `item-${n}` }],
+    }));
+    upstreamResponses.push({ body: { next_change_id: "market-1", stashes: [...peers, stash] } });
+    const client = createClient({ baseUrl, userAgent: "market-e2e", token: TOKEN });
+    await ingestPs(local.conn, client, { pages: 1 });
+    await evaluateSales(local.conn, true);
+    upstreamResponses.push({
+        body: { next_change_id: "market-2", stashes: [{ ...stash, items: [] }] },
+    });
+    await ingestPs(local.conn, client, { pages: 1 });
+    const start = Date.now();
+    for (let seconds = 0; seconds <= 3600; seconds += 240)
+        await evaluateSales(local.conn, true, new Date(start + seconds * 1000));
+    const hour = Math.floor(start / 3600000) * 3600;
+    await rollupPs(local.conn, { hour });
+    const database = mysql as unknown as TDatabase;
+    const filters = marketFiltersSchema.parse({ league: "Standard", item: "Headhunter" });
+    const data = await getMarketData(database, filters);
+    expect(data.rows).toHaveLength(1);
+    expect(data.rows[0]).toMatchObject({
+        realm: "pc",
+        periodSales: 1,
+        periodRemovals: 1,
+        periodPending: 0,
+    });
+    expect(data.history[0]).toMatchObject({
+        likelySales: 1,
+        prices: { divine: { median: 10 } },
+        salesPrices: { divine: { median: 10 } },
+    });
+    expect((await getMarketData(database, { ...filters, league: "Other Season" })).rows).toEqual(
+        [],
+    );
+    expect((await getMarketData(database, { ...filters, realm: "poe2" })).rows).toEqual([]);
+    upstreamResponses.push({
+        body: {
+            next_change_id: "market-3",
+            stashes: [{ ...stash, id: "relisted-stash", items: [item] }],
+        },
+    });
+    await ingestPs(local.conn, client, { pages: 1 });
+    await rollupPs(local.conn, { hour });
+    expect((await getMarketData(database, filters)).history[0]).toMatchObject({
+        likelySales: 0,
+        relistedCount: 1,
+    });
 });
 
 it("updates a seeded currency market with a long ID through HTTP to MySQL", async () => {
