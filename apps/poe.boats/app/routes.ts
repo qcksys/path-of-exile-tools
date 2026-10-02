@@ -12,6 +12,7 @@ export default [
     ]),
     ...prefix("1", [
         index("routes/poe1-home.tsx"),
+        route("arbitrage", "routes/arbitrage/poe1.tsx"),
         ...prefix("idol-planner", [
             index("routes/idol-planner/home.tsx"),
             route("share/:id", "routes/idol-planner/share.$id.tsx"),
@@ -24,7 +25,10 @@ export default [
             route("api/sets/:id/placements", "routes/idol-planner/api.sets.$id.placements.ts"),
         ]),
     ]),
-    ...prefix("2", [index("routes/poe2-home.tsx")]),
+    ...prefix("2", [
+        index("routes/poe2-home.tsx"),
+        route("arbitrage", "routes/arbitrage/poe2.tsx"),
+    ]),
     route("idol-planner/*", "routes/legacy-idol-planner.ts"),
     route("*", "routes/404.tsx"),
 ] satisfies RouteConfig;
