@@ -4,7 +4,9 @@ import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { RecombinatorSimulator } from "~/components/recombinator/simulator";
 import { calculateRecombinatorPlan } from "~/lib/recombinator";
+import { catalogModLabel } from "~/lib/recombinator-catalog";
 import type { RecombinatorPlan } from "~/schemas/recombinator";
+import { catalogFixture, lifeMod } from "./fixtures/recombinator-catalog";
 
 class CalculatorWorker {
     onmessage: ((event: { data: unknown }) => void) | null = null;
@@ -38,6 +40,42 @@ afterEach(() => {
 });
 
 describe("recombinator editor", () => {
+    it("selects catalog bases and mods, calculates with stable IDs, and resets selections on level changes", async () => {
+        render(createElement(RecombinatorSimulator, { catalog: catalogFixture }));
+        fireEvent.change(screen.getByLabelText("Item 1 prefixes"), { target: { value: "" } });
+        fireEvent.change(screen.getByLabelText("Item 1 suffixes"), { target: { value: "" } });
+        const baseInput = screen.getByRole("combobox", { name: "Item 1 base" });
+        act(() => baseInput.focus());
+        fireEvent.change(baseInput, { target: { value: "Vaal" } });
+        fireEvent.keyDown(baseInput, { key: "ArrowDown" });
+        fireEvent.click(await screen.findByRole("option", { name: "Vaal Regalia · Body Armour" }));
+        expect(screen.getByLabelText("Item 1 level")).toHaveProperty("value", "86");
+        const prefixInput = screen.getByRole("combobox", { name: "Item 1 add prefix (0/3)" });
+        act(() => prefixInput.focus());
+        fireEvent.change(prefixInput, { target: { value: "Healthy" } });
+        fireEvent.keyDown(prefixInput, { key: "ArrowDown" });
+        fireEvent.click(await screen.findByRole("option", { name: catalogModLabel(lifeMod) }));
+        expect(screen.getByRole("combobox", { name: "Item 1 add prefix (1/3)" })).toBeDefined();
+        expect(screen.getByRole("button", { name: /Edit item 1:.*Vaal Regalia/ })).toBeDefined();
+        await act(async () => {
+            fireEvent.click(screen.getByRole("button", { name: "Calculate plan" }));
+        });
+        expect(screen.getByLabelText(catalogModLabel(lifeMod))).toBeDefined();
+        expect(screen.getByTestId("target-chance")).toBeDefined();
+        fireEvent.change(screen.getByLabelText("Item 1 level"), { target: { value: "79" } });
+        expect(screen.getByRole("combobox", { name: "Item 1 add prefix (0/3)" })).toBeDefined();
+        expect(screen.queryByTestId("target-chance")).toBeNull();
+        const lowLevelInput = screen.getByRole("combobox", { name: "Item 1 add prefix (0/3)" });
+        act(() => lowLevelInput.focus());
+        fireEvent.change(lowLevelInput, { target: { value: "Fecund" } });
+        fireEvent.keyDown(lowLevelInput, { key: "ArrowDown" });
+        expect(screen.queryByRole("option", { name: /Fecund/ })).toBeNull();
+        fireEvent.keyDown(lowLevelInput, { key: "Escape" });
+        fireEvent.click(screen.getByRole("button", { name: "Load example" }));
+        expect(screen.getByRole("combobox", { name: "Item 1 base" })).toHaveProperty("value", "");
+        expect(screen.queryByLabelText("Item 1 level")).toBeNull();
+    });
+
     it("selects a tree step to inspect its outcome distribution", () => {
         render(createElement(RecombinatorSimulator));
         fireEvent.click(screen.getByRole("button", { name: /^Inspect step 1:/ }));

@@ -1,0 +1,31 @@
+[project]
+name = "poe-game-data"
+version = "0.0.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "repoe",
+]
+
+[tool.uv]
+package = false
+cache-dir = ".cache/uv"
+
+override-dependencies = [
+    "pypoe @ https://github.com/repoe-fork/pypoe/archive/66d1d7442c5718260e1a8efd24989d22987e91af.tar.gz",
+]
+
+# RePoE's ../PyPoE requirement otherwise records a machine-specific cache path.
+[[tool.uv.dependency-metadata]]
+name = "repoe"
+version = "1.0.0"
+requires-python = ">=3.11,<4.0"
+requires-dist = [
+    "datamodel-code-generator>0.60.2",
+    "pillow==12.1.1",
+    "pydantic>=2.7.1,<3.0.0",
+    "pypoe",
+    "requests>=2.31.0,<3.0.0",
+]
+
+[tool.uv.sources]
+repoe = { url = "https://github.com/repoe-fork/repoe/archive/1c72e40a99aa8c8f70e9a3526155f455d5eedd43.tar.gz" }

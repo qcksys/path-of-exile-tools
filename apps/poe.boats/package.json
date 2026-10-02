@@ -8,6 +8,7 @@
         "dev:portless": "portless",
         "build": "react-router build",
         "env:check": "varlock load",
+        "game-data:recombinator": "tsx scripts/export-recombinator-catalog.ts",
         "test": "vp test run",
         "test:e2e": "vp test run --config vitest.e2e.config.ts",
         "test:watch": "vp test",

@@ -6,7 +6,8 @@
             "!apps/{poe-leauge-price-diff,poe-idol-planner}",
             "!**/worker-configuration.d.ts",
             "!apps/poe.boats/env.d.ts",
-            "!apps/poe.boats/app/data"
+            "!apps/poe.boats/app/data",
+            "!apps/poe.boats/public/game-data/*.json"
         ]
     },
     "vcs": {

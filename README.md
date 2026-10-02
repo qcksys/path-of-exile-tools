@@ -8,6 +8,7 @@ A Vite+ and pnpm monorepo containing:
 | `packages/poe-api-client` | Typed Path of Exile API client |
 | `packages/poe-stash-ingest` | DuckDB ingestor that pushes hourly summaries to poe.boats |
 | `packages/poe-stash-tracker` | Local SQLite stash tracker |
+| `packages/poe-game-data` | Extract and validate PoE 1/2 item bases, mods, weights, text, and images |
 
 ## Recombinator simulator
 
@@ -21,7 +22,7 @@ The model follows [the linked 3.26 recombinator guide](https://codeberg.org/poe_
 
 ## Install and validate
 
-Install [Vite+](https://viteplus.dev/guide/) and use the Node version in `.node-version` (Node 24).
+Install [Vite+](https://viteplus.dev/guide/) and use the Node version in `.node-version` (Node 24). The game-data package also requires [uv](https://docs.astral.sh/uv/getting-started/installation/), which manages its Python 3.13 environment.
 
 ```sh
 vp install --frozen-lockfile
@@ -37,6 +38,10 @@ Remove-Item Env:APP_ENV
 ```
 
 In a POSIX shell, prefix each command with `APP_ENV=test`. The ready task runs Biome, builds, type checks, and tests. Environment tests cover required credentials, dev/prod selection, and exclusion of 1Password credentials from the runtime configuration. The API client currently has no test cases.
+
+## Local game data
+
+The [game-data pipeline guide](packages/poe-game-data/README.md) covers GGPK, local bundles, and patch-CDN extraction for both games, repeatable snapshots, and comparison with PoEDB and Craft of Exile. The [research report](docs/research/poe-game-data-extraction.md) explains the formats and website provenance.
 
 ## Environment configuration
 
