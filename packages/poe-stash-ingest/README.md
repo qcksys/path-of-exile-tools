@@ -140,9 +140,9 @@ poe-stash-ps prune
 
 ## poe.boats secret
 
-The HTTP route at `/api/stash-ingest` requires a bearer token. Store it in the environment's 1Password item as `POE_BOATS_INGEST_TOKEN`. Varlock maps that field to this package's `POE_BOATS_INGEST_TOKEN` and the worker's `STASH_INGEST_TOKEN`; deployment synchronizes the worker secret.
+The HTTP route at `/api/stash-ingest` requires a bearer token. Store it in the ingestor's environment-specific 1Password record as `POE_BOATS_INGEST_TOKEN` and the matching app record as `STASH_INGEST_TOKEN`. The values must match. Local app deployment synchronizes the worker secret.
 
-The default push target is `https://dev.poe.boats/api/stash-ingest`. With `APP_ENV=prod`, it becomes `https://poe.boats/api/stash-ingest`.
+The push target comes from `POE_BOATS_INGEST_URL` in the ingestor's own 1Password record. The dev record preserves the local development endpoint; the prod record targets `https://poe.boats/api/stash-ingest`.
 
 Generate and review database migration SQL in `apps/poe.boats` before applying it to the selected environment:
 
