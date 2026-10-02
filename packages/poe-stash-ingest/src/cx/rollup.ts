@@ -1,7 +1,9 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
+import { REALM } from "#src/shared/auth.ts";
 import { queryAll } from "#src/shared/db.ts";
 import { push } from "#src/shared/remote/push.ts";
 import type { CurrencyHourlyRow } from "#src/shared/remote/types.ts";
+import { assertSourceRealm } from "#src/shared/source.ts";
 
 const STREAM = "cxapi";
 
@@ -20,6 +22,7 @@ export async function rollupCx(
     conn: DuckDBConnection,
     opts: { hour?: number; league?: string | null; dryRun?: boolean },
 ): Promise<{ rows: number }> {
+    await assertSourceRealm(conn, REALM ?? "pc");
     const hour = opts.hour ?? Math.floor(Date.now() / 3_600_000) * 3600 - 3600;
     const league = opts.league ?? null;
 
@@ -41,6 +44,7 @@ export async function rollupCx(
     );
 
     const rows: CurrencyHourlyRow[] = aggregates.map((a) => ({
+        realm: REALM ?? "pc",
         league: a.league,
         hour: Number(a.observedHour),
         marketId: a.marketId,

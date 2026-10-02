@@ -1,7 +1,9 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
+import { REALM } from "#src/shared/auth.ts";
 import { queryAll } from "#src/shared/db.ts";
 import { push } from "#src/shared/remote/push.ts";
 import type { UniqueHourlyRow } from "#src/shared/remote/types.ts";
+import { assertSourceRealm } from "#src/shared/source.ts";
 
 const STREAM = "psapi";
 
@@ -22,6 +24,11 @@ interface AggregateRow {
     listingCount: number;
     uniqueSellers: number;
     pricesJson: string;
+    salesPricesJson: string;
+    removedCount: number;
+    likelySales: number;
+    relistedCount: number;
+    pendingCount: number;
     firstSeenAt: string;
     lastSeenAt: string;
 }
@@ -41,27 +48,24 @@ interface AggregateRow {
  * in a NOT NULL primary key.
  */
 const ROLLUP_SQL = /* sql */ `
-WITH windowed AS (
+WITH observations AS (
+    SELECT * EXCLUDE (observed_hour), observed_hour AS hour, 'listing' AS status
+    FROM ps_listing_hour WHERE observed_hour = $1 AND ($2 IS NULL OR league = $2)
+    UNION ALL BY NAME
+    SELECT * EXCLUDE (removed_at, eligible_since, market_price, market_sellers, updated_at),
+        epoch(date_trunc('hour', removed_at))::BIGINT AS hour
+    FROM ps_sale WHERE epoch(date_trunc('hour', removed_at))::BIGINT = $1
+        AND ($2 IS NULL OR league = $2)
+), windowed AS (
     SELECT
         l.league,
-        l.observed_hour AS hour,
+        l.hour,
+        l.status,
         l.item_key,
         COALESCE(l.corrupted, FALSE) AS corrupted,
         COALESCE(l.foil_variation, -1) AS foil_variation,
         COALESCE(json_extract_string(l.mod_signature, '$.kind'), '') AS signature_kind,
-        CASE
-            WHEN json_extract_string(l.mod_signature, '$.kind') = 'forbidden-jewel'
-                THEN COALESCE(json_extract_string(l.mod_signature, '$.allocatedNotable'), '')
-            WHEN json_extract_string(l.mod_signature, '$.kind') = 'impossible-escape'
-                THEN COALESCE(json_extract_string(l.mod_signature, '$.keystone'), '')
-            WHEN json_extract_string(l.mod_signature, '$.kind') = 'forbidden-shako'
-                THEN COALESCE(
-                    json_extract_string(l.mod_signature, '$.skill') || '@' ||
-                        json_extract_string(l.mod_signature, '$.level'), '')
-            WHEN json_extract_string(l.mod_signature, '$.kind') = 'watchers-eye'
-                THEN sha256(COALESCE(l.mod_signature::VARCHAR, ''))
-            ELSE ''
-        END AS signature_value,
+        COALESCE(l.signature_value, '') AS signature_value,
         l.mod_signature::VARCHAR AS signature_data,
         l.icon_asset,
         l.base_type,
@@ -73,9 +77,9 @@ WITH windowed AS (
         l.price_currency,
         l.first_seen_at,
         l.last_seen_at
-    FROM ps_listing_hour l
+    FROM observations l
     LEFT JOIN icon_basemap b ON l.icon_asset = b.icon_asset
-    WHERE l.observed_hour = $1
+    WHERE l.hour = $1
         AND ($2 IS NULL OR l.league = $2)
         -- Defer rolling up unidentified items whose icon_asset has not
         -- been basemapped yet. They stay in ps_listing_hour and become eligible
@@ -88,27 +92,27 @@ WITH windowed AS (
 prices AS (
     SELECT
         league, hour, item_key, corrupted, foil_variation,
-        signature_kind, signature_value, price_currency,
+        signature_kind, signature_value, price_currency, status,
         COUNT(*) AS price_count,
         MIN(price_amount) AS min,
         MEDIAN(price_amount) AS median,
         MAX(price_amount) AS max
     FROM windowed
-    WHERE price_amount IS NOT NULL AND price_currency IS NOT NULL
+    WHERE price_amount > 0 AND price_currency IS NOT NULL AND status IN ('listing', 'likely-sold')
     GROUP BY league, hour, item_key, corrupted, foil_variation,
-             signature_kind, signature_value, price_currency
+             signature_kind, signature_value, price_currency, status
 ),
 prices_agg AS (
     SELECT
         league, hour, item_key, corrupted, foil_variation,
-        signature_kind, signature_value,
+        signature_kind, signature_value, status,
         json_group_object(
             price_currency,
             json_object('count', price_count, 'min', min, 'median', median, 'max', max)
         ) AS prices_json
     FROM prices
     GROUP BY league, hour, item_key, corrupted, foil_variation,
-             signature_kind, signature_value
+             signature_kind, signature_value, status
 )
 SELECT
     w.league,
@@ -124,19 +128,28 @@ SELECT
     ANY_VALUE(w.resolved_name) AS name,
     ANY_VALUE(w.frame_type) AS "frameType",
     ANY_VALUE(w.identified) AS identified,
-    COUNT(*) AS "listingCount",
-    COUNT(DISTINCT w.account_name) AS "uniqueSellers",
+    COUNT(*) FILTER (WHERE w.status = 'listing') AS "listingCount",
+    COUNT(DISTINCT w.account_name) FILTER (WHERE w.status = 'listing') AS "uniqueSellers",
+    COUNT(*) FILTER (WHERE w.status <> 'listing') AS "removedCount",
+    COUNT(*) FILTER (WHERE w.status = 'likely-sold') AS "likelySales",
+    COUNT(*) FILTER (WHERE w.status = 'relisted') AS "relistedCount",
+    COUNT(*) FILTER (WHERE w.status = 'pending') AS "pendingCount",
     COALESCE(p.prices_json, '{}') AS "pricesJson",
+    COALESCE(s.prices_json, '{}') AS "salesPricesJson",
     MIN(w.first_seen_at)::VARCHAR AS "firstSeenAt",
     MAX(w.last_seen_at)::VARCHAR AS "lastSeenAt"
 FROM windowed w
-LEFT JOIN prices_agg p USING (
+LEFT JOIN (SELECT * FROM prices_agg WHERE status = 'listing') p USING (
+    league, hour, item_key, corrupted, foil_variation,
+    signature_kind, signature_value
+)
+LEFT JOIN (SELECT * FROM prices_agg WHERE status = 'likely-sold') s USING (
     league, hour, item_key, corrupted, foil_variation,
     signature_kind, signature_value
 )
 GROUP BY
     w.league, w.hour, w.item_key, w.corrupted, w.foil_variation,
-    w.signature_kind, w.signature_value, p.prices_json
+    w.signature_kind, w.signature_value, p.prices_json, s.prices_json
 ORDER BY w.league, w.item_key, w.signature_kind, w.signature_value
 `;
 
@@ -148,12 +161,14 @@ export async function rollupPs(
     conn: DuckDBConnection,
     opts: { hour?: number; league?: string | null; dryRun?: boolean },
 ): Promise<{ hours: number[]; rows: number }> {
+    await assertSourceRealm(conn, REALM ?? "pc");
     const hour = opts.hour ?? unixHour() - 3600;
     const league = opts.league ?? null;
 
     const aggregates = await queryAll<AggregateRow>(conn, ROLLUP_SQL, [hour, league]);
 
     const rows: UniqueHourlyRow[] = aggregates.map((a) => ({
+        realm: REALM ?? "pc",
         league: a.league,
         hour: Number(a.hour),
         itemKey: a.itemKey,
@@ -172,6 +187,11 @@ export async function rollupPs(
         listingCount: Number(a.listingCount),
         uniqueSellers: Number(a.uniqueSellers),
         prices: JSON.parse(a.pricesJson) as UniqueHourlyRow["prices"],
+        salesPrices: JSON.parse(a.salesPricesJson) as UniqueHourlyRow["prices"],
+        removedCount: Number(a.removedCount),
+        likelySales: Number(a.likelySales),
+        relistedCount: Number(a.relistedCount),
+        pendingCount: Number(a.pendingCount),
         firstSeenAt: a.firstSeenAt,
         lastSeenAt: a.lastSeenAt,
     }));
