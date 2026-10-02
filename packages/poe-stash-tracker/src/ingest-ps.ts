@@ -1,3 +1,5 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { PublicStashChange } from "@poe-tools/api-client";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { createPoeClient, LEAGUE, REALM } from "#src/auth.ts";
@@ -38,6 +40,14 @@ async function applyStashChange(
     change: PublicStashChange,
     now: Date,
 ): Promise<{ inserted: number; updated: number; removed: number }> {
+    if (!change.public) {
+        const removed = await db
+            .update(tListing)
+            .set({ removedAt: now })
+            .where(and(eq(tListing.stashId, change.id), isNull(tListing.removedAt)))
+            .returning({ itemId: tListing.itemId });
+        return { inserted: 0, updated: 0, removed: removed.length };
+    }
     if (!change.accountName) return { inserted: 0, updated: 0, removed: 0 };
     if (change.league && change.league !== LEAGUE) return { inserted: 0, updated: 0, removed: 0 };
 
@@ -154,7 +164,7 @@ async function applyStashChange(
     return { inserted, updated, removed: goneIds.length };
 }
 
-async function ingestPage(
+export async function ingestPage(
     db: Db,
     client: ReturnType<typeof createPoeClient>,
     cursor: string | undefined,
@@ -267,7 +277,9 @@ async function main() {
     }
 }
 
-main().catch((err) => {
-    console.error(err);
-    process.exit(1);
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+    main().catch((err) => {
+        console.error(err);
+        process.exit(1);
+    });
+}

@@ -40,8 +40,10 @@ jobs:
         run: vp run -r build
       - name: Type check
         run: vp run -r typecheck
-      - name: Test
+      - name: Unit tests
         run: vp run -r test --exclude '**/env.test.ts'
+      - name: Ingest end-to-end tests (MySQL Testcontainers)
+        run: vp run poe-boats#test:e2e
 
   deploy:
     needs: validate

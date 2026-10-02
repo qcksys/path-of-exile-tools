@@ -1,6 +1,9 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import type { PoeApiClient } from "@poe-tools/api-client";
 import { eq } from "drizzle-orm";
 import { createPoeClient, LEAGUE, REALM } from "#src/auth.ts";
-import { openDb } from "#src/db.ts";
+import { type Db, openDb } from "#src/db.ts";
 import { tCurrencyRate, tStreamCursor } from "#src/schema.ts";
 
 const STREAM = "cxapi";
@@ -19,18 +22,14 @@ function previousHour(): number {
     return Math.floor(Date.now() / 3_600_000) * 3600 - 3600;
 }
 
-async function main() {
-    const db = openDb();
-    const client = createPoeClient();
-    const override = parseFromArg();
-
+export async function ingestCx(db: Db, client: PoeApiClient, fromHour?: number) {
     const [row] = await db
         .select()
         .from(tStreamCursor)
         .where(eq(tStreamCursor.streamName, STREAM))
         .limit(1);
 
-    const id = override ?? (row ? Number(row.cursor) : previousHour());
+    const id = fromHour ?? (row ? Number(row.cursor) : previousHour());
     const snap = await client.public.currencyExchange({ realm: REALM, id });
 
     const rows = snap.markets
@@ -38,7 +37,7 @@ async function main() {
         .map((m) => ({
             league: m.league,
             marketId: m.market_id,
-            observedHour: snap.next_change_id,
+            observedHour: id,
             lowestRatio: m.lowest_ratio,
             highestRatio: m.highest_ratio,
             volumeTraded: m.volume_traded,
@@ -67,7 +66,7 @@ async function main() {
 
     const caughtUp = String(id) === nextCursor;
     console.log(
-        `cxapi: hour=${snap.next_change_id} league=${LEAGUE} markets=${rows.length}/${snap.markets.length}${
+        `cxapi: hour=${id} league=${LEAGUE} markets=${rows.length}/${snap.markets.length}${
             caughtUp ? " [caught up]" : ""
         }`,
     );
@@ -80,7 +79,9 @@ async function main() {
     }
 }
 
-main().catch((err) => {
-    console.error(err);
-    process.exit(1);
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+    ingestCx(openDb(), createPoeClient(), parseFromArg() ?? undefined).catch((err) => {
+        console.error(err);
+        process.exit(1);
+    });
+}
