@@ -120,7 +120,8 @@ program
             console.log(
                 `prune${opts.dryRun ? " (dry-run)" : ""}: ` +
                     `before=${result.beforeRows} ageDrop=${result.droppedByAge} ` +
-                    `capDrop=${result.droppedByCap} after=${result.afterRows}`,
+                    `capDrop=${result.droppedByCap} after=${result.afterRows} ` +
+                    `hourlyDrop=${result.droppedHourlyRows}`,
             );
         } finally {
             await db.close();

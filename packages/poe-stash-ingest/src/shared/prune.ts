@@ -13,6 +13,7 @@ export interface PruneResult {
     beforeRows: number;
     droppedByAge: number;
     droppedByCap: number;
+    droppedHourlyRows: number;
     afterRows: number;
 }
 
@@ -35,8 +36,24 @@ export async function prune(conn: DuckDBConnection, opts: PruneOptions): Promise
     const before = await countRows(conn);
 
     let droppedByAge = 0;
+    let droppedHourlyRows = 0;
     if (opts.keepDays > 0) {
         const cutoffSql = `current_timestamp - INTERVAL ${Math.floor(opts.keepDays)} DAY`;
+        // Keep observations that have not yet been included in a successful rollup.
+        const deliveredHourlySql = `SELECT l.rowid FROM ps_listing_hour l
+            JOIN rollup_state r ON r.stream_name = 'psapi'
+                AND r.league = l.league AND r.hour = l.observed_hour
+            LEFT JOIN icon_basemap b ON b.icon_asset = l.icon_asset
+            WHERE l.last_seen_at < ${cutoffSql} AND l.last_seen_at <= r.pushed_at
+                AND (l.identified OR (b.name IS NOT NULL AND b.first_seen_at <= r.pushed_at))`;
+        const hourlyRows = await queryAll<{ n: number }>(
+            conn,
+            `SELECT COUNT(*) AS n FROM (${deliveredHourlySql})`,
+        );
+        droppedHourlyRows = Number(hourlyRows[0]?.n ?? 0);
+        if (!opts.dryRun) {
+            await conn.run(`DELETE FROM ps_listing_hour WHERE rowid IN (${deliveredHourlySql})`);
+        }
         if (opts.dryRun) {
             const rows = await queryAll<{ n: number }>(
                 conn,
@@ -72,5 +89,5 @@ export async function prune(conn: DuckDBConnection, opts: PruneOptions): Promise
     }
 
     const after = opts.dryRun ? before - droppedByAge - droppedByCap : await countRows(conn);
-    return { beforeRows: before, droppedByAge, droppedByCap, afterRows: after };
+    return { beforeRows: before, droppedByAge, droppedByCap, droppedHourlyRows, afterRows: after };
 }

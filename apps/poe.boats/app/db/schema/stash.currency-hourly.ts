@@ -12,7 +12,7 @@ export const tStashCurrencyHourly = mysqlTable(
     `${DB_TABLE_PREFIX}stash_currency_hourly`,
     {
         league: varchar({ length: 100 }).notNull(),
-        marketId: varchar({ length: 100 }).notNull(),
+        marketId: varchar({ length: 512 }).notNull(),
         hour: bigint({ mode: "number" }).notNull(),
         lowestRatio: json().$type<Record<string, number>>(),
         highestRatio: json().$type<Record<string, number>>(),
