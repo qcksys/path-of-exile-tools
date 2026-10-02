@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "propertyNames": {
+    "type": "string"
+  },
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "adds_tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "domain": {
+        "type": "string"
+      },
+      "generation_type": {
+        "type": "string"
+      },
+      "generation_weights": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "tag": {
+              "type": "string"
+            },
+            "weight": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "tag",
+            "weight"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "grants_effects": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "granted_effect_id": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "granted_effect_id",
+            "level"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "groups": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "implicit_tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "is_essence_only": {
+        "type": "boolean"
+      },
+      "name": {
+        "type": "string"
+      },
+      "required_level": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "maximum_level": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "spawn_weights": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "tag": {
+              "type": "string"
+            },
+            "weight": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "tag",
+            "weight"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "stats": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "max": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "min",
+            "max",
+            "id"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "text": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "type": {
+        "type": "string"
+      },
+      "gold_value": {
+        "default": null,
+        "anyOf": [
+          {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "adds_tags",
+      "domain",
+      "generation_type",
+      "generation_weights",
+      "grants_effects",
+      "groups",
+      "implicit_tags",
+      "is_essence_only",
+      "name",
+      "required_level",
+      "maximum_level",
+      "spawn_weights",
+      "stats",
+      "text",
+      "type",
+      "gold_value"
+    ],
+    "additionalProperties": false
+  },
+  "minProperties": 1,
+  "$id": "urn:qcksys:poe1:3.29.3-build.3:mods.schema.json",
+  "$comment": "Generated from Zod. Cross-field refinements (such as min <= max) and dataset reference checks remain in the Zod validators."
+}

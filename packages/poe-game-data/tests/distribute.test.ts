@@ -172,6 +172,8 @@ it.each([
     ["src/schemas.ts", "export {};", "schema hash mismatch"],
     ["src/release.ts", "export {};", "Generated package source changed"],
     ["types/mods.d.ts", "export {};", "Generated package source changed"],
+    ["json-schema/mods.schema.json", "{}", "Generated package source changed"],
+    ["json-schema/extra.schema.json", "{}", "JSON Schema files differ"],
 ])("detects modified package file %s", async (path, content, error) => {
     const { directory, packagesRoot, snapshot } = await fixture();
     await materializePackage(snapshot, packagesRoot);
@@ -229,3 +231,17 @@ it.each([
     expect(counts.bases).toBeGreaterThan(5000);
     expect(counts.mods).toBeGreaterThan(10000);
 }, 30_000);
+
+it("detects missing JSON Schemas and incorrect schema references", async () => {
+    const { directory, packagesRoot, snapshot } = await fixture();
+    await materializePackage(snapshot, packagesRoot);
+    const manifest = dataPackageManifestSchema.parse(
+        await readJson(join(directory, "manifest.json")),
+    );
+    manifest.files["mods.json"]!.schema = "json-schema/stats.schema.json";
+    await writeJson(join(directory, "manifest.json"), manifest);
+    await expect(verifyDataPackage(directory)).rejects.toThrow("Incorrect JSON Schema reference");
+    await materializePackage(snapshot, packagesRoot);
+    await rm(join(directory, "json-schema/mods.schema.json"));
+    await expect(verifyDataPackage(directory)).rejects.toThrow();
+});

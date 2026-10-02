@@ -46,6 +46,10 @@ export async function pipelineSources(): Promise<Record<string, Buffer>> {
     const files: Record<string, Buffer> = {};
     for (const name of await filesUnder(join(packageDirectory, "src")))
         files[`src/${name}`] = await readFile(join(packageDirectory, "src", name));
+    const cli = join(packageDirectory, "../poe-cli");
+    for (const name of await filesUnder(join(cli, "src")))
+        files[`cli/src/${name}`] = await readFile(join(cli, "src", name));
+    files["cli/package.json"] = await readFile(join(cli, "package.json"));
     files["package.json"] = await readFile(join(packageDirectory, "package.json"));
     files["pnpm-lock.yaml"] = await readFile(join(packageDirectory, "../../pnpm-lock.yaml"));
     files["pnpm-workspace.yaml"] = await readFile(
