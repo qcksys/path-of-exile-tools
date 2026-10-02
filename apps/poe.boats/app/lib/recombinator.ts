@@ -3,6 +3,7 @@ import {
     type RecombinatorItem,
     type RecombinatorPlan,
     recombinatorPlanSchema,
+    sharesAffixGroup,
 } from "~/schemas/recombinator";
 
 export const RECOMBINATOR_GUIDE_URL =
@@ -50,7 +51,7 @@ function selectAffixes(pool: RecombinatorAffix[], count: number): Selection[] {
         // Duplicate copies each get a draw, then every member of the selected group is removed.
         for (const affix of remaining) {
             draw(
-                remaining.filter((candidate) => candidate.group !== affix.group),
+                remaining.filter((candidate) => !sharesAffixGroup(candidate, affix)),
                 [...selected, affix],
                 probability / remaining.length,
             );
@@ -87,6 +88,11 @@ function mergeOutcome(
 function recombine(left: RecombinatorItem, right: RecombinatorItem): RecombinatorOutcome[] {
     const prefixes = [...left.prefixes, ...right.prefixes];
     const suffixes = [...left.suffixes, ...right.suffixes];
+    if (prefixes.some((prefix) => suffixes.some((suffix) => sharesAffixGroup(prefix, suffix)))) {
+        throw new Error(
+            "A mod group appears in both prefixes and suffixes. This model does not support that combination; use compatible bases and modifier groups.",
+        );
+    }
     if ([...prefixes, ...suffixes].filter((affix) => affix.exclusive).length > 1) {
         throw new Error(
             "This step can combine more than one exclusive modifier (including duplicate copies). The guide does not model those odds; remove the extra exclusive modifier.",

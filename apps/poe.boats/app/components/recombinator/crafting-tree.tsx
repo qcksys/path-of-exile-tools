@@ -98,8 +98,8 @@ function CraftingNode({ data }: NodeProps<CraftNode>) {
                                         {side === "prefixes" ? "P" : "S"}
                                     </span>
                                     <ModifierIcons affix={affix} />
-                                    <span className="truncate" title={affix.id}>
-                                        {affix.id}
+                                    <span className="truncate" title={affix.label ?? affix.id}>
+                                        {affix.label ?? affix.id}
                                     </span>
                                 </span>
                             ))

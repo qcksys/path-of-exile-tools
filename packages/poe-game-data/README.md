@@ -4,6 +4,8 @@ Extract PoE 1 and PoE 2 client assets into separate, versioned datasets of item 
 
 The pipeline uses commit-pinned [RePoE](https://github.com/repoe-fork/repoe) and its compatible [PyPoE fork](https://github.com/repoe-fork/pypoe). Their Python dependencies are locked in `uv.lock`. This fork matters: the original PyPoE and the wiki fork have different schemas and interfaces. The [research report](../../docs/research/poe-game-data-extraction.md) documents other tools and the evidence for PoEDB/Craft of Exile's data sources.
 
+RePoE declares PyPoE through a sibling directory (`../PyPoE`). The wrapper supplies [static dependency metadata](https://docs.astral.sh/uv/reference/settings/#dependency-metadata) matching that pinned RePoE revision and resolves PyPoE through the archive override. This avoids embedding a temporary cache directory in the lockfile, which otherwise breaks `--locked` on another machine or an empty cache. Keep this metadata synchronized when updating the RePoE pin. CI uses uv 0.12.22; maintainers can check portability with `uv lock --check --cache-dir <empty-directory>` through `vp exec` from this package.
+
 ## Run it
 
 Install [Vite+](https://viteplus.dev/guide/) and [uv](https://docs.astral.sh/uv/getting-started/installation/). `uv` creates the package's `.venv` and obtains Python 3.13 when needed. Dependency installation uses the network; the tests themselves do not. Windows was used for the live verification below; Linux CI runs the fixture suite.
@@ -22,6 +24,36 @@ Vite+ runs this package's scripts from `packages/poe-game-data`, so the config a
 To extract one game, append `--game poe1` or `--game poe2`. The default processes every game in the config, in order. A failure stops the command; any game already completed keeps its successful snapshot. To retry the other game, select it explicitly.
 
 Each run prints its staging directory. Progress and upstream warnings are written to that directory's `extract.log`. The first run downloads bundles on demand and can use several gigabytes of disk and memory; repeated runs reuse the per-game, per-patch bundle cache. It does not download the entire game.
+
+## Refresh the recombinator catalog
+
+The PoE 1 recombinator consumes a compact projection of a successful snapshot. After extraction, run from the repository root:
+
+```sh
+vp run poe-boats#game-data:recombinator
+```
+
+The exporter follows `data/poe1/latest.json`. To select an older snapshot, pass its path relative to `apps/poe.boats`:
+
+```sh
+vp run poe-boats#game-data:recombinator ../../packages/poe-game-data/data/poe1/snapshots/3.29.3.3-pyd2ngrj
+```
+
+It verifies the manifest's SHA-256 hashes for `normalized/base_items.json` and `normalized/mods.json`, validates their required fields with Zod, and atomically replaces `apps/poe.boats/public/game-data/recombinator-poe1.json`. The output records the client patch, manifest hash, and both source-table hashes. Corrupt inputs or PoE 2 snapshots fail without replacing the published catalog. This verifies consistency with the local manifest, not authenticity of an untrusted snapshot.
+
+Commit this small application catalog when refreshing the data; the much larger source snapshots remain ignored. The app fetches it only on the recombinator page, validates it with the same catalog schema used by the exporter, and retains custom input with a retry button if loading fails. Deployments and normal app tests need neither Python nor a game installation. The initial catalog from client `3.29.3.3` contains 1,016 equipment bases and 1,204 modifiers (555 KB uncompressed).
+
+The projection includes released weapon, armour, quiver and jewellery bases, plus `item`-domain prefixes/suffixes that can roll naturally on at least one included base. It excludes essence-only and non-rollable special mods. Ordered spawn weights, generation rules, level bounds, added tags and every mod group are preserved. Missing translations fall back to the modifier ID; no tier number or stat range is invented. Jewel, flask, influence, essence, crafted and other special selection modes are outside this catalog. Custom modifiers remain available for the simulator's existing supported cases.
+
+In the editor, choose a base, set item level (1–100), then search prefixes and suffixes by translated stats or mod name. Selected and custom modifiers share the three-per-side limit. Changing a base or item level clears its selected catalog mods; custom input remains visible in the numbered custom-modifier section. Selected mod IDs remain stable through the tree, target filters and worker results. Different tiers retain different IDs, while overlapping groups prevent them from surviving together. A group occurring on both affix sides is rejected because the current probability model does not handle that case.
+
+**Selection data and recombination odds have different scopes.** The source patch is shown independently of the simulator's existing 3.26 probability model. Spawn/generation weights determine which mods appear in the picker; they do not replace the simulator's equal-per-copy selection model. Base compatibility, output-base inheritance, output item level and transfer restrictions remain outside that model. The pipeline still supports both games; this application export deliberately accepts PoE 1 only because the existing recombinator is a PoE 1 tool.
+
+Validate a refresh with:
+
+```sh
+vp run poe-boats#test test/recombinator-catalog.test.ts test/recombinator-export.test.ts test/recombinator-ui.test.ts test/recombinator-page.test.ts
+```
 
 ## Use an installed game
 
