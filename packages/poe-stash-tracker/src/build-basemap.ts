@@ -17,7 +17,7 @@ import { tIconBasemap, tListing } from "#src/schema.ts";
  *
  * Safe to re-run. Basemap upserts accumulate `seen_count` conservatively.
  */
-async function main() {
+export async function buildBasemap() {
     const db = openDb();
     const now = new Date();
 
@@ -133,8 +133,3 @@ async function main() {
     }
     console.log(`refreshed item_key on ${rekeyed}/${keyable.length} rows.`);
 }
-
-main().catch((err) => {
-    console.error(err);
-    process.exit(1);
-});

@@ -1,4 +1,4 @@
-import { parseArgs } from "node:util";
+import { Command, runCli } from "@poe-tools/cli";
 import { clearCache, fetchPoedbPage, listCachedFiles } from "./fetcher.ts";
 import { generateJsonSchemas, validateConvertedData, writeConvertedData } from "./output.ts";
 import { parseIdolPage } from "./parser.ts";
@@ -17,46 +17,14 @@ const IDOL_PAGES = [
     "Conqueror_Idol",
 ] as const;
 
-const { values: args } = parseArgs({
-    allowPositionals: true,
-    options: {
-        cached: { type: "boolean", default: false },
-        "clear-cache": { type: "boolean", default: false },
-        "generate-schemas": { type: "boolean", default: true },
-        help: { type: "boolean", short: "h", default: false },
-    },
-});
-
-function printHelp(): void {
-    console.log(`
-poedb-converter - Fetch and convert POE idol data from poedb.tw
-
-Usage: pnpm run data:idols [options]
-
-Options:
-  --cached           Use cached HTML files if available
-  --clear-cache      Clear the cache before fetching
-  --generate-schemas Generate JSON Schema files (default: true)
-  -h, --help         Show this help message
-
-Locales processed: ${LOCALES.join(", ")}
-
-Examples:
-  pnpm run data:idols
-  pnpm run data:idols --cached
-  pnpm run data:idols --clear-cache
-`);
-}
-
-async function main(): Promise<void> {
-    if (args.help || process.argv.includes("--help") || process.argv.includes("-h")) {
-        printHelp();
-        process.exit(0);
-    }
-
+async function main(args: {
+    cached: boolean;
+    clearCache: boolean;
+    generateSchemas: boolean;
+}): Promise<void> {
     console.log("=== POE Idol Data Converter ===\n");
 
-    if (args["clear-cache"]) {
+    if (args.clearCache) {
         console.log("Clearing cache...");
         clearCache();
     }
@@ -139,7 +107,7 @@ async function main(): Promise<void> {
     console.log("\nWriting output files...");
     writeConvertedData(convertedData);
 
-    if (args["generate-schemas"]) {
+    if (args.generateSchemas) {
         console.log("\nGenerating JSON schemas...");
         generateJsonSchemas();
     }
@@ -151,7 +119,12 @@ async function main(): Promise<void> {
     }
 }
 
-main().catch((error) => {
-    console.error("Fatal error:", error);
-    process.exit(1);
-});
+const program = new Command()
+    .name("poedb-idol-converter")
+    .description("Fetch and convert PoEDB idol data")
+    .option("--cached", "use cached HTML if available", false)
+    .option("--clear-cache", "clear cached HTML before fetching", false)
+    .option("--generate-schemas", "generate JSON Schemas", true)
+    .option("--no-generate-schemas", "skip JSON Schema generation")
+    .action(main);
+process.exitCode = await runCli(program);

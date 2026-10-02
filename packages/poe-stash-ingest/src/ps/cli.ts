@@ -1,14 +1,5 @@
 #!/usr/bin/env node
-import { Command } from "commander";
-import { flushRollups, runPipeline } from "#src/pipeline.ts";
-import { rebuildBasemap } from "#src/ps/basemap-rebuild.ts";
-import { ingestPs } from "#src/ps/ingest.ts";
-import { rollupPs } from "#src/ps/rollup.ts";
-import { createPoeClient } from "#src/shared/auth.ts";
-import { getCursor, setCursor } from "#src/shared/cursor.ts";
-import { openDb } from "#src/shared/db.ts";
-import { parseLeagueFilter } from "#src/shared/leagues.ts";
-import { prune } from "#src/shared/prune.ts";
+import { Command, positiveInteger, runCli } from "@poe-tools/cli";
 
 const program = new Command();
 program
@@ -19,10 +10,14 @@ program
 program
     .command("ingest")
     .description("Walk N pages of psapi, upsert listings, learn basemap, extract mod signatures.")
-    .option("-p, --pages <n>", "number of pages to fetch", "3")
+    .option("-p, --pages <n>", "number of pages to fetch", positiveInteger, 3)
     .option("-c, --cursor <id>", "explicit cursor (overrides saved); seed once, then omit")
     .option("-l, --league <name>", "season to capture (use a separate database per season)", "all")
     .action(async (opts) => {
+        const { ingestPs } = await import("#src/ps/ingest.ts");
+        const { createPoeClient } = await import("#src/shared/auth.ts");
+        const { openDb } = await import("#src/shared/db.ts");
+        const { parseLeagueFilter } = await import("#src/shared/leagues.ts");
         const db = await openDb();
         try {
             const client = createPoeClient();
@@ -49,10 +44,17 @@ program
 program
     .command("rollup")
     .description("Aggregate captured listings into the hourly summary and POST to poe.boats.")
-    .option("-h, --hour <unixhour>", "unix-hour to roll up (defaults to previous completed hour)")
+    .option(
+        "-h, --hour <unixhour>",
+        "unix-hour to roll up (defaults to previous completed hour)",
+        positiveInteger,
+    )
     .option("-l, --league <name>", "limit to one league, or 'all' (default: all)", "all")
     .option("--dry-run", "print summary; do not POST")
     .action(async (opts) => {
+        const { rollupPs } = await import("#src/ps/rollup.ts");
+        const { openDb } = await import("#src/shared/db.ts");
+        const { parseLeagueFilter } = await import("#src/shared/leagues.ts");
         const db = await openDb();
         try {
             await rollupPs(db.conn, {
@@ -69,6 +71,8 @@ program
     .command("basemap")
     .description("Rebuild icon_basemap from identified uniques already in the DB.")
     .action(async () => {
+        const { rebuildBasemap } = await import("#src/ps/basemap-rebuild.ts");
+        const { openDb } = await import("#src/shared/db.ts");
         const db = await openDb();
         try {
             await rebuildBasemap(db.conn);
@@ -82,6 +86,8 @@ program
     .description("Inspect or set the saved psapi cursor.")
     .option("--set <id>", "overwrite saved cursor")
     .action(async (opts) => {
+        const { getCursor, setCursor } = await import("#src/shared/cursor.ts");
+        const { openDb } = await import("#src/shared/db.ts");
         const db = await openDb();
         try {
             if (opts.set) {
@@ -113,11 +119,13 @@ program
     )
     .option("--dry-run", "report what would be deleted; make no changes")
     .action(async (opts) => {
+        const { openDb } = await import("#src/shared/db.ts");
+        const { prune } = await import("#src/shared/prune.ts");
         const db = await openDb();
         try {
             const result = await prune(db.conn, {
-                maxRows: Number(opts.maxRows ?? 2_000_000),
-                keepDays: Number(opts.keepDays ?? 30),
+                maxRows: Number(opts.maxRows ?? process.env.PS_LOCAL_MAX_ROWS ?? 2_000_000),
+                keepDays: Number(opts.keepDays ?? process.env.PS_LOCAL_KEEP_DAYS ?? 30),
                 dryRun: !!opts.dryRun,
             });
             console.log(
@@ -134,12 +142,17 @@ program
 program
     .command("process")
     .description("Ingest, evaluate sales, and retry all pending completed hours.")
-    .option("-p, --pages <n>", "maximum stash pages per cycle", "50")
+    .option("-p, --pages <n>", "maximum stash pages per cycle", positiveInteger, 50)
     .option("-l, --league <name>", "season to capture", "all")
     .option("-c, --cursor <id>", "initial stash cursor; applied only on the first cycle")
     .option("--no-currency", "skip the currency exchange source")
     .option("--watch", "continue processing every minute; Ctrl+C to stop")
     .action(async (opts) => {
+        const { runPipeline } = await import("#src/pipeline.ts");
+        const { createPoeClient } = await import("#src/shared/auth.ts");
+        const { getCursor } = await import("#src/shared/cursor.ts");
+        const { openDb } = await import("#src/shared/db.ts");
+        const { parseLeagueFilter } = await import("#src/shared/leagues.ts");
         const db = await openDb();
         const client = createPoeClient();
         let cursor = opts.cursor;
@@ -174,6 +187,9 @@ program
     .option("-l, --league <name>", "season to deliver", "all")
     .option("--dry-run", "do not POST or mark delivered")
     .action(async (opts) => {
+        const { flushRollups } = await import("#src/pipeline.ts");
+        const { openDb } = await import("#src/shared/db.ts");
+        const { parseLeagueFilter } = await import("#src/shared/leagues.ts");
         const db = await openDb();
         try {
             console.log(
@@ -187,7 +203,9 @@ program
         }
     });
 
-program.parseAsync().catch((err) => {
-    console.error(err);
-    process.exit(1);
-});
+for (const command of program.commands)
+    command.hook("preAction", async () => {
+        await import("varlock/auto-load");
+    });
+
+process.exitCode = await runCli(program);
