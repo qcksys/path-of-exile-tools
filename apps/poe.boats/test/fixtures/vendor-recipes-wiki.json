@@ -1,0 +1,1701 @@
+{
+    "checkedAt": "2026-10-02T03:54:25.375Z",
+    "recipes": [
+        {
+            "id": "1:amber-oil",
+            "input": "Amber Oil",
+            "output": "Verdant Oil",
+            "quantity": 3,
+            "revision": 1683008,
+            "source": "https://www.poewiki.net/w/index.php?title=Verdant%20Oil&oldid=1683008"
+        },
+        {
+            "id": "1:azure-oil",
+            "input": "Azure Oil",
+            "output": "Indigo Oil",
+            "quantity": 3,
+            "revision": 1683011,
+            "source": "https://www.poewiki.net/w/index.php?title=Indigo%20Oil&oldid=1683011"
+        },
+        {
+            "id": "1:black-oil",
+            "input": "Black Oil",
+            "output": "Opalescent Oil",
+            "quantity": 3,
+            "revision": 1683015,
+            "source": "https://www.poewiki.net/w/index.php?title=Opalescent%20Oil&oldid=1683015"
+        },
+        {
+            "id": "1:clear-oil",
+            "input": "Clear Oil",
+            "output": "Sepia Oil",
+            "quantity": 3,
+            "revision": 1683006,
+            "source": "https://www.poewiki.net/w/index.php?title=Sepia%20Oil&oldid=1683006"
+        },
+        {
+            "id": "1:crimson-oil",
+            "input": "Crimson Oil",
+            "output": "Black Oil",
+            "quantity": 3,
+            "revision": 1683014,
+            "source": "https://www.poewiki.net/w/index.php?title=Black%20Oil&oldid=1683014"
+        },
+        {
+            "id": "1:indigo-oil",
+            "input": "Indigo Oil",
+            "output": "Violet Oil",
+            "quantity": 3,
+            "revision": 1683012,
+            "source": "https://www.poewiki.net/w/index.php?title=Violet%20Oil&oldid=1683012"
+        },
+        {
+            "id": "1:manual:catalysts",
+            "input": "Catalysts, all of same type",
+            "output": "random Catalyst",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x random Catalyst",
+                "3x Catalysts, all of same type",
+                "Cannot return a Tainted Catalyst, Sinistral Catalyst, or Dextral Catalyst."
+            ]
+        },
+        {
+            "id": "1:manual:corrupted",
+            "input": "item (magic/rare, corrupted)",
+            "output": "Item (magic/rare, corrupted/uncorrupted)",
+            "quantity": 5,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "Item (magic/rare, corrupted/uncorrupted)",
+                "5x item (magic/rare, corrupted)",
+                "Components must all be of the same base item type (e.g. Coral Ring). Resulting item level - lowest of all components, and normal art, not corrupted except basetype list below. The recipe works with item that are naturally corrupted: e.g. legacy Breach Rings and Thief's Trinket etc. The resulting item is also corrupted. Legacy Talismans could only historically be directly obtained corrupted, but this recipe returns an uncorrupted copy as talismans are no longer corrupted by default. Cluster jewels - randomizes the number of passives and type of small passives on resulting item The recipe does not transfer influence to the resulting item, even if all five components are from the same influence. This recipe can be used to obtain craftable versions of basetypes that only exist as Unique items, such as Prismatic Jewels, by using uniques that have been corrupted into rares."
+            ]
+        },
+        {
+            "id": "1:manual:hybrid-flasks",
+            "input": "Hybrid Flask",
+            "output": "Hybrid Flask of next base type",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x Hybrid Flask of next base type",
+                "3x Hybrid Flask",
+                "The components must all be of the same base item type (e.g. Small Hybrid Flask). The result will have the lowest item level of all components. If all three are magic, the result will be magic and unidentified."
+            ]
+        },
+        {
+            "id": "1:manual:idols",
+            "input": "Idols, all of same type",
+            "output": "Idol of same type",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x Idol of same type",
+                "3x Idols, all of same type",
+                "Cannot use Unique idols"
+            ]
+        },
+        {
+            "id": "1:manual:life-flasks",
+            "input": "Life Flask",
+            "output": "Life Flask of next base type",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x Life Flask of next base type",
+                "3x Life Flask",
+                "The components must all be of the same base item type (e.g. Small Life Flask). The result will have the lowest item level of all components. If all three are magic, the result will be magic and unidentified. NOTE: This works only up to combining Hallowed (Level 42) Flasks into Sanctified (Level 50). Divine and Eternal Flasks cannot be produced through combination."
+            ]
+        },
+        {
+            "id": "1:manual:magic",
+            "input": "item (magic)",
+            "output": "Item (magic, unidentified)",
+            "quantity": 5,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "Item (magic, unidentified)",
+                "5x item (magic)",
+                "The components must all be of the same base item type (e.g., Coral Ring). The result will have the lowest item level of all components. This vendor recipe doesn't transfer influence to the resulting item, even if all five components are from the same influence."
+            ]
+        },
+        {
+            "id": "1:manual:mana-flasks",
+            "input": "Mana Flask",
+            "output": "Mana Flask of next base type",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x Mana Flask of next base type",
+                "3x Mana Flask",
+                "The components must all be of the same base item type (e.g. Small Mana Flask). The result will have the lowest item level of all components. If all three are magic, the result will be magic and unidentified. NOTE: This works only up to combining Hallowed (Level 42) Flasks into Sanctified (Level 50). Divine and Eternal Flasks cannot be produced through combination."
+            ]
+        },
+        {
+            "id": "1:manual:maps",
+            "input": "map of the same tier",
+            "output": "map, one tier higher",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x map, one tier higher",
+                "3x map of the same tier",
+                "The resulting map is always normal rarity. Can mix and match with Blighted maps, but will still return a regular map."
+            ]
+        },
+        {
+            "id": "1:manual:rare",
+            "input": "item (rare)",
+            "output": "Item (rare, unidentified)",
+            "quantity": 5,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "Item (rare, unidentified)",
+                "5x item (rare)",
+                "Components must all be of the same base item type (e.g. Coral Ring). Resulting item level - lowest of all components, and normal art. Cluster jewels - random number of passives and type of small passives on resulting item The recipe does not transfer influence to the resulting item, even if all five components are from the same influence."
+            ]
+        },
+        {
+            "id": "1:manual:runegrafts",
+            "input": "runegraft, any",
+            "output": "random runegraft",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": ["1x random runegraft", "3x runegraft, any", ""]
+        },
+        {
+            "id": "1:manual:scarabs",
+            "input": "scarabs (any type)",
+            "output": "random scarab of a different type",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x random scarab of a different type",
+                "3x scarabs (any type)",
+                "The random scarab will be of a different type from the scarabs used for the recipe."
+            ]
+        },
+        {
+            "id": "1:manual:tattoos",
+            "input": "tattoos from same tribe",
+            "output": "random tattoo from same tribe",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x random tattoo from same tribe",
+                "3x tattoos from same tribe",
+                "There are 10 Tribes (Arohongui, Hinekora, etc.). Not to be confused with the Attribute type (Strength/Dexterity/Intelligence) of the Tattoo. It is possible to receive back the same type of Tattoo that you just sold 3 copies of."
+            ]
+        },
+        {
+            "id": "1:manual:ultimatums",
+            "input": "Inscribed Ultimatum, any reward or encounter type",
+            "output": "random Inscribed Ultimatum",
+            "quantity": 5,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x random Inscribed Ultimatum",
+                "5x Inscribed Ultimatum, any reward or encounter type",
+                "The returned Inscribed Ultimatum's area level is the lowest of the 5 Inscribed Ultimatums used in the recipe. The reward and encounter type is random.Note: if all 5 Inscribed Ultimatums are the same tier (damage/life% modifier), the resulting Inscribed Ultimatum's reward will also be of the same tier."
+            ]
+        },
+        {
+            "id": "1:manual:unique",
+            "input": "unique item (same name, not corrupted)",
+            "output": "unique item",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x unique item",
+                "3x unique item (same name, not corrupted)",
+                "The unique items used as recipe components must not only have the same name, but also be of the same unique item variant; if they can generate with variable explicit modifier, all modifiers must be the same between the three items. The resulting item will be of the same variant as the components. This rule also applies to legacy variants. The resulting unique item will have its natural implicit modifier, if any. As of version 3.23.0d, unique synthesised item instead return a synthesised unique item with randomised synthesised implicit modifiers instead. Synthesis \"Circle\" Rings also require that they have the same random explicit modifiers. Foulborn unique items cannot be used as components in the 3 to 1 vendor recipe as of version 3.27.0c, and are not interchangeable for their regular versions."
+            ]
+        },
+        {
+            "id": "1:manual:wombgifts",
+            "input": "wombgifts, any type",
+            "output": "random wombgift",
+            "quantity": 5,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": [
+                "1x random wombgift",
+                "5x wombgifts, any type",
+                "Output item has the lowest item level among the input items."
+            ]
+        },
+        {
+            "id": "1:muttering-essence-of-anger",
+            "input": "Muttering Essence of Anger",
+            "output": "Weeping Essence of Anger",
+            "quantity": 3,
+            "revision": 1681254,
+            "source": "https://www.poewiki.net/w/index.php?title=Weeping%20Essence%20of%20Anger&oldid=1681254"
+        },
+        {
+            "id": "1:muttering-essence-of-contempt",
+            "input": "Muttering Essence of Contempt",
+            "output": "Weeping Essence of Contempt",
+            "quantity": 3,
+            "revision": 1681242,
+            "source": "https://www.poewiki.net/w/index.php?title=Weeping%20Essence%20of%20Contempt&oldid=1681242"
+        },
+        {
+            "id": "1:muttering-essence-of-fear",
+            "input": "Muttering Essence of Fear",
+            "output": "Weeping Essence of Fear",
+            "quantity": 3,
+            "revision": 1681266,
+            "source": "https://www.poewiki.net/w/index.php?title=Weeping%20Essence%20of%20Fear&oldid=1681266"
+        },
+        {
+            "id": "1:muttering-essence-of-greed",
+            "input": "Muttering Essence of Greed",
+            "output": "Weeping Essence of Greed",
+            "quantity": 3,
+            "revision": 1681235,
+            "source": "https://www.poewiki.net/w/index.php?title=Weeping%20Essence%20of%20Greed&oldid=1681235"
+        },
+        {
+            "id": "1:muttering-essence-of-hatred",
+            "input": "Muttering Essence of Hatred",
+            "output": "Weeping Essence of Hatred",
+            "quantity": 3,
+            "revision": 1681221,
+            "source": "https://www.poewiki.net/w/index.php?title=Weeping%20Essence%20of%20Hatred&oldid=1681221"
+        },
+        {
+            "id": "1:muttering-essence-of-sorrow",
+            "input": "Muttering Essence of Sorrow",
+            "output": "Weeping Essence of Sorrow",
+            "quantity": 3,
+            "revision": 1681248,
+            "source": "https://www.poewiki.net/w/index.php?title=Weeping%20Essence%20of%20Sorrow&oldid=1681248"
+        },
+        {
+            "id": "1:muttering-essence-of-torment",
+            "input": "Muttering Essence of Torment",
+            "output": "Weeping Essence of Torment",
+            "quantity": 3,
+            "revision": 1681260,
+            "source": "https://www.poewiki.net/w/index.php?title=Weeping%20Essence%20of%20Torment&oldid=1681260"
+        },
+        {
+            "id": "1:muttering-essence-of-woe",
+            "input": "Muttering Essence of Woe",
+            "output": "Weeping Essence of Woe",
+            "quantity": 3,
+            "revision": 1681228,
+            "source": "https://www.poewiki.net/w/index.php?title=Weeping%20Essence%20of%20Woe&oldid=1681228"
+        },
+        {
+            "id": "1:opalescent-oil",
+            "input": "Opalescent Oil",
+            "output": "Silver Oil",
+            "quantity": 3,
+            "revision": 1683016,
+            "source": "https://www.poewiki.net/w/index.php?title=Silver%20Oil&oldid=1683016"
+        },
+        {
+            "id": "1:purchase:alt:jewellers",
+            "input": "Orb of Alteration",
+            "output": "Jeweller's Orb",
+            "quantity": 2,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Jeweller's Orb", "2x Orb of Alteration", "Act 2 (Yeena)"]
+        },
+        {
+            "id": "1:purchase:aug:alt",
+            "input": "Orb of Augmentation",
+            "output": "Orb of Alteration",
+            "quantity": 4,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Alteration", "4x Orb of Augmentation", "Act 1 (Nessa)"]
+        },
+        {
+            "id": "1:purchase:chance:scour",
+            "input": "Orb of Chance",
+            "output": "Orb of Scouring",
+            "quantity": 4,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Scouring", "4x Orb of Chance", "Act 2 (Yeena)"]
+        },
+        {
+            "id": "1:purchase:fusing:chance",
+            "input": "Orb of Fusing",
+            "output": "Orb of Chance",
+            "quantity": 1,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Chance", "1x Orb of Fusing", "Act 3 (Clarissa)"]
+        },
+        {
+            "id": "1:purchase:jewellers:fusing",
+            "input": "Jeweller's Orb",
+            "output": "Orb of Fusing",
+            "quantity": 4,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Fusing", "4x Jeweller's Orb", "Act 2 (Yeena)"]
+        },
+        {
+            "id": "1:purchase:portal:transmute",
+            "input": "Portal Scroll",
+            "output": "Orb of Transmutation",
+            "quantity": 7,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Transmutation", "7x Portal Scroll", "Act 1 (Nessa)"]
+        },
+        {
+            "id": "1:purchase:regret:alch",
+            "input": "Orb of Regret",
+            "output": "Orb of Alchemy",
+            "quantity": 1,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Alchemy", "1x Orb of Regret", "Act 3 (Clarissa)"]
+        },
+        {
+            "id": "1:purchase:scour:regret",
+            "input": "Orb of Scouring",
+            "output": "Orb of Regret",
+            "quantity": 2,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Regret", "2x Orb of Scouring", "Act 2 (Yeena)"]
+        },
+        {
+            "id": "1:purchase:scrap:whetstone",
+            "input": "Armourer's Scrap",
+            "output": "Blacksmith's Whetstone",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Blacksmith's Whetstone", "3x Armourer's Scrap", "Act 2 (Greust)"]
+        },
+        {
+            "id": "1:purchase:transmute:aug",
+            "input": "Orb of Transmutation",
+            "output": "Orb of Augmentation",
+            "quantity": 4,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Orb of Augmentation", "4x Orb of Transmutation", "Act 1 (Nessa)"]
+        },
+        {
+            "id": "1:purchase:whetstone:scrap",
+            "input": "Blacksmith's Whetstone",
+            "output": "Armourer's Scrap",
+            "quantity": 1,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Armourer's Scrap", "1x Blacksmith's Whetstone", "Act 1 (Tarkleigh)"]
+        },
+        {
+            "id": "1:purchase:wisdom:portal",
+            "input": "Scroll of Wisdom",
+            "output": "Portal Scroll",
+            "quantity": 3,
+            "outputQuantity": 1,
+            "revision": 1699119,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
+            "wikiRow": ["Portal Scroll", "3x Scroll of Wisdom", "Act 1 (Nessa)"]
+        },
+        {
+            "id": "1:screaming-essence-of-anger",
+            "input": "Screaming Essence of Anger",
+            "output": "Shrieking Essence of Anger",
+            "quantity": 3,
+            "revision": 1681257,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Anger&oldid=1681257"
+        },
+        {
+            "id": "1:screaming-essence-of-anguish",
+            "input": "Screaming Essence of Anguish",
+            "output": "Shrieking Essence of Anguish",
+            "quantity": 3,
+            "revision": 1681293,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Anguish&oldid=1681293"
+        },
+        {
+            "id": "1:screaming-essence-of-contempt",
+            "input": "Screaming Essence of Contempt",
+            "output": "Shrieking Essence of Contempt",
+            "quantity": 3,
+            "revision": 1681245,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Contempt&oldid=1681245"
+        },
+        {
+            "id": "1:screaming-essence-of-doubt",
+            "input": "Screaming Essence of Doubt",
+            "output": "Shrieking Essence of Doubt",
+            "quantity": 3,
+            "revision": 1681289,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Doubt&oldid=1681289"
+        },
+        {
+            "id": "1:screaming-essence-of-dread",
+            "input": "Screaming Essence of Dread",
+            "output": "Shrieking Essence of Dread",
+            "quantity": 3,
+            "revision": 1681311,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Dread&oldid=1681311"
+        },
+        {
+            "id": "1:screaming-essence-of-envy",
+            "input": "Screaming Essence of Envy",
+            "output": "Shrieking Essence of Envy",
+            "quantity": 3,
+            "revision": 1681317,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Envy&oldid=1681317"
+        },
+        {
+            "id": "1:screaming-essence-of-fear",
+            "input": "Screaming Essence of Fear",
+            "output": "Shrieking Essence of Fear",
+            "quantity": 3,
+            "revision": 1681269,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Fear&oldid=1681269"
+        },
+        {
+            "id": "1:screaming-essence-of-greed",
+            "input": "Screaming Essence of Greed",
+            "output": "Shrieking Essence of Greed",
+            "quantity": 3,
+            "revision": 1681238,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Greed&oldid=1681238"
+        },
+        {
+            "id": "1:screaming-essence-of-hatred",
+            "input": "Screaming Essence of Hatred",
+            "output": "Shrieking Essence of Hatred",
+            "quantity": 3,
+            "revision": 1681224,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Hatred&oldid=1681224"
+        },
+        {
+            "id": "1:screaming-essence-of-loathing",
+            "input": "Screaming Essence of Loathing",
+            "output": "Shrieking Essence of Loathing",
+            "quantity": 3,
+            "revision": 1681297,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Loathing&oldid=1681297"
+        },
+        {
+            "id": "1:screaming-essence-of-misery",
+            "input": "Screaming Essence of Misery",
+            "output": "Shrieking Essence of Misery",
+            "quantity": 3,
+            "revision": 1681308,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Misery&oldid=1681308"
+        },
+        {
+            "id": "1:screaming-essence-of-rage",
+            "input": "Screaming Essence of Rage",
+            "output": "Shrieking Essence of Rage",
+            "quantity": 3,
+            "revision": 1681279,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Rage&oldid=1681279"
+        },
+        {
+            "id": "1:screaming-essence-of-scorn",
+            "input": "Screaming Essence of Scorn",
+            "output": "Shrieking Essence of Scorn",
+            "quantity": 3,
+            "revision": 1681314,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Scorn&oldid=1681314"
+        },
+        {
+            "id": "1:screaming-essence-of-sorrow",
+            "input": "Screaming Essence of Sorrow",
+            "output": "Shrieking Essence of Sorrow",
+            "quantity": 3,
+            "revision": 1681251,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Sorrow&oldid=1681251"
+        },
+        {
+            "id": "1:screaming-essence-of-spite",
+            "input": "Screaming Essence of Spite",
+            "output": "Shrieking Essence of Spite",
+            "quantity": 3,
+            "revision": 1681301,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Spite&oldid=1681301"
+        },
+        {
+            "id": "1:screaming-essence-of-suffering",
+            "input": "Screaming Essence of Suffering",
+            "output": "Shrieking Essence of Suffering",
+            "quantity": 3,
+            "revision": 1681274,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Suffering&oldid=1681274"
+        },
+        {
+            "id": "1:screaming-essence-of-torment",
+            "input": "Screaming Essence of Torment",
+            "output": "Shrieking Essence of Torment",
+            "quantity": 3,
+            "revision": 1681263,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Torment&oldid=1681263"
+        },
+        {
+            "id": "1:screaming-essence-of-woe",
+            "input": "Screaming Essence of Woe",
+            "output": "Shrieking Essence of Woe",
+            "quantity": 3,
+            "revision": 1681231,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Woe&oldid=1681231"
+        },
+        {
+            "id": "1:screaming-essence-of-wrath",
+            "input": "Screaming Essence of Wrath",
+            "output": "Shrieking Essence of Wrath",
+            "quantity": 3,
+            "revision": 1681284,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Wrath&oldid=1681284"
+        },
+        {
+            "id": "1:screaming-essence-of-zeal",
+            "input": "Screaming Essence of Zeal",
+            "output": "Shrieking Essence of Zeal",
+            "quantity": 3,
+            "revision": 1681305,
+            "source": "https://www.poewiki.net/w/index.php?title=Shrieking%20Essence%20of%20Zeal&oldid=1681305"
+        },
+        {
+            "id": "1:sell:alt:wisdom",
+            "input": "Orb of Alteration",
+            "output": "Scroll of Wisdom",
+            "quantity": 1,
+            "outputQuantity": 4,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": ["4x Scroll of Wisdom", "1x Orb of Alteration"]
+        },
+        {
+            "id": "1:sell:portal:wisdom",
+            "input": "Portal Scroll",
+            "output": "Scroll of Wisdom",
+            "quantity": 1,
+            "outputQuantity": 1,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": ["1x Scroll of Wisdom", "1x Portal Scroll"]
+        },
+        {
+            "id": "1:sell:scrap:wisdom",
+            "input": "Armourer's Scrap",
+            "output": "Scroll of Wisdom",
+            "quantity": 1,
+            "outputQuantity": 2,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": ["2x Scroll of Wisdom", "1x Armourer's Scrap"]
+        },
+        {
+            "id": "1:sell:transmute:wisdom",
+            "input": "Orb of Transmutation",
+            "output": "Scroll of Wisdom",
+            "quantity": 1,
+            "outputQuantity": 4,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": ["4x Scroll of Wisdom", "1x Orb of Transmutation"]
+        },
+        {
+            "id": "1:sell:whetstone:wisdom",
+            "input": "Blacksmith's Whetstone",
+            "output": "Scroll of Wisdom",
+            "quantity": 1,
+            "outputQuantity": 4,
+            "revision": 1702238,
+            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
+            "wikiRow": ["4x Scroll of Wisdom", "1x Blacksmith's Whetstone"]
+        },
+        {
+            "id": "1:sepia-oil",
+            "input": "Sepia Oil",
+            "output": "Amber Oil",
+            "quantity": 3,
+            "revision": 1683007,
+            "source": "https://www.poewiki.net/w/index.php?title=Amber%20Oil&oldid=1683007"
+        },
+        {
+            "id": "1:shrieking-essence-of-anger",
+            "input": "Shrieking Essence of Anger",
+            "output": "Deafening Essence of Anger",
+            "quantity": 3,
+            "revision": 1681258,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Anger&oldid=1681258"
+        },
+        {
+            "id": "1:shrieking-essence-of-anguish",
+            "input": "Shrieking Essence of Anguish",
+            "output": "Deafening Essence of Anguish",
+            "quantity": 3,
+            "revision": 1681294,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Anguish&oldid=1681294"
+        },
+        {
+            "id": "1:shrieking-essence-of-contempt",
+            "input": "Shrieking Essence of Contempt",
+            "output": "Deafening Essence of Contempt",
+            "quantity": 3,
+            "revision": 1681246,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Contempt&oldid=1681246"
+        },
+        {
+            "id": "1:shrieking-essence-of-doubt",
+            "input": "Shrieking Essence of Doubt",
+            "output": "Deafening Essence of Doubt",
+            "quantity": 3,
+            "revision": 1681290,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Doubt&oldid=1681290"
+        },
+        {
+            "id": "1:shrieking-essence-of-dread",
+            "input": "Shrieking Essence of Dread",
+            "output": "Deafening Essence of Dread",
+            "quantity": 3,
+            "revision": 1681312,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Dread&oldid=1681312"
+        },
+        {
+            "id": "1:shrieking-essence-of-envy",
+            "input": "Shrieking Essence of Envy",
+            "output": "Deafening Essence of Envy",
+            "quantity": 3,
+            "revision": 1681318,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Envy&oldid=1681318"
+        },
+        {
+            "id": "1:shrieking-essence-of-fear",
+            "input": "Shrieking Essence of Fear",
+            "output": "Deafening Essence of Fear",
+            "quantity": 3,
+            "revision": 1681270,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Fear&oldid=1681270"
+        },
+        {
+            "id": "1:shrieking-essence-of-greed",
+            "input": "Shrieking Essence of Greed",
+            "output": "Deafening Essence of Greed",
+            "quantity": 3,
+            "revision": 1681239,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Greed&oldid=1681239"
+        },
+        {
+            "id": "1:shrieking-essence-of-hatred",
+            "input": "Shrieking Essence of Hatred",
+            "output": "Deafening Essence of Hatred",
+            "quantity": 3,
+            "revision": 1681225,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Hatred&oldid=1681225"
+        },
+        {
+            "id": "1:shrieking-essence-of-loathing",
+            "input": "Shrieking Essence of Loathing",
+            "output": "Deafening Essence of Loathing",
+            "quantity": 3,
+            "revision": 1681298,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Loathing&oldid=1681298"
+        },
+        {
+            "id": "1:shrieking-essence-of-misery",
+            "input": "Shrieking Essence of Misery",
+            "output": "Deafening Essence of Misery",
+            "quantity": 3,
+            "revision": 1681309,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Misery&oldid=1681309"
+        },
+        {
+            "id": "1:shrieking-essence-of-rage",
+            "input": "Shrieking Essence of Rage",
+            "output": "Deafening Essence of Rage",
+            "quantity": 3,
+            "revision": 1681280,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Rage&oldid=1681280"
+        },
+        {
+            "id": "1:shrieking-essence-of-scorn",
+            "input": "Shrieking Essence of Scorn",
+            "output": "Deafening Essence of Scorn",
+            "quantity": 3,
+            "revision": 1681315,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Scorn&oldid=1681315"
+        },
+        {
+            "id": "1:shrieking-essence-of-sorrow",
+            "input": "Shrieking Essence of Sorrow",
+            "output": "Deafening Essence of Sorrow",
+            "quantity": 3,
+            "revision": 1681252,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Sorrow&oldid=1681252"
+        },
+        {
+            "id": "1:shrieking-essence-of-spite",
+            "input": "Shrieking Essence of Spite",
+            "output": "Deafening Essence of Spite",
+            "quantity": 3,
+            "revision": 1681302,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Spite&oldid=1681302"
+        },
+        {
+            "id": "1:shrieking-essence-of-suffering",
+            "input": "Shrieking Essence of Suffering",
+            "output": "Deafening Essence of Suffering",
+            "quantity": 3,
+            "revision": 1681275,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Suffering&oldid=1681275"
+        },
+        {
+            "id": "1:shrieking-essence-of-torment",
+            "input": "Shrieking Essence of Torment",
+            "output": "Deafening Essence of Torment",
+            "quantity": 3,
+            "revision": 1681264,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Torment&oldid=1681264"
+        },
+        {
+            "id": "1:shrieking-essence-of-woe",
+            "input": "Shrieking Essence of Woe",
+            "output": "Deafening Essence of Woe",
+            "quantity": 3,
+            "revision": 1681232,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Woe&oldid=1681232"
+        },
+        {
+            "id": "1:shrieking-essence-of-wrath",
+            "input": "Shrieking Essence of Wrath",
+            "output": "Deafening Essence of Wrath",
+            "quantity": 3,
+            "revision": 1681285,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Wrath&oldid=1681285"
+        },
+        {
+            "id": "1:shrieking-essence-of-zeal",
+            "input": "Shrieking Essence of Zeal",
+            "output": "Deafening Essence of Zeal",
+            "quantity": 3,
+            "revision": 1681306,
+            "source": "https://www.poewiki.net/w/index.php?title=Deafening%20Essence%20of%20Zeal&oldid=1681306"
+        },
+        {
+            "id": "1:silver-oil",
+            "input": "Silver Oil",
+            "output": "Golden Oil",
+            "quantity": 3,
+            "revision": 1683017,
+            "source": "https://www.poewiki.net/w/index.php?title=Golden%20Oil&oldid=1683017"
+        },
+        {
+            "id": "1:teal-oil",
+            "input": "Teal Oil",
+            "output": "Azure Oil",
+            "quantity": 3,
+            "revision": 1683010,
+            "source": "https://www.poewiki.net/w/index.php?title=Azure%20Oil&oldid=1683010"
+        },
+        {
+            "id": "1:verdant-oil",
+            "input": "Verdant Oil",
+            "output": "Teal Oil",
+            "quantity": 3,
+            "revision": 1683009,
+            "source": "https://www.poewiki.net/w/index.php?title=Teal%20Oil&oldid=1683009"
+        },
+        {
+            "id": "1:violet-oil",
+            "input": "Violet Oil",
+            "output": "Crimson Oil",
+            "quantity": 3,
+            "revision": 1683013,
+            "source": "https://www.poewiki.net/w/index.php?title=Crimson%20Oil&oldid=1683013"
+        },
+        {
+            "id": "1:wailing-essence-of-anger",
+            "input": "Wailing Essence of Anger",
+            "output": "Screaming Essence of Anger",
+            "quantity": 3,
+            "revision": 1681256,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Anger&oldid=1681256"
+        },
+        {
+            "id": "1:wailing-essence-of-anguish",
+            "input": "Wailing Essence of Anguish",
+            "output": "Screaming Essence of Anguish",
+            "quantity": 3,
+            "revision": 1681292,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Anguish&oldid=1681292"
+        },
+        {
+            "id": "1:wailing-essence-of-contempt",
+            "input": "Wailing Essence of Contempt",
+            "output": "Screaming Essence of Contempt",
+            "quantity": 3,
+            "revision": 1681244,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Contempt&oldid=1681244"
+        },
+        {
+            "id": "1:wailing-essence-of-doubt",
+            "input": "Wailing Essence of Doubt",
+            "output": "Screaming Essence of Doubt",
+            "quantity": 3,
+            "revision": 1681288,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Doubt&oldid=1681288"
+        },
+        {
+            "id": "1:wailing-essence-of-fear",
+            "input": "Wailing Essence of Fear",
+            "output": "Screaming Essence of Fear",
+            "quantity": 3,
+            "revision": 1681268,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Fear&oldid=1681268"
+        },
+        {
+            "id": "1:wailing-essence-of-greed",
+            "input": "Wailing Essence of Greed",
+            "output": "Screaming Essence of Greed",
+            "quantity": 3,
+            "revision": 1681237,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Greed&oldid=1681237"
+        },
+        {
+            "id": "1:wailing-essence-of-hatred",
+            "input": "Wailing Essence of Hatred",
+            "output": "Screaming Essence of Hatred",
+            "quantity": 3,
+            "revision": 1681223,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Hatred&oldid=1681223"
+        },
+        {
+            "id": "1:wailing-essence-of-loathing",
+            "input": "Wailing Essence of Loathing",
+            "output": "Screaming Essence of Loathing",
+            "quantity": 3,
+            "revision": 1681296,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Loathing&oldid=1681296"
+        },
+        {
+            "id": "1:wailing-essence-of-rage",
+            "input": "Wailing Essence of Rage",
+            "output": "Screaming Essence of Rage",
+            "quantity": 3,
+            "revision": 1681278,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Rage&oldid=1681278"
+        },
+        {
+            "id": "1:wailing-essence-of-sorrow",
+            "input": "Wailing Essence of Sorrow",
+            "output": "Screaming Essence of Sorrow",
+            "quantity": 3,
+            "revision": 1681250,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Sorrow&oldid=1681250"
+        },
+        {
+            "id": "1:wailing-essence-of-spite",
+            "input": "Wailing Essence of Spite",
+            "output": "Screaming Essence of Spite",
+            "quantity": 3,
+            "revision": 1681300,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Spite&oldid=1681300"
+        },
+        {
+            "id": "1:wailing-essence-of-suffering",
+            "input": "Wailing Essence of Suffering",
+            "output": "Screaming Essence of Suffering",
+            "quantity": 3,
+            "revision": 1681273,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Suffering&oldid=1681273"
+        },
+        {
+            "id": "1:wailing-essence-of-torment",
+            "input": "Wailing Essence of Torment",
+            "output": "Screaming Essence of Torment",
+            "quantity": 3,
+            "revision": 1681262,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Torment&oldid=1681262"
+        },
+        {
+            "id": "1:wailing-essence-of-woe",
+            "input": "Wailing Essence of Woe",
+            "output": "Screaming Essence of Woe",
+            "quantity": 3,
+            "revision": 1681230,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Woe&oldid=1681230"
+        },
+        {
+            "id": "1:wailing-essence-of-wrath",
+            "input": "Wailing Essence of Wrath",
+            "output": "Screaming Essence of Wrath",
+            "quantity": 3,
+            "revision": 1681283,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Wrath&oldid=1681283"
+        },
+        {
+            "id": "1:wailing-essence-of-zeal",
+            "input": "Wailing Essence of Zeal",
+            "output": "Screaming Essence of Zeal",
+            "quantity": 3,
+            "revision": 1681304,
+            "source": "https://www.poewiki.net/w/index.php?title=Screaming%20Essence%20of%20Zeal&oldid=1681304"
+        },
+        {
+            "id": "1:weeping-essence-of-anger",
+            "input": "Weeping Essence of Anger",
+            "output": "Wailing Essence of Anger",
+            "quantity": 3,
+            "revision": 1681255,
+            "source": "https://www.poewiki.net/w/index.php?title=Wailing%20Essence%20of%20Anger&oldid=1681255"
+        },
+        {
+            "id": "1:weeping-essence-of-contempt",
+            "input": "Weeping Essence of Contempt",
+            "output": "Wailing Essence of Contempt",
+            "quantity": 3,
+            "revision": 1681243,
+            "source": "https://www.poewiki.net/w/index.php?title=Wailing%20Essence%20of%20Contempt&oldid=1681243"
+        },
+        {
+            "id": "1:weeping-essence-of-doubt",
+            "input": "Weeping Essence of Doubt",
+            "output": "Wailing Essence of Doubt",
+            "quantity": 3,
+            "revision": 1681287,
+            "source": "https://www.poewiki.net/w/index.php?title=Wailing%20Essence%20of%20Doubt&oldid=1681287"
+        },
+        {
+            "id": "1:weeping-essence-of-fear",
+            "input": "Weeping Essence of Fear",
+            "output": "Wailing Essence of Fear",
+            "quantity": 3,
+            "revision": 1681267,
+            "source": "https://www.poewiki.net/w/index.php?title=Wailing%20Essence%20of%20Fear&oldid=1681267"
+        },
+        {
+            "id": "1:weeping-essence-of-greed",
+            "input": "Weeping Essence of Greed",
+            "output": "Wailing Essence of Greed",
+            "quantity": 3,
+            "revision": 1681236,
+            "source": "https://www.poewiki.net/w/index.php?title=Wailing%20Essence%20of%20Greed&oldid=1681236"
+        },
+        {
+            "id": "1:weeping-essence-of-hatred",
+            "input": "Weeping Essence of Hatred",
+            "output": "Wailing Essence of Hatred",
+            "quantity": 3,
+            "revision": 1681222,
+            "source": "https://www.poewiki.net/w/index.php?title=Wailing%20Essence%20of%20Hatred&oldid=1681222"
+        },
+        {
+            "id": "1:weeping-essence-of-rage",
+            "input": "Weeping Essence of Rage",
+            "output": "Wailing Essence of Rage",
+            "quantity": 3,
+            "revision": 1681277,
+            "source": "https://www.poewiki.net/w/index.php?title=Wailing%20Essence%20of%20Rage&oldid=1681277"
+        },
+        {
+            "id": "1:weeping-essence-of-sorrow",
+            "input": "Weeping Essence of Sorrow",
+            "output": "Wailing Essence of Sorrow",
+            "quantity": 3,
+            "revision": 1681249,
+            "source": "https://www.poewiki.net/w/index.php?title=Wailing%20Essence%20of%20Sorrow&oldid=1681249"
+        },
+        {
+            "id": "1:weeping-essence-of-suffering",
+            "input": "Weeping Essence of Suffering",
+            "output": "Wailing Essence of Suffering",
+            "quantity": 3,
+            "revision": 1681272,
+            "source": "https://www.poewiki.net/w/index.php?title=Wailing%20Essence%20of%20Suffering&oldid=1681272"
+        },
+        {
+            "id": "1:weeping-essence-of-torment",
+            "input": "Weeping Essence of Torment",
+            "output": "Wailing Essence of Torment",
+            "quantity": 3,
+            "revision": 1681261,
+            "source": "https://www.poewiki.net/w/index.php?title=Wailing%20Essence%20of%20Torment&oldid=1681261"
+        },
+        {
+            "id": "1:weeping-essence-of-woe",
+            "input": "Weeping Essence of Woe",
+            "output": "Wailing Essence of Woe",
+            "quantity": 3,
+            "revision": 1681229,
+            "source": "https://www.poewiki.net/w/index.php?title=Wailing%20Essence%20of%20Woe&oldid=1681229"
+        },
+        {
+            "id": "1:weeping-essence-of-wrath",
+            "input": "Weeping Essence of Wrath",
+            "output": "Wailing Essence of Wrath",
+            "quantity": 3,
+            "revision": 1681282,
+            "source": "https://www.poewiki.net/w/index.php?title=Wailing%20Essence%20of%20Wrath&oldid=1681282"
+        },
+        {
+            "id": "1:whispering-essence-of-contempt",
+            "input": "Whispering Essence of Contempt",
+            "output": "Muttering Essence of Contempt",
+            "quantity": 3,
+            "revision": 1681241,
+            "source": "https://www.poewiki.net/w/index.php?title=Muttering%20Essence%20of%20Contempt&oldid=1681241"
+        },
+        {
+            "id": "1:whispering-essence-of-greed",
+            "input": "Whispering Essence of Greed",
+            "output": "Muttering Essence of Greed",
+            "quantity": 3,
+            "revision": 1681234,
+            "source": "https://www.poewiki.net/w/index.php?title=Muttering%20Essence%20of%20Greed&oldid=1681234"
+        },
+        {
+            "id": "1:whispering-essence-of-hatred",
+            "input": "Whispering Essence of Hatred",
+            "output": "Muttering Essence of Hatred",
+            "quantity": 3,
+            "revision": 1681220,
+            "source": "https://www.poewiki.net/w/index.php?title=Muttering%20Essence%20of%20Hatred&oldid=1681220"
+        },
+        {
+            "id": "1:whispering-essence-of-woe",
+            "input": "Whispering Essence of Woe",
+            "output": "Muttering Essence of Woe",
+            "quantity": 3,
+            "revision": 1681227,
+            "source": "https://www.poewiki.net/w/index.php?title=Muttering%20Essence%20of%20Woe&oldid=1681227"
+        },
+        {
+            "id": "2:adept-rune",
+            "input": "Adept Rune",
+            "output": "Greater Adept Rune",
+            "quantity": 3,
+            "revision": 131838,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Adept%20Rune&oldid=131838"
+        },
+        {
+            "id": "2:body-rune",
+            "input": "Body Rune",
+            "output": "Greater Body Rune",
+            "quantity": 3,
+            "revision": 131811,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Body%20Rune&oldid=131811"
+        },
+        {
+            "id": "2:concentrated-liquid-fear",
+            "input": "Concentrated Liquid Fear",
+            "output": "Concentrated Liquid Suffering",
+            "quantity": 3,
+            "revision": 133827,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Concentrated%20Liquid%20Suffering&oldid=133827"
+        },
+        {
+            "id": "2:concentrated-liquid-suffering",
+            "input": "Concentrated Liquid Suffering",
+            "output": "Concentrated Liquid Isolation",
+            "quantity": 3,
+            "revision": 133828,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Concentrated%20Liquid%20Isolation&oldid=133828"
+        },
+        {
+            "id": "2:desert-rune",
+            "input": "Desert Rune",
+            "output": "Greater Desert Rune",
+            "quantity": 3,
+            "revision": 131826,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Desert%20Rune&oldid=131826"
+        },
+        {
+            "id": "2:diluted-liquid-greed",
+            "input": "Diluted Liquid Greed",
+            "output": "Liquid Paranoia",
+            "quantity": 3,
+            "revision": 133822,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Liquid%20Paranoia&oldid=133822"
+        },
+        {
+            "id": "2:diluted-liquid-guilt",
+            "input": "Diluted Liquid Guilt",
+            "output": "Diluted Liquid Greed",
+            "quantity": 3,
+            "revision": 133821,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Diluted%20Liquid%20Greed&oldid=133821"
+        },
+        {
+            "id": "2:diluted-liquid-ire",
+            "input": "Diluted Liquid Ire",
+            "output": "Diluted Liquid Guilt",
+            "quantity": 3,
+            "revision": 133820,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Diluted%20Liquid%20Guilt&oldid=133820"
+        },
+        {
+            "id": "2:essence-of-abrasion",
+            "input": "Essence of Abrasion",
+            "output": "Greater Essence of Abrasion",
+            "quantity": 3,
+            "revision": 105514,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Abrasion&oldid=105514"
+        },
+        {
+            "id": "2:essence-of-alacrity",
+            "input": "Essence of Alacrity",
+            "output": "Greater Essence of Alacrity",
+            "quantity": 3,
+            "revision": 54492,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Alacrity&oldid=54492"
+        },
+        {
+            "id": "2:essence-of-battle",
+            "input": "Essence of Battle",
+            "output": "Greater Essence of Battle",
+            "quantity": 3,
+            "revision": 54510,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Battle&oldid=54510"
+        },
+        {
+            "id": "2:essence-of-command",
+            "input": "Essence of Command",
+            "output": "Greater Essence of Command",
+            "quantity": 3,
+            "revision": 61713,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Command&oldid=61713"
+        },
+        {
+            "id": "2:essence-of-electricity",
+            "input": "Essence of Electricity",
+            "output": "Greater Essence of Electricity",
+            "quantity": 3,
+            "revision": 105517,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Electricity&oldid=105517"
+        },
+        {
+            "id": "2:essence-of-enhancement",
+            "input": "Essence of Enhancement",
+            "output": "Greater Essence of Enhancement",
+            "quantity": 3,
+            "revision": 126243,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Enhancement&oldid=126243"
+        },
+        {
+            "id": "2:essence-of-flames",
+            "input": "Essence of Flames",
+            "output": "Greater Essence of Flames",
+            "quantity": 3,
+            "revision": 105515,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Flames&oldid=105515"
+        },
+        {
+            "id": "2:essence-of-grounding",
+            "input": "Essence of Grounding",
+            "output": "Greater Essence of Grounding",
+            "quantity": 3,
+            "revision": 54479,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Grounding&oldid=54479"
+        },
+        {
+            "id": "2:essence-of-haste",
+            "input": "Essence of Haste",
+            "output": "Greater Essence of Haste",
+            "quantity": 3,
+            "revision": 105519,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Haste&oldid=105519"
+        },
+        {
+            "id": "2:essence-of-ice",
+            "input": "Essence of Ice",
+            "output": "Greater Essence of Ice",
+            "quantity": 3,
+            "revision": 105518,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Ice&oldid=105518"
+        },
+        {
+            "id": "2:essence-of-insulation",
+            "input": "Essence of Insulation",
+            "output": "Greater Essence of Insulation",
+            "quantity": 3,
+            "revision": 54471,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Insulation&oldid=54471"
+        },
+        {
+            "id": "2:essence-of-opulence",
+            "input": "Essence of Opulence",
+            "output": "Greater Essence of Opulence",
+            "quantity": 3,
+            "revision": 105639,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Opulence&oldid=105639"
+        },
+        {
+            "id": "2:essence-of-ruin",
+            "input": "Essence of Ruin",
+            "output": "Greater Essence of Ruin",
+            "quantity": 3,
+            "revision": 54483,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Ruin&oldid=54483"
+        },
+        {
+            "id": "2:essence-of-seeking",
+            "input": "Essence of Seeking",
+            "output": "Greater Essence of Seeking",
+            "quantity": 3,
+            "revision": 54496,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Seeking&oldid=54496"
+        },
+        {
+            "id": "2:essence-of-sorcery",
+            "input": "Essence of Sorcery",
+            "output": "Greater Essence of Sorcery",
+            "quantity": 3,
+            "revision": 88187,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Sorcery&oldid=88187"
+        },
+        {
+            "id": "2:essence-of-thawing",
+            "input": "Essence of Thawing",
+            "output": "Greater Essence of Thawing",
+            "quantity": 3,
+            "revision": 54475,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20Thawing&oldid=54475"
+        },
+        {
+            "id": "2:essence-of-the-body",
+            "input": "Essence of the Body",
+            "output": "Greater Essence of the Body",
+            "quantity": 3,
+            "revision": 54442,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20the%20Body&oldid=54442"
+        },
+        {
+            "id": "2:essence-of-the-infinite",
+            "input": "Essence of the Infinite",
+            "output": "Greater Essence of the Infinite",
+            "quantity": 3,
+            "revision": 54501,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20the%20Infinite&oldid=54501"
+        },
+        {
+            "id": "2:essence-of-the-mind",
+            "input": "Essence of the Mind",
+            "output": "Greater Essence of the Mind",
+            "quantity": 3,
+            "revision": 54446,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Essence%20of%20the%20Mind&oldid=54446"
+        },
+        {
+            "id": "2:glacial-rune",
+            "input": "Glacial Rune",
+            "output": "Greater Glacial Rune",
+            "quantity": 3,
+            "revision": 131829,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Glacial%20Rune&oldid=131829"
+        },
+        {
+            "id": "2:inspiration-rune",
+            "input": "Inspiration Rune",
+            "output": "Greater Inspiration Rune",
+            "quantity": 3,
+            "revision": 131817,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Inspiration%20Rune&oldid=131817"
+        },
+        {
+            "id": "2:iron-rune",
+            "input": "Iron Rune",
+            "output": "Greater Iron Rune",
+            "quantity": 3,
+            "revision": 126358,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Iron%20Rune&oldid=126358"
+        },
+        {
+            "id": "2:lesser-adept-rune",
+            "input": "Lesser Adept Rune",
+            "output": "Adept Rune",
+            "quantity": 3,
+            "revision": 131836,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Adept%20Rune&oldid=131836"
+        },
+        {
+            "id": "2:lesser-body-rune",
+            "input": "Lesser Body Rune",
+            "output": "Body Rune",
+            "quantity": 3,
+            "revision": 131809,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Body%20Rune&oldid=131809"
+        },
+        {
+            "id": "2:lesser-desert-rune",
+            "input": "Lesser Desert Rune",
+            "output": "Desert Rune",
+            "quantity": 3,
+            "revision": 131824,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Desert%20Rune&oldid=131824"
+        },
+        {
+            "id": "2:lesser-essence-of-abrasion",
+            "input": "Lesser Essence of Abrasion",
+            "output": "Essence of Abrasion",
+            "quantity": 3,
+            "revision": 105510,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Abrasion&oldid=105510"
+        },
+        {
+            "id": "2:lesser-essence-of-alacrity",
+            "input": "Lesser Essence of Alacrity",
+            "output": "Essence of Alacrity",
+            "quantity": 3,
+            "revision": 54491,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Alacrity&oldid=54491"
+        },
+        {
+            "id": "2:lesser-essence-of-battle",
+            "input": "Lesser Essence of Battle",
+            "output": "Essence of Battle",
+            "quantity": 3,
+            "revision": 54509,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Battle&oldid=54509"
+        },
+        {
+            "id": "2:lesser-essence-of-command",
+            "input": "Lesser Essence of Command",
+            "output": "Essence of Command",
+            "quantity": 3,
+            "revision": 61712,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Command&oldid=61712"
+        },
+        {
+            "id": "2:lesser-essence-of-electricity",
+            "input": "Lesser Essence of Electricity",
+            "output": "Essence of Electricity",
+            "quantity": 3,
+            "revision": 105513,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Electricity&oldid=105513"
+        },
+        {
+            "id": "2:lesser-essence-of-enhancement",
+            "input": "Lesser Essence of Enhancement",
+            "output": "Essence of Enhancement",
+            "quantity": 3,
+            "revision": 126242,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Enhancement&oldid=126242"
+        },
+        {
+            "id": "2:lesser-essence-of-flames",
+            "input": "Lesser Essence of Flames",
+            "output": "Essence of Flames",
+            "quantity": 3,
+            "revision": 105511,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Flames&oldid=105511"
+        },
+        {
+            "id": "2:lesser-essence-of-grounding",
+            "input": "Lesser Essence of Grounding",
+            "output": "Essence of Grounding",
+            "quantity": 3,
+            "revision": 54478,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Grounding&oldid=54478"
+        },
+        {
+            "id": "2:lesser-essence-of-haste",
+            "input": "Lesser Essence of Haste",
+            "output": "Essence of Haste",
+            "quantity": 3,
+            "revision": 105516,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Haste&oldid=105516"
+        },
+        {
+            "id": "2:lesser-essence-of-ice",
+            "input": "Lesser Essence of Ice",
+            "output": "Essence of Ice",
+            "quantity": 3,
+            "revision": 105512,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Ice&oldid=105512"
+        },
+        {
+            "id": "2:lesser-essence-of-insulation",
+            "input": "Lesser Essence of Insulation",
+            "output": "Essence of Insulation",
+            "quantity": 3,
+            "revision": 54470,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Insulation&oldid=54470"
+        },
+        {
+            "id": "2:lesser-essence-of-opulence",
+            "input": "Lesser Essence of Opulence",
+            "output": "Essence of Opulence",
+            "quantity": 3,
+            "revision": 105640,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Opulence&oldid=105640"
+        },
+        {
+            "id": "2:lesser-essence-of-ruin",
+            "input": "Lesser Essence of Ruin",
+            "output": "Essence of Ruin",
+            "quantity": 3,
+            "revision": 54482,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Ruin&oldid=54482"
+        },
+        {
+            "id": "2:lesser-essence-of-seeking",
+            "input": "Lesser Essence of Seeking",
+            "output": "Essence of Seeking",
+            "quantity": 3,
+            "revision": 54495,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Seeking&oldid=54495"
+        },
+        {
+            "id": "2:lesser-essence-of-sorcery",
+            "input": "Lesser Essence of Sorcery",
+            "output": "Essence of Sorcery",
+            "quantity": 3,
+            "revision": 88186,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Sorcery&oldid=88186"
+        },
+        {
+            "id": "2:lesser-essence-of-thawing",
+            "input": "Lesser Essence of Thawing",
+            "output": "Essence of Thawing",
+            "quantity": 3,
+            "revision": 54474,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20Thawing&oldid=54474"
+        },
+        {
+            "id": "2:lesser-essence-of-the-body",
+            "input": "Lesser Essence of the Body",
+            "output": "Essence of the Body",
+            "quantity": 3,
+            "revision": 54443,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20the%20Body&oldid=54443"
+        },
+        {
+            "id": "2:lesser-essence-of-the-infinite",
+            "input": "Lesser Essence of the Infinite",
+            "output": "Essence of the Infinite",
+            "quantity": 3,
+            "revision": 54500,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20the%20Infinite&oldid=54500"
+        },
+        {
+            "id": "2:lesser-essence-of-the-mind",
+            "input": "Lesser Essence of the Mind",
+            "output": "Essence of the Mind",
+            "quantity": 3,
+            "revision": 54445,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Essence%20of%20the%20Mind&oldid=54445"
+        },
+        {
+            "id": "2:lesser-glacial-rune",
+            "input": "Lesser Glacial Rune",
+            "output": "Glacial Rune",
+            "quantity": 3,
+            "revision": 131827,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Glacial%20Rune&oldid=131827"
+        },
+        {
+            "id": "2:lesser-inspiration-rune",
+            "input": "Lesser Inspiration Rune",
+            "output": "Inspiration Rune",
+            "quantity": 3,
+            "revision": 131815,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Inspiration%20Rune&oldid=131815"
+        },
+        {
+            "id": "2:lesser-iron-rune",
+            "input": "Lesser Iron Rune",
+            "output": "Iron Rune",
+            "quantity": 3,
+            "revision": 126338,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Iron%20Rune&oldid=126338"
+        },
+        {
+            "id": "2:lesser-mind-rune",
+            "input": "Lesser Mind Rune",
+            "output": "Mind Rune",
+            "quantity": 3,
+            "revision": 131804,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Mind%20Rune&oldid=131804"
+        },
+        {
+            "id": "2:lesser-rebirth-rune",
+            "input": "Lesser Rebirth Rune",
+            "output": "Rebirth Rune",
+            "quantity": 3,
+            "revision": 131843,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Rebirth%20Rune&oldid=131843"
+        },
+        {
+            "id": "2:lesser-resolve-rune",
+            "input": "Lesser Resolve Rune",
+            "output": "Resolve Rune",
+            "quantity": 3,
+            "revision": 131839,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Resolve%20Rune&oldid=131839"
+        },
+        {
+            "id": "2:lesser-robust-rune",
+            "input": "Lesser Robust Rune",
+            "output": "Robust Rune",
+            "quantity": 3,
+            "revision": 131833,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Robust%20Rune&oldid=131833"
+        },
+        {
+            "id": "2:lesser-stone-rune",
+            "input": "Lesser Stone Rune",
+            "output": "Stone Rune",
+            "quantity": 3,
+            "revision": 131818,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Stone%20Rune&oldid=131818"
+        },
+        {
+            "id": "2:lesser-storm-rune",
+            "input": "Lesser Storm Rune",
+            "output": "Storm Rune",
+            "quantity": 3,
+            "revision": 131830,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Storm%20Rune&oldid=131830"
+        },
+        {
+            "id": "2:lesser-vision-rune",
+            "input": "Lesser Vision Rune",
+            "output": "Vision Rune",
+            "quantity": 3,
+            "revision": 131821,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Vision%20Rune&oldid=131821"
+        },
+        {
+            "id": "2:liquid-despair",
+            "input": "Liquid Despair",
+            "output": "Concentrated Liquid Fear",
+            "quantity": 3,
+            "revision": 133826,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Concentrated%20Liquid%20Fear&oldid=133826"
+        },
+        {
+            "id": "2:liquid-disgust",
+            "input": "Liquid Disgust",
+            "output": "Liquid Despair",
+            "quantity": 3,
+            "revision": 133825,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Liquid%20Despair&oldid=133825"
+        },
+        {
+            "id": "2:liquid-envy",
+            "input": "Liquid Envy",
+            "output": "Liquid Disgust",
+            "quantity": 3,
+            "revision": 133824,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Liquid%20Disgust&oldid=133824"
+        },
+        {
+            "id": "2:liquid-paranoia",
+            "input": "Liquid Paranoia",
+            "output": "Liquid Envy",
+            "quantity": 3,
+            "revision": 133823,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Liquid%20Envy&oldid=133823"
+        },
+        {
+            "id": "2:mind-rune",
+            "input": "Mind Rune",
+            "output": "Greater Mind Rune",
+            "quantity": 3,
+            "revision": 131805,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Mind%20Rune&oldid=131805"
+        },
+        {
+            "id": "2:rebirth-rune",
+            "input": "Rebirth Rune",
+            "output": "Greater Rebirth Rune",
+            "quantity": 3,
+            "revision": 131844,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Rebirth%20Rune&oldid=131844"
+        },
+        {
+            "id": "2:resolve-rune",
+            "input": "Resolve Rune",
+            "output": "Greater Resolve Rune",
+            "quantity": 3,
+            "revision": 131841,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Resolve%20Rune&oldid=131841"
+        },
+        {
+            "id": "2:robust-rune",
+            "input": "Robust Rune",
+            "output": "Greater Robust Rune",
+            "quantity": 3,
+            "revision": 131835,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Robust%20Rune&oldid=131835"
+        },
+        {
+            "id": "2:stone-rune",
+            "input": "Stone Rune",
+            "output": "Greater Stone Rune",
+            "quantity": 3,
+            "revision": 131820,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Stone%20Rune&oldid=131820"
+        },
+        {
+            "id": "2:storm-rune",
+            "input": "Storm Rune",
+            "output": "Greater Storm Rune",
+            "quantity": 3,
+            "revision": 131832,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Storm%20Rune&oldid=131832"
+        },
+        {
+            "id": "2:vision-rune",
+            "input": "Vision Rune",
+            "output": "Greater Vision Rune",
+            "quantity": 3,
+            "revision": 131823,
+            "source": "https://www.poe2wiki.net/w/index.php?title=Greater%20Vision%20Rune&oldid=131823"
+        }
+    ]
+}
