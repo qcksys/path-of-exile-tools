@@ -9,7 +9,19 @@ import { sStashCurrencyHourlyI } from "~/db/schema/stash.currency-hourly";
 import { logger } from "~/services/logger";
 import type { Route } from "./+types/api.stash-ingest";
 
+const PRICE_SCHEMA = z.record(
+    z.string(),
+    z.object({
+        count: z.number().int().nonnegative(),
+        min: z.number().positive(),
+        median: z.number().positive(),
+        max: z.number().positive(),
+    }),
+);
+
+const REALM_SCHEMA = z.enum(["pc", "poe2", "xbox", "sony"]).default("pc");
 const UNIQUE_ROW_SCHEMA = z.object({
+    realm: REALM_SCHEMA,
     league: z.string().min(1).max(100),
     hour: z.number().int().nonnegative(),
     itemKey: z.string().min(1).max(255),
@@ -25,15 +37,18 @@ const UNIQUE_ROW_SCHEMA = z.object({
     identified: z.boolean(),
     listingCount: z.number().int().nonnegative(),
     uniqueSellers: z.number().int().nonnegative(),
-    prices: z.record(
-        z.string(),
-        z.object({ count: z.number(), min: z.number(), median: z.number(), max: z.number() }),
-    ),
+    removedCount: z.number().int().nonnegative().optional(),
+    likelySales: z.number().int().nonnegative().optional(),
+    relistedCount: z.number().int().nonnegative().optional(),
+    pendingCount: z.number().int().nonnegative().optional(),
+    prices: PRICE_SCHEMA,
+    salesPrices: PRICE_SCHEMA.optional(),
     firstSeenAt: z.string().max(32),
     lastSeenAt: z.string().max(32),
 });
 
 const CURRENCY_ROW_SCHEMA = z.object({
+    realm: REALM_SCHEMA,
     league: z.string().min(1).max(100),
     hour: z.number().int().nonnegative(),
     marketId: sStashCurrencyHourlyI.shape.marketId.min(1),

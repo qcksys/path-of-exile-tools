@@ -1,4 +1,5 @@
 import type { Item } from "@poe-tools/api-client";
+import { explicitModLines } from "#src/shared/mod-extractors/lines.ts";
 import type { ModExtractor, ModSignature } from "#src/shared/mod-extractors/types.ts";
 
 const AURAS = [
@@ -41,7 +42,7 @@ export const watchersEyeExtractor: ModExtractor = {
         return item.frameType === 3 && item.identified && item.name === "Watcher's Eye";
     },
     extract(item: Item): ModSignature | null {
-        const mods = (item.explicitMods ?? [])
+        const mods = explicitModLines(item)
             .map(parseLine)
             .filter((m): m is { aura: string; stat: string } => m !== null)
             .sort((a, b) => a.aura.localeCompare(b.aura) || a.stat.localeCompare(b.stat));

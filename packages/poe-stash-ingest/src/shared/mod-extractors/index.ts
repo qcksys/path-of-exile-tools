@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { Item } from "@poe-tools/api-client";
 import { forbiddenJewelExtractor } from "#src/shared/mod-extractors/forbidden-jewels.ts";
 import { forbiddenShakoExtractor } from "#src/shared/mod-extractors/forbidden-shako.ts";
@@ -23,3 +24,12 @@ export function extractModSignature(item: Item): ModSignature | null {
 }
 
 export type { ModExtractor, ModSignature };
+
+export function signatureValue(signature: ModSignature | null): string {
+    if (!signature) return "";
+    const extractor = EXTRACTORS.find((entry) => entry.kind === signature.kind);
+    return (
+        extractor?.value?.(signature) ??
+        createHash("sha256").update(JSON.stringify(signature)).digest("hex")
+    );
+}

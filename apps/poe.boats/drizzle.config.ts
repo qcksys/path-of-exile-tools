@@ -3,6 +3,10 @@ import type { Config } from "drizzle-kit";
 import { DB_TABLE_PREFIX } from "~/const";
 
 const env = process.env as { DATABASE_URL: string };
+const databaseUrl = new URL(env.DATABASE_URL);
+if (databaseUrl.hostname.endsWith(".psdb.cloud") && !databaseUrl.searchParams.has("ssl")) {
+    databaseUrl.searchParams.set("ssl", JSON.stringify({ rejectUnauthorized: true }));
+}
 
 export const drizzleConfig: {
     schema: string;
@@ -17,7 +21,7 @@ export default {
     schema: drizzleConfig.schema,
     out: drizzleConfig.out,
     dbCredentials: {
-        url: env.DATABASE_URL,
+        url: databaseUrl.toString(),
     },
     tablesFilter: [DB_TABLE_PREFIX],
     migrations: {
