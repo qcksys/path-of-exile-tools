@@ -29,7 +29,7 @@ export function AppHeader({ section, sectionBadge, tools }: AppHeaderProps = {})
                             height={24}
                             className="h-6 w-6 rounded"
                         />
-                        <span className="font-bold text-accent text-lg">POE.BOATS</span>
+                        <span className="font-bold text-foreground text-lg">POE.BOATS</span>
                     </Link>
                     {section && (
                         <>
