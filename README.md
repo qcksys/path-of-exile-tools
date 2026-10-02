@@ -9,6 +9,16 @@ A Vite+ and pnpm monorepo containing:
 | `packages/poe-stash-ingest` | DuckDB ingestor that pushes hourly summaries to poe.boats |
 | `packages/poe-stash-tracker` | Local SQLite stash tracker |
 
+## Recombinator simulator
+
+Open `/1/recombinator` from the Path of Exile 1 tools page. Enter up to three prefixes and three suffixes per starting item, then connect items or earlier results in up to eight crafting steps. The example combines two independently crafted items. Each step reports every modifier outcome, affix-count totals, and the probability of a selected target; failures from earlier steps remain in the calculation.
+
+The interactive crafting tree maps all items and steps. Drag a source connector to a step's A or B connector to replace that input, select a step to inspect its outcomes, and pan or zoom to explore larger plans. Connections also stay synchronized with the input dropdowns.
+
+Use identical labels for duplicate modifiers. To prevent different tiers of a modifier appearing together, enter a shared group, such as `T1 life | life` and `T2 life | life`. Toggle the star for exclusive modifiers or the disconnected-plug icon for NNN (non-native natural) modifiers; this updates every copy with the same label. Text entry also accepts `*` for exclusive and `!` for NNN. NNN markers are annotations only: odds assume the modifier is eligible on both bases. Every reference to a step represents a fresh independent run of that recipe, not reuse of a consumed item or retrying until success.
+
+The model follows [the linked 3.26 recombinator guide](https://codeberg.org/poe_notes/poe_notes/src/branch/main/Recombinators-dark-images.md) and its [empirical affix-count table](https://www.reddit.com/r/pathofexile/comments/1exyavx/325_updated_guide_to_recombinators/). The two columns that round to 101% are normalized. Individual modifier selection assumes equal weight per input copy because actual selection weights are not established. The isolated one-prefix plus one-suffix case has three equally likely non-empty outcomes. Multiple exclusive modifiers in a pair, fractured/base-restricted modifiers, item-level/base inheritance, and crafting costs are outside the model. Large plans stop with an explicit limit error instead of discarding outcomes.
+
 ## Install and validate
 
 Install [Vite+](https://viteplus.dev/guide/) and use the Node version in `.node-version` (Node 24).
