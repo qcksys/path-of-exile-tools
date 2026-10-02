@@ -32,6 +32,8 @@ CREATE INDEX IF NOT EXISTS ps_listing_league_itemkey ON ps_listing(league, item_
 CREATE INDEX IF NOT EXISTS ps_listing_icon ON ps_listing(icon_asset);
 CREATE INDEX IF NOT EXISTS ps_listing_removed ON ps_listing(removed_at);
 
+ALTER TABLE ps_listing ADD COLUMN IF NOT EXISTS signature_value VARCHAR;
+
 CREATE TABLE IF NOT EXISTS ps_listing_hour AS
     SELECT * EXCLUDE (removed_at, raw_item),
            epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
@@ -40,6 +42,21 @@ CREATE TABLE IF NOT EXISTS ps_listing_hour AS
 CREATE UNIQUE INDEX IF NOT EXISTS ps_listing_hour_pk
     ON ps_listing_hour(account_name, stash_id, item_id, observed_hour);
 CREATE INDEX IF NOT EXISTS ps_listing_hour_time ON ps_listing_hour(observed_hour, league);
+ALTER TABLE ps_listing_hour ADD COLUMN IF NOT EXISTS signature_value VARCHAR;
+
+CREATE TABLE IF NOT EXISTS ps_sale AS
+    SELECT * EXCLUDE (raw_item), 'pending'::VARCHAR AS status,
+        NULL::TIMESTAMP AS eligible_since, NULL::DOUBLE AS market_price,
+        0::BIGINT AS market_sellers, current_timestamp::TIMESTAMP AS updated_at
+    FROM ps_listing WHERE FALSE;
+CREATE UNIQUE INDEX IF NOT EXISTS ps_sale_pk
+    ON ps_sale(league, account_name, stash_id, item_id, removed_at);
+CREATE INDEX IF NOT EXISTS ps_sale_status ON ps_sale(status);
+
+CREATE TABLE IF NOT EXISTS pipeline_health (
+    id INTEGER PRIMARY KEY, last_poll_at TIMESTAMP NOT NULL, caught_up BOOLEAN NOT NULL
+);
+CREATE TABLE IF NOT EXISTS pipeline_config (key VARCHAR PRIMARY KEY, value VARCHAR NOT NULL);
 
 CREATE TABLE IF NOT EXISTS icon_basemap (
     icon_asset VARCHAR PRIMARY KEY,
@@ -90,6 +107,16 @@ export async function openDb(path = process.env.PS_LOCAL_DB ?? "./data.duckdb"):
     // `epoch(date_trunc('hour', ts))` agrees with JS `Date.now()/3.6e6` unix-hour math.
     await conn.run("SET TimeZone='UTC'");
     await conn.run(SCHEMA_SQL);
+    // Preserve the market keys used before extractors owned their key projection.
+    for (const table of ["ps_listing", "ps_listing_hour"]) {
+        await conn.run(`UPDATE ${table} SET signature_value = CASE
+            WHEN mod_signature IS NULL THEN ''
+            WHEN mod_signature->>'kind' = 'forbidden-jewel' THEN mod_signature->>'allocatedNotable'
+            WHEN mod_signature->>'kind' = 'impossible-escape' THEN mod_signature->>'keystone'
+            WHEN mod_signature->>'kind' = 'forbidden-shako'
+                THEN (mod_signature->>'skill') || '@' || (mod_signature->>'level')
+            ELSE sha256(mod_signature::VARCHAR) END WHERE signature_value IS NULL`);
+    }
     return {
         conn,
         close: async () => {

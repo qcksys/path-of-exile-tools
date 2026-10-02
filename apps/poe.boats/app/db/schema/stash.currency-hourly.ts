@@ -11,6 +11,7 @@ import { timestampCols } from "~/db/helpers/schema.ts";
 export const tStashCurrencyHourly = mysqlTable(
     `${DB_TABLE_PREFIX}stash_currency_hourly`,
     {
+        realm: varchar({ length: 10 }).notNull().default("pc"),
         league: varchar({ length: 100 }).notNull(),
         marketId: varchar({ length: 512 }).notNull(),
         hour: bigint({ mode: "number" }).notNull(),
@@ -22,7 +23,7 @@ export const tStashCurrencyHourly = mysqlTable(
         ...timestampCols,
     },
     (table) => [
-        primaryKey({ columns: [table.league, table.marketId, table.hour] }),
+        primaryKey({ columns: [table.realm, table.league, table.marketId, table.hour] }),
         index("idx_stash_cx_league_hour").on(table.league, table.hour),
     ],
 );

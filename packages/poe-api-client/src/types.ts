@@ -50,6 +50,17 @@ export interface Profile {
 /*  Item                                                                      */
 /* -------------------------------------------------------------------------- */
 
+export interface ItemMod {
+    description: string;
+    flags?: {
+        fractured?: boolean;
+        mutated?: boolean;
+        crafted?: boolean;
+        desecrated?: boolean;
+        vestigial?: boolean;
+    };
+}
+
 export interface ItemProperty {
     name: string;
     values: Array<[string, number]>;
@@ -141,8 +152,8 @@ export interface Item {
     nextLevelRequirements?: ItemProperty[];
     utilityMods?: string[];
     enchantMods?: string[];
-    implicitMods?: string[];
-    explicitMods?: string[];
+    implicitMods?: Array<string | ItemMod>;
+    explicitMods?: Array<string | ItemMod>;
     craftedMods?: string[];
     fracturedMods?: string[];
     scourgeMods?: string[];

@@ -27,6 +27,12 @@ export default function Poe1Home() {
                     >
                         Recombinator Simulator
                     </Link>
+                    <Link
+                        to="/1/market"
+                        className="rounded-lg border border-border px-6 py-3 font-medium transition-colors hover:bg-muted"
+                    >
+                        Season market
+                    </Link>
                 </nav>
             </main>
             <AppFooter />
