@@ -32,7 +32,7 @@ export function ScarabPricesProvider({ children }: { children: ReactNode }) {
 
         try {
             const response = await fetch(
-                `/idol-planner/api/prices/scarabs?league=${encodeURIComponent(leagueId)}`,
+                `/1/idol-planner/api/prices/scarabs?league=${encodeURIComponent(leagueId)}`,
             );
 
             if (!response.ok) {

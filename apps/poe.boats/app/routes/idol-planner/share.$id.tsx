@@ -186,7 +186,7 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
 
             saveStorage(storage);
 
-            navigate("/idol-planner", { replace: true });
+            navigate("/1/idol-planner", { replace: true });
         } catch (error) {
             console.log({
                 message: "Import failed",
@@ -202,7 +202,7 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
         const storage = loadStorage();
         storage.activeSetId = loadState.existingSet.id;
         saveStorage(storage);
-        navigate("/idol-planner", { replace: true });
+        navigate("/1/idol-planner", { replace: true });
     };
 
     if (loadState.status === "loading") {
@@ -232,7 +232,7 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
                         <CardDescription>{loadState.message}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button onClick={() => navigate("/idol-planner")} className="w-full">
+                        <Button onClick={() => navigate("/1/idol-planner")} className="w-full">
                             {t("share.goToPlanner")}
                         </Button>
                     </CardContent>
@@ -351,7 +351,7 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
                     <div className="flex gap-3 pt-4">
                         <Button
                             variant="outline"
-                            onClick={() => navigate("/idol-planner")}
+                            onClick={() => navigate("/1/idol-planner")}
                             className="flex-1"
                         >
                             {t("actions.cancel")}
