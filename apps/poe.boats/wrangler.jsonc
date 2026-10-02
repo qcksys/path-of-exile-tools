@@ -1,5 +1,6 @@
 {
     "$schema": "node_modules/wrangler/config-schema.json",
+    "name": "poe-dot-boats-local",
     "account_id": "923e3a86a572d6d6d05230ccadbbbe34",
     "compatibility_date": "2026-04-01",
     "compatibility_flags": ["nodejs_compat"],
@@ -14,7 +15,7 @@
         "region": "aws:ap-southeast-2"
     },
     "vars": {
-        "URL": "",
+        "URL": "poe.boats.localhost",
         "ENVIRONMENT": "local"
     },
     "env": {
@@ -27,7 +28,7 @@
                 }
             },
             "vars": {
-                "URL": "",
+                "URL": "poe.boats",
                 "ENVIRONMENT": "prod"
             },
             "routes": [
@@ -49,7 +50,7 @@
                 }
             },
             "vars": {
-                "URL": "",
+                "URL": "dev.poe.boats",
                 "ENVIRONMENT": "dev"
             },
             "routes": [

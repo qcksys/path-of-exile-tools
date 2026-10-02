@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { cloudflare } from "@cloudflare/vite-plugin";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
+import { varlockCloudflareVitePlugin } from "@varlock/cloudflare-integration";
 import { Marked } from "marked";
 import { defineConfig, type Plugin } from "vite-plus";
 
@@ -34,6 +34,7 @@ function embeddedMarkdown(entries: Record<string, string>): Plugin {
 export default defineConfig(({ mode }) => {
     if (mode === "dev" || mode === "prod") {
         process.env.CLOUDFLARE_ENV = mode;
+        process.env.APP_ENV = mode;
     }
     return {
         resolve: {
@@ -43,7 +44,7 @@ export default defineConfig(({ mode }) => {
             embeddedMarkdown({
                 changelog: resolve(import.meta.dirname, "CHANGELOG.md"),
             }),
-            cloudflare({
+            varlockCloudflareVitePlugin({
                 viteEnvironment: { name: "ssr" },
             }),
             tailwindcss(),

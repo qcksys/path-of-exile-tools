@@ -31,7 +31,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     // re-uses them during hydration — no async roundtrip, no flash.
     let translations: unknown = null;
     if (locale !== DEFAULT_LOCALE) {
-        const mod = await import(`~/i18n/locales/${locale}.json`);
+        const mod = await import(`./i18n/locales/${locale}.json`);
         translations = mod.default;
     }
 

@@ -1,5 +1,5 @@
 import { dbContext } from "~/context";
-import { loadShare } from "~/lib/share";
+import { loadShare } from "~/lib/share.server";
 import { ShareIdSchema } from "~/schemas/share";
 import type { Route } from "./+types/api.share.$id";
 

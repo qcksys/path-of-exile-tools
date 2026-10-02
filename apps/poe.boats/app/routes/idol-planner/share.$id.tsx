@@ -14,8 +14,8 @@ import {
     extractScarabIds,
     extractScarabNames,
     formatMetaDescription,
-    loadShare,
 } from "~/lib/share";
+import { loadShare } from "~/lib/share.server";
 import { loadStorage, saveStorage } from "~/lib/storage";
 import type { IdolSet } from "~/schemas/idol-set";
 import type { InventoryIdol } from "~/schemas/inventory";
