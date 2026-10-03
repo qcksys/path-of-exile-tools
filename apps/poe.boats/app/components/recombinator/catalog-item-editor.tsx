@@ -10,9 +10,16 @@ import {
 } from "~/components/ui/combobox";
 import { Field, FieldGroup, FieldLabel } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
-import { availableCatalogMods, catalogModAffix, catalogModLabel } from "~/lib/recombinator-catalog";
+import { Separator } from "~/components/ui/separator";
+import {
+    availableCatalogMods,
+    catalogBaseOptions,
+    catalogModAffix,
+    catalogModLabel,
+} from "~/lib/recombinator-catalog";
 import type { RecombinatorDraftItem } from "~/lib/recombinator-plan";
 import { draftAffixes } from "~/lib/recombinator-tree";
+import { cn } from "~/lib/utils";
 import { type RecombinatorAffix, sharesAffixGroup } from "~/schemas/recombinator";
 import type { RecombinatorCatalog } from "~/schemas/recombinator-catalog";
 
@@ -87,9 +94,12 @@ function CatalogPicker({
                         )}
                     </ComboboxList>
                     {matches.length > 60 ? (
-                        <p className="border-t px-3 py-2 text-xs text-muted-foreground">
-                            Showing 60 of {matches.length}. Type to narrow the list.
-                        </p>
+                        <>
+                            <Separator />
+                            <p className="px-3 py-2 text-xs text-muted-foreground">
+                                Showing 60 of {matches.length}. Type to narrow the list.
+                            </p>
+                        </>
                     ) : null}
                 </ComboboxContent>
             </Combobox>
@@ -113,13 +123,16 @@ export function CatalogItemEditor({
     onToggle: (id: string, flag: "exclusive" | "nonNative", enabled: boolean) => void;
 }) {
     const selection = entry.catalog;
+    const baseOptions = useMemo(() => catalogBaseOptions(catalog.bases), [catalog]);
     const bases = useMemo(
         () =>
-            catalog.bases.map((base) => ({
+            baseOptions.map((base) => ({
                 id: base.id,
-                label: `${base.name} · ${base.itemClass}`,
+                label: base.id.startsWith("generic:")
+                    ? `${base.name} · generic`
+                    : `${base.name} · ${base.itemClass}`,
             })),
-        [catalog],
+        [baseOptions],
     );
     const modsById = useMemo(
         () => new Map(catalog.mods.map((mod) => [`poe1:${mod.id}`, mod])),
@@ -147,7 +160,7 @@ export function CatalogItemEditor({
                     onChange({
                         ...entry,
                         catalog: {
-                            base: catalog.bases.find((base) => base.id === id)!,
+                            base: baseOptions.find((base) => base.id === id)!,
                             level: selection?.level ?? 86,
                             prefixes: [],
                             suffixes: [],
@@ -157,7 +170,13 @@ export function CatalogItemEditor({
             />
             {selection ? (
                 <>
-                    <Field>
+                    <Field
+                        data-invalid={
+                            !Number.isInteger(selection.level) ||
+                            selection.level < 1 ||
+                            selection.level > 100
+                        }
+                    >
                         <FieldLabel htmlFor={`${entry.id}-level`}>Item level</FieldLabel>
                         <Input
                             id={`${entry.id}-level`}
@@ -202,7 +221,10 @@ export function CatalogItemEditor({
                         return (
                             <div
                                 key={side}
-                                className={`flex flex-col gap-2 ${side === "prefixes" ? "text-mod-prefix" : "text-mod-suffix"}`}
+                                className={cn(
+                                    "flex flex-col gap-2",
+                                    side === "prefixes" ? "text-mod-prefix" : "text-mod-suffix",
+                                )}
                             >
                                 <CatalogPicker
                                     id={`${entry.id}-${side}-catalog`}

@@ -1,6 +1,7 @@
 import { Star, Unplug, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { draftAffixes } from "~/lib/recombinator-tree";
+import { cn } from "~/lib/utils";
 import type { RecombinatorAffix } from "~/schemas/recombinator";
 
 const exclusiveDescription =
@@ -71,35 +72,43 @@ export function ModifierFlags({
         ).values(),
     ];
     return affixes.length ? (
-        <ul className="space-y-1 text-xs">
+        <ul className="flex flex-col gap-1 text-xs">
             {affixes.map((affix) => (
                 <li key={affix.id} className="flex min-w-0 items-center gap-2">
                     <span
-                        className={`min-w-0 flex-1 ${onRemove ? "" : "truncate text-muted-foreground"}`}
+                        className={cn(
+                            "min-w-0 flex-1",
+                            !onRemove && "truncate text-muted-foreground",
+                        )}
                         title={affix.label ?? affix.id}
                     >
                         {affix.label ?? affix.id}
                     </span>
-                    <button
+                    <Button
+                        variant={affix.exclusive ? "secondary" : "ghost"}
+                        size="icon-xs"
                         type="button"
                         aria-label={`Exclusive: ${affix.label ?? affix.id}`}
                         aria-pressed={affix.exclusive}
                         title={exclusiveDescription}
                         onClick={() => onToggle(affix.id, "exclusive", !affix.exclusive)}
-                        className={`rounded p-1.5 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring ${affix.exclusive ? "bg-warning/10 text-warning" : "text-muted-foreground"}`}
                     >
-                        <Star className={`size-3.5 ${affix.exclusive ? "fill-current" : ""}`} />
-                    </button>
-                    <button
+                        <Star
+                            data-icon="inline-start"
+                            className={cn(affix.exclusive && "fill-current")}
+                        />
+                    </Button>
+                    <Button
+                        variant={affix.nonNative ? "secondary" : "ghost"}
+                        size="icon-xs"
                         type="button"
                         aria-label={`NNN: ${affix.label ?? affix.id}`}
                         aria-pressed={affix.nonNative}
                         title={nonNativeDescription}
                         onClick={() => onToggle(affix.id, "nonNative", !affix.nonNative)}
-                        className={`rounded p-1.5 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring ${affix.nonNative ? "bg-mod-implicit/10 text-mod-implicit" : "text-muted-foreground"}`}
                     >
-                        <Unplug className="size-3.5" />
-                    </button>
+                        <Unplug data-icon="inline-start" />
+                    </Button>
                     {onRemove ? (
                         <Button
                             variant="ghost"

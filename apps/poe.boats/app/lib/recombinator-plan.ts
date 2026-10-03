@@ -1,5 +1,9 @@
 import { ZodError } from "zod";
-import { availableCatalogMods, catalogModAffix } from "~/lib/recombinator-catalog";
+import {
+    availableCatalogMods,
+    catalogBaseOptions,
+    catalogModAffix,
+} from "~/lib/recombinator-catalog";
 import {
     parseAffixes,
     type RecombinatorAffix,
@@ -25,6 +29,50 @@ export type RecombinatorDraft = {
     items: RecombinatorDraftItem[];
     steps: RecombinatorPlan["steps"];
 };
+
+export const emptyRecombinatorDraft: RecombinatorDraft = {
+    items: [
+        { id: "a", name: "Item 1", prefixes: "", suffixes: "" },
+        { id: "b", name: "Item 2", prefixes: "", suffixes: "" },
+    ],
+    steps: [{ id: "combine", name: "Combine items", left: "a", right: "b" }],
+};
+
+export function catalogExampleDraft(catalog: RecombinatorCatalog): RecombinatorDraft {
+    const base =
+        catalogBaseOptions(catalog.bases).find(
+            (candidate) => candidate.id === "generic:Body Armour:str_dex",
+        ) ?? catalog.bases[0];
+    const pool = availableCatalogMods(catalog.mods, base, 86).toSorted((a, b) => b.level - a.level);
+    const chosen: typeof pool = [];
+    for (const mod of pool) {
+        if (chosen.filter((entry) => entry.side === mod.side).length >= 3) continue;
+        if (mod.groups.some((group) => chosen.some((entry) => entry.groups.includes(group))))
+            continue;
+        chosen.push(mod);
+    }
+    const prefixes = chosen.filter((mod) => mod.side === "prefixes");
+    const suffixes = chosen.filter((mod) => mod.side === "suffixes");
+    return {
+        items: [0, 1, 0, 2].map((tier, index) => ({
+            id: ["a", "b", "c", "d"][index],
+            name: `Item ${index + 1}`,
+            prefixes: "",
+            suffixes: "",
+            catalog: {
+                base,
+                level: 86,
+                prefixes: prefixes.length
+                    ? [catalogModAffix(prefixes[tier % prefixes.length])]
+                    : [],
+                suffixes: suffixes.length
+                    ? [catalogModAffix(suffixes[index % suffixes.length])]
+                    : [],
+            },
+        })),
+        steps: exampleRecombinatorDraft.steps,
+    };
+}
 
 export const exampleRecombinatorDraft: RecombinatorDraft = {
     items: [
@@ -54,7 +102,9 @@ function resolveCatalogAffixes(
     if (!Number.isInteger(selection.level) || selection.level < 1 || selection.level > 100) {
         throw new Error("Item level must be a whole number from 1 to 100.");
     }
-    const base = catalog.bases.find((candidate) => candidate.id === selection.base.id);
+    const base = catalogBaseOptions(catalog.bases).find(
+        (candidate) => candidate.id === selection.base.id,
+    );
     if (!base) throw new Error("The selected base is no longer in the catalog. Select it again.");
     const byId = new Map(catalog.mods.map((mod) => [`poe1:${mod.id}`, mod]));
     const selected = [...selection.prefixes, ...selection.suffixes].map((affix) => {

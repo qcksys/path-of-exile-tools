@@ -55,28 +55,26 @@ const rawModSchema = z.object({
     generation_weights: z.array(rawWeightSchema),
 });
 const manifestSchema = z.object({
-    format_version: z.literal(1),
+    format: z.literal(1),
     game: z.literal("poe1"),
-    patch: z.string(),
-    files: z.record(z.string(), z.string().regex(/^[a-f0-9]{64}$/)),
+    client_build: z.string(),
+    files: z.record(z.string(), z.object({ sha256: z.string().regex(/^[a-f0-9]{64}$/) })),
 });
 const sha256 = (data: Uint8Array) => createHash("sha256").update(data).digest("hex");
 
-export async function exportRecombinatorCatalog(snapshot: string, output: string) {
-    const manifestBytes = await readFile(resolve(snapshot, "manifest.json"));
+export async function exportRecombinatorCatalog(dataPackage: string, output: string) {
+    const manifestBytes = await readFile(resolve(dataPackage, "manifest.json"));
     const manifest = manifestSchema.parse(JSON.parse(manifestBytes.toString()));
     async function verifiedJson(path: string): Promise<unknown> {
-        const bytes = await readFile(resolve(snapshot, path));
-        if (sha256(bytes) !== manifest.files[path])
-            throw new Error(`Snapshot hash mismatch: ${path}`);
+        const bytes = await readFile(resolve(dataPackage, "data", path));
+        if (sha256(bytes) !== manifest.files[path]?.sha256)
+            throw new Error(`Package hash mismatch: ${path}`);
         return JSON.parse(bytes.toString());
     }
     const rawBases = z
         .record(z.string(), rawBaseSchema)
-        .parse(await verifiedJson("normalized/base_items.json"));
-    const rawMods = z
-        .record(z.string(), rawModSchema)
-        .parse(await verifiedJson("normalized/mods.json"));
+        .parse(await verifiedJson("base_items.json"));
+    const rawMods = z.record(z.string(), rawModSchema).parse(await verifiedJson("mods.json"));
     const bases = Object.entries(rawBases)
         .filter(
             ([, base]) =>
@@ -124,11 +122,11 @@ export async function exportRecombinatorCatalog(snapshot: string, output: string
     const catalog = recombinatorCatalogSchema.parse({
         format: 1,
         game: "poe1",
-        patch: manifest.patch,
+        patch: manifest.client_build,
         source: {
             manifestSha256: sha256(manifestBytes),
-            basesSha256: manifest.files["normalized/base_items.json"],
-            modsSha256: manifest.files["normalized/mods.json"],
+            basesSha256: manifest.files["base_items.json"].sha256,
+            modsSha256: manifest.files["mods.json"].sha256,
         },
         bases,
         mods: mods
@@ -144,21 +142,11 @@ export async function exportRecombinatorCatalog(snapshot: string, output: string
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
     const program = new Command()
         .name("export-recombinator-catalog")
-        .description("Export the PoE 1 recombinator catalog from a saved snapshot")
-        .argument("[snapshot]", "snapshot directory; defaults to the latest PoE 1 snapshot")
+        .description("Export the PoE 1 recombinator catalog from the generated data package")
+        .argument("[data-package]", "package directory; defaults to packages/poe-1-data")
         .action(async (selected?: string) => {
-            const data = resolve("../../packages/poe-game-data/data/poe1");
-            const snapshot =
-                selected ??
-                resolve(
-                    data,
-                    z
-                        .object({ snapshot: z.string() })
-                        .parse(JSON.parse(await readFile(resolve(data, "latest.json"), "utf8")))
-                        .snapshot,
-                );
             const catalog = await exportRecombinatorCatalog(
-                snapshot,
+                selected ?? resolve("../../packages/poe-1-data"),
                 resolve("public/game-data/recombinator-poe1.json"),
             );
             console.log(

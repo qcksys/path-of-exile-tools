@@ -40,10 +40,46 @@ afterEach(() => {
 });
 
 describe("recombinator editor", () => {
+    it("starts without placeholder mods and requires bases before calculating", () => {
+        render(createElement(RecombinatorSimulator, { catalog: catalogFixture }));
+        expect(screen.queryByText("T1 life")).toBeNull();
+        expect(screen.queryByRole("textbox", { name: "Item 1 prefixes" })).toBeNull();
+        fireEvent.click(screen.getByRole("button", { name: "Calculate plan" }));
+        expect(screen.getByRole("alert").textContent).toContain("Choose a base");
+        expect(screen.queryByTestId("target-chance")).toBeNull();
+    });
+
+    it("searches generic categories, excludes conflicting tiers, and clears mods when switching to a weapon", async () => {
+        render(createElement(RecombinatorSimulator, { catalog: catalogFixture }));
+        async function choose(label: string, query: string, option: string) {
+            const input = screen.getByRole("combobox", { name: label });
+            act(() => input.focus());
+            fireEvent.change(input, { target: { value: query } });
+            fireEvent.keyDown(input, { key: "ArrowDown" });
+            fireEvent.click(await screen.findByRole("option", { name: option }));
+        }
+        await choose("Item 1 base", "any int", "Any INT Body Armour · generic");
+        await choose("Item 1 add prefix (0/3)", "healthy", catalogModLabel(lifeMod));
+        const prefixes = screen.getByRole("combobox", { name: "Item 1 add prefix (1/3)" });
+        act(() => prefixes.focus());
+        fireEvent.change(prefixes, { target: { value: "Fecund" } });
+        fireEvent.keyDown(prefixes, { key: "ArrowDown" });
+        expect(screen.queryByRole("option", { name: /Fecund/ })).toBeNull();
+        fireEvent.keyDown(prefixes, { key: "Escape" });
+        await choose("Item 1 base", "any sword", "Any One Hand Sword · generic");
+        expect(
+            screen.queryByRole("button", { name: `Remove ${catalogModLabel(lifeMod)}` }),
+        ).toBeNull();
+        const weaponPrefix = screen.getByRole("combobox", { name: "Item 1 add prefix (0/3)" });
+        act(() => weaponPrefix.focus());
+        fireEvent.change(weaponPrefix, { target: { value: "life" } });
+        fireEvent.keyDown(weaponPrefix, { key: "ArrowDown" });
+        expect(screen.queryAllByRole("option")).toHaveLength(0);
+        expect(await screen.findByText("No eligible matches.")).toBeDefined();
+    });
+
     it("selects catalog bases and mods, calculates with stable IDs, and resets selections on level changes", async () => {
         render(createElement(RecombinatorSimulator, { catalog: catalogFixture }));
-        fireEvent.change(screen.getByLabelText("Item 1 prefixes"), { target: { value: "" } });
-        fireEvent.change(screen.getByLabelText("Item 1 suffixes"), { target: { value: "" } });
         const baseInput = screen.getByRole("combobox", { name: "Item 1 base" });
         act(() => baseInput.focus());
         fireEvent.change(baseInput, { target: { value: "Vaal" } });
@@ -57,10 +93,17 @@ describe("recombinator editor", () => {
         fireEvent.click(await screen.findByRole("option", { name: catalogModLabel(lifeMod) }));
         expect(screen.getByRole("combobox", { name: "Item 1 add prefix (1/3)" })).toBeDefined();
         expect(screen.getByRole("button", { name: /Edit item 1:.*Vaal Regalia/ })).toBeDefined();
+        const secondBase = screen.getByRole("combobox", { name: "Item 2 base" });
+        act(() => secondBase.focus());
+        fireEvent.change(secondBase, { target: { value: "Any INT" } });
+        fireEvent.keyDown(secondBase, { key: "ArrowDown" });
+        fireEvent.click(
+            await screen.findByRole("option", { name: "Any INT Body Armour · generic" }),
+        );
         await act(async () => {
             fireEvent.click(screen.getByRole("button", { name: "Calculate plan" }));
         });
-        expect(screen.getByLabelText(catalogModLabel(lifeMod))).toBeDefined();
+        expect(screen.getByRole("checkbox", { name: catalogModLabel(lifeMod) })).toBeDefined();
         expect(screen.getByTestId("target-chance")).toBeDefined();
         fireEvent.change(screen.getByLabelText("Item 1 level"), { target: { value: "79" } });
         expect(screen.getByRole("combobox", { name: "Item 1 add prefix (0/3)" })).toBeDefined();
@@ -72,14 +115,20 @@ describe("recombinator editor", () => {
         expect(screen.queryByRole("option", { name: /Fecund/ })).toBeNull();
         fireEvent.keyDown(lowLevelInput, { key: "Escape" });
         fireEvent.click(screen.getByRole("button", { name: "Load example" }));
-        expect(screen.getByRole("combobox", { name: "Item 1 base" })).toHaveProperty("value", "");
-        expect(screen.queryByLabelText("Item 1 level")).toBeNull();
+        expect(screen.getByRole("combobox", { name: "Item 1 base" })).toHaveProperty(
+            "value",
+            "Vaal Regalia · Body Armour",
+        );
+        expect(screen.getByLabelText("Item 1 level")).toHaveProperty("value", "86");
+        expect(screen.queryByRole("textbox", { name: "Item 1 prefixes" })).toBeNull();
     });
 
     it("selects a tree step to inspect its outcome distribution", () => {
         render(createElement(RecombinatorSimulator));
         fireEvent.click(screen.getByRole("button", { name: /^Inspect step 1:/ }));
-        expect(screen.getByLabelText("View step results")).toHaveProperty("value", "first");
+        expect(screen.getByRole("combobox", { name: "View step results" }).textContent).toContain(
+            "Build first pair",
+        );
         expect(screen.getByTestId("target-chance").textContent).toBe("0%");
         expect(
             screen.getByRole("button", { name: /^Inspect step 1:/ }).getAttribute("aria-pressed"),
@@ -108,25 +157,32 @@ describe("recombinator editor", () => {
     it("filters outcomes without changing their odds and supports impossible exact targets", () => {
         render(createElement(RecombinatorSimulator));
         const probability = screen.getByTestId("target-chance").textContent;
-        fireEvent.click(screen.getByLabelText("Matching only"));
+        fireEvent.click(screen.getByRole("checkbox", { name: "Matching only" }));
         expect(screen.getByTestId("target-chance").textContent).toBe(probability);
         expect(screen.getAllByRole("row")).toHaveLength(8);
-        fireEvent.click(screen.getByLabelText("Exact match (no additional modifiers)"));
+        fireEvent.click(
+            screen.getByRole("checkbox", { name: "Exact match (no additional modifiers)" }),
+        );
         expect(screen.getByTestId("target-chance").textContent).toBe("0%");
         expect(screen.getByText("No outcomes match these target modifiers.")).toBeDefined();
     });
 
-    it("starts with a connected multi-step example and updates targets", () => {
+    it("starts with a connected multi-step example and updates targets", async () => {
         render(createElement(RecombinatorSimulator));
         expect(screen.getByRole("heading", { name: "Recombinator simulator" })).toBeDefined();
-        expect(screen.getByLabelText("Step 3 input A")).toHaveProperty("value", "first");
-        expect(screen.getByLabelText("Step 3 input B")).toHaveProperty("value", "second");
+        expect(screen.getByRole("combobox", { name: "Step 3 input A" }).textContent).toContain(
+            "Build first pair",
+        );
+        expect(screen.getByRole("combobox", { name: "Step 3 input B" }).textContent).toContain(
+            "Build second pair",
+        );
         const original = screen.getByTestId("target-chance").textContent;
         fireEvent.click(screen.getByLabelText("T1 life"));
         expect(screen.getByTestId("target-chance").textContent).not.toBe(original);
-        fireEvent.change(screen.getByLabelText("View step results"), {
-            target: { value: "first" },
-        });
+        fireEvent.click(screen.getByRole("combobox", { name: "View step results" }));
+        const firstStep = await screen.findByRole("option", { name: "Step 1: Build first pair" });
+        act(() => firstStep.focus());
+        fireEvent.keyDown(firstStep, { key: "Enter" });
         expect(screen.getByTestId("target-chance").textContent).toBe("0%");
     });
 
@@ -155,7 +211,9 @@ describe("recombinator editor", () => {
             true,
         );
         fireEvent.click(screen.getByRole("button", { name: "Add step" }));
-        expect(screen.getByLabelText("Step 4 input A")).toHaveProperty("value", "finish");
+        expect(screen.getByRole("combobox", { name: "Step 4 input A" }).textContent).toContain(
+            "Combine both results",
+        );
         fireEvent.click(screen.getByRole("button", { name: "Remove step 4" }));
         expect(screen.queryByLabelText("Step 4 input A")).toBeNull();
     });

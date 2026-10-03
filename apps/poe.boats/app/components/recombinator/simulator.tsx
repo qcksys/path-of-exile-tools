@@ -7,8 +7,46 @@ import {
     ModifierIcons,
     ModifierLegend,
 } from "~/components/recombinator/modifier-icons";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "~/components/ui/accordion";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "~/components/ui/card";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "~/components/ui/empty";
+import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from "~/components/ui/select";
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "~/components/ui/table";
+import { Textarea } from "~/components/ui/textarea";
 import {
     calculateRecombinatorPlan,
     matchesTarget,
@@ -19,20 +57,19 @@ import {
     summarizeCounts,
 } from "~/lib/recombinator";
 import {
+    catalogExampleDraft,
+    emptyRecombinatorDraft,
     exampleRecombinatorDraft,
     parseRecombinatorDraft,
     type RecombinatorDraft,
 } from "~/lib/recombinator-plan";
 import { draftAffixes, toggleDraftAffixFlag } from "~/lib/recombinator-tree";
+import { cn } from "~/lib/utils";
 import type { RecombinatorAffix, RecombinatorPlan } from "~/schemas/recombinator";
 import type { RecombinatorCatalog } from "~/schemas/recombinator-catalog";
 
 const examplePlan = parseRecombinatorDraft(exampleRecombinatorDraft);
 const exampleResults = calculateRecombinatorPlan(examplePlan);
-const selectClass =
-    "h-9 w-full min-w-0 rounded-lg border border-input bg-background px-2 text-sm focus-visible:outline-2 focus-visible:outline-ring";
-const textareaClass =
-    "min-h-24 w-full resize-y rounded-lg border border-input bg-background p-2 text-sm leading-6 placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring";
 const pageSize = 20;
 
 function percent(value: number) {
@@ -58,13 +95,19 @@ function AffixList({ affixes, side }: { affixes: RecombinatorAffix[]; side: "pre
 type Calculation = { plan: RecombinatorPlan; results: RecombinatorStepResult[] };
 
 export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatalog }) {
-    const [draft, setDraft] = useState(exampleRecombinatorDraft);
-    const [calculation, setCalculation] = useState<Calculation | null>({
-        plan: examplePlan,
-        results: exampleResults,
-    });
-    const [selectedStep, setSelectedStep] = useState("finish");
-    const [required, setRequired] = useState<string[]>(["T1 life", "T1 armour", "T1 evasion"]);
+    const [draft, setDraft] = useState(catalog ? emptyRecombinatorDraft : exampleRecombinatorDraft);
+    const [calculation, setCalculation] = useState<Calculation | null>(
+        catalog
+            ? null
+            : {
+                  plan: examplePlan,
+                  results: exampleResults,
+              },
+    );
+    const [selectedStep, setSelectedStep] = useState(catalog ? "combine" : "finish");
+    const [required, setRequired] = useState<string[]>(
+        catalog ? [] : ["T1 life", "T1 armour", "T1 evasion"],
+    );
     const [exact, setExact] = useState(false);
     const [matchingOnly, setMatchingOnly] = useState(false);
     const [page, setPage] = useState(0);
@@ -88,6 +131,14 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
         setError(null);
         let plan: RecombinatorPlan;
         try {
+            if (
+                catalog &&
+                draft.items.some(
+                    (item) => !item.catalog && !item.prefixes.trim() && !item.suffixes.trim(),
+                )
+            ) {
+                throw new Error("Choose a base for each starting item before calculating.");
+            }
             plan = parseRecombinatorDraft(draft, catalog);
         } catch (caught) {
             const message = caught instanceof Error ? caught.message : "Check your inputs.";
@@ -155,9 +206,9 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
     const inUse = (id: string) => draft.steps.some((step) => step.left === id || step.right === id);
 
     return (
-        <div className="space-y-8">
+        <div className="flex flex-col gap-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="max-w-2xl space-y-3">
+                <div className="flex max-w-2xl flex-col gap-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                         Crafting laboratory · PoE 1 · 3.26 model
                     </p>
@@ -172,75 +223,98 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                 <Button
                     variant="outline"
                     onClick={() => {
-                        edit(exampleRecombinatorDraft);
-                        setCalculation({ plan: examplePlan, results: exampleResults });
+                        const next = catalog
+                            ? catalogExampleDraft(catalog)
+                            : exampleRecombinatorDraft;
+                        edit(next);
+                        if (!catalog)
+                            setCalculation({ plan: examplePlan, results: exampleResults });
                         setSelectedStep("finish");
-                        setRequired(["T1 life", "T1 armour", "T1 evasion"]);
+                        setRequired(
+                            catalog
+                                ? [
+                                      ...new Set(
+                                          next.items.flatMap(
+                                              (item) =>
+                                                  item.catalog?.prefixes.map((affix) => affix.id) ??
+                                                  [],
+                                          ),
+                                      ),
+                                  ]
+                                : ["T1 life", "T1 armour", "T1 evasion"],
+                        );
                         setExact(false);
                         setMatchingOnly(false);
                     }}
                 >
-                    <RotateCcw />
+                    <RotateCcw data-icon="inline-start" />
                     Load example
                 </Button>
             </div>
 
-            <div className="rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm leading-6">
-                <strong>Estimated odds.</strong> Uses the guide’s measured affix-count table and
-                equal selection weight per modifier copy. Actual modifier weights are uncertain. All
-                items must have compatible bases and transferable modifiers.
-                <details className="mt-1">
-                    <summary className="w-fit cursor-pointer font-medium underline underline-offset-4">
-                        Rules, scope and sources
-                    </summary>
-                    <div className="mt-3 space-y-2 text-muted-foreground">
-                        <p>
-                            Duplicate copies increase the input count and selection chance, but only
-                            one modifier per group can survive. Prefixes and suffixes roll
-                            independently, except isolated 1p + 1s: the three non-empty outcomes
-                            each have a 1/3 chance.
-                        </p>
-                        <p>
-                            The published 3- and 4-input columns total 101%; each is normalized to
-                            100%. Small differences from the guide’s diagrams are expected.
-                            Calculations enumerate every outcome under this model; they are not
-                            random samples.
-                        </p>
-                        <p>
-                            At most one exclusive modifier is supported across each pair, including
-                            duplicate copies. Fractured mods, base-specific transfer restrictions,
-                            output base and item level, new modifiers, and gold/dust costs are
-                            outside this model. Use distinct labels for different tiers and a shared
-                            group for conflicting mods.
-                        </p>
-                        <p>
-                            Each reference to an earlier step means a fresh, independent run of that
-                            recipe. All its outcomes continue, including failures. Reusing a step
-                            requires making another item; this does not model consuming the same
-                            physical item twice or retrying until success.
-                        </p>
-                        <p>
-                            <a
-                                className="underline underline-offset-4"
-                                href={RECOMBINATOR_GUIDE_URL}
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                Read the linked guide
-                            </a>
-                            {" · "}
-                            <a
-                                className="underline underline-offset-4"
-                                href={RECOMBINATOR_TABLE_URL}
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                Original probability table
-                            </a>
-                        </p>
-                    </div>
-                </details>
-            </div>
+            <Alert role="note">
+                <AlertTitle>Estimated odds</AlertTitle>
+                <AlertDescription>
+                    <p>
+                        Uses the guide’s measured affix-count table and equal selection weight per
+                        modifier copy. Actual modifier weights are uncertain. All items must have
+                        compatible bases and transferable modifiers.
+                    </p>
+                    <Accordion>
+                        <AccordionItem value="rules">
+                            <AccordionTrigger>Rules, scope and sources</AccordionTrigger>
+                            <AccordionContent>
+                                <p>
+                                    Duplicate copies increase the input count and selection chance,
+                                    but only one modifier per group can survive. Prefixes and
+                                    suffixes roll independently, except isolated 1p + 1s: the three
+                                    non-empty outcomes each have a 1/3 chance.
+                                </p>
+                                <p>
+                                    The published 3- and 4-input columns total 101%; each is
+                                    normalized to 100%. Small differences from the guide’s diagrams
+                                    are expected. Calculations enumerate every outcome under this
+                                    model; they are not random samples.
+                                </p>
+                                <p>
+                                    At most one exclusive modifier is supported across each pair,
+                                    including duplicate copies. Fractured mods, base-specific
+                                    transfer restrictions, output base and item level, new
+                                    modifiers, and gold/dust costs are outside this model. Use
+                                    distinct labels for different tiers and a shared group for
+                                    conflicting mods.
+                                </p>
+                                <p>
+                                    Each reference to an earlier step means a fresh, independent run
+                                    of that recipe. All its outcomes continue, including failures.
+                                    Reusing a step requires making another item; this does not model
+                                    consuming the same physical item twice or retrying until
+                                    success.
+                                </p>
+                                <p>
+                                    <a
+                                        className="underline underline-offset-4"
+                                        href={RECOMBINATOR_GUIDE_URL}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        Read the linked guide
+                                    </a>
+                                    {" · "}
+                                    <a
+                                        className="underline underline-offset-4"
+                                        href={RECOMBINATOR_TABLE_URL}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        Original probability table
+                                    </a>
+                                </p>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                </AlertDescription>
+            </Alert>
 
             <CraftingTree
                 draft={draft}
@@ -262,8 +336,8 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
             />
 
             <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-                <div className="min-w-0 space-y-8">
-                    <section aria-labelledby="items-heading" className="space-y-4">
+                <div className="flex min-w-0 flex-col gap-8">
+                    <section aria-labelledby="items-heading" className="flex flex-col gap-4">
                         <div className="flex items-center justify-between gap-3">
                             <h2 id="items-heading" className="text-lg font-semibold">
                                 01 <span className="ml-2">Starting items</span>
@@ -286,13 +360,14 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                     })
                                 }
                             >
-                                <Plus />
+                                <Plus data-icon="inline-start" />
                                 Add item
                             </Button>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            Choose a base and item level to select its natural mods, or enter custom
-                            modifiers. Each item supports up to 3 prefixes and 3 suffixes in total.
+                            Search for an armour attribute type, weapon category, or specific base.
+                            Choose an item level, then search its valid mods. Each item supports up
+                            to 3 prefixes and 3 suffixes.
                         </p>
                         {catalog ? (
                             <p className="text-xs text-muted-foreground">
@@ -307,156 +382,189 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                             NNN markers are annotations. Odds assume these modifiers are eligible on
                             both bases; base-transfer restrictions are not simulated.
                         </p>
-                        <details className="text-sm text-muted-foreground">
-                            <summary className="cursor-pointer">
-                                Mod groups and modifier flags
-                            </summary>
-                            <p className="mt-2">
-                                Use <code>T1 life | life</code> and <code>T2 life | life</code> to
-                                share a mod group. Mark an exclusive modifier with <code>*</code>,
-                                for example <code>*Essence reservation</code>, or an NNN modifier
-                                with <code>!</code>, for example <code>!T1 spell suppression</code>.
-                                Labels and groups are case-sensitive.
-                            </p>
-                        </details>
+                        <Accordion>
+                            <AccordionItem value="groups">
+                                <AccordionTrigger>Mod groups and modifier flags</AccordionTrigger>
+                                <AccordionContent>
+                                    <p>
+                                        Catalog mods include their actual groups and tiers. For
+                                        custom mods, Use <code>T1 life | life</code> and{" "}
+                                        <code>T2 life | life</code> to share a mod group. Mark an
+                                        exclusive modifier with <code>*</code>, for example{" "}
+                                        <code>*Essence reservation</code>, or an NNN modifier with{" "}
+                                        <code>!</code>, for example{" "}
+                                        <code>!T1 spell suppression</code>. Labels and groups are
+                                        case-sensitive.
+                                    </p>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                         <div className="grid gap-3 sm:grid-cols-2">
                             {draft.items.map((entry, index) => (
-                                <article
+                                <Card
                                     key={entry.id}
                                     id={`recombinator-item-${entry.id}`}
-                                    className="min-w-0 rounded-xl border border-border bg-card p-4"
+                                    className="min-w-0"
                                 >
-                                    <div className="mb-4 flex items-center gap-2">
-                                        <span className="text-xs font-mono text-muted-foreground">
-                                            {String(index + 1).padStart(2, "0")}
-                                        </span>
-                                        <Input
-                                            aria-label={`Item ${index + 1} name`}
-                                            value={entry.name}
-                                            maxLength={80}
-                                            onChange={(event) =>
-                                                edit({
-                                                    ...draft,
-                                                    items: draft.items.map((item) =>
-                                                        item.id === entry.id
-                                                            ? { ...item, name: event.target.value }
-                                                            : item,
-                                                    ),
-                                                })
-                                            }
-                                        />
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            aria-label={`Remove item ${index + 1}`}
-                                            disabled={inUse(entry.id) || draft.items.length <= 2}
-                                            title={
-                                                inUse(entry.id)
-                                                    ? "Used by a crafting step"
-                                                    : "Remove item"
-                                            }
-                                            onClick={() =>
-                                                edit({
-                                                    ...draft,
-                                                    items: draft.items.filter(
-                                                        (item) => item.id !== entry.id,
-                                                    ),
-                                                })
-                                            }
-                                        >
-                                            <Trash2 />
-                                        </Button>
-                                    </div>
-                                    {catalog ? (
-                                        <CatalogItemEditor
-                                            entry={entry}
-                                            index={index}
-                                            catalog={catalog}
-                                            knownAffixes={draft.items.flatMap((item) => [
-                                                ...(item.catalog?.prefixes ?? []),
-                                                ...(item.catalog?.suffixes ?? []),
-                                            ])}
-                                            onChange={(next) =>
-                                                edit({
-                                                    ...draft,
-                                                    items: draft.items.map((item) =>
-                                                        item.id === entry.id ? next : item,
-                                                    ),
-                                                })
-                                            }
-                                            onToggle={(id, flag, enabled) =>
-                                                edit(toggleDraftAffixFlag(draft, id, flag, enabled))
-                                            }
-                                        />
-                                    ) : null}
-                                    <details open={!entry.catalog}>
-                                        <summary className="mb-3 cursor-pointer text-sm text-muted-foreground">
-                                            Custom modifiers (
-                                            {draftAffixes(entry.prefixes).length +
-                                                draftAffixes(entry.suffixes).length}
-                                            )
-                                        </summary>
-                                        <div className="space-y-3">
-                                            {(["prefixes", "suffixes"] as const).map((side) => (
-                                                <div key={side} className="space-y-1.5">
-                                                    <label className="block space-y-1.5">
-                                                        <span
-                                                            className={`text-xs font-semibold uppercase tracking-wider ${side === "prefixes" ? "text-mod-prefix" : "text-mod-suffix"}`}
-                                                        >
-                                                            {side}
-                                                        </span>
-                                                        <textarea
-                                                            aria-label={`Item ${index + 1} ${side}`}
-                                                            className={textareaClass}
-                                                            value={entry[side]}
-                                                            maxLength={500}
-                                                            spellCheck={false}
-                                                            placeholder={
-                                                                side === "prefixes"
-                                                                    ? "T1 life\nT1 armour"
-                                                                    : "T1 fire resistance"
-                                                            }
-                                                            onChange={(event) =>
-                                                                edit({
-                                                                    ...draft,
-                                                                    items: draft.items.map(
-                                                                        (item) =>
-                                                                            item.id === entry.id
-                                                                                ? {
-                                                                                      ...item,
-                                                                                      [side]: event
-                                                                                          .target
-                                                                                          .value,
-                                                                                  }
-                                                                                : item,
-                                                                    ),
-                                                                })
-                                                            }
-                                                        />
-                                                    </label>
-                                                    <ModifierFlags
-                                                        text={entry[side]}
-                                                        onToggle={(id, flag, enabled) =>
-                                                            edit(
-                                                                toggleDraftAffixFlag(
-                                                                    draft,
-                                                                    id,
-                                                                    flag,
-                                                                    enabled,
-                                                                ),
-                                                            )
-                                                        }
-                                                    />
-                                                </div>
-                                            ))}
+                                    <CardHeader>
+                                        <CardTitle>Item {index + 1}</CardTitle>
+                                        <CardDescription>
+                                            {entry.catalog?.base.name ??
+                                                "Choose a base to get started"}
+                                        </CardDescription>
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                aria-label={`Item ${index + 1} name`}
+                                                value={entry.name}
+                                                maxLength={80}
+                                                onChange={(event) =>
+                                                    edit({
+                                                        ...draft,
+                                                        items: draft.items.map((item) =>
+                                                            item.id === entry.id
+                                                                ? {
+                                                                      ...item,
+                                                                      name: event.target.value,
+                                                                  }
+                                                                : item,
+                                                        ),
+                                                    })
+                                                }
+                                            />
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                aria-label={`Remove item ${index + 1}`}
+                                                disabled={
+                                                    inUse(entry.id) || draft.items.length <= 2
+                                                }
+                                                title={
+                                                    inUse(entry.id)
+                                                        ? "Used by a crafting step"
+                                                        : "Remove item"
+                                                }
+                                                onClick={() =>
+                                                    edit({
+                                                        ...draft,
+                                                        items: draft.items.filter(
+                                                            (item) => item.id !== entry.id,
+                                                        ),
+                                                    })
+                                                }
+                                            >
+                                                <Trash2 />
+                                            </Button>
                                         </div>
-                                    </details>
-                                </article>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {catalog ? (
+                                            <CatalogItemEditor
+                                                entry={entry}
+                                                index={index}
+                                                catalog={catalog}
+                                                knownAffixes={draft.items.flatMap((item) => [
+                                                    ...(item.catalog?.prefixes ?? []),
+                                                    ...(item.catalog?.suffixes ?? []),
+                                                ])}
+                                                onChange={(next) =>
+                                                    edit({
+                                                        ...draft,
+                                                        items: draft.items.map((item) =>
+                                                            item.id === entry.id ? next : item,
+                                                        ),
+                                                    })
+                                                }
+                                                onToggle={(id, flag, enabled) =>
+                                                    edit(
+                                                        toggleDraftAffixFlag(
+                                                            draft,
+                                                            id,
+                                                            flag,
+                                                            enabled,
+                                                        ),
+                                                    )
+                                                }
+                                            />
+                                        ) : null}
+                                        <Accordion defaultValue={catalog ? [] : ["custom"]}>
+                                            <AccordionItem value="custom">
+                                                <AccordionTrigger>
+                                                    Custom modifiers (
+                                                    {draftAffixes(entry.prefixes).length +
+                                                        draftAffixes(entry.suffixes).length}
+                                                    )
+                                                </AccordionTrigger>
+                                                <AccordionContent>
+                                                    <FieldGroup>
+                                                        {(["prefixes", "suffixes"] as const).map(
+                                                            (side) => (
+                                                                <Field key={side}>
+                                                                    <FieldLabel
+                                                                        htmlFor={`${entry.id}-custom-${side}`}
+                                                                    >
+                                                                        {side}
+                                                                    </FieldLabel>
+                                                                    <Textarea
+                                                                        id={`${entry.id}-custom-${side}`}
+                                                                        aria-label={`Item ${index + 1} ${side}`}
+                                                                        className="min-h-24"
+                                                                        value={entry[side]}
+                                                                        maxLength={500}
+                                                                        spellCheck={false}
+                                                                        placeholder={
+                                                                            side === "prefixes"
+                                                                                ? "T1 life\nT1 armour"
+                                                                                : "T1 fire resistance"
+                                                                        }
+                                                                        onChange={(event) =>
+                                                                            edit({
+                                                                                ...draft,
+                                                                                items: draft.items.map(
+                                                                                    (item) =>
+                                                                                        item.id ===
+                                                                                        entry.id
+                                                                                            ? {
+                                                                                                  ...item,
+                                                                                                  [side]: event
+                                                                                                      .target
+                                                                                                      .value,
+                                                                                              }
+                                                                                            : item,
+                                                                                ),
+                                                                            })
+                                                                        }
+                                                                    />
+                                                                    <ModifierFlags
+                                                                        text={entry[side]}
+                                                                        onToggle={(
+                                                                            id,
+                                                                            flag,
+                                                                            enabled,
+                                                                        ) =>
+                                                                            edit(
+                                                                                toggleDraftAffixFlag(
+                                                                                    draft,
+                                                                                    id,
+                                                                                    flag,
+                                                                                    enabled,
+                                                                                ),
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                </Field>
+                                                            ),
+                                                        )}
+                                                    </FieldGroup>
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        </Accordion>
+                                    </CardContent>
+                                </Card>
                             ))}
                         </div>
                     </section>
 
-                    <section aria-labelledby="steps-heading" className="space-y-4">
+                    <section aria-labelledby="steps-heading" className="flex flex-col gap-4">
                         <div className="flex items-center justify-between gap-3">
                             <h2 id="steps-heading" className="text-lg font-semibold">
                                 02 <span className="ml-2">Crafting steps</span>
@@ -479,7 +587,7 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                     })
                                 }
                             >
-                                <Plus />
+                                <Plus data-icon="inline-start" />
                                 Add step
                             </Button>
                         </div>
@@ -487,66 +595,17 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                             A previous step carries every outcome forward. Each reference runs that
                             recipe independently, with fresh items.
                         </p>
-                        <ol className="space-y-3">
+                        <ol className="flex flex-col gap-3">
                             {draft.steps.map((step, index) => (
-                                <li
-                                    key={step.id}
-                                    className="rounded-xl border border-border bg-card p-4"
-                                >
-                                    <div className="mb-3 flex items-center gap-3">
-                                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted font-mono text-xs">
-                                            {index + 1}
-                                        </span>
-                                        <Input
-                                            aria-label={`Step ${index + 1} name`}
-                                            value={step.name}
-                                            maxLength={80}
-                                            onChange={(event) =>
-                                                edit({
-                                                    ...draft,
-                                                    steps: draft.steps.map((entry) =>
-                                                        entry.id === step.id
-                                                            ? { ...entry, name: event.target.value }
-                                                            : entry,
-                                                    ),
-                                                })
-                                            }
-                                        />
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            aria-label={`Remove step ${index + 1}`}
-                                            disabled={inUse(step.id) || draft.steps.length <= 1}
-                                            title={
-                                                inUse(step.id)
-                                                    ? "Used by a later step"
-                                                    : "Remove step"
-                                            }
-                                            onClick={() =>
-                                                edit({
-                                                    ...draft,
-                                                    steps: draft.steps.filter(
-                                                        (entry) => entry.id !== step.id,
-                                                    ),
-                                                })
-                                            }
-                                        >
-                                            <Trash2 />
-                                        </Button>
-                                    </div>
-                                    <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
-                                        {(["left", "right"] as const).map((side) => (
-                                            <label
-                                                key={side}
-                                                className={`min-w-0 space-y-1 ${side === "right" ? "col-start-3" : ""}`}
-                                            >
-                                                <span className="text-xs text-muted-foreground">
-                                                    Input {side === "left" ? "A" : "B"}
-                                                </span>
-                                                <select
-                                                    className={selectClass}
-                                                    aria-label={`Step ${index + 1} input ${side === "left" ? "A" : "B"}`}
-                                                    value={step[side]}
+                                <li key={step.id}>
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Step {index + 1}</CardTitle>
+                                            <div className="flex items-center gap-3">
+                                                <Input
+                                                    aria-label={`Step ${index + 1} name`}
+                                                    value={step.name}
+                                                    maxLength={80}
                                                     onChange={(event) =>
                                                         edit({
                                                             ...draft,
@@ -554,72 +613,166 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                                 entry.id === step.id
                                                                     ? {
                                                                           ...entry,
-                                                                          [side]: event.target
-                                                                              .value,
+                                                                          name: event.target.value,
                                                                       }
                                                                     : entry,
                                                             ),
                                                         })
                                                     }
+                                                />
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    aria-label={`Remove step ${index + 1}`}
+                                                    disabled={
+                                                        inUse(step.id) || draft.steps.length <= 1
+                                                    }
+                                                    title={
+                                                        inUse(step.id)
+                                                            ? "Used by a later step"
+                                                            : "Remove step"
+                                                    }
+                                                    onClick={() =>
+                                                        edit({
+                                                            ...draft,
+                                                            steps: draft.steps.filter(
+                                                                (entry) => entry.id !== step.id,
+                                                            ),
+                                                        })
+                                                    }
                                                 >
-                                                    <optgroup label="Starting items">
-                                                        {draft.items.map((item) => (
-                                                            <option key={item.id} value={item.id}>
-                                                                {item.name || "Unnamed item"}
-                                                            </option>
-                                                        ))}
-                                                    </optgroup>
-                                                    {index > 0 ? (
-                                                        <optgroup label="Earlier results · independent run">
-                                                            {draft.steps
-                                                                .slice(0, index)
-                                                                .map((entry, stepIndex) => (
-                                                                    <option
-                                                                        key={entry.id}
-                                                                        value={entry.id}
-                                                                    >
-                                                                        Step {stepIndex + 1}:{" "}
-                                                                        {entry.name ||
-                                                                            "Unnamed step"}
-                                                                    </option>
-                                                                ))}
-                                                        </optgroup>
-                                                    ) : null}
-                                                </select>
-                                            </label>
-                                        ))}
-                                        <Plus
-                                            aria-hidden="true"
-                                            className="col-start-2 row-start-1 mb-2 size-4 text-muted-foreground"
-                                        />
-                                    </div>
-                                    <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                                        <ArrowDown className="size-3" />
-                                        Full outcome distribution →{" "}
-                                        {step.name || `Step ${index + 1}`}
-                                    </p>
+                                                    <Trash2 />
+                                                </Button>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <FieldGroup className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+                                                {(["left", "right"] as const).map((side) => (
+                                                    <Field
+                                                        key={side}
+                                                        className={cn(
+                                                            "min-w-0",
+                                                            side === "right" && "col-start-3",
+                                                        )}
+                                                    >
+                                                        <FieldLabel htmlFor={`${step.id}-${side}`}>
+                                                            Input {side === "left" ? "A" : "B"}
+                                                        </FieldLabel>
+                                                        <Select
+                                                            value={step[side]}
+                                                            onValueChange={(value) =>
+                                                                value &&
+                                                                edit({
+                                                                    ...draft,
+                                                                    steps: draft.steps.map(
+                                                                        (entry) =>
+                                                                            entry.id === step.id
+                                                                                ? {
+                                                                                      ...entry,
+                                                                                      [side]: value,
+                                                                                  }
+                                                                                : entry,
+                                                                    ),
+                                                                })
+                                                            }
+                                                        >
+                                                            <SelectTrigger
+                                                                id={`${step.id}-${side}`}
+                                                                className="w-full min-w-0"
+                                                                aria-label={`Step ${index + 1} input ${side === "left" ? "A" : "B"}`}
+                                                            >
+                                                                <SelectValue>
+                                                                    {sourceName(step[side]) ||
+                                                                        "Unnamed source"}
+                                                                </SelectValue>
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectGroup>
+                                                                    <SelectLabel>
+                                                                        Starting items
+                                                                    </SelectLabel>
+                                                                    {draft.items.map((item) => (
+                                                                        <SelectItem
+                                                                            key={item.id}
+                                                                            value={item.id}
+                                                                        >
+                                                                            {item.name ||
+                                                                                "Unnamed item"}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectGroup>
+                                                                {index > 0 ? (
+                                                                    <SelectGroup>
+                                                                        <SelectLabel>
+                                                                            Earlier results ·
+                                                                            independent run
+                                                                        </SelectLabel>
+                                                                        {draft.steps
+                                                                            .slice(0, index)
+                                                                            .map(
+                                                                                (
+                                                                                    entry,
+                                                                                    stepIndex,
+                                                                                ) => (
+                                                                                    <SelectItem
+                                                                                        key={
+                                                                                            entry.id
+                                                                                        }
+                                                                                        value={
+                                                                                            entry.id
+                                                                                        }
+                                                                                    >
+                                                                                        Step{" "}
+                                                                                        {stepIndex +
+                                                                                            1}
+                                                                                        :{" "}
+                                                                                        {entry.name ||
+                                                                                            "Unnamed step"}
+                                                                                    </SelectItem>
+                                                                                ),
+                                                                            )}
+                                                                    </SelectGroup>
+                                                                ) : null}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </Field>
+                                                ))}
+                                                <Plus
+                                                    aria-hidden="true"
+                                                    className="col-start-2 row-start-1 mb-2 size-4 text-muted-foreground"
+                                                />
+                                            </FieldGroup>
+                                        </CardContent>
+                                        <CardFooter>
+                                            <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                                                <ArrowDown className="size-3" />
+                                                Full outcome distribution →{" "}
+                                                {step.name || `Step ${index + 1}`}
+                                            </p>
+                                        </CardFooter>
+                                    </Card>
                                 </li>
                             ))}
                         </ol>
                         {error ? (
-                            <div
-                                role="alert"
-                                className="whitespace-pre-wrap break-words rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
-                            >
-                                {error}
-                            </div>
+                            <Alert variant="destructive">
+                                <AlertTitle>Check your plan</AlertTitle>
+                                <AlertDescription className="whitespace-pre-wrap break-words">
+                                    {error}
+                                </AlertDescription>
+                            </Alert>
                         ) : null}
                         <Button size="lg" className="w-full" disabled={busy} onClick={calculate}>
-                            <FlaskConical />
+                            <FlaskConical data-icon="inline-start" />
                             {busy ? "Calculating all outcomes…" : "Calculate plan"}
-                            <ArrowRight />
+                            <ArrowRight data-icon="inline-end" />
                         </Button>
                     </section>
                 </div>
 
                 <section
                     aria-labelledby="outcomes-heading"
-                    className="min-w-0 space-y-5 xl:sticky xl:top-20"
+                    className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-20"
                     aria-busy={busy}
                 >
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -627,88 +780,102 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                             03 <span className="ml-2">Outcome odds</span>
                         </h2>
                         {calculation ? (
-                            <select
-                                aria-label="View step results"
-                                className={`${selectClass} sm:max-w-64`}
+                            <Select
                                 value={selectedStep}
-                                onChange={(event) => {
-                                    setSelectedStep(event.target.value);
+                                onValueChange={(value) => {
+                                    if (value) setSelectedStep(value);
                                     setPage(0);
                                 }}
                             >
-                                {calculation.plan.steps.map((step, index) => (
-                                    <option key={step.id} value={step.id}>
-                                        Step {index + 1}: {step.name}
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger
+                                    aria-label="View step results"
+                                    className="w-full sm:max-w-64"
+                                >
+                                    <SelectValue>{sourceName(selectedStep)}</SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        {calculation.plan.steps.map((step, index) => (
+                                            <SelectItem key={step.id} value={step.id}>
+                                                Step {index + 1}: {step.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                         ) : null}
                     </div>
                     {!calculation ? (
-                        <div
-                            role="status"
-                            className="rounded-xl border border-dashed border-border px-6 py-16 text-center text-muted-foreground"
-                        >
-                            <FlaskConical className="mx-auto mb-4 size-8" />
-                            <p>
-                                {busy
-                                    ? "Calculating your crafting plan…"
-                                    : "Your plan has changed. Calculate to see updated odds."}
-                            </p>
-                        </div>
+                        <Empty role="status">
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <FlaskConical />
+                                </EmptyMedia>
+                                <EmptyDescription>
+                                    {busy
+                                        ? "Calculating your crafting plan…"
+                                        : "Your plan has changed. Calculate to see updated odds."}
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
                     ) : (
                         <>
-                            <div className="rounded-xl border border-border bg-card p-5">
-                                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                    Target modifiers
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {modifiers.map(({ affix, side }) => (
-                                        <label
-                                            key={affix.id}
-                                            className={`flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs ${required.includes(affix.id) ? "border-foreground/30 bg-muted" : "border-border"}`}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                className="accent-foreground"
-                                                aria-label={affix.label ?? affix.id}
-                                                checked={required.includes(affix.id)}
-                                                onChange={(event) => {
-                                                    setRequired((previous) =>
-                                                        event.target.checked
-                                                            ? [...previous, affix.id]
-                                                            : previous.filter(
-                                                                  (id) => id !== affix.id,
-                                                              ),
-                                                    );
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Target modifiers</CardTitle>
+                                    <CardDescription>
+                                        Select the mods you want to keep.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <FieldSet>
+                                        <FieldLegend className="sr-only">
+                                            Target modifiers
+                                        </FieldLegend>
+                                        <FieldGroup className="gap-2">
+                                            {modifiers.map(({ affix, side }) => (
+                                                <Field key={affix.id} orientation="horizontal">
+                                                    <Checkbox
+                                                        id={`target-${affix.id}`}
+                                                        aria-label={affix.label ?? affix.id}
+                                                        checked={required.includes(affix.id)}
+                                                        onCheckedChange={(checked) => {
+                                                            setRequired((previous) =>
+                                                                checked
+                                                                    ? [...previous, affix.id]
+                                                                    : previous.filter(
+                                                                          (id) => id !== affix.id,
+                                                                      ),
+                                                            );
+                                                            setPage(0);
+                                                        }}
+                                                    />
+                                                    <FieldLabel htmlFor={`target-${affix.id}`}>
+                                                        <Badge variant="outline" aria-hidden="true">
+                                                            {side === "prefixes" ? "P" : "S"}
+                                                        </Badge>
+                                                        <ModifierIcons affix={affix} />{" "}
+                                                        {affix.label ?? affix.id}
+                                                    </FieldLabel>
+                                                </Field>
+                                            ))}
+                                        </FieldGroup>
+                                        <Field orientation="horizontal">
+                                            <Checkbox
+                                                id="exact-match"
+                                                checked={exact}
+                                                onCheckedChange={(checked) => {
+                                                    setExact(checked);
                                                     setPage(0);
                                                 }}
                                             />
-                                            <span
-                                                className={
-                                                    side === "prefixes"
-                                                        ? "text-mod-prefix"
-                                                        : "text-mod-suffix"
-                                                }
-                                            >
-                                                <ModifierIcons affix={affix} />{" "}
-                                                {affix.label ?? affix.id}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-                                <label className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                                    <input
-                                        type="checkbox"
-                                        checked={exact}
-                                        onChange={(event) => {
-                                            setExact(event.target.checked);
-                                            setPage(0);
-                                        }}
-                                    />
-                                    Exact match (no additional modifiers)
-                                </label>
-                                <div className="mt-5 flex items-end justify-between gap-3 border-t border-border pt-4">
+                                            <FieldLabel htmlFor="exact-match">
+                                                Exact match (no additional modifiers)
+                                            </FieldLabel>
+                                        </Field>
+                                    </FieldSet>
+                                </CardContent>
+                                <CardFooter className="items-end justify-between gap-3">
                                     <div>
                                         <p className="text-sm text-muted-foreground">
                                             {required.length === 0
@@ -729,103 +896,111 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                         <br />
                                         Includes earlier failures
                                     </p>
-                                </div>
-                            </div>
-                            <div className="rounded-xl border border-border p-4">
-                                <h3 className="mb-3 text-sm font-medium">
-                                    Affix-count distribution
-                                </h3>
-                                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                                </CardFooter>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Affix-count distribution</CardTitle>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                                     {counts.map((count) => (
-                                        <div
+                                        <Badge
+                                            variant="secondary"
                                             key={`${count.prefixes}/${count.suffixes}`}
-                                            className="rounded-md bg-muted/60 px-2 py-2 text-center"
+                                            className="flex flex-col gap-1 py-2"
                                         >
-                                            <p className="text-xs text-muted-foreground">
-                                                <span className="text-mod-prefix">
-                                                    {count.prefixes}p
-                                                </span>{" "}
-                                                /{" "}
-                                                <span className="text-mod-suffix">
-                                                    {count.suffixes}s
-                                                </span>
-                                            </p>
-                                            <p className="mt-1 font-mono text-xs">
-                                                {percent(count.probability)}
-                                            </p>
-                                        </div>
+                                            <span>
+                                                {count.prefixes}p / {count.suffixes}s
+                                            </span>
+                                            <span>{percent(count.probability)}</span>
+                                        </Badge>
                                     ))}
-                                </div>
-                            </div>
-                            <div className="overflow-hidden rounded-xl border border-border">
-                                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-3 text-xs">
-                                    <span className="font-medium">
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>
                                         {sourceName(selectedStep)} · {outcomes.length} outcomes
-                                    </span>
-                                    <label className="flex cursor-pointer items-center gap-2">
-                                        <input
-                                            type="checkbox"
+                                    </CardTitle>
+                                    <Field orientation="horizontal">
+                                        <Checkbox
+                                            id="matching-only"
                                             checked={matchingOnly}
-                                            onChange={(event) => {
-                                                setMatchingOnly(event.target.checked);
+                                            onCheckedChange={(checked) => {
+                                                setMatchingOnly(checked);
                                                 setPage(0);
                                             }}
                                         />
-                                        Matching only
-                                    </label>
-                                </div>
-                                <div className="max-h-[32rem] overflow-auto">
-                                    <table className="w-full table-fixed text-left text-xs leading-5">
-                                        <caption className="sr-only">
+                                        <FieldLabel htmlFor="matching-only">
+                                            Matching only
+                                        </FieldLabel>
+                                    </Field>
+                                </CardHeader>
+                                <CardContent className="max-h-[32rem] overflow-auto">
+                                    <Table className="table-fixed">
+                                        <TableCaption className="sr-only">
                                             Modifier outcomes and unconditional probabilities for{" "}
                                             {sourceName(selectedStep)}
-                                        </caption>
-                                        <thead className="sticky top-0 bg-muted">
-                                            <tr>
-                                                <th className="px-3 py-2 font-medium">Prefixes</th>
-                                                <th className="px-3 py-2 font-medium">Suffixes</th>
-                                                <th className="w-28 px-3 py-2 text-right font-medium">
+                                        </TableCaption>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Prefixes</TableHead>
+                                                <TableHead>Suffixes</TableHead>
+                                                <TableHead className="w-28 text-right">
                                                     Probability
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
+                                                </TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
                                             {visible
                                                 .slice(
                                                     displayedPage * pageSize,
                                                     (displayedPage + 1) * pageSize,
                                                 )
                                                 .map((outcome) => (
-                                                    <tr
+                                                    <TableRow
                                                         key={outcomeKey(outcome.item)}
-                                                        className={`border-t border-border align-top ${required.length && matchesTarget(outcome.item, required, exact) ? "bg-success/5" : ""}`}
+                                                        data-state={
+                                                            required.length &&
+                                                            matchesTarget(
+                                                                outcome.item,
+                                                                required,
+                                                                exact,
+                                                            )
+                                                                ? "selected"
+                                                                : undefined
+                                                        }
                                                     >
-                                                        <td className="break-words px-3 py-3">
+                                                        <TableCell className="whitespace-normal break-words align-top">
                                                             <AffixList
                                                                 affixes={outcome.item.prefixes}
                                                                 side="prefix"
                                                             />
-                                                        </td>
-                                                        <td className="break-words px-3 py-3">
+                                                        </TableCell>
+                                                        <TableCell className="whitespace-normal break-words align-top">
                                                             <AffixList
                                                                 affixes={outcome.item.suffixes}
                                                                 side="suffix"
                                                             />
-                                                        </td>
-                                                        <td className="px-3 py-3 text-right font-mono tabular-nums">
+                                                        </TableCell>
+                                                        <TableCell className="text-right align-top">
                                                             {percent(outcome.probability)}
-                                                        </td>
-                                                    </tr>
+                                                        </TableCell>
+                                                    </TableRow>
                                                 ))}
-                                        </tbody>
-                                    </table>
+                                        </TableBody>
+                                    </Table>
                                     {visible.length === 0 ? (
-                                        <p className="p-6 text-center text-sm text-muted-foreground">
-                                            No outcomes match these target modifiers.
-                                        </p>
+                                        <Empty>
+                                            <EmptyHeader>
+                                                <EmptyDescription>
+                                                    No outcomes match these target modifiers.
+                                                </EmptyDescription>
+                                            </EmptyHeader>
+                                        </Empty>
                                     ) : null}
-                                </div>
-                                <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+                                </CardContent>
+                                <CardFooter className="justify-between gap-2">
                                     <Button
                                         size="sm"
                                         variant="ghost"
@@ -845,8 +1020,8 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                     >
                                         Next
                                     </Button>
-                                </div>
-                            </div>
+                                </CardFooter>
+                            </Card>
                             <p className="text-xs leading-5 text-muted-foreground">
                                 Probabilities are per complete recipe attempt, without retries or
                                 discarding failures. Target filtering does not renormalize the odds.
