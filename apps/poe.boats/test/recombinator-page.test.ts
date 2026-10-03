@@ -24,7 +24,7 @@ describe("recombinator catalog loading", () => {
     it.each([
         "http",
         "schema",
-    ])("keeps custom inputs available after a %s failure and supports retry", async (failure) => {
+    ])("reports a %s failure and loads the catalog on retry", async (failure) => {
         const fetch = vi
             .fn()
             .mockResolvedValueOnce(
@@ -36,7 +36,7 @@ describe("recombinator catalog loading", () => {
         vi.stubGlobal("fetch", fetch);
         render(createElement(MemoryRouter, {}, createElement(RecombinatorPage)));
         expect(await screen.findByRole("alert")).toBeDefined();
-        expect(screen.getByTestId("catalog").textContent).toBe("custom inputs");
+        expect(screen.queryByTestId("catalog")).toBeNull();
         await act(async () => {
             fireEvent.click(screen.getByRole("button", { name: "Retry catalog" }));
         });

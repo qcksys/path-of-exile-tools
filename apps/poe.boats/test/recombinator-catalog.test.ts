@@ -1,8 +1,16 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vite-plus/test";
 import { calculateRecombinatorPlan } from "~/lib/recombinator";
-import { availableCatalogMods, catalogModAffix } from "~/lib/recombinator-catalog";
-import { parseRecombinatorDraft, type RecombinatorDraft } from "~/lib/recombinator-plan";
+import {
+    availableCatalogMods,
+    catalogBaseOptions,
+    catalogModAffix,
+} from "~/lib/recombinator-catalog";
+import {
+    catalogExampleDraft,
+    parseRecombinatorDraft,
+    type RecombinatorDraft,
+} from "~/lib/recombinator-plan";
 import { layoutRecombinatorTree, toggleDraftAffixFlag } from "~/lib/recombinator-tree";
 import {
     recombinatorAffixSchema,
@@ -31,6 +39,44 @@ function draft(): RecombinatorDraft {
 }
 
 describe("recombinator catalog", () => {
+    it("derives generic tags from matching bases and revalidates them when calculating", () => {
+        const regalia = catalogFixture.bases[0];
+        const bases = catalogBaseOptions([
+            { ...regalia, tags: [...regalia.tags, "special_base"] },
+            { ...regalia, id: "another-int-base", name: "Another INT base" },
+            catalogFixture.bases[1],
+        ]);
+        const generic = bases.find((base) => base.id === "generic:Body Armour:int")!;
+        expect(generic.tags).toEqual(regalia.tags);
+        expect(bases.some((base) => base.id === "generic:Body Armour:str_dex_int")).toBe(false);
+        expect(bases.some((base) => base.id === "generic:One Hand Sword:all")).toBe(true);
+        const input = draft();
+        input.items[0].catalog!.base = generic;
+        expect(parseRecombinatorDraft(input, catalogFixture).items[0].item.prefixes).toHaveLength(
+            1,
+        );
+        input.items[0].catalog!.base = {
+            ...generic,
+            id: "generic:One Hand Sword:all",
+            tags: generic.tags,
+        };
+        expect(() => parseRecombinatorDraft(input, catalogFixture)).toThrow("not eligible");
+    });
+
+    it("loads a multi-step example made entirely from eligible catalog modifiers", () => {
+        const example = catalogExampleDraft(catalogFixture);
+        const plan = parseRecombinatorDraft(example, catalogFixture);
+        expect(plan.steps).toHaveLength(3);
+        expect(example.items.every((item) => item.prefixes === "" && item.suffixes === "")).toBe(
+            true,
+        );
+        expect(
+            plan.items.every(({ item }) =>
+                item.prefixes.every((mod) => mod.id.startsWith("poe1:")),
+            ),
+        ).toBe(true);
+        expect(calculateRecombinatorPlan(plan)).toHaveLength(3);
+    });
     it("uses ordered weights, including blocking zeroes, and inclusive level limits", () => {
         expect(availableCatalogMods([lifeMod], catalogFixture.bases[1], 86)).toEqual([]);
         expect(availableCatalogMods([lifeTier2], catalogFixture.bases[0], 79)).toEqual([]);
@@ -138,12 +184,50 @@ describe("recombinator catalog", () => {
             JSON.parse(await readFile("public/game-data/recombinator-poe1.json", "utf8")),
         );
         const base = catalog.bases.find((item) => item.name === "Vaal Regalia")!;
+        const manifest = JSON.parse(
+            await readFile("../../packages/poe-1-data/manifest.json", "utf8"),
+        );
+        expect(catalog.patch).toBe(manifest.client_build);
+        expect(catalog.source.basesSha256).toBe(manifest.files["base_items.json"].sha256);
+        expect(catalog.source.modsSha256).toBe(manifest.files["mods.json"].sha256);
         expect(base).toBeDefined();
         expect(
             availableCatalogMods(catalog.mods, base, 86).some((mod) => mod.id === "IncreasedLife9"),
         ).toBe(true);
         expect(new Set(catalog.bases.map((item) => item.id)).size).toBe(catalog.bases.length);
         expect(new Set(catalog.mods.map((mod) => mod.id)).size).toBe(catalog.mods.length);
+        const options = catalogBaseOptions(catalog.bases);
+        const ids = (id: string) =>
+            availableCatalogMods(catalog.mods, options.find((base) => base.id === id)!, 86).map(
+                (mod) => mod.id,
+            );
+        for (const attributes of [
+            "str",
+            "dex",
+            "int",
+            "str_int",
+            "str_dex",
+            "dex_int",
+            "str_dex_int",
+        ]) {
+            expect(ids(`generic:Body Armour:${attributes}`).length).toBeGreaterThan(0);
+        }
+        expect(ids("generic:Body Armour:int")).toContain("LocalIncreasedEnergyShield1");
+        expect(ids("generic:Body Armour:str")).not.toContain("LocalIncreasedEnergyShield1");
+        expect(ids("generic:Body Armour:str_dex_int")).toContain("LocalIncreasedEnergyShield1");
+        const staff = ids("generic:Staff:all");
+        const warstaff = ids("generic:Warstaff:all");
+        expect(staff.some((id) => id.startsWith("SpellDamageOnTwoHandWeapon"))).toBe(true);
+        expect(warstaff.some((id) => id.startsWith("SpellDamageOnTwoHandWeapon"))).toBe(false);
+        for (const itemClass of ["One Hand Sword", "Two Hand Sword"]) {
+            expect(ids(`generic:${itemClass}:all`)).toContain(
+                "LocalIncreasedPhysicalDamagePercent1",
+            );
+            expect(ids(`generic:${itemClass}:all`)).not.toContain("IncreasedLife9");
+        }
+        expect(ids("generic:One Hand Sword:all")).not.toEqual(ids("generic:Two Hand Sword:all"));
+        const example = parseRecombinatorDraft(catalogExampleDraft(catalog), catalog);
+        expect(calculateRecombinatorPlan(example)).toHaveLength(3);
         for (const mod of catalog.mods)
             expect(recombinatorAffixSchema.safeParse(catalogModAffix(mod)).success).toBe(true);
     });

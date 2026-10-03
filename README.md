@@ -12,7 +12,11 @@ A Vite+ and pnpm monorepo containing:
 
 ## Recombinator simulator
 
-Open `/1/recombinator` from the Path of Exile 1 tools page. Enter up to three prefixes and three suffixes per starting item, then connect items or earlier results in up to eight crafting steps. The example combines two independently crafted items. Each step reports every modifier outcome, affix-count totals, and the probability of a selected target; failures from earlier steps remain in the calculation.
+Open `/1/recombinator` from the Path of Exile 1 tools page. Search for a particular base, a generic armour attribute combination (STR, DEX, INT and their hybrids, per armour slot), or a weapon category such as Staff, Warstaff, One Hand Sword or Two Hand Sword. Generic choices use the tags shared by the generated bases in that category; only combinations present in the data are offered. Select up to three prefixes and three suffixes from the searchable list of natural, uninfluenced mods valid for that base and item level. Selecting a different base or level clears selected catalog mods. Custom modifiers remain available under the advanced accordion.
+
+The catalog is exported from the committed `packages/poe-1-data` outputs, with hashes checked against the package manifest. App builds refresh it automatically. Run `pnpm --filter poe-boats game-data:recombinator` after regenerating that package to refresh `apps/poe.boats/public/game-data/recombinator-poe1.json` during development. No local extraction snapshot is required.
+
+Connect items or earlier results in up to eight crafting steps. Load example creates a multi-step plan using actual catalog mods. Each step reports every modifier outcome, affix-count totals, and the probability of a selected target; failures from earlier steps remain in the calculation.
 
 The interactive crafting tree maps all items and steps. Drag a source connector to a step's A or B connector to replace that input, select a step to inspect its outcomes, and pan or zoom to explore larger plans. Connections also stay synchronized with the input dropdowns.
 

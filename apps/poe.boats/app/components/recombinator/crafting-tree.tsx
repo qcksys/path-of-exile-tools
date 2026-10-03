@@ -1,18 +1,28 @@
 import {
     Background,
-    Controls,
     type Edge,
     Handle,
     MarkerType,
     type Node,
     type NodeProps,
+    Panel,
     Position,
     ReactFlow,
     type ReactFlowInstance,
 } from "@xyflow/react";
-import { Box, GitMerge } from "lucide-react";
+import { Box, GitMerge, Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ModifierIcons, ModifierLegend } from "~/components/recombinator/modifier-icons";
+import { Button } from "~/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "~/components/ui/card";
+import { Separator } from "~/components/ui/separator";
 import { matchesTarget, type RecombinatorStepResult } from "~/lib/recombinator";
 import type { RecombinatorDraft } from "~/lib/recombinator-plan";
 import {
@@ -21,6 +31,7 @@ import {
     layoutRecombinatorTree,
     type TreeAffix,
 } from "~/lib/recombinator-tree";
+import { cn } from "~/lib/utils";
 import "@xyflow/react/dist/style.css";
 import "./crafting-tree.css";
 
@@ -41,8 +52,11 @@ type CraftNode = Node<
 
 function CraftingNode({ data }: NodeProps<CraftNode>) {
     return (
-        <div
-            className={`h-full rounded-xl border bg-card shadow-sm ${data.active ? "border-primary ring-2 ring-primary/20" : "border-border"}`}
+        <Card
+            className={cn(
+                "h-full gap-0 overflow-visible py-0",
+                data.active && "ring-2 ring-primary",
+            )}
         >
             {data.kind === "step" ? (
                 <>
@@ -68,18 +82,19 @@ function CraftingNode({ data }: NodeProps<CraftNode>) {
                     </span>
                 </>
             ) : null}
-            <button
+            <Button
+                variant="ghost"
                 type="button"
                 onClick={data.select}
                 aria-label={`${data.kind === "item" ? "Edit item" : "Inspect step"} ${data.index + 1}: ${data.name}`}
                 aria-pressed={data.kind === "step" ? data.active : undefined}
-                className="nodrag pointer-events-auto h-full w-full rounded-xl px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-ring"
+                className="nodrag pointer-events-auto block h-full w-full px-4 py-3 text-left whitespace-normal"
             >
                 <span className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                     {data.kind === "item" ? (
-                        <Box className="size-3" />
+                        <Box data-icon="inline-start" />
                     ) : (
-                        <GitMerge className="size-3" />
+                        <GitMerge data-icon="inline-start" />
                     )}
                     {data.kind === "item" ? "Item" : "Step"} {data.index + 1}
                 </span>
@@ -92,7 +107,10 @@ function CraftingNode({ data }: NodeProps<CraftNode>) {
                             data.affixes.slice(0, 6).map(({ affix, side }) => (
                                 <span
                                     key={`${side}-${affix.id}`}
-                                    className={`flex items-center gap-1 ${side === "prefixes" ? "text-mod-prefix" : "text-mod-suffix"}`}
+                                    className={cn(
+                                        "flex items-center gap-1",
+                                        side === "prefixes" ? "text-mod-prefix" : "text-mod-suffix",
+                                    )}
                                 >
                                     <span className="font-mono text-[9px] opacity-70">
                                         {side === "prefixes" ? "P" : "S"}
@@ -127,14 +145,14 @@ function CraftingNode({ data }: NodeProps<CraftNode>) {
                         ) : null}
                     </span>
                 )}
-            </button>
+            </Button>
             <Handle
                 id="output"
                 type="source"
                 position={Position.Right}
                 aria-label={`${data.kind === "item" ? "Item" : "Step"} ${data.index + 1} output connector`}
             />
-        </div>
+        </Card>
     );
 }
 
@@ -201,24 +219,25 @@ export function CraftingTree({
     });
 
     return (
-        <section
-            aria-labelledby="tree-heading"
-            className="overflow-hidden rounded-xl border border-border"
-        >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
+        <Card aria-labelledby="tree-heading" className="gap-0">
+            <CardHeader className="flex flex-wrap items-center justify-between gap-3 pb-3">
                 <div>
-                    <h2 id="tree-heading" className="flex items-center gap-2 font-semibold">
+                    <CardTitle id="tree-heading" className="flex items-center gap-2">
                         <GitMerge className="size-4" />
                         Crafting tree
-                    </h2>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    </CardTitle>
+                    <CardDescription>
                         Drag an output to A or B to replace that input. Select a step to inspect it.
                         Pan and zoom to explore.
-                    </p>
+                    </CardDescription>
                 </div>
                 <ModifierLegend />
-            </div>
-            <div className="recombinator-flow h-[460px] sm:h-[520px]" data-testid="crafting-tree">
+            </CardHeader>
+            <Separator />
+            <CardContent
+                className="recombinator-flow h-[460px] px-0 sm:h-[520px]"
+                data-testid="crafting-tree"
+            >
                 <ReactFlow<CraftNode, Edge>
                     nodes={nodes}
                     edges={edges}
@@ -242,17 +261,41 @@ export function CraftingTree({
                     onConnect={(connection) => onEdit(connectTreeStep(draft, connection))}
                 >
                     <Background gap={20} size={1} />
-                    <Controls
-                        showInteractive={false}
-                        fitViewOptions={{ padding: 0.12, maxZoom: 1 }}
-                    />
+                    <Panel position="bottom-left" className="flex gap-1">
+                        <Button
+                            variant="outline"
+                            size="icon-sm"
+                            aria-label="Zoom in"
+                            onClick={() => void instance?.zoomIn()}
+                        >
+                            <ZoomIn />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon-sm"
+                            aria-label="Zoom out"
+                            onClick={() => void instance?.zoomOut()}
+                        >
+                            <ZoomOut />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon-sm"
+                            aria-label="Fit crafting tree"
+                            onClick={() => void instance?.fitView({ padding: 0.12, maxZoom: 1 })}
+                        >
+                            <Maximize />
+                        </Button>
+                    </Panel>
                 </ReactFlow>
-            </div>
-            <p className="border-t border-border px-4 py-2 text-xs text-muted-foreground">
-                <span className="text-mod-prefix">Blue → input A</span> ·{" "}
-                <span className="text-mod-suffix">Green → input B</span>. Connections can only use
-                starting items or earlier steps. Repeated sources mean independent runs.
-            </p>
-        </section>
+            </CardContent>
+            <CardFooter>
+                <p className="text-xs text-muted-foreground">
+                    <span className="text-mod-prefix">Blue → input A</span> ·{" "}
+                    <span className="text-mod-suffix">Green → input B</span>. Connections can only
+                    use starting items or earlier steps. Repeated sources mean independent runs.
+                </p>
+            </CardFooter>
+        </Card>
     );
 }
