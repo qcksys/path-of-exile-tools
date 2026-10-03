@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "react-router dev",
         "dev:portless": "portless",
-        "build": "react-router build",
+        "build": "vp run game-data:recombinator && react-router build",
         "env:check": "varlock load",
         "game-data:recombinator": "tsx scripts/export-recombinator-catalog.ts",
         "test": "vp test run",

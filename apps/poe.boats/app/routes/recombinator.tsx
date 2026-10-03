@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { AppFooter } from "~/components/app-footer";
 import { AppHeader } from "~/components/app-header";
 import { RecombinatorSimulator } from "~/components/recombinator/simulator";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import {
     type RecombinatorCatalog,
@@ -50,30 +51,38 @@ export default function RecombinatorPage() {
     return (
         <div className="flex min-h-screen flex-col">
             <AppHeader section={<span className="hidden sm:inline">Recombinator</span>} />
-            <main className="container mx-auto flex-1 space-y-6 px-4 py-8">
-                <Link to="/1/" className="text-sm text-muted-foreground hover:text-foreground">
+            <main className="container mx-auto flex flex-1 flex-col gap-6 px-4 py-8">
+                <Button
+                    variant="link"
+                    nativeButton={false}
+                    className="self-start"
+                    render={<Link to="/1/" />}
+                >
                     ← Path of Exile 1 tools
-                </Link>
+                </Button>
                 {!catalog ? (
-                    <div
-                        className="flex items-center gap-3 text-sm text-muted-foreground"
-                        role={error ? "alert" : "status"}
-                    >
-                        {error
-                            ? "The item catalog could not be loaded. Custom modifiers are still available."
-                            : "Loading item catalog…"}
-                        {error ? (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setAttempt((value) => value + 1)}
-                            >
-                                Retry catalog
-                            </Button>
-                        ) : null}
-                    </div>
-                ) : null}
-                <RecombinatorSimulator catalog={catalog} />
+                    <Alert role={error ? "alert" : "status"}>
+                        <AlertTitle>
+                            {error ? "Item catalog unavailable" : "Loading item catalog…"}
+                        </AlertTitle>
+                        <AlertDescription>
+                            {error
+                                ? "The item catalog could not be loaded. Retry to select bases and modifiers."
+                                : "Preparing equipment bases and valid modifiers."}
+                            {error ? (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setAttempt((value) => value + 1)}
+                                >
+                                    Retry catalog
+                                </Button>
+                            ) : null}
+                        </AlertDescription>
+                    </Alert>
+                ) : (
+                    <RecombinatorSimulator catalog={catalog} />
+                )}
             </main>
             <AppFooter />
         </div>

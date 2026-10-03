@@ -1,11 +1,6 @@
 .recombinator-flow {
     --xy-background-color: var(--background);
     --xy-background-pattern-dots-color: var(--border);
-    --xy-controls-button-background-color: var(--card);
-    --xy-controls-button-background-color-hover: var(--muted);
-    --xy-controls-button-color: var(--foreground);
-    --xy-controls-button-color-hover: var(--foreground);
-    --xy-controls-button-border-color: var(--border);
     --xy-attribution-background-color: var(--card);
     --xy-handle-background-color: var(--foreground);
     --xy-handle-border-color: var(--background);
