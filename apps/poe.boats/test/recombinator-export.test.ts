@@ -13,10 +13,10 @@ afterEach(async () => {
     );
 });
 
-async function snapshot(game = "poe1") {
+async function dataPackage(game = "poe1") {
     const directory = await mkdtemp(join(tmpdir(), "recombinator-export-"));
     temporary.push(directory);
-    await mkdir(join(directory, "normalized"));
+    await mkdir(join(directory, "data"));
     const base = {
         domain: "item",
         release_state: "released",
@@ -38,12 +38,12 @@ async function snapshot(game = "poe1") {
         generation_weights: [],
     };
     const tables = {
-        "normalized/base_items.json": {
+        "base_items.json": {
             base,
             unreleased: { ...base, release_state: "unreleased" },
             currency: { ...base, item_class: "Currency" },
         },
-        "normalized/mods.json": {
+        "mods.json": {
             life: mod,
             essence: { ...mod, is_essence_only: true },
             unique: { ...mod, generation_type: "unique" },
@@ -56,22 +56,22 @@ async function snapshot(game = "poe1") {
             },
         },
     };
-    const files: Record<string, string> = {};
+    const files: Record<string, { sha256: string }> = {};
     for (const [path, data] of Object.entries(tables)) {
         const bytes = JSON.stringify(data);
-        files[path] = createHash("sha256").update(bytes).digest("hex");
-        await writeFile(join(directory, path), bytes);
+        files[path] = { sha256: createHash("sha256").update(bytes).digest("hex") };
+        await writeFile(join(directory, "data", path), bytes);
     }
     await writeFile(
         join(directory, "manifest.json"),
-        JSON.stringify({ format_version: 1, game, patch: "fixture", files }),
+        JSON.stringify({ format: 1, game, client_build: "fixture", files }),
     );
     return directory;
 }
 
-describe("catalog snapshot export", () => {
+describe("catalog package export", () => {
     it("exports a deterministic equipment subset with source hashes and plain text", async () => {
-        const directory = await snapshot();
+        const directory = await dataPackage();
         const output = join(directory, "public", "catalog.json");
         const catalog = await exportRecombinatorCatalog(directory, output);
         expect(catalog.bases.map((base) => base.id)).toEqual(["base"]);
@@ -84,16 +84,18 @@ describe("catalog snapshot export", () => {
     });
 
     it("preserves the last published catalog on corruption and rejects PoE 2 inputs", async () => {
-        const directory = await snapshot();
+        const directory = await dataPackage();
         const output = join(directory, "catalog.json");
         await exportRecombinatorCatalog(directory, output);
         const before = await readFile(output, "utf8");
-        await writeFile(join(directory, "normalized/mods.json"), "{}");
+        await writeFile(join(directory, "data/mods.json"), "{}");
         await expect(exportRecombinatorCatalog(directory, output)).rejects.toThrow(
-            "Snapshot hash mismatch",
+            "Package hash mismatch",
         );
         expect(await readFile(output, "utf8")).toBe(before);
-        await expect(exportRecombinatorCatalog(await snapshot("poe2"), output)).rejects.toThrow();
+        await expect(
+            exportRecombinatorCatalog(await dataPackage("poe2"), output),
+        ).rejects.toThrow();
         expect(await readFile(output, "utf8")).toBe(before);
     });
 });
