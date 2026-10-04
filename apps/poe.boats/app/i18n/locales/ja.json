@@ -40,7 +40,8 @@
     },
     "footer": {
         "dataFrom": "データ提供",
-        "emailMe": "メールを送る"
+        "emailMe": "メールを送る",
+        "disclaimer": "本製品はGrinding Gear Gamesとは一切関係がなく、同社による承認も受けていません。"
     },
     "idolSet": {
         "newSet": "新規セット",
