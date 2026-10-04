@@ -1,23 +1,12 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
-import { z } from "zod";
 import leaguesData from "~/data/leagues.json";
 import { loadFromStorage, saveToStorage } from "~/lib/storage-utils";
-import {
-    DEFAULT_LEAGUE,
-    DEFAULT_REALM,
-    type League,
-    type Realm,
-    RealmSchema,
-} from "~/schemas/league";
+import { LeagueSettingsSchema, resolveLeagueSettings } from "~/operations/preferences";
+import { DEFAULT_LEAGUE, DEFAULT_REALM, type League, type Realm } from "~/schemas/league";
 
 const STORAGE_KEY = "poe-idol-planner-league";
 
-const LEAGUE_SETTINGS_SCHEMA = z.object({
-    league: z.string(),
-    realm: RealmSchema,
-});
-
-type LeagueSettings = z.infer<typeof LEAGUE_SETTINGS_SCHEMA>;
+type LeagueSettings = { league: string; realm: Realm };
 
 const DEFAULT_LEAGUE_SETTINGS: LeagueSettings = {
     league: DEFAULT_LEAGUE,
@@ -36,7 +25,7 @@ interface LeagueContextValue {
 const LEAGUE_CONTEXT = createContext<LeagueContextValue | null>(null);
 
 function loadLeagueSettings(): LeagueSettings {
-    return loadFromStorage(STORAGE_KEY, LEAGUE_SETTINGS_SCHEMA, DEFAULT_LEAGUE_SETTINGS);
+    return loadFromStorage(STORAGE_KEY, LeagueSettingsSchema, DEFAULT_LEAGUE_SETTINGS);
 }
 
 function saveLeagueSettings(settings: LeagueSettings): void {
@@ -51,12 +40,7 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
     const [isHydrated, setIsHydrated] = useState(false);
 
     useEffect(() => {
-        const loaded = loadLeagueSettings();
-        const leaguesForRealm = leaguesData.result.filter((l) => l.realm === loaded.realm);
-        const leagueExists = leaguesForRealm.some((l) => l.id === loaded.league);
-        if (!leagueExists && leaguesForRealm.length > 0) {
-            loaded.league = leaguesForRealm[0].id;
-        }
+        const loaded = resolveLeagueSettings(loadLeagueSettings());
         setSettings(loaded);
         setIsHydrated(true);
     }, []);
@@ -69,20 +53,11 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
     const leagues = leaguesData.result.filter((l) => l.realm === settings.realm) as League[];
 
     const setLeague = useCallback((league: string) => {
-        setSettings((prev) => ({ ...prev, league }));
+        setSettings((prev) => resolveLeagueSettings({ ...prev, league }));
     }, []);
 
     const setRealm = useCallback((realm: Realm) => {
-        setSettings((prev) => {
-            const leaguesForRealm = leaguesData.result.filter((l) => l.realm === realm);
-            const currentLeagueExists = leaguesForRealm.some((l) => l.id === prev.league);
-            return {
-                realm,
-                league: currentLeagueExists
-                    ? prev.league
-                    : (leaguesForRealm[0]?.id ?? DEFAULT_LEAGUE),
-            };
-        });
+        setSettings((prev) => resolveLeagueSettings({ ...prev, realm }));
     }, []);
 
     return (

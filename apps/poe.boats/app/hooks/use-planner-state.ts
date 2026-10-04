@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { getAllUnlockIds } from "~/data/map-device-unlocks";
 import { useIdolSets } from "~/hooks/use-idol-sets";
 import { loadStorage, saveStorage } from "~/lib/storage";
+import { newPlannerSet } from "~/operations/planner";
 import type { IdolSet } from "~/schemas/idol-set";
-import { createEmptyMapDevice } from "~/schemas/scarab";
 import { STORAGE_VERSION } from "~/schemas/storage";
 
 const DEFAULT_SET_NAME = "Set 1";
@@ -20,16 +19,7 @@ export function usePlannerState() {
         setActiveSetId(data.activeSetId);
 
         if (data.sets.length === 0) {
-            const defaultSet: IdolSet = {
-                id: "default",
-                name: DEFAULT_SET_NAME,
-                placements: [],
-                inventory: [],
-                mapDevice: createEmptyMapDevice(),
-                unlockedConditions: getAllUnlockIds(),
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
-            };
+            const defaultSet = newPlannerSet(DEFAULT_SET_NAME, "default");
             setSets([defaultSet]);
             setActiveSetId(defaultSet.id);
         }

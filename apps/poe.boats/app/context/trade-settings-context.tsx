@@ -6,6 +6,7 @@ import {
     saveTradeSettings,
     type TradeSettings,
 } from "~/lib/trade-settings";
+import { updateTradeSettings } from "~/operations/preferences";
 
 interface TradeSettingsContextValue {
     settings: TradeSettings;
@@ -24,7 +25,7 @@ export function TradeSettingsProvider({ children }: { children: ReactNode }) {
 
     const updateSettings = useCallback(
         (updates: Partial<TradeSettings>) => {
-            setSettings((prev) => ({ ...prev, ...updates }));
+            setSettings((prev) => updateTradeSettings(prev, updates));
         },
         [setSettings],
     );
