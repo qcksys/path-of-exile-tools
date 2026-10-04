@@ -6,7 +6,11 @@ import {
     nativeWeight,
     prepareRecombinatorItem,
 } from "~/lib/recombinator";
-import { catalogBaseOptions, catalogModAffix } from "~/lib/recombinator-catalog";
+import {
+    availableCatalogMods,
+    catalogBaseOptions,
+    catalogModAffix,
+} from "~/lib/recombinator-catalog";
 import {
     availablePreparationRecipes,
     emptyRecombinatorDraft,
@@ -187,6 +191,62 @@ describe("stage preparation and base transfer", () => {
             ),
         ).toBe(0);
     });
+
+    it("validates retained essence modifiers without changing the input", () => {
+        const preparation = {
+            kind: "essence" as const,
+            side: "prefixes" as const,
+            affix: armour,
+            itemClasses: ["Shield"],
+            keepInputMods: true,
+        };
+        const donor = item("Life", "Fire\nCold");
+        expect(prepareRecombinatorItem(donor, preparation)).toMatchObject({
+            prefixes: [parseAffixes("Life")[0], armour],
+            suffixes: parseAffixes("Fire\nCold"),
+        });
+        expect(donor.prefixes).toHaveLength(1);
+        for (const invalid of [item("A\nB\nC"), item("Armour")])
+            expect(() => prepareRecombinatorItem(invalid, preparation)).toThrow("open affix slot");
+        for (const invalid of [
+            item("!NNN"),
+            item("*Exclusive"),
+            { ...item(), prefixes: [{ ...parseAffixes("Craft")[0], crafted: true }] },
+        ])
+            expect(() => prepareRecombinatorItem(invalid, preparation)).toThrow(
+                "Only natural modifiers",
+            );
+    });
+
+    it.each([
+        "prefixes",
+        "suffixes",
+    ] as const)("supports two exclusive bench crafts in %s without improving the natural pair odds", (side) => {
+        const naturalSide = side === "prefixes" ? "suffixes" : "prefixes";
+        for (const duplicate of [false, true]) {
+            const recipe = plan(
+                { ...item(), [naturalSide]: parseAffixes("A") },
+                { ...item(), [naturalSide]: parseAffixes("B") },
+            );
+            for (const [index, field] of (
+                ["leftPreparation", "rightPreparation"] as const
+            ).entries())
+                recipe.steps[0][field] = {
+                    kind: "bench",
+                    side,
+                    affix: { ...parseAffixes(`*Craft ${duplicate ? 0 : index}`)[0], crafted: true },
+                    itemClasses: ["Shield"],
+                };
+            const result = calculateRecombinatorPlan(recipe)[0];
+            expect(chance(result, ["A", "B"])).toBeCloseTo(0.33);
+            expect(result.outcomes.reduce((sum, row) => sum + row.probability, 0)).toBeCloseTo(1);
+            expect(result.outcomes.every(({ item }) => item[side].length === 1)).toBe(true);
+            recipe.steps[0].removeCrafted = true;
+            const cleaned = calculateRecombinatorPlan(recipe)[0];
+            expect(chance(cleaned, ["A", "B"])).toBeCloseTo(0.33);
+            expect(cleaned.outcomes.every(({ item }) => item[side].length === 0)).toBe(true);
+        }
+    });
 });
 
 describe("generated preparation recipes", () => {
@@ -200,6 +260,46 @@ describe("generated preparation recipes", () => {
     );
     const bases = catalogBaseOptions(catalog.bases);
     const shield = bases.find((base) => base.id === "generic:Shield:int")!;
+
+    it.each([
+        0, 1, 2,
+    ])("keeps Flaring and %i suffixes with a generated Torment donor", (suffixCount) => {
+        const base = bases.find((base) => base.name === "Despot Axe")!;
+        const pool = availableCatalogMods(catalog.mods, base, 83);
+        const affix = (name: string) => catalogModAffix(pool.find((mod) => mod.name === name)!);
+        const draft = structuredClone(emptyRecombinatorDraft);
+        draft.items[0].catalog = {
+            base,
+            level: 83,
+            prefixes: [affix("Merciless"), affix("Dictator's")],
+            suffixes: [],
+        };
+        draft.items[1].catalog = {
+            base,
+            level: 83,
+            prefixes: [affix("Flaring")],
+            suffixes: [affix("of the Brute"), affix("of Skill")].slice(0, suffixCount),
+        };
+        const required = ["Merciless", "Dictator's", "Flaring"].map((name) => affix(name).id);
+        expect(
+            chance(calculateRecombinatorPlan(parseRecombinatorDraft(draft, catalog))[0], required),
+        ).toBeCloseTo(10 / 101);
+        draft.steps[0].rightPreparation = availablePreparationRecipes(
+            catalog,
+            [base],
+            "essence",
+        ).find((recipe) => recipe.name === "Screaming Essence of Torment")!.id;
+        draft.steps[0].rightKeepInputMods = true;
+        const parsed = parseRecombinatorDraft(draft, catalog);
+        const result = calculateRecombinatorPlan(parsed)[0];
+        expect(chance(result, required)).toBeCloseTo(31 / 101);
+        expect(chance(result, [parsed.steps[0].rightPreparation!.affix.id])).toBe(0);
+        expect(result.outcomes.every(({ item }) => item.suffixes.length <= suffixCount)).toBe(true);
+        draft.steps[0].rightKeepInputMods = false;
+        expect(
+            chance(calculateRecombinatorPlan(parseRecombinatorDraft(draft, catalog))[0], required),
+        ).toBe(0);
+    });
 
     it("offers the extracted wailing Doubt mod as an INT-shield NNN, but not a native evasion recipe", () => {
         const recipes = availablePreparationRecipes(catalog, [shield], "essence");
