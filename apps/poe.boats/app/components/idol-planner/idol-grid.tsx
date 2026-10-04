@@ -7,6 +7,7 @@ import { getLockedPositions, MAP_DEVICE_UNLOCKS } from "~/data/map-device-unlock
 import { useTranslations } from "~/i18n";
 import { GRID_HEIGHT, GRID_WIDTH, isCellValid } from "~/lib/grid-utils";
 import { cn } from "~/lib/utils";
+import { canPlaceInSet } from "~/operations/planner";
 import type { IdolInstance } from "~/schemas/idol";
 import type { IdolPlacement } from "~/schemas/idol-set";
 import type { InventoryIdol } from "~/schemas/inventory";
@@ -428,38 +429,17 @@ function GridTabContent({
     const allPlacements = useMemo(() => placements, [placements]);
 
     const canPlaceAtPosition = useCallback(
-        (x: number, y: number): boolean => {
-            if (!draggedItem) return false;
-            const base = IDOL_BASES[draggedItem.idol.baseType as IdolBaseKey];
-
-            const originX = x - dragOffset.x;
-            const originY = y - dragOffset.y;
-
-            if (
-                originX < 0 ||
-                originY < 0 ||
-                originX + base.width > GRID_WIDTH ||
-                originY + base.height > GRID_HEIGHT
-            ) {
-                return false;
-            }
-
-            for (let dy = 0; dy < base.height; dy++) {
-                for (let dx = 0; dx < base.width; dx++) {
-                    const cell = grid[originY + dy]?.[originX + dx];
-                    if (!cell?.isValid || cell?.isLocked) return false;
-                    if (cell?.occupied) {
-                        if (sourcePlacementId && cell.placementId === sourcePlacementId) {
-                            continue;
-                        }
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        },
-        [draggedItem, grid, sourcePlacementId, dragOffset],
+        (x: number, y: number): boolean =>
+            Boolean(
+                draggedItem &&
+                    canPlaceInSet(
+                        { placements, inventory, unlockedConditions },
+                        draggedItem.id,
+                        { x: x - dragOffset.x, y: y - dragOffset.y },
+                        sourcePlacementId ?? undefined,
+                    ),
+            ),
+        [draggedItem, placements, inventory, unlockedConditions, sourcePlacementId, dragOffset],
     );
 
     const getPreviewCells = useCallback((): Set<string> => {

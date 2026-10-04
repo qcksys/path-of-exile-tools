@@ -26,6 +26,7 @@ import {
 import { useLocale, useTranslations } from "~/i18n";
 import type { SupportedLocale } from "~/i18n/types";
 import { cn } from "~/lib/utils";
+import { canSelectScarab } from "~/operations/map-device";
 import {
     HORNED_SCARAB_OF_AWAKENING_ID,
     type MapCraftingOption,
@@ -86,14 +87,9 @@ function ScarabSlot({
     const filteredScarabs = useMemo(() => {
         let scarabs = categoryFilter ? getScarabsByCategory(categoryFilter) : SCARABS;
 
-        // Filter out scarabs that have reached their limit
-        // (unless it's the current slot's scarab, which can be reselected)
-        scarabs = scarabs.filter((s) => {
-            const currentUsage = scarabUsageCount.get(s.id) ?? 0;
-            // If this slot already has this scarab, don't count it toward the limit
-            const effectiveUsage = s.id === scarabId ? currentUsage - 1 : currentUsage;
-            return effectiveUsage < s.limit;
-        });
+        scarabs = scarabs.filter((s) =>
+            canSelectScarab(s, scarabUsageCount.get(s.id) ?? 0, scarabId),
+        );
 
         return scarabs;
     }, [categoryFilter, scarabUsageCount, scarabId]);

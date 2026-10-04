@@ -1,12 +1,10 @@
-import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { dbContext } from "~/context";
-import { getPriceCache } from "~/db/queries/idol-planner.queries";
 import { useTranslations } from "~/i18n";
-import { computeSetHash, findDuplicateSet } from "~/lib/set-hash";
+import { findDuplicateSet } from "~/lib/set-hash";
 import {
     buildShareUrl,
     calculateScarabCost,
@@ -17,8 +15,10 @@ import {
 } from "~/lib/share";
 import { loadShare } from "~/lib/share.server";
 import { loadStorage, saveStorage } from "~/lib/storage";
+import { OperationError } from "~/operations/errors";
+import { importPlannerShare } from "~/operations/import-share";
+import { getScarabPrices } from "~/operations/shares.server";
 import type { IdolSet } from "~/schemas/idol-set";
-import type { InventoryIdol } from "~/schemas/inventory";
 import { DEFAULT_LEAGUE } from "~/schemas/league";
 import type { ScarabPricesData } from "~/schemas/scarab";
 import type { SharedSet } from "~/schemas/share";
@@ -35,13 +35,10 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 
     let prices: ScarabPricesData | null = null;
     if (sharedSet) {
-        const cached = await getPriceCache(db, DEFAULT_LEAGUE);
-        if (cached?.prices) {
-            prices = {
-                league: DEFAULT_LEAGUE,
-                prices: cached.prices,
-                updatedAt: cached.rowUpdatedAt?.toISOString() ?? new Date().toISOString(),
-            };
+        try {
+            prices = await getScarabPrices({ db }, { league: DEFAULT_LEAGUE });
+        } catch (error) {
+            if (!(error instanceof OperationError && error.status === 404)) throw error;
         }
     }
 
@@ -146,45 +143,17 @@ export default function SharePage({ loaderData }: Route.ComponentProps) {
 
         setImporting(true);
         try {
-            const storage = loadStorage();
-            const { set: sharedSet, idols: sharedIdols } = loadState.data;
-
-            const idolIdMap = new Map<string, string>();
-            const newInventory: InventoryIdol[] = [];
-
-            for (const idol of sharedIdols) {
-                const newId = nanoid();
-                idolIdMap.set(idol.id, newId);
-                newInventory.push({
-                    ...idol,
-                    id: newId,
-                    source: "shared",
-                    importedAt: Date.now(),
-                    usageCount: 0,
-                });
+            const result = importPlannerShare({
+                state: loadStorage(),
+                shared: loadState.data,
+                force: forceImport,
+            });
+            if (!result.importedSetId) {
+                setImporting(false);
+                return;
             }
-
-            const newSetId = nanoid();
-            const importedSet: IdolSet = {
-                ...sharedSet,
-                id: newSetId,
-                name: `${sharedSet.name} (Imported)`,
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
-                inventory: newInventory,
-                placements: sharedSet.placements.map((p) => ({
-                    ...p,
-                    id: nanoid(),
-                    inventoryIdolId: idolIdMap.get(p.inventoryIdolId) || p.inventoryIdolId,
-                })),
-            };
-
-            importedSet.contentHash = computeSetHash(importedSet);
-
-            storage.sets.push(importedSet);
-            storage.activeSetId = newSetId;
-
-            saveStorage(storage);
+            const saved = saveStorage(result.state);
+            if (!saved.success) throw new Error(saved.error);
 
             navigate("/1/idol-planner", { replace: true });
         } catch (error) {

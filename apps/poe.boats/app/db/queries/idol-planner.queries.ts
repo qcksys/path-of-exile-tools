@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { TDatabase } from "~/db/client.ts";
 import { tIdolPlannerIdol } from "~/db/schema/idol-planner.idol";
 import { tIdolPlannerPlacement } from "~/db/schema/idol-planner.placement";
@@ -7,19 +7,36 @@ import { tIdolPlannerSet } from "~/db/schema/idol-planner.set";
 import { tIdolPlannerSharedSet } from "~/db/schema/idol-planner.shared-set";
 import { tIdolPlannerUserPrefs } from "~/db/schema/idol-planner.user-prefs";
 
+export type PlannerDatabase = Pick<TDatabase, "select" | "insert" | "update" | "delete">;
+
 // -- Sets --
 
-export async function getUserSets(db: TDatabase, userId: string) {
+export async function getUserSets(db: PlannerDatabase, userId: string) {
     return db
         .select()
         .from(tIdolPlannerSet)
-        .where(and(eq(tIdolPlannerSet.userId, userId), eq(tIdolPlannerSet.rowDeletedAt, null!)));
+        .where(and(eq(tIdolPlannerSet.userId, userId), isNull(tIdolPlannerSet.rowDeletedAt)));
 }
 
-export async function getSetWithData(db: TDatabase, setId: string) {
-    const [set] = await db.select().from(tIdolPlannerSet).where(eq(tIdolPlannerSet.id, setId));
+export async function getSetWithData(
+    db: PlannerDatabase,
+    setId: string,
+    userId?: string,
+    lock = false,
+) {
+    const query = db
+        .select()
+        .from(tIdolPlannerSet)
+        .where(
+            and(
+                eq(tIdolPlannerSet.id, setId),
+                isNull(tIdolPlannerSet.rowDeletedAt),
+                userId === undefined ? undefined : eq(tIdolPlannerSet.userId, userId),
+            ),
+        );
+    const [set] = await (lock ? query.for("update") : query);
 
-    if (!set) return null;
+    if (!set || set.rowDeletedAt) return null;
 
     const [idols, placements] = await Promise.all([
         db.select().from(tIdolPlannerIdol).where(eq(tIdolPlannerIdol.setId, setId)),
@@ -30,7 +47,7 @@ export async function getSetWithData(db: TDatabase, setId: string) {
 }
 
 export async function createSet(
-    db: TDatabase,
+    db: PlannerDatabase,
     data: {
         id: string;
         userId: string;
@@ -51,7 +68,7 @@ export async function createSet(
 }
 
 export async function updateSet(
-    db: TDatabase,
+    db: PlannerDatabase,
     setId: string,
     data: Partial<{
         name: string;
@@ -63,7 +80,7 @@ export async function updateSet(
     await db.update(tIdolPlannerSet).set(data).where(eq(tIdolPlannerSet.id, setId));
 }
 
-export async function setActiveSet(db: TDatabase, userId: string, setId: string) {
+export async function setActiveSet(db: PlannerDatabase, userId: string, setId: string) {
     await db
         .update(tIdolPlannerSet)
         .set({ isActive: false })
@@ -71,7 +88,7 @@ export async function setActiveSet(db: TDatabase, userId: string, setId: string)
     await db.update(tIdolPlannerSet).set({ isActive: true }).where(eq(tIdolPlannerSet.id, setId));
 }
 
-export async function deleteSet(db: TDatabase, setId: string) {
+export async function deleteSet(db: PlannerDatabase, setId: string) {
     await db
         .update(tIdolPlannerSet)
         .set({ rowDeletedAt: new Date() })
@@ -80,47 +97,53 @@ export async function deleteSet(db: TDatabase, setId: string) {
 
 // -- Idols --
 
-export async function addIdol(db: TDatabase, data: typeof tIdolPlannerIdol.$inferInsert) {
+export async function addIdol(db: PlannerDatabase, data: typeof tIdolPlannerIdol.$inferInsert) {
     await db.insert(tIdolPlannerIdol).values(data);
 }
 
-export async function addIdols(db: TDatabase, data: Array<typeof tIdolPlannerIdol.$inferInsert>) {
+export async function addIdols(
+    db: PlannerDatabase,
+    data: Array<typeof tIdolPlannerIdol.$inferInsert>,
+) {
     if (data.length === 0) return;
     await db.insert(tIdolPlannerIdol).values(data);
 }
 
 export async function updateIdol(
-    db: TDatabase,
+    db: PlannerDatabase,
     idolId: string,
     data: Partial<typeof tIdolPlannerIdol.$inferInsert>,
 ) {
     await db.update(tIdolPlannerIdol).set(data).where(eq(tIdolPlannerIdol.id, idolId));
 }
 
-export async function removeIdol(db: TDatabase, idolId: string) {
+export async function removeIdol(db: PlannerDatabase, idolId: string) {
     await db.delete(tIdolPlannerPlacement).where(eq(tIdolPlannerPlacement.idolId, idolId));
     await db.delete(tIdolPlannerIdol).where(eq(tIdolPlannerIdol.id, idolId));
 }
 
-export async function removeIdols(db: TDatabase, idolIds: string[]) {
+export async function removeIdols(db: PlannerDatabase, idolIds: string[]) {
     for (const id of idolIds) {
         await removeIdol(db, id);
     }
 }
 
-export async function clearSetInventory(db: TDatabase, setId: string) {
+export async function clearSetInventory(db: PlannerDatabase, setId: string) {
     await db.delete(tIdolPlannerPlacement).where(eq(tIdolPlannerPlacement.setId, setId));
     await db.delete(tIdolPlannerIdol).where(eq(tIdolPlannerIdol.setId, setId));
 }
 
 // -- Placements --
 
-export async function addPlacement(db: TDatabase, data: typeof tIdolPlannerPlacement.$inferInsert) {
+export async function addPlacement(
+    db: PlannerDatabase,
+    data: typeof tIdolPlannerPlacement.$inferInsert,
+) {
     await db.insert(tIdolPlannerPlacement).values(data);
 }
 
 export async function movePlacement(
-    db: TDatabase,
+    db: PlannerDatabase,
     placementId: string,
     posX: number,
     posY: number,
@@ -131,13 +154,13 @@ export async function movePlacement(
         .where(eq(tIdolPlannerPlacement.id, placementId));
 }
 
-export async function removePlacement(db: TDatabase, placementId: string) {
+export async function removePlacement(db: PlannerDatabase, placementId: string) {
     await db.delete(tIdolPlannerPlacement).where(eq(tIdolPlannerPlacement.id, placementId));
 }
 
 // -- User Preferences --
 
-export async function getUserPrefs(db: TDatabase, userId: string) {
+export async function getUserPrefs(db: PlannerDatabase, userId: string) {
     const [prefs] = await db
         .select()
         .from(tIdolPlannerUserPrefs)
@@ -146,7 +169,7 @@ export async function getUserPrefs(db: TDatabase, userId: string) {
 }
 
 export async function upsertUserPrefs(
-    db: TDatabase,
+    db: PlannerDatabase,
     userId: string,
     data: Partial<{
         leagueId: string | null;
@@ -169,14 +192,14 @@ export async function upsertUserPrefs(
 // -- Shared Sets (replaces KV_SAVE) --
 
 export async function saveSharedSet(
-    db: TDatabase,
+    db: PlannerDatabase,
     id: string,
     data: NonNullable<typeof tIdolPlannerSharedSet.$inferInsert.data>,
 ) {
     await db.insert(tIdolPlannerSharedSet).values({ id, data });
 }
 
-export async function loadSharedSet(db: TDatabase, shareId: string) {
+export async function loadSharedSet(db: PlannerDatabase, shareId: string) {
     const [result] = await db
         .select()
         .from(tIdolPlannerSharedSet)
@@ -186,7 +209,7 @@ export async function loadSharedSet(db: TDatabase, shareId: string) {
 
 // -- Price Cache (replaces KV_POENINJA) --
 
-export async function getPriceCache(db: TDatabase, league: string) {
+export async function getPriceCache(db: PlannerDatabase, league: string) {
     const [result] = await db
         .select()
         .from(tIdolPlannerPriceCache)
@@ -195,7 +218,7 @@ export async function getPriceCache(db: TDatabase, league: string) {
 }
 
 export async function upsertPriceCache(
-    db: TDatabase,
+    db: PlannerDatabase,
     league: string,
     prices: NonNullable<typeof tIdolPlannerPriceCache.$inferInsert.prices>,
 ) {

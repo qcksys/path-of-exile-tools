@@ -1,6 +1,7 @@
 import { createContext, type ReactNode, useCallback, useContext } from "react";
 import { useStorageState } from "~/hooks/use-storage-state";
 import { loadFavorites, saveFavorites } from "~/lib/favorites";
+import { editFavorites } from "~/operations/preferences";
 
 interface FavoritesContextValue {
     favorites: string[];
@@ -18,29 +19,21 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
     const addFavorite = useCallback(
         (modId: string) => {
-            setFavorites((prev) => {
-                if (prev.includes(modId)) return prev;
-                return [...prev, modId];
-            });
+            setFavorites((prev) => editFavorites(prev, modId, "add"));
         },
         [setFavorites],
     );
 
     const removeFavorite = useCallback(
         (modId: string) => {
-            setFavorites((prev) => prev.filter((id) => id !== modId));
+            setFavorites((prev) => editFavorites(prev, modId, "remove"));
         },
         [setFavorites],
     );
 
     const toggleFavorite = useCallback(
         (modId: string) => {
-            setFavorites((prev) => {
-                if (prev.includes(modId)) {
-                    return prev.filter((id) => id !== modId);
-                }
-                return [...prev, modId];
-            });
+            setFavorites((prev) => editFavorites(prev, modId, "toggle"));
         },
         [setFavorites],
     );

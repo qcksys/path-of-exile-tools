@@ -18,8 +18,8 @@ import { useDnd } from "~/context/dnd-context";
 import { useLeague } from "~/context/league-context";
 import { useTradeSettings } from "~/context/trade-settings-context";
 import { useLocale, useTranslations } from "~/i18n";
-import { resolveModText } from "~/lib/mod-text-resolver";
 import { generateTradeUrl } from "~/lib/trade-search";
+import { searchIdolInventory } from "~/operations/inventory";
 import type { InventoryIdol } from "~/schemas/inventory";
 
 interface InventoryPanelProps {
@@ -220,17 +220,7 @@ export function InventoryPanel({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [idsToDelete, setIdsToDelete] = useState<string[]>([]);
 
-    const filteredInventory = inventory.filter((item) => {
-        if (!searchQuery) return true;
-        const idol = item.idol;
-        const allMods = [...idol.prefixes, ...idol.suffixes];
-        const query = searchQuery.toLowerCase();
-        return (
-            idol.name?.toLowerCase().includes(query) ||
-            idol.baseType.toLowerCase().includes(query) ||
-            allMods.some((mod) => resolveModText(mod, locale).toLowerCase().includes(query))
-        );
-    });
+    const filteredInventory = searchIdolInventory(inventory, searchQuery, locale);
 
     const handleRequestDelete = (ids: string[]) => {
         setIdsToDelete(ids);

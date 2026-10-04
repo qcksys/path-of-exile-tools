@@ -37,6 +37,7 @@ import {
 import { useLocale, useTranslations } from "~/i18n";
 import { generateTradeUrlForMod } from "~/lib/trade-search";
 import { cn } from "~/lib/utils";
+import { filterIdolModifiers } from "~/operations/planner-catalog";
 
 interface ModsSearchModalProps {
     open: boolean;
@@ -267,45 +268,26 @@ export function ModsSearchModal({ open, onOpenChange }: ModsSearchModalProps) {
     // Module-level cached call
     const allModifiers = useMemo(() => getModifierOptions(locale), [locale]);
 
-    const filteredModifiers = useMemo(() => {
-        return allModifiers.filter((mod) => {
-            if (typeFilter !== "all" && mod.type !== typeFilter) return false;
-
-            if (mechanicFilter.length > 0) {
-                if (!mechanicFilter.includes(mod.mechanic)) return false;
-            }
-
-            if (idolTypeFilter.length > 0) {
-                const idolTypeNames = idolTypeFilter.map(
-                    (key) => key.charAt(0).toUpperCase() + key.slice(1),
-                );
-                const hasIdolType = mod.applicableIdols.some((idol) =>
-                    idolTypeNames.includes(idol),
-                );
-                if (!hasIdolType) return false;
-            }
-
-            if (favoriteFilter === "favorites" && !favorites.includes(mod.id)) return false;
-            if (favoriteFilter === "non-favorites" && favorites.includes(mod.id)) return false;
-
-            if (deferredSearchQuery) {
-                const query = deferredSearchQuery.toLowerCase();
-                const tierText = mod.tiers[0]?.text?.toLowerCase() || "";
-                const nameText = mod.name.toLowerCase();
-                if (!tierText.includes(query) && !nameText.includes(query)) return false;
-            }
-
-            return true;
-        });
-    }, [
-        allModifiers,
-        typeFilter,
-        mechanicFilter,
-        idolTypeFilter,
-        favoriteFilter,
-        favorites,
-        deferredSearchQuery,
-    ]);
+    const filteredModifiers = useMemo(
+        () =>
+            filterIdolModifiers(allModifiers, {
+                query: deferredSearchQuery,
+                type: typeFilter,
+                mechanics: mechanicFilter,
+                bases: idolTypeFilter,
+                favorites,
+                favoriteFilter,
+            }),
+        [
+            allModifiers,
+            typeFilter,
+            mechanicFilter,
+            idolTypeFilter,
+            favoriteFilter,
+            favorites,
+            deferredSearchQuery,
+        ],
+    );
 
     const groupedModifiers = useMemo(() => {
         const groups: Record<LeagueMechanic, ModifierOption[]> = {} as Record<

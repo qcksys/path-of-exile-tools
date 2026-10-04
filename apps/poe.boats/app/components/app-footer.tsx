@@ -26,6 +26,12 @@ export function AppFooter() {
                         poedb.tw
                     </a>
                 </p>
+                <a
+                    href="/integrations"
+                    className="ml-4 text-sm text-muted-foreground underline-offset-4 hover:underline"
+                >
+                    API &amp; MCP
+                </a>
             </div>
         </footer>
     );
