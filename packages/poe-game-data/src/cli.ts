@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { Command, Option, positiveInteger, runCli } from "@poe-tools/cli";
 import { z } from "zod";
 import { gameSchema, loadConfig } from "./config.ts";
+import { exportCraftingRecipes } from "./crafting-recipes.ts";
 import {
     commitDataPackages,
     dataPackages,
@@ -29,6 +30,12 @@ export function createProgram() {
     const program = new Command()
         .name("extract")
         .description("Extract, package, and inspect PoE client data");
+    program
+        .command("crafting")
+        .description("Export essence and bench recipes for the committed PoE 1 client build")
+        .action(async () =>
+            print(await exportCraftingRecipes(resolve(packageDirectory, "../poe-1-data"))),
+        );
     program
         .command("versions")
         .description("Discover current client builds")

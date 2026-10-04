@@ -6,7 +6,7 @@ import { RecombinatorSimulator } from "~/components/recombinator/simulator";
 import { calculateRecombinatorPlan } from "~/lib/recombinator";
 import { catalogModLabel } from "~/lib/recombinator-catalog";
 import type { RecombinatorPlan } from "~/schemas/recombinator";
-import { catalogFixture, lifeMod } from "./fixtures/recombinator-catalog";
+import { armourMod, catalogFixture, lifeMod } from "./fixtures/recombinator-catalog";
 
 class CalculatorWorker {
     onmessage: ((event: { data: unknown }) => void) | null = null;
@@ -40,6 +40,71 @@ afterEach(() => {
 });
 
 describe("recombinator editor", () => {
+    it("prepares an essence donor at a stage and filters target odds by output base", async () => {
+        const nnn = {
+            ...armourMod,
+            spawn: [
+                ["str_armour", 1000],
+                ["default", 0],
+            ] as [string, number][],
+        };
+        render(
+            createElement(RecombinatorSimulator, {
+                catalog: {
+                    ...catalogFixture,
+                    mods: [...catalogFixture.mods.filter((mod) => mod.id !== nnn.id), nnn],
+                    recipes: [
+                        {
+                            id: "dread",
+                            name: "Whispering Essence of Dread",
+                            kind: "essence",
+                            mod: nnn.id,
+                            itemClasses: ["Body Armour"],
+                            cost: [{ name: "Essence of Dread", amount: 1 }],
+                        },
+                    ],
+                },
+            }),
+        );
+        async function choose(label: string, query: string, option: string) {
+            const input = screen.getByRole("combobox", { name: label });
+            act(() => input.focus());
+            fireEvent.change(input, { target: { value: query } });
+            fireEvent.keyDown(input, { key: "ArrowDown" });
+            fireEvent.click(await screen.findByRole("option", { name: option }));
+        }
+        async function select(label: string, option: string) {
+            fireEvent.click(screen.getByRole("combobox", { name: label }));
+            const entry = await screen.findByRole("option", { name: option });
+            act(() => entry.focus());
+            fireEvent.keyDown(entry, { key: "Enter" });
+        }
+        await choose("Item 1 base", "vaal", "Vaal Regalia · Body Armour");
+        await choose("Item 2 base", "any int", "Any INT Body Armour · generic");
+        await choose("Item 1 add prefix (0/3)", "healthy", catalogModLabel(lifeMod));
+        await select("Step 1 input B preparation", "Prepare an essence NNN donor");
+        fireEvent.click(screen.getByRole("button", { name: "Calculate plan" }));
+        expect(screen.getByRole("alert").textContent).toContain("Choose a preparation recipe");
+        await choose(
+            "Step 1 input B preparation recipe",
+            "dread",
+            `Whispering Essence of Dread · Prefix: ${nnn.text}`,
+        );
+        expect(screen.getByText(/This replaces every existing mod/)).toBeDefined();
+        await act(async () => {
+            fireEvent.click(screen.getByRole("button", { name: "Calculate plan" }));
+        });
+        fireEvent.click(screen.getByRole("checkbox", { name: catalogModLabel(lifeMod) }));
+        expect(screen.getByTestId("target-chance").textContent).toBe("100%");
+        await select("Required output base", "Vaal Regalia");
+        expect(screen.getByTestId("target-chance").textContent).toBe("50%");
+        expect(screen.getByRole("button", { name: /^Inspect step 1:/ }).textContent).toContain(
+            "50% target",
+        );
+        await select("Step 1 input B preparation", "Use input as is");
+        expect(screen.queryByTestId("target-chance")).toBeNull();
+    });
+
     it("starts without placeholder mods and requires bases before calculating", () => {
         render(createElement(RecombinatorSimulator, { catalog: catalogFixture }));
         expect(screen.queryByText("T1 life")).toBeNull();
@@ -135,7 +200,7 @@ describe("recombinator editor", () => {
         ).toBe("true");
     });
 
-    it("toggles NNN and exclusive icons and carries them into outcomes", async () => {
+    it("toggles NNN and exclusive flags and excludes NNN mods from outcomes", async () => {
         render(createElement(RecombinatorSimulator));
         fireEvent.click(screen.getAllByRole("button", { name: "NNN: T1 life" })[0]);
         expect(screen.getByLabelText("Item 1 prefixes")).toHaveProperty("value", "!T1 life");
@@ -147,7 +212,7 @@ describe("recombinator editor", () => {
         await act(async () => {
             fireEvent.click(screen.getByRole("button", { name: "Calculate plan" }));
         });
-        expect(screen.getAllByRole("img", { name: "NNN modifier" }).length).toBeGreaterThan(2);
+        expect(screen.getAllByRole("img", { name: "NNN modifier" })).toHaveLength(3);
         expect(screen.getAllByRole("img", { name: "Exclusive modifier" }).length).toBeGreaterThan(
             1,
         );

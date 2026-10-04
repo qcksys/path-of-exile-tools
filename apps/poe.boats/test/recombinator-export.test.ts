@@ -66,6 +66,30 @@ async function dataPackage(game = "poe1") {
         join(directory, "manifest.json"),
         JSON.stringify({ format: 1, game, client_build: "fixture", files }),
     );
+    await writeFile(
+        join(directory, "crafting.json"),
+        JSON.stringify({
+            format: 1,
+            game: "poe1",
+            patch: "fixture",
+            source: {
+                basesSha256: files["base_items.json"].sha256,
+                modsSha256: files["mods.json"].sha256,
+                schemaSha256: "a".repeat(64),
+                tables: {},
+            },
+            recipes: [
+                {
+                    id: "essence-life",
+                    name: "Life essence",
+                    kind: "essence",
+                    mod: "life",
+                    itemClasses: ["Body Armour"],
+                    cost: [{ name: "Life essence", amount: 1 }],
+                },
+            ],
+        }),
+    );
     return directory;
 }
 
@@ -78,6 +102,7 @@ describe("catalog package export", () => {
         expect(catalog.mods.map((mod) => mod.id)).toEqual(["life"]);
         expect(catalog.mods[0].text).toBe("+10 to maximum Life");
         expect(catalog.source.manifestSha256).toMatch(/^[a-f0-9]{64}$/);
+        expect(catalog.recipes?.[0].mod).toBe("life");
         const first = await readFile(output, "utf8");
         await exportRecombinatorCatalog(directory, output);
         expect(await readFile(output, "utf8")).toBe(first);
@@ -97,5 +122,16 @@ describe("catalog package export", () => {
             exportRecombinatorCatalog(await dataPackage("poe2"), output),
         ).rejects.toThrow();
         expect(await readFile(output, "utf8")).toBe(before);
+    });
+
+    it("rejects recipes generated for another data package", async () => {
+        const directory = await dataPackage();
+        const file = join(directory, "crafting.json");
+        const recipes = JSON.parse(await readFile(file, "utf8"));
+        recipes.source.modsSha256 = "0".repeat(64);
+        await writeFile(file, JSON.stringify(recipes));
+        await expect(
+            exportRecombinatorCatalog(directory, join(directory, "catalog.json")),
+        ).rejects.toThrow("Crafting recipes differ");
     });
 });

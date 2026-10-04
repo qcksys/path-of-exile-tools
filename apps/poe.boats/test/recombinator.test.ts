@@ -187,7 +187,7 @@ describe("recombinator validation", () => {
         expect(() => parseAffixes("A | ")).toThrow();
     });
 
-    it("preserves NNN annotations without changing the compatible-base odds", () => {
+    it("counts manually marked NNN mods, then excludes them from selection", () => {
         expect(parseAffixes("!Suppression | suppression")[0]).toEqual({
             id: "Suppression",
             group: "suppression",
@@ -198,14 +198,11 @@ describe("recombinator validation", () => {
         const recipe = plan(item("!Life"), item("Armour"));
         recipe.steps.push({ id: "finish", name: "Finish", left: "combine", right: "b" });
         const results = calculateRecombinatorPlan(recipe);
-        expect(results[0].outcomes.map(({ probability }) => probability)).toEqual(
-            outcomes(item("Life"), item("Armour")).map(({ probability }) => probability),
-        );
+        expect(results[0].outcomes).toEqual([{ item: item("Armour"), probability: 1 }]);
         const life = results[1].outcomes
             .flatMap(({ item }) => item.prefixes)
             .filter((affix) => affix.id === "Life");
-        expect(life.length).toBeGreaterThan(0);
-        expect(life.every((affix) => affix.nonNative)).toBe(true);
+        expect(life).toHaveLength(0);
         expect(() => outcomes(item("!Life"), item("Life"))).toThrow(/modifier flags/);
     });
 
@@ -220,7 +217,7 @@ describe("recombinator validation", () => {
             /more than one exclusive/,
         );
         expect(() => outcomes(item("*Essence"), item("", "*Aspect"))).toThrow(
-            /more than one exclusive/,
+            /[Mm]ore than one exclusive/,
         );
     });
 
