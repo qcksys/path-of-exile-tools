@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 import type { RecombinatorAffix } from "~/schemas/recombinator";
 
 const exclusiveDescription =
-    "Exclusive modifier: at most one survives. Opposite-side crafts use estimated odds; multiple exclusives on the same side are unsupported.";
+    "Exclusive modifier: at most one survives. Two one-mod magic inputs can each have an exclusive bench craft on the empty affix side. Craft odds are estimates.";
 const nonNativeDescription =
     "NNN (non-native natural): counts toward the pool, then is excluded. This manual flag excludes the mod on every base; catalog base restrictions are automatic.";
 
