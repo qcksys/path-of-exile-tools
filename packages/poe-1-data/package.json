@@ -15,6 +15,7 @@
             "default": "./manifest.json"
         },
         "./package.json": "./package.json",
+        "./crafting.json": "./crafting.json",
         "./data/base_items.json": {
             "types": "./types/base_items.d.ts",
             "default": "./data/base_items.json"
@@ -58,6 +59,7 @@
         "src",
         "types",
         "manifest.json",
+        "crafting.json",
         "README.md",
         "THIRD_PARTY_NOTICES.md",
         "json-schema"

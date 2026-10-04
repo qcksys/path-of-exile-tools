@@ -5,6 +5,7 @@
             "**",
             "!data",
             "!manifest.json",
+            "!crafting.json",
             "!src/schemas.ts",
             "!src/release.ts",
             "!types",

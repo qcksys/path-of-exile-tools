@@ -25,7 +25,7 @@ import type { RecombinatorCatalog } from "~/schemas/recombinator-catalog";
 
 type Option = { id: string; label: string };
 
-function CatalogPicker({
+export function CatalogPicker({
     id,
     label,
     options,

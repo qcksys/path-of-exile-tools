@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command, runCli } from "@poe-tools/cli";
 import { z } from "zod";
+import { craftingRecipesSchema } from "../../../packages/poe-game-data/src/crafting-recipes";
 import { availableCatalogMods } from "../app/lib/recombinator-catalog";
 import { recombinatorCatalogSchema } from "../app/schemas/recombinator-catalog";
 
@@ -53,6 +54,7 @@ const rawModSchema = z.object({
     adds_tags: z.array(z.string()),
     spawn_weights: z.array(rawWeightSchema),
     generation_weights: z.array(rawWeightSchema),
+    implicit_tags: z.array(z.string()).default([]),
 });
 const manifestSchema = z.object({
     format: z.literal(1),
@@ -75,6 +77,30 @@ export async function exportRecombinatorCatalog(dataPackage: string, output: str
         .record(z.string(), rawBaseSchema)
         .parse(await verifiedJson("base_items.json"));
     const rawMods = z.record(z.string(), rawModSchema).parse(await verifiedJson("mods.json"));
+    const craftingBytes = await readFile(resolve(dataPackage, "crafting.json"));
+    const crafting = craftingRecipesSchema.parse(JSON.parse(craftingBytes.toString()));
+    if (
+        crafting.patch !== manifest.client_build ||
+        crafting.source.basesSha256 !== manifest.files["base_items.json"].sha256 ||
+        crafting.source.modsSha256 !== manifest.files["mods.json"].sha256
+    ) {
+        throw new Error(
+            "Crafting recipes differ from the data package. Run the crafting exporter.",
+        );
+    }
+    const recipes = crafting.recipes.filter((recipe) => {
+        const mod = rawMods[recipe.mod];
+        if (!mod) throw new Error(`Unknown recipe mod: ${recipe.mod}`);
+        return (
+            ["prefix", "suffix"].includes(mod.generation_type) &&
+            mod.groups.length > 0 &&
+            recipe.itemClasses.some((itemClass) => equipment.has(itemClass)) &&
+            (recipe.kind === "essence"
+                ? mod.domain === "item" && !mod.is_essence_only
+                : mod.domain === "crafted" && mod.implicit_tags.includes("unveiled_mod"))
+        );
+    });
+    const recipeMods = new Set(recipes.map((recipe) => recipe.mod));
     const bases = Object.entries(rawBases)
         .filter(
             ([, base]) =>
@@ -86,8 +112,8 @@ export async function exportRecombinatorCatalog(dataPackage: string, output: str
         .sort((a, b) => a.name.localeCompare(b.name, "en") || a.id.localeCompare(b.id, "en"));
     const mods = Object.entries(rawMods)
         .filter(
-            ([, mod]) =>
-                mod.domain === "item" &&
+            ([id, mod]) =>
+                (mod.domain === "item" || recipeMods.has(id)) &&
                 ["prefix", "suffix"].includes(mod.generation_type) &&
                 !mod.is_essence_only &&
                 mod.groups.length > 0,
@@ -105,6 +131,7 @@ export async function exportRecombinatorCatalog(dataPackage: string, output: str
             maxLevel: mod.maximum_level,
             groups: mod.groups,
             addsTags: mod.adds_tags,
+            ...(mod.domain === "crafted" ? { crafted: true, exclusive: true } : {}),
             spawn: mod.spawn_weights.map(({ tag, weight }): [string, number] => [tag, weight]),
             generation: mod.generation_weights.map(({ tag, weight }): [string, number] => [
                 tag,
@@ -127,11 +154,13 @@ export async function exportRecombinatorCatalog(dataPackage: string, output: str
             manifestSha256: sha256(manifestBytes),
             basesSha256: manifest.files["base_items.json"].sha256,
             modsSha256: manifest.files["mods.json"].sha256,
+            craftingSha256: sha256(craftingBytes),
         },
         bases,
         mods: mods
-            .filter((mod) => reachable.has(mod.id))
+            .filter((mod) => reachable.has(mod.id) || recipeMods.has(mod.id))
             .sort((a, b) => a.id.localeCompare(b.id, "en")),
+        recipes,
     });
     await mkdir(dirname(output), { recursive: true });
     await writeFile(`${output}.tmp`, `${JSON.stringify(catalog)}\n`);
