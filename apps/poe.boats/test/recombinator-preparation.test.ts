@@ -54,6 +54,17 @@ const chance = (result: ReturnType<typeof calculateRecombinatorPlan>[number], re
         .reduce((sum, row) => sum + row.probability, 0);
 
 describe("stage preparation and base transfer", () => {
+    it("applies NNN exclusion after the special count roll for isolated opposite affixes", () => {
+        const donor = { ...item(), prefixes: [armour] };
+        const result = calculateRecombinatorPlan(plan(donor, item("", "Fire")))[0];
+        expect(chance(result, ["Fire"])).toBeCloseTo(2 / 3);
+        expect(chance(result, ["Armour"])).toBe(0);
+        expect(
+            result.outcomes.find(({ item }) => !item.prefixes.length && !item.suffixes.length)
+                ?.probability,
+        ).toBeCloseTo(1 / 3);
+    });
+
     it("keeps the desired mod with certainty when its same-side essence donor is NNN on both bases", () => {
         const recipe = plan(item("Life"), item("Old mod"));
         recipe.steps[0].rightPreparation = {

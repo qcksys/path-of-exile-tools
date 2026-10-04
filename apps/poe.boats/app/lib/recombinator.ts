@@ -146,15 +146,18 @@ function recombineOnBase(
         suffixes.length === 1 &&
         left.prefixes.length + left.suffixes.length === 1 &&
         right.prefixes.length + right.suffixes.length === 1 &&
-        [...prefixes, ...suffixes].every(
-            (affix) => !affix.exclusive && nativeWeight(affix, base) > 0,
-        );
+        [...prefixes, ...suffixes].every((affix) => !affix.exclusive);
     if (isolatedOpposites) {
-        return [
-            { item: { prefixes, suffixes, ...(base ? { base } : {}) }, probability: 1 / 3 },
-            { item: { prefixes, suffixes: [], ...(base ? { base } : {}) }, probability: 1 / 3 },
-            { item: { prefixes: [], suffixes, ...(base ? { base } : {}) }, probability: 1 / 3 },
-        ];
+        const eligiblePrefixes = prefixes.filter((affix) => nativeWeight(affix, base) > 0);
+        const eligibleSuffixes = suffixes.filter((affix) => nativeWeight(affix, base) > 0);
+        const results = new Map<string, RecombinatorOutcome>();
+        for (const item of [
+            { prefixes: eligiblePrefixes, suffixes: eligibleSuffixes },
+            { prefixes: eligiblePrefixes, suffixes: [] },
+            { prefixes: [], suffixes: eligibleSuffixes },
+        ])
+            mergeOutcome(results, { ...item, ...(base ? { base } : {}) }, 1 / 3);
+        return [...results.values()];
     }
     const results = new Map<string, RecombinatorOutcome>();
     const weighted = [...prefixes, ...suffixes].some((affix) => affix.exclusive);
