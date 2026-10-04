@@ -88,6 +88,17 @@ vp run -r env:check
 vp run dev
 ```
 
+All three packages cache 1Password lookups for one hour when `APP_ENV` is `local` or `dev`. Caching is disabled for the plugin in `test` and `prod`. Varlock's default `auto` mode persists encrypted values when a native encryption backend is available outside CI, or when `_VARLOCK_CACHE_KEY` is supplied; otherwise it uses memory. See the [Varlock caching guide](https://varlock.dev/guides/caching/).
+
+Inspect or clear the shared disk cache from the repository root:
+
+```sh
+vp exec --filter poe-boats varlock cache status
+vp exec --filter poe-boats varlock cache clear --plugin 1password --yes
+```
+
+The cache is shared across projects for the current OS user, so clearing the `1password` plugin also clears its entries for other projects. After changing a dev secret in 1Password, clear the cache before restarting local commands or running `deploy:dev:cf` to synchronize it. For a single fresh environment check without reading or writing the cache, run `vp run -r env:check --skip-cache`.
+
 For OAuth using the configured HTTPS hostname, run from `apps/poe.boats`:
 
 ```sh
