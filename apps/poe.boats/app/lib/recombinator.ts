@@ -2,6 +2,7 @@ import {
     type RecombinatorAffix,
     type RecombinatorItem,
     type RecombinatorPlan,
+    recombinatorItemSchema,
     recombinatorPlanSchema,
     sharesAffixGroup,
 } from "~/schemas/recombinator";
@@ -10,6 +11,10 @@ export const RECOMBINATOR_GUIDE_URL =
     "https://codeberg.org/poe_notes/poe_notes/src/branch/main/Recombinators-dark-images.md";
 export const RECOMBINATOR_TABLE_URL =
     "https://www.reddit.com/r/pathofexile/comments/1exyavx/325_updated_guide_to_recombinators/";
+export const RECOMBINATOR_PREPARATION_URL =
+    "https://www.reddit.com/r/pathofexile/comments/1ljll69/using_recombination_and_essences_for_guaranteed/";
+export const RECOMBINATOR_EXCLUSIVE_URL =
+    "https://www.reddit.com/r/pathofexile/comments/1lfyxxd/326_recombinators_analysisguide/";
 
 // The measured table rounds the 3- and 4-input columns to 101%. Normalize each column.
 export const AFFIX_COUNT_WEIGHTS: readonly (readonly number[])[] = [
@@ -30,10 +35,21 @@ export function outcomeKey(item: RecombinatorItem): string {
     return JSON.stringify([
         item.prefixes.map((affix) => affix.id).sort(),
         item.suffixes.map((affix) => affix.id).sort(),
+        item.base?.id,
     ]);
 }
 
-function selectAffixes(pool: RecombinatorAffix[], count: number): Selection[] {
+export function nativeWeight(affix: RecombinatorAffix, base?: RecombinatorItem["base"]): number {
+    if (affix.nonNative) return 0;
+    if (affix.exclusive || !affix.spawn || !base) return 1000;
+    return affix.spawn.find(([tag]) => base.tags.includes(tag))?.[1] ?? 0;
+}
+
+function selectAffixes(
+    pool: RecombinatorAffix[],
+    count: number,
+    weight: (affix: RecombinatorAffix) => number,
+): Selection[] {
     const results = new Map<string, Selection>();
     function draw(
         remaining: RecombinatorAffix[],
@@ -49,11 +65,12 @@ function selectAffixes(pool: RecombinatorAffix[], count: number): Selection[] {
             return;
         }
         // Duplicate copies each get a draw, then every member of the selected group is removed.
+        const total = remaining.reduce((sum, affix) => sum + weight(affix), 0);
         for (const affix of remaining) {
             draw(
                 remaining.filter((candidate) => !sharesAffixGroup(candidate, affix)),
                 [...selected, affix],
-                probability / remaining.length,
+                (probability * weight(affix)) / total,
             );
         }
     }
@@ -61,13 +78,25 @@ function selectAffixes(pool: RecombinatorAffix[], count: number): Selection[] {
     return [...results.values()];
 }
 
-function sideOutcomes(pool: RecombinatorAffix[]): Selection[] {
+function sideOutcomes(
+    pool: RecombinatorAffix[],
+    base?: RecombinatorItem["base"],
+    excludeExclusive = false,
+    weighted = false,
+): Selection[] {
     const weights = AFFIX_COUNT_WEIGHTS[pool.length];
     const total = weights.reduce((sum, weight) => sum + weight, 0);
     return weights.flatMap((weight, count) =>
         weight === 0
             ? []
-            : selectAffixes(pool, count).map((selection) => ({
+            : selectAffixes(
+                  pool.filter(
+                      (affix) =>
+                          nativeWeight(affix, base) > 0 && !(excludeExclusive && affix.exclusive),
+                  ),
+                  count,
+                  (affix) => (weighted ? nativeWeight(affix, base) : 1),
+              ).map((selection) => ({
                   ...selection,
                   probability: (selection.probability * weight) / total,
               })),
@@ -85,7 +114,11 @@ function mergeOutcome(
     else results.set(key, { item, probability });
 }
 
-function recombine(left: RecombinatorItem, right: RecombinatorItem): RecombinatorOutcome[] {
+function recombineOnBase(
+    left: RecombinatorItem,
+    right: RecombinatorItem,
+    base?: RecombinatorItem["base"],
+): RecombinatorOutcome[] {
     const prefixes = [...left.prefixes, ...right.prefixes];
     const suffixes = [...left.suffixes, ...right.suffixes];
     if (prefixes.some((prefix) => suffixes.some((suffix) => sharesAffixGroup(prefix, suffix)))) {
@@ -93,36 +126,98 @@ function recombine(left: RecombinatorItem, right: RecombinatorItem): Recombinato
             "A mod group appears in both prefixes and suffixes. This model does not support that combination; use compatible bases and modifier groups.",
         );
     }
-    if ([...prefixes, ...suffixes].filter((affix) => affix.exclusive).length > 1) {
+    if ([prefixes, suffixes].some((pool) => pool.filter((affix) => affix.exclusive).length > 1)) {
         throw new Error(
-            "This step can combine more than one exclusive modifier (including duplicate copies). The guide does not model those odds; remove the extra exclusive modifier.",
+            "This step can combine more than one exclusive modifier on the same affix side (including duplicate copies). Those odds are not supported; remove the extra exclusive modifier.",
+        );
+    }
+    if (
+        [...prefixes, ...suffixes].filter((affix) => affix.exclusive).length === 2 &&
+        (prefixes.length !== 2 ||
+            suffixes.length !== 2 ||
+            [left, right].some((item) => item.prefixes.length !== 1 || item.suffixes.length !== 1))
+    ) {
+        throw new Error(
+            "More than one exclusive modifier is supported only for two one-mod magic items with opposite-side bench crafts.",
         );
     }
     const isolatedOpposites =
         prefixes.length === 1 &&
         suffixes.length === 1 &&
         left.prefixes.length + left.suffixes.length === 1 &&
-        right.prefixes.length + right.suffixes.length === 1;
+        right.prefixes.length + right.suffixes.length === 1 &&
+        [...prefixes, ...suffixes].every(
+            (affix) => !affix.exclusive && nativeWeight(affix, base) > 0,
+        );
     if (isolatedOpposites) {
         return [
-            { item: { prefixes, suffixes }, probability: 1 / 3 },
-            { item: { prefixes, suffixes: [] }, probability: 1 / 3 },
-            { item: { prefixes: [], suffixes }, probability: 1 / 3 },
+            { item: { prefixes, suffixes, ...(base ? { base } : {}) }, probability: 1 / 3 },
+            { item: { prefixes, suffixes: [], ...(base ? { base } : {}) }, probability: 1 / 3 },
+            { item: { prefixes: [], suffixes, ...(base ? { base } : {}) }, probability: 1 / 3 },
         ];
     }
     const results = new Map<string, RecombinatorOutcome>();
-    const prefixOutcomes = sideOutcomes(prefixes);
-    const suffixOutcomes = sideOutcomes(suffixes);
-    for (const prefix of prefixOutcomes) {
-        for (const suffix of suffixOutcomes) {
-            mergeOutcome(
-                results,
-                { prefixes: prefix.affixes, suffixes: suffix.affixes },
-                prefix.probability * suffix.probability,
-            );
+    const weighted = [...prefixes, ...suffixes].some((affix) => affix.exclusive);
+    // Exclusive crafts on opposite sides use the researched 50/50 side-order estimate.
+    const orders: ("prefixes" | "suffixes")[] = weighted ? ["prefixes", "suffixes"] : ["prefixes"];
+    for (const first of orders) {
+        const second = first === "prefixes" ? "suffixes" : "prefixes";
+        const pools = { prefixes, suffixes };
+        for (const a of sideOutcomes(pools[first], base, false, weighted)) {
+            for (const b of sideOutcomes(
+                pools[second],
+                base,
+                a.affixes.some((affix) => affix.exclusive),
+                weighted,
+            )) {
+                const item: RecombinatorItem = {
+                    prefixes: [],
+                    suffixes: [],
+                    ...(base ? { base } : {}),
+                };
+                item[first] = a.affixes;
+                item[second] = b.affixes;
+                mergeOutcome(results, item, (a.probability * b.probability) / orders.length);
+            }
         }
     }
     return [...results.values()];
+}
+
+function recombine(left: RecombinatorItem, right: RecombinatorItem): RecombinatorOutcome[] {
+    if (!left.base && !right.base) return recombineOnBase(left, right);
+    if (!left.base || !right.base)
+        throw new Error("Choose a base for both inputs to model base transfer.");
+    if (left.base.itemClass !== right.base.itemClass)
+        throw new Error("Choose inputs from the same item class for base transfer.");
+    const results = new Map<string, RecombinatorOutcome>();
+    for (const base of [left.base, right.base]) {
+        for (const outcome of recombineOnBase(left, right, base))
+            mergeOutcome(results, outcome.item, outcome.probability / 2);
+    }
+    return [...results.values()];
+}
+
+type Preparation = RecombinatorPlan["steps"][number]["leftPreparation"];
+export function prepareRecombinatorItem(
+    item: RecombinatorItem,
+    preparation: Preparation,
+): RecombinatorItem {
+    if (!preparation) return item;
+    if (!item.base || !preparation.itemClasses.includes(item.base.itemClass))
+        throw new Error("This preparation recipe is not valid for the input base.");
+    const { kind, side, affix } = preparation;
+    if (kind === "essence") {
+        return { base: item.base, prefixes: [], suffixes: [], [side]: [affix] };
+    }
+    if ([...item.prefixes, ...item.suffixes].some((entry) => entry.crafted))
+        throw new Error("Remove existing crafted modifiers before adding a bench craft.");
+    const result = recombinatorItemSchema.safeParse({ ...item, [side]: [...item[side], affix] });
+    if (!result.success)
+        throw new Error(
+            "This bench craft needs an open affix slot and a free mod group on every input outcome.",
+        );
+    return result.data;
 }
 
 export function calculateRecombinatorPlan(input: RecombinatorPlan): RecombinatorStepResult[] {
@@ -138,12 +233,17 @@ export function calculateRecombinatorPlan(input: RecombinatorPlan): Recombinator
         try {
             for (const left of sources.get(step.left)!) {
                 for (const right of sources.get(step.right)!) {
+                    const preparedLeft = prepareRecombinatorItem(left.item, step.leftPreparation);
+                    const preparedRight = prepareRecombinatorItem(
+                        right.item,
+                        step.rightPreparation,
+                    );
                     const key = JSON.stringify(
-                        [outcomeKey(left.item), outcomeKey(right.item)].sort(),
+                        [outcomeKey(preparedLeft), outcomeKey(preparedRight)].sort(),
                     );
                     let combined = cache.get(key);
                     if (!combined) {
-                        combined = recombine(left.item, right.item);
+                        combined = recombine(preparedLeft, preparedRight);
                         cache.set(key, combined);
                     }
                     work += combined.length;
@@ -155,7 +255,17 @@ export function calculateRecombinatorPlan(input: RecombinatorPlan): Recombinator
                     for (const outcome of combined) {
                         mergeOutcome(
                             outcomes,
-                            outcome.item,
+                            step.removeCrafted
+                                ? {
+                                      ...outcome.item,
+                                      prefixes: outcome.item.prefixes.filter(
+                                          (affix) => !affix.crafted,
+                                      ),
+                                      suffixes: outcome.item.suffixes.filter(
+                                          (affix) => !affix.crafted,
+                                      ),
+                                  }
+                                : outcome.item,
                             left.probability * right.probability * outcome.probability,
                         );
                     }

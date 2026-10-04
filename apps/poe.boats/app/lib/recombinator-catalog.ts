@@ -46,6 +46,7 @@ export function availableCatalogMods(
     const groups = new Set(selected.flatMap((mod) => mod.groups));
     return mods.filter(
         (mod) =>
+            !mod.crafted &&
             mod.level <= level &&
             (mod.maxLevel === 0 || level <= mod.maxLevel) &&
             !mod.groups.some((group) => groups.has(group)) &&
@@ -64,7 +65,9 @@ export function catalogModAffix(mod: CatalogMod): RecombinatorAffix {
         label: catalogModLabel(mod),
         group: mod.groups[0],
         groups: mod.groups,
-        exclusive: false,
+        exclusive: mod.exclusive ?? false,
         nonNative: false,
+        spawn: mod.spawn,
+        ...(mod.crafted ? { crafted: true } : {}),
     };
 }

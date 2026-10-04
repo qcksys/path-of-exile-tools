@@ -137,6 +137,15 @@ Keep this extractor's `data/` while you need its provenance and replay inputs. `
 
 ## Committed data packages
 
+PoE 1 essence and crafting-bench mappings are exported separately for the exact build in the committed package:
+
+```sh
+pnpm --filter @poe-tools/game-data exec tsx src/cli.ts crafting
+pnpm --filter poe-boats game-data:recombinator
+```
+
+The first command reads `Essences`, `CraftingBenchOptions`, and their item-class categories from the client CDN and writes `packages/poe-1-data/crafting.json`. It records table/schema hashes and the base/mod package hashes. Run it again after updating PoE 1 data; the application exporter rejects mismatched recipes. Low-tier essences can force ordinary natural modifier IDs onto incompatible bases. Bench eligibility comes from the recipe classes, not natural spawn weights. The recombinator catalog includes natural essence recipes and bench mods tagged `unveiled_mod`; essence-exclusive mods are not NNN donors.
+
 `run` writes the normalized JSON and standalone TypeScript/Zod schemas to `@qcksys/poe-1-data` and `@qcksys/poe-2-data`. Versions derive from exact client build IDs: `3.29.3.3` becomes `3.29.3-build.3`, and `4.5.5.4` becomes `4.5.5-build.4`. Add `--commit` to create a scoped local Git commit. Use `package --snapshot <path>` to regenerate from saved inputs, or `verify-packages` to check committed data without raw snapshots. See the [distribution guide](DISTRIBUTION.md) for commands, version rules, integrity checks, and local tarballs.
 
 ## Verification and compatibility
