@@ -52,7 +52,7 @@ vp exec --filter poe-boats playwright install chromium
 vp run poe-boats#test:e2e:browser
 ```
 
-Playwright builds and previews the app on `127.0.0.1:4173` using the inert test environment and checks the generated recipes with the real calculation worker. The tests cover physical axes with essence or bench preparation, suppression transfers, triple ES body armour, triple elemental bows, life/resistance crafts, and multi-step plans. See the [craft coverage and expected probabilities](apps/poe.boats/test/e2e/browser/README.md) for research sources and model assumptions. CI runs the same Chromium suite. Failure screenshots and traces are saved under `apps/poe.boats/test-results/`.
+Playwright builds and previews the app on `127.0.0.1:4173` using the inert test environment and checks the generated recipes with the real calculation worker. The tests cover physical axes with essence or bench preparation, suppression transfers, triple ES body armour, triple elemental bows, life/resistance crafts, and multi-step plans. See the [craft coverage and expected probabilities](apps/poe.boats/test/e2e/browser/README.md) for research sources and model assumptions. CI runs the same Chromium suite. Failure screenshots and traces are saved under `apps/poe.boats/test-results/` and uploaded as the `browser-test-results` CI artifact for seven days.
 
 ## Local game data
 
