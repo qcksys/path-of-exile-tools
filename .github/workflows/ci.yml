@@ -48,6 +48,14 @@ jobs:
         run: vp exec --filter poe-boats playwright install --with-deps chromium
       - name: Browser end-to-end tests
         run: vp run poe-boats#test:e2e:browser
+      - name: Upload browser failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-test-results
+          path: apps/poe.boats/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
 
   deploy:
     needs: validate
