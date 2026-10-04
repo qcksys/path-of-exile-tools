@@ -33,6 +33,9 @@ export function AppFooter() {
                     API &amp; MCP
                 </a>
             </div>
+            <p className="container mx-auto mt-2 px-4 text-center text-muted-foreground text-sm">
+                {t("footer.disclaimer")}
+            </p>
         </footer>
     );
 }

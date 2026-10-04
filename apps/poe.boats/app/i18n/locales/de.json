@@ -40,7 +40,8 @@
     },
     "footer": {
         "dataFrom": "Daten von",
-        "emailMe": "E-Mail senden"
+        "emailMe": "E-Mail senden",
+        "disclaimer": "Dieses Produkt steht in keiner Verbindung zu Grinding Gear Games und wird von Grinding Gear Games in keiner Weise unterstützt."
     },
     "idolSet": {
         "newSet": "Neues Set",

@@ -40,7 +40,8 @@
     },
     "footer": {
         "dataFrom": "Данные из",
-        "emailMe": "Написать мне"
+        "emailMe": "Написать мне",
+        "disclaimer": "Этот продукт никак не связан с Grinding Gear Games и не одобрен этой компанией."
     },
     "idolSet": {
         "newSet": "Новый набор",
