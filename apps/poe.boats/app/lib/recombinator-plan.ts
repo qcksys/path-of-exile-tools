@@ -1,4 +1,4 @@
-import { ZodError } from "zod";
+import { ZodError, z } from "zod";
 import {
     availableCatalogMods,
     catalogBaseOptions,
@@ -8,12 +8,14 @@ import {
     parseAffixes,
     type RecombinatorAffix,
     type RecombinatorPlan,
+    recombinatorAffixSchema,
     recombinatorPlanSchema,
 } from "~/schemas/recombinator";
-import type {
-    CatalogBase,
-    CatalogRecipe,
-    RecombinatorCatalog,
+import {
+    type CatalogBase,
+    type CatalogRecipe,
+    catalogBaseSchema,
+    type RecombinatorCatalog,
 } from "~/schemas/recombinator-catalog";
 import { nativeWeight } from "./recombinator";
 
@@ -39,6 +41,45 @@ export type RecombinatorDraft = {
         rightKeepInputMods?: boolean;
     })[];
 };
+
+export const RecombinatorDraftSchema = z.object({
+    items: z
+        .array(
+            z.object({
+                id: z.string().min(1).max(80),
+                name: z.string().min(1).max(80),
+                prefixes: z.string().max(10000),
+                suffixes: z.string().max(10000),
+                catalog: z
+                    .object({
+                        base: catalogBaseSchema,
+                        level: z.number().int().min(1).max(100),
+                        prefixes: z.array(recombinatorAffixSchema).max(3),
+                        suffixes: z.array(recombinatorAffixSchema).max(3),
+                    })
+                    .optional(),
+            }),
+        )
+        .min(2)
+        .max(12),
+    steps: z
+        .array(
+            recombinatorPlanSchema.shape.steps.element
+                .omit({ leftPreparation: true, rightPreparation: true })
+                .extend({
+                    leftPreparation: z.string().optional(),
+                    rightPreparation: z.string().optional(),
+                    leftKeepInputMods:
+                        recombinatorPlanSchema.shape.steps.element.shape.leftPreparation.unwrap()
+                            .shape.keepInputMods,
+                    rightKeepInputMods:
+                        recombinatorPlanSchema.shape.steps.element.shape.rightPreparation.unwrap()
+                            .shape.keepInputMods,
+                }),
+        )
+        .min(1)
+        .max(8),
+});
 
 export function draftSourceBases(draft: RecombinatorDraft): Map<string, CatalogBase[]> {
     const sources = new Map(

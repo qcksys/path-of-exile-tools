@@ -32,7 +32,7 @@ describe("recombinator catalog loading", () => {
                     ? new Response("unavailable", { status: 503 })
                     : Response.json({ game: "poe2" }),
             )
-            .mockResolvedValueOnce(Response.json(catalogFixture));
+            .mockResolvedValueOnce(Response.json({ catalog: catalogFixture }));
         vi.stubGlobal("fetch", fetch);
         render(createElement(MemoryRouter, {}, createElement(RecombinatorPage)));
         expect(await screen.findByRole("alert")).toBeDefined();
@@ -43,7 +43,7 @@ describe("recombinator catalog loading", () => {
         expect(screen.getByTestId("catalog").textContent).toBe("fixture");
         expect(screen.queryByRole("alert")).toBeNull();
         expect(fetch).toHaveBeenLastCalledWith(
-            "/game-data/recombinator-poe1.json",
+            "/api/v1/recombinator/catalog",
             expect.objectContaining({ cache: "reload" }),
         );
     });
