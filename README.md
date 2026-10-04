@@ -45,6 +45,15 @@ Remove-Item Env:APP_ENV
 
 In a POSIX shell, prefix each command with `APP_ENV=test`. The ready task runs Biome, builds, type checks, and tests. Environment tests cover required credentials, dev/prod selection, and exclusion of 1Password credentials from the runtime configuration. The API client currently has no test cases.
 
+Run the recombinator browser end-to-end tests with:
+
+```sh
+vp exec --filter poe-boats playwright install chromium
+vp run poe-boats#test:e2e:browser
+```
+
+Playwright builds and previews the app on `127.0.0.1:4173` using the inert test environment and checks the generated recipes with the real calculation worker. The tests cover the essence NNN donor with zero to two suffixes and exclusive crafted suffixes on both axes. CI runs the same Chromium suite. Failure screenshots and traces are saved under `apps/poe.boats/test-results/`.
+
 ## Local game data
 
 The [game-data pipeline guide](packages/poe-game-data/README.md) covers GGPK, local bundles, and patch-CDN extraction for both games, repeatable snapshots, and comparison with PoEDB and Craft of Exile. The [research report](docs/research/poe-game-data-extraction.md) explains the formats and website provenance.

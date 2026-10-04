@@ -16,4 +16,6 @@ build
 # Scripts cache
 scripts/**/.cache/
 .vitest/
+playwright-report/
+test-results/
 env.d.ts

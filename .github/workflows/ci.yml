@@ -44,6 +44,10 @@ jobs:
         run: vp run --filter '*' test --exclude '**/env.test.ts'
       - name: Ingest end-to-end tests (MySQL Testcontainers)
         run: vp run poe-boats#test:e2e
+      - name: Install Chromium for browser tests
+        run: vp exec --filter poe-boats playwright install --with-deps chromium
+      - name: Browser end-to-end tests
+        run: vp run poe-boats#test:e2e:browser
 
   deploy:
     needs: validate
