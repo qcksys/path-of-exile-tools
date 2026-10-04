@@ -1,9 +1,16 @@
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
+import { internal } from "varlock";
+import { resolveCacheTtl } from "varlock/plugin-lib";
 import { describe, expect, it } from "vite-plus/test";
 
 const appDir = resolve(import.meta.dirname, "..");
 const cli = resolve(appDir, "node_modules/varlock/bin/cli.js");
+const packages = [
+    ["web app", appDir],
+    ["stash ingestor", resolve(appDir, "../../packages/poe-stash-ingest")],
+    ["stash tracker", resolve(appDir, "../../packages/poe-stash-tracker")],
+];
 const fixtures = {
     LOG_LEVEL: "silent",
     DATABASE_URL: "mysql://test:test@localhost/poe_test",
@@ -56,14 +63,36 @@ function loadEnv(
 }
 
 describe("environment configuration", () => {
-    it.each([
-        ["web app", appDir],
-        ["stash ingestor", resolve(appDir, "../../packages/poe-stash-ingest")],
-        ["stash tracker", resolve(appDir, "../../packages/poe-stash-tracker")],
-    ])("validates the %s without 1Password credentials", (_name, directory) => {
+    it.each(packages)("validates the %s without 1Password credentials", (_name, directory) => {
         const result = loadEnv(directory);
         expect(result.stderr).toBe("");
         expect(result.status).toBe(0);
+    });
+
+    describe.each(packages)("%s 1Password cache", (_name, directory) => {
+        it.each([
+            [undefined, "1h"],
+            ["local", "1h"],
+            ["dev", "1h"],
+            ["test", undefined],
+            ["prod", undefined],
+        ])("uses the expected TTL for APP_ENV=%s", async (environment, expectedTtl) => {
+            const graph = await internal.loadEnvGraph({
+                entryFilePaths: [resolve(directory, ".env.schema")],
+                overrideValues: {
+                    ...(environment ? { APP_ENV: environment } : {}),
+                    OP_SERVICE_ACCOUNT_TOKEN: "",
+                },
+                processEnvOverride: {},
+                skipCache: true,
+            });
+            expect(internal.checkForSchemaErrors(graph, { noThrow: true }).hasErrors).toBe(false);
+            const initializers = graph.getRootDecFns("initOp");
+            expect(initializers).toHaveLength(1);
+            const cacheTtl = initializers[0].decValueResolver?.objArgs?.cacheTtl;
+            expect(cacheTtl).toBeDefined();
+            expect(await resolveCacheTtl(cacheTtl)).toBe(expectedTtl);
+        });
     });
 
     it.each([
