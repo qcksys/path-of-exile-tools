@@ -7,6 +7,7 @@ import {
     ModifierIcons,
     ModifierLegend,
 } from "~/components/recombinator/modifier-icons";
+import { PreparationEditor } from "~/components/recombinator/preparation-editor";
 import {
     Accordion,
     AccordionContent,
@@ -51,13 +52,16 @@ import {
     calculateRecombinatorPlan,
     matchesTarget,
     outcomeKey,
+    RECOMBINATOR_EXCLUSIVE_URL,
     RECOMBINATOR_GUIDE_URL,
+    RECOMBINATOR_PREPARATION_URL,
     RECOMBINATOR_TABLE_URL,
     type RecombinatorStepResult,
     summarizeCounts,
 } from "~/lib/recombinator";
 import {
     catalogExampleDraft,
+    draftSourceBases,
     emptyRecombinatorDraft,
     exampleRecombinatorDraft,
     parseRecombinatorDraft,
@@ -110,6 +114,7 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
     );
     const [exact, setExact] = useState(false);
     const [matchingOnly, setMatchingOnly] = useState(false);
+    const [requiredBase, setRequiredBase] = useState("any");
     const [page, setPage] = useState(0);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -125,6 +130,7 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
         setCalculation(null);
         setError(null);
         setPage(0);
+        setRequiredBase("any");
     }
 
     function calculate() {
@@ -194,9 +200,28 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                 for (const affix of item[side]) unique.set(affix.id, { affix, side });
             }
         }
+        for (const step of calculation?.plan.steps ?? []) {
+            for (const preparation of [step.leftPreparation, step.rightPreparation]) {
+                if (preparation)
+                    unique.set(preparation.affix.id, {
+                        affix: preparation.affix,
+                        side: preparation.side,
+                    });
+            }
+        }
         return [...unique.values()];
     }, [calculation]);
-    const matching = outcomes.filter(({ item }) => matchesTarget(item, required, exact));
+    const matching = outcomes.filter(
+        ({ item }) =>
+            matchesTarget(item, required, exact) &&
+            (requiredBase === "any" || item.base?.id === requiredBase),
+    );
+    const sourceBases = useMemo(() => draftSourceBases(draft), [draft]);
+    const outputBases = [
+        ...new Map(
+            outcomes.flatMap(({ item }) => (item.base ? [[item.base.id, item.base] as const] : [])),
+        ).values(),
+    ];
     const targetChance = matching.reduce((sum, outcome) => sum + outcome.probability, 0);
     const visible = matchingOnly ? matching : outcomes;
     const pages = Math.max(1, Math.ceil(visible.length / pageSize));
@@ -256,9 +281,9 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                 <AlertTitle>Estimated odds</AlertTitle>
                 <AlertDescription>
                     <p>
-                        Uses the guide’s measured affix-count table and equal selection weight per
-                        modifier copy. Actual modifier weights are uncertain. All items must have
-                        compatible bases and transferable modifiers.
+                        Uses the guide’s measured affix-count table. Ordinary pools use equal weight
+                        per modifier copy; exclusive crafts use a weight-based estimate. Base
+                        restrictions are applied before choosing the surviving mods.
                     </p>
                     <Accordion>
                         <AccordionItem value="rules">
@@ -277,12 +302,15 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                     model; they are not random samples.
                                 </p>
                                 <p>
-                                    At most one exclusive modifier is supported across each pair,
-                                    including duplicate copies. Fractured mods, base-specific
-                                    transfer restrictions, output base and item level, new
-                                    modifiers, and gold/dust costs are outside this model. Use
-                                    distinct labels for different tiers and a shared group for
-                                    conflicting mods.
+                                    Bases have equal chances of surviving. Natural mods which cannot
+                                    roll on the chosen base count toward the pool, then are
+                                    excluded. Manually marking NNN excludes that mod on every base.
+                                    Opposite-side exclusive crafts use estimated odds: 50/50 affix
+                                    order, natural spawn weights and an assumed craft weight of
+                                    1,000. More than one exclusive on the same side is unsupported.
+                                    Fractures, influences, output item level, new modifiers and
+                                    gold/dust costs are outside this model. Use distinct labels for
+                                    different tiers and a shared group for conflicting mods.
                                 </p>
                                 <p>
                                     Each reference to an earlier step means a fresh, independent run
@@ -309,6 +337,24 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                     >
                                         Original probability table
                                     </a>
+                                    {" · "}
+                                    <a
+                                        className="underline underline-offset-4"
+                                        href={RECOMBINATOR_PREPARATION_URL}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        Essence NNN preparation
+                                    </a>
+                                    {" · "}
+                                    <a
+                                        className="underline underline-offset-4"
+                                        href={RECOMBINATOR_EXCLUSIVE_URL}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        Exclusive magic-pair research
+                                    </a>
                                 </p>
                             </AccordionContent>
                         </AccordionItem>
@@ -322,6 +368,7 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                 selectedStep={selectedStep}
                 required={required}
                 exact={exact}
+                requiredBase={requiredBase}
                 onEdit={edit}
                 onSelect={(id, kind) => {
                     if (kind === "step") {
@@ -742,6 +789,106 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                     className="col-start-2 row-start-1 mb-2 size-4 text-muted-foreground"
                                                 />
                                             </FieldGroup>
+                                            {catalog ? (
+                                                <div className="mt-4 flex flex-col gap-3">
+                                                    <div className="grid gap-3 md:grid-cols-2">
+                                                        {(["left", "right"] as const).map(
+                                                            (side) => {
+                                                                const field =
+                                                                    side === "left"
+                                                                        ? "leftPreparation"
+                                                                        : "rightPreparation";
+                                                                return (
+                                                                    <PreparationEditor
+                                                                        key={`${step.id}-${side}-${step[side]}`}
+                                                                        id={`${step.id}-${side}-preparation`}
+                                                                        label={`Step ${index + 1} input ${side === "left" ? "A" : "B"} preparation`}
+                                                                        value={step[field]}
+                                                                        bases={
+                                                                            sourceBases.get(
+                                                                                step[side],
+                                                                            ) ?? []
+                                                                        }
+                                                                        outputBases={
+                                                                            sourceBases.get(
+                                                                                step.id,
+                                                                            ) ?? []
+                                                                        }
+                                                                        catalog={catalog}
+                                                                        onChange={(recipe) =>
+                                                                            edit({
+                                                                                ...draft,
+                                                                                steps: draft.steps.map(
+                                                                                    (entry) =>
+                                                                                        entry.id ===
+                                                                                        step.id
+                                                                                            ? {
+                                                                                                  ...entry,
+                                                                                                  [field]:
+                                                                                                      recipe,
+                                                                                                  removeCrafted:
+                                                                                                      recipe &&
+                                                                                                      catalog.recipes?.find(
+                                                                                                          (
+                                                                                                              candidate,
+                                                                                                          ) =>
+                                                                                                              candidate.id ===
+                                                                                                              recipe,
+                                                                                                      )
+                                                                                                          ?.kind ===
+                                                                                                          "bench"
+                                                                                                          ? true
+                                                                                                          : entry.removeCrafted,
+                                                                                              }
+                                                                                            : entry,
+                                                                                ),
+                                                                            })
+                                                                        }
+                                                                    />
+                                                                );
+                                                            },
+                                                        )}
+                                                    </div>
+                                                    <Field orientation="horizontal">
+                                                        <Checkbox
+                                                            id={`${step.id}-remove-crafted`}
+                                                            checked={step.removeCrafted ?? false}
+                                                            onCheckedChange={(checked) =>
+                                                                edit({
+                                                                    ...draft,
+                                                                    steps: draft.steps.map(
+                                                                        (entry) =>
+                                                                            entry.id === step.id
+                                                                                ? {
+                                                                                      ...entry,
+                                                                                      removeCrafted:
+                                                                                          checked ===
+                                                                                          true,
+                                                                                  }
+                                                                                : entry,
+                                                                    ),
+                                                                })
+                                                            }
+                                                        />
+                                                        <FieldLabel
+                                                            htmlFor={`${step.id}-remove-crafted`}
+                                                        >
+                                                            Remove crafted mods after this
+                                                            recombination
+                                                        </FieldLabel>
+                                                    </Field>
+                                                    {step.leftPreparation ||
+                                                    step.rightPreparation ? (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Preparation applies before this step.
+                                                            Bench crafts must fit every possible
+                                                            input outcome. Calculated odds are
+                                                            conditional on completing the listed
+                                                            preparation.
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+                                            ) : null}
                                         </CardContent>
                                         <CardFooter>
                                             <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
@@ -873,12 +1020,49 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                 Exact match (no additional modifiers)
                                             </FieldLabel>
                                         </Field>
+                                        {outputBases.length ? (
+                                            <Field>
+                                                <FieldLabel htmlFor="target-base">
+                                                    Required output base
+                                                </FieldLabel>
+                                                <Select
+                                                    value={requiredBase}
+                                                    onValueChange={(value) => {
+                                                        setRequiredBase(value ?? "any");
+                                                        setPage(0);
+                                                    }}
+                                                >
+                                                    <SelectTrigger id="target-base">
+                                                        <SelectValue>
+                                                            {outputBases.find(
+                                                                (base) => base.id === requiredBase,
+                                                            )?.name ?? "Any output base"}
+                                                        </SelectValue>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectGroup>
+                                                            <SelectItem value="any">
+                                                                Any output base
+                                                            </SelectItem>
+                                                            {outputBases.map((base) => (
+                                                                <SelectItem
+                                                                    key={base.id}
+                                                                    value={base.id}
+                                                                >
+                                                                    {base.name}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectGroup>
+                                                    </SelectContent>
+                                                </Select>
+                                            </Field>
+                                        ) : null}
                                     </FieldSet>
                                 </CardContent>
                                 <CardFooter className="items-end justify-between gap-3">
                                     <div>
                                         <p className="text-sm text-muted-foreground">
-                                            {required.length === 0
+                                            {required.length === 0 && requiredBase === "any"
                                                 ? exact
                                                     ? "No-modifier outcome"
                                                     : "All outcomes"
@@ -907,7 +1091,7 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                         <Badge
                                             variant="secondary"
                                             key={`${count.prefixes}/${count.suffixes}`}
-                                            className="flex flex-col gap-1 py-2"
+                                            className="flex h-auto w-full flex-col gap-1 rounded-md py-2"
                                         >
                                             <span>
                                                 {count.prefixes}p / {count.suffixes}s
@@ -961,17 +1145,27 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                     <TableRow
                                                         key={outcomeKey(outcome.item)}
                                                         data-state={
-                                                            required.length &&
+                                                            (required.length > 0 ||
+                                                                exact ||
+                                                                requiredBase !== "any") &&
                                                             matchesTarget(
                                                                 outcome.item,
                                                                 required,
                                                                 exact,
-                                                            )
+                                                            ) &&
+                                                            (requiredBase === "any" ||
+                                                                outcome.item.base?.id ===
+                                                                    requiredBase)
                                                                 ? "selected"
                                                                 : undefined
                                                         }
                                                     >
                                                         <TableCell className="whitespace-normal break-words align-top">
+                                                            {outcome.item.base ? (
+                                                                <p className="mb-2 text-xs text-muted-foreground">
+                                                                    {outcome.item.base.name}
+                                                                </p>
+                                                            ) : null}
                                                             <AffixList
                                                                 affixes={outcome.item.prefixes}
                                                                 side="prefix"

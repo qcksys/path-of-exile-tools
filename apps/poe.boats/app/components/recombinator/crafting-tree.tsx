@@ -164,6 +164,7 @@ export function CraftingTree({
     selectedStep,
     required,
     exact,
+    requiredBase = "any",
     onEdit,
     onSelect,
 }: {
@@ -172,6 +173,7 @@ export function CraftingTree({
     selectedStep: string;
     required: string[];
     exact: boolean;
+    requiredBase?: string;
     onEdit: (draft: RecombinatorDraft) => void;
     onSelect: (id: string, kind: "item" | "step") => void;
 }) {
@@ -194,11 +196,14 @@ export function CraftingTree({
                 ...node,
                 active: node.kind === "step" && selectedStep === node.id,
                 outcomes: outcomes?.length,
-                hasTarget: required.length > 0 || exact,
+                hasTarget: required.length > 0 || exact || requiredBase !== "any",
                 chance: outcomes?.reduce(
                     (sum, outcome) =>
                         sum +
-                        (matchesTarget(outcome.item, required, exact) ? outcome.probability : 0),
+                        (matchesTarget(outcome.item, required, exact) &&
+                        (requiredBase === "any" || outcome.item.base?.id === requiredBase)
+                            ? outcome.probability
+                            : 0),
                     0,
                 ),
                 select: () => onSelect(node.id, node.kind),

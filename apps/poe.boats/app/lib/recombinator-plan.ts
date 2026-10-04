@@ -10,7 +10,12 @@ import {
     type RecombinatorPlan,
     recombinatorPlanSchema,
 } from "~/schemas/recombinator";
-import type { CatalogBase, RecombinatorCatalog } from "~/schemas/recombinator-catalog";
+import type {
+    CatalogBase,
+    CatalogRecipe,
+    RecombinatorCatalog,
+} from "~/schemas/recombinator-catalog";
+import { nativeWeight } from "./recombinator";
 
 export type RecombinatorDraftItem = {
     id: string;
@@ -27,8 +32,58 @@ export type RecombinatorDraftItem = {
 
 export type RecombinatorDraft = {
     items: RecombinatorDraftItem[];
-    steps: RecombinatorPlan["steps"];
+    steps: (Omit<RecombinatorPlan["steps"][number], "leftPreparation" | "rightPreparation"> & {
+        leftPreparation?: string;
+        rightPreparation?: string;
+    })[];
 };
+
+export function draftSourceBases(draft: RecombinatorDraft): Map<string, CatalogBase[]> {
+    const sources = new Map(
+        draft.items.map((item) => [item.id, item.catalog ? [item.catalog.base] : []]),
+    );
+    for (const step of draft.steps) {
+        const bases = [...(sources.get(step.left) ?? []), ...(sources.get(step.right) ?? [])];
+        sources.set(step.id, [...new Map(bases.map((base) => [base.id, base])).values()]);
+    }
+    return sources;
+}
+
+export function availablePreparationRecipes(
+    catalog: RecombinatorCatalog,
+    bases: CatalogBase[],
+    kind: CatalogRecipe["kind"],
+) {
+    const mods = new Map(catalog.mods.map((mod) => [mod.id, mod]));
+    return (catalog.recipes ?? []).filter((recipe) => {
+        if (
+            recipe.kind !== kind ||
+            !bases.length ||
+            !bases.every((base) => recipe.itemClasses.includes(base.itemClass))
+        )
+            return false;
+        const mod = mods.get(recipe.mod);
+        if (!mod) return false;
+        return (
+            kind === "bench" || bases.some((base) => nativeWeight(catalogModAffix(mod), base) === 0)
+        );
+    });
+}
+
+function resolvePreparation(id: string | undefined, catalog?: RecombinatorCatalog) {
+    if (!id) return undefined;
+    if (id.startsWith("pending:"))
+        throw new Error("Choose a preparation recipe or use the input as is.");
+    const recipe = catalog?.recipes?.find((entry) => entry.id === id);
+    const mod = catalog?.mods.find((entry) => entry.id === recipe?.mod);
+    if (!recipe || !mod) throw new Error("The preparation recipe is unavailable. Select it again.");
+    return {
+        kind: recipe.kind,
+        side: mod.side,
+        affix: catalogModAffix(mod),
+        itemClasses: recipe.itemClasses,
+    };
+}
 
 export const emptyRecombinatorDraft: RecombinatorDraft = {
     items: [
@@ -135,7 +190,7 @@ function resolveCatalogAffixes(
             };
         });
     }
-    return { prefixes: resolveSide("prefixes"), suffixes: resolveSide("suffixes") };
+    return { prefixes: resolveSide("prefixes"), suffixes: resolveSide("suffixes"), base };
 }
 
 export function parseRecombinatorDraft(
@@ -159,6 +214,7 @@ export function parseRecombinatorDraft(
                             id,
                             name,
                             item: {
+                                ...("base" in chosen ? { base: chosen.base } : {}),
                                 prefixes: [...chosen.prefixes, ...parseAffixes(prefixes)],
                                 suffixes: [...chosen.suffixes, ...parseAffixes(suffixes)],
                             },
@@ -170,7 +226,11 @@ export function parseRecombinatorDraft(
                     }
                 },
             ),
-            steps: draft.steps,
+            steps: draft.steps.map((step) => ({
+                ...step,
+                leftPreparation: resolvePreparation(step.leftPreparation, catalog),
+                rightPreparation: resolvePreparation(step.rightPreparation, catalog),
+            })),
         });
     } catch (error) {
         if (!(error instanceof ZodError)) throw error;

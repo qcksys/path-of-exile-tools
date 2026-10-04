@@ -5,9 +5,9 @@ import { cn } from "~/lib/utils";
 import type { RecombinatorAffix } from "~/schemas/recombinator";
 
 const exclusiveDescription =
-    "Exclusive modifier: at most one across each recombination pair in this model.";
+    "Exclusive modifier: at most one survives. Opposite-side crafts use estimated odds; multiple exclusives on the same side are unsupported.";
 const nonNativeDescription =
-    "NNN (non-native natural): requires a compatible base. Base-transfer restrictions are not calculated.";
+    "NNN (non-native natural): counts toward the pool, then is excluded. This manual flag excludes the mod on every base; catalog base restrictions are automatic.";
 
 export function ModifierIcons({
     affix,

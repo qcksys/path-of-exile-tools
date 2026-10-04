@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { catalogBaseSchema } from "./recombinator-catalog";
 
 const labelSchema = z.string().trim().min(1).max(80);
 
@@ -9,14 +10,23 @@ export const recombinatorAffixSchema = z.object({
     groups: z.array(z.string().min(1).max(256)).min(1).optional(),
     exclusive: z.boolean(),
     nonNative: z.boolean().default(false),
+    spawn: z.array(z.tuple([z.string(), z.number().nonnegative()])).optional(),
+    crafted: z.boolean().optional(),
 });
 
 const affixesSchema = z.array(recombinatorAffixSchema).max(3);
+const preparationSchema = z.object({
+    kind: z.enum(["essence", "bench"]),
+    side: z.enum(["prefixes", "suffixes"]),
+    affix: recombinatorAffixSchema,
+    itemClasses: z.array(z.string()).min(1),
+});
 
 export const recombinatorItemSchema = z
     .object({
         prefixes: affixesSchema,
         suffixes: affixesSchema,
+        base: catalogBaseSchema.optional(),
     })
     .superRefine((item, ctx) => {
         for (const side of ["prefixes", "suffixes"] as const) {
@@ -50,6 +60,9 @@ export const recombinatorPlanSchema = z
                     name: labelSchema,
                     left: labelSchema,
                     right: labelSchema,
+                    leftPreparation: preparationSchema.optional(),
+                    rightPreparation: preparationSchema.optional(),
+                    removeCrafted: z.boolean().optional(),
                 }),
             )
             .min(1)
@@ -70,7 +83,19 @@ export const recombinatorPlanSchema = z
             }
             ids.add(entry.id);
         }
-        for (const { item } of plan.items) {
+        const prepared = plan.steps
+            .flatMap((step) => [step.leftPreparation, step.rightPreparation])
+            .flatMap((preparation) =>
+                preparation
+                    ? [
+                          {
+                              prefixes: preparation.side === "prefixes" ? [preparation.affix] : [],
+                              suffixes: preparation.side === "suffixes" ? [preparation.affix] : [],
+                          },
+                      ]
+                    : [],
+            );
+        for (const item of [...plan.items.map((entry) => entry.item), ...prepared]) {
             for (const side of ["prefixes", "suffixes"] as const) {
                 for (const affix of item[side]) {
                     const definition = JSON.stringify([
@@ -79,6 +104,8 @@ export const recombinatorPlanSchema = z
                         affixGroups(affix).toSorted(),
                         affix.exclusive,
                         affix.nonNative,
+                        affix.spawn,
+                        affix.crafted ?? false,
                     ]);
                     const previous = definitions.get(affix.id);
                     if (previous && previous !== definition) {
