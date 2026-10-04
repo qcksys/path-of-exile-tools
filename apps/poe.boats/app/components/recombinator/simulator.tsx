@@ -305,12 +305,13 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                     Bases have equal chances of surviving. Natural mods which cannot
                                     roll on the chosen base count toward the pool, then are
                                     excluded. Manually marking NNN excludes that mod on every base.
-                                    Opposite-side exclusive crafts use estimated odds: 50/50 affix
-                                    order, natural spawn weights and an assumed craft weight of
-                                    1,000. More than one exclusive on the same side is unsupported.
-                                    Fractures, influences, output item level, new modifiers and
-                                    gold/dust costs are outside this model. Use distinct labels for
-                                    different tiers and a shared group for conflicting mods.
+                                    Exclusive crafts use estimated odds: 50/50 affix order, natural
+                                    spawn weights and an assumed craft weight of 1,000. Two one-mod
+                                    magic inputs can each have a craft on their empty affix side; at
+                                    most one exclusive mod can survive. Fractures, influences,
+                                    output item level, new modifiers and gold/dust costs are outside
+                                    this model. Use distinct labels for different tiers and a shared
+                                    group for conflicting mods.
                                 </p>
                                 <p>
                                     Each reference to an earlier step means a fresh, independent run
@@ -426,8 +427,9 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                         ) : null}
                         <ModifierLegend />
                         <p className="text-xs text-muted-foreground">
-                            NNN markers are annotations. Odds assume these modifiers are eligible on
-                            both bases; base-transfer restrictions are not simulated.
+                            NNN modifiers contribute to the input mod count but cannot survive on
+                            either base. Generated essence recipes apply base eligibility
+                            automatically.
                         </p>
                         <Accordion>
                             <AccordionItem value="groups">
@@ -798,12 +800,19 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                                     side === "left"
                                                                         ? "leftPreparation"
                                                                         : "rightPreparation";
+                                                                const keepField =
+                                                                    side === "left"
+                                                                        ? "leftKeepInputMods"
+                                                                        : "rightKeepInputMods";
                                                                 return (
                                                                     <PreparationEditor
                                                                         key={`${step.id}-${side}-${step[side]}`}
                                                                         id={`${step.id}-${side}-preparation`}
                                                                         label={`Step ${index + 1} input ${side === "left" ? "A" : "B"} preparation`}
                                                                         value={step[field]}
+                                                                        keepInputMods={
+                                                                            step[keepField]
+                                                                        }
                                                                         bases={
                                                                             sourceBases.get(
                                                                                 step[side],
@@ -815,7 +824,10 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                                             ) ?? []
                                                                         }
                                                                         catalog={catalog}
-                                                                        onChange={(recipe) =>
+                                                                        onChange={(
+                                                                            recipe,
+                                                                            keepInputMods,
+                                                                        ) =>
                                                                             edit({
                                                                                 ...draft,
                                                                                 steps: draft.steps.map(
@@ -826,6 +838,8 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                                                                   ...entry,
                                                                                                   [field]:
                                                                                                       recipe,
+                                                                                                  [keepField]:
+                                                                                                      keepInputMods,
                                                                                                   removeCrafted:
                                                                                                       recipe &&
                                                                                                       catalog.recipes?.find(

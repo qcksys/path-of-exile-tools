@@ -1,5 +1,6 @@
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Badge } from "~/components/ui/badge";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Field, FieldGroup, FieldLabel } from "~/components/ui/field";
 import {
     Select,
@@ -18,6 +19,7 @@ export function PreparationEditor({
     id,
     label,
     value,
+    keepInputMods = false,
     bases,
     outputBases,
     catalog,
@@ -26,10 +28,11 @@ export function PreparationEditor({
     id: string;
     label: string;
     value?: string;
+    keepInputMods?: boolean;
     bases: CatalogBase[];
     outputBases: CatalogBase[];
     catalog: RecombinatorCatalog;
-    onChange: (recipe: string | undefined) => void;
+    onChange: (recipe: string | undefined, keepInputMods?: boolean) => void;
 }) {
     const selected = catalog.recipes?.find((recipe) => recipe.id === value);
     const kind = selected?.kind ?? (value?.startsWith("pending:") ? value.slice(8) : "none");
@@ -89,12 +92,26 @@ export function PreparationEditor({
                         label={`${label} recipe`}
                         options={options}
                         value={options.find((option) => option.id === value)}
-                        onSelect={onChange}
+                        onSelect={(recipe) => onChange(recipe, keepInputMods)}
                     />
+                    {kind === "essence" ? (
+                        <Field orientation="horizontal">
+                            <Checkbox
+                                id={`${id}-keep-mods`}
+                                checked={keepInputMods}
+                                onCheckedChange={(checked) => onChange(value, checked === true)}
+                            />
+                            <FieldLabel htmlFor={`${id}-keep-mods`}>
+                                Keep input modifiers in prepared donor
+                            </FieldLabel>
+                        </Field>
+                    ) : null}
                     <p className="text-xs text-muted-foreground">
                         {kind === "essence"
-                            ? "Scour the input, use the essence on its base, then annul the other modifiers until only the forced mod remains. This replaces every existing mod, including an earlier step’s result. Odds start after successful isolation; essence rolls and annuls are not simulated."
-                            : "For a one-mod magic item, craft on the empty affix side. Prepare both inputs: one natural prefix + crafted suffix, and one crafted prefix + natural suffix. The bench recipe must be unlocked. Select remove crafted mods below to clean the result."}
+                            ? keepInputMods
+                                ? "Select the natural mods you want on the input item, including any suffixes to keep. Use an essence tier capable of rolling those mods, repeat until they appear, then annul unwanted mods. The prepared donor contains those selected mods plus the forced essence mod. Essences reroll items; calculated odds start after successful preparation and exclude essence rolls and annuls."
+                                : "Scour the input, use the essence on its base, then annul the other modifiers until only the forced mod remains. This replaces every existing mod, including an earlier step’s result. Odds start after successful isolation; essence rolls and annuls are not simulated."
+                            : "For a one-mod magic item, craft on the empty affix side of both inputs. Same-side natural mods keep the original success odds; the crafts can reduce recombination cost. Opposite-side natural mods can improve their combined odds. The bench recipe must be unlocked. Select remove crafted mods below to clean the result."}
                     </p>
                 </>
             ) : null}
