@@ -35,6 +35,8 @@ export type RecombinatorDraft = {
     steps: (Omit<RecombinatorPlan["steps"][number], "leftPreparation" | "rightPreparation"> & {
         leftPreparation?: string;
         rightPreparation?: string;
+        leftKeepInputMods?: boolean;
+        rightKeepInputMods?: boolean;
     })[];
 };
 
@@ -70,7 +72,11 @@ export function availablePreparationRecipes(
     });
 }
 
-function resolvePreparation(id: string | undefined, catalog?: RecombinatorCatalog) {
+function resolvePreparation(
+    id: string | undefined,
+    catalog?: RecombinatorCatalog,
+    keepInputMods = false,
+) {
     if (!id) return undefined;
     if (id.startsWith("pending:"))
         throw new Error("Choose a preparation recipe or use the input as is.");
@@ -82,6 +88,7 @@ function resolvePreparation(id: string | undefined, catalog?: RecombinatorCatalo
         side: mod.side,
         affix: catalogModAffix(mod),
         itemClasses: recipe.itemClasses,
+        keepInputMods: recipe.kind === "essence" && keepInputMods,
     };
 }
 
@@ -228,8 +235,16 @@ export function parseRecombinatorDraft(
             ),
             steps: draft.steps.map((step) => ({
                 ...step,
-                leftPreparation: resolvePreparation(step.leftPreparation, catalog),
-                rightPreparation: resolvePreparation(step.rightPreparation, catalog),
+                leftPreparation: resolvePreparation(
+                    step.leftPreparation,
+                    catalog,
+                    step.leftKeepInputMods,
+                ),
+                rightPreparation: resolvePreparation(
+                    step.rightPreparation,
+                    catalog,
+                    step.rightKeepInputMods,
+                ),
             })),
         });
     } catch (error) {

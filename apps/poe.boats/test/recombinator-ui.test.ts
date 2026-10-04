@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { RecombinatorSimulator } from "~/components/recombinator/simulator";
 import { calculateRecombinatorPlan } from "~/lib/recombinator";
 import { catalogModLabel } from "~/lib/recombinator-catalog";
 import type { RecombinatorPlan } from "~/schemas/recombinator";
-import { armourMod, catalogFixture, lifeMod } from "./fixtures/recombinator-catalog";
+import { armourMod, catalogFixture, fireMod, lifeMod } from "./fixtures/recombinator-catalog";
 
 class CalculatorWorker {
     onmessage: ((event: { data: unknown }) => void) | null = null;
@@ -40,6 +40,67 @@ afterEach(() => {
 });
 
 describe("recombinator editor", () => {
+    it("calculates two natural prefixes with exclusive crafted suffixes through the recipe controls", async () => {
+        const craft = { ...fireMod, crafted: true, exclusive: true };
+        render(
+            createElement(RecombinatorSimulator, {
+                catalog: {
+                    ...catalogFixture,
+                    mods: [lifeMod, armourMod, craft],
+                    recipes: [
+                        {
+                            id: "bench-suffix",
+                            name: "Exclusive suffix craft",
+                            kind: "bench",
+                            mod: craft.id,
+                            itemClasses: ["Body Armour"],
+                            cost: [{ name: "Chaos Orb", amount: 1 }],
+                        },
+                    ],
+                },
+            }),
+        );
+        async function choose(label: string, query: string, option: string) {
+            const input = screen.getByRole("combobox", { name: label });
+            act(() => input.focus());
+            fireEvent.change(input, { target: { value: query } });
+            fireEvent.keyDown(input, { key: "ArrowDown" });
+            await screen.findByRole("option", { name: option });
+            fireEvent.click(screen.getByRole("option", { name: option }));
+        }
+        for (const number of [1, 2]) {
+            await choose(`Item ${number} base`, "vaal", "Vaal Regalia · Body Armour");
+            const mod = number === 1 ? lifeMod : armourMod;
+            await choose(`Item ${number} add prefix (0/3)`, mod.name, catalogModLabel(mod));
+            const label = `Step 1 input ${number === 1 ? "A" : "B"} preparation`;
+            const trigger = screen.getByRole("combobox", { name: label });
+            fireEvent.click(trigger);
+            const option = await screen.findByRole("option", {
+                name: "Add an exclusive bench craft",
+            });
+            act(() => option.focus());
+            fireEvent.keyDown(option, { key: "Enter" });
+            await waitFor(() => expect(document.activeElement).toBe(trigger));
+            await choose(
+                `${label} recipe`,
+                "exclusive",
+                `Exclusive suffix craft · Suffix: ${craft.text}`,
+            );
+        }
+        expect(
+            screen
+                .getByRole("checkbox", { name: "Remove crafted mods after this recombination" })
+                .getAttribute("aria-checked"),
+        ).toBe("true");
+        await act(async () => {
+            fireEvent.click(screen.getByRole("button", { name: "Calculate plan" }));
+        });
+        for (const mod of [lifeMod, armourMod])
+            fireEvent.click(screen.getByRole("checkbox", { name: catalogModLabel(mod) }));
+        expect(screen.getByTestId("target-chance").textContent).toBe("33%");
+        expect(screen.queryByRole("alert")).toBeNull();
+    });
+
     it("prepares an essence donor at a stage and filters target odds by output base", async () => {
         const nnn = {
             ...armourMod,
@@ -82,6 +143,7 @@ describe("recombinator editor", () => {
         await choose("Item 1 base", "vaal", "Vaal Regalia · Body Armour");
         await choose("Item 2 base", "any int", "Any INT Body Armour · generic");
         await choose("Item 1 add prefix (0/3)", "healthy", catalogModLabel(lifeMod));
+        await choose("Item 2 add suffix (0/3)", "flame", catalogModLabel(fireMod));
         await select("Step 1 input B preparation", "Prepare an essence NNN donor");
         fireEvent.click(screen.getByRole("button", { name: "Calculate plan" }));
         expect(screen.getByRole("alert").textContent).toContain("Choose a preparation recipe");
@@ -96,6 +158,24 @@ describe("recombinator editor", () => {
         });
         fireEvent.click(screen.getByRole("checkbox", { name: catalogModLabel(lifeMod) }));
         expect(screen.getByTestId("target-chance").textContent).toBe("100%");
+        fireEvent.click(
+            screen.getByRole("checkbox", { name: "Keep input modifiers in prepared donor" }),
+        );
+        expect(screen.queryByTestId("target-chance")).toBeNull();
+        expect(screen.getByText(/Essences reroll items/)).toBeDefined();
+        await act(async () => {
+            fireEvent.click(screen.getByRole("button", { name: "Calculate plan" }));
+        });
+        fireEvent.click(screen.getByRole("checkbox", { name: catalogModLabel(fireMod) }));
+        expect(screen.getByTestId("target-chance").textContent).toBe("59%");
+        fireEvent.click(
+            screen.getByRole("checkbox", { name: "Keep input modifiers in prepared donor" }),
+        );
+        await act(async () => {
+            fireEvent.click(screen.getByRole("button", { name: "Calculate plan" }));
+        });
+        expect(screen.getByTestId("target-chance").textContent).toBe("0%");
+        fireEvent.click(screen.getByRole("checkbox", { name: catalogModLabel(fireMod) }));
         await select("Required output base", "Vaal Regalia");
         expect(screen.getByTestId("target-chance").textContent).toBe("50%");
         expect(screen.getByRole("button", { name: /^Inspect step 1:/ }).textContent).toContain(
