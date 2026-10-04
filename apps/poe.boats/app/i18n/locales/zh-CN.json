@@ -40,7 +40,8 @@
     },
     "footer": {
         "dataFrom": "数据来自",
-        "emailMe": "发送邮件"
+        "emailMe": "发送邮件",
+        "disclaimer": "本产品与 Grinding Gear Games 没有任何关联，也未获得该公司的认可。"
     },
     "idolSet": {
         "newSet": "新配置",
