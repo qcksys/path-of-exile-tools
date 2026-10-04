@@ -1,11 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-
-async function choose(page: Page, label: string, query: string, option: string | RegExp) {
-    const input = page.getByRole("combobox", { name: label, exact: true });
-    await input.fill(query);
-    await input.press("ArrowDown");
-    await page.getByRole("option", { name: option, exact: true }).click();
-}
+import { choose } from "./recombinator-helpers";
 
 async function prepareAxes(page: Page) {
     await page.goto("/1/recombinator");
