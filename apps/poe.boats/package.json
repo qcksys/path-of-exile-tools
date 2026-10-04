@@ -11,6 +11,7 @@
         "game-data:recombinator": "tsx scripts/export-recombinator-catalog.ts",
         "test": "vp test run",
         "test:e2e": "vp test run --config vitest.e2e.config.ts",
+        "test:e2e:browser": "playwright test",
         "test:watch": "vp test",
         "deploy:dev:cf": "react-router build --mode dev && cross-env APP_ENV=dev varlock-wrangler deploy --env dev",
         "deploy:prod:cf": "react-router build --mode prod && cross-env APP_ENV=prod varlock-wrangler deploy --env prod",
@@ -68,6 +69,7 @@
     },
     "devDependencies": {
         "@cloudflare/vite-plugin": "^1.33.1",
+        "@playwright/test": "catalog:",
         "@poe-tools/cli": "workspace:*",
         "@react-router/dev": "^7.14.2",
         "@tailwindcss/vite": "^4.2.4",
