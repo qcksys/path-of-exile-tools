@@ -636,6 +636,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         expect(screen.getByRole("article", { name: "Independent copy editor" })).toBeDefined();
         expect(screen.getByRole("article", { name: "Final check (copy) editor" })).toBeDefined();
         fireEvent.click(button("Show process flow"));
+        await act(() => vi.dynamicImportSettled());
         expect(await screen.findByTestId(`rf__node-step:${saved.steps[1]!.id}`)).toBeDefined();
         expect(await screen.findByTestId(`rf__node-step:${saved.steps[3]!.id}`)).toBeDefined();
         fireEvent.click(copy.getByRole("button", { name: "Remove step" }));

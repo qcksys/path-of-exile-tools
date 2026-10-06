@@ -98,28 +98,27 @@ describe("PoE 2 reveal source distribution", () => {
         expect(small.validateItem(JSON.parse(JSON.stringify(item)))).toEqual(item);
     });
 
-    it("enumerates the reference distribution using extracted weights within each source", () => {
-        for (const [id, probability] of [
-            [ordinary[0]!.id, 7 / 12],
-            [exclusive[0]!.id, 5 / 12],
-        ] as const) {
-            const method = { kind: "reveal" as const, preferred: [id] };
-            const target = small.validateTarget({ groups: [{ mods: [id] }] });
-            expect(calculateExact(small, hidden, method, target).probability).toBeCloseTo(
-                probability,
-            );
-            expect(small.revealProbabilities(hidden).get(id)).toBeCloseTo(probability, 12);
-            const withEchoes = { ...method, omens: [echoes] };
-            expect(
-                calculateExact(small, hidden, withEchoes, target, 20000).probability,
-            ).toBeCloseTo(1 - (1 - probability) ** 2);
-        }
+    it.each([
+        [ordinary[0]!.id, 7 / 12],
+        [exclusive[0]!.id, 5 / 12],
+    ] as const)("enumerates the reference distribution using extracted weights for %s", (id, probability) => {
+        const method = { kind: "reveal" as const, preferred: [id] };
+        const target = small.validateTarget({ groups: [{ mods: [id] }] });
+        expect(calculateExact(small, hidden, method, target).probability).toBeCloseTo(probability);
+        expect(small.revealProbabilities(hidden).get(id)).toBeCloseTo(probability, 12);
+        const withEchoes = { ...method, omens: [echoes] };
+        expect(calculateExact(small, hidden, withEchoes, target, 20000).probability).toBeCloseTo(
+            1 - (1 - probability) ** 2,
+        );
         expect(small.revealPool(hidden).map(({ id, weight }) => ({ id, weight }))).toEqual(
             [...exclusive, ...ordinary].map(({ id, weight }) => ({ id, weight })),
         );
     });
 
-    it("applies the same distribution and one Echoes cost in exact and sampled processes", () => {
+    it.each([
+        "exact",
+        "sampled",
+    ] as const)("applies the same distribution and one Echoes cost in %s processes", (mode) => {
         const id = ordinary[0]!.id;
         const target = small.validateTarget({ groups: [{ mods: [id] }] });
         const reveal = { kind: "reveal" as const, preferred: [id], omens: [echoes] };
@@ -139,11 +138,14 @@ describe("PoE 2 reveal source distribution", () => {
             iterations: 2000,
             maxActions: 2,
         });
-        const exact = calculateProcessExact(small, project, 20000);
-        expect(exact.probability).toBeCloseTo(119 / 144);
-        expect(exact.meanCost).toBeCloseTo(12);
-        expect(exact.totalActions).toBeCloseTo(2);
-        expect(exact.spending[echoes]).toBeCloseTo(1);
+        if (mode === "exact") {
+            const exact = calculateProcessExact(small, project, 20000);
+            expect(exact.probability).toBeCloseTo(119 / 144);
+            expect(exact.meanCost).toBeCloseTo(12);
+            expect(exact.totalActions).toBeCloseTo(2);
+            expect(exact.spending[echoes]).toBeCloseTo(1);
+            return;
+        }
         const simulation = new CraftingSimulation(small.catalog, project, true);
         for (let index = 0; index < project.iterations; index++) simulation.runTrial();
         expect(simulation.result().probability).toBeCloseTo(119 / 144, 1);
