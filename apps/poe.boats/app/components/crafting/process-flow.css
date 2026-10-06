@@ -1,0 +1,19 @@
+.crafting-process-flow {
+    --xy-background-color: var(--background);
+    --xy-background-pattern-dots-color: var(--border);
+    --xy-attribution-background-color: var(--card);
+    --xy-edge-label-color: var(--foreground);
+    --xy-edge-label-background-color: var(--card);
+    --xy-handle-background-color: var(--foreground);
+    --xy-handle-border-color: var(--background);
+}
+
+.crafting-process-flow .react-flow__handle {
+    width: 12px;
+    height: 12px;
+    border-width: 2px;
+}
+
+.crafting-process-flow .react-flow__attribution a {
+    color: var(--muted-foreground);
+}

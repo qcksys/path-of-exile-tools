@@ -15,6 +15,7 @@
             "default": "./manifest.json"
         },
         "./package.json": "./package.json",
+        "./crafting-data.json": "./crafting-data.json",
         "./data/base_items.json": {
             "types": "./types/base_items.d.ts",
             "default": "./data/base_items.json"
@@ -60,7 +61,8 @@
         "manifest.json",
         "README.md",
         "THIRD_PARTY_NOTICES.md",
-        "json-schema"
+        "json-schema",
+        "crafting-data.json"
     ],
     "type": "module",
     "description": "Static Path of Exile 2 client data with TypeScript types and Zod schemas.",

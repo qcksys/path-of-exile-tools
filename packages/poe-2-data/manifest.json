@@ -3,10 +3,11 @@
   "game": "poe2",
   "version": "4.5.5-build.4",
   "client_build": "4.5.5.4",
-  "source_manifest_sha256": "be05985698251b636ca82854d393148c106b5e1b2127b6285eb994b490b2aad0",
+  "source_manifest_sha256": "6cfa1f489f4421575961ac6fa849e6a75d6f149bac57a8de9d0d10fe065401df",
   "dat_schema_sha256": "4b51063be32f2a66c1047bf455784d2e85411bed401ffdee380c8603399b9656",
-  "extractor_sha256": "2fc8aed26e77831d142543a8a44cc4f526defe4c8d0ef754c02f9a79a8883106",
-  "zod_schema_sha256": "7d473d2f22eccede2f0c0b93225c645cee3f788bef456425b1dfc4c77ac4c6df",
+  "extractor_sha256": "ed2986ea76b8dba4948460a403cc199ee5444c2a06c8b3845756871b87ceb123",
+  "zod_schema_sha256": "56d1438e3d4fc42b403281e32971f4617e82caa33332642f283f02b2062e6966",
+  "crafting_data_sha256": "9788dd268fc1b330d60f9ef85f30d5dfa38ae2e65066e48b1ab4d095f9f68ed1",
   "weight_provenance": "client-extracted; PoE 2 values are not Craft of Exile empirical weights",
   "files": {
     "Metadata/Items/Amulets/AbstractAmulet.json": {
@@ -455,463 +456,463 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "base_items.json": {
-      "sha256": "171c7a3fe804782fa8199ad11d5da80be46c37fe0a0329171011190da84c55bc",
-      "bytes": 8199056,
+      "sha256": "36cdad96e9c408af1b78a490445ef1b5079cdae6495feadc1688381e31d1aaef",
+      "bytes": 8346297,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Active Skill Gem.json": {
-      "sha256": "47b8e88f658cb417f518ca12f197d5f8ad4cfe205701081758a7c24501b2b2a2",
-      "bytes": 688542,
+      "sha256": "615a5d535318c7329a7d7a4e15e1446fe87b23b0069517caa9a8678f7091d6c9",
+      "bytes": 702177,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Amulet.json": {
-      "sha256": "a55ddc7814b3aec0ad2804d34d9ca55fd467661d751902cd179cf9be89abe19d",
-      "bytes": 37596,
+      "sha256": "8212e5de3a54c0d3359bf7a85d991731f8eaba0ba660f4025731aa700f43e57b",
+      "bytes": 38271,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/ArchnemesisMod.json": {
-      "sha256": "6dae3bcda2f52532c8b8128f0d4228963905666df73f674d1c9c14c6702ba3a1",
-      "bytes": 1339,
+      "sha256": "c4c00c21e85206d825fa38c0908192bc1ba1b84eec6f1bed53367dd9a4116569",
+      "bytes": 1366,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/AtlasCurrency.json": {
-      "sha256": "c10922d79856920ba5dc1b90ad34eb85d1686e467cf09d69d5d9d0a130e80689",
-      "bytes": 3067,
+      "sha256": "f008b5abbd0b54191f380580165634d359acb2f16820e3eb98bcef68fe63089e",
+      "bytes": 3121,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/AtlasUpgradeItem.json": {
-      "sha256": "0355f5437e4cf57e6baefea6b5eece48511784b938281b00ba6b63c1833396bc",
-      "bytes": 87091,
+      "sha256": "1dff247245f1477a8570de83cb456d3fe0faa785367601ec5e041b5b87ff6f64",
+      "bytes": 88738,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Belt.json": {
-      "sha256": "82f71673c2113dc1e6138faf318ad55bb858d4696fc5f1d6e330b95730719031",
-      "bytes": 27959,
+      "sha256": "cc694c7e1895e97f0af38f6c662d9732b202f5c62ff81f099b3a598cc94daa89",
+      "bytes": 28499,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Body Armour.json": {
-      "sha256": "3465248cad3c7e5ec16e1c3cee5a4e49bd33fffe37ae7d961883822f3b4ddd8f",
-      "bytes": 605351,
+      "sha256": "96ddaa80f868f73ed2ab7a3c8279b09ebec43b84e5eba2d19c571d6356b323eb",
+      "bytes": 615314,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Boots.json": {
-      "sha256": "5ebea837f3b1b60cd4a50dd8e7a1fe759ab3dd95653464a8439abe5bac6405a2",
-      "bytes": 305740,
+      "sha256": "79143e0c2d78dff959be8053c37993fe5cf168de5cb08ebdceda1bf1a49d9837",
+      "bytes": 310924,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Bow.json": {
-      "sha256": "e2171caa47ad638030ec8026de2e6a9df0bacfcb226078ee8d9ec84e99a6677f",
-      "bytes": 55356,
+      "sha256": "bd16dc8b7d18a95164317641efcbd6adb00c50e25fc1d7cf34d85929aaa532c3",
+      "bytes": 56196,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Breachstone.json": {
-      "sha256": "a3b0fbc762dcd34114d92391227e8f7fb192d0207b6fdfe8eaeff5af25e62057",
-      "bytes": 44488,
+      "sha256": "cbf3c43419548935c7e1402cf7e871076a9a6ae89523cf98f912cfe0e67656ba",
+      "bytes": 45190,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/BrequelFruit.json": {
-      "sha256": "9ccc6108cca46b4d002d12356f804e76852b824dd1ac8dcc613fa49a31a429dc",
-      "bytes": 6767,
+      "sha256": "324b828695945dc8fbe186bea661e9642ef6bbbfeedd3bc2924e6bb3899201d4",
+      "bytes": 6902,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Buckler.json": {
-      "sha256": "0c248f3b646985ae88e355f1b908e1d9d0bed255b7eda6dff9898423152a7b94",
-      "bytes": 85775,
+      "sha256": "64e9c933783f4f30c93b5fb086275190a6df9d3ac489545eaf6df12bf22d6402",
+      "bytes": 87179,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Claw.json": {
-      "sha256": "e7dbe849297ded07fc5f538fefb6c88173a59b8888c8c696c9a9d2bed389bd51",
-      "bytes": 20180,
+      "sha256": "3c6edf9046031e0d7d2fa5370dda0003c426c733810528d57bd3b25c00633565",
+      "bytes": 20492,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/ConventionTreasure.json": {
-      "sha256": "ddc8efe7f7e72f046b091791cb678416102aed81fb2e1fc139d4c10a0f6e172d",
-      "bytes": 45046,
+      "sha256": "566cf3153fd4e587a0e301f1ba161cf48307c5f35bfa405afc62d2d24af70a1b",
+      "bytes": 45883,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Crossbow.json": {
-      "sha256": "bbcff89327fd0d5276788f88cc87f2e351ccd660e14486e467b7031ced0c0fe3",
-      "bytes": 55289,
+      "sha256": "401c2f49956821742a3f3268590be7803c92ff15e467aa015a097640c5d94226",
+      "bytes": 56175,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Currency.json": {
-      "sha256": "89418dc09719f469222e460b63544bbeac56eb2917870e024c3fdaa6b755ef46",
-      "bytes": 1399,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Dagger.json": {
-      "sha256": "1add9c3e5dc13b796c3a997cce0a5cfe5bfd4568a94e97ca974ae53634fbf6dc",
-      "bytes": 34617,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/DelveSocketableCurrency.json": {
-      "sha256": "33110199482d8c0335ed934f64867c8bf30f5a1e766ffef3c0d0c4efa145586e",
-      "bytes": 11975,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/DelveStackableSocketableCurrency.json": {
-      "sha256": "819548162d2abc7b18b6c2eefda62402507d8e9ccbeb3180b2664766b1f45889",
-      "bytes": 12223,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/DivinationCard.json": {
-      "sha256": "1bae32282c90cd228124cd8ebae0147a24fe7f6ef7c1cb8728b4702082e45dab",
-      "bytes": 1445,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Expedition2Logbooks.json": {
-      "sha256": "bd4dc7ed798f21ce5e71bc7516c7b450e5216042f7f25df6b238639c2b734b8c",
-      "bytes": 1520,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/ExpeditionLogbook.json": {
-      "sha256": "36415b416eee16e5693339af32a200697065d60790dfc44c034266c3e9c9addc",
+      "sha256": "370925b089a63c08b259c08900418a1b418ce66767a67d9077bd3c42ed139c26",
       "bytes": 1426,
       "schema": "json-schema/base_items.schema.json"
     },
+    "base_items/Dagger.json": {
+      "sha256": "acf10c347997e0b01cd82b609856ffd5cae04ba13218735d893b0458f99e64cb",
+      "bytes": 35145,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/DelveSocketableCurrency.json": {
+      "sha256": "a421a2061e54b6c367404cdda470133dcf67e7e87a15b43ab94f858b2f656a89",
+      "bytes": 12191,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/DelveStackableSocketableCurrency.json": {
+      "sha256": "380d1aa819b3e21e20d2abd03cc33dcf7b0c07795de2797bdbc885f33eeb0ed6",
+      "bytes": 12439,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/DivinationCard.json": {
+      "sha256": "a64eae3a5f2f3f50ef6a9a0910c898ee0f2fe2c911a66f712f9d381a15768428",
+      "bytes": 1472,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Expedition2Logbooks.json": {
+      "sha256": "4313e8b34c13a577d629542bb854f620e04fb4f2eb37e18a2fc9f4b7a8c88eba",
+      "bytes": 1547,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/ExpeditionLogbook.json": {
+      "sha256": "13a979ed55426662a136bcae44cb0181d13ff21204dab4ecc9399f6544950aae",
+      "bytes": 1453,
+      "schema": "json-schema/base_items.schema.json"
+    },
     "base_items/FishingRod.json": {
-      "sha256": "4af06fa0faf9efde055813e15e3830f9bb87a5f3ddc773fe83eab119b91b224a",
-      "bytes": 1560,
+      "sha256": "8a92025e41f154ad96893cdbace4407e65d24fdf66c524eb8b2502404d29bca5",
+      "bytes": 1584,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Flail.json": {
-      "sha256": "d753b02a449a85f049f8862fb46dabf3a24167cc830e469841c9297f19bf5177",
-      "bytes": 32549,
+      "sha256": "52065ebc70888b668de756450b0d4d23c98464ccceb4af572bca2196a0bfb535",
+      "bytes": 33053,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Focus.json": {
-      "sha256": "424dca3e3240225f86b1f44ecbe2457a6fcd4365511cac92ce6623246dcfd7d7",
-      "bytes": 79325,
+      "sha256": "23e77348ec115e660420623703c55031d1da282219adadde103c3f52d586e11f",
+      "bytes": 80702,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/GiftBox.json": {
-      "sha256": "170e326e76cd9952eb27576767182e158345c3845465f78d15d6a63c6855050c",
-      "bytes": 15667,
+      "sha256": "f4169dc7a81be60ff5d545005e1a61f36c0a18e7a3a13e42f55668a720e3e70b",
+      "bytes": 15964,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Gloves.json": {
-      "sha256": "b10703e1a90aa2b8d2526f07b90262de4ccaf8437c377e29cba0e336d325a6c2",
-      "bytes": 324511,
+      "sha256": "3fad08e674e4df94daff22a4300982bc97cfb470811c9e682452464b548f90ca",
+      "bytes": 329992,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/HeistBlueprint.json": {
-      "sha256": "ec830775f5fdb3c9df05ce9d8a7ebad52edd65c58765b7dc634b8651b8146f79",
-      "bytes": 12591,
+      "sha256": "418158e6387239ae81942b01c3f8d7f7131b82adf8fecb900d928a14557692e3",
+      "bytes": 12834,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/HeistContract.json": {
-      "sha256": "454f732956c7dcac884b68ce6dd6f44d4c6eb09091d6570e5a30a2412dc596a4",
-      "bytes": 20885,
+      "sha256": "362092abd30c2b297f3ca2aaa145cfb4c24d6fe4cc58739ed219a6d846982775",
+      "bytes": 21290,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/HeistEquipmentReward.json": {
-      "sha256": "270a628c1d3797aafdb53ecc289f36ddf71b6a7a125cca56e92333d75185b391",
-      "bytes": 7282,
+      "sha256": "e10db7a4c03996d416ac61a214fed758e324a4adbb357cec0e0d03b0163c38b7",
+      "bytes": 7417,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/HeistEquipmentTool.json": {
-      "sha256": "685d1bfe0ee94ac4af1a305549b0adf1c7ea5539786408f656cd0c36e07d3d50",
-      "bytes": 56205,
+      "sha256": "534cddc555454128383cae19e02f2ef87042e0ef455a1d9f52105fac4278ad5b",
+      "bytes": 57204,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/HeistEquipmentUtility.json": {
-      "sha256": "d732483763164f576e1d7f62074f0d989432dfaf4ba9ae9ebc87aaa50312202a",
-      "bytes": 7316,
+      "sha256": "5150c7f30c99615c328b02c02fd88806a13fa3b8cae835dcb0f948a6060e82dd",
+      "bytes": 7451,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/HeistEquipmentWeapon.json": {
-      "sha256": "9a78e9abd3a9ccfc6f1eae1ac779c48ed8789f8f37b694ae29ec0312b055ecbf",
-      "bytes": 19570,
+      "sha256": "d83b4a9d1d616e07766157601ab7e0af89cedbda06345d37a1ee525607ef2024",
+      "bytes": 19921,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/HeistObjective.json": {
-      "sha256": "332a8f9456b2c195b61432b14b4cbeedc1fb2fab59d6a0c7030b07c88ab1f5d0",
-      "bytes": 63880,
+      "sha256": "6f9520f36fa7e971b1a4519d323ec2d02db85a855687e92e72719beb251a8e01",
+      "bytes": 65149,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Helmet.json": {
-      "sha256": "a131f6b8b0970b0860fa671cad10ea7370cd8178a82fcc0d829c27f9845e7d25",
-      "bytes": 420343,
+      "sha256": "859a956628508ae71071047df6fd28d1c5418e90c786e3a1dd62c8d48648932e",
+      "bytes": 427417,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/HiddenItem.json": {
-      "sha256": "2f3921d4c209ba7ff2af224bf498dac5f2202a252dba25d66857d86db72076bd",
-      "bytes": 101697,
+      "sha256": "002e553213e9970f3d67fdd28fee3bf80caba9c284c1d1a6e7f02dfbfde183ad",
+      "bytes": 103695,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Incubator.json": {
-      "sha256": "861660ad7a324084387c9947b263d6d9ff79538db68b11b02e4d35c9379fd095",
-      "bytes": 47690,
+      "sha256": "c6e2164a174254f5d1b264049f4d433a4e6a482be44a0737cbc930f627620b6e",
+      "bytes": 48500,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/IncubatorStackable.json": {
-      "sha256": "9d384da52a827bcb34bf8a9a3728d625cd55cdb7f771926442e876b9c5d3ba6b",
-      "bytes": 50325,
+      "sha256": "6453deecf5fa2c812db5c428a74cbd7ac304bee066cd666f12bc328424bd9a98",
+      "bytes": 51162,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/IncursionArm.json": {
-      "sha256": "bf03a65ed390f42a1467e757865894d96522f9f75475fcd58f67e1f3c84d1f9a",
-      "bytes": 8209,
+      "sha256": "94cbf2ed88fbdf3acf7818c6175d31da9286ce759ef32625a5efd72c082627b3",
+      "bytes": 8371,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/IncursionItem.json": {
-      "sha256": "1f78d6d753d2c320f54672ccbe1b00e910236ec110b9bb445779369d51c8548f",
-      "bytes": 2686,
+      "sha256": "c6456789555fa95f121738e8c2e8ce894fe95cf9a8a3a5c2638c623988954839",
+      "bytes": 2740,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/IncursionLeg.json": {
-      "sha256": "92e22b5c14901a7940f9de93fe7a50962228172be08bb974e316cd2c3104e6c4",
-      "bytes": 8204,
+      "sha256": "e71a32af3514b19d31f7c54faf70432613b529a045afb108f936a497cb3ab3bc",
+      "bytes": 8366,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/InstanceLocalItem.json": {
-      "sha256": "e935fc9147882f9195450a5cc30e44cbe424d827c1f3210069eeb6f57a219445",
-      "bytes": 27065,
+      "sha256": "d5e9a3b04948c05e8b00b520f4a95779ce8054f5578da88c55bc12e668df4a76",
+      "bytes": 27605,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/ItemisedSanctum.json": {
-      "sha256": "cd3f49a83fe88c1e4e03ee92049468b64f385cfc4b5755efa657b0c8f41221f4",
-      "bytes": 6896,
+      "sha256": "812989d60c33fb0494fa83976a799899818ad1dd331f186607a91dc886dc4843",
+      "bytes": 7031,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Jewel.json": {
-      "sha256": "a49688e9b1fcbb2b4b05ce2792b4b6bf2aa1d23246dc088a0dc8c19eccc2abdf",
-      "bytes": 12652,
+      "sha256": "452b4c78d9c209cd45941fe5f01386755205cda86346291811d115eddac43fe8",
+      "bytes": 12895,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/LifeFlask.json": {
-      "sha256": "9a534a05c853adc6a0c4ed3dcdcc02250a91d9463017bc4d21c12a987217ba54",
-      "bytes": 12327,
+      "sha256": "9e546f307331632be3a6ff28a451eea94caa8286e599409ec8089af82fc2aa2e",
+      "bytes": 12570,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/ManaFlask.json": {
-      "sha256": "874d2e50c53bb908418e442b543be6bd07147f0f0ea47046795c59e839835c7d",
-      "bytes": 12326,
+      "sha256": "8009526c976d937695515e92cc5dacf55354f73320b550c6aaefebdc62215764",
+      "bytes": 12569,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Map.json": {
-      "sha256": "9c013536f1c1097117d04403289d816f029751db02dce9035b0772957f4dd261",
-      "bytes": 22035,
+      "sha256": "ec3109f26a915a6c6c917f56ec72effb5f5eafb1f91179dd833767fca11e5810",
+      "bytes": 22467,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/MapFragment.json": {
-      "sha256": "19c47dd79a9bfb0331658362b29acdd1fc8ef32341c1f729514343d698a094f0",
-      "bytes": 220531,
+      "sha256": "50fecebcd8363c1e0090fcbaf9c27fa84a6f9165ab92cfff7546f7e2d27cde28",
+      "bytes": 224554,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/MemoryLine.json": {
-      "sha256": "5b4b125391ef4b1b59611ff56c4f9da527e0385294a9fdf259fd421d5f54678e",
-      "bytes": 5658,
+      "sha256": "37ac2a92d8c88f6015d61967fbd8b12e58bcf0f29d1d4d0841d86e4f39927bf5",
+      "bytes": 5766,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Meta Skill Gem.json": {
-      "sha256": "12e20a095509556d606b0273d7678ef56473338e0c985ab2fb558ce321d86210",
-      "bytes": 60382,
+      "sha256": "7742639817ede8d44fe570f0460dc0274a16cb21819a7b6005bd98785b874c94",
+      "bytes": 61570,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Microtransaction.json": {
-      "sha256": "93f02d8a516342569e77f1db28bfb3d9f37bf2f93fe7e432894bff484fc9ec7a",
-      "bytes": 18742,
+      "sha256": "f57cc34c8427ba7a643755f30581026a8778f194ba2ee12c2d28bdb706487e43",
+      "bytes": 19093,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/MiscMapItem.json": {
-      "sha256": "89d2314634c94a0887361c057152c477a06262156998812dbbd792011a73a598",
-      "bytes": 30063,
+      "sha256": "41a396df415d64bf77f2670f1bcfde693bf307a0c0206f32117cca128669c1c5",
+      "bytes": 30630,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Omen.json": {
-      "sha256": "fa73042a528eeb8118eb18626317df980d246713606e92299f0b620020b6c3a6",
-      "bytes": 79833,
+      "sha256": "764e1fcd3949f7e4df350daf8ab10992fcd900a608a6b4aed1fcc6e58b005f9f",
+      "bytes": 81183,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/One Hand Axe.json": {
-      "sha256": "d062c4294d5dc433e597e15de1e0c0f8095a957d7622671d06043aa3fea1b416",
-      "bytes": 33558,
+      "sha256": "f0e43da4fb1cc83dac80af1c023f38fc2c723756993a4e45bba92445113f665c",
+      "bytes": 34062,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/One Hand Mace.json": {
-      "sha256": "3ad4c69a42519b885335d4a371259067b95dc031e9df2a831ef762983cc0e280",
-      "bytes": 71854,
+      "sha256": "2818d7fad1b9b0e80df2055149f1e02e6e324fb0e698eb856847e05c3b2dd493",
+      "bytes": 72910,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/One Hand Sword.json": {
-      "sha256": "239e6dabc87076180929d42a964b9f95c834035aa72bfd937cb887345a96bc3d",
-      "bytes": 38716,
+      "sha256": "ec04d46354dbd59c38a2776f7fd91c285b4ab1d3253d0edfe78d36418345084e",
+      "bytes": 39292,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/PantheonSoul.json": {
-      "sha256": "48dc4a20e426639e619bf3027e23621dd7584dc8e60684c46df090142c3d3e31",
-      "bytes": 28013,
+      "sha256": "5cc1c14a2078fc9349ea4584c5fdab2b9c98b059fee4a0d13b7905bf3ca49dfd",
+      "bytes": 28553,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/PinnacleKeyStackable.json": {
-      "sha256": "7eeea3381c26ce92b675a07fc8ece9aa46db16370d2fe8dcb6aa9784aeeae836",
-      "bytes": 14273,
+      "sha256": "b53cb0eaf9aa985083ed3344750faa4cb759e3f88c34a6ee539e1003621653b9",
+      "bytes": 14543,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/PinnacleKey_OLD.json": {
-      "sha256": "869578254f9d2c889a7942bad48ae1bbf35a62d46447ac03c584d20833771a28",
-      "bytes": 8137,
+      "sha256": "bb24842d760d18d52a22dc8ad0ae27096d6f78ec6b3d1555aaefc21c83c9aad7",
+      "bytes": 8299,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/QuestItem.json": {
-      "sha256": "e936888050a9cc31a27eb37985d4e24997ec93bef4bf48b7873788ef57b47807",
-      "bytes": 529380,
+      "sha256": "1b305a07c66e62777a375339eafd4adeddefc9bfc436f755dcc0d7fb4faa0c5e",
+      "bytes": 539505,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Quiver.json": {
-      "sha256": "47e75aeb607696aeedd67a4eb094adea81824551685312412de875e24e15b158",
-      "bytes": 15299,
+      "sha256": "ef1601e220da984e03f68b78767151def19306b5b207ea072cf4318f8bba7efe",
+      "bytes": 15596,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Relic.json": {
-      "sha256": "3fd8879c0716d98eee0747a1b2a2dcb0f08d47dd94e1a508e1732d068c42df51",
-      "bytes": 9497,
+      "sha256": "f2313925a662fd9bfd0b6532fa3bc8d8ba790917be7e1575355b676873b15ce7",
+      "bytes": 9686,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Ring.json": {
-      "sha256": "090cb3551fb20806ef2eb5b7d12dd9ceb1519158fd62e6c239ea8677de9537f4",
-      "bytes": 39676,
+      "sha256": "08d58bfea5a24b4ce8614e896b39c2de693f9a97a09319ad7779f7df62634dd3",
+      "bytes": 40459,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/SanctumSpecialRelic.json": {
-      "sha256": "30164e246336704fd6b93f3aab8d6371c95ec20d0f76412e349ebb1dd8fe9dc1",
-      "bytes": 4184,
+      "sha256": "2ce2874fc96e43267dbc58437c7def9829d9db17ec5bbcdb413ecac88e186251",
+      "bytes": 4265,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Sceptre.json": {
-      "sha256": "54d9bafee9ecd3e266e4b49921b4afed8ba95a77fd87a4816605a681c727d030",
-      "bytes": 25164,
+      "sha256": "38b05d986214ba2efb6cb8aa070053d53ee9e489f61468483091a665da9647b6",
+      "bytes": 25596,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/SentinelDrone.json": {
-      "sha256": "42d5b7bc068a734dec7eaddc4ff331310f2ec066a2436c98224467a7d65a806c",
-      "bytes": 1402,
+      "sha256": "26b3600e1950ee71b445f3d44c612b63f1f3e0013c70c55d5c400e8ddd3e591d",
+      "bytes": 1429,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Shield.json": {
-      "sha256": "8675b53d320bd7164862cb149491ee96d504fdca9fd15025ff4bc0695bdd9c65",
-      "bytes": 251751,
+      "sha256": "c0998261a62227fdf434ac953d50112da4c4408592032dd6c4359d3744152b3e",
+      "bytes": 255828,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/SkillGemToken.json": {
-      "sha256": "897f7a53f45b5e400b5434f97c24513087533139899860e158dd1803cac70a51",
-      "bytes": 1353,
+      "sha256": "96de6f572efa133025c970a8e693258f01b94179d1a35e9da285066ab19fc420",
+      "bytes": 1380,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/SoulCore.json": {
-      "sha256": "46571dd76094db50fa5b83b5813cb620544288cb424ef1b76defd521735cc278",
-      "bytes": 469137,
+      "sha256": "67b06e2493d21f14a345cba03331e4ee2ed10ad46d6ee1bf1422907f90dddb60",
+      "bytes": 477588,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Spear.json": {
-      "sha256": "64ba06b7652470c239023fb837c2dbb34b4c049793d8367fa5ed9811a7e40700",
-      "bytes": 59049,
+      "sha256": "940fa765e334e829ec0e65828da360f328f1792044d32d9eab84a17ff35124cb",
+      "bytes": 59913,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/StackableCurrency.json": {
-      "sha256": "883d40204d9f83271256631866d49fcc82490029fb88d96aeba8a70f5c577bae",
-      "bytes": 1271653,
+      "sha256": "527a5da125b48d61f787fe876372098085ad78babdd76e7c0d489a1b23da943d",
+      "bytes": 1295089,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Staff.json": {
-      "sha256": "7ea3768a1ffe95aba01ee3d1d8a54c100cd67c1f46d5a72568eb995427d3ed69",
-      "bytes": 30423,
+      "sha256": "ce05bd66f278e46916bdf195ffab37c145c01e02da08ff7cbda5cb5de5ebc529",
+      "bytes": 30936,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Support Skill Gem.json": {
-      "sha256": "36923ad2bb7a346ee05d89f53e817dedbc94add1812e71189b8adbe63d94798c",
-      "bytes": 901608,
+      "sha256": "d57b7ca23bad24bd481617d860b54eef4e7c974bcfeeebda10818566094496c4",
+      "bytes": 918942,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Talisman.json": {
-      "sha256": "7f1638beedd2f0c04bd8381d10b50d470f0b3dc135f141d30db31f1b6f476774",
-      "bytes": 49987,
+      "sha256": "0a0ec6d4156d68339a8929451e13b544a7f844cba7c8fc79b246c2aa933991bb",
+      "bytes": 50731,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/TowerAugmentation.json": {
-      "sha256": "20cbc55168f8f93ec68fc031f83eb894d75807dec7d92b9a6c42a66c645abe16",
-      "bytes": 12016,
+      "sha256": "98e818ad0ae33e3e2be68f15d32f7412b27d56d57e9f931a765a88378b7be894",
+      "bytes": 12232,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/TrapTool.json": {
-      "sha256": "cb3d44fef96e503edf1709360dc79b451300da1fa7a3d2958a87459028c26b0c",
-      "bytes": 18080,
+      "sha256": "6960321cf154202a9a87adc769bd2e365ef64be46188664768ace036abc296fe",
+      "bytes": 18431,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Two Hand Axe.json": {
-      "sha256": "92a192fe33562b4a3599e5031fa55009649f4d90ca62b9c5f41215521d68e609",
-      "bytes": 33667,
+      "sha256": "2c1dcc053b4143c133d71d3c9aa367baddd3310ba0774ec18145d21b11b8d953",
+      "bytes": 34171,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Two Hand Mace.json": {
-      "sha256": "3a61471f0054f76b27b4ac05666b95ff469d774b388d31d448bd4fa63b398f0f",
-      "bytes": 70827,
+      "sha256": "189c7d25dcbcee50d3fe3f93888db4bac2b47b245c934bb98eea8e993bd365d5",
+      "bytes": 71859,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Two Hand Sword.json": {
-      "sha256": "de08691bced90952bfb97663688eda3ca03e132743a74651ad657e7076ac7bea",
-      "bytes": 37137,
+      "sha256": "cd39defd16c932de1aaf648e794cc455d16e1a1e676c5d8618ab4816d842c673",
+      "bytes": 37689,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/UltimatumKey.json": {
-      "sha256": "46e1c1011eb7232977665cdf03617bac9400319de8ff24218a17e41ebaeb7a16",
-      "bytes": 6846,
+      "sha256": "2dd519730591dbfb695f19a0ceab3ef4a3e8f1f3e4a531700ec2bebc7b8d2832",
+      "bytes": 6981,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/UncutReservationGemStackable.json": {
-      "sha256": "f2822c127fac4f8c212487c6d694cbced5ac8aa76acd484c396d5c4bd8eba43f",
-      "bytes": 24950,
+      "sha256": "41c9d06ce1b433fca80bdd94e15e0e5a37f5d05b4651406ce010ef95a170fe64",
+      "bytes": 25409,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/UncutReservationGem_OLD.json": {
-      "sha256": "65b05a1eb504e88accfcb9119fe8d9676642e9c4ef5728ff7ca51be081e90485",
-      "bytes": 1355,
+      "sha256": "f24bb6563bfd24eef305446e410e55baecd12e30277da5eaba7d9420d7668b8b",
+      "bytes": 1382,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/UncutSkillGemStackable.json": {
-      "sha256": "df2cd134acf05aab480a70754a0ec707d0b12079a99696a1eba6e5a6f272361c",
-      "bytes": 30002,
+      "sha256": "df114e90a70587ad060d145feacf8ce13840712fa4fd9c392ecbb0c7aa258d69",
+      "bytes": 30569,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/UncutSkillGem_OLD.json": {
-      "sha256": "841f0ef080c84ec13c6c22ab32e0dc635775be05332d500ad458bc874d063432",
-      "bytes": 2666,
+      "sha256": "5fb5494d4f157cd09b0a77f7de5da8ef056d65a8e6f76c0357b7258d98186307",
+      "bytes": 2720,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/UncutSupportGemStackable.json": {
-      "sha256": "50db74da3ffda7a9145d15e487190b54b9770a81d5706870f2ad8126b14a5998",
-      "bytes": 7037,
+      "sha256": "d98086b4d224b465e462c0bfd65d97422c4a841a3306d3898e51a903d5dfa6fe",
+      "bytes": 7172,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/UncutSupportGem_OLD.json": {
-      "sha256": "f0c97780ba9f72d20780c6f838185dc1039d78bb28b58f1267751e2862b2907c",
-      "bytes": 1344,
+      "sha256": "0a49053895e72ae3a53c04a426cc9bc5ef7ef4890949d07620f79729fad75bce",
+      "bytes": 1371,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/UniqueFragment.json": {
-      "sha256": "52b3e65d2aecd36922b69489520a34a5a835f135a815e244fed025d4f4817b27",
-      "bytes": 30805,
+      "sha256": "65de0279f46f3befcb1a3a9832da8d320b57adfaa9bc73d1a2d74001dc7d6554",
+      "bytes": 31399,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/UtilityFlask.json": {
-      "sha256": "c9b53f705c0cf26373ba5bf3dabaa85fede3587b5b3672c0ffa342c694b08cd7",
-      "bytes": 18315,
+      "sha256": "8a984301ab68fc01b74191d69dc9d71df8a9e4d765b4cbfc3b577728e6c16124",
+      "bytes": 18666,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/VaultKey.json": {
-      "sha256": "ace5e82648f9ee2dacc68fadd5da1cedbf6a4e349af10b6b2ce9364a18906bda",
-      "bytes": 36599,
+      "sha256": "cfb977134bbc83171a1edd94fed0e1ea5fc2103f0ebec548be386a098caf9236",
+      "bytes": 37301,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Wand.json": {
-      "sha256": "7b99a92c695daeb1e1766c4b43f6471fc96e0460db319a2e967a27f7b76280d4",
-      "bytes": 28638,
+      "sha256": "5b72c7adcab01d03244bbccacfdab7e684a67df14b5022859d00594ad7747558",
+      "bytes": 29124,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Warstaff.json": {
-      "sha256": "83690b9892262130c4b83b36e09abc47232f7f205f45a6a7dadb23c67b4b4aad",
-      "bytes": 61732,
+      "sha256": "352eea6b96336888db5f526f3b4037c94733903ea945b85394d8d8f8341ed57f",
+      "bytes": 62644,
       "schema": "json-schema/base_items.schema.json"
     },
     "item_classes.json": {

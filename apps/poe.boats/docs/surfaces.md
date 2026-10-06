@@ -14,6 +14,7 @@ The app uses React Router framework routes (the Remix successor) on Cloudflare W
 | Season market search, seasons, paging, variants, history | `market` | `get_season_market`; `getMarketData` |
 | Recombinator equipment, modifiers, preparation recipes | `recombinator/catalog`, `bases`, `mods`, `recipes`, `draft` | Catalog, base/mod/recipe filtering, and `parseRecombinatorDraft` |
 | Recombination outcomes, preparation, target odds | `recombinator/calculate`, `target` | `calculateRecombinatorPlan`, `matchesTarget`, `summarizeCounts` |
+| PoE 1 and PoE 2 crafting calculation, process simulation, and item emulation | Pending | Browser and Web Worker share `CraftingEngine`, `CraftingSimulation`, and project schemas; HTTP/MCP registrations remain to be added |
 | Local sets: create, select, rename, duplicate, delete, import | `idol-planner/edit`, `import` | `edit_idol_planner`, `import_idol_share`; shared immutable state operations |
 | Inventory: add, edit, duplicate, delete, clear, search, paste parsing | `idol-planner/edit`, `inventory`, `parse` | Planner commands, localized inventory search, and parser |
 | Grid placement, movement, removal, collision/unlock rules | `idol-planner/edit`, `can-place` | `editPlanner`, `canPlaceInSet`; also used by drag previews |

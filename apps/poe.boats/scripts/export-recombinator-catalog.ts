@@ -4,36 +4,22 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command, runCli } from "@poe-tools/cli";
 import { z } from "zod";
+import { craftingDataSchema } from "../../../packages/poe-game-data/src/crafting-data-model";
 import { craftingRecipesSchema } from "../../../packages/poe-game-data/src/crafting-recipes";
+import {
+    dataPackageManifestSchema,
+    itemClassesSchema,
+} from "../../../packages/poe-game-data/src/model";
 import { availableCatalogMods } from "../app/lib/recombinator-catalog";
 import { recombinatorCatalogSchema } from "../app/schemas/recombinator-catalog";
 
-const equipment = new Set([
-    "Amulet",
-    "Belt",
-    "Ring",
-    "Quiver",
-    "Body Armour",
-    "Boots",
-    "Gloves",
-    "Helmet",
-    "Shield",
-    "Bow",
-    "Claw",
-    "Dagger",
-    "Rune Dagger",
-    "One Hand Axe",
-    "One Hand Mace",
-    "One Hand Sword",
-    "Thrusting One Hand Sword",
-    "Sceptre",
-    "Staff",
-    "Warstaff",
-    "Two Hand Axe",
-    "Two Hand Mace",
-    "Two Hand Sword",
-    "Wand",
-]);
+const recombinationDataSchema = craftingDataSchema.pick({
+    format: true,
+    game: true,
+    patch: true,
+    source: true,
+    recombinableClasses: true,
+});
 const rawBaseSchema = z.object({
     name: z.string(),
     item_class: z.string(),
@@ -56,17 +42,12 @@ const rawModSchema = z.object({
     generation_weights: z.array(rawWeightSchema),
     implicit_tags: z.array(z.string()).default([]),
 });
-const manifestSchema = z.object({
-    format: z.literal(1),
-    game: z.literal("poe1"),
-    client_build: z.string(),
-    files: z.record(z.string(), z.object({ sha256: z.string().regex(/^[a-f0-9]{64}$/) })),
-});
 const sha256 = (data: Uint8Array) => createHash("sha256").update(data).digest("hex");
 
 export async function exportRecombinatorCatalog(dataPackage: string, output: string) {
     const manifestBytes = await readFile(resolve(dataPackage, "manifest.json"));
-    const manifest = manifestSchema.parse(JSON.parse(manifestBytes.toString()));
+    const manifest = dataPackageManifestSchema.parse(JSON.parse(manifestBytes.toString()));
+    if (manifest.game !== "poe1") throw new Error("Recombinator catalog requires PoE 1 data.");
     async function verifiedJson(path: string): Promise<unknown> {
         const bytes = await readFile(resolve(dataPackage, "data", path));
         if (sha256(bytes) !== manifest.files[path]?.sha256)
@@ -77,6 +58,27 @@ export async function exportRecombinatorCatalog(dataPackage: string, output: str
         .record(z.string(), rawBaseSchema)
         .parse(await verifiedJson("base_items.json"));
     const rawMods = z.record(z.string(), rawModSchema).parse(await verifiedJson("mods.json"));
+    const classes = itemClassesSchema.parse(await verifiedJson("item_classes.json"));
+    const supplementBytes = await readFile(resolve(dataPackage, "crafting-data.json"));
+    if (sha256(supplementBytes) !== manifest.crafting_data_sha256)
+        throw new Error("Package hash mismatch: crafting-data.json");
+    const supplement = recombinationDataSchema.parse(JSON.parse(supplementBytes.toString()));
+    if (
+        supplement.game !== manifest.game ||
+        supplement.patch !== manifest.client_build ||
+        supplement.source.basesSha256 !== manifest.files["base_items.json"].sha256 ||
+        supplement.source.modsSha256 !== manifest.files["mods.json"].sha256 ||
+        supplement.source.schemaSha256 !== manifest.dat_schema_sha256 ||
+        !supplement.source.tables["Data/RecombinableClasses.datc64"]
+    ) {
+        throw new Error(
+            "Recombination data differs from the data package. Run the crafting-data exporter.",
+        );
+    }
+    for (const itemClass of supplement.recombinableClasses)
+        if (!Object.hasOwn(classes, itemClass))
+            throw new Error(`Unresolved recombinable item class: ${itemClass}`);
+    const equipment = new Set(supplement.recombinableClasses);
     const craftingBytes = await readFile(resolve(dataPackage, "crafting.json"));
     const crafting = craftingRecipesSchema.parse(JSON.parse(craftingBytes.toString()));
     if (
@@ -155,6 +157,7 @@ export async function exportRecombinatorCatalog(dataPackage: string, output: str
             basesSha256: manifest.files["base_items.json"].sha256,
             modsSha256: manifest.files["mods.json"].sha256,
             craftingSha256: sha256(craftingBytes),
+            craftingDataSha256: sha256(supplementBytes),
         },
         bases,
         mods: mods
