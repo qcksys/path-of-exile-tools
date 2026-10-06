@@ -29,7 +29,7 @@ export const craftingRecipesSchema = z.object({
     recipes: z.array(craftingRecipeSchema).min(1),
 });
 
-const essenceClasses: Record<string, string[]> = {
+export const essenceClasses: Record<string, string[]> = {
     Helmet: ["Helmet"],
     BodyArmour: ["Body Armour"],
     Boots: ["Boots"],

@@ -4,6 +4,7 @@ import { readdir, readFile, rm } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { promisify } from "node:util";
 import { z } from "zod";
+import { validateCraftingData } from "./crafting-data-model.ts";
 import { assetPath, digest, missing, readJson, writeBytes, writeJson } from "./io.ts";
 import { generateJsonSchemas, jsonSchemaPath } from "./json-schema.ts";
 import {
@@ -69,6 +70,20 @@ async function generatedSources(
     };
 }
 
+export async function refreshCraftingPackage(directory: string, craftingSha256: string) {
+    const manifest = dataPackageManifestSchema.parse(
+        await readJson(join(directory, "manifest.json")),
+    );
+    const sources = await generatedSources(manifest);
+    for (const [path, content] of Object.entries(sources))
+        await writeBytes(join(directory, path), content);
+    await writeJson(join(directory, "manifest.json"), {
+        ...manifest,
+        zod_schema_sha256: digest(sources["src/schemas.ts"]),
+        crafting_data_sha256: craftingSha256,
+    });
+}
+
 async function listFiles(root: string, prefix = ""): Promise<string[]> {
     const files: string[] = [];
     let entries: Dirent[];
@@ -91,7 +106,7 @@ export async function materializePackage(
     snapshot: string,
     packagesRoot = resolve(packageDirectory, ".."),
 ) {
-    const { manifest } = await verify(snapshot);
+    const { manifest, crafting } = await verify(snapshot);
     const version = packageVersionForBuild(manifest.patch);
     const directory = join(packagesRoot, dataPackages[manifest.game]);
     const metadata = packageSchema.parse(await readJson(join(directory, "package.json")));
@@ -129,6 +144,7 @@ export async function materializePackage(
         extractor_sha256: manifest.pipeline_sha256,
         zod_schema_sha256: digest(sources["src/schemas.ts"]),
         weight_provenance: manifest.weight_provenance,
+        ...(crafting ? { crafting_data_sha256: manifest.files["crafting-data.json"] } : {}),
         files,
     });
     for (const [path, bytes] of outputs)
@@ -145,9 +161,22 @@ export async function materializePackage(
         if (!Object.hasOwn(sources, `json-schema/${old}`))
             await rm(assetPath(join(directory, "json-schema"), old));
     await writeJson(join(directory, "manifest.json"), provenance);
+    const exports = { ...metadata.exports };
+    const packageFiles = metadata.files.filter((path) => path !== "crafting-data.json");
+    if (crafting) {
+        await writeBytes(
+            join(directory, "crafting-data.json"),
+            await readFile(join(snapshot, "crafting-data.json")),
+        );
+        exports["./crafting-data.json"] = "./crafting-data.json";
+        packageFiles.push("crafting-data.json");
+    } else {
+        delete exports["./crafting-data.json"];
+        await rm(join(directory, "crafting-data.json"), { force: true });
+    }
     await writeBytes(
         join(directory, "package.json"),
-        `${JSON.stringify({ ...metadata, version }, null, 4)}\n`,
+        `${JSON.stringify({ ...metadata, version, exports, files: packageFiles }, null, 4)}\n`,
     );
     return {
         directory,
@@ -200,7 +229,28 @@ export async function verifyDataPackage(directory: string) {
         if (Object.hasOwn(dataFileSchemas, path)) core[path.slice(0, -5)] = value;
     }
     const { tag_details: _details, ...dataset } = core;
-    return { manifest, counts: counts(validateDataset(dataset)) };
+    const data = validateDataset(dataset);
+    if (
+        Boolean(metadata.exports["./crafting-data.json"]) !== Boolean(manifest.crafting_data_sha256)
+    )
+        throw new Error("Crafting data export differs from manifest");
+    if (manifest.crafting_data_sha256) {
+        const bytes = await readFile(join(directory, "crafting-data.json"));
+        if (digest(bytes) !== manifest.crafting_data_sha256)
+            throw new Error("Package data hash mismatch: crafting-data.json");
+        validateCraftingData(
+            JSON.parse(bytes.toString("utf8")),
+            {
+                game: manifest.game,
+                patch: manifest.client_build,
+                basesSha256: manifest.files["base_items.json"]!.sha256,
+                modsSha256: manifest.files["mods.json"]!.sha256,
+                schemaSha256: manifest.dat_schema_sha256,
+            },
+            data,
+        );
+    }
+    return { manifest, counts: counts(data) };
 }
 
 export async function commitDataPackages(

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, expect, it } from "vite-plus/test";
 import type { Game } from "../src/config.ts";
+import { craftingDataSchema } from "../src/crafting-data-model.ts";
 import {
     commitDataPackages,
     dataPackages,
@@ -67,7 +68,11 @@ const data = datasetSchema.parse({
     item_classes: { Belt: { name: "Belt" } },
 });
 
-async function fixture(game: Game = "poe1", extra: Record<string, unknown> = {}) {
+async function fixture(
+    game: Game = "poe1",
+    extra: Record<string, unknown> = {},
+    withCrafting = false,
+) {
     const root = await mkdtemp(join(tmpdir(), "poe-distribute-"));
     temporary.push(root);
     const packagesRoot = join(root, "packages");
@@ -96,6 +101,72 @@ async function fixture(game: Game = "poe1", extra: Record<string, unknown> = {})
     })) {
         await writeJson(join(staging, name), value);
         files[name] = digest(await readFile(join(staging, name)));
+    }
+    if (withCrafting) {
+        const table = "Data/Mods.datc64";
+        await writeBytes(join(staging, "raw", table), "raw fixture");
+        files[`raw/${table}`] = digest("raw fixture");
+        const crafting = craftingDataSchema.parse({
+            format: 1,
+            game,
+            patch: build,
+            source: {
+                basesSha256: files["normalized/base_items.json"],
+                modsSha256: files["normalized/mods.json"],
+                schemaSha256: files["schema.json"],
+                tables: { [table]: files[`raw/${table}`] },
+            },
+            currencies: [],
+            allflame: null,
+            strongboxes: [],
+            clusterJewels: null,
+            locus: null,
+            memoryMaps: null,
+            templeCorruption: null,
+            qualityInfusers: [],
+            waystones: [],
+            maps: [],
+            baseQuality: [],
+            taintedCatalysts: [],
+            mapQuality: [],
+            augments: [],
+            augmentTags: {},
+            elementalConversions: [],
+            taggedModifierEffects: [],
+            memoryStrandCosts: {},
+            recombinableClasses: [],
+            craftableModTypes: [],
+            keywords: {},
+            sanctification: null,
+            passiveTree: null,
+            genesis: null,
+            anointing: { maps: [], items: [], recipes: [], passives: {} },
+            liquidEmotions: [],
+            scalableStats: [],
+            catalysts: [],
+            desecration: [],
+            modEquivalencies: [],
+            baseRules: {},
+            tieredCurrency: [],
+            poe2Essences: [],
+            rarities: {},
+            classes: {},
+            influences: [],
+            influenceUpgrades: [],
+            modRules: {},
+            statDescriptions: [],
+            modDescriptions: {},
+            modTexts: {},
+            statLookups: {},
+            essences: [],
+            bench: [],
+            flaskEnchantments: [],
+            fossils: [],
+            harvest: [],
+            beasts: [],
+        });
+        await writeJson(join(staging, "crafting-data.json"), crafting);
+        files["crafting-data.json"] = digest(await readFile(join(staging, "crafting-data.json")));
     }
     const snapshot = await publish(
         root,
@@ -179,6 +250,23 @@ it.each([
     await materializePackage(snapshot, packagesRoot);
     await writeBytes(join(directory, path), content);
     await expect(verifyDataPackage(directory)).rejects.toThrow(error);
+});
+
+it("packages crafting provenance, detects recipe tampering, and removes stale supplements", async () => {
+    const { directory, packagesRoot, snapshot } = await fixture("poe1", {}, true);
+    await materializePackage(snapshot, packagesRoot);
+    const { manifest } = await verifyDataPackage(directory);
+    const bytes = await readFile(join(directory, "crafting-data.json"));
+    expect(manifest.crafting_data_sha256).toBe(digest(bytes));
+    expect(await readFile(join(snapshot, "crafting-data.json"))).toEqual(bytes);
+    await writeBytes(join(directory, "crafting-data.json"), `${bytes.toString()} `);
+    await expect(verifyDataPackage(directory)).rejects.toThrow("hash mismatch: crafting-data.json");
+    const legacy = await fixture();
+    await materializePackage(legacy.snapshot, packagesRoot);
+    expect((await verifyDataPackage(directory)).manifest.crafting_data_sha256).toBeUndefined();
+    await expect(readFile(join(directory, "crafting-data.json"))).rejects.toThrow();
+    const metadata = await readJson(join(directory, "package.json"));
+    expect(metadata).not.toHaveProperty(["exports", "./crafting-data.json"]);
 });
 
 it("rejects invalid snapshot JSON before changing the package", async () => {

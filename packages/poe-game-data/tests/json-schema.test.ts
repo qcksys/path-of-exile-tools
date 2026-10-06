@@ -51,6 +51,15 @@ it.each([
     expect(validateBases({})).toBe(false);
     expect(validateBases({ test: { ...base, drop_level: "1" } })).toBe(false);
     expect(validateBases({ test: { ...base, extra: true } })).toBe(false);
+    for (const reload of [-1, 1.5, "800"])
+        expect(
+            validateBases({
+                test: {
+                    ...base,
+                    properties: { ...(base.properties as object), reload_time: reload },
+                },
+            }),
+        ).toBe(false);
     const { requirements: _requirements, ...missingOutputField } = base;
     expect(validateBases({ test: missingOutputField })).toBe(false);
 }, 30_000);

@@ -114,7 +114,7 @@ function mergeOutcome(
     else results.set(key, { item, probability });
 }
 
-function recombineOnBase(
+export function recombineOnBase(
     left: RecombinatorItem,
     right: RecombinatorItem,
     base?: RecombinatorItem["base"],

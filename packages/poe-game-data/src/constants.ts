@@ -30,6 +30,7 @@ export const itemDomainCorrections = new Set([
 
 export function translationFile(domain: string): string {
     const files: Record<string, string> = {
+        passive_skill: "passive_skill",
         monster: "monster",
         chest: "chest",
         strongbox: "chest",

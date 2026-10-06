@@ -4,6 +4,8 @@ import { basename, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { type Config, configSchema, type Game, gameSchema, hosts } from "./config.ts";
+import { exportCraftingDescriptions, normalizeCraftingData } from "./crafting-data.ts";
+import { validateCraftingData } from "./crafting-data-model.ts";
 import { exportImage } from "./images.ts";
 import { assetPath, digest, readJson, writeBytes, writeJson } from "./io.ts";
 import { Metadata } from "./metadata.ts";
@@ -120,7 +122,25 @@ export async function verify(snapshot: string) {
         throw new Error("Snapshot contains files absent from the manifest");
     if (digest(await readFile(join(snapshot, "schema.json"))) !== manifest.schema_sha256)
         throw new Error("Schema digest differs from manifest");
-    return { manifest, data: await readDataset(snapshot) };
+    const data = await readDataset(snapshot);
+    const crafting = manifest.files["crafting-data.json"]
+        ? validateCraftingData(
+              await readJson(join(snapshot, "crafting-data.json")),
+              {
+                  game: manifest.game,
+                  patch: manifest.patch,
+                  basesSha256: manifest.files["normalized/base_items.json"]!,
+                  modsSha256: manifest.files["normalized/mods.json"]!,
+                  schemaSha256: manifest.schema_sha256,
+              },
+              data,
+          )
+        : undefined;
+    if (crafting)
+        for (const [path, sha] of Object.entries(crafting.source.tables))
+            if (manifest.files[`raw/${path}`] !== sha)
+                throw new Error(`Crafting table provenance differs from snapshot: ${path}`);
+    return { manifest, data, crafting };
 }
 
 export async function publish(
@@ -199,6 +219,53 @@ export async function run(config: Config, output: string, selected: Game[], sche
                 await writeNormalized(normalized, `base_items/${name}`, value);
             for (const [path, value] of metadata.files)
                 await writeNormalized(normalized, path, value.sections);
+            const crafting = await normalizeCraftingData(
+                tables,
+                data.mods,
+                source,
+                data.base_items,
+            );
+            const craftingText = await exportCraftingDescriptions(
+                crafting,
+                data.mods,
+                translations,
+            );
+            const provenance = {
+                game,
+                patch: configSource.patch,
+                basesSha256: digest(await readFile(join(normalized, "base_items.json"))),
+                modsSha256: digest(await readFile(join(normalized, "mods.json"))),
+                schemaSha256: digest(schemaBytes),
+            };
+            await writeJson(
+                join(staging, "crafting-data.json"),
+                validateCraftingData(
+                    {
+                        format: 1,
+                        game,
+                        patch: configSource.patch,
+                        source: {
+                            basesSha256: provenance.basesSha256,
+                            modsSha256: provenance.modsSha256,
+                            schemaSha256: provenance.schemaSha256,
+                            tables: Object.fromEntries(
+                                Object.entries(source.inputs)
+                                    .filter(
+                                        ([path]) =>
+                                            path.endsWith(".datc64") ||
+                                            path === crafting.passiveTree?.asset ||
+                                            path.includes("/StatDescriptions/"),
+                                    )
+                                    .map(([path, evidence]) => [path, evidence.sha256]),
+                            ),
+                        },
+                        ...crafting,
+                        ...craftingText,
+                    },
+                    provenance,
+                    data,
+                ),
+            );
             const imageErrors: Record<string, string> = {};
             for (const [index, image] of images.entries()) {
                 if (index % 100 === 0) console.error(`[${game}] Images ${index}/${images.length}`);
