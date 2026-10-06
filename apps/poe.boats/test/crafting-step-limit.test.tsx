@@ -55,15 +55,15 @@ describe.each([
             );
         }
         render(<Editor />);
-        const buttons = screen.getAllByRole("button", { name: "Copy step" });
+        const buttons = screen.getAllByText("Copy step", { selector: "button" });
         expect(buttons).toHaveLength(50);
         for (const button of buttons) expect(button).toHaveProperty("disabled", true);
-        fireEvent.click(screen.getAllByRole("button", { name: "Remove step" })[0]!);
-        const available = screen.getAllByRole("button", { name: "Copy step" });
+        fireEvent.click(screen.getAllByText("Remove step", { selector: "button" })[0]!);
+        const available = screen.getAllByText("Copy step", { selector: "button" });
         expect(available).toHaveLength(49);
         expect(available[0]).toHaveProperty("disabled", false);
         fireEvent.click(available[0]!);
-        const full = screen.getAllByRole("button", { name: "Copy step" });
+        const full = screen.getAllByText("Copy step", { selector: "button" });
         expect(full).toHaveLength(50);
         expect(full[0]).toHaveProperty("disabled", true);
     });
