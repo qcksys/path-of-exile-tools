@@ -32,7 +32,16 @@ export function AppFooter({ source }: { source?: string } = {}) {
                         </>
                     )}
                 </p>
+                <a
+                    href="/integrations"
+                    className="ml-4 text-sm text-muted-foreground underline-offset-4 hover:underline"
+                >
+                    API &amp; MCP
+                </a>
             </div>
+            <p className="container mx-auto mt-2 px-4 text-center text-muted-foreground text-sm">
+                {t("footer.disclaimer")}
+            </p>
         </footer>
     );
 }

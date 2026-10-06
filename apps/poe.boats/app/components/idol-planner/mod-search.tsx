@@ -20,25 +20,12 @@ import {
     LEAGUE_MECHANICS,
     type LeagueMechanic,
 } from "~/data/idol-bases";
-import idolModifiers from "~/data/idol-modifiers.json";
 import { useLocale, useTranslations } from "~/i18n";
-import type { SupportedLocale } from "~/i18n/types";
 import { cn } from "~/lib/utils";
 
-export interface ModifierOption {
-    id: string;
-    type: "prefix" | "suffix";
-    name: string;
-    mechanic: LeagueMechanic;
-    applicableIdols: string[];
-    tiers: {
-        tier: number;
-        levelReq: number;
-        text: string;
-        values: { min: number; max: number }[];
-        weight: number;
-    }[];
-}
+import { getModifierOptions, type ModifierOption } from "~/operations/planner-catalog";
+
+export { getModifierOptions, type ModifierOption } from "~/operations/planner-catalog";
 
 interface ModSearchProps {
     type?: "prefix" | "suffix";
@@ -49,57 +36,6 @@ interface ModSearchProps {
     onSelect: (mod: ModifierOption | null) => void;
     disabled?: boolean;
     placeholder?: string;
-}
-
-function getLocalizedText(textObj: Record<string, string>, locale: SupportedLocale): string {
-    return textObj[locale] || textObj.en || "";
-}
-
-// Module-level cache for modifier options per locale
-const modifierOptionsCache = new Map<SupportedLocale, ModifierOption[]>();
-
-export function getModifierOptions(locale: SupportedLocale = "en"): ModifierOption[] {
-    // Return cached result if available
-    const cached = modifierOptionsCache.get(locale);
-    if (cached) {
-        return cached;
-    }
-
-    // Dedupe mods by tier text, merging applicableIdols for identical mods
-    const modsByText = new Map<string, ModifierOption>();
-
-    for (const mod of idolModifiers) {
-        const tierText = getLocalizedText(mod.tiers[0]?.text || {}, locale);
-        const key = `${mod.type}:${mod.mechanic}:${mod.tiers[0]?.text?.en || ""}`;
-
-        const existing = modsByText.get(key);
-        if (existing) {
-            // Merge applicableIdols from duplicate
-            const newIdols = mod.applicableIdols.filter(
-                (idol) => !existing.applicableIdols.includes(idol),
-            );
-            existing.applicableIdols.push(...newIdols);
-        } else {
-            modsByText.set(key, {
-                id: mod.id,
-                type: mod.type as "prefix" | "suffix",
-                name: getLocalizedText(mod.name, locale) || tierText || mod.id,
-                mechanic: mod.mechanic as LeagueMechanic,
-                applicableIdols: [...mod.applicableIdols],
-                tiers: mod.tiers.map((tier) => ({
-                    tier: tier.tier,
-                    levelReq: tier.levelReq,
-                    text: getLocalizedText(tier.text, locale),
-                    values: tier.values || [],
-                    weight: tier.weight ?? 0,
-                })),
-            });
-        }
-    }
-
-    const result = Array.from(modsByText.values());
-    modifierOptionsCache.set(locale, result);
-    return result;
 }
 
 export function ModSearch({

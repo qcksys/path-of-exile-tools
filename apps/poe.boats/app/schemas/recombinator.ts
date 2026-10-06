@@ -20,6 +20,7 @@ const preparationSchema = z.object({
     side: z.enum(["prefixes", "suffixes"]),
     affix: recombinatorAffixSchema,
     itemClasses: z.array(z.string()).min(1),
+    keepInputMods: z.boolean().optional(),
 });
 
 export const recombinatorItemSchema = z

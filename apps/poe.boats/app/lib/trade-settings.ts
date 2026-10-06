@@ -5,7 +5,7 @@ const TRADE_SETTINGS_KEY = "poe-idol-planner-trade-settings";
 
 const WEIGHT_FILTER_MODE_SCHEMA = z.enum(["gte", "lte"]);
 
-const TRADE_SETTINGS_SCHEMA = z.object({
+export const TRADE_SETTINGS_SCHEMA = z.object({
     maxWeight: z.number().int().min(0).nullable(),
     filterByMaxWeight: z.boolean(),
     separateWeightFilters: z.boolean(),

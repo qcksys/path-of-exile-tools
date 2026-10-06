@@ -68,7 +68,11 @@ function selectAffixes(
         const total = remaining.reduce((sum, affix) => sum + weight(affix), 0);
         for (const affix of remaining) {
             draw(
-                remaining.filter((candidate) => !sharesAffixGroup(candidate, affix)),
+                remaining.filter(
+                    (candidate) =>
+                        !sharesAffixGroup(candidate, affix) &&
+                        !(affix.exclusive && candidate.exclusive),
+                ),
                 [...selected, affix],
                 (probability * weight(affix)) / total,
             );
@@ -126,9 +130,18 @@ export function recombineOnBase(
             "A mod group appears in both prefixes and suffixes. This model does not support that combination; use compatible bases and modifier groups.",
         );
     }
-    if ([prefixes, suffixes].some((pool) => pool.filter((affix) => affix.exclusive).length > 1)) {
+    const magicWithCrafts = [left, right].every(
+        (item) =>
+            item.prefixes.length === 1 &&
+            item.suffixes.length === 1 &&
+            [...item.prefixes, ...item.suffixes].some((affix) => affix.exclusive && affix.crafted),
+    );
+    if (
+        !magicWithCrafts &&
+        [prefixes, suffixes].some((pool) => pool.filter((affix) => affix.exclusive).length > 1)
+    ) {
         throw new Error(
-            "This step can combine more than one exclusive modifier on the same affix side (including duplicate copies). Those odds are not supported; remove the extra exclusive modifier.",
+            "This step can combine more than one exclusive modifier on the same affix side. Only two one-mod magic items with an exclusive bench craft each support this setup.",
         );
     }
     if (
@@ -210,15 +223,24 @@ export function prepareRecombinatorItem(
     if (!item.base || !preparation.itemClasses.includes(item.base.itemClass))
         throw new Error("This preparation recipe is not valid for the input base.");
     const { kind, side, affix } = preparation;
-    if (kind === "essence") {
+    if (kind === "essence" && !preparation.keepInputMods) {
         return { base: item.base, prefixes: [], suffixes: [], [side]: [affix] };
     }
+    if (
+        kind === "essence" &&
+        [...item.prefixes, ...item.suffixes].some(
+            (entry) => entry.crafted || entry.exclusive || nativeWeight(entry, item.base) === 0,
+        )
+    )
+        throw new Error(
+            "Only natural modifiers eligible on the donor base can be kept with an essence.",
+        );
     if ([...item.prefixes, ...item.suffixes].some((entry) => entry.crafted))
         throw new Error("Remove existing crafted modifiers before adding a bench craft.");
     const result = recombinatorItemSchema.safeParse({ ...item, [side]: [...item[side], affix] });
     if (!result.success)
         throw new Error(
-            "This bench craft needs an open affix slot and a free mod group on every input outcome.",
+            `This ${kind === "essence" ? "essence donor" : "bench craft"} needs an open affix slot and a free mod group on every input outcome.`,
         );
     return result.data;
 }

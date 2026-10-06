@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { z } from "zod";
 import { AppFooter } from "~/components/app-footer";
 import { AppHeader } from "~/components/app-header";
 import { RecombinatorSimulator } from "~/components/recombinator/simulator";
@@ -31,12 +32,14 @@ export default function RecombinatorPage() {
         setError(false);
         async function load() {
             try {
-                const response = await fetch("/game-data/recombinator-poe1.json", {
+                const response = await fetch("/api/v1/recombinator/catalog", {
                     signal: controller.signal,
                     cache: attempt > 0 ? "reload" : "no-cache",
                 });
                 if (!response.ok) throw new Error("Catalog request failed");
-                const data = recombinatorCatalogSchema.parse(await response.json());
+                const data = z
+                    .object({ catalog: recombinatorCatalogSchema })
+                    .parse(await response.json()).catalog;
                 if (active) setCatalog(data);
             } catch {
                 if (active) setError(true);

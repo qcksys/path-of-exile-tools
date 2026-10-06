@@ -6,6 +6,9 @@ export default [
     route("account", "routes/account.tsx"),
     route("action/set-theme", "routes/action.set-theme.ts"),
     route("changelog", "routes/changelog.tsx"),
+    route("api/*", "routes/api.ts"),
+    route("mcp", "routes/mcp.ts"),
+    route("integrations", "routes/integrations.tsx"),
     ...prefix("api", [
         route("auth/*", "routes/api.auth.$.ts"),
         route("stash-ingest", "routes/api.stash-ingest.ts"),
