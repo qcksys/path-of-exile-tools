@@ -3,7 +3,7 @@
   "game": "poe1",
   "patch": "3.29.3.3",
   "source": {
-    "basesSha256": "d11064190501147ad081f184e510c04e87538e6558cf0242cb86efa3ea2171ee",
+    "basesSha256": "160581ed74394bd8b21885e217be021d684680c04eb13826c60eb7638f81a08c",
     "modsSha256": "3ef5cb632f21d391a0644c8b7d0a48394a211fa3e20bfdc99cb625d8080edfcc",
     "schemaSha256": "4b51063be32f2a66c1047bf455784d2e85411bed401ffdee380c8603399b9656",
     "tables": {

@@ -10,6 +10,12 @@ export default function Poe2Home() {
                 <h1 className="font-heading text-4xl font-bold tracking-tight">Path of Exile 2</h1>
                 <nav className="flex gap-4">
                     <Link
+                        to="/2/crafting"
+                        className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    >
+                        Crafting Calculator
+                    </Link>
+                    <Link
                         to="/2/arbitrage"
                         className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                     >

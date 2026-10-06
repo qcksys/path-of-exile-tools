@@ -14,6 +14,7 @@ export default [
         index("routes/poe1-home.tsx"),
         route("arbitrage", "routes/arbitrage/poe1.tsx"),
         route("recombinator", "routes/recombinator.tsx"),
+        route("crafting/:mode?", "routes/crafting/poe1.tsx"),
         route("market", "routes/market.tsx"),
         ...prefix("idol-planner", [
             index("routes/idol-planner/home.tsx"),
@@ -29,6 +30,7 @@ export default [
     ]),
     ...prefix("2", [
         index("routes/poe2-home.tsx"),
+        route("crafting/:mode?", "routes/crafting/poe2.tsx"),
         route("arbitrage", "routes/arbitrage/poe2.tsx"),
     ]),
     route("idol-planner/*", "routes/legacy-idol-planner.ts"),

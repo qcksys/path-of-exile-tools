@@ -67,13 +67,14 @@ describe("environment configuration", () => {
     });
 
     it.each([
-        ["dev", "dev.poe.boats"],
-        ["prod", "poe.boats"],
-    ])("selects the %s environment and auth hostname", (environment, hostname) => {
+        ["test", "local", "poe-boats.localhost"],
+        ["dev", "dev", "dev.poe.boats"],
+        ["prod", "prod", "poe.boats"],
+    ])("selects the %s environment and auth hostname", (environment, name, hostname) => {
         const result = loadEnv(appDir, environment);
         expect(result.status).toBe(0);
         const graph = JSON.parse(result.stdout);
-        expect(graph.config.ENVIRONMENT.value).toBe(environment);
+        expect(graph.config.ENVIRONMENT.value).toBe(name);
         expect(graph.config.URL.value).toBe(hostname);
     });
 

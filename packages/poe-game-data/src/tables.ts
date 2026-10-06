@@ -58,6 +58,26 @@ export class Row {
     boolean(name: string) {
         return z.boolean().parse(this.value(name));
     }
+    unnamedBoolean(index: number) {
+        const read = this.table.unnamedBooleans.get(index);
+        if (!read)
+            throw new Error(`${this.table.name}: column ${index} is not an unnamed scalar boolean`);
+        return z.boolean().parse(read(this.index));
+    }
+    unnamedInt32(index: number) {
+        const read = this.table.unnamedInt32s.get(index);
+        if (!read)
+            throw new Error(`${this.table.name}: column ${index} is not an unnamed scalar i32`);
+        return z.number().int().parse(read(this.index));
+    }
+    unnamedForeignKey(index: number) {
+        const read = this.table.unnamedForeignKeys.get(index);
+        if (!read)
+            throw new Error(
+                `${this.table.name}: column ${index} is not an unnamed scalar foreign key`,
+            );
+        return z.number().int().nonnegative().nullable().parse(read(this.index));
+    }
     numbers(name: string) {
         return z.array(z.number().finite()).parse(this.value(name));
     }
@@ -84,6 +104,9 @@ export class Row {
 
 export class Table {
     columns = new Map<string, { schema: Column; read: (index: number) => unknown }>();
+    readonly unnamedBooleans = new Map<number, (index: number) => unknown>();
+    readonly unnamedInt32s = new Map<number, (index: number) => unknown>();
+    readonly unnamedForeignKeys = new Map<number, (index: number) => unknown>();
     rows: Row[];
     constructor(
         readonly name: string,
@@ -93,7 +116,7 @@ export class Table {
     ) {
         const dat = readDatFile(".datc64", bytes);
         let offset = 0;
-        for (const column of columns) {
+        for (const [index, column] of columns.entries()) {
             const header = { offset, type: headerType(column) };
             offset += getHeaderLength(header, dat);
             if (column.name) {
@@ -103,6 +126,12 @@ export class Table {
                     schema: column,
                     read: getFieldReader(header, dat),
                 });
+            } else if (column.type === "bool" && !column.array && !column.interval) {
+                this.unnamedBooleans.set(index, getFieldReader(header, dat));
+            } else if (column.type === "i32" && !column.array && !column.interval) {
+                this.unnamedInt32s.set(index, getFieldReader(header, dat));
+            } else if (column.type === "foreignrow" && !column.array && !column.interval) {
+                this.unnamedForeignKeys.set(index, getFieldReader(header, dat));
             }
         }
         if (dat.rowCount && offset !== dat.rowLength)

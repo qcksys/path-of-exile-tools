@@ -1,5 +1,5 @@
 import { expect, it } from "vite-plus/test";
-import { baseSchema, modPool, modSchema } from "../src/model.ts";
+import { baseSchema, modPool, modSchema, propertiesSchema } from "../src/model.ts";
 import { parseVersion } from "../src/versions.ts";
 
 const base = baseSchema.parse({
@@ -31,6 +31,14 @@ const mod = modSchema.parse({
     stats: [],
     text: "Life",
     type: "Life",
+});
+
+it("retains reload milliseconds, distinguishes absent properties and rejects invalid values", () => {
+    expect(propertiesSchema.parse({}).reload_time).toBeNull();
+    expect(propertiesSchema.parse({ reload_time: 750 }).reload_time).toBe(750);
+    expect(propertiesSchema.parse({ reload_time: 0 }).reload_time).toBe(0);
+    for (const value of [-1, 1.5, "750"])
+        expect(propertiesSchema.safeParse({ reload_time: value }).success).toBe(false);
 });
 
 it("applies the first matching weight, including a zero exclusion", () => {

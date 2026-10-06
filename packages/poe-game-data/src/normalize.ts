@@ -227,6 +227,7 @@ export async function normalize(tables: Tables, metadata: Metadata, translate: T
             DamageMax: "physical_damage_max",
             RangeMax: "range",
         });
+        if (game === "poe2") copy(weapons.get(id), { ReloadTime: "reload_time" });
         const money = currency.get(id);
         copy(money, {
             StackSize: "stack_size",
