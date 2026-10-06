@@ -71,6 +71,16 @@ async function mcp(method: string, params?: unknown, authenticated = false) {
 describe("transport parity", () => {
     beforeEach(() => vi.restoreAllMocks());
 
+    it("serves the Scalar reference without requiring an operation runtime", async () => {
+        const response = await api.request("https://poe.boats/api/docs");
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain("text/html");
+        const html = await response.text();
+        expect(html).toContain("<title>API Reference · POE.BOATS</title>");
+        expect(html).toContain("https://cdn.jsdelivr.net/npm/@scalar/api-reference");
+        expect(html).toContain('"url": "/api/openapi.json"');
+    });
+
     it("publishes every operation with complete input and output schemas", async () => {
         const response = await api.request("https://poe.boats/api/openapi.json");
         expect(response.status).toBe(200);
