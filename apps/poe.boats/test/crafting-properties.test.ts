@@ -159,45 +159,49 @@ describe.each(["poe1", "poe2"] as const)("%s final item properties", (game) => {
         ).toBeCloseTo(1 / possibilities);
     });
 
-    it("counts hybrid percentage modifiers on every affected defence and preserves ward", () => {
-        const checked: string[] = [];
-        for (const id of [
-            "local_armour_and_evasion_+%",
-            "local_armour_and_energy_shield_+%",
-            "local_evasion_and_energy_shield_+%",
-            "local_ward_+%",
-        ])
-            for (const [baseId, base] of Object.entries(catalog.bases)) {
-                const raw = { ...engine.createItem(baseId), rarity: "rare" as const };
-                const candidate = engine
-                    .pool(raw)
-                    .find((entry) => entry.mod.stats.some((stat) => stat.id === id));
-                if (!candidate) continue;
-                const item = engine.addStartingMod(
-                    {
-                        ...raw,
-                        baseDefences: Object.fromEntries(
-                            baseDefenceEntries(catalog, raw).map(({ key, range }) => [
-                                key,
-                                range.min,
-                            ]),
-                        ),
-                    },
-                    candidate.id,
-                    minimum,
-                );
-                const percentage = candidate.mod.stats.find((stat) => stat.id === id)!.min;
-                const values = itemProperties(engine, item);
-                for (const [key, range] of Object.entries(base.defences)) {
-                    if (!range) continue;
-                    expect(values[key as "armour" | "evasion" | "energy_shield" | "ward"]).toBe(
-                        Math.round(range.min * (1 + percentage / 100)),
-                    );
-                }
-                checked.push(id);
-                break;
-            }
-        expect(checked).toHaveLength(game === "poe1" ? 4 : 3);
+    it.each([
+        {
+            stat: "local_armour_and_evasion_+%",
+            base: game === "poe1" ? "Rotted Round Shield" : "Chain Mail",
+            defences: ["armour", "evasion"],
+        },
+        {
+            stat: "local_armour_and_energy_shield_+%",
+            base: game === "poe1" ? "Plank Kite Shield" : "Pilgrim Vestments",
+            defences: ["armour", "energy_shield"],
+        },
+        {
+            stat: "local_evasion_and_energy_shield_+%",
+            base: game === "poe1" ? "Spiked Bundle" : "Hermit Garb",
+            defences: ["evasion", "energy_shield"],
+        },
+        ...(game === "poe1"
+            ? [{ stat: "local_ward_+%", base: "Runic Helm", defences: ["ward"] } as const]
+            : []),
+    ] as const)("applies $stat to every affected defence on $base", ({ stat, base, defences }) => {
+        const raw = { ...create(base), rarity: "rare" as const };
+        const candidate = engine
+            .pool(raw)
+            .find((entry) => entry.mod.stats.some((entry) => entry.id === stat))!;
+        expect(candidate).toBeDefined();
+        const item = engine.addStartingMod(
+            {
+                ...raw,
+                baseDefences: Object.fromEntries(
+                    baseDefenceEntries(catalog, raw).map(({ key, range }) => [key, range.min]),
+                ),
+            },
+            candidate.id,
+            minimum,
+        );
+        const percentage = candidate.mod.stats.find((entry) => entry.id === stat)!.min;
+        expect(percentage).toBeGreaterThan(0);
+        const values = itemProperties(engine, item);
+        for (const key of defences) {
+            const range = catalog.bases[item.baseId]!.defences[key]!;
+            expect(range?.min).toBeGreaterThan(0);
+            expect(values[key]).toBe(Math.round(range.min * (1 + percentage / 100)));
+        }
     });
 
     it("enumerates value-sensitive item requirements in calculations and ordered process routes", () => {
