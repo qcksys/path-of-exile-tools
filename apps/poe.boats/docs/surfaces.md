@@ -45,7 +45,7 @@ MCP exposes public tools to anonymous callers and adds account tools when authen
 
 Both transports reject foreign Origin headers, cap operation bodies at 1 MiB, and return non-cacheable results. No request-specific identity lives in module globals. `ASSETS` reads the bundled recombinator catalog without a public self-fetch. No new database tables or migrations are needed.
 
-The browser reference at `/integrations` lists every operation, its schemas, and an explicit Run button. Submitting a write there performs the operation under the signed-in account. `/api/openapi.json` is the machine-readable OpenAPI 3.1 contract; `/api/docs` redirects to the reference.
+The browser reference at `/integrations` lists every operation, its schemas, and an explicit Run button. Submitting a write there performs the operation under the signed-in account. `/api/openapi.json` is the machine-readable OpenAPI 3.1 contract; `/api/docs` serves the Scalar API reference using that same contract on the current origin. The integrations page links to both.
 
 ## References
 

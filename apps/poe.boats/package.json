@@ -37,6 +37,7 @@
         "@qcksys/drizzle-extensions": "^0.3.0",
         "@qcksys/pino-cloudflare": "^0.1.0",
         "@react-router/cloudflare": "^7.14.2",
+        "@scalar/hono-api-reference": "catalog:",
         "@tailwindcss/typography": "catalog:",
         "@varlock/1password-plugin": "catalog:",
         "@varlock/cloudflare-integration": "catalog:",
