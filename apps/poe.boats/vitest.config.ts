@@ -8,5 +8,6 @@ export default defineConfig({
         environment: "node",
         include: ["test/**/*.test.{ts,tsx,mjs}"],
         exclude: ["test/e2e/**"],
+        setupFiles: ["test/crafting-ui-setup.ts"],
     },
 });

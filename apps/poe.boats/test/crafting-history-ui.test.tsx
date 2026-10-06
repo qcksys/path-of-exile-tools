@@ -190,8 +190,9 @@ for (const game of ["poe1", "poe2"] as const) {
         it("discards old entries at the existing retention limit and keeps the current row correct", () => {
             mount();
             fireEvent.click(screen.getByText("Actions history"));
+            const level = screen.getByLabelText("Item level");
             for (let index = 0; index < 105; index++)
-                fireEvent.change(screen.getByLabelText("Item level"), {
+                fireEvent.change(level, {
                     target: { value: String(70 + (index % 2)) },
                 });
             expect(entries()).toHaveLength(101);
