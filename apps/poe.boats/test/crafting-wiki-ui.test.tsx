@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /** biome-ignore-all lint/style/useNamingConvention: Ring recipes retain canonical Breachlord names. */
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { CraftingWorkbench } from "../app/components/crafting/workbench";
@@ -36,6 +36,14 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
+function button(name: string) {
+    const scope = screen.getByText(name, { selector: "button" }).parentElement!;
+    return within(scope).getByRole("button", { name });
+}
+
+const storage = () =>
+    within(screen.getByText("Save, load, and export", { selector: "summary" }).parentElement!);
+
 function mount(base: string) {
     const project = craftingProjectSchema.parse({
         format: 1,
@@ -60,11 +68,11 @@ function mount(base: string) {
         </MemoryRouter>,
     );
     fireEvent.click(screen.getByText("Save, load, and export"));
-    fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "setup" } });
-    fireEvent.click(screen.getByRole("button", { name: "Load project" }));
+    fireEvent.change(storage().getByLabelText("Saved project"), { target: { value: "setup" } });
+    fireEvent.click(button("Load project"));
 }
 const save = () => {
-    fireEvent.click(screen.getByRole("button", { name: "Save project" }));
+    fireEvent.click(button("Save project"));
     return craftingProjectSchema.parse(
         JSON.parse(localStorage.getItem(key)!)["My crafting project"],
     );
@@ -72,15 +80,18 @@ const save = () => {
 
 it("edits the Grasping recipe, emulates with undo, saves it and sends it to the worker", () => {
     mount(graspingMailBase);
+    const recipe = within(
+        screen.getByLabelText("Grasping Mail recipe").parentElement!.parentElement!,
+    );
     for (const lord of ["Xoph", "Tul", "Esh", "Uul-Netol", "Chayula"])
-        fireEvent.change(screen.getByLabelText(`${lord} rings`), {
+        fireEvent.change(recipe.getByLabelText(`${lord} rings`), {
             target: { value: lord === "Xoph" ? "60" : "0" },
         });
     expect(screen.getByRole("combobox", { name: "Crafting method" })).toHaveProperty(
         "value",
         "Generate rare item",
     );
-    fireEvent.click(screen.getByRole("button", { name: "Apply craft" }));
+    fireEvent.click(button("Apply craft"));
     expect(screen.queryByRole("alert")).toBeNull();
     const generated = save();
     fireEvent.change(screen.getByRole("combobox", { name: "Modifier source" }), {
@@ -95,9 +106,9 @@ it("edits the Grasping recipe, emulates with undo, saves it and sends it to the 
         id: "rare",
         breachRings: { Xoph: 60 },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    fireEvent.click(button("Undo"));
     expect(save().item.rarity).toBe("normal");
-    fireEvent.click(screen.getByRole("button", { name: "Calculate odds" }));
+    fireEvent.click(button("Calculate odds"));
     expect(WorkerStub.instances.at(-1)!.postMessage.mock.calls[0]![0].project.method).toEqual(
         generated.method,
     );
@@ -120,20 +131,20 @@ it("manually selects a Heist enchantment, retains it through crafting and reload
     expect(screen.getByText(/Random Tempering and Tailoring odds are unknown/)).toBeDefined();
     const selected = save();
     expect(selected.item.enchantments?.[0]?.id).toBe("ArmourEnchantmentHeistLifeEffect1");
-    fireEvent.click(screen.getByRole("button", { name: "Apply craft" }));
+    fireEvent.click(button("Apply craft"));
     expect(save().item.enchantments).toEqual(selected.item.enchantments);
-    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    fireEvent.click(button("Undo"));
     expect(save().item.enchantments).toEqual(selected.item.enchantments);
-    fireEvent.click(screen.getByRole("button", { name: "Clear starting Heist enchantment" }));
-    fireEvent.change(screen.getByLabelText("Saved project"), {
+    fireEvent.click(button("Clear starting Heist enchantment"));
+    fireEvent.change(storage().getByLabelText("Saved project"), {
         target: { value: "My crafting project" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Load project" }));
+    fireEvent.click(button("Load project"));
     expect(screen.getByRole("combobox", { name: "Starting Heist enchantment" })).toHaveProperty(
         "value",
         "8% increased Explicit Life Modifier magnitudes",
     );
-    fireEvent.click(screen.getByRole("button", { name: "Calculate odds" }));
+    fireEvent.click(button("Calculate odds"));
     expect(
         WorkerStub.instances.at(-1)!.postMessage.mock.calls[0]![0].project.item.enchantments,
     ).toEqual(selected.item.enchantments);
