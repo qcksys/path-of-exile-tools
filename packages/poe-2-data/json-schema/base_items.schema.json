@@ -326,6 +326,19 @@
               }
             ]
           },
+          "reload_time": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "critical_strike_chance": {
             "default": null,
             "anyOf": [
@@ -456,6 +469,7 @@
           "life_per_use",
           "mana_per_use",
           "attack_time",
+          "reload_time",
           "critical_strike_chance",
           "physical_damage_max",
           "physical_damage_min",

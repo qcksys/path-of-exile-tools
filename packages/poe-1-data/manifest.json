@@ -3,10 +3,11 @@
   "game": "poe1",
   "version": "3.29.3-build.3",
   "client_build": "3.29.3.3",
-  "source_manifest_sha256": "2f3e95ce994caf91d900b8b7f81d7ee53a617b0c5b5a152751e51a8d1e2c3a1f",
+  "source_manifest_sha256": "a9d2155a604cec8775de338e9b01f2f92014662ef568d0d6b898103101fff1ba",
   "dat_schema_sha256": "4b51063be32f2a66c1047bf455784d2e85411bed401ffdee380c8603399b9656",
-  "extractor_sha256": "2fc8aed26e77831d142543a8a44cc4f526defe4c8d0ef754c02f9a79a8883106",
-  "zod_schema_sha256": "7d473d2f22eccede2f0c0b93225c645cee3f788bef456425b1dfc4c77ac4c6df",
+  "extractor_sha256": "ed2986ea76b8dba4948460a403cc199ee5444c2a06c8b3845756871b87ceb123",
+  "zod_schema_sha256": "56d1438e3d4fc42b403281e32971f4617e82caa33332642f283f02b2062e6966",
+  "crafting_data_sha256": "5dac6135acc38d7886f18c91deddac716ecb61a8b90f0309a194a75d0021facf",
   "weight_provenance": "client-extracted; PoE 2 values are not Craft of Exile empirical weights",
   "files": {
     "Metadata/Items/Amulets/AbstractAmulet.json": {
@@ -440,443 +441,443 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "base_items.json": {
-      "sha256": "d11064190501147ad081f184e510c04e87538e6558cf0242cb86efa3ea2171ee",
-      "bytes": 8025344,
+      "sha256": "160581ed74394bd8b21885e217be021d684680c04eb13826c60eb7638f81a08c",
+      "bytes": 8172791,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/AbyssJewel.json": {
-      "sha256": "6d748b9ab306a199d9eda007513c861895aecdb4912d3afb01679afa9b3f2ae5",
-      "bytes": 7091,
+      "sha256": "c64c6edda2d22ed98ea8a82286e4de717fcfd2cb794420e7b79f13d3a54775df",
+      "bytes": 7226,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Active Skill Gem.json": {
-      "sha256": "0506f9ef501a8b14057fc61ff9db7c1fc13d42c6fbee8393ac3c907881b75e7f",
-      "bytes": 725131,
+      "sha256": "33a55f05794b53ea642ff2ce484dba0532455f7f92e2fa4a7fea394eb63b5729",
+      "bytes": 739549,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Amulet.json": {
-      "sha256": "9852ba38de30cded48816a0186a162014974f0066ad46325baffbaec2e70f58e",
-      "bytes": 138024,
+      "sha256": "a0644a130aac568cbcb6ae85a7fdc729b74be7c2ddf6fc8633e02ce31ab8322b",
+      "bytes": 140697,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/AnimalCharm.json": {
-      "sha256": "809b28a3109dc3ab9e69188a12914fc35c323d2e2ab6313d16ab0b87bf47e823",
-      "bytes": 4251,
+      "sha256": "4232877ebbfb5056a7deb078ed7716700ac98243c7a1d0222229cd92a6473744",
+      "bytes": 4332,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/ArchnemesisMod.json": {
-      "sha256": "6dae3bcda2f52532c8b8128f0d4228963905666df73f674d1c9c14c6702ba3a1",
-      "bytes": 1339,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/AtlasRelic.json": {
-      "sha256": "b960d9e6aa99ed239085a5dd953016a1062a2b991f0f2e25f3c9079a62899312",
-      "bytes": 8657,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/AtlasUpgradeItem.json": {
-      "sha256": "71de6ad9a08a9d841eda9b1cd014f1c02088e8888e61a222eb30e7f935e9d2e0",
-      "bytes": 87095,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Belt.json": {
-      "sha256": "5c6d712c01c02fc8675d1cf6568a68747ce3ae0d59a4ed69f40b7c46002bc6d7",
-      "bytes": 23347,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Body Armour.json": {
-      "sha256": "759ea04cab0a12ff6ff0623cb9ae65387b73a31684496c7838b521c2524cb9c2",
-      "bytes": 197306,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Boots.json": {
-      "sha256": "4e9ff591415eb9b0c58f79d308a852adb2cbfe8f5700f8978163515fed2174d8",
-      "bytes": 130033,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Bow.json": {
-      "sha256": "25c450ceb6aff1e8f273684ac6004b9480d732c880aad7b5178a481ed09c398e",
-      "bytes": 46744,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Breachstone.json": {
-      "sha256": "c0bc20e34e25ed8cdddf6e1cb8356b6841fdee1f7990d3ff12e9515085e64fa5",
-      "bytes": 36705,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/BrequelFruit.json": {
-      "sha256": "113db5725dd83eaf1b323c8a042f3b9ef54f72e37f43807997929a1d31abe6ff",
-      "bytes": 6162,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Claw.json": {
-      "sha256": "f6c2d9d9b139e2bf0b16f97abb1f4fd108b02abbcbd893f3493be465bff947a3",
-      "bytes": 44080,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/CocoonedItem.json": {
-      "sha256": "c5b701da554b22b9fae33ec48d5e9e9e274acb5dde60cc1a8c086eac208738cc",
-      "bytes": 6811,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Currency.json": {
-      "sha256": "89418dc09719f469222e460b63544bbeac56eb2917870e024c3fdaa6b755ef46",
-      "bytes": 1399,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/CursedDucat.json": {
-      "sha256": "a9cc018714ab5935e19840f67c483af228a487fae5f4ef50c7aea4769d3fba62",
-      "bytes": 8547,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Dagger.json": {
-      "sha256": "7dfd4be965133e6d5082c762c9c9278697028cc9daa9ce6bd66eb5950939ac19",
-      "bytes": 22743,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/DeepwaterChart.json": {
-      "sha256": "03ca539435bb19a2c73682e7b2c503bc7a80c543e71de448166af414d77e2fc4",
-      "bytes": 5688,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/DelveSocketableCurrency.json": {
-      "sha256": "33110199482d8c0335ed934f64867c8bf30f5a1e766ffef3c0d0c4efa145586e",
-      "bytes": 11975,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/DelveStackableSocketableCurrency.json": {
-      "sha256": "ca25e47359fab3b03dfbce03c22ed34c7c4308c22f0e6f7d51842efc912a5a43",
-      "bytes": 12231,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/DivinationCard.json": {
-      "sha256": "b0ec965acf9f38a37e26efd7ac6d9a73eb48b85581226657a1e5655e69c10ea0",
-      "bytes": 718077,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/ExpeditionLogbook.json": {
-      "sha256": "3ced306b4463eb7728c9ec33f0f5f3856c089547ba0a718a1ddf3fbf60c0fc19",
-      "bytes": 1411,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/FishingRod.json": {
-      "sha256": "d63f3daafe558801d7102991ef42f9ccee871c146dc0a7929b8b725cf5752cdf",
-      "bytes": 1559,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/GhostItem.json": {
-      "sha256": "6cb7bd8cb6a89eda76e5c585d3edc222b471746078b47a98917a120c64270be2",
-      "bytes": 14916,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/GiftBox.json": {
-      "sha256": "170e326e76cd9952eb27576767182e158345c3845465f78d15d6a63c6855050c",
-      "bytes": 15667,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Gloves.json": {
-      "sha256": "816391dd7ac44ba8e8f57928cd3fd6a3da00e08096d662cf55f3657f4498dfb6",
-      "bytes": 126014,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Gold.json": {
-      "sha256": "b341d923f82d63b612db5ce2afae2c6ae4921ff00307099753256c2606bf845a",
-      "bytes": 1343,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/HeistBlueprint.json": {
-      "sha256": "ec830775f5fdb3c9df05ce9d8a7ebad52edd65c58765b7dc634b8651b8146f79",
-      "bytes": 12591,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/HeistContract.json": {
-      "sha256": "454f732956c7dcac884b68ce6dd6f44d4c6eb09091d6570e5a30a2412dc596a4",
-      "bytes": 20885,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/HeistEquipmentReward.json": {
-      "sha256": "270a628c1d3797aafdb53ecc289f36ddf71b6a7a125cca56e92333d75185b391",
-      "bytes": 7282,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/HeistEquipmentTool.json": {
-      "sha256": "685d1bfe0ee94ac4af1a305549b0adf1c7ea5539786408f656cd0c36e07d3d50",
-      "bytes": 56205,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/HeistEquipmentUtility.json": {
-      "sha256": "d732483763164f576e1d7f62074f0d989432dfaf4ba9ae9ebc87aaa50312202a",
-      "bytes": 7316,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/HeistEquipmentWeapon.json": {
-      "sha256": "9a78e9abd3a9ccfc6f1eae1ac779c48ed8789f8f37b694ae29ec0312b055ecbf",
-      "bytes": 19570,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/HeistObjective.json": {
-      "sha256": "332a8f9456b2c195b61432b14b4cbeedc1fb2fab59d6a0c7030b07c88ab1f5d0",
-      "bytes": 63880,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Helmet.json": {
-      "sha256": "ef1c104c6442b5c59b99294f4678658571e9af8c609fe00ec4cd6dfaeb2d5925",
-      "bytes": 151447,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/HiddenItem.json": {
-      "sha256": "310e3447dadecc18cfe5b7bd6459a91b7ed2f3bd1af2778a6e292b28c2ec4f57",
-      "bytes": 105752,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/HybridFlask.json": {
-      "sha256": "82d933e065b0a2997ff854343d80064e90c2208bb70cac4baacf2cae3fea7b01",
-      "bytes": 8188,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Incubator.json": {
-      "sha256": "f1f8d0f44cbbb9ec23128e36ae21494f521a1f985c2ed52eb458b70eae311da6",
-      "bytes": 47656,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/IncubatorStackable.json": {
-      "sha256": "8f1db8b56df3e2cedd9cca679be022bf78c03e7d5b00232eb76267953eefe7f5",
-      "bytes": 54077,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/IncursionItem.json": {
-      "sha256": "1f78d6d753d2c320f54672ccbe1b00e910236ec110b9bb445779369d51c8548f",
-      "bytes": 2686,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/InstanceLocalItem.json": {
-      "sha256": "7574c7ab1664124259fa9710dc88bb74c179df2cf2d5ca1772748a0cf41b1083",
-      "bytes": 29672,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/ItemisedCorpse.json": {
-      "sha256": "5da2df93df2e4bdd92fcfa775845080b67341b58a9d84c871e05101a34594175",
-      "bytes": 177561,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/ItemisedSanctum.json": {
-      "sha256": "e2b6bbe04bff999c43ebab6e0b89ecf6633b2e60b26ebee0197b9fe71621443a",
-      "bytes": 6923,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/Jewel.json": {
-      "sha256": "e01cdc41f67bb634508232746a2ea844d909bb381ae9bcfc4d160a82042d40b8",
-      "bytes": 11267,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/LabyrinthItem.json": {
-      "sha256": "8fc13d23473acb891907ecb97e1ffd0cd7d8805b902dccdea70dcfaadfe2a8ef",
-      "bytes": 4026,
-      "schema": "json-schema/base_items.schema.json"
-    },
-    "base_items/LabyrinthMapItem.json": {
-      "sha256": "94f4f81293b3947ce33ede5f0425245d3c73cbe706247a4095439f5338263661",
+      "sha256": "c4c00c21e85206d825fa38c0908192bc1ba1b84eec6f1bed53367dd9a4116569",
       "bytes": 1366,
       "schema": "json-schema/base_items.schema.json"
     },
+    "base_items/AtlasRelic.json": {
+      "sha256": "06b35e97eb0ff8f590f0da0765f3dde3206b48beec3b0ea1b8f7e0a5b8499ac4",
+      "bytes": 8819,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/AtlasUpgradeItem.json": {
+      "sha256": "dd589aba8a5f1dc178e2fec9c8e5b02a0d411acd7604fb11b5b721a752f0b802",
+      "bytes": 88742,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Belt.json": {
+      "sha256": "41ec22799dafbefc9e7ac0b6a45fe271c531f17ed64ba852bb176618e535efe5",
+      "bytes": 23806,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Body Armour.json": {
+      "sha256": "0ecf9a379a780da744d363a1e423dcd6d16c845dd00b894fb61a3682482b92d9",
+      "bytes": 200654,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Boots.json": {
+      "sha256": "03a32ebdd7f6bfa7b50720b234635534ab1118df2169dffc722eb14509f6ccab",
+      "bytes": 132274,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Bow.json": {
+      "sha256": "35bbbbfb9489c99aa5e6fa50753410a9642136287afdf10b8fee315b16752bcb",
+      "bytes": 47554,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Breachstone.json": {
+      "sha256": "89e898a1fd674478d1a5df34e25b430fb23413c8158b9ffe38d881816d5c0c33",
+      "bytes": 37380,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/BrequelFruit.json": {
+      "sha256": "1eac011130531a48110baec89e175e2c66e84478647c9a9b3334514c76cf8ac9",
+      "bytes": 6270,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Claw.json": {
+      "sha256": "d9431c503ae9b7bffee7490fa01759c6a03eecd89127a9744b6053eb7a7150aa",
+      "bytes": 44836,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/CocoonedItem.json": {
+      "sha256": "b64aeedd1e17730d2d415cdc75661894cee78f77d0903c8437c9e2fe228c7a67",
+      "bytes": 6946,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Currency.json": {
+      "sha256": "370925b089a63c08b259c08900418a1b418ce66767a67d9077bd3c42ed139c26",
+      "bytes": 1426,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/CursedDucat.json": {
+      "sha256": "19138d59bcfe3210a225b2e1997674ef084dfb9ec8c2e3a7c0b24e6ae1f6e68a",
+      "bytes": 8709,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Dagger.json": {
+      "sha256": "dcea4dee2e8dda44d8a29fea3be8ae8daf3383f0d8a5510bea9364b44f9cfa03",
+      "bytes": 23121,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/DeepwaterChart.json": {
+      "sha256": "c23e94ddb56497e0cb2bf51b40c7c7b3514a0ccc3c37bac5a134da2c7c00e3c0",
+      "bytes": 5796,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/DelveSocketableCurrency.json": {
+      "sha256": "a421a2061e54b6c367404cdda470133dcf67e7e87a15b43ab94f858b2f656a89",
+      "bytes": 12191,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/DelveStackableSocketableCurrency.json": {
+      "sha256": "3c7472344c83dd827bd7361c5e00680c6b44254a941a392bf9f1a330201053ba",
+      "bytes": 12447,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/DivinationCard.json": {
+      "sha256": "8c7232785a69e1272e0e1f9d6a65566896e3b5bd707d814b8c017580b9a86a3c",
+      "bytes": 730767,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/ExpeditionLogbook.json": {
+      "sha256": "cff8cd5fd1b1cd4c2a213b0adb53855d758a7893fa6f31c41d7bb2296960688d",
+      "bytes": 1438,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/FishingRod.json": {
+      "sha256": "692bf5e8046b907c734ef813b68727988395fe25a1deace94e448cea0b77ea71",
+      "bytes": 1586,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/GhostItem.json": {
+      "sha256": "04a9a41143c6fbfb52cc5351bc0926ac6673e63d6b4c5c290273dba5edbc7492",
+      "bytes": 15213,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/GiftBox.json": {
+      "sha256": "f4169dc7a81be60ff5d545005e1a61f36c0a18e7a3a13e42f55668a720e3e70b",
+      "bytes": 15964,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Gloves.json": {
+      "sha256": "c667edf100b9ff2c7aa4f673e17138c9a338196af4c8bfcac5744d28b7e00747",
+      "bytes": 128174,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Gold.json": {
+      "sha256": "ffc1a1e77cf614c49c3922599a3759e4f8b9305762ab7ac551d41d8bdba4fbc8",
+      "bytes": 1370,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/HeistBlueprint.json": {
+      "sha256": "418158e6387239ae81942b01c3f8d7f7131b82adf8fecb900d928a14557692e3",
+      "bytes": 12834,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/HeistContract.json": {
+      "sha256": "362092abd30c2b297f3ca2aaa145cfb4c24d6fe4cc58739ed219a6d846982775",
+      "bytes": 21290,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/HeistEquipmentReward.json": {
+      "sha256": "e10db7a4c03996d416ac61a214fed758e324a4adbb357cec0e0d03b0163c38b7",
+      "bytes": 7417,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/HeistEquipmentTool.json": {
+      "sha256": "534cddc555454128383cae19e02f2ef87042e0ef455a1d9f52105fac4278ad5b",
+      "bytes": 57204,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/HeistEquipmentUtility.json": {
+      "sha256": "5150c7f30c99615c328b02c02fd88806a13fa3b8cae835dcb0f948a6060e82dd",
+      "bytes": 7451,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/HeistEquipmentWeapon.json": {
+      "sha256": "d83b4a9d1d616e07766157601ab7e0af89cedbda06345d37a1ee525607ef2024",
+      "bytes": 19921,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/HeistObjective.json": {
+      "sha256": "6f9520f36fa7e971b1a4519d323ec2d02db85a855687e92e72719beb251a8e01",
+      "bytes": 65149,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Helmet.json": {
+      "sha256": "eb13bad48ab65fd0fc9ccf32c7d9122673462a984d7d1c2eb0316346946bfe54",
+      "bytes": 154039,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/HiddenItem.json": {
+      "sha256": "46b9785591febd9d2d99a26200f92ccee9ba8c04f65017c9ef30a08187466a6f",
+      "bytes": 107831,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/HybridFlask.json": {
+      "sha256": "e53760ada28f05598f5aa5508f0c9949505f1b3b1fed0bab7bf5b4e571937e92",
+      "bytes": 8350,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Incubator.json": {
+      "sha256": "5eaaf61f81443355d028a33bfb5ef96fa81e30b93fde3ef86be8c7c38cd9ad88",
+      "bytes": 48466,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/IncubatorStackable.json": {
+      "sha256": "8e969541dde692c804648790cfe70af0a037a99c9075e390e195b80a6c2f2136",
+      "bytes": 54968,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/IncursionItem.json": {
+      "sha256": "c6456789555fa95f121738e8c2e8ce894fe95cf9a8a3a5c2638c623988954839",
+      "bytes": 2740,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/InstanceLocalItem.json": {
+      "sha256": "b718278a2f4b478621f7465528d08d7b9eb578fd88e4f9caf84e39da584c7409",
+      "bytes": 30266,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/ItemisedCorpse.json": {
+      "sha256": "817436986ce8653a5e70576e0582eb916a11e4feb56d890c73b1c5f04bc71bcd",
+      "bytes": 180639,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/ItemisedSanctum.json": {
+      "sha256": "493341ed2bea917c470445c296b2e66edaabffb157ec8825c2a0b3608b2bd945",
+      "bytes": 7058,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Jewel.json": {
+      "sha256": "1151520e2c5073fc9702d79c0d0d97fe27d286a701ec2df233c31dc2e9207ea8",
+      "bytes": 11483,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/LabyrinthItem.json": {
+      "sha256": "5db221b452127ad00022145d0f942ee073ce2eac23ea3c6527093132800efbf0",
+      "bytes": 4107,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/LabyrinthMapItem.json": {
+      "sha256": "98d075931436fa4db042c5ce3adfc70d0407c9e73fa8f52d596d65e16f093f8b",
+      "bytes": 1393,
+      "schema": "json-schema/base_items.schema.json"
+    },
     "base_items/LabyrinthTrinket.json": {
-      "sha256": "de62924cbecf413043edc6b1abcf113110a257a606ad32279d7fedf9baa01b50",
-      "bytes": 15596,
+      "sha256": "9572b5669178f1bf57337a393e19088bb7deeefc993732e848582e45848acac1",
+      "bytes": 15866,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Leaguestone.json": {
-      "sha256": "d4947da3533779f331bf06814d8426391451da821c20c254f36110831553e0a6",
-      "bytes": 24383,
+      "sha256": "a0a94fead1a9c67bfd70f723c0227b2267666776551121d47c7eb6223a00b6e6",
+      "bytes": 24842,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/LifeFlask.json": {
-      "sha256": "d942e90a739021171b673ecb0762f240c7023bd9d795ddf008ca65d6348c5787",
-      "bytes": 20568,
+      "sha256": "1aec2c8b781f4407d727550d96372231fbc5a4f9ad5925f84c2628b9ac3df4fe",
+      "bytes": 20973,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/ManaFlask.json": {
-      "sha256": "e3e8f45499f67e59f3e016ba79b12eda5b8c1010dfdaf65fae76794f6d9943cb",
-      "bytes": 16274,
+      "sha256": "9b0bc713903e45a1bfb95bf73158d986bc2598ec935fda57ee02cdd69fbd370d",
+      "bytes": 16598,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Map.json": {
-      "sha256": "fac3b7eb167b9a0d537a2a98bd9982188f6fc1bbe60beb87a773a161ffefe0d2",
-      "bytes": 692378,
+      "sha256": "f96ba2f0704f6ad133ce6687532ba0f11da125654c64d7f7e5ef33082336a59b",
+      "bytes": 705635,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/MapFragment.json": {
-      "sha256": "062224ab3b015d2dc1a3a0de9b4d8183bbdec7e68a093055fdc76eb58e6869aa",
-      "bytes": 467940,
+      "sha256": "82584cde7856e37ecb73afcc9f7b39d56443406db639eac1736aa3208c8e2ab0",
+      "bytes": 476040,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/MapKey.json": {
-      "sha256": "970b57bf536b174e05b965f8b915547f19a2fa21fe49918b600bd3592cd21a5b",
-      "bytes": 28272,
+      "sha256": "a326f5b16517d5b64b008cd8cb2bb95f3b988395f502a84d923e0e2857763527",
+      "bytes": 28812,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/MemoryLine.json": {
-      "sha256": "bc38798bb8ba4f45b191da95bf56f51c6f5766c1c27b739e706ed438c62fb086",
-      "bytes": 5662,
+      "sha256": "322c11bd48e9cddce9c92886a402158290228203a74b91473adad8e0d43a9aa8",
+      "bytes": 5770,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/MetamorphosisDNA.json": {
-      "sha256": "38169795f1df7e3adb1450c255f8b9a5d938c062953e58cf3464ad7779110d12",
-      "bytes": 6865,
+      "sha256": "dc26a10b0e585704fa620e1bde0ed56259afc9deea94b12f7375351c814a4659",
+      "bytes": 7000,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Microtransaction.json": {
-      "sha256": "da49656ac67a2590069210bd80300fef8a2c94c991358c61b67db1b9afb4b61b",
-      "bytes": 8330,
+      "sha256": "aef8988939895604d2dcaa3fe80e78e030244b56bbd742eaba12424887f807ee",
+      "bytes": 8492,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/MiscMapItem.json": {
-      "sha256": "223664d6f8ea6efb99cee96cd12ba6eea377b85ff8295792529f4089a3c3a05b",
-      "bytes": 51467,
+      "sha256": "2819a3d40b3c0dca0dd23ce86eb13628721cbf3c96b3df3ba393d5c8b60bf1c1",
+      "bytes": 52439,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/NecropolisPack.json": {
-      "sha256": "fb0f33ad9eeecdd7d7ce150404f4a39a88ed80170c1f369c9dd438778185fc3a",
-      "bytes": 99261,
+      "sha256": "4cfc6949e375cb943b1388ea2a8c292995bcffe3567c971a03937309222f9a33",
+      "bytes": 101151,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/One Hand Axe.json": {
-      "sha256": "35e9a35177d77ab71004a8033ec670f44f6922b93ff1b83a0f7579f48e1f706c",
-      "bytes": 44459,
+      "sha256": "209720a956697d0e7799b11af8e098a836a95e99d06c0052b3b3fe110d0798a4",
+      "bytes": 45215,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/One Hand Mace.json": {
-      "sha256": "4d514651c05cc85e03c8de494c51233df6e016027cb30668568fbb90ab8b5889",
-      "bytes": 45826,
+      "sha256": "f7b1cd295ae0ae33261296ea2d55af26fefc2c7901aeee3fa1822194fb15f774",
+      "bytes": 46582,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/One Hand Sword.json": {
-      "sha256": "2c549776ab6962ac8dad68f61f82edf1290f5eb4a3fb4d0233691834117b76a2",
-      "bytes": 52542,
+      "sha256": "4e02cf369542102bee687d753b7928bb91e5c77ea1464a233cfab599036f4203",
+      "bytes": 53406,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/PantheonSoul.json": {
-      "sha256": "cb9cdaa63daef17c6e52a0dcf6a40fa016fdfe756f105ec96ca5e598852c6245",
-      "bytes": 27996,
+      "sha256": "920b9ed5a95197560c1291c5484f337263c8ed62b2d465ad639ea8e3a5f552a1",
+      "bytes": 28536,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/QuestItem.json": {
-      "sha256": "fea7c888b900523be62d8cc74c622f58a27fdae7607b10f1e94f18e3cb6e4e7f",
-      "bytes": 386830,
+      "sha256": "09dbda7f830d32d9badb4c364988fafe9a8007239b29579415cb77077b994199",
+      "bytes": 394444,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Quiver.json": {
-      "sha256": "e6f0ee097a9438b243cfa3c7edf3cb388d45994482eda01f7b3983dd5ff3f79b",
-      "bytes": 40534,
+      "sha256": "dd33e7601c0bccc2ac349cf40fc1b6b11d1d13acee1070fabed5a8be3ff31bd8",
+      "bytes": 41317,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Relic.json": {
-      "sha256": "2adc51de3601674c2420cbb283bd677a85a6fbb0db05a1ac246193870aec94b2",
-      "bytes": 19055,
+      "sha256": "0a450de6e39c83fd50cc77866342c0c88d73bc119092e266616b5cdbe211bf31",
+      "bytes": 19433,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/RemovedItem.json": {
-      "sha256": "388f8a57de807972a6b074af5ef4c231f725f0b62b9dd6b9073f92fffe6c9006",
-      "bytes": 26286,
+      "sha256": "3d13064257dcfdecf59a85c0a55ace09e9e9bbbde881aa33c41aa007231b6789",
+      "bytes": 26772,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Ring.json": {
-      "sha256": "f783ee415a00ab4db811b5d23c73b5f5acf23b0dc0bca9cb4296d5d1d6e190c0",
-      "bytes": 67719,
+      "sha256": "5bd92c567a02a044ec900d76071972eb779478f7e38226bb3684d4f945b64f3b",
+      "bytes": 69042,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Rune Dagger.json": {
-      "sha256": "54f9089e4cf0ab7e1a17be1ac2052c77bc454c9bee89707b5c701436ccbe1372",
-      "bytes": 29030,
+      "sha256": "04ae37f587a554d0463cca7569f0abe711cec969f350a850cb28dd629726e2e2",
+      "bytes": 29516,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/SanctumSpecialRelic.json": {
-      "sha256": "973a42df380d6489985afa82636fadbfd337f8490e12da8eba07d6dc70639e96",
-      "bytes": 4175,
+      "sha256": "7688295e0fa95e3e900ba34894e110aca0f8ea9178d576864056f1f0fc8ac771",
+      "bytes": 4256,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Sceptre.json": {
-      "sha256": "2762cfb70a6e3f79c64a4d983494e01156dcb196f2faeb1f37d1ddf070f12bd0",
-      "bytes": 45845,
+      "sha256": "57785b5c711bd4f1eccd58e28da97e11054efb7b9ceafe9f3ec42c3c92fe60ae",
+      "bytes": 46601,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/SentinelDrone.json": {
-      "sha256": "0434c4b3fc9207fff6c06846a8208ac262982bfa3aeff2fef29f1801cf58ee1d",
-      "bytes": 38416,
+      "sha256": "196ae1d153b45ba5ee38ea312f2a2803758e90a0e7ab5a09266318dd63d4b28a",
+      "bytes": 39118,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Shield.json": {
-      "sha256": "25c47fa3ac5d9e2e669d0acd8ae411b9ebdca2bf1b2f2b48d438b38fafa06e83",
-      "bytes": 158881,
+      "sha256": "b8348689bbd0187799c7c3768b38e3e44150d09005bd71e0f308f63e612081d1",
+      "bytes": 161527,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/StackableCurrency.json": {
-      "sha256": "884c4a1e9a077a43e2860c076ca46812e043ab425fbe71c77866153de0d0a888",
-      "bytes": 1597814,
+      "sha256": "45d910a3ea712827cb57d0e7bc2d800a5b761ca825ac7308371de2f452bc8586",
+      "bytes": 1627055,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Staff.json": {
-      "sha256": "ceb71275888f7d215d24fb630c456c32d16b48b747c073840ea293a9b8310d07",
-      "bytes": 25665,
+      "sha256": "95c2f694cf90daaa52fc9fbc0748ebcc7636146bcfde1928465cf70da5155e61",
+      "bytes": 26097,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Support Skill Gem.json": {
-      "sha256": "14d2d6914229974fda7bd11860399d35808d4973409131ed55027e0a573ad695",
-      "bytes": 441292,
+      "sha256": "457ce3cdbba2bb05a8710b36fdbbebf6b43f6a42e46ec576c94938e02d2adfbe",
+      "bytes": 449743,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Thrusting One Hand Sword.json": {
-      "sha256": "e4c585d21cdf59a3776674848ad4e1fe329a18ef284412b04ff5b037ceb6ae69",
-      "bytes": 41397,
+      "sha256": "f902f35765e6d48147d535009151c79aa2da6368d1d84c837dc621e231e72dc3",
+      "bytes": 42072,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Tincture.json": {
-      "sha256": "82a7b1f0dd0e741247b465e372dfe0c2d25f9277f4153c5f0ece1acb34e886f2",
-      "bytes": 24832,
+      "sha256": "1448474242257cb25e4abc1f10ceff32f06de8d125ee29a9be29efa5416b044b",
+      "bytes": 25318,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Trinket.json": {
-      "sha256": "75c64da815c8258f7d4b842a0735a415e5b0e39dde978a1e4b0f6a92868540d2",
-      "bytes": 1350,
+      "sha256": "e86d4613f208f6a8e8e1b35f6736dd7e46e0f752537892f2238df9fc4b1afb3f",
+      "bytes": 1377,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Two Hand Axe.json": {
-      "sha256": "74099971b1c3ddbed27721b947dc69fe64d7a225a73be6c1e6bc44058a9a9e0f",
-      "bytes": 39876,
+      "sha256": "bb6e963f91d0656eaea0fe6c95502d9eb34b5ede8df56268c2f5534787e0c66b",
+      "bytes": 40551,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Two Hand Mace.json": {
-      "sha256": "276884e5d30f341ca9708191362495206d1373a89591d019f64f3b75610ceaae",
-      "bytes": 40816,
+      "sha256": "c3722e5a3055296e154aa219425bab2cce4065c8b137b58022f91bdfa3c34c4a",
+      "bytes": 41491,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Two Hand Sword.json": {
-      "sha256": "cd08fc9410f60340b610284e8ca8052efc9eb5f1656b0e61f7139e6e1da0e532",
-      "bytes": 44479,
+      "sha256": "e80f61888f6a8c7859d0b1b8c2f2c898ba0e926b1e8a1b60151935b8ef786855",
+      "bytes": 45208,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/UniqueFragment.json": {
-      "sha256": "f6ce14a7b090710c81a70678e9560314a8506eea9c769f8ebe88a39b2db47497",
-      "bytes": 36339,
+      "sha256": "dad68515bd10d9c751b36c6e6a086bb06a10af3a5c5163acfc88fed12e63c481",
+      "bytes": 37041,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/UtilityFlask.json": {
-      "sha256": "6d30ae02a5dcbe92d752bf91316bfdff649f5165eedb496899b0bab907bea5f2",
-      "bytes": 26891,
+      "sha256": "d5fe4091ea11df8161802172f38c040c4432f80ad6e42651130ff5bc228fe651",
+      "bytes": 27377,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/VaultKey.json": {
-      "sha256": "c0a57ae736bb73e1e191e14eea6dfb010864f5c53d4be4a952ea75b5811b8f01",
-      "bytes": 20485,
+      "sha256": "9821f6e1678e376b7c2277e97a3b5426035ede82203e8f510bff68a9ef29e378",
+      "bytes": 20890,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Wand.json": {
-      "sha256": "da6c0470996344684f31af84b3f55a54d839b660c6578d6977da68f0b58249b8",
-      "bytes": 47408,
+      "sha256": "90884c9711b6baeaf560ed12c7f79b9048e27fae70cf1cde2d7954e8c1d64a26",
+      "bytes": 48191,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Warstaff.json": {
-      "sha256": "617faebb3058d8c2afbcec530542c9554d2eba6b3d10dcce639e7b9968b5fee6",
-      "bytes": 19672,
+      "sha256": "a142259caf4af6803a5c2789f91cc9cc8f05e83aec9f014b3682df4eed42083e",
+      "bytes": 19996,
       "schema": "json-schema/base_items.schema.json"
     },
     "item_classes.json": {

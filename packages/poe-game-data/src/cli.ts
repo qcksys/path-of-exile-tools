@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { Command, Option, positiveInteger, runCli } from "@poe-tools/cli";
 import { z } from "zod";
 import { gameSchema, loadConfig } from "./config.ts";
+import { exportCraftingData } from "./crafting-data.ts";
 import { exportCraftingRecipes } from "./crafting-recipes.ts";
 import {
     commitDataPackages,
@@ -30,6 +31,21 @@ export function createProgram() {
     const program = new Command()
         .name("extract")
         .description("Extract, package, and inspect PoE client data");
+    program
+        .command("crafting-data")
+        .description("Extract crafting rules and recipes for the packaged client builds")
+        .addOption(gamesOption())
+        .option("--source <path>", "installed client or extracted raw directory")
+        .option("--schema <path>", "saved DAT schema; omit to download")
+        .action(async (options) => {
+            for (const game of selectedGames(options.game))
+                print(
+                    await exportCraftingData(
+                        resolve(packageDirectory, "..", dataPackages[game]),
+                        options,
+                    ),
+                );
+        });
     program
         .command("crafting")
         .description("Export essence and bench recipes for the committed PoE 1 client build")

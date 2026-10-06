@@ -26,6 +26,7 @@
       "life_per_use": null,
       "mana_per_use": null,
       "attack_time": null,
+      "reload_time": null,
       "critical_strike_chance": null,
       "physical_damage_max": null,
       "physical_damage_min": null,

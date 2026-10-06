@@ -41,6 +41,10 @@ export const recombinatorCatalogSchema = z.object({
             .string()
             .regex(/^[a-f0-9]{64}$/)
             .optional(),
+        craftingDataSha256: z
+            .string()
+            .regex(/^[a-f0-9]{64}$/)
+            .optional(),
     }),
     bases: z.array(catalogBaseSchema).min(1),
     mods: z.array(catalogModSchema).min(1),

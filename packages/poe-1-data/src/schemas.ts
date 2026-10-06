@@ -44,6 +44,7 @@ export const propertiesSchema = z.strictObject({
     life_per_use: optionalInteger,
     mana_per_use: optionalInteger,
     attack_time: optionalInteger,
+    reload_time: integer.nonnegative().nullable().default(null),
     critical_strike_chance: optionalInteger,
     physical_damage_max: optionalInteger,
     physical_damage_min: optionalInteger,
@@ -154,6 +155,7 @@ export const dataPackageManifestSchema = z
         dat_schema_sha256: sha256Schema,
         extractor_sha256: sha256Schema,
         zod_schema_sha256: sha256Schema,
+        crafting_data_sha256: sha256Schema.optional(),
         weight_provenance: z.literal(
             "client-extracted; PoE 2 values are not Craft of Exile empirical weights",
         ),
