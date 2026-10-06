@@ -74,8 +74,12 @@ export default function Integrations({ loaderData, actionData }: Route.Component
                 <h1 className="font-heading text-3xl font-bold">Use POE.BOATS from your tools</h1>
                 <p>
                     Explore the same operations used by the planner, market, and calculators.{" "}
+                    <a className="underline" href="/api/docs">
+                        Browse the Scalar API reference
+                    </a>{" "}
+                    or{" "}
                     <a className="underline" href="/api/openapi.json">
-                        Download the OpenAPI contract
+                        download the OpenAPI contract
                     </a>
                     .
                 </p>
