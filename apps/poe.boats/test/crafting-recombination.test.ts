@@ -352,7 +352,7 @@ describe("crafting workbench recombination", () => {
         ).toBe(true);
     });
 
-    it("supports researched opposite-side unveiled crafts and rejects unsupported exclusive combinations", () => {
+    it("supports prepared unveiled crafts on either side and rejects unsupported exclusive combinations", () => {
         const crafts = catalog.crafting.bench.filter(
             (entry) =>
                 entry.mod &&
@@ -383,7 +383,19 @@ describe("crafting workbench recombination", () => {
         expect(calculateExact(engine, left, method(right), target).probability).toBeGreaterThan(
             1 / 3,
         );
-        expect(() => recombinationOutcomes(engine, left, left)).toThrow("exclusive modifier");
+        const sameSide = recombinationOutcomes(engine, left, left);
+        expect(sameSide.reduce((sum, entry) => sum + entry.weight, 0)).toBeCloseTo(1);
+        expect(
+            sameSide.every(
+                (entry) => entry.value.mods.filter((rolled) => rolled.crafted).length <= 1,
+            ),
+        ).toBe(true);
+        const rare = { ...left, rarity: "rare" as const };
+        const extra = engine.pool(rare).find((entry) => entry.mod.generation_type === "prefix")!;
+        const unsupported = engine.addStartingMod(rare, extra.id, seededRandom(42));
+        expect(() => recombinationOutcomes(engine, unsupported, left)).toThrow(
+            "exclusive modifier",
+        );
     });
 
     it("accounts for service and donor costs in conditional calculations and seeded simulation", () => {
