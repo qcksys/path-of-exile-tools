@@ -96,9 +96,11 @@ Connect items or earlier results in up to eight crafting steps. Load example cre
 
 The interactive crafting tree maps all items and steps. Drag a source connector to a step's A or B connector to replace that input, select a step to inspect its outcomes, and pan or zoom to explore larger plans. Connections also stay synchronized with the input dropdowns.
 
-Use identical labels for duplicate modifiers. To prevent different tiers of a modifier appearing together, enter a shared group, such as `T1 life | life` and `T2 life | life`. Toggle the star for exclusive modifiers or the disconnected-plug icon for NNN (non-native natural) modifiers; this updates every copy with the same label. Text entry also accepts `*` for exclusive and `!` for NNN. NNN markers are annotations only: odds assume the modifier is eligible on both bases. Every reference to a step represents a fresh independent run of that recipe, not reuse of a consumed item or retrying until success.
+Use identical labels for duplicate modifiers. To prevent different tiers of a modifier appearing together, enter a shared group, such as `T1 life | life` and `T2 life | life`. Toggle the star for exclusive modifiers or the disconnected-plug icon for NNN (non-native natural) modifiers; this updates every copy with the same label. Text entry also accepts `*` for exclusive and `!` for NNN. Manually marked NNN mods count toward the input pool but are excluded on both bases. Generated mods use the selected output base's eligibility. Every reference to a step represents a fresh independent run of that recipe, not reuse of a consumed item or retrying until success.
 
-The model follows [the linked 3.26 recombinator guide](https://codeberg.org/poe_notes/poe_notes/src/branch/main/Recombinators-dark-images.md) and its [empirical affix-count table](https://www.reddit.com/r/pathofexile/comments/1exyavx/325_updated_guide_to_recombinators/). The two columns that round to 101% are normalized. Individual modifier selection assumes equal weight per input copy because actual selection weights are not established. The isolated one-prefix plus one-suffix case has three equally likely non-empty outcomes. Multiple exclusive modifiers in a pair, fractured/base-restricted modifiers, item-level/base inheritance, and crafting costs are outside the model. Large plans stop with an explicit limit error instead of discarding outcomes.
+Each input can use a generated essence or exclusive bench recipe. Essence preparation normally isolates the forced mod. Enable **Keep input modifiers in prepared donor** to model rolling the essence until the selected natural mods also appear, then annulling unwanted mods. For example, select Flaring and zero to two suffixes on a Despot Axe, choose Screaming Essence of Torment, and enable this option to prepare Flaring plus the NNN spell-lightning prefix. Combined with a Merciless + Dictator's axe, triple-prefix odds are 30.6931%, versus 9.901% without NNN. These odds start after successful preparation; essence tier limits, rolling and annulling costs/chances are not calculated. Select an essence tier capable of rolling the desired mods.
+
+The model follows [the linked 3.26 recombinator guide](https://codeberg.org/poe_notes/poe_notes/src/branch/main/Recombinators-dark-images.md) and its [empirical affix-count table](https://www.reddit.com/r/pathofexile/comments/1exyavx/325_updated_guide_to_recombinators/). The two columns that round to 101% are normalized. Ordinary modifier selection assumes equal weight per input copy. Exclusive-craft estimates use natural spawn weights, craft weight 1,000, and 50/50 affix order. Two one-mod magic items can each have an exclusive craft on the empty affix side, with at most one exclusive surviving. Crafting suffixes onto two single-prefix items keeps the two-prefix success chance at 33%; removing crafted mods after the step is optional. The isolated one-prefix plus one-suffix case has three equally likely non-empty outcomes. Fractures, influences, output item level, new modifiers and crafting costs are outside the model. Large plans stop with an explicit limit error instead of discarding outcomes.
 
 ## Install and validate
 
@@ -118,6 +120,15 @@ Remove-Item Env:APP_ENV
 ```
 
 In a POSIX shell, prefix each command with `APP_ENV=test`. The ready task runs Biome, builds, type checks, and tests. Environment tests cover required credentials, dev/prod selection, and exclusion of 1Password credentials from the runtime configuration. The API client currently has no test cases.
+
+Run the recombinator browser end-to-end tests with:
+
+```sh
+vp exec --filter poe-boats playwright install chromium
+vp run poe-boats#test:e2e:browser
+```
+
+Playwright builds and previews the app on `127.0.0.1:4173` using the inert test environment and checks the generated recipes with the real calculation worker. The tests cover physical axes with essence or bench preparation, suppression transfers, triple ES body armour, triple elemental bows, life/resistance crafts, and multi-step plans. See the [craft coverage and expected probabilities](apps/poe.boats/test/e2e/browser/README.md) for research sources and model assumptions. CI runs the same Chromium suite. Failure screenshots and traces are saved under `apps/poe.boats/test-results/` and uploaded as the `browser-test-results` CI artifact for seven days.
 
 ## Local game data
 
@@ -152,6 +163,17 @@ For local development, install the 1Password CLI, sign in, and enable its deskto
 vp run -r env:check
 vp run dev
 ```
+
+All three packages cache 1Password lookups for one hour when `APP_ENV` is `local` or `dev`. Caching is disabled for the plugin in `test` and `prod`. Varlock's default `auto` mode persists encrypted values when a native encryption backend is available outside CI, or when `_VARLOCK_CACHE_KEY` is supplied; otherwise it uses memory. See the [Varlock caching guide](https://varlock.dev/guides/caching/).
+
+Inspect or clear the shared disk cache from the repository root:
+
+```sh
+vp exec --filter poe-boats varlock cache status
+vp exec --filter poe-boats varlock cache clear --plugin 1password --yes
+```
+
+The cache is shared across projects for the current OS user, so clearing the `1password` plugin also clears its entries for other projects. After changing a dev secret in 1Password, clear the cache before restarting local commands or running `deploy:dev:cf` to synchronize it. For a single fresh environment check without reading or writing the cache, run `vp run -r env:check --skip-cache`.
 
 For OAuth using the configured HTTPS hostname, run from `apps/poe.boats`:
 

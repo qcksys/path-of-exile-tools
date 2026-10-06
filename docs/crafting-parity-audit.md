@@ -412,3 +412,9 @@ The build exports PoE 1 with 1,819 bases and 15,904 modifiers, including the 190
 Live checks used only Portless at `https://poe-boats.localhost`. A 60-Xoph recipe generated a Grasping Mail with two Xoph modifiers. Manual life-effect enchantment selection changed the ordinary life roll from 122 to 131 and life-on-hit from 26 to 28, with no currency charge. Undo/redo restored the corresponding values; a named save and automatic draft retained the enchantment and recipe. A Breach modifier requirement ran 100 worker trials with 74 successes. Calculator-to-process conversion retained the recipe composition; the restart process completed 100 successes in 150 total crafts, with missing recipe prices left unknown. PoE 2 reloaded successfully, exposed no Heist controls and displayed the requested unknown-weight Delirium exclusion. Evidence images are in the ignored `.artifacts/crafting/wiki-exceptions.png` and `.artifacts/crafting/wiki-process.png`.
 
 The agreed source blockers are resolved. Synthesis and random PoE 2 Delirium remain excluded; random Heist odds remain unknown by request. The documented model boundaries remain visible in the workbench.
+
+## Integration with dev, 2026-10-07
+
+The PR branch incorporates dev through `c99c0a0`, including the shared operation registry, HTTP API, MCP tools, browser regressions, Varlock cache settings, and localized affiliation disclaimer. The sole merge conflict was the generated Cloudflare type header; regeneration resolved it and retained the asset binding.
+
+Crafting calculation, simulation and emulation currently run in the browser using the shared domain engine and Web Worker. They are not yet registered in the HTTP/MCP operation catalog introduced on dev while this work was in progress. This remaining surface-parity work is recorded in `apps/poe.boats/docs/surfaces.md`; the PR must not be treated as satisfying that new integration requirement.
