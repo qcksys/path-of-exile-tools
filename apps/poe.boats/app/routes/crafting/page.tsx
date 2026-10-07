@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { AppFooter } from "~/components/app-footer";
 import { AppHeader } from "~/components/app-header";
+import { CraftingProjects } from "~/components/crafting/projects";
 import { CraftingWorkbench } from "~/components/crafting/workbench";
 import { Button } from "~/components/ui/button";
 import { useStorageState } from "~/hooks/use-storage-state";
-import { type CraftingCatalog, craftingCatalogSchema } from "~/schemas/crafting";
+import type { CraftingCatalog } from "~/schemas/crafting";
 
 const fullscreenKey = "poe-boats:crafting:fullscreen";
 function loadFullscreen() {
@@ -31,26 +32,25 @@ export function CraftingPage({ game }: { game: "poe1" | "poe2" }) {
     const [fullscreen, setFullscreen] = useStorageState(loadFullscreen, saveFullscreen, false);
     const fullscreenButton = useRef<HTMLButtonElement>(null);
     useEffect(() => {
-        const controller = new AbortController();
+        const loader = new Worker(
+            new URL("../../lib/crafting-catalog.worker.ts", import.meta.url),
+            { type: "module" },
+        );
+        setCatalog(undefined);
         setError("");
-        async function load() {
-            try {
-                const response = await fetch(`/game-data/crafting-${game}.json`, {
-                    signal: controller.signal,
-                    cache: attempt ? "reload" : "no-cache",
-                });
-                if (!response.ok) throw new Error(`Catalog request failed (${response.status}).`);
-                const data = craftingCatalogSchema.parse(await response.json());
-                if (data.game !== game || data.crafting.patch !== data.patch)
-                    throw new Error("The crafting catalog has inconsistent build information.");
-                if (!controller.signal.aborted) setCatalog(data);
-            } catch (error) {
-                if (!controller.signal.aborted)
-                    setError(error instanceof Error ? error.message : String(error));
-            }
-        }
-        void load();
-        return () => controller.abort();
+        loader.onmessage = ({
+            data,
+        }: MessageEvent<{ catalog?: CraftingCatalog; error?: string }>) => {
+            if (data.catalog) setCatalog(data.catalog);
+            else setError(data.error ?? "The crafting catalog could not be loaded.");
+            loader.terminate();
+        };
+        loader.onerror = (event) => {
+            setError(event.message || "The crafting catalog worker could not be started.");
+            loader.terminate();
+        };
+        loader.postMessage({ game, reload: attempt > 0 });
+        return () => loader.terminate();
     }, [game, attempt]);
     return (
         // biome-ignore lint/a11y/noStaticElementInteractions: This page handles Escape after interactive descendants have handled it.
@@ -89,12 +89,14 @@ export function CraftingPage({ game }: { game: "poe1" | "poe2" }) {
                         {fullscreen ? "Exit fullscreen" : "Fullscreen"}
                     </Button>
                 </div>
-                {!["calculate", "simulate", "emulate"].includes(mode) ? (
+                {!["calculate", "simulate", "emulate", "projects"].includes(mode) ? (
                     <p>
                         Unknown crafting mode.{" "}
                         <Link to={`/${game === "poe1" ? 1 : 2}/crafting`}>Open the calculator</Link>
                         .
                     </p>
+                ) : catalog && mode === "projects" ? (
+                    <CraftingProjects key={catalog.game} catalog={catalog} />
                 ) : catalog ? (
                     <CraftingWorkbench
                         key={`${catalog.game}:${catalog.patch}`}

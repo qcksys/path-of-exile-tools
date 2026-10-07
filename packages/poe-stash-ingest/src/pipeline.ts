@@ -2,6 +2,7 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import type { PoeApiClient } from "@poe-tools/api-client";
 import { ingestCx } from "#src/cx/ingest.ts";
 import { rollupCx } from "#src/cx/rollup.ts";
+import { rollupEquipment } from "#src/ps/equipment-rollup.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
 import { rollupPs } from "#src/ps/rollup.ts";
 import { REALM } from "#src/shared/auth.ts";
@@ -30,6 +31,10 @@ export async function flushRollups(
             SELECT DISTINCT 'cxapi', l.league, l.observed_hour FROM cx_market_hour l
             LEFT JOIN rollup_state r ON r.stream_name = 'cxapi' AND r.league = l.league AND r.hour = l.observed_hour
             WHERE r.pushed_at IS NULL
+            UNION ALL
+            SELECT DISTINCT 'equipment', l.league, l.hour FROM ps_equipment_cohort_hour l
+            LEFT JOIN rollup_state r ON r.stream_name = 'equipment' AND r.league = l.league AND r.hour = l.hour
+            WHERE r.pushed_at IS NULL OR l.changed_at > r.pushed_at
         ) SELECT * FROM dirty
         WHERE hour < epoch(date_trunc('hour', current_timestamp)) AND ($1 IS NULL OR league = $1)
         ORDER BY hour, stream, league LIMIT $2`,
@@ -37,7 +42,12 @@ export async function flushRollups(
     );
     let rows = 0;
     for (const entry of pending) {
-        const rollup = entry.stream === "psapi" ? rollupPs : rollupCx;
+        const rollup =
+            entry.stream === "psapi"
+                ? rollupPs
+                : entry.stream === "equipment"
+                  ? rollupEquipment
+                  : rollupCx;
         rows += (
             await rollup(conn, {
                 hour: Number(entry.hour),
@@ -57,14 +67,18 @@ export async function runPipeline(
         league?: string | null;
         cursor?: string;
         currency?: boolean;
+        observedAt?: Date;
     },
 ) {
     await configureSource(conn, REALM ?? "pc", opts.league ?? null);
     const errors: unknown[] = [];
-    const stash = await ingestPs(conn, client, opts).catch((error: unknown) => {
-        errors.push(error);
-        return null;
-    });
+    const stash =
+        REALM === "poe2"
+            ? null
+            : await ingestPs(conn, client, opts).catch((error: unknown) => {
+                  errors.push(error);
+                  return null;
+              });
     const currency =
         opts.currency === false
             ? []

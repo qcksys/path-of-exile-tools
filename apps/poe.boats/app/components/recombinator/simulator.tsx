@@ -8,6 +8,8 @@ import {
     ModifierLegend,
 } from "~/components/recombinator/modifier-icons";
 import { PreparationEditor } from "~/components/recombinator/preparation-editor";
+import { SendInputToCrafting } from "~/components/recombinator/send-input-to-crafting";
+import { SendPlanToCrafting } from "~/components/recombinator/send-plan-to-crafting";
 import {
     Accordion,
     AccordionContent,
@@ -275,6 +277,16 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                     <RotateCcw data-icon="inline-start" />
                     Load example
                 </Button>
+                {catalog && (
+                    <SendPlanToCrafting
+                        catalog={catalog}
+                        draft={draft}
+                        finalStep={selectedStep}
+                        required={required}
+                        exact={exact}
+                        requiredBase={requiredBase}
+                    />
+                )}
             </div>
 
             <Alert role="note">
@@ -607,6 +619,9 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                 </AccordionContent>
                                             </AccordionItem>
                                         </Accordion>
+                                        {catalog && (
+                                            <SendInputToCrafting entry={entry} catalog={catalog} />
+                                        )}
                                     </CardContent>
                                 </Card>
                             ))}

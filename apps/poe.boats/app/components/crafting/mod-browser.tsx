@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import { eldritchFamilyKey, eldritchLabel } from "~/lib/crafting-eldritch";
 import { type CraftingEngine, eldritchTier } from "~/lib/crafting-engine";
 import { graspingMailBase, graspingPool } from "~/lib/crafting-grasping";
+import { incursionModifierPool } from "~/lib/crafting-incursion";
 import { modifierLevelText, modifierTiers } from "~/lib/crafting-modifier-details";
 import { omenEffects } from "~/lib/crafting-omens";
 import { replaceTarget, targetEntries } from "~/lib/crafting-targets";
@@ -62,7 +63,9 @@ export function ModBrowser({
     const source =
         (selectedSource.startsWith("influence:") && !selectedInfluence) ||
         (selectedSource === "breach" &&
-            (engine.catalog.game !== "poe1" || engine.base(item).item_class !== "Body Armour"))
+            (engine.catalog.game !== "poe1" || engine.base(item).item_class !== "Body Armour")) ||
+        (selectedSource === "incursion" &&
+            (engine.catalog.game !== "poe1" || engine.base(item).item_class !== "Gloves"))
             ? "natural"
             : selectedSource;
     const influence = selectedInfluence?.influence;
@@ -120,79 +123,86 @@ export function ModBrowser({
                             }
                           : { memoryStrands: item.unidentified ? item.memoryStrands : undefined },
                   )
-                : source === "breach"
-                  ? graspingPool(
-                        engine.catalog,
-                        { ...item, baseId: graspingMailBase, mods: [] },
-                        "legacy",
-                    )
-                  : source === "natural" && method.kind === "genesis"
-                    ? engine.genesisModifiers(item, method.nodes)
-                    : source === "ukatoa"
-                      ? engine.ukatoaModifiers(item)
-                      : source === "attribute"
-                        ? engine.attributeModifiers(item)
-                        : ducatSource
-                          ? engine.ducatPool(
-                                {
-                                    ...item,
-                                    rarity: engine.base(item).rarities.includes("rare")
-                                        ? "rare"
-                                        : "magic",
-                                    mods: [],
-                                },
-                                source,
-                            )
-                          : source === "bench" ||
-                              source === "essence" ||
-                              source === "aspect" ||
-                              source === "emotion"
-                            ? engine.recipePool(item, source)
-                            : source === "corrupted-essence"
-                              ? engine.corruptedEssencePool(
-                                    { ...item, mods: item.mods.filter((entry) => entry.fractured) },
-                                    method.kind === "fossils"
-                                        ? {
-                                              fossils: method.ids,
-                                              logic: method.logic,
-                                              tangled: method.tangled,
-                                          }
-                                        : {},
-                                )
-                              : source === "eldritch"
-                                ? engine.eldritchModifiers(item)
-                                : source === "gilded"
-                                  ? engine.gildedModifiers(item)
-                                  : source === "corrupted"
-                                    ? engine.corruptedModifiers(item)
-                                    : source === "revealed"
-                                      ? item.reveal
-                                          ? engine.revealPool(item)
-                                          : (revealPreview?.pool ?? [])
-                                      : engine.pool(
-                                            {
-                                                ...item,
-                                                rarity: engine.base(item).rarities.includes("rare")
-                                                    ? "rare"
-                                                    : "magic",
-                                                mods: [],
-                                            },
-                                            method.kind === "fossils"
-                                                ? {
-                                                      fossils: method.ids,
-                                                      logic: method.logic,
-                                                      tangled: method.tangled,
-                                                  }
-                                                : {
-                                                      memoryStrands: item.unidentified
-                                                          ? item.memoryStrands
-                                                          : undefined,
-                                                      catalysing: omenEffects(
-                                                          engine.catalog,
-                                                          method,
-                                                      ).catalysing,
-                                                  },
-                                        ),
+                : source === "incursion"
+                  ? incursionModifierPool(engine.catalog, item)
+                  : source === "breach"
+                    ? graspingPool(
+                          engine.catalog,
+                          { ...item, baseId: graspingMailBase, mods: [] },
+                          "legacy",
+                      )
+                    : source === "natural" && method.kind === "genesis"
+                      ? engine.genesisModifiers(item, method.nodes)
+                      : source === "ukatoa"
+                        ? engine.ukatoaModifiers(item)
+                        : source === "attribute"
+                          ? engine.attributeModifiers(item)
+                          : ducatSource
+                            ? engine.ducatPool(
+                                  {
+                                      ...item,
+                                      rarity: engine.base(item).rarities.includes("rare")
+                                          ? "rare"
+                                          : "magic",
+                                      mods: [],
+                                  },
+                                  source,
+                              )
+                            : source === "bench" ||
+                                source === "essence" ||
+                                source === "aspect" ||
+                                source === "emotion"
+                              ? engine.recipePool(item, source)
+                              : source === "corrupted-essence"
+                                ? engine.corruptedEssencePool(
+                                      {
+                                          ...item,
+                                          mods: item.mods.filter((entry) => entry.fractured),
+                                      },
+                                      method.kind === "fossils"
+                                          ? {
+                                                fossils: method.ids,
+                                                logic: method.logic,
+                                                tangled: method.tangled,
+                                            }
+                                          : {},
+                                  )
+                                : source === "eldritch"
+                                  ? engine.eldritchModifiers(item)
+                                  : source === "gilded"
+                                    ? engine.gildedModifiers(item)
+                                    : source === "corrupted"
+                                      ? engine.corruptedModifiers(item)
+                                      : source === "revealed"
+                                        ? item.reveal
+                                            ? engine.revealPool(item)
+                                            : (revealPreview?.pool ?? [])
+                                        : engine.pool(
+                                              {
+                                                  ...item,
+                                                  rarity: engine
+                                                      .base(item)
+                                                      .rarities.includes("rare")
+                                                      ? "rare"
+                                                      : "magic",
+                                                  mods: [],
+                                              },
+                                              method.kind === "fossils"
+                                                  ? {
+                                                        fossils: method.ids,
+                                                        logic: method.logic,
+                                                        tangled: method.tangled,
+                                                    }
+                                                  : {
+                                                        memoryStrands: item.unidentified
+                                                            ? item.memoryStrands
+                                                            : undefined,
+                                                        catalysing: omenEffects(
+                                                            engine.catalog,
+                                                            method,
+                                                        ).catalysing,
+                                                    },
+                                          ),
         [engine, item, method, source, ducatSource, influence, revealPreview],
     );
     const pool =
@@ -327,6 +337,12 @@ export function ModBrowser({
                             </option>
                         ))}
                         <option value="essence">Essence guarantees</option>
+                        {engine.catalog.game === "poe1" &&
+                            engine.base(item).item_class === "Gloves" && (
+                                <option value="incursion">
+                                    Incursion glove suffixes (prepared items)
+                                </option>
+                            )}
                         {engine.catalog.game === "poe2" ? (
                             <option value="emotion">Liquid Emotion guarantees</option>
                         ) : null}

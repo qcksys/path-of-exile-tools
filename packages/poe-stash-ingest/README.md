@@ -9,6 +9,116 @@ The local DuckDB file is the _transient_ hot store — bulk-write friendly, OLAP
 
 ## Setup
 
+### Docker Compose (local pipeline)
+
+The repository's `compose.yaml` runs one ingestion worker with a persistent DuckDB volume.
+It includes both stash and exchange ingestion and retries pending summary deliveries. Install
+Docker with Compose v2.24 or newer, complete the repository's 1Password environment setup,
+then run from the repository root:
+
+```powershell
+$env:APP_ENV = "dev"
+$env:VARLOCK_TELEMETRY_DISABLED = "1"
+$env:INGEST_LEAGUE = "Allflame"
+$env:COMPOSE_PROJECT_NAME = "poe-allflame-pc"
+vp run '@poe-tools/stash-ingest#docker:up'
+docker compose logs -f ingest
+```
+
+Varlock resolves the existing environment-specific credentials on the host. Compose mounts
+the client secret and ingest token under `/run/secrets`; neither is copied into the image or
+included in command arguments. Only package source files and manifests enter the build context.
+Local and development configuration uses Varlock's encrypted disk cache with a 12-hour lifetime
+for resolved 1Password values, shared across subsequent command invocations. The app and tracker
+use the same policy. A cache miss still needs authorization; new references, explicit cache clearing
+or `--skip-cache` can require another request before the other entries expire. Production caching
+remains disabled. Running `op whoami` directly does not test this cache; Varlock can reuse cached
+values without an authenticated CLI session.
+The container runs as the unprivileged `node` user and reads its credentials before validating
+the environment. `POE_BOATS_INGEST_URL` selects the receiving app; for an app on the host use
+`host.docker.internal` in that URL. No database port is exposed.
+
+Set `INGEST_PAGES` to change the pages per cycle (default 50), or `INGEST_CURRENCY=false` to
+disable exchange ingestion. The default league is `all`. Use a distinct `COMPOSE_PROJECT_NAME`
+for each realm and season so its volume and cursors remain separate. Never scale the worker or
+run a second CLI process against its DuckDB file. DuckDB rejects concurrent writers.
+
+```powershell
+docker compose ps
+docker compose stop ingest
+docker compose start ingest
+docker compose down
+```
+
+`stop` allows the active cycle to finish and closes DuckDB; `start` resumes committed cursors.
+`down` removes containers and leaves the named volume intact. `down --volumes` deletes that
+local history and should only be used when deliberately discarding it. Remote chart history is
+not deleted by either command. Health reflects the last completed cycle; a failed stage or no
+completion in ten minutes makes the worker unhealthy. Logs identify the failed stage and the
+watch loop retries it. Docker's restart policy restarts a crashed process, not an unhealthy one.
+
+To seed a recent cursor on an empty volume, stop the worker, then run a one-off command with
+the same host credentials (`varlock run` from this package directory):
+
+```powershell
+vp exec varlock run -- docker compose -f ../../compose.yaml run --rm ingest cursor --set <cursor>
+```
+
+For a PoE 2 worker, set `POE_REALM=poe2` and use a separate Compose project/volume. The processing
+loop captures currency exchange data only. Equipment prices remain manual; direct public-stash
+ingestion refuses the unsupported realm.
+Exchange requests use GGG's public CDN and do not send the OAuth token. The worker still validates
+the shared environment configuration; stash requests use the configured OAuth credentials.
+
+### Offline Compose replay
+
+This profile requires no credentials and disables external networking. A local HTTP fixture
+server feeds 8,400 synthetic item observations through the API client, DuckDB ingestion,
+update/removal handling, and unique, equipment and currency summary delivery. It checks 3,000
+retained unique listings, 2,400 active unique listings, the updated median price, and the cursor
+after reopening the database. Another 3,000 equipment observations cover early league and day 21,
+with separate any-link/six-link cohorts, seller counts, prices and immutable cohort definitions.
+The receiver is an in-process fixture, not the app's MySQL integration test.
+
+```powershell
+docker compose -p poe-ingest-replay --profile replay up --build --abort-on-container-exit --exit-code-from replay replay
+docker compose -p poe-ingest-replay --profile replay up --abort-on-container-exit --exit-code-from replay replay
+docker compose -p poe-ingest-replay --profile replay down
+```
+
+The second invocation verifies that the first invocation's cursor survives container restart
+(`resumed: true`). The replay volume is separate from the live worker volume. Fixtures cover
+current-hour unique observations, two equipment observation hours 21 days apart, and the saved
+exchange hour (initially the previous completed hour). The saved-hour check also works when the
+container restarts on a later day; fixtures make no claim about upstream historical availability. Process-cost integration
+with these histories remains tracked in the
+[crafting project design](../../docs/crafting-project-design.md).
+
+### Read-only public-stash metadata check
+
+To check which modifier fields the live PoE 1 feed supplies, run from the repository root:
+
+```powershell
+$env:APP_ENV = "dev"
+$env:VARLOCK_TELEMETRY_DISABLED = "1"
+vp run '@poe-tools/stash-ingest#ps' inspect --pages 1
+```
+
+This uses the existing credential references and reads at most five pages. It does not open DuckDB,
+advance saved ingestion cursors, store raw responses or deliver summaries. Reports count string rows,
+object rows and rows containing name/tier/level metadata, with at most three sanitized examples per
+page. Account names, stash names, listing IDs, notes, icons and unrelated nested fields are omitted.
+The returned pagination cursor can be supplied with `--cursor <id>`; omitting it begins at the oldest
+available page, not necessarily recent listings. An empty page ends inspection. Results establish
+coverage only for the inspected sample, not all listings or exact canonical modifier resolution.
+
+The command also works as `inspect --pages 1` on the Compose ingest service with the existing host
+credential setup. It requires authenticated access to the public-stash API and refuses the PoE 2
+realm. If credential resolution reports an authorization timeout, unlock 1Password and allow its
+connection request before retrying; do not paste credentials into the command or diagnostic output.
+
+### Host execution
+
 ```bash
 vp install
 vp run env:check
@@ -130,6 +240,15 @@ cx is already hourly; rollup is a passthrough that POSTs cached `cx_market_hour`
 Each source response and its cursor are committed in one transaction. Public stash rollups use hourly observations, so later price changes and unlisting events do not rewrite earlier hours. These are counts of listings observed during the hour, rather than a census of all active listings.
 
 Pruning applies the row target to eligible removed listings in `ps_listing`. It also deletes hourly observations older than `keepDays` once delivered and no longer needed for sale corrections. Active, pending and unresolved observations remain available for replay and can exceed the row target.
+
+Equipment has separate current state, hourly observations and delivery markers. The same prune
+command applies the row target independently to its eligible removed listings, retaining active and
+undelivered observations, including source hours needed by unacknowledged trailing 6/24-hour summaries.
+Full delivered hours are removed together so a later rollup cannot replace permanent history with
+partial or empty prices. Equipment rollups preserve hourly prices and add exact wider medians over
+deduplicated observations; source gaps prevent widening and historical corrections dirty dependent
+windows. Observed cohort definitions remain stored. See the
+[equipment cohort policy](../poe-market/README.md) for capture selection and confidence semantics.
 
 ## Remote schema (poe.boats — MySQL, prefixed `qsPoeBoats__stash_`)
 

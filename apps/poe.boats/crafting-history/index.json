@@ -1,0 +1,392 @@
+{
+    "format": 1,
+    "revisions": [
+        {
+            "era": "3.29",
+            "revision": "r1",
+            "engine": "crafting-graph-1",
+            "patch": "3.29.3.3",
+            "manifestSha256": "26d7c39c8a6e2f73d34fd3fc91b595223d7e31818305c45ee3573bde8dd3e8c5",
+            "craftingSha256": "5dac6135acc38d7886f18c91deddac716ecb61a8b90f0309a194a75d0021facf",
+            "format": 1,
+            "game": "poe1",
+            "label": "PoE 1 3.29",
+            "notes": "Initial retained graph model. Recombination currently supports natural, Breach and unveiled crafted modifiers; broader non-native transfers remain pending.",
+            "publishedAt": "2026-10-06T19:37:32.918Z",
+            "catalog": {
+                "sha256": "18a55afea42bdf76cf84140bcbc342cfe6c0b22a477063005d12fad4c04f475d",
+                "bytes": 16966636
+            },
+            "implementation": {
+                "sha256": "296f9f16b2e0d52352368ef18c220fc5926eb89ec0f360aef0456c191efbd8b1",
+                "bytes": 368142
+            },
+            "availability": {
+                "kinds": [
+                    "generate",
+                    "recombine",
+                    "currency",
+                    "essence",
+                    "bench",
+                    "locus",
+                    "anoint",
+                    "fossils",
+                    "harvest",
+                    "beast",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": true
+            }
+        },
+        {
+            "era": "client-4.5",
+            "revision": "r1",
+            "engine": "crafting-graph-1",
+            "patch": "4.5.5.4",
+            "manifestSha256": "a2584927d6f0b9b20a775d4ce2735ff58a1ba44f43ded144e16e325fee1b9296",
+            "craftingSha256": "9788dd268fc1b330d60f9ef85f30d5dfa38ae2e65066e48b1ab4d095f9f68ed1",
+            "format": 1,
+            "game": "poe2",
+            "label": "PoE 2 (client 4.5)",
+            "notes": "Initial retained graph model. Equipment prices are supplied manually; the era label refers to the extracted client build.",
+            "publishedAt": "2026-10-06T19:37:33.441Z",
+            "catalog": {
+                "sha256": "65d9fcea10d6ca3d9b1b450dc28764021a9aedad153d1687ea4f272dff5fcd7a",
+                "bytes": 7949181
+            },
+            "implementation": {
+                "sha256": "296f9f16b2e0d52352368ef18c220fc5926eb89ec0f360aef0456c191efbd8b1",
+                "bytes": 368142
+            },
+            "availability": {
+                "kinds": [
+                    "genesis",
+                    "generate",
+                    "socket_jewel",
+                    "remove_jewel",
+                    "currency",
+                    "essence",
+                    "augment",
+                    "upgrade_augment",
+                    "anoint",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": false
+            }
+        },
+        {
+            "era": "3.29",
+            "revision": "r2",
+            "engine": "crafting-graph-2",
+            "patch": "3.29.3.3",
+            "manifestSha256": "26d7c39c8a6e2f73d34fd3fc91b595223d7e31818305c45ee3573bde8dd3e8c5",
+            "craftingSha256": "5dac6135acc38d7886f18c91deddac716ecb61a8b90f0309a194a75d0021facf",
+            "format": 1,
+            "game": "poe1",
+            "label": "PoE 1 3.29",
+            "notes": "Initial retained graph model. Recombination currently supports natural, Breach and unveiled crafted modifiers; broader non-native transfers remain pending.",
+            "publishedAt": "2026-10-06T19:52:13.571Z",
+            "catalog": {
+                "sha256": "18a55afea42bdf76cf84140bcbc342cfe6c0b22a477063005d12fad4c04f475d",
+                "bytes": 16966636
+            },
+            "implementation": {
+                "sha256": "b57317f7f65b2ea389c23aceccb86932e9e7d431793467b11f8b88a145a7e802",
+                "bytes": 368142
+            },
+            "availability": {
+                "kinds": [
+                    "generate",
+                    "recombine",
+                    "currency",
+                    "essence",
+                    "bench",
+                    "locus",
+                    "anoint",
+                    "fossils",
+                    "harvest",
+                    "beast",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": true
+            }
+        },
+        {
+            "era": "client-4.5",
+            "revision": "r2",
+            "engine": "crafting-graph-2",
+            "patch": "4.5.5.4",
+            "manifestSha256": "a2584927d6f0b9b20a775d4ce2735ff58a1ba44f43ded144e16e325fee1b9296",
+            "craftingSha256": "9788dd268fc1b330d60f9ef85f30d5dfa38ae2e65066e48b1ab4d095f9f68ed1",
+            "format": 1,
+            "game": "poe2",
+            "label": "PoE 2 (client 4.5)",
+            "notes": "Initial retained graph model. Equipment prices are supplied manually; the era label refers to the extracted client build.",
+            "publishedAt": "2026-10-06T19:52:14.024Z",
+            "catalog": {
+                "sha256": "65d9fcea10d6ca3d9b1b450dc28764021a9aedad153d1687ea4f272dff5fcd7a",
+                "bytes": 7949181
+            },
+            "implementation": {
+                "sha256": "b57317f7f65b2ea389c23aceccb86932e9e7d431793467b11f8b88a145a7e802",
+                "bytes": 368142
+            },
+            "availability": {
+                "kinds": [
+                    "genesis",
+                    "generate",
+                    "socket_jewel",
+                    "remove_jewel",
+                    "currency",
+                    "essence",
+                    "augment",
+                    "upgrade_augment",
+                    "anoint",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": false
+            }
+        },
+        {
+            "era": "3.29",
+            "revision": "r3",
+            "engine": "crafting-graph-3",
+            "patch": "3.29.3.3",
+            "manifestSha256": "26d7c39c8a6e2f73d34fd3fc91b595223d7e31818305c45ee3573bde8dd3e8c5",
+            "craftingSha256": "5dac6135acc38d7886f18c91deddac716ecb61a8b90f0309a194a75d0021facf",
+            "format": 1,
+            "game": "poe1",
+            "label": "PoE 1 3.29",
+            "notes": "Adds extracted natural essence NNN transfers and distinguishes essence-exclusive modifiers. Preserves the existing empirical affix-count and selection model; unsupported exclusive combinations remain explicit errors.",
+            "publishedAt": "2026-10-06T21:08:57.430Z",
+            "catalog": {
+                "sha256": "18a55afea42bdf76cf84140bcbc342cfe6c0b22a477063005d12fad4c04f475d",
+                "bytes": 16966636
+            },
+            "implementation": {
+                "sha256": "04c86b667516300ef56642d9e6c220a76e4c9be0a5c363e4b93fc263c26c7d1f",
+                "bytes": 368411
+            },
+            "availability": {
+                "kinds": [
+                    "generate",
+                    "recombine",
+                    "currency",
+                    "essence",
+                    "bench",
+                    "locus",
+                    "anoint",
+                    "fossils",
+                    "harvest",
+                    "beast",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": true
+            }
+        },
+        {
+            "era": "client-4.5",
+            "revision": "r3",
+            "engine": "crafting-graph-3",
+            "patch": "4.5.5.4",
+            "manifestSha256": "a2584927d6f0b9b20a775d4ce2735ff58a1ba44f43ded144e16e325fee1b9296",
+            "craftingSha256": "9788dd268fc1b330d60f9ef85f30d5dfa38ae2e65066e48b1ab4d095f9f68ed1",
+            "format": 1,
+            "game": "poe2",
+            "label": "PoE 2 (client 4.5)",
+            "notes": "Shared engine publication with PoE 1 NNN support; PoE 2 crafting rules are unchanged. Equipment prices are supplied manually; the era label refers to the extracted client build.",
+            "publishedAt": "2026-10-06T21:08:58.027Z",
+            "catalog": {
+                "sha256": "65d9fcea10d6ca3d9b1b450dc28764021a9aedad153d1687ea4f272dff5fcd7a",
+                "bytes": 7949181
+            },
+            "implementation": {
+                "sha256": "04c86b667516300ef56642d9e6c220a76e4c9be0a5c363e4b93fc263c26c7d1f",
+                "bytes": 368411
+            },
+            "availability": {
+                "kinds": [
+                    "genesis",
+                    "generate",
+                    "socket_jewel",
+                    "remove_jewel",
+                    "currency",
+                    "essence",
+                    "augment",
+                    "upgrade_augment",
+                    "anoint",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": false
+            }
+        },
+        {
+            "era": "3.29",
+            "revision": "r4",
+            "engine": "crafting-graph-4",
+            "patch": "3.29.3.3",
+            "manifestSha256": "26d7c39c8a6e2f73d34fd3fc91b595223d7e31818305c45ee3573bde8dd3e8c5",
+            "craftingSha256": "5dac6135acc38d7886f18c91deddac716ecb61a8b90f0309a194a75d0021facf",
+            "format": 1,
+            "game": "poe1",
+            "label": "PoE 1 3.29",
+            "notes": "Adds prepared Incursion glove suffixes and their exclusive recombination behavior. Preserves the existing empirical affix-count and selection model; unsupported exclusive combinations remain explicit errors.",
+            "publishedAt": "2026-10-07T00:28:31.454Z",
+            "catalog": {
+                "sha256": "18a55afea42bdf76cf84140bcbc342cfe6c0b22a477063005d12fad4c04f475d",
+                "bytes": 16966636
+            },
+            "implementation": {
+                "sha256": "e7614802f36cc80d556ce55837ca5844e92674f3c76f659dcc10d0ccd0b984c2",
+                "bytes": 369226
+            },
+            "availability": {
+                "kinds": [
+                    "generate",
+                    "recombine",
+                    "currency",
+                    "essence",
+                    "bench",
+                    "locus",
+                    "anoint",
+                    "fossils",
+                    "harvest",
+                    "beast",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": true
+            }
+        },
+        {
+            "era": "client-4.5",
+            "revision": "r4",
+            "engine": "crafting-graph-4",
+            "patch": "4.5.5.4",
+            "manifestSha256": "a2584927d6f0b9b20a775d4ce2735ff58a1ba44f43ded144e16e325fee1b9296",
+            "craftingSha256": "9788dd268fc1b330d60f9ef85f30d5dfa38ae2e65066e48b1ab4d095f9f68ed1",
+            "format": 1,
+            "game": "poe2",
+            "label": "PoE 2 (client 4.5)",
+            "notes": "Shared engine publication with PoE 1 Incursion glove support; PoE 2 crafting rules are unchanged. Equipment prices are supplied manually; the era label refers to the extracted client build.",
+            "publishedAt": "2026-10-07T00:28:31.979Z",
+            "catalog": {
+                "sha256": "65d9fcea10d6ca3d9b1b450dc28764021a9aedad153d1687ea4f272dff5fcd7a",
+                "bytes": 7949181
+            },
+            "implementation": {
+                "sha256": "e7614802f36cc80d556ce55837ca5844e92674f3c76f659dcc10d0ccd0b984c2",
+                "bytes": 369226
+            },
+            "availability": {
+                "kinds": [
+                    "genesis",
+                    "generate",
+                    "socket_jewel",
+                    "remove_jewel",
+                    "currency",
+                    "essence",
+                    "augment",
+                    "upgrade_augment",
+                    "anoint",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": false
+            }
+        },
+        {
+            "era": "3.29",
+            "revision": "r5",
+            "engine": "crafting-graph-5",
+            "patch": "3.29.3.3",
+            "manifestSha256": "26d7c39c8a6e2f73d34fd3fc91b595223d7e31818305c45ee3573bde8dd3e8c5",
+            "craftingSha256": "5dac6135acc38d7886f18c91deddac716ecb61a8b90f0309a194a75d0021facf",
+            "format": 1,
+            "game": "poe1",
+            "label": "PoE 1 3.29",
+            "notes": "Adds conditional graph steps: query the first input before spending currency or acquiring another input, and route a non-matching item unchanged. Unknown matches stop the estimate. Existing game crafting probabilities are unchanged.",
+            "publishedAt": "2026-10-07T01:58:55.468Z",
+            "catalog": {
+                "sha256": "18a55afea42bdf76cf84140bcbc342cfe6c0b22a477063005d12fad4c04f475d",
+                "bytes": 16966636
+            },
+            "implementation": {
+                "sha256": "cbcbe51dc69b80471a2b944e9c35c2a6378714c0f885ef115ab4f91a38777f2b",
+                "bytes": 369835
+            },
+            "availability": {
+                "kinds": [
+                    "generate",
+                    "recombine",
+                    "currency",
+                    "essence",
+                    "bench",
+                    "locus",
+                    "anoint",
+                    "fossils",
+                    "harvest",
+                    "beast",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": true
+            }
+        },
+        {
+            "era": "client-4.5",
+            "revision": "r5",
+            "engine": "crafting-graph-5",
+            "patch": "4.5.5.4",
+            "manifestSha256": "a2584927d6f0b9b20a775d4ce2735ff58a1ba44f43ded144e16e325fee1b9296",
+            "craftingSha256": "9788dd268fc1b330d60f9ef85f30d5dfa38ae2e65066e48b1ab4d095f9f68ed1",
+            "format": 1,
+            "game": "poe2",
+            "label": "PoE 2 (client 4.5)",
+            "notes": "Adds conditional graph steps: query the first input before spending currency or acquiring another input, and route a non-matching item unchanged. Unknown matches stop the estimate. PoE 2 crafting probabilities are unchanged; equipment prices remain manual.",
+            "publishedAt": "2026-10-07T01:58:55.887Z",
+            "catalog": {
+                "sha256": "65d9fcea10d6ca3d9b1b450dc28764021a9aedad153d1687ea4f272dff5fcd7a",
+                "bytes": 7949181
+            },
+            "implementation": {
+                "sha256": "cbcbe51dc69b80471a2b944e9c35c2a6378714c0f885ef115ab4f91a38777f2b",
+                "bytes": 369835
+            },
+            "availability": {
+                "kinds": [
+                    "genesis",
+                    "generate",
+                    "socket_jewel",
+                    "remove_jewel",
+                    "currency",
+                    "essence",
+                    "augment",
+                    "upgrade_augment",
+                    "anoint",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": false
+            }
+        }
+    ],
+    "latest": [
+        {
+            "game": "poe1",
+            "era": "3.29",
+            "revision": "r5"
+        },
+        {
+            "game": "poe2",
+            "era": "client-4.5",
+            "revision": "r5"
+        }
+    ]
+}

@@ -18,6 +18,15 @@ const context: OperationContext = {
     db,
     origin: "https://poe.boats",
     loadCatalog: async () => catalogFixture,
+    loadWorkbenchCatalog: async () => {
+        throw new Error("Crafting is not used by saved planner tests.");
+    },
+    loadCraftingRulesets: async () => {
+        throw new Error("Crafting is not used by saved planner tests.");
+    },
+    loadCraftingRevision: async () => {
+        throw new Error("Crafting is not used by saved planner tests.");
+    },
     caller: { id: "owner", name: "Test", email: "test@example.com", role: "user" },
 };
 const idol = {

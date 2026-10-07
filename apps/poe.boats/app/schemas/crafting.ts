@@ -335,23 +335,25 @@ const craftingMethodOptionsSchema = z.discriminatedUnion("kind", [
         omens: z.array(id).max(4).optional(),
     }),
 ]);
-export const craftingMethodSchema = z.preprocess((input, context) => {
-    if (
-        input &&
-        typeof input === "object" &&
-        "allflame" in input &&
-        input.allflame !== undefined &&
-        (!("kind" in input) || !["currency", "essence", "fossils"].includes(String(input.kind)))
-    ) {
-        context.issues.push({
-            code: "custom",
-            message: "Allflame requires an eligible itemized currency, essence or resonator.",
-            input,
-        });
-        return z.NEVER;
-    }
-    return input;
-}, craftingMethodOptionsSchema);
+export const craftingMethodSchema = z
+    .preprocess((input, context) => {
+        if (
+            input &&
+            typeof input === "object" &&
+            "allflame" in input &&
+            input.allflame !== undefined &&
+            (!("kind" in input) || !["currency", "essence", "fossils"].includes(String(input.kind)))
+        ) {
+            context.issues.push({
+                code: "custom",
+                message: "Allflame requires an eligible itemized currency, essence or resonator.",
+                input,
+            });
+            return z.NEVER;
+        }
+        return input;
+    }, craftingMethodOptionsSchema)
+    .meta(z.toJSONSchema(craftingMethodOptionsSchema, { io: "input" }));
 const affixCountRangeSchema = z
     .object({
         min: z.number().int().min(0).max(9),

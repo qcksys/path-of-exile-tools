@@ -1,4 +1,5 @@
 import type { Item } from "@poe-tools/api-client";
+import { isUniqueItem } from "#src/shared/capture.ts";
 import { explicitModLines } from "#src/shared/mod-extractors/lines.ts";
 import type { ModExtractor, ModSignature } from "#src/shared/mod-extractors/types.ts";
 
@@ -39,7 +40,7 @@ function parseLine(line: string): { aura: string; stat: string } | null {
 export const watchersEyeExtractor: ModExtractor = {
     kind: "watchers-eye",
     matches(item: Item): boolean {
-        return item.frameType === 3 && item.identified && item.name === "Watcher's Eye";
+        return isUniqueItem(item) && item.identified && item.name === "Watcher's Eye";
     },
     extract(item: Item): ModSignature | null {
         const mods = explicitModLines(item)

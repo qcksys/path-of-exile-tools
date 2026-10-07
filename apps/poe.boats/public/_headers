@@ -1,0 +1,13 @@
+/game-data/history/catalogs/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/game-data/history/engines/*
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: text/javascript; charset=utf-8
+
+/game-data/history/index.json
+  Cache-Control: no-cache
+
+/game-data/history/worker.mjs
+  Cache-Control: no-cache
+  Content-Type: text/javascript; charset=utf-8
