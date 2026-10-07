@@ -9,6 +9,11 @@ CI runs browser tests in a separate job from unit and MySQL tests. Both must suc
 has a 15-minute limit to leave time for failure artifacts. The line reporter identifies each test
 as it runs, and screenshots/traces are uploaded on failure or cancellation when available.
 
+The browser job uses the official Playwright `v1.63.0-noble` container, which includes browsers
+and their system dependencies, so CI does not install Chromium separately. Keep the image tag
+in `.github/workflows/ci.yml` aligned with the locked `@playwright/test` version when upgrading.
+The container shares the host IPC namespace as recommended by Playwright for Chromium.
+
 Run `vp exec playwright test` from the app directory. Playwright builds the application and starts the
 real Cloudflare runtime through `test/e2e/server.ts`, using validated inert `.env.test` values and
 Varlock's serialized environment binding. The test server disables Wrangler's inspector explicitly:
