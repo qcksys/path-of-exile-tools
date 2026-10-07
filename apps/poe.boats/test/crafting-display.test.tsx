@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { readFileSync } from "node:fs";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
@@ -16,6 +17,7 @@ import { modifierTiers } from "~/lib/crafting-modifier-details";
 import { craftingCatalogSchema } from "~/schemas/crafting";
 import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog } from "./crafting-fixtures";
+import { chooseStartingItem } from "./starting-item-helper";
 
 const catalogs = [
     catalog,
@@ -74,7 +76,6 @@ it("restores persisted preferences and exposes labelled, keyboard-operable setti
     expect(screen.queryByRole("region", { name: "Crafting display settings" })).toBeNull();
     fireEvent.click(button("Display settings"));
     expect(button("Display settings").getAttribute("aria-expanded")).toBe("true");
-    await select("Item ordering", "Drop level (ascending)");
     await select("Item output", "Classic");
     await select("Modifier layout", "Separate affix tabs");
     await select("Tag filter behavior", "Hide mismatches");
@@ -95,9 +96,6 @@ it("restores persisted preferences and exposes labelled, keyboard-operable setti
     render(<Settings />);
     expect(currentDisplay()).toEqual({ advanced: false, compact: true });
     fireEvent.click(button("Display settings"));
-    expect(screen.getByRole("combobox", { name: "Item ordering" }).textContent).toContain(
-        "Drop level",
-    );
     expect(screen.getByRole("combobox", { name: "Item output" }).textContent).toContain("Classic");
     expect(screen.getByRole("combobox", { name: "Modifier layout" }).textContent).toContain(
         "Separate affix tabs",
@@ -129,7 +127,7 @@ it.each([
     render(<Settings />);
     expect(currentDisplay()).toEqual({ advanced: true, compact: false });
     expect(JSON.parse(localStorage.getItem(storageKey)!)).toEqual({
-        itemOrder: "name",
+        itemOrder: "dropLevel",
         itemOutput: "advanced",
         modifierLayout: "columns",
         filterEffect: "cross",
@@ -231,6 +229,7 @@ describe.each(catalogs)("$game display preferences", (data) => {
                 <CraftingWorkbench catalog={data} mode="emulate" />
             </MemoryRouter>,
         );
+        chooseStartingItem(data);
         for (const id of [
             "IncreasedLife8",
             data.game === "poe1" ? "LocalBaseArmourAndLife1" : "LocalIncreasedArmourAndLife1",
@@ -287,6 +286,7 @@ describe.each(catalogs)("$game display preferences", (data) => {
                 <CraftingWorkbench catalog={data} mode="emulate" />
             </MemoryRouter>,
         );
+        chooseStartingItem(data);
         const id = data.game === "poe1" ? "ColdResist1" : "IncreasedLife8";
         const card = screen.getByRole("region", { name: "Current item" });
         changeControl(screen.getByLabelText("Modifier source"), {
@@ -333,6 +333,7 @@ describe.each(catalogs)("$game display preferences", (data) => {
                 <CraftingWorkbench catalog={data} mode="emulate" />
             </MemoryRouter>,
         );
+        chooseStartingItem(data);
         const item = screen.getByRole("region", { name: "Current item" });
         const initial = item.textContent;
         fireEvent.click(button("Apply craft"));
@@ -345,7 +346,6 @@ describe.each(catalogs)("$game display preferences", (data) => {
         const project = localStorage.getItem(key);
         fireEvent.click(button("Display settings"));
         await select("Item output", "Classic");
-        await select("Item ordering", "Drop level (ascending)");
         fireEvent.click(screen.getByRole("checkbox", { name: "Compact layout" }));
         expect(screen.getByRole("region", { name: "Current item" })).toBe(item);
         expect(item.dataset.itemOutput).toBe("classic");
@@ -382,9 +382,9 @@ describe.each(catalogs)("$game display preferences", (data) => {
                 <CraftingWorkbench catalog={data} />
             </MemoryRouter>,
         );
+        chooseStartingItem(data);
         const item = screen.getByRole("region", { name: "Current item" }).textContent;
         fireEvent.click(button("Display settings"));
-        await select("Item ordering", "Drop level (ascending)");
         const picker = screen.getByRole("combobox", { name: "Item base" });
         const selected = picker.getAttribute("value");
         changeControl(picker, { target: { value: "Body Armour" } });
@@ -394,25 +394,22 @@ describe.each(catalogs)("$game display preferences", (data) => {
             .filter((base) =>
                 `${base.name} ${base.item_class}`.toLowerCase().includes("body armour"),
             )
-            .sort((a, b) => a.drop_level - b.drop_level || a.name.localeCompare(b.name));
-        expect(options.map((option) => option.textContent)).toEqual(
-            expected
-                .slice(0, 60)
-                .map((base) => `${base.name} · ${base.item_class} · drop level ${base.drop_level}`),
+            .sort(
+                (a, b) =>
+                    a.item_class.localeCompare(b.item_class) ||
+                    a.drop_level - b.drop_level ||
+                    (a.requirements?.level ?? 0) - (b.requirements?.level ?? 0) ||
+                    (a.requirements?.strength ?? 0) - (b.requirements?.strength ?? 0) ||
+                    (a.requirements?.dexterity ?? 0) - (b.requirements?.dexterity ?? 0) ||
+                    (a.requirements?.intelligence ?? 0) - (b.requirements?.intelligence ?? 0) ||
+                    a.name.localeCompare(b.name),
+            );
+        expect(options.map((option) => option.getAttribute("aria-label"))).toEqual(
+            expected.slice(0, 60).map((base) => `${base.name} · ${base.item_class}`),
         );
         fireEvent.keyDown(picker, { key: "Escape" });
         expectControlValue(picker, selected);
         expect(screen.getByRole("region", { name: "Current item" }).textContent).toBe(item);
-        await select("Item ordering", "Alphabetical");
-        changeControl(picker, { target: { value: "Body Armour" } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        const alphabetical = within(await screen.findByRole("listbox")).getAllByRole("option");
-        expect(alphabetical.map((option) => option.textContent)).toEqual(
-            expected
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .slice(0, 60)
-                .map((base) => `${base.name} · ${base.item_class}`),
-        );
     });
 
     it("keeps a running calculation alive while settings change", async () => {
@@ -430,12 +427,12 @@ describe.each(catalogs)("$game display preferences", (data) => {
                 <CraftingWorkbench catalog={data} />
             </MemoryRouter>,
         );
+        chooseStartingItem(data);
         changeControl(screen.getByLabelText("Required rarity"), { target: { value: "rare" } });
         fireEvent.click(button("Calculate odds"));
         expect(postMessage).toHaveBeenCalledTimes(1);
         fireEvent.click(button("Display settings"));
         await select("Item output", "Classic");
-        await select("Item ordering", "Drop level (ascending)");
         await select("Modifier layout", "Separate affix tabs");
         await select("Tag filter behavior", "Hide mismatches");
         fireEvent.click(screen.getByRole("checkbox", { name: "Show tag filter" }));
@@ -487,6 +484,7 @@ it("shows the same extracted spawn-level override in the modifier browser and it
             <CraftingWorkbench catalog={catalogs[1]!} mode="emulate" />
         </MemoryRouter>,
     );
+    chooseStartingItem(catalogs[1]!);
     changeControl(screen.getByLabelText("Search modifiers"), {
         target: { value: "ArmourAppliesToElementalDamage1" },
     });

@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { CatalogItemArt } from "~/components/item-art";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -353,6 +354,7 @@ export function MethodPicker({
             id: JSON.stringify(entry.value),
             label: entry.label,
             pin: methodPinKey(entry.value),
+            itemId: "id" in entry.value ? entry.value.id : undefined,
         }));
     const anoint = value.kind === "anoint" ? anointment(engine.catalog, value.id) : undefined;
     const enchantment =
@@ -424,7 +426,12 @@ export function MethodPicker({
                   .map((id) => engine.fossil(id))
             : [];
     if (fossils.length && !base.strongbox)
-        options.push({ id: "fossils", label: "Fossils + resonator", pin: "fossils" });
+        options.push({
+            id: "fossils",
+            label: "Fossils + resonator",
+            pin: "fossils",
+            itemId: undefined,
+        });
     const selectMethod = (selected: string) => {
         if (selected === "fossils") {
             const resonator = resonators.find(
@@ -1195,6 +1202,7 @@ export function MethodPicker({
                                     .map((recipe) => ({
                                         id: recipe.id,
                                         label: engine.costName(recipe.items[0]!),
+                                        itemId: recipe.items[0],
                                     }))}
                                 onSelect={(id) =>
                                     onChange({
@@ -1404,7 +1412,11 @@ export function MethodPicker({
                                     !entry.item.destroyed &&
                                     !entry.item.reveal,
                             )
-                            .map((entry) => ({ id: entry.id, label: entry.name }))}
+                            .map((entry) => ({
+                                id: entry.id,
+                                label: entry.name,
+                                itemId: entry.item.baseId,
+                            }))}
                         value={
                             value.jewel
                                 ? { id: value.jewel.id, label: value.jewel.name }
@@ -1444,7 +1456,11 @@ export function MethodPicker({
                             .filter(
                                 (entry) => engine.base(entry.item).item_class === base.item_class,
                             )
-                            .map((entry) => ({ id: entry.id, label: entry.name }))}
+                            .map((entry) => ({
+                                id: entry.id,
+                                label: entry.name,
+                                itemId: entry.item.baseId,
+                            }))}
                         value={
                             value.donor
                                 ? { id: value.donor.id, label: value.donor.name }
@@ -1515,6 +1531,10 @@ export function MethodPicker({
                             {value.donor &&
                             !inventory.some((entry) => entry.id === value.donor!.id) ? (
                                 <FormSelectItem value={value.donor.id}>
+                                    <CatalogItemArt
+                                        id={value.donor.item.baseId}
+                                        game={engine.catalog.game}
+                                    />
                                     {value.donor.name}
                                 </FormSelectItem>
                             ) : null}
@@ -1525,6 +1545,10 @@ export function MethodPicker({
                                 )
                                 .map((entry) => (
                                     <FormSelectItem key={entry.id} value={entry.id}>
+                                        <CatalogItemArt
+                                            id={entry.item.baseId}
+                                            game={engine.catalog.game}
+                                        />
                                         {entry.name}
                                     </FormSelectItem>
                                 ))}
@@ -1652,6 +1676,7 @@ export function MethodPicker({
                                 }
                             />
                             <span>
+                                <CatalogItemArt id={omen.id} game={engine.catalog.game} />
                                 <span id={`${id}-omen-name-${omen.id}`}>{omen.name}</span>
                                 <span
                                     id={`${id}-omen-description-${omen.id}`}
@@ -1775,6 +1800,7 @@ export function MethodPicker({
                                     }}
                                 />
                                 <span>
+                                    <CatalogItemArt id={fossil.id} game={engine.catalog.game} />
                                     <span id={`${id}-fossil-name-${fossil.id}`}>{fossil.name}</span>
                                     <span
                                         id={`${id}-fossil-description-${fossil.id}`}
@@ -1869,6 +1895,7 @@ export function MethodPicker({
                                 )
                                 .map((entry) => (
                                     <FormSelectItem key={entry.id} value={entry.id}>
+                                        <CatalogItemArt id={entry.id} game={engine.catalog.game} />
                                         {entry.name}
                                         {allflameCurrencies.has(entry.id)
                                             ? " · Allflame eligible"

@@ -17,6 +17,7 @@ import { catalogBaseOptions } from "~/lib/recombinator-catalog";
 import type { RecombinatorDraftItem } from "~/lib/recombinator-plan";
 import { craftingGraphSchema } from "~/schemas/crafting-graph";
 import type { RecombinatorCatalog } from "~/schemas/recombinator-catalog";
+import { CatalogPicker } from "./catalog-item-editor";
 
 const previewSchema = z.object({ graph: craftingGraphSchema, itemText: z.string() });
 const control = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
@@ -143,24 +144,26 @@ export function SendInputToCrafting({
                     plan. The purchase price is unknown. You can edit the prepared item in the
                     project's full workbench.
                 </DialogDescription>
-                <Label className="block space-y-1 text-sm">
-                    Concrete item base
-                    <FormSelect
-                        className={control}
-                        value={baseId}
-                        onValueChange={(selectedValue) => {
-                            reset();
-                            setBaseId(selectedValue);
-                        }}
-                    >
-                        <FormSelectItem value="">Choose a base</FormSelectItem>
-                        {bases.map((base) => (
-                            <FormSelectItem key={base.id} value={base.id}>
-                                {base.name}
-                            </FormSelectItem>
-                        ))}
-                    </FormSelect>
-                </Label>
+                <CatalogPicker
+                    id="handoff-concrete-base"
+                    label="Concrete item base"
+                    options={bases.map((base) => ({
+                        id: base.id,
+                        label: `${base.name} · ${base.itemClass}`,
+                    }))}
+                    value={
+                        bases
+                            .filter((base) => base.id === baseId)
+                            .map((base) => ({
+                                id: base.id,
+                                label: `${base.name} · ${base.itemClass}`,
+                            }))[0]
+                    }
+                    onSelect={(selectedValue) => {
+                        reset();
+                        setBaseId(selectedValue);
+                    }}
+                />
                 <Label className="block space-y-1 text-sm">
                     Input rarity
                     <FormSelect

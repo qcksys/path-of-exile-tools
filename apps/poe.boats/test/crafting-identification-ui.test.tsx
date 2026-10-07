@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { readFileSync } from "node:fs";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
@@ -6,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import { CraftingWorkbench } from "../app/components/crafting/workbench";
 import { craftingCatalogSchema } from "../app/schemas/crafting";
 import { changeControl, expectControlValue } from "./control-helpers";
+import { chooseStartingItem } from "./starting-item-helper";
 
 class WorkerStub {
     static instances: WorkerStub[] = [];
@@ -46,6 +48,7 @@ for (const game of ["poe1", "poe2"] as const) {
                     <CraftingWorkbench catalog={catalog} mode={mode} />
                 </MemoryRouter>,
             );
+            chooseStartingItem(catalog);
             changeControl(screen.getByLabelText("Rarity"), { target: { value: "rare" } });
             if (game === "poe1")
                 changeControl(screen.getByLabelText("Memory strands"), {

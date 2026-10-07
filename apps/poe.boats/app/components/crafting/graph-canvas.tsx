@@ -10,8 +10,11 @@ import {
     useNodesState,
     useUpdateNodeInternals,
 } from "@xyflow/react";
-import { useEffect, useMemo } from "react";
+import { ExpandIcon, MaximizeIcon, MinimizeIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CatalogItemArt } from "~/components/item-art";
 import { Badge } from "~/components/ui/badge";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { connectGraphInput } from "~/lib/crafting-graph-authoring";
 import { cn } from "~/lib/utils";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
@@ -23,6 +26,8 @@ type FlowNode = Node<
     {
         label: string;
         kind: string;
+        baseId?: string;
+        game: "poe1" | "poe2";
         ports: { id: string; name: string }[];
         active: boolean;
         final: boolean;
@@ -57,6 +62,9 @@ function CraftingFlowNode({ id, data }: NodeProps<FlowNode>) {
                 onClick={data.select}
                 aria-label={`Edit ${data.label}`}
             >
+                {data.baseId && (
+                    <CatalogItemArt id={data.baseId} game={data.game} className="size-9" />
+                )}
                 {data.label}
             </Button>
             {data.ports.map((port, index) => (
@@ -91,6 +99,8 @@ export function GraphCanvas({
     onChange,
     result,
     onError,
+    fullWidth = false,
+    onFullWidthChange,
 }: {
     graph: CraftingGraph;
     selected: string;
@@ -98,7 +108,10 @@ export function GraphCanvas({
     onChange: (graph: CraftingGraph) => void;
     result?: CraftingGraphResult;
     onError: (error: unknown) => void;
+    fullWidth?: boolean;
+    onFullWidthChange?: (value: boolean) => void;
 }) {
+    const [fullscreen, setFullscreen] = useState(false);
     const projected = useMemo(
         () =>
             graph.nodes.map(
@@ -112,6 +125,12 @@ export function GraphCanvas({
                     data: {
                         label: node.name,
                         kind: node.kind,
+                        game: graph.game,
+                        baseId:
+                            node.kind === "acquire"
+                                ? node.alternatives.find((option) => option.kind === "purchase")
+                                      ?.item.baseId
+                                : undefined,
                         active: selected === node.id,
                         final: graph.entry === node.id,
                         ports:
@@ -123,7 +142,10 @@ export function GraphCanvas({
                         cost:
                             result?.estimates.find((entry) => entry.nodeId === node.id)
                                 ?.expectedCost ?? null,
-                        select: () => onSelect(node.id),
+                        select: () => {
+                            onSelect(node.id);
+                            setFullscreen(false);
+                        },
                     },
                 }),
             ),
@@ -191,58 +213,90 @@ export function GraphCanvas({
             labelBgStyle: { fill: "var(--card)" },
         }));
     });
+    const canvas = (
+        <section
+            className={cn(
+                "min-h-0 rounded-lg border border-border bg-muted/20 [--xy-controls-button-background-color:var(--card)] [--xy-controls-button-color:var(--foreground)] [--xy-controls-button-border-color:var(--border)] [--xy-controls-button-background-color-hover:var(--muted)]",
+                fullscreen ? "flex-1" : "h-[480px]",
+            )}
+            aria-label="Crafting project graph"
+        >
+            <ReactFlow<FlowNode>
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={nodeTypes}
+                onNodesChange={onNodesChange}
+                edgesReconnectable={false}
+                deleteKeyCode={null}
+                fitView
+                minZoom={0.25}
+                maxZoom={1.5}
+                onConnect={(connection) => {
+                    try {
+                        if (connection.targetHandle)
+                            onChange(
+                                connectGraphInput(
+                                    graph,
+                                    connection.target,
+                                    connection.targetHandle,
+                                    connection.source,
+                                ),
+                            );
+                    } catch (error) {
+                        onError(error);
+                    }
+                }}
+                onNodeDragStop={(_, node) =>
+                    onChange({
+                        ...graph,
+                        nodes: graph.nodes.map((entry) =>
+                            entry.id === node.id ? { ...entry, position: node.position } : entry,
+                        ),
+                    })
+                }
+            >
+                <Background gap={24} color="var(--border)" />
+                <Controls />
+            </ReactFlow>
+        </section>
+    );
     return (
         <div className="flex flex-col gap-2">
-            <fieldset className="flex flex-wrap gap-2" aria-label="Graph color legend">
-                <Badge variant="acquisition">Acquisitions</Badge>
-                <Badge variant="craft">Crafting steps</Badge>
-                <Badge variant="recovery">Recovery · dashed</Badge>
-                <Badge variant="outcome">Final outcome</Badge>
-            </fieldset>
-            <section
-                className="h-[480px] rounded-lg border border-border bg-muted/20 [--xy-controls-button-background-color:var(--card)] [--xy-controls-button-color:var(--foreground)] [--xy-controls-button-border-color:var(--border)] [--xy-controls-button-background-color-hover:var(--muted)]"
-                aria-label="Crafting project graph"
-            >
-                <ReactFlow<FlowNode>
-                    nodes={nodes}
-                    edges={edges}
-                    nodeTypes={nodeTypes}
-                    onNodesChange={onNodesChange}
-                    edgesReconnectable={false}
-                    deleteKeyCode={null}
-                    fitView
-                    minZoom={0.25}
-                    maxZoom={1.5}
-                    onConnect={(connection) => {
-                        try {
-                            if (connection.targetHandle)
-                                onChange(
-                                    connectGraphInput(
-                                        graph,
-                                        connection.target,
-                                        connection.targetHandle,
-                                        connection.source,
-                                    ),
-                                );
-                        } catch (error) {
-                            onError(error);
-                        }
-                    }}
-                    onNodeDragStop={(_, node) =>
-                        onChange({
-                            ...graph,
-                            nodes: graph.nodes.map((entry) =>
-                                entry.id === node.id
-                                    ? { ...entry, position: node.position }
-                                    : entry,
-                            ),
-                        })
-                    }
-                >
-                    <Background gap={24} color="var(--border)" />
-                    <Controls />
-                </ReactFlow>
-            </section>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <fieldset className="flex flex-wrap gap-2" aria-label="Graph color legend">
+                    <Badge variant="acquisition">Acquisitions</Badge>
+                    <Badge variant="craft">Crafting steps</Badge>
+                    <Badge variant="recovery">Recovery · dashed</Badge>
+                    <Badge variant="outcome">Final outcome</Badge>
+                </fieldset>
+                <div className="flex gap-2">
+                    {onFullWidthChange && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            aria-pressed={fullWidth}
+                            onClick={() => onFullWidthChange(!fullWidth)}
+                        >
+                            {fullWidth ? <MinimizeIcon /> : <ExpandIcon />}
+                            Full width
+                        </Button>
+                    )}
+                    <Dialog open={fullscreen} onOpenChange={setFullscreen}>
+                        <DialogTrigger render={<Button variant="outline" size="sm" />}>
+                            <MaximizeIcon /> Fullscreen graph
+                        </DialogTrigger>
+                        <DialogContent className="flex h-dvh max-w-none flex-col rounded-none sm:max-w-none">
+                            <DialogTitle>Crafting project graph</DialogTitle>
+                            <p className="text-xs text-muted-foreground">
+                                Select a node to return to its editor. Press Escape to exit
+                                fullscreen.
+                            </p>
+                            {fullscreen && canvas}
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            </div>
+            {!fullscreen && canvas}
         </div>
     );
 }

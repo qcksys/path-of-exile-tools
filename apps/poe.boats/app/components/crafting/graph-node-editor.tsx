@@ -12,6 +12,7 @@ import { connectGraphInput, removeGraphNode } from "~/lib/crafting-graph-authori
 import { replaceGraphMethod } from "~/lib/crafting-graph-method";
 import { bindCohortPurchasePrice } from "~/lib/crafting-market";
 import { rulesetAllowsConditionalSteps, rulesetAllowsMethod } from "~/lib/crafting-rulesets";
+import { craftingItemOptions } from "~/lib/item-presentation";
 import type { CraftingMethod } from "~/schemas/crafting";
 import type { CraftingPrice } from "~/schemas/crafting-economy";
 import type { CraftingGraph, GraphDestination, GraphNode } from "~/schemas/crafting-graph";
@@ -185,9 +186,9 @@ export function GraphNodeEditor({
     const uid = useId();
     const bases = useMemo(
         () =>
-            Object.entries(engine.catalog.bases)
-                .filter(([, base]) => base.rarities.includes("normal"))
-                .map(([id, base]) => ({ id, label: `${base.name} · ${base.item_class}` })),
+            craftingItemOptions(engine.catalog).filter((option) =>
+                engine.catalog.bases[option.id]!.rarities.includes("normal"),
+            ),
         [engine],
     );
     const update = (next: GraphNode) =>
@@ -225,7 +226,11 @@ export function GraphNodeEditor({
             options.unshift({ method: node.method, label: engine.methodName(node.method) });
         return options
             .filter((entry) => rulesetAllowsMethod(ruleset, entry.method))
-            .map((entry) => ({ ...entry, id: methodKey(entry.method) }));
+            .map((entry) => ({
+                ...entry,
+                id: methodKey(entry.method),
+                itemId: "id" in entry.method ? entry.method.id : undefined,
+            }));
     }, [engine, ruleset, node]);
     const reorder = (from: number, to: number) => {
         if (

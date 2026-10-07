@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { readFileSync } from "node:fs";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
@@ -8,6 +9,7 @@ import { CraftingEngine, seededRandom } from "~/lib/crafting-engine";
 import { calculateProcessExact } from "~/lib/crafting-simulation";
 import { craftingCatalogSchema, craftingProjectSchema } from "~/schemas/crafting";
 import { changeControl, expectControlValue } from "./control-helpers";
+import { chooseStartingItem } from "./starting-item-helper";
 
 class Worker {
     static instances: Worker[] = [];
@@ -75,6 +77,7 @@ describe.each(["poe1", "poe2"] as const)("%s Strongbox workbench", (game) => {
                 <CraftingWorkbench catalog={catalog} mode={mode} />
             </MemoryRouter>,
         );
+        chooseStartingItem(catalog);
         fireEvent.click(screen.getByText("Save, load, and export"));
         changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "strongbox" },

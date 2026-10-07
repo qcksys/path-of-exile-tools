@@ -57,12 +57,12 @@ it("shows missing or destroyed results without offering a new crafting input", (
 
 it("cancels a pending item handoff when another sampled trial is selected", async () => {
     let resolve!: (response: Response) => void;
-    const fetch = vi.fn(
-        () =>
-            new Promise<Response>((done) => {
-                resolve = done;
-            }),
-    );
+    const fetch = vi.fn((url: string) => {
+        if (url.startsWith("/game-data/items-")) return Promise.resolve(Response.json({}));
+        return new Promise<Response>((done) => {
+            resolve = done;
+        });
+    });
     vi.stubGlobal("fetch", fetch);
     render(
         <MemoryRouter>
@@ -70,7 +70,9 @@ it("cancels a pending item handoff when another sampled trial is selected", asyn
         </MemoryRouter>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Use item in new project" }));
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch.mock.calls.filter(([url]) => !url.startsWith("/game-data/items-"))).toHaveLength(
+        1,
+    );
     changeControl(screen.getByRole("combobox", { name: "Sampled trial" }), {
         target: { value: "1" },
     });

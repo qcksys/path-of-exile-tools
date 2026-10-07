@@ -14,7 +14,7 @@ import {
 import { useStorageState } from "~/hooks/use-storage-state";
 
 const preferencesSchema = z.object({
-    itemOrder: z.enum(["name", "dropLevel"]).default("name"),
+    itemOrder: z.enum(["name", "dropLevel"]).default("dropLevel"),
     itemOutput: z.enum(["advanced", "classic"]).default("advanced"),
     modifierLayout: z.enum(["columns", "tabs"]).default("columns"),
     filterEffect: z.enum(["cross", "hide"]).default("cross"),
@@ -101,7 +101,6 @@ export function DisplaySettings({
 }) {
     const id = useId();
     const [open, setOpen] = useState(false);
-    const orders = { name: "Alphabetical", dropLevel: "Drop level (ascending)" };
     const outputs = { advanced: "Advanced", classic: "Classic" };
     const layouts = { columns: "Prefix and suffix columns", tabs: "Separate affix tabs" };
     const filters = { cross: "Cross out mismatches", hide: "Hide mismatches" };
@@ -123,31 +122,6 @@ export function DisplaySettings({
                 className="rounded-lg border border-border bg-card p-4"
             >
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <Field>
-                        <FieldLabel htmlFor={`${id}-order`}>Item ordering</FieldLabel>
-                        <Select
-                            value={value.itemOrder}
-                            items={orders}
-                            onValueChange={(itemOrder) =>
-                                itemOrder &&
-                                onChange({
-                                    ...value,
-                                    itemOrder: preferencesSchema.shape.itemOrder.parse(itemOrder),
-                                })
-                            }
-                        >
-                            <SelectTrigger id={`${id}-order`} className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {Object.entries(orders).map(([key, label]) => (
-                                    <SelectItem key={key} value={key}>
-                                        {label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </Field>
                     <Field>
                         <FieldLabel htmlFor={`${id}-output`}>Item output</FieldLabel>
                         <Select

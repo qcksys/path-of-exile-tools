@@ -18,6 +18,7 @@ import type { RecombinatorDraft } from "~/lib/recombinator-plan";
 import { type CraftingGraph, craftingGraphSchema } from "~/schemas/crafting-graph";
 import type { RecombinatorCatalog } from "~/schemas/recombinator-catalog";
 import { recombinatorCraftingPlanSchema } from "~/schemas/recombinator-crafting";
+import { CatalogPicker } from "./catalog-item-editor";
 
 const control = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
 type Choices = z.infer<typeof recombinatorCraftingPlanSchema>["inputs"];
@@ -179,23 +180,23 @@ export function SendPlanToCrafting({
                     return (
                         <fieldset key={entry.id} className="space-y-2 rounded border p-3">
                             <legend className="px-1 font-medium">{entry.name}</legend>
-                            <Label className="block text-sm">
-                                Concrete base
-                                <FormSelect
-                                    className={control}
-                                    value={choice?.baseId ?? ""}
-                                    onValueChange={(selectedValue) =>
-                                        change({ baseId: selectedValue })
-                                    }
-                                >
-                                    <FormSelectItem value="">Choose a base</FormSelectItem>
-                                    {bases.map((base) => (
-                                        <FormSelectItem key={base.id} value={base.id}>
-                                            {base.name}
-                                        </FormSelectItem>
-                                    ))}
-                                </FormSelect>
-                            </Label>
+                            <CatalogPicker
+                                id={`handoff-base-${entry.id}`}
+                                label="Concrete base"
+                                options={bases.map((base) => ({
+                                    id: base.id,
+                                    label: `${base.name} · ${base.itemClass}`,
+                                }))}
+                                value={
+                                    bases
+                                        .filter((base) => base.id === choice?.baseId)
+                                        .map((base) => ({
+                                            id: base.id,
+                                            label: `${base.name} · ${base.itemClass}`,
+                                        }))[0]
+                                }
+                                onSelect={(selectedValue) => change({ baseId: selectedValue })}
+                            />
                             <div className="grid grid-cols-2 gap-2">
                                 <Label className="block text-sm">
                                     Rarity

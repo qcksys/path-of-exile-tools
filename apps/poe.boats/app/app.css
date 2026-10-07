@@ -13,6 +13,36 @@ body {
 
 @custom-variant dark (&:is(.dark *));
 
+.poe-item-card.poe-item-card {
+    --card: #090909;
+    --background: #111;
+    --foreground: #dedcd7;
+    --muted: #24211f;
+    --muted-foreground: #a39b8c;
+    --border: #453d31;
+    --input: #554c3b;
+    --item-mod: #9999ff;
+    --item-crafted: #b4b4ff;
+    --item-fractured: #d0b37f;
+    --item-rarity: #c8c8c8;
+    --primary: var(--item-mod);
+    --primary-foreground: #090909;
+    --destructive: #f16a62;
+    border-color: var(--item-rarity);
+}
+
+.poe-item-card[data-rarity="magic"] {
+    --item-rarity: #9999ff;
+}
+.poe-item-card[data-rarity="rare"] {
+    --item-rarity: #ffff77;
+}
+.poe-item-header {
+    color: var(--item-rarity);
+    border-color: var(--item-rarity);
+    background: color-mix(in srgb, var(--item-rarity) 10%, #090909);
+}
+
 :root {
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);

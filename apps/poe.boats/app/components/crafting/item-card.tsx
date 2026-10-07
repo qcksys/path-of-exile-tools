@@ -1,6 +1,8 @@
 import { useContext, useMemo } from "react";
+import { ItemArt } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { useItemPresentations } from "~/hooks/use-item-presentations";
 import { anointment, anointmentText, blightedMapName } from "~/lib/crafting-anointing";
 import { augment, augmentText } from "~/lib/crafting-augments";
 import { clusterText } from "~/lib/crafting-clusters";
@@ -43,6 +45,7 @@ export function ItemCard({
     label?: string;
 }) {
     const { advanced, compact } = useContext(CraftingDisplay);
+    const presentation = useItemPresentations(engine.catalog.game)[item.baseId];
     const tiers = useMemo(
         () => modifierTiers(engine, item.baseId, "ordinary", item.cluster),
         [engine, item.baseId, item.cluster],
@@ -75,10 +78,10 @@ export function ItemCard({
         return (
             <li
                 key={`${rolled.id}:${index}`}
-                className={`space-y-1 border-b border-border/50 last:border-0 ${compact ? "py-1.5" : "py-3"}`}
+                className={`space-y-1 ${compact ? "py-1.5" : "py-3"}`}
             >
                 <div
-                    className={`whitespace-pre-line text-sm ${rolled.fractured ? "text-amber-600 dark:text-amber-400" : enchantment ? "text-sky-700 dark:text-sky-300" : "text-foreground"}`}
+                    className={`whitespace-pre-line text-center text-sm ${rolled.fractured ? "text-[var(--item-fractured)]" : enchantment || rolled.crafted ? "text-[var(--item-crafted)]" : "text-[var(--item-mod)]"}`}
                 >
                     {unrevealed
                         ? `Unrevealed ${mod.generation_type}`
@@ -240,18 +243,26 @@ export function ItemCard({
         <section
             aria-label={label}
             data-item-output={advanced ? "advanced" : "classic"}
-            className="overflow-hidden rounded-lg border border-border bg-card shadow-sm"
+            data-rarity={item.rarity}
+            className="poe-item-card dark overflow-hidden border bg-card text-foreground shadow-lg"
         >
             <div
-                className={`border-b border-border px-4 ${compact ? "py-2" : "py-4"} ${item.rarity === "rare" ? "bg-amber-500/10" : item.rarity === "magic" ? "bg-blue-500/10" : "bg-muted/50"}`}
+                className={`poe-item-header border-b px-4 text-center ${compact ? "py-2" : "py-4"}`}
             >
                 <div className="mb-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                     {item.rarity} · {base.item_class}
                 </div>
-                <h2 className="text-lg font-semibold">
+                <h2 className="font-serif text-xl font-medium">
                     {item.blight ? `${blightedMapName(engine.catalog, item)} ` : ""}
                     {base.name}
                 </h2>
+                {presentation && (
+                    <ItemArt
+                        src={presentation.art}
+                        name={base.name}
+                        className="mx-auto mt-3 h-20 w-20 bg-transparent"
+                    />
+                )}
                 {chest ? (
                     <details className="mt-2 text-xs text-muted-foreground">
                         <summary>Encounter properties</summary>
@@ -499,7 +510,7 @@ export function ItemCard({
                                 <li
                                     key={line.key}
                                     data-fractured={line.fractured}
-                                    className={`whitespace-pre-line text-sm ${compact ? "py-1" : "py-2"} ${line.fractured ? "text-amber-600 dark:text-amber-400" : "text-foreground"}`}
+                                    className={`whitespace-pre-line text-center text-sm ${compact ? "py-1" : "py-2"} ${line.fractured ? "text-[var(--item-fractured)]" : "text-[var(--item-mod)]"}`}
                                 >
                                     {line.text}
                                 </li>
