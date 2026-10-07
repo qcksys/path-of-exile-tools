@@ -48,6 +48,9 @@ jobs:
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --init --ipc=host
     env:
       APP_ENV: test
     steps:
@@ -62,8 +65,6 @@ jobs:
       - run: vp install --frozen-lockfile
       - name: Build
         run: vp run -r build
-      - name: Install Chromium for browser tests
-        run: vp exec --filter poe-boats playwright install --with-deps chromium
       - name: Browser end-to-end tests
         timeout-minutes: 15
         run: vp run poe-boats#test:e2e:browser --reporter=line
