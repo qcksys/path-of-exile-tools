@@ -7,6 +7,7 @@ import { CraftingWorkbench } from "~/components/crafting/workbench";
 import { CraftingEngine, seededRandom } from "~/lib/crafting-engine";
 import { calculateProcessExact } from "~/lib/crafting-simulation";
 import { craftingCatalogSchema, craftingProjectSchema } from "~/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 
 class Worker {
     static instances: Worker[] = [];
@@ -75,7 +76,7 @@ describe.each(["poe1", "poe2"] as const)("%s Strongbox workbench", (game) => {
             </MemoryRouter>,
         );
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "strongbox" },
         });
         fireEvent.click(screen.getByRole("button", { name: "Load project" }));
@@ -109,7 +110,7 @@ describe.each(["poe1", "poe2"] as const)("%s Strongbox workbench", (game) => {
         fireEvent.click(screen.getByRole("button", { name: "Save project" }));
         saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.item.mods).toHaveLength(1);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(screen.getByRole("button", { name: "Load project" }));
@@ -117,17 +118,14 @@ describe.each(["poe1", "poe2"] as const)("%s Strongbox workbench", (game) => {
 
         const picker = screen.getByRole("combobox", { name: "Item base" });
         const nextId = `Metadata/Chests/StrongBoxes/${game === "poe1" ? "Arcanist" : "ResearchStrongboxHigh"}`;
-        fireEvent.change(picker, { target: { value: nextId.split("/").at(-1) } });
+        changeControl(picker, { target: { value: nextId.split("/").at(-1) } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(
             await screen.findByRole("option", {
                 name: new RegExp(` · ${nextId.split("/").at(-1)}$`),
             }),
         );
-        expect(screen.getByLabelText("Item level")).toHaveProperty(
-            "value",
-            game === "poe1" ? "86" : "65",
-        );
+        expectControlValue(screen.getByLabelText("Item level"), game === "poe1" ? "86" : "65");
         expect(screen.queryByRole("alert")).toBeNull();
     });
 
@@ -170,7 +168,7 @@ describe.each(["poe1", "poe2"] as const)("%s Strongbox workbench", (game) => {
                 prices: { [exalt.id]: 2, [greater.id]: 3, [directional.id]: 4 },
             });
             const picker = screen.getByRole("combobox", { name: "Crafting method" });
-            fireEvent.change(picker, { target: { value: exalt.name } });
+            changeControl(picker, { target: { value: exalt.name } });
             fireEvent.keyDown(picker, { key: "ArrowDown" });
             fireEvent.click(await screen.findByRole("option", { name: exalt.name }));
             fireEvent.click(screen.getByRole("checkbox", { name: greater.name }));
@@ -197,7 +195,7 @@ describe.each(["poe1", "poe2"] as const)("%s Strongbox workbench", (game) => {
             expect(save().item).toEqual(item);
             fireEvent.click(screen.getByRole("button", { name: "Redo" }));
             expect(save()).toEqual(crafted);
-            fireEvent.change(screen.getByLabelText("Saved project"), {
+            changeControl(screen.getByLabelText("Saved project"), {
                 target: { value: "My crafting project" },
             });
             fireEvent.click(screen.getByRole("button", { name: "Load project" }));
@@ -275,7 +273,7 @@ describe.each(["poe1", "poe2"] as const)("%s Strongbox workbench", (game) => {
             expect(save().item).toEqual(item);
             fireEvent.click(screen.getByRole("button", { name: "Redo" }));
             expect(save()).toEqual(crafted);
-            fireEvent.change(screen.getByLabelText("Saved project"), {
+            changeControl(screen.getByLabelText("Saved project"), {
                 target: { value: "My crafting project" },
             });
             fireEvent.click(screen.getByRole("button", { name: "Load project" }));

@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { exportCraftingItemText } from "~/lib/crafting-item-text";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
@@ -49,23 +52,23 @@ export function GraphSamples({
                 state and crafting revision. Its acquisition price is unknown; this trial's spending
                 is not an estimate of the cost to produce that particular item.
             </p>
-            <label className="block space-y-1 text-xs">
+            <Label className="block space-y-1 text-xs">
                 Sampled trial
-                <select
+                <FormSelect
                     className={graphControl}
                     value={selected}
-                    onChange={(event) => setSelected(Number(event.target.value))}
+                    onValueChange={(selectedValue) => setSelected(Number(selectedValue))}
                 >
                     {result.samples.map((entry, index) => (
                         // biome-ignore lint/suspicious/noArrayIndexKey: A trial's ordinal is its identity; this fixed prefix is never reordered.
-                        <option key={index} value={index}>
+                        <FormSelectItem key={index} value={index}>
                             Trial {index + 1} ·{" "}
                             {graph.outcomes.find((outcome) => outcome.id === entry.outcomeId)
                                 ?.name ?? entry.status}
-                        </option>
+                        </FormSelectItem>
                     ))}
-                </select>
-            </label>
+                </FormSelect>
+            </Label>
             {sample && (
                 <p className="text-xs text-muted-foreground">
                     This trial: {sample.actions} craft actions ·{" "}
@@ -82,14 +85,14 @@ export function GraphSamples({
                         {exported.issue && (
                             <p className="text-xs text-muted-foreground">{exported.issue}</p>
                         )}
-                        <label className="block space-y-1 text-xs">
+                        <Label className="block space-y-1 text-xs">
                             {exported.issue ? "Sampled item JSON" : "Sampled item text"}
-                            <textarea
+                            <Textarea
                                 className={`${graphControl} min-h-56 font-mono text-xs`}
                                 readOnly
                                 value={exported.text}
                             />
-                        </label>
+                        </Label>
                         {item.destroyed ? (
                             <p className="text-xs">
                                 Destroyed items cannot become crafting inputs.

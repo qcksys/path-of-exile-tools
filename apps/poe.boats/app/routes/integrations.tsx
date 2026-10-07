@@ -3,6 +3,10 @@ import { Form, Link, useNavigation } from "react-router";
 import { z } from "zod";
 import { AppFooter } from "~/components/app-footer";
 import { AppHeader } from "~/components/app-header";
+import { Button } from "~/components/ui/button";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
 import { checkRequestOrigin, operationError, readOperationBody } from "~/operations/http";
 import { legacyPlannerRequest, runOperation } from "~/operations/legacy-planner.server";
 import { operations } from "~/operations/registry.server";
@@ -104,21 +108,21 @@ export default function Integrations({ loaderData, actionData }: Route.Component
                     method="post"
                     className="grid gap-4 rounded-xl border border-border bg-card p-5"
                 >
-                    <label className="grid gap-2">
+                    <Label className="grid gap-2">
                         Operation
-                        <select
+                        <FormSelect
                             name="operation"
                             value={name}
-                            onChange={(event) => setName(event.target.value)}
+                            onValueChange={(selectedValue) => setName(selectedValue)}
                             className="rounded border border-border bg-background p-2"
                         >
                             {loaderData.operations.map((entry) => (
-                                <option key={entry.name} value={entry.name}>
+                                <FormSelectItem key={entry.name} value={entry.name}>
                                     {entry.family} · {entry.name}
-                                </option>
+                                </FormSelectItem>
                             ))}
-                        </select>
-                    </label>
+                        </FormSelect>
+                    </Label>
                     <p>{operation.description}</p>
                     <p className="text-sm text-muted-foreground">
                         <code>
@@ -126,9 +130,9 @@ export default function Integrations({ loaderData, actionData }: Route.Component
                         </code>{" "}
                         · {operation.access === "account" ? "Sign-in required" : "Public"}
                     </p>
-                    <label className="grid gap-2">
+                    <Label className="grid gap-2">
                         Input JSON
-                        <textarea
+                        <Textarea
                             key={name}
                             name="input"
                             rows={10}
@@ -136,7 +140,7 @@ export default function Integrations({ loaderData, actionData }: Route.Component
                             required
                             className="w-full rounded border border-border bg-background p-3 font-mono text-sm"
                         />
-                    </label>
+                    </Label>
                     <details>
                         <summary className="cursor-pointer">Input and result schemas</summary>
                         <pre className="overflow-auto text-xs">
@@ -147,13 +151,14 @@ export default function Integrations({ loaderData, actionData }: Route.Component
                             )}
                         </pre>
                     </details>
-                    <button
+                    <Button
+                        variant="ghost"
                         type="submit"
                         disabled={navigation.state !== "idle"}
                         className="justify-self-start rounded bg-primary px-4 py-2 font-medium text-primary-foreground"
                     >
                         {navigation.state === "idle" ? "Run operation" : "Running…"}
-                    </button>
+                    </Button>
                 </Form>
                 {actionData !== undefined ? (
                     <section

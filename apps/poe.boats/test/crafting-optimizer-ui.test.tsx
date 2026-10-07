@@ -9,6 +9,7 @@ import {
     mergeFossilOptimizations,
 } from "~/lib/crafting-optimizer";
 import { type CraftingProject, craftingProjectSchema } from "~/schemas/crafting";
+import { changeControl } from "./control-helpers";
 import { baseId, catalog, currency, engine } from "./crafting-fixtures";
 
 type Request = { project: CraftingProject; options: FossilOptimizerOptions };
@@ -78,11 +79,11 @@ function mount() {
         if (!["Pristine Fossil", "Frigid Fossil", "Scorched Fossil"].includes(fossil.name))
             fireEvent.click(screen.getByRole("checkbox", { name: fossil.name }));
     }
-    fireEvent.change(screen.getByLabelText("Maximum resonator sockets"), {
+    changeControl(screen.getByLabelText("Maximum resonator sockets"), {
         target: { value: "2" },
     });
-    fireEvent.change(screen.getByLabelText("Trials per combination"), { target: { value: "100" } });
-    fireEvent.change(screen.getByLabelText("Optimizer workers"), { target: { value: "2" } });
+    changeControl(screen.getByLabelText("Trials per combination"), { target: { value: "100" } });
+    changeControl(screen.getByLabelText("Optimizer workers"), { target: { value: "2" } });
     return { ...view, input, onChoose, update: (next: CraftingProject) => view.rerender(ui(next)) };
 }
 function optimizer(worker: OptimizerWorker) {
@@ -144,7 +145,7 @@ it("merges workers finishing out of order, estimates progress and selects the ra
     expect(screen.getByRole("status").textContent).toBe("6 / 6 combinations completed");
     const merged = mergeFossilOptimizations([a.result(), b.result()]);
     expect(screen.getAllByRole("button", { name: "Use combination" })).toHaveLength(6);
-    fireEvent.change(screen.getByLabelText("Rank combinations by"), { target: { value: "cost" } });
+    changeControl(screen.getByLabelText("Rank combinations by"), { target: { value: "cost" } });
     fireEvent.click(screen.getAllByRole("button", { name: "Use combination" })[0]!);
     expect(onChoose).toHaveBeenCalledWith(merged.byCost[0]!.method);
     expect(input).toEqual(before);
@@ -152,7 +153,7 @@ it("merges workers finishing out of order, estimates progress and selects the ra
 
 it("caps active workers at the number of combinations", () => {
     mount();
-    fireEvent.change(screen.getByLabelText("Optimizer workers"), { target: { value: "8" } });
+    changeControl(screen.getByLabelText("Optimizer workers"), { target: { value: "8" } });
     fireEvent.click(button("Compare fossils"));
     expect(OptimizerWorker.instances).toHaveLength(6);
     for (const [index, worker] of OptimizerWorker.instances.entries())
@@ -195,13 +196,13 @@ it.each([
     fireEvent.click(button("Compare fossils"));
     const prior = [...OptimizerWorker.instances];
     if (change === "workers")
-        fireEvent.change(screen.getByLabelText("Optimizer workers"), { target: { value: "3" } });
+        changeControl(screen.getByLabelText("Optimizer workers"), { target: { value: "3" } });
     if (change === "sockets")
-        fireEvent.change(screen.getByLabelText("Maximum resonator sockets"), {
+        changeControl(screen.getByLabelText("Maximum resonator sockets"), {
             target: { value: "1" },
         });
     if (change === "trials")
-        fireEvent.change(screen.getByLabelText("Trials per combination"), {
+        changeControl(screen.getByLabelText("Trials per combination"), {
             target: { value: "200" },
         });
     if (change === "fossils")

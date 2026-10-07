@@ -1,5 +1,8 @@
 import { useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { validateLibrary } from "~/lib/crafting-inventory";
 import type { CraftingItem, CraftingLibrary, CraftingProject } from "~/schemas/crafting";
@@ -28,17 +31,17 @@ export function InventoryStorage({
     const selected = shared ? library.library : project;
     return (
         <section aria-label="Item storage" className="space-y-3">
-            <label className="block space-y-1 text-xs">
+            <Label className="block space-y-1 text-xs">
                 Inventory storage
-                <select
+                <FormSelect
                     className={controlClass}
                     value={scope}
-                    onChange={(event) => setScope(event.target.value)}
+                    onValueChange={(selectedValue) => setScope(selectedValue)}
                 >
-                    <option value="project">Project inventory</option>
-                    <option value="library">Shared library</option>
-                </select>
-            </label>
+                    <FormSelectItem value="project">Project inventory</FormSelectItem>
+                    <FormSelectItem value="library">Shared library</FormSelectItem>
+                </FormSelect>
+            </Label>
             <fieldset disabled={shared && (!library.ready || library.blocked)}>
                 <InventoryPanel
                     key={scope}
@@ -96,7 +99,7 @@ export function InventoryStorage({
                             </Button>
                         ) : null}
                     </div>
-                    <input
+                    <Input
                         ref={file}
                         type="file"
                         accept="application/json,.json"

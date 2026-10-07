@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { usesAllflame } from "~/lib/crafting-allflame";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import {
@@ -188,23 +192,23 @@ export function FossilOptimizerPanel({
                     </p>
                 ) : null}
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-1 text-sm">
+                    <Label className="block space-y-1 text-sm">
                         Maximum resonator sockets
-                        <select
+                        <FormSelect
                             className={controlClass}
                             value={maxSockets}
-                            onChange={(event) => setMaxSockets(Number(event.target.value))}
+                            onValueChange={(selectedValue) => setMaxSockets(Number(selectedValue))}
                         >
                             {[1, 2, 3, 4].map((size) => (
-                                <option key={size} value={size}>
+                                <FormSelectItem key={size} value={size}>
                                     {size}
-                                </option>
+                                </FormSelectItem>
                             ))}
-                        </select>
-                    </label>
-                    <label className="space-y-1 text-sm">
+                        </FormSelect>
+                    </Label>
+                    <Label className="block space-y-1 text-sm">
                         Trials per combination
-                        <input
+                        <Input
                             className={controlClass}
                             type="number"
                             min={100}
@@ -213,21 +217,21 @@ export function FossilOptimizerPanel({
                             value={trials}
                             onChange={(event) => setTrials(Number(event.target.value))}
                         />
-                    </label>
-                    <label className="space-y-1 text-sm">
+                    </Label>
+                    <Label className="block space-y-1 text-sm">
                         Optimizer workers
-                        <select
+                        <FormSelect
                             className={controlClass}
                             value={workerCount}
-                            onChange={(event) => setWorkerCount(Number(event.target.value))}
+                            onValueChange={(selectedValue) => setWorkerCount(Number(selectedValue))}
                         >
                             {[1, 2, 3, 4, 5, 6, 7, 8].map((count) => (
-                                <option key={count} value={count}>
+                                <FormSelectItem key={count} value={count}>
                                     {count}
-                                </option>
+                                </FormSelectItem>
                             ))}
-                        </select>
-                    </label>
+                        </FormSelect>
+                    </Label>
                 </div>
                 <p className="text-xs text-muted-foreground">
                     More workers use more CPU and memory. Worker count does not change seeded
@@ -236,20 +240,19 @@ export function FossilOptimizerPanel({
                 <fieldset className="grid max-h-48 gap-2 overflow-y-auto rounded border p-3 sm:grid-cols-2">
                     <legend className="px-1 text-sm">Included fossils</legend>
                     {fossils.map((entry) => (
-                        <label key={entry.id} className="flex gap-2 text-sm">
-                            <input
-                                type="checkbox"
+                        <Label key={entry.id} className="flex gap-2 text-sm">
+                            <Checkbox
                                 checked={!excluded.includes(entry.id)}
-                                onChange={(event) =>
+                                onCheckedChange={(checked) =>
                                     setExcluded(
-                                        event.target.checked
+                                        checked
                                             ? excluded.filter((id) => id !== entry.id)
                                             : [...excluded, entry.id],
                                     )
                                 }
                             />
                             {entry.name}
-                        </label>
+                        </Label>
                     ))}
                 </fieldset>
                 {tangled ? (
@@ -263,9 +266,9 @@ export function FossilOptimizerPanel({
                     <summary className="cursor-pointer text-sm">Optimizer prices in chaos</summary>
                     <div className="mt-3 grid max-h-60 gap-3 overflow-y-auto sm:grid-cols-2">
                         {costs.map((entry) => (
-                            <label key={entry.id} className="space-y-1 text-xs">
+                            <Label key={entry.id} className="block space-y-1 text-xs">
                                 {entry.name}
-                                <input
+                                <Input
                                     className={controlClass}
                                     type="number"
                                     min={0}
@@ -279,7 +282,7 @@ export function FossilOptimizerPanel({
                                         onPrices(prices);
                                     }}
                                 />
-                            </label>
+                            </Label>
                         ))}
                     </div>
                 </details>
@@ -331,17 +334,19 @@ export function FossilOptimizerPanel({
                                   ? " · Partial results — optimizer stopped"
                                   : " · Complete"}
                         </p>
-                        <label className="block space-y-1 text-sm">
+                        <Label className="block space-y-1 text-sm">
                             Rank combinations by
-                            <select
+                            <FormSelect
                                 className={controlClass}
                                 value={sort}
-                                onChange={(event) => setSort(event.target.value)}
+                                onValueChange={(selectedValue) => setSort(selectedValue)}
                             >
-                                <option value="attempts">Fewest expected attempts</option>
-                                <option value="cost">Lowest expected cost</option>
-                            </select>
-                        </label>
+                                <FormSelectItem value="attempts">
+                                    Fewest expected attempts
+                                </FormSelectItem>
+                                <FormSelectItem value="cost">Lowest expected cost</FormSelectItem>
+                            </FormSelect>
+                        </Label>
                         {sort === "cost" && !result.byCost.length ? (
                             <p className="text-sm text-muted-foreground">
                                 Cost ranking needs a price for every ingredient and at least one

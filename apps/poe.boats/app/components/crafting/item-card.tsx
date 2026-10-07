@@ -1,5 +1,6 @@
 import { useContext, useMemo } from "react";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import { anointment, anointmentText, blightedMapName } from "~/lib/crafting-anointing";
 import { augment, augmentText } from "~/lib/crafting-augments";
 import { clusterText } from "~/lib/crafting-clusters";
@@ -151,7 +152,7 @@ export function ItemCard({
                                 >
                                     {stat.id} ({range.min}–{range.max})
                                     {onChange ? (
-                                        <input
+                                        <Input
                                             className="mt-1 block w-full rounded border bg-background px-2 py-1"
                                             aria-label={`Value for ${stat.id}`}
                                             type="number"

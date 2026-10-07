@@ -1,3 +1,6 @@
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { breachlords, graspingMailSource, mixedBreachRings } from "~/lib/crafting-grasping";
 import type { CraftingMethod } from "~/schemas/crafting";
 import { controlClass } from "./method-picker";
@@ -12,30 +15,29 @@ export function GraspingOptions({
     const rings = method.breachRings ?? mixedBreachRings;
     return (
         <div className="space-y-2 rounded-md border p-3">
-            <label className="block space-y-1 text-xs">
+            <Label className="block space-y-1 text-xs">
                 Grasping Mail recipe
-                <select
+                <FormSelect
                     className={controlClass}
                     value={rings === "legacy" ? "legacy" : "modern"}
-                    onChange={(event) =>
+                    onValueChange={(selectedValue) =>
                         onChange({
                             ...method,
-                            breachRings:
-                                event.target.value === "legacy" ? "legacy" : mixedBreachRings,
+                            breachRings: selectedValue === "legacy" ? "legacy" : mixedBreachRings,
                         })
                     }
                 >
-                    <option value="modern">60 Breachlord rings</option>
-                    <option value="legacy">60 legacy Breach Rings</option>
-                </select>
-            </label>
+                    <FormSelectItem value="modern">60 Breachlord rings</FormSelectItem>
+                    <FormSelectItem value="legacy">60 legacy Breach Rings</FormSelectItem>
+                </FormSelect>
+            </Label>
             {rings !== "legacy" ? (
                 <>
                     <div className="grid grid-cols-2 gap-2">
                         {breachlords.map((lord) => (
-                            <label key={lord} className="block space-y-1 text-xs">
+                            <Label key={lord} className="block space-y-1 text-xs">
                                 {lord} rings
-                                <input
+                                <Input
                                     className={controlClass}
                                     type="number"
                                     min={0}
@@ -52,7 +54,7 @@ export function GraspingOptions({
                                         })
                                     }
                                 />
-                            </label>
+                            </Label>
                         ))}
                     </div>
                     <p className="text-xs text-muted-foreground">

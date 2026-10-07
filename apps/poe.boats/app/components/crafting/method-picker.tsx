@@ -2,6 +2,9 @@ import { useId } from "react";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { allflameDucatActions, allflameQuote } from "~/lib/crafting-allflame";
 import {
     anointingOils,
@@ -524,16 +527,15 @@ export function MethodPicker({
             ) : null}
             {value.kind === "bench" && data.bench.find((entry) => entry.id === value.id)?.mod ? (
                 <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm">
-                        <input
-                            type="checkbox"
+                    <Label className="flex items-center gap-2 text-sm">
+                        <Checkbox
                             checked={Boolean(value.skipOnConflict)}
-                            onChange={(event) =>
-                                onChange({ ...value, skipOnConflict: event.target.checked })
+                            onCheckedChange={(checked) =>
+                                onChange({ ...value, skipOnConflict: checked })
                             }
                         />
                         Skip addition when the bench modifier conflicts
-                    </label>
+                    </Label>
                     <p className="text-xs text-muted-foreground">
                         A single existing craft is removed first at the extracted removal cost.
                         Fractured crafts cannot be removed. With multiple-craft capacity, existing
@@ -1365,8 +1367,8 @@ export function MethodPicker({
             ) : null}
             {value.kind === "beast" && engine.beastRequiresLevel(value.id) ? (
                 <div className="space-y-1 text-sm">
-                    <label htmlFor={`${id}-beast-level`}>Beast level</label>
-                    <input
+                    <Label htmlFor={`${id}-beast-level`}>Beast level</Label>
+                    <Input
                         id={`${id}-beast-level`}
                         aria-describedby={`${id}-beast-description`}
                         className={controlClass}
@@ -1496,25 +1498,25 @@ export function MethodPicker({
             data.currencies.find((entry) => entry.id === value.id)?.action ===
                 "transfer_item_influence" ? (
                 <div className="space-y-2">
-                    <label className="block space-y-1 text-sm">
+                    <Label className="block space-y-1 text-sm">
                         Donor item
-                        <select
+                        <FormSelect
                             className={controlClass}
                             value={value.donor?.id ?? ""}
-                            onChange={(event) => {
-                                const donor = inventory.find(
-                                    (entry) => entry.id === event.target.value,
-                                );
+                            onValueChange={(selectedValue) => {
+                                const donor = inventory.find((entry) => entry.id === selectedValue);
                                 onChange({
                                     ...value,
                                     donor: donor ? structuredClone(donor) : undefined,
                                 });
                             }}
                         >
-                            <option value="">Choose an inventory snapshot</option>
+                            <FormSelectItem value="">Choose an inventory snapshot</FormSelectItem>
                             {value.donor &&
                             !inventory.some((entry) => entry.id === value.donor!.id) ? (
-                                <option value={value.donor.id}>{value.donor.name}</option>
+                                <FormSelectItem value={value.donor.id}>
+                                    {value.donor.name}
+                                </FormSelectItem>
                             ) : null}
                             {inventory
                                 .filter(
@@ -1522,12 +1524,12 @@ export function MethodPicker({
                                         engine.base(entry.item).item_class === base.item_class,
                                 )
                                 .map((entry) => (
-                                    <option key={entry.id} value={entry.id}>
+                                    <FormSelectItem key={entry.id} value={entry.id}>
                                         {entry.name}
-                                    </option>
+                                    </FormSelectItem>
                                 ))}
-                        </select>
-                    </label>
+                        </FormSelect>
+                    </Label>
                     <p className="text-xs text-muted-foreground">
                         Store the donor in item inventory, then load or create the target. Each
                         attempt consumes one donor and one orb; set both prices. Inventory snapshots
@@ -1551,16 +1553,15 @@ export function MethodPicker({
                             ? " With Abyssal Echoes, reroll once if no preference is offered."
                             : null}
                     </p>
-                    <label className="flex items-center gap-2 text-xs">
-                        <input
-                            type="checkbox"
+                    <Label className="flex items-center gap-2 text-xs">
+                        <Checkbox
                             checked={Boolean(value.skipOnMiss)}
-                            onChange={(event) =>
-                                onChange({ ...value, skipOnMiss: event.target.checked })
+                            onCheckedChange={(checked) =>
+                                onChange({ ...value, skipOnMiss: checked })
                             }
                         />
                         Keep modifier unrevealed when no preference matches
-                    </label>
+                    </Label>
                     {value.skipOnMiss ? (
                         <p className="text-xs text-muted-foreground">
                             Offered choices are retained for another reveal step or manual
@@ -1629,7 +1630,7 @@ export function MethodPicker({
                         Omens consumed by this craft
                     </legend>
                     {omens.map((omen) => (
-                        <label
+                        <Label
                             key={omen.id}
                             htmlFor={`${id}-omen-${omen.id}`}
                             className="flex items-start gap-2 text-sm"
@@ -1659,7 +1660,7 @@ export function MethodPicker({
                                     {cleanModText(omen.description)}
                                 </span>
                             </span>
-                        </label>
+                        </Label>
                     ))}
                     {value.omens?.some((id) => id.endsWith("/OmenOnExaltConsumeQuality")) ? (
                         <section
@@ -1732,7 +1733,7 @@ export function MethodPicker({
                             Choose up to four fossils
                         </legend>
                         {[...fossils, ...selectedFossils].map((fossil) => (
-                            <label
+                            <Label
                                 key={fossil.id}
                                 htmlFor={`${id}-fossil-${fossil.id}`}
                                 className="flex items-start gap-2 text-sm"
@@ -1782,7 +1783,7 @@ export function MethodPicker({
                                         {fossil.descriptions.join(" · ")}
                                     </span>
                                 </span>
-                            </label>
+                            </Label>
                         ))}
                     </fieldset>
                     {value.ids.some((id) => engine.fossil(id).randomOutcomes.length) ? (
@@ -1848,13 +1849,13 @@ export function MethodPicker({
                             last craft.
                         </p>
                     ) : null}
-                    <label className="block space-y-1 text-sm">
+                    <Label className="block space-y-1 text-sm">
                         Resonator
-                        <select
+                        <FormSelect
                             className={controlClass}
                             value={value.resonator}
-                            onChange={(event) =>
-                                onChange({ ...value, resonator: event.target.value })
+                            onValueChange={(selectedValue) =>
+                                onChange({ ...value, resonator: selectedValue })
                             }
                         >
                             {resonators
@@ -1867,34 +1868,34 @@ export function MethodPicker({
                                         entry.id.endsWith(String(value.ids.length)),
                                 )
                                 .map((entry) => (
-                                    <option key={entry.id} value={entry.id}>
+                                    <FormSelectItem key={entry.id} value={entry.id}>
                                         {entry.name}
                                         {allflameCurrencies.has(entry.id)
                                             ? " · Allflame eligible"
                                             : ""}
-                                    </option>
+                                    </FormSelectItem>
                                 ))}
-                        </select>
-                    </label>
-                    <label className="block space-y-1 text-sm">
+                        </FormSelect>
+                    </Label>
+                    <Label className="block space-y-1 text-sm">
                         Fossil weight model
-                        <select
+                        <FormSelect
                             className={controlClass}
                             value={value.logic}
-                            onChange={(event) =>
+                            onValueChange={(selectedValue) =>
                                 onChange({
                                     ...value,
                                     logic:
-                                        event.target.value === "additive"
+                                        selectedValue === "additive"
                                             ? "additive"
                                             : "multiplicative",
                                 })
                             }
                         >
-                            <option value="additive">Additive</option>
-                            <option value="multiplicative">Multiplicative</option>
-                        </select>
-                    </label>
+                            <FormSelectItem value="additive">Additive</FormSelectItem>
+                            <FormSelectItem value="multiplicative">Multiplicative</FormSelectItem>
+                        </FormSelect>
+                    </Label>
                 </>
             ) : null}
         </div>

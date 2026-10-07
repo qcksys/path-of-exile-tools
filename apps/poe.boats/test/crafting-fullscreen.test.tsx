@@ -7,6 +7,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { CraftingPage } from "~/routes/crafting/page";
 import { craftingCatalogSchema } from "~/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog } from "./crafting-fixtures";
 import { stubCraftingWorkers } from "./crafting-worker-fixtures";
 
@@ -56,7 +57,7 @@ describe.each(catalogs)("$game fullscreen crafting", (data) => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(data)));
         render(page(data.game));
         await screen.findByRole("heading", { name: "Crafting workbench" });
-        fireEvent.change(screen.getByLabelText("Required rarity"), {
+        changeControl(screen.getByLabelText("Required rarity"), {
             target: { value: "rare" },
         });
         fireEvent.click(screen.getByRole("button", { name: "Calculate odds" }));
@@ -113,10 +114,10 @@ describe.each(catalogs)("$game fullscreen crafting", (data) => {
             (entry) => entry.action === "transmute_to_magic",
         )!;
         const input = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(input, { target: { value: currency.name } });
+        changeControl(input, { target: { value: currency.name } });
         fireEvent.keyDown(input, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: currency.name }));
-        expect(input).toHaveProperty("value", currency.name);
+        expectControlValue(input, currency.name);
         fireEvent.keyDown(input, { key: "ArrowDown" });
         await screen.findByRole("listbox");
         fireEvent.keyDown(input, { key: "Escape" });

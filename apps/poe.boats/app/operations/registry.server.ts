@@ -13,6 +13,7 @@ import { craftingGraphOperations } from "./crafting-graph";
 import { craftingItemQueryOperations } from "./crafting-item-queries";
 import { craftingMarketOperations } from "./crafting-market";
 import { craftingMethodProjectOperations } from "./crafting-method-project";
+import { craftingPresetOperations } from "./crafting-presets";
 import { craftingRulesetOperations } from "./crafting-rulesets";
 import { craftingTradeOperations } from "./crafting-trade";
 import { craftingWorkbenchOperations } from "./crafting-workbench";
@@ -72,6 +73,7 @@ export const operations = [
     ...calculatorOperations,
     ...craftingGraphOperations,
     ...craftingMethodProjectOperations,
+    ...craftingPresetOperations,
     ...recombinatorCraftingOperations,
     ...craftingWorkbenchOperations,
     ...craftingCloudOperations,

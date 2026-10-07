@@ -15,6 +15,7 @@ import {
 } from "~/lib/crafting-simulation";
 import type { CraftingItem, CraftingProject } from "~/schemas/crafting";
 import { craftingCatalogSchema, craftingProjectSchema } from "~/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 import { baseId, catalog, currency, engine } from "./crafting-fixtures";
 
 class CraftingWorker {
@@ -99,16 +100,16 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ reveal: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "reveal" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "reveal" } });
         fireEvent.click(button("Load project"));
         const card = screen.getByRole("region", { name: "Current item" });
         const before = card.textContent;
-        fireEvent.change(screen.getByLabelText("Modifier source"), {
+        changeControl(screen.getByLabelText("Modifier source"), {
             target: { value: "revealed" },
         });
-        expect(screen.getByLabelText("Preview reveal source")).toHaveProperty("value", method.id);
+        expectControlValue(screen.getByLabelText("Preview reveal source"), method.id);
         const alternative = current.revealSources(item).find((entry) => entry.id !== method.id)!;
-        fireEvent.change(screen.getByLabelText("Preview reveal source"), {
+        changeControl(screen.getByLabelText("Preview reveal source"), {
             target: { value: alternative.id },
         });
         const pool = screen.getByRole("region", { name: "Modifier pool" });
@@ -138,10 +139,7 @@ describe("crafting workbench", () => {
         const after = card.textContent;
         fireEvent.click(button("Undo"));
         expect(card.textContent).toBe(before);
-        expect(screen.getByLabelText("Preview reveal source")).toHaveProperty(
-            "value",
-            alternative.id,
-        );
+        expectControlValue(screen.getByLabelText("Preview reveal source"), alternative.id);
         fireEvent.click(button("Redo"));
         expect(card.textContent).toBe(after);
         expect(screen.queryByLabelText("Preview reveal source")).toBeNull();
@@ -165,13 +163,13 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ influence: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "influence" },
         });
         fireEvent.click(button("Load project"));
         const card = screen.getByRole("region", { name: "Current item" });
         const before = card.textContent;
-        fireEvent.change(screen.getByLabelText("Modifier source"), {
+        changeControl(screen.getByLabelText("Modifier source"), {
             target: { value: "influence:0" },
         });
         expect(card.textContent).toBe(before);
@@ -203,13 +201,15 @@ describe("crafting workbench", () => {
         expect(saved.item).toEqual(request.project.item);
         expect(saved.target).toEqual(request.project.target);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
         expect(card.textContent).toBe(after);
         fireEvent.click(screen.getByText("Influences", { selector: "summary" }));
-        expect(screen.getByRole("checkbox", { name: "Shaper" })).toHaveProperty("checked", true);
+        expect(screen.getByRole("checkbox", { name: "Shaper" }).getAttribute("aria-checked")).toBe(
+            String(true),
+        );
     });
 
     it("uses extracted Genesis effects for modifier previews, worker requests, history and saved projects", async () => {
@@ -231,26 +231,30 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ genesis: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "genesis" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "genesis" } });
         fireEvent.click(button("Load project"));
         expect(button("Apply craft")).toHaveProperty("disabled", true);
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: tree.name } });
+        changeControl(picker, { target: { value: tree.name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: tree.name }));
         expect(button("Apply craft")).toHaveProperty("disabled", false);
         const effects = within(screen.getByRole("region", { name: "Genesis Tree effects" }));
         expect(
-            effects.getByRole("checkbox", { name: tree.passives.EquipmentNode9neg!.text! }),
-        ).toHaveProperty("checked", false);
+            effects
+                .getByRole("checkbox", { name: tree.passives.EquipmentNode9neg!.text! })
+                .getAttribute("aria-checked"),
+        ).toBe(String(false));
         fireEvent.click(
             effects.getByRole("checkbox", { name: tree.passives.EquipmentNode9!.text! }),
         );
-        fireEvent.change(effects.getByLabelText("Modifier tier rating bonuses"), {
+        changeControl(effects.getByLabelText("Modifier tier rating bonuses"), {
             target: { value: "3" },
         });
-        expect(effects.getByRole("option", { name: "3 bonuses · +60 rating" })).toBeDefined();
-        fireEvent.change(screen.getByRole("textbox", { name: "Search modifiers" }), {
+        expect(effects.getByLabelText("Modifier tier rating bonuses").textContent).toContain(
+            "3 bonuses · +60 rating",
+        );
+        changeControl(screen.getByRole("textbox", { name: "Search modifiers" }), {
             target: { value: "maximum Life" },
         });
         const pool = screen.getByRole("region", { name: "Modifier pool" });
@@ -298,22 +302,24 @@ describe("crafting workbench", () => {
             effects.getByRole("checkbox", { name: tree.passives.EquipmentNode9!.text! }),
         );
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
         expect(card.textContent).toBe(after);
         expect(
-            effects.getByRole("checkbox", { name: tree.passives.EquipmentNode9!.text! }),
-        ).toHaveProperty("checked", true);
-        expect(effects.getByLabelText("Modifier tier rating bonuses")).toHaveProperty("value", "3");
+            effects
+                .getByRole("checkbox", { name: tree.passives.EquipmentNode9!.text! })
+                .getAttribute("aria-checked"),
+        ).toBe(String(true));
+        expectControlValue(effects.getByLabelText("Modifier tier rating bonuses"), "3");
         fireEvent.click(screen.getByRole("checkbox", { name: "Combine crafting steps" }));
         fireEvent.click(button("Add crafting step"));
         const step = within(screen.getByRole("article", { name: "Step 1 editor" }));
-        fireEvent.change(step.getByLabelText("Modifier tier rating bonuses"), {
+        changeControl(step.getByLabelText("Modifier tier rating bonuses"), {
             target: { value: "0" },
         });
-        expect(effects.getByLabelText("Modifier tier rating bonuses")).toHaveProperty("value", "3");
+        expectControlValue(effects.getByLabelText("Modifier tier rating bonuses"), "3");
         fireEvent.click(button("Mass simulate"));
         const process = CraftingWorker.instances.at(-1)!.postMessage.mock.calls[0]![0];
         expect(process.project.useProcess).toBe(true);
@@ -362,10 +368,10 @@ describe("crafting workbench", () => {
         );
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "wand" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "wand" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Genesis" } });
+        changeControl(picker, { target: { value: "Genesis" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         expect(await screen.findByText("No eligible matches.")).toBeDefined();
         expect(screen.queryByRole("option", { name: catalog.crafting.genesis!.name })).toBeNull();
@@ -410,35 +416,39 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ tangled: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "tangled" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "tangled" } });
         fireEvent.click(button("Load project"));
         const effects = within(
             screen.getAllByRole("group", { name: "Tangled Fossil revealed effects" })[0]!,
         );
-        expect(effects.getByLabelText("Greatly more modifiers")).toHaveProperty("value", "life");
-        expect(effects.getByLabelText("Blocked modifiers")).toHaveProperty("value", "resistance");
+        expectControlValue(effects.getByLabelText("Greatly more modifiers"), "life");
+        expectControlValue(effects.getByLabelText("Blocked modifiers"), "resistance");
+        const blocked = effects.getByLabelText("Blocked modifiers");
+        fireEvent.click(blocked);
+        const blockedMenu = document.getElementById(blocked.getAttribute("aria-controls")!)!;
         expect(
-            within(effects.getByLabelText("Blocked modifiers")).getByRole("option", {
-                name: "life",
-            }),
-        ).toHaveProperty("disabled", true);
-        expect(
-            within(effects.getByLabelText("Greatly more modifiers")).getAllByRole("option"),
-        ).toHaveLength(22);
+            within(blockedMenu).getByRole("option", { name: "life" }).getAttribute("aria-disabled"),
+        ).toBe("true");
+        fireEvent.keyDown(blockedMenu, { key: "Escape" });
+        const more = effects.getByLabelText("Greatly more modifiers");
+        fireEvent.click(more);
+        const moreMenu = document.getElementById(more.getAttribute("aria-controls")!)!;
+        expect(within(moreMenu).getAllByRole("option")).toHaveLength(22);
+        fireEvent.keyDown(moreMenu, { key: "Escape" });
         const pool = screen.getByRole("region", { name: "Modifier pool" });
-        fireEvent.change(screen.getByRole("textbox", { name: "Search modifiers" }), {
+        changeControl(screen.getByRole("textbox", { name: "Search modifiers" }), {
             target: { value: "maximum Life" },
         });
         expect(pool.querySelector('[data-modifier-id="IncreasedLife1"]')?.textContent).toContain(
             "40,000",
         );
-        fireEvent.change(effects.getByLabelText("Greatly more modifiers"), {
+        changeControl(effects.getByLabelText("Greatly more modifiers"), {
             target: { value: "critical" },
         });
         expect(pool.querySelector('[data-modifier-id="IncreasedLife1"]')?.textContent).toContain(
             "10,000",
         );
-        fireEvent.change(effects.getByLabelText("Blocked modifiers"), {
+        changeControl(effects.getByLabelText("Blocked modifiers"), {
             target: { value: "fire" },
         });
         fireEvent.click(button("Mass simulate"));
@@ -453,7 +463,7 @@ describe("crafting workbench", () => {
         expect(card.textContent).not.toBe(crafted);
         fireEvent.click(button("Redo"));
         expect(card.textContent).toBe(crafted);
-        fireEvent.change(screen.getByLabelText("Project name"), {
+        changeControl(screen.getByLabelText("Project name"), {
             target: { value: "revealed pair" },
         });
         fireEvent.click(button("Save project"));
@@ -462,17 +472,14 @@ describe("crafting workbench", () => {
         );
         fireEvent.click(screen.getByText("Fossil optimizer"));
         const optimizer = within(screen.getByText("Fossil optimizer").closest("details")!);
-        expect(optimizer.getByLabelText("Greatly more modifiers")).toHaveProperty(
-            "value",
-            "critical",
-        );
-        fireEvent.change(optimizer.getByLabelText("Blocked modifiers"), {
+        expectControlValue(optimizer.getByLabelText("Greatly more modifiers"), "critical");
+        changeControl(optimizer.getByLabelText("Blocked modifiers"), {
             target: { value: "cold" },
         });
         fireEvent.click(button("Compare fossils"));
         const worker = CraftingWorker.instances.at(-1)!;
         expect(worker.postMessage.mock.calls[0]![0].options.tangled).toBe(pair("critical", "cold"));
-        fireEvent.change(optimizer.getByLabelText("Blocked modifiers"), {
+        changeControl(optimizer.getByLabelText("Blocked modifiers"), {
             target: { value: "chaos" },
         });
         expect(worker.terminate).toHaveBeenCalled();
@@ -527,7 +534,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ level: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "level" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "level" } });
         fireEvent.click(button("Load project"));
         const card = screen.getByRole("region", { name: "Current item" });
         expect(
@@ -538,10 +545,10 @@ describe("crafting workbench", () => {
             screen.getByText(/Required Character Level includes the base, modifiers/),
         ).toBeDefined();
         fireEvent.click(button("Require Required Character Level"));
-        fireEvent.change(screen.getByLabelText("Minimum Required Character Level"), {
+        changeControl(screen.getByLabelText("Minimum Required Character Level"), {
             target: { value: "0" },
         });
-        fireEvent.change(screen.getByLabelText("Maximum Required Character Level"), {
+        changeControl(screen.getByLabelText("Maximum Required Character Level"), {
             target: { value: "10" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -567,15 +574,12 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.target.properties).toEqual(request.target.properties);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
         expect(card.textContent).toBe(after);
-        expect(screen.getByLabelText("Maximum Required Character Level")).toHaveProperty(
-            "value",
-            "10",
-        );
+        expectControlValue(screen.getByLabelText("Maximum Required Character Level"), "10");
     });
 
     it.each([
@@ -621,7 +625,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ requirements: initial }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "requirements" },
         });
         fireEvent.click(button("Load project"));
@@ -636,10 +640,10 @@ describe("crafting workbench", () => {
             ),
         ).toBeDefined();
         fireEvent.click(button("Require Strength Requirement"));
-        fireEvent.change(screen.getByLabelText("Minimum Strength Requirement"), {
+        changeControl(screen.getByLabelText("Minimum Strength Requirement"), {
             target: { value: "0" },
         });
-        fireEvent.change(screen.getByLabelText("Maximum Strength Requirement"), {
+        changeControl(screen.getByLabelText("Maximum Strength Requirement"), {
             target: { value: String(maximum) },
         });
         fireEvent.click(button("Calculate odds"));
@@ -667,15 +671,12 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.target.properties).toEqual(request.target.properties);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
         expect(card.textContent).toBe(after);
-        expect(screen.getByLabelText("Maximum Strength Requirement")).toHaveProperty(
-            "value",
-            String(maximum),
-        );
+        expectControlValue(screen.getByLabelText("Maximum Strength Requirement"), String(maximum));
     });
 
     it("uses extracted reload time for PoE 2 targets, calculation, simulation and saved history", () => {
@@ -709,7 +710,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ reload: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "reload" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "reload" } });
         fireEvent.click(button("Load project"));
         const card = screen.getByRole("region", { name: "Current item" });
         expect(
@@ -720,10 +721,10 @@ describe("crafting workbench", () => {
             screen.getByText(/Reload Time includes local attack and reload speed/),
         ).toBeDefined();
         fireEvent.click(button("Require Reload Time (s)"));
-        fireEvent.change(screen.getByLabelText("Minimum Reload Time (s)"), {
+        changeControl(screen.getByLabelText("Minimum Reload Time (s)"), {
             target: { value: "0" },
         });
-        fireEvent.change(screen.getByLabelText("Maximum Reload Time (s)"), {
+        changeControl(screen.getByLabelText("Maximum Reload Time (s)"), {
             target: { value: "0.64" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -749,12 +750,12 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.target.properties).toEqual(request.target.properties);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
         expect(card.textContent).toBe(after);
-        expect(screen.getByLabelText("Maximum Reload Time (s)")).toHaveProperty("value", "0.64");
+        expectControlValue(screen.getByLabelText("Maximum Reload Time (s)"), "0.64");
     });
 
     it.each([
@@ -782,11 +783,11 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ bench: initial }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "bench" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "bench" } });
         fireEvent.click(button("Load project"));
         const card = screen.getByRole("region", { name: "Current item" });
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: recipe.name } });
+        changeControl(picker, { target: { value: recipe.name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: `Bench · ${recipe.name}` }));
         expect(screen.getByRole("note", { name: "Bench reroll model" }).textContent).toContain(
@@ -819,7 +820,7 @@ describe("crafting workbench", () => {
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.method).toEqual(request.method);
         expect(saved.item.mods.slice(0, 5)).toEqual(item.mods.slice(0, 5));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -860,10 +861,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ ukatoa: initial }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "ukatoa" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "ukatoa" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: ducat.name } });
+        changeControl(picker, { target: { value: ducat.name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: ducat.name }));
         expect(
@@ -874,11 +875,11 @@ describe("crafting workbench", () => {
         expect(screen.getByRole("note", { name: "Ducat crafting model" }).textContent).toContain(
             "empty pool removes",
         );
-        fireEvent.change(screen.getByLabelText("Modifier source"), { target: { value: "ukatoa" } });
+        changeControl(screen.getByLabelText("Modifier source"), { target: { value: "ukatoa" } });
         const pool = within(screen.getByRole("region", { name: "Modifier pool" }));
         const selected = engine.ukatoaModifiers(item)[0];
         if (selected) {
-            fireEvent.change(screen.getByLabelText("Search modifiers"), {
+            changeControl(screen.getByLabelText("Search modifiers"), {
                 target: { value: selected.id },
             });
             fireEvent.click(pool.getByRole("button", { name: "Require" }));
@@ -907,7 +908,7 @@ describe("crafting workbench", () => {
         for (const copy of saved.item.allflameCopies)
             expect(copy.implicits).toHaveLength(selected ? 1 : 0);
         const expected = engine.chooseAllflame(saved.item, 0);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -967,10 +968,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ merrick: initial }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "merrick" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "merrick" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: ducat.name } });
+        changeControl(picker, { target: { value: ducat.name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: ducat.name }));
         expect(
@@ -997,7 +998,7 @@ describe("crafting workbench", () => {
             expect(copy.mods).toHaveLength(5);
         }
         const expected = engine.chooseAllflame(saved.item, 0);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -1045,10 +1046,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ genteel: initial }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "genteel" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "genteel" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: ducat.name } });
+        changeControl(picker, { target: { value: ducat.name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: ducat.name }));
         expect(
@@ -1059,10 +1060,10 @@ describe("crafting workbench", () => {
         expect(screen.getByRole("note", { name: "Ducat crafting model" }).textContent).toContain(
             "conflicting replacement removes",
         );
-        fireEvent.change(screen.getByLabelText("Modifier source"), {
+        changeControl(screen.getByLabelText("Modifier source"), {
             target: { value: "attribute" },
         });
-        fireEvent.change(screen.getByLabelText("Search modifiers"), {
+        changeControl(screen.getByLabelText("Search modifiers"), {
             target: { value: "Dexterity1" },
         });
         const pool = within(screen.getByRole("region", { name: "Modifier pool" }));
@@ -1088,7 +1089,7 @@ describe("crafting workbench", () => {
         let saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.item.allflameCopies).toHaveLength(2);
         const expected = engine.chooseAllflame(saved.item, 0);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -1141,10 +1142,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ ducat: initial }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "ducat" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "ducat" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: ducat.name } });
+        changeControl(picker, { target: { value: ducat.name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: ducat.name }));
         expect(
@@ -1152,8 +1153,8 @@ describe("crafting workbench", () => {
                 .getByRole("checkbox", { name: "Use Allflame crafting" })
                 .getAttribute("aria-disabled"),
         ).toBe("true");
-        fireEvent.change(screen.getByLabelText("Modifier source"), { target: { value: action } });
-        fireEvent.change(screen.getByLabelText("Search modifiers"), { target: { value: mod.id } });
+        changeControl(screen.getByLabelText("Modifier source"), { target: { value: action } });
+        changeControl(screen.getByLabelText("Search modifiers"), { target: { value: mod.id } });
         const pool = within(screen.getByRole("region", { name: "Modifier pool" }));
         expect(pool.getByText(modText(mod.mod))).toBeDefined();
         fireEvent.click(pool.getByRole("button", { name: "Require" }));
@@ -1175,7 +1176,7 @@ describe("crafting workbench", () => {
         let saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.item.allflameCopies).toHaveLength(action === "add_pantheon_aspect" ? 4 : 3);
         const expected = engine.chooseAllflame(saved.item, 1);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -1236,10 +1237,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ ducat: initial }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "ducat" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "ducat" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: ducat.name } });
+        changeControl(picker, { target: { value: ducat.name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: ducat.name }));
         const toggle = screen.getByRole("checkbox", { name: "Use Allflame crafting" });
@@ -1258,7 +1259,7 @@ describe("crafting workbench", () => {
         let saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.item.allflameCopies).toHaveLength(outcome === "split" ? 4 : 1);
         const expected = engine.chooseAllflame(saved.item, 0);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -1302,7 +1303,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ allflame: initial }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "allflame" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "allflame" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(screen.getByRole("checkbox", { name: "Use Allflame crafting" }));
         expect(screen.getByRole("note", { name: "Allflame crafting model" }).textContent).toContain(
@@ -1310,7 +1311,7 @@ describe("crafting workbench", () => {
         );
         fireEvent.click(screen.getByText("Intangibility requirement"));
         fireEvent.click(button("Add intangibility requirement"));
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Minimum intangibility" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Minimum intangibility" }), {
             target: { value: "8" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -1340,7 +1341,7 @@ describe("crafting workbench", () => {
         expect(screen.getAllByRole("button", { name: /^Keep copy/ })).toHaveLength(4);
         fireEvent.click(button("Redo"));
         expect(screen.queryByRole("button", { name: "Keep copy 2" })).toBeNull();
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -1389,14 +1390,14 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ linking: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "linking" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "linking" } });
         fireEvent.click(button("Load project"));
         const connection = screen.getByRole("combobox", { name: "Socket 1 to 2" });
-        fireEvent.change(connection, { target: { value: "Linked" } });
+        changeControl(connection, { target: { value: "Linked" } });
         fireEvent.keyDown(connection, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Linked" }));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: engine.methodName(method) } });
+        changeControl(picker, { target: { value: engine.methodName(method) } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(
             await screen.findByRole("option", {
@@ -1408,7 +1409,7 @@ describe("crafting workbench", () => {
         );
         fireEvent.click(screen.getByText("Linked socket requirement"));
         fireEvent.click(button("Add linked socket requirement"));
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Minimum linked sockets" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Minimum linked sockets" }), {
             target: { value: "6" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -1443,12 +1444,12 @@ describe("crafting workbench", () => {
         expect(saved.target.linkedSockets).toEqual({ min: 6, max: 6 });
         expect(saved.method).toEqual(method);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
         expect(card.textContent).toBe(after);
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Gem sockets" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Gem sockets" }), {
             target: { value: "4" },
         });
         expect(card.textContent).toContain("Largest linked group: 1–4 sockets");
@@ -1497,11 +1498,11 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ fresh: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "fresh" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "fresh" } });
         fireEvent.click(button("Load project"));
         expect(button("Apply craft").hasAttribute("disabled")).toBe(true);
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Generate rare item" } });
+        changeControl(picker, { target: { value: "Generate rare item" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Generate rare item" }));
         expect(button("Apply craft").hasAttribute("disabled")).toBe(false);
@@ -1545,7 +1546,7 @@ describe("crafting workbench", () => {
         expect(saved.item).toMatchObject({ rarity: "rare", quality: 0, corrupted: false });
         expect(saved.item.destroyed).toBeUndefined();
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -1580,7 +1581,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ emptyReveal: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "emptyReveal" },
         });
         fireEvent.click(button("Load project"));
@@ -1618,7 +1619,7 @@ describe("crafting workbench", () => {
         expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
             `${bone.name}1`,
         );
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -1663,7 +1664,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ totals: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "totals" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "totals" } });
         fireEvent.click(button("Load project"));
         const card = screen.getByRole("region", { name: "Current item" });
         const properties = within(card).getByRole("region", { name: "Final item properties" });
@@ -1673,10 +1674,10 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Require Total Resistance (%)"));
         const input = screen.getByLabelText("Minimum Total Resistance (%)");
         expect(input.hasAttribute("min")).toBe(false);
-        fireEvent.change(input, { target: { value: "-1" } });
+        changeControl(input, { target: { value: "-1" } });
         fireEvent.click(button("Require Flat Life"));
         const maximum = current.mod("IncreasedLife1").stats[0]!.max;
-        fireEvent.change(screen.getByLabelText("Minimum Flat Life"), {
+        changeControl(screen.getByLabelText("Minimum Flat Life"), {
             target: { value: String(maximum) },
         });
         fireEvent.click(button("Calculate odds"));
@@ -1702,12 +1703,12 @@ describe("crafting workbench", () => {
         expect(card.textContent).toBe(before);
         fireEvent.click(button("Redo"));
         expect(card.textContent).toBe(after);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        expect(screen.getByLabelText("Minimum Total Resistance (%)")).toHaveProperty("value", "-1");
-        expect(screen.getByLabelText("Minimum Flat Life")).toHaveProperty("value", String(maximum));
+        expectControlValue(screen.getByLabelText("Minimum Total Resistance (%)"), "-1");
+        expectControlValue(screen.getByLabelText("Minimum Flat Life"), String(maximum));
     });
 
     it.each([
@@ -1751,7 +1752,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ flask: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "flask" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "flask" } });
         fireEvent.click(button("Load project"));
         const card = screen.getByRole("region", { name: "Current item" });
         const properties = within(card).getByRole("region", { name: "Final item properties" });
@@ -1764,15 +1765,15 @@ describe("crafting workbench", () => {
         ).toBeTruthy();
         fireEvent.click(button("Require Life Recovery"));
         const maximum = game === "poe1" ? 123 : 87;
-        fireEvent.change(screen.getByLabelText("Minimum Life Recovery"), {
+        changeControl(screen.getByLabelText("Minimum Life Recovery"), {
             target: { value: String(maximum) },
         });
         fireEvent.click(button("Require Charges per Use"));
-        fireEvent.change(screen.getByLabelText("Minimum Charges per Use"), {
+        changeControl(screen.getByLabelText("Minimum Charges per Use"), {
             target: { value: "" },
         });
         fireEvent.click(button("Require Charges per Use"));
-        fireEvent.change(screen.getByLabelText("Maximum Charges per Use"), {
+        changeControl(screen.getByLabelText("Maximum Charges per Use"), {
             target: { value: "10" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -1801,15 +1802,12 @@ describe("crafting workbench", () => {
         expect(card.textContent).toBe(before);
         fireEvent.click(button("Redo"));
         expect(card.textContent).toBe(after);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        expect(screen.getByLabelText("Minimum Life Recovery")).toHaveProperty(
-            "value",
-            String(maximum),
-        );
-        expect(screen.getByLabelText("Maximum Charges per Use")).toHaveProperty("value", "10");
+        expectControlValue(screen.getByLabelText("Minimum Life Recovery"), String(maximum));
+        expectControlValue(screen.getByLabelText("Maximum Charges per Use"), "10");
     });
 
     it.each([
@@ -1857,7 +1855,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ properties: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "properties" },
         });
         fireEvent.click(button("Load project"));
@@ -1867,7 +1865,7 @@ describe("crafting workbench", () => {
         ).toContain("Physical DPS");
         fireEvent.click(screen.getByText("Final item property conditions"));
         fireEvent.click(button("Require Attacks per Second"));
-        fireEvent.change(screen.getByLabelText("Minimum Attacks per Second"), {
+        changeControl(screen.getByLabelText("Minimum Attacks per Second"), {
             target: { value: String(maximum) },
         });
         fireEvent.click(button("Calculate odds"));
@@ -1899,15 +1897,16 @@ describe("crafting workbench", () => {
         expect(card.textContent).toBe(before);
         fireEvent.click(button("Redo"));
         expect(card.textContent).toBe(after);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        expect(
+        expectControlValue(
             within(screen.getByRole("region", { name: "Crafting requirements" })).getByLabelText(
                 "Minimum Attacks per Second",
             ),
-        ).toHaveProperty("value", String(maximum));
+            String(maximum),
+        );
         fireEvent.click(
             within(screen.getByRole("region", { name: "Crafting requirements" })).getByRole(
                 "button",
@@ -1960,11 +1959,11 @@ describe("crafting workbench", () => {
         const key = `poe-boats:crafting:${game}:${data.patch}`;
         localStorage.setItem(key, JSON.stringify({ nested: project }));
         mount("calculate", data);
-        fireEvent.change(screen.getByLabelText("Search modifiers"), {
+        changeControl(screen.getByLabelText("Search modifiers"), {
             target: { value: "IncreasedLife1" },
         });
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "nested" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "nested" } });
         fireEvent.click(button("Load project"));
         const requirements = within(screen.getByRole("region", { name: "Crafting requirements" }));
         fireEvent.click(requirements.getByRole("button", { name: "Add combined condition" }));
@@ -1980,9 +1979,9 @@ describe("crafting workbench", () => {
         fireEvent.click(condition.getByText("Condition 1.1", { exact: true }));
         const leaf = within(condition.getByRole("region", { name: "Condition 1.1 requirements" }));
         fireEvent.click(leaf.getByText("Item conditions", { exact: true }));
-        fireEvent.change(leaf.getByLabelText("Required rarity"), { target: { value: "rare" } });
+        changeControl(leaf.getByLabelText("Required rarity"), { target: { value: "rare" } });
         const picker = screen.getByRole("combobox", { name: "Requirement destination" });
-        fireEvent.change(picker, { target: { value: "Condition 1.1" } });
+        changeControl(picker, { target: { value: "Condition 1.1" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Condition 1.1" }));
         const pool = within(screen.getByRole("region", { name: "Modifier pool" }));
@@ -2002,7 +2001,7 @@ describe("crafting workbench", () => {
             requirements.getByRole("region", { name: "Condition 2 requirements" }),
         );
         fireEvent.click(alternative.getByText("Item conditions", { exact: true }));
-        fireEvent.change(alternative.getByLabelText("Required rarity"), {
+        changeControl(alternative.getByLabelText("Required rarity"), {
             target: { value: "normal" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -2032,10 +2031,10 @@ describe("crafting workbench", () => {
             step.getByRole("region", { name: "Condition 2 requirements" }),
         );
         fireEvent.click(stepAlternative.getByText("Item conditions", { exact: true }));
-        fireEvent.change(stepAlternative.getByLabelText("Required rarity"), {
+        changeControl(stepAlternative.getByLabelText("Required rarity"), {
             target: { value: "magic" },
         });
-        expect(alternative.getByLabelText("Required rarity")).toHaveProperty("value", "normal");
+        expectControlValue(alternative.getByLabelText("Required rarity"), "normal");
         fireEvent.click(processRegion.getByRole("button", { name: "Use current requirements" }));
         fireEvent.click(button("Calculate odds"));
         const worker = CraftingWorker.instances[1]!;
@@ -2051,7 +2050,7 @@ describe("crafting workbench", () => {
         fireEvent.click(
             requirements.getAllByRole("button", { name: "Remove combined condition" })[0]!,
         );
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -2084,18 +2083,18 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ defences: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "defences" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "defences" } });
         fireEvent.click(button("Load project"));
         const card = screen.getByRole("region", { name: "Current item" });
         expect(card.textContent).toContain("Base Armour: Not set");
         fireEvent.click(screen.getByText("Starting base defences"));
-        fireEvent.change(screen.getByLabelText("Starting Base Armour"), {
+        changeControl(screen.getByLabelText("Starting Base Armour"), {
             target: { value: String(range.min) },
         });
         expect(card.textContent).toContain(`Base Armour: ${range.min}`);
         fireEvent.click(button("Set maximum base defences"));
         expect(card.textContent).toContain(`Base Armour: ${range.max}`);
-        fireEvent.change(screen.getByLabelText("Starting Base Armour"), {
+        changeControl(screen.getByLabelText("Starting Base Armour"), {
             target: { value: String(range.min) },
         });
         fireEvent.click(screen.getByText("Base defence requirements"));
@@ -2104,7 +2103,7 @@ describe("crafting workbench", () => {
             String(range.max),
         );
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Sacred Orb" } });
+        changeControl(picker, { target: { value: "Sacred Orb" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Sacred Orb" }));
         expect(screen.getByRole("note", { name: "Sacred Orb model" }).textContent).toContain(
@@ -2131,7 +2130,7 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Redo"));
         expect(card.textContent).toBe(after);
         fireEvent.click(button("Clear Base Armour requirement"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -2181,7 +2180,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ defences: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "defences" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "defences" } });
         fireEvent.click(button("Load project"));
         expect(screen.getByRole("region", { name: "Current item" }).textContent).toContain(
             `Base Armour: ${value}`,
@@ -2241,18 +2240,24 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ exclusion: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "exclusion" },
         });
         fireEvent.click(button("Load project"));
         const requirements = within(screen.getByRole("region", { name: "Crafting requirements" }));
         fireEvent.click(requirements.getByRole("checkbox", { name: "Exclude matches in group 1" }));
         expect(requirements.getByText(/all selected modifiers must be absent/)).toBeDefined();
-        fireEvent.change(requirements.getByLabelText("Group 1 match threshold"), {
+        changeControl(requirements.getByLabelText("Group 1 match threshold"), {
             target: { value: "2" },
         });
         expect(requirements.getByText(/Passes when fewer than 2/)).toBeDefined();
-        expect(screen.getByRole("option", { name: "Group 1 (exclude matches)" })).toBeDefined();
+        const groupPicker = screen.getByRole("combobox", { name: "Add requirements to" });
+        fireEvent.click(groupPicker);
+        const groupMenu = document.getElementById(groupPicker.getAttribute("aria-controls")!)!;
+        expect(
+            within(groupMenu).getByRole("option", { name: "Group 1 (exclude matches)" }),
+        ).toBeDefined();
+        fireEvent.keyDown(groupMenu, { key: "Escape" });
         fireEvent.click(button("Calculate odds"));
         expect(
             CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project.target.groups[0],
@@ -2295,7 +2300,7 @@ describe("crafting workbench", () => {
         expect(saved.target.groups[0]).toMatchObject({ negated: true, minimum: 2 });
         expect(saved.steps[0].condition.groups).toEqual(saved.target.groups);
         fireEvent.click(requirements.getByRole("checkbox", { name: "Exclude matches in group 1" }));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -2357,13 +2362,13 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ recombination: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "recombination" },
         });
         fireEvent.click(button("Load project"));
         const choose = async (name: string, label: string) => {
             const picker = screen.getByRole("combobox", { name });
-            fireEvent.change(picker, { target: { value: label } });
+            changeControl(picker, { target: { value: label } });
             fireEvent.keyDown(picker, { key: "ArrowDown" });
             fireEvent.click(await screen.findByRole("option", { name: label }));
         };
@@ -2380,7 +2385,7 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Stop simulation"));
         fireEvent.click(button("Apply craft"));
         expect(screen.queryByRole("alert")).toBeNull();
-        expect(screen.getByLabelText("Rarity")).toHaveProperty("value", "rare");
+        expectControlValue(screen.getByLabelText("Rarity"), "rare");
         expect(screen.getByText("Emulator spending")).toBeDefined();
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
@@ -2395,17 +2400,17 @@ describe("crafting workbench", () => {
                 );
         }
         fireEvent.click(button("Undo"));
-        expect(screen.getByLabelText("Rarity")).toHaveProperty("value", "magic");
-        if (advanced) expect(screen.getByLabelText("Memory strands")).toHaveProperty("value", "82");
+        expectControlValue(screen.getByLabelText("Rarity"), "magic");
+        if (advanced) expectControlValue(screen.getByLabelText("Memory strands"), "82");
         expect(screen.queryByText("Emulator spending")).toBeNull();
         fireEvent.click(button("Redo"));
-        expect(screen.getByLabelText("Rarity")).toHaveProperty("value", "rare");
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        expectControlValue(screen.getByLabelText("Rarity"), "rare");
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        expect(screen.getByRole("combobox", { name: "Recombination donor" })).toHaveProperty(
-            "value",
+        expectControlValue(
+            screen.getByRole("combobox", { name: "Recombination donor" }),
             donor.name,
         );
     });
@@ -2439,11 +2444,11 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ blight: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "blight" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "blight" } });
         fireEvent.click(button("Load project"));
         const choose = async (name: string, label: string) => {
             const picker = screen.getByRole("combobox", { name });
-            fireEvent.change(picker, { target: { value: label } });
+            changeControl(picker, { target: { value: label } });
             fireEvent.keyDown(picker, { key: "ArrowDown" });
             fireEvent.click(await screen.findByRole("option", { name: label }));
         };
@@ -2481,7 +2486,7 @@ describe("crafting workbench", () => {
         expect(screen.queryByRole("button", { name: "Remove oil 3" })).toBeNull();
         await choose("Blight map type", "Ordinary map");
         expect(card.textContent).not.toContain("Can be Anointed");
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -2519,13 +2524,13 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ conversion: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "conversion" },
         });
         fireEvent.click(button("Load project"));
         const choose = async (name: string, query: string, label: string) => {
             const picker = screen.getByRole("combobox", { name });
-            fireEvent.change(picker, { target: { value: query } });
+            changeControl(picker, { target: { value: query } });
             fireEvent.keyDown(picker, { key: "ArrowDown" });
             fireEvent.click(await screen.findByRole("option", { name: label }));
         };
@@ -2557,7 +2562,7 @@ describe("crafting workbench", () => {
         expect(card.textContent).not.toContain("Jewel sockets");
         fireEvent.click(button("Redo"));
         expect(card.textContent).toContain("Jewel sockets: 1");
-        fireEvent.change(screen.getByLabelText("Project name"), {
+        changeControl(screen.getByLabelText("Project name"), {
             target: { value: "Jewel socket" },
         });
         fireEvent.click(button("Save project"));
@@ -2570,7 +2575,7 @@ describe("crafting workbench", () => {
         });
         expect(saved.target.jewelSocket).toBe(true);
         expect(current.validateItem(saved.item)).toEqual(saved.item);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "Jewel socket" },
         });
         fireEvent.click(button("Load project"));
@@ -2616,11 +2621,11 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ jewel: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "jewel" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "jewel" } });
         fireEvent.click(button("Load project"));
         const choose = async (name: string, label: string) => {
             const picker = screen.getByRole("combobox", { name });
-            fireEvent.change(picker, { target: { value: label } });
+            changeControl(picker, { target: { value: label } });
             fireEvent.keyDown(picker, { key: "ArrowDown" });
             fireEvent.click(await screen.findByRole("option", { name: label }));
         };
@@ -2644,7 +2649,7 @@ describe("crafting workbench", () => {
             "Ruby",
         );
         fireEvent.click(screen.getByText("Item inventory (1)"));
-        fireEvent.change(screen.getByLabelText("Inventory tab"), { target: { value: "Jewels" } });
+        changeControl(screen.getByLabelText("Inventory tab"), { target: { value: "Jewels" } });
         fireEvent.click(button("Store socketed Jewel"));
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
@@ -2665,7 +2670,7 @@ describe("crafting workbench", () => {
         expect(screen.getByRole("region", { name: "Current item" }).textContent).toContain(
             "Jewel sockets: 1",
         );
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -2704,10 +2709,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ matron: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "matron" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "matron" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Meta-modifier" } });
+        changeControl(picker, { target: { value: "Meta-modifier" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(
             await screen.findByRole("option", {
@@ -2743,7 +2748,7 @@ describe("crafting workbench", () => {
         expect(card.textContent).not.toContain("Suffixes Cannot Be Changed");
         fireEvent.click(button("Redo"));
         expect(card.textContent).toContain("Suffixes Cannot Be Changed");
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -2785,10 +2790,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ beast: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "beast" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "beast" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Add a Mod to" } });
+        changeControl(picker, { target: { value: "Add a Mod to" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         const extracted = catalog.crafting.beasts.find((entry) => entry.id === recipe)!;
         fireEvent.click(
@@ -2822,7 +2827,7 @@ describe("crafting workbench", () => {
         expect(card.textContent).not.toBe(result);
         fireEvent.click(button("Redo"));
         expect(card.textContent).toBe(result);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -2862,11 +2867,11 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ abyss: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "abyss" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "abyss" } });
         fireEvent.click(button("Load project"));
         const select = async (name: string) => {
             const picker = screen.getByRole("combobox", { name: "Crafting method" });
-            fireEvent.change(picker, { target: { value: name } });
+            changeControl(picker, { target: { value: name } });
             fireEvent.keyDown(picker, { key: "ArrowDown" });
             fireEvent.click(await screen.findByRole("option", { name }));
         };
@@ -2927,7 +2932,7 @@ describe("crafting workbench", () => {
         ).toBe(true);
         fireEvent.click(button("Undo"));
         expect(button("Reroll reveal choices").hasAttribute("disabled")).toBe(false);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -2978,11 +2983,11 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ talisman: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "talisman" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "talisman" } });
         fireEvent.click(button("Load project"));
         const select = async (name: string) => {
             const picker = screen.getByRole("combobox", { name: "Crafting method" });
-            fireEvent.change(picker, { target: { value: name } });
+            changeControl(picker, { target: { value: name } });
             fireEvent.keyDown(picker, { key: "ArrowDown" });
             fireEvent.click(await screen.findByRole("option", { name }));
         };
@@ -3036,7 +3041,7 @@ describe("crafting workbench", () => {
         expect(JSON.parse(localStorage.getItem(key)!)["My crafting project"].item).toEqual(saved);
         fireEvent.click(button("Apply craft"));
         expect(screen.getByRole("alert").textContent).toContain("fractured");
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -3062,10 +3067,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ sockets: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "sockets" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "sockets" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Tainted Jeweller" } });
+        changeControl(picker, { target: { value: "Tainted Jeweller" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Tainted Jeweller's Orb" }));
         expect(screen.getByRole("note", { name: "Tainted Jeweller model" }).textContent).toContain(
@@ -3090,12 +3095,12 @@ describe("crafting workbench", () => {
         expect(card.textContent).toContain("Gem sockets: 4");
         fireEvent.click(button("Save project"));
         expect(JSON.parse(localStorage.getItem(key)!)["My crafting project"].item.sockets).toBe(4);
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Gem sockets" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Gem sockets" }), {
             target: { value: "6" },
         });
         fireEvent.click(button("Apply craft"));
         expect(screen.getByRole("alert").textContent).toContain("maximum sockets");
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -3132,10 +3137,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ tainted: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "tainted" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "tainted" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: name } });
+        changeControl(picker, { target: { value: name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name }));
         expect(screen.getByRole("note", { name: note })).toBeDefined();
@@ -3171,7 +3176,7 @@ describe("crafting workbench", () => {
         expect(saved.item.sockets).toBe(6);
         expect(saved.item.corrupted).toBe(true);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -3215,7 +3220,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ fracture: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "fracture" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "fracture" } });
         fireEvent.click(button("Load project"));
         expect(screen.getByRole("note", { name: "Fracturing model" }).textContent).toContain(
             "still occupy a crafted slot",
@@ -3251,7 +3256,7 @@ describe("crafting workbench", () => {
             saved.item.mods.filter((entry: { fractured: boolean }) => entry.fractured),
         ).toHaveLength(1);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -3280,16 +3285,16 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ sockets: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "sockets" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "sockets" } });
         fireEvent.click(button("Load project"));
         const count = screen.getByRole("spinbutton", { name: "Gem sockets" }) as HTMLInputElement;
         fireEvent.click(screen.getByText("Custom prices in chaos"));
         expect(screen.getByRole("spinbutton", { name: "Vaal Orb" })).toBeDefined();
         expect(count.max).toBe("6");
-        fireEvent.change(count, { target: { value: "2" } });
+        changeControl(count, { target: { value: "2" } });
         fireEvent.click(screen.getByText("Socket requirement"));
         fireEvent.click(button("Add socket requirement"));
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Minimum gem sockets" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Minimum gem sockets" }), {
             target: { value: "6" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -3299,7 +3304,7 @@ describe("crafting workbench", () => {
         expect(request.project.target.sockets).toEqual({ min: 6, max: 6 });
         fireEvent.click(button("Stop simulation"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Six Sockets" } });
+        changeControl(picker, { target: { value: "Six Sockets" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Bench · Six Sockets" }));
         fireEvent.click(button("Apply craft"));
@@ -3322,8 +3327,8 @@ describe("crafting workbench", () => {
         expect(saved.item.sockets).toBe(6);
         expect(saved.item.corrupted).toBe(corrupted);
         expect(saved.target.sockets).toEqual({ min: 6, max: 6 });
-        fireEvent.change(count, { target: { value: "0" } });
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(count, { target: { value: "0" } });
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -3350,12 +3355,12 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ beastSockets: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "beastSockets" },
         });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: recipe.description } });
+        changeControl(picker, { target: { value: recipe.description } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(
             await screen.findByRole("option", {
@@ -3368,7 +3373,7 @@ describe("crafting workbench", () => {
         expect(screen.queryByRole("spinbutton", { name: "Beast level" })).toBeNull();
         fireEvent.click(screen.getByText("Socket requirement"));
         fireEvent.click(button("Add socket requirement"));
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Minimum gem sockets" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Minimum gem sockets" }), {
             target: { value: "6" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -3401,7 +3406,7 @@ describe("crafting workbench", () => {
         expect(saved.item).toEqual({ ...project.item, sockets: 6 });
         expect(saved.target.sockets).toEqual({ min: 6, max: 6 });
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -3432,12 +3437,12 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ flask: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "flask" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "flask" } });
         fireEvent.click(button("Load project"));
         expect(screen.getByText(/one of 15 eligible outcomes/)).toBeDefined();
         fireEvent.click(screen.getByText("Enchantment requirement"));
         const targetPicker = screen.getByRole("combobox", { name: "Require enchantment" });
-        fireEvent.change(targetPicker, { target: { value: "Charges reach full" } });
+        changeControl(targetPicker, { target: { value: "Charges reach full" } });
         fireEvent.keyDown(targetPicker, { key: "ArrowDown" });
         fireEvent.click(
             await screen.findByRole("option", { name: /Used when Charges reach full/ }),
@@ -3449,7 +3454,7 @@ describe("crafting workbench", () => {
         ).toEqual([recipe.enchantment!.mod]);
         fireEvent.click(button("Stop simulation"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Bench Charges reach full" } });
+        changeControl(picker, { target: { value: "Bench Charges reach full" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(
             await screen.findByRole("option", {
@@ -3474,13 +3479,13 @@ describe("crafting workbench", () => {
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.item.enchantments[0].id).toBe(recipe.enchantment!.mod);
         expect(saved.target.enchantments).toEqual([recipe.enchantment!.mod]);
-        fireEvent.change(picker, { target: { value: "Remove Enchantments" } });
+        changeControl(picker, { target: { value: "Remove Enchantments" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Bench · Remove Enchantments" }));
         fireEvent.click(button("Apply craft"));
         expect(card.textContent).not.toContain("Used when Charges reach full");
         expect(screen.queryByRole("alert")).toBeNull();
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -3526,7 +3531,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ serle: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "serle" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "serle" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(button("Apply craft"));
         expect(screen.queryByRole("alert")).toBeNull();
@@ -3536,7 +3541,7 @@ describe("crafting workbench", () => {
             screen.getByRole("spinbutton", { name: "Base quality (%)" }).getAttribute("max"),
         ).toBe("62");
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: current.costName(recipe.id) } });
+        changeControl(picker, { target: { value: current.costName(recipe.id) } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: current.costName(recipe.id) }));
         expect(screen.getByRole("region", { name: "Base quality model" }).textContent).toContain(
@@ -3544,7 +3549,7 @@ describe("crafting workbench", () => {
         );
         fireEvent.click(screen.getByText("Base quality requirement"));
         fireEvent.click(button("Add quality requirement"));
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Maximum base quality (%)" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Maximum base quality (%)" }), {
             target: { value: "52" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -3603,11 +3608,11 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ upgrade: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "upgrade" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "upgrade" } });
         fireEvent.click(button("Load project"));
         const choose = async (name: string, query: string, label: string) => {
             const picker = screen.getByRole("combobox", { name });
-            fireEvent.change(picker, { target: { value: query } });
+            changeControl(picker, { target: { value: query } });
             fireEvent.keyDown(picker, { key: "ArrowDown" });
             fireEvent.click(await screen.findByRole("option", { name: label }));
         };
@@ -3644,7 +3649,7 @@ describe("crafting workbench", () => {
         ).toContain("Socket 2");
         fireEvent.click(button("Redo"));
         expect(card.textContent).toContain("Socket 2 · Perfect Desert Rune");
-        fireEvent.change(screen.getByLabelText("Project name"), { target: { value: "upgraded" } });
+        changeControl(screen.getByLabelText("Project name"), { target: { value: "upgraded" } });
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!).upgraded;
         expect(saved.method).toEqual(sent.method);
@@ -3708,7 +3713,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ interaction: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "interaction" },
         });
         fireEvent.click(button("Load project"));
@@ -3726,7 +3731,7 @@ describe("crafting workbench", () => {
         expect(card.textContent).not.toContain(scenario.text);
         fireEvent.click(button("Redo"));
         expect(card.textContent).toContain(scenario.text);
-        fireEvent.change(screen.getByLabelText("Project name"), { target: { value: "result" } });
+        changeControl(screen.getByLabelText("Project name"), { target: { value: "result" } });
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!).result;
         expect(current.statTotals(current.validateItem(saved.item)).get(scenario.stat)).toBe(
@@ -3764,12 +3769,12 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ atziri: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "atziri" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "atziri" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(button("Apply craft"));
         expect(screen.queryByRole("alert")).toBeNull();
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: vaal.name } });
+        changeControl(picker, { target: { value: vaal.name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: vaal.name }));
         expect(
@@ -3828,10 +3833,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ aldur: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "aldur" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "aldur" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Betrayal of Aldur" } });
+        changeControl(picker, { target: { value: "Betrayal of Aldur" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Socket · Betrayal of Aldur" }));
         fireEvent.click(button("Calculate odds"));
@@ -3849,7 +3854,7 @@ describe("crafting workbench", () => {
         expect(card.textContent).toContain("Damage as Extra Fire Damage");
         fireEvent.click(button("Redo"));
         expect(card.textContent?.match(/Damage as Extra Chaos Damage/g)).toHaveLength(2);
-        fireEvent.change(screen.getByLabelText("Project name"), { target: { value: "converted" } });
+        changeControl(screen.getByLabelText("Project name"), { target: { value: "converted" } });
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!).converted;
         expect(saved.item.mods.map((entry: { id: string }) => entry.id)).toEqual([
@@ -3901,7 +3906,7 @@ describe("crafting workbench", () => {
         mount("calculate", data);
         if (data.bases[base]!.initialSockets) {
             const picker = screen.getByRole("combobox", { name: "Item base" });
-            fireEvent.change(picker, { target: { value: "Grasping Ring" } });
+            changeControl(picker, { target: { value: "Grasping Ring" } });
             fireEvent.keyDown(picker, { key: "ArrowDown" });
             fireEvent.click(await screen.findByRole("option", { name: /Grasping Ring/ }));
             const sockets = screen.getByRole("spinbutton", {
@@ -3912,7 +3917,7 @@ describe("crafting workbench", () => {
             expect(sockets.max).toBe("1");
         }
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "serle" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "serle" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(button("Apply craft"));
         const card = screen.getByRole("region", { name: "Current item" });
@@ -3921,11 +3926,13 @@ describe("crafting workbench", () => {
         expect(card.textContent).toContain("Socket 1 · Serle's Triumph");
         fireEvent.click(screen.getByText("Item conditions"));
         expect(screen.getByLabelText("Maximum total affixes").getAttribute("max")).toBe("7");
-        expect(
-            screen.getByRole("combobox", { name: "Open affixes of either type" }).textContent,
-        ).toContain("At least 7");
+        const openAffixes = screen.getByRole("combobox", { name: "Open affixes of either type" });
+        fireEvent.click(openAffixes);
+        const affixMenu = document.getElementById(openAffixes.getAttribute("aria-controls")!)!;
+        expect(within(affixMenu).getByRole("option", { name: "At least 7" })).toBeDefined();
+        fireEvent.keyDown(affixMenu, { key: "Escape" });
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Exalted Orb" } });
+        changeControl(picker, { target: { value: "Exalted Orb" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Exalted Orb" }));
         fireEvent.click(button("Calculate odds"));
@@ -3940,7 +3947,7 @@ describe("crafting workbench", () => {
         expect(card.textContent).toContain("3/4 suffixes");
         fireEvent.click(button("Redo"));
         expect(card.textContent).toContain("4/4 suffixes");
-        fireEvent.change(screen.getByLabelText("Project name"), {
+        changeControl(screen.getByLabelText("Project name"), {
             target: { value: "seven affixes" },
         });
         fireEvent.click(button("Save project"));
@@ -3981,7 +3988,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ augments: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "augments" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "augments" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(button("Calculate odds"));
         expect(CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project.method).toEqual({
@@ -3996,7 +4003,7 @@ describe("crafting workbench", () => {
         expect(card.textContent).toContain("+14% to Fire Resistance");
         const choose = async (name: string, value: string) => {
             const picker = screen.getByRole("combobox", { name });
-            fireEvent.change(picker, { target: { value } });
+            changeControl(picker, { target: { value } });
             fireEvent.keyDown(picker, { key: "ArrowDown" });
             fireEvent.click(await screen.findByRole("option", { name: value }));
         };
@@ -4009,7 +4016,7 @@ describe("crafting workbench", () => {
         expect(card.textContent).toContain("Socket 1 · Desert Rune");
         fireEvent.click(button("Redo"));
         expect(card.textContent).toContain("Socket 1 · Glacial Rune");
-        fireEvent.change(screen.getByLabelText("Project name"), { target: { value: "socketed" } });
+        changeControl(screen.getByLabelText("Project name"), { target: { value: "socketed" } });
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!).socketed;
         expect(saved.item.augments).toEqual([cold.id]);
@@ -4037,16 +4044,16 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ map: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "map" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "map" } });
         fireEvent.click(button("Load project"));
         const choose = async (name: string, value: string) => {
             const picker = screen.getByRole("combobox", { name });
-            fireEvent.change(picker, { target: { value } });
+            changeControl(picker, { target: { value } });
             fireEvent.keyDown(picker, { key: "ArrowDown" });
             fireEvent.click(await screen.findByRole("option", { name: value }));
         };
         await choose("Map quality type", "Quality (Rarity)");
-        fireEvent.change(screen.getByLabelText("Map quality (%)"), { target: { value: "18" } });
+        changeControl(screen.getByLabelText("Map quality (%)"), { target: { value: "18" } });
         await choose("Crafting method", "Maven's Chisel of Procurement");
         expect(screen.getByRole("region", { name: "Map quality model" }).textContent).toContain(
             "Adds 5%",
@@ -4054,7 +4061,7 @@ describe("crafting workbench", () => {
         fireEvent.click(screen.getByText("Map quality requirement", { exact: true }));
         fireEvent.click(button("Add quality requirement"));
         await choose("Required map quality type", "Quality (Rarity)");
-        fireEvent.change(screen.getByLabelText("Maximum map quality (%)"), {
+        changeControl(screen.getByLabelText("Maximum map quality (%)"), {
             target: { value: "20" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -4076,7 +4083,7 @@ describe("crafting workbench", () => {
         expect(saved.item).toMatchObject({ mapQuality: rarity.id, quality: 20 });
         expect(saved.target).toEqual(sent.target);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -4108,17 +4115,17 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ tainted: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "tainted" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "tainted" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Tainted Catalyst" } });
+        changeControl(picker, { target: { value: "Tainted Catalyst" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Tainted Catalyst" }));
         expect(
             screen.getByRole("region", { name: "Tainted Catalyst model" }).textContent,
         ).toContain("12 eligible types");
         fireEvent.click(screen.getByText("Catalyst quality requirement", { exact: true }));
-        fireEvent.change(screen.getByLabelText("Minimum catalyst quality (%)"), {
+        changeControl(screen.getByLabelText("Minimum catalyst quality (%)"), {
             target: { value: "18" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -4141,7 +4148,7 @@ describe("crafting workbench", () => {
         expect(saved.item).toEqual(result);
         expect(saved.target).toEqual(sent.target);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -4167,14 +4174,14 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ map: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "map" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "map" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(screen.getByRole("checkbox", { name: "Memory Influenced Map" }));
         const uses = screen.getByLabelText("Existing Intention uses") as HTMLInputElement;
         expect(uses.max).toBe("3");
-        fireEvent.change(uses, { target: { value: "1" } });
+        changeControl(uses, { target: { value: "1" } });
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Orb of Intention" } });
+        changeControl(picker, { target: { value: "Orb of Intention" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Orb of Intention" }));
         expect(
@@ -4185,7 +4192,7 @@ describe("crafting workbench", () => {
         expect((screen.getByLabelText("Minimum Intention uses") as HTMLInputElement).value).toBe(
             "3",
         );
-        fireEvent.change(screen.getByLabelText("Minimum Intention uses"), {
+        changeControl(screen.getByLabelText("Minimum Intention uses"), {
             target: { value: "2" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -4213,7 +4220,7 @@ describe("crafting workbench", () => {
         expect(saved.item.memoryMap).toEqual({ intentions: 3 });
         expect(saved.target).toEqual(sent.target);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -4263,10 +4270,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ jewel: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "jewel" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "jewel" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: label } });
+        changeControl(picker, { target: { value: label } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: label }));
         expect(screen.getByRole("region", { name: `${label} model` }).textContent).toContain(
@@ -4295,7 +4302,7 @@ describe("crafting workbench", () => {
         expect(saved.method).toEqual(method);
         if (locus && !destroyed) expect(saved.item.implicits).toHaveLength(2);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -4332,10 +4339,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ map: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "map" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "map" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: twice ? "Corrupt a Map" : "Vaal Orb" } });
+        changeControl(picker, { target: { value: twice ? "Corrupt a Map" : "Vaal Orb" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: label }));
         expect(screen.queryByLabelText("Beast level")).toBeNull();
@@ -4349,7 +4356,7 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Add tier requirement"));
         expect((screen.getByLabelText("Minimum Map tier") as HTMLInputElement).value).toBe("3");
         expect((screen.getByLabelText("Maximum Map tier") as HTMLInputElement).max).toBe("17");
-        fireEvent.change(screen.getByLabelText("Maximum Map tier"), { target: { value: "3" } });
+        changeControl(screen.getByLabelText("Maximum Map tier"), { target: { value: "3" } });
         if (!twice) {
             fireEvent.click(button("Clear tier requirement"));
             fireEvent.click(screen.getByText("Item conditions", { exact: true }));
@@ -4357,7 +4364,7 @@ describe("crafting workbench", () => {
                 "8",
             );
             for (const bound of ["Minimum", "Maximum"])
-                fireEvent.change(screen.getByLabelText(`${bound} total affixes`), {
+                changeControl(screen.getByLabelText(`${bound} total affixes`), {
                     target: { value: "8" },
                 });
         }
@@ -4385,7 +4392,7 @@ describe("crafting workbench", () => {
         );
         expect(saved.target).toEqual(sent.target);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -4420,10 +4427,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ map: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "map" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "map" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Corrupt a Map" } });
+        changeControl(picker, { target: { value: "Corrupt a Map" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(
             await screen.findByRole("option", {
@@ -4431,10 +4438,10 @@ describe("crafting workbench", () => {
             }),
         );
         expect(screen.queryByLabelText("Beast level")).toBeNull();
-        fireEvent.change(screen.getByLabelText("Modifier source"), {
+        changeControl(screen.getByLabelText("Modifier source"), {
             target: { value: "corrupted" },
         });
-        fireEvent.change(screen.getByLabelText("Search modifiers"), {
+        changeControl(screen.getByLabelText("Search modifiers"), {
             target: { value: "Item Rarity" },
         });
         expect(screen.getAllByText("+(8-12)% Item Rarity").length).toBeGreaterThan(0);
@@ -4461,7 +4468,7 @@ describe("crafting workbench", () => {
         expect(saved.item).toEqual(engine.apply(project.item, method, seededRandom(0)).item);
         expect(saved.target).toEqual(project.target);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -4500,10 +4507,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ vaal: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "vaal" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "vaal" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Vaal Orb" } });
+        changeControl(picker, { target: { value: "Vaal Orb" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Vaal Orb" }));
         expect(screen.getByRole("region", { name: "Vaal Orb model" }).textContent).toContain(
@@ -4532,7 +4539,7 @@ describe("crafting workbench", () => {
         );
         expect(saved.target).toEqual(project.target);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -4595,7 +4602,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ infuser: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "infuser" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "infuser" } });
         fireEvent.click(button("Load project"));
         expect(screen.getByRole("region", { name: "Quality Infuser model" }).textContent).toContain(
             "Modeled corruption chance for this use: 45%",
@@ -4630,7 +4637,7 @@ describe("crafting workbench", () => {
         expect(saved.item).toEqual(model.apply(item, project.method, seededRandom(seed)).item);
         expect(saved.target).toEqual(target);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -4710,7 +4717,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ tablet: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "tablet" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "tablet" } });
         fireEvent.click(button("Load project"));
         expect(screen.getByRole("region", { name: `${name} model` }).textContent).toContain(
             tablet ? "three equally likely" : "twice corrupted",
@@ -4746,7 +4753,7 @@ describe("crafting workbench", () => {
         expect(saved.item).toEqual(model.apply(item, project.method, seededRandom(seed)).item);
         expect(saved.target).toEqual(project.target);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -4782,7 +4789,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ waystone: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "waystone" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "waystone" } });
         fireEvent.click(button("Load project"));
         expect(screen.getByRole("region", { name: "Vaal Orb model" }).textContent).toContain(
             "change tier by one",
@@ -4813,7 +4820,7 @@ describe("crafting workbench", () => {
         expect(model.waystone(saved.item)?.tier).toBe(16);
         expect(saved.target.waystoneTier).toEqual({ min: 16, max: 16 });
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -4870,17 +4877,17 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ eight: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "eight" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "eight" } });
         fireEvent.click(button("Load project"));
         expect(screen.queryByRole("alert")).toBeNull();
         expect(screen.getByRole("region", { name: "Current item" }).textContent).toContain(
             "4/3 prefixes",
         );
         fireEvent.click(screen.getByText("Item conditions", { exact: true }));
-        fireEvent.change(screen.getByLabelText("Minimum total affixes"), {
+        changeControl(screen.getByLabelText("Minimum total affixes"), {
             target: { value: "8" },
         });
-        fireEvent.change(screen.getByLabelText("Maximum total affixes"), {
+        changeControl(screen.getByLabelText("Maximum total affixes"), {
             target: { value: "8" },
         });
         fireEvent.click(button("Save project"));
@@ -4921,7 +4928,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ jewel: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "jewel" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "jewel" } });
         fireEvent.click(button("Load project"));
         const modelDescription = screen.getByRole("region", { name: "Vaal Orb model" });
         expect(modelDescription.textContent).toContain("50% no-change chance");
@@ -4951,7 +4958,7 @@ describe("crafting workbench", () => {
             JSON.parse(localStorage.getItem(key)!)["My crafting project"].item.mods[0],
         ).toMatchObject({ values: [20], corruptionScale: 119 });
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -4994,22 +5001,22 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ corruption: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "corruption" },
         });
         fireEvent.click(button("Load project"));
         expect(screen.getByRole("region", { name: "Vaal Orb model" }).textContent).toContain(
             "four equally likely outcomes",
         );
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Augment sockets" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Augment sockets" }), {
             target: { value: "2" },
         });
         fireEvent.click(screen.getByText("Socket requirement", { exact: true }));
         fireEvent.click(button("Add socket requirement"));
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Minimum augment sockets" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Minimum augment sockets" }), {
             target: { value: "3" },
         });
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Maximum augment sockets" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Maximum augment sockets" }), {
             target: { value: "3" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -5034,7 +5041,7 @@ describe("crafting workbench", () => {
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.item).toMatchObject({ sockets: 3, corrupted: true });
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -5077,20 +5084,20 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ bloodstained: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "bloodstained" },
         });
         fireEvent.click(button("Load project"));
         expect(
             screen.getByRole("region", { name: "Bloodstained Fossil model" }).textContent,
         ).toContain("locked implicits remain");
-        fireEvent.change(screen.getByLabelText("Modifier source"), {
+        changeControl(screen.getByLabelText("Modifier source"), {
             target: { value: "corrupted" },
         });
         const desired = engine
             .corruptedModifiers(item)
             .find((entry) => entry.mod.required_level > 1)!;
-        fireEvent.change(screen.getByRole("textbox", { name: "Search modifiers" }), {
+        changeControl(screen.getByRole("textbox", { name: "Search modifiers" }), {
             target: { value: desired.id },
         });
         const pool = within(screen.getByRole("region", { name: "Modifier pool" }));
@@ -5118,7 +5125,7 @@ describe("crafting workbench", () => {
         expect(saved.item.corrupted).toBe(true);
         expect(engine.mod(saved.item.implicits[0].id).generation_type).toBe("corrupted");
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -5161,7 +5168,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ gilded: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "gilded" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "gilded" } });
         fireEvent.click(button("Load project"));
         const fossils = within(screen.getByRole("group", { name: "Choose up to four fossils" }));
         fireEvent.click(fossils.getByRole("checkbox", { name: "Gilded Fossil" }));
@@ -5169,7 +5176,7 @@ describe("crafting workbench", () => {
         expect(screen.getByRole("region", { name: "Gilded Fossil model" }).textContent).toContain(
             "vendor reward outcomes are not simulated",
         );
-        fireEvent.change(screen.getByLabelText("Modifier source"), { target: { value: "gilded" } });
+        changeControl(screen.getByLabelText("Modifier source"), { target: { value: "gilded" } });
         const pool = within(screen.getByRole("region", { name: "Modifier pool" }));
         expect(pool.getByText("Item sells for much more to vendors")).toBeDefined();
         fireEvent.click(pool.getByRole("button", { name: "Require" }));
@@ -5196,7 +5203,7 @@ describe("crafting workbench", () => {
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.item.implicits).toHaveLength(2);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -5237,7 +5244,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ sanctified: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "sanctified" },
         });
         fireEvent.click(button("Load project"));
@@ -5247,7 +5254,7 @@ describe("crafting workbench", () => {
         expect(
             screen.getByRole("region", { name: "Sanctified Fossil model" }).textContent,
         ).toContain("0.61×");
-        fireEvent.change(screen.getByRole("textbox", { name: "Search modifiers" }), {
+        changeControl(screen.getByRole("textbox", { name: "Search modifiers" }), {
             target: { value: "IncreasedLife1" },
         });
         expect(
@@ -5276,7 +5283,7 @@ describe("crafting workbench", () => {
         expect(saved.method.ids).toEqual([sanctified.id]);
         expect(saved.item.mods.length).toBeGreaterThanOrEqual(4);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -5333,19 +5340,16 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ catalysing: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "catalysing" },
         });
         fireEvent.click(button("Load project"));
         fireEvent.click(screen.getByRole("checkbox", { name: omen.name }));
-        expect(screen.getByRole("spinbutton", { name: /^Catalyst quality/ })).toHaveProperty(
-            "value",
-            "20",
-        );
+        expectControlValue(screen.getByRole("spinbutton", { name: /^Catalyst quality/ }), "20");
         expect(
             screen.getByRole("region", { name: "Catalysing Exaltation model" }).textContent,
         ).toContain("multiplied by 5 at 20%");
-        fireEvent.change(screen.getByRole("textbox", { name: "Search modifiers" }), {
+        changeControl(screen.getByRole("textbox", { name: "Search modifiers" }), {
             target: { value: "IncreasedLife1" },
         });
         const pool = screen.getByRole("region", { name: "Modifier pool" });
@@ -5365,10 +5369,7 @@ describe("crafting workbench", () => {
         const spending = screen.getByText("Emulator spending").closest("details")!;
         expect(spending.textContent).toContain(`${omen.name}1`);
         fireEvent.click(button("Undo"));
-        expect(screen.getByRole("spinbutton", { name: /^Catalyst quality/ })).toHaveProperty(
-            "value",
-            "20",
-        );
+        expectControlValue(screen.getByRole("spinbutton", { name: /^Catalyst quality/ }), "20");
         fireEvent.click(button("Redo"));
         expect(screen.queryByRole("spinbutton", { name: /^Catalyst quality/ })).toBeNull();
         fireEvent.click(button("Apply craft"));
@@ -5414,19 +5415,19 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ conflict: project }));
         mount();
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "conflict" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "conflict" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Orb of Conflict" } });
+        changeControl(picker, { target: { value: "Orb of Conflict" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Orb of Conflict" }));
         expect(screen.getByRole("region", { name: "Orb of Conflict model" }).textContent).toContain(
             "50/50",
         );
-        fireEvent.change(screen.getByLabelText("Modifier source"), {
+        changeControl(screen.getByLabelText("Modifier source"), {
             target: { value: "eldritch" },
         });
-        fireEvent.change(screen.getByRole("textbox", { name: "Search modifiers" }), {
+        changeControl(screen.getByRole("textbox", { name: "Search modifiers" }), {
             target: { value: `${exarch}1` },
         });
         const pool = screen.getByRole("region", { name: "Modifier pool" });
@@ -5499,11 +5500,11 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ quality: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "quality" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "quality" } });
         fireEvent.click(button("Load project"));
         const name = model.costName(recipe.id);
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: name } });
+        changeControl(picker, { target: { value: name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name }));
         expect(screen.getByRole("region", { name: "Base quality model" }).textContent).toContain(
@@ -5511,7 +5512,7 @@ describe("crafting workbench", () => {
         );
         fireEvent.click(screen.getByText("Base quality requirement"));
         fireEvent.click(button("Add quality requirement"));
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Maximum base quality (%)" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Maximum base quality (%)" }), {
             target: { value: "20" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -5570,11 +5571,11 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ memory: project }));
         mount();
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "memory" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "memory" } });
         fireEvent.click(button("Load project"));
         const name = engine.costName(method.kind === "currency" ? method.id : "");
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: name } });
+        changeControl(picker, { target: { value: name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name }));
         expect(
@@ -5635,13 +5636,13 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ strands: project }));
         mount();
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "strands" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "strands" } });
         fireEvent.click(button("Load project"));
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Memory strands" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Memory strands" }), {
             target: { value: "31" },
         });
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Orb of Unravelling" } });
+        changeControl(picker, { target: { value: "Orb of Unravelling" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Orb of Unravelling" }));
         expect(
@@ -5649,7 +5650,7 @@ describe("crafting workbench", () => {
         ).toContain("empirical research model");
         fireEvent.click(screen.getByText("Memory strand requirement"));
         fireEvent.click(button("Add strand requirement"));
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Maximum memory strands" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Maximum memory strands" }), {
             target: { value: "0" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -5675,7 +5676,7 @@ describe("crafting workbench", () => {
         expect(saved.item.memoryStrands).toBeUndefined();
         expect(saved.target.memoryStrands).toEqual({ min: 0, max: 0 });
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -5726,12 +5727,12 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ catalysts: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "catalysts" },
         });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: name } });
+        changeControl(picker, { target: { value: name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name }));
         expect(screen.getByRole("region", { name: "Catalyst application" }).textContent).toContain(
@@ -5739,10 +5740,10 @@ describe("crafting workbench", () => {
         );
         fireEvent.click(screen.getByText("Catalyst quality requirement"));
         const targetPicker = screen.getByRole("combobox", { name: "Required catalyst" });
-        fireEvent.change(targetPicker, { target: { value: name } });
+        changeControl(targetPicker, { target: { value: name } });
         fireEvent.keyDown(targetPicker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name }));
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Maximum catalyst quality (%)" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Maximum catalyst quality (%)" }), {
             target: { value: "20" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -5767,7 +5768,7 @@ describe("crafting workbench", () => {
         expect(saved.item.catalyst).toEqual({ id: selected.id, quality: 20 });
         expect(saved.target.catalyst).toEqual(sent.target.catalyst);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -5814,10 +5815,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ potent: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "potent" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "potent" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: name } });
+        changeControl(picker, { target: { value: name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name }));
         const description = screen.getByRole("region", { name: "Liquid Emotion outcome" });
@@ -5849,7 +5850,7 @@ describe("crafting workbench", () => {
         expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
             `${name}1`,
         );
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -5885,9 +5886,9 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ glyphic: project }));
         mount();
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "glyphic" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "glyphic" } });
         fireEvent.click(button("Load project"));
-        fireEvent.change(screen.getByLabelText("Modifier source"), {
+        changeControl(screen.getByLabelText("Modifier source"), {
             target: { value: "corrupted-essence" },
         });
         const pool = screen.getByRole("region", { name: "Modifier pool" });
@@ -5962,7 +5963,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ fossils: project }));
         mount();
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "fossils" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "fossils" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(screen.getByRole("checkbox", { name: /^Fractured Fossil/ }));
         fireEvent.click(
@@ -6000,7 +6001,7 @@ describe("crafting workbench", () => {
         fireEvent.click(
             screen.getByRole("checkbox", { name: "Require fractured modifiers in group 1" }),
         );
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -6025,7 +6026,7 @@ describe("crafting workbench", () => {
         mount("emulate", data);
         fireEvent.click(screen.getByText("Existing Delirium passive"));
         const picker = screen.getByRole("combobox", { name: "Allocated notable" });
-        fireEvent.change(picker, { target: { value: "Harness the Elements" } });
+        changeControl(picker, { target: { value: "Harness the Elements" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Harness the Elements" }));
         const card = screen.getByRole("region", { name: "Current item" });
@@ -6033,7 +6034,7 @@ describe("crafting workbench", () => {
         expect(card.textContent).toContain("20% increased Damage");
         fireEvent.click(screen.getByText("Allocated passive requirement"));
         const requirement = screen.getByRole("combobox", { name: "Require allocated notable" });
-        fireEvent.change(requirement, { target: { value: "Harness the Elements" } });
+        changeControl(requirement, { target: { value: "Harness the Elements" } });
         fireEvent.keyDown(requirement, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: "Harness the Elements" }));
         fireEvent.click(button("Calculate odds"));
@@ -6055,11 +6056,11 @@ describe("crafting workbench", () => {
         expect(saved.item.mods[0].grantedPassive).toBe("elemental32");
         expect(saved.target.grantedPassives).toEqual(["elemental32"]);
         fireEvent.click(button("Clear allocated passive requirement"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        expect(requirement).toHaveProperty("value", "Harness the Elements");
+        expectControlValue(requirement, "Harness the Elements");
         expect(screen.queryByRole("alert")).toBeNull();
     });
 
@@ -6104,7 +6105,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ exhausted: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "exhausted" },
         });
         fireEvent.click(button("Load project"));
@@ -6128,7 +6129,7 @@ describe("crafting workbench", () => {
         expect(panel.textContent).toContain("4 unrevealed modifiers remain");
         fireEvent.click(button("Redo"));
         expect(panel.textContent).toContain("3 unrevealed modifiers remain");
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -6165,7 +6166,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ putrefaction: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "putrefaction" },
         });
         fireEvent.click(button("Load project"));
@@ -6179,7 +6180,7 @@ describe("crafting workbench", () => {
                 .getAttribute("aria-disabled"),
         ).toBe("true");
         fireEvent.click(screen.getByText("Item conditions"));
-        fireEvent.change(screen.getByRole("spinbutton", { name: "Maximum unrevealed modifiers" }), {
+        changeControl(screen.getByRole("spinbutton", { name: "Maximum unrevealed modifiers" }), {
             target: { value: "0" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -6207,7 +6208,7 @@ describe("crafting workbench", () => {
         expect(partial.item.reveal.index).toBe(count - 1);
         expect(partial.item.reveal.echoes).toEqual({ omen: echoes, remaining: 1 });
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -6264,7 +6265,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ astrolabe: project }));
         mount();
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "astrolabe" },
         });
         fireEvent.click(button("Load project"));
@@ -6277,8 +6278,8 @@ describe("crafting workbench", () => {
         fireEvent.click(screen.getByText("Item conditions"));
         for (const name of ["Shaper", "Elder", "Crusader", "Redeemer", "Hunter", "Warlord"]) {
             const influence = screen.getByRole("checkbox", { name: new RegExp(`^${name}$`) });
-            expect(influence).toHaveProperty("checked", true);
-            expect(influence).toHaveProperty("disabled", true);
+            expect(influence.getAttribute("aria-checked")).toBe(String(true));
+            expect(influence.getAttribute("aria-disabled")).toBe("true");
             fireEvent.click(screen.getByRole("checkbox", { name: `Require ${name}` }));
         }
         fireEvent.click(button("Calculate odds"));
@@ -6305,16 +6306,15 @@ describe("crafting workbench", () => {
         expect(saved.item.influences).toEqual([]);
         expect(saved.target.influences).toEqual([0, 1, 2, 3, 4, 5]);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
         expect(card.textContent).toBe(after);
         fireEvent.click(button("Clear item conditions"));
-        expect(screen.getByRole("checkbox", { name: "Require Warlord" })).toHaveProperty(
-            "checked",
-            false,
-        );
+        expect(
+            screen.getByRole("checkbox", { name: "Require Warlord" }).getAttribute("aria-checked"),
+        ).toBe(String(false));
     });
 
     it("selects Harvest influence randomisation, targets an influence and saves the result with undo and costs", async () => {
@@ -6347,12 +6347,12 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ influence: project }));
         mount();
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "influence" },
         });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Randomise the Influence" } });
+        changeControl(picker, { target: { value: "Randomise the Influence" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: `Harvest · ${recipe.name}` }));
         expect(
@@ -6387,16 +6387,15 @@ describe("crafting workbench", () => {
         expect(saved.target.influences).toEqual([1]);
         expect(saved.item.influences).not.toEqual([0]);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
         expect(card.textContent).toBe(after);
         fireEvent.click(button("Clear item conditions"));
-        expect(screen.getByRole("checkbox", { name: "Require Elder" })).toHaveProperty(
-            "checked",
-            false,
-        );
+        expect(
+            screen.getByRole("checkbox", { name: "Require Elder" }).getAttribute("aria-checked"),
+        ).toBe(String(false));
     });
 
     it("selects Sanctification, dispatches stat targets and preserves state and costs through undo and save/load", () => {
@@ -6434,7 +6433,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ sanctify: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "sanctify" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "sanctify" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(screen.getByRole("checkbox", { name: /^Omen of Sanctification/ }));
         expect(
@@ -6472,7 +6471,7 @@ describe("crafting workbench", () => {
         expect(saved.item.sanctified).toBe(true);
         expect(saved.item.mods[0].sanctification).toBeGreaterThanOrEqual(78);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -6516,7 +6515,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ mixed: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "mixed" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "mixed" } });
         fireEvent.click(button("Load project"));
         expect(screen.getByRole("region", { name: "Reveal modifier" }).textContent).toContain(
             "80%, 15% or 5% probability",
@@ -6542,7 +6541,7 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.item.mods[0]).toMatchObject({ id, desecrated: true, crafted: false });
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -6551,7 +6550,7 @@ describe("crafting workbench", () => {
             (entry) => entry.action === "remove_random_mod",
         )!;
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: annul.name } });
+        changeControl(picker, { target: { value: annul.name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: annul.name }));
         fireEvent.click(screen.getByRole("checkbox", { name: /^Omen of Light/ }));
@@ -6596,10 +6595,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ affinity: project }));
         mount();
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "affinity" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "affinity" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: recipe.name } });
+        changeControl(picker, { target: { value: recipe.name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: `Harvest · ${recipe.name}` }));
         expect(
@@ -6631,7 +6630,7 @@ describe("crafting workbench", () => {
         expect(saved.item.mods.length).toBeGreaterThanOrEqual(4);
         expect(saved.item.quality).toBe(20);
         fireEvent.click(button("Undo"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -6677,10 +6676,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ breach: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "breach" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "breach" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: essence.name } });
+        changeControl(picker, { target: { value: essence.name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: essence.name }));
         fireEvent.click(
@@ -6696,14 +6695,14 @@ describe("crafting workbench", () => {
         const card = screen.getByRole("region", { name: "Current item" });
         expect(card.textContent).toContain("+20% to Maximum Quality");
         const catalyst = data.crafting.catalysts.find((entry) => entry.tags.includes("life"))!;
-        fireEvent.change(screen.getByRole("combobox", { name: "Catalyst" }), {
+        changeControl(screen.getByRole("combobox", { name: "Catalyst" }), {
             target: { value: catalyst.id },
         });
-        fireEvent.change(screen.getByRole("spinbutton", { name: /Catalyst quality/ }), {
+        changeControl(screen.getByRole("spinbutton", { name: /Catalyst quality/ }), {
             target: { value: "40" },
         });
         expect(screen.getByText(/Current crafting maximum 40%/)).toBeDefined();
-        fireEvent.change(picker, { target: { value: annul.name } });
+        changeControl(picker, { target: { value: annul.name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: annul.name }));
         fireEvent.click(screen.getByRole("checkbox", { name: /Omen of Sinistral Annulment/ }));
@@ -6725,10 +6724,10 @@ describe("crafting workbench", () => {
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.item.catalyst.quality).toBe(40);
         expect(saved.item.mods).toHaveLength(1);
-        fireEvent.change(screen.getByRole("combobox", { name: "Catalyst" }), {
+        changeControl(screen.getByRole("combobox", { name: "Catalyst" }), {
             target: { value: "" },
         });
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -6739,10 +6738,10 @@ describe("crafting workbench", () => {
 
     it("sets base quality, targets Harvest enchantment life, and retains the result through undo and saves", async () => {
         mount();
-        fireEvent.change(screen.getByLabelText("Base quality (%)"), { target: { value: "20" } });
+        changeControl(screen.getByLabelText("Base quality (%)"), { target: { value: "20" } });
         const recipe = catalog.crafting.harvest.find((entry) => entry.id === "LifeBodyEnchant")!;
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Enchant a Body Armour" } });
+        changeControl(picker, { target: { value: "Enchant a Body Armour" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: `Harvest · ${recipe.name}` }));
         expect(screen.getByRole("region", { name: "Harvest enchantment" }).textContent).toContain(
@@ -6750,7 +6749,7 @@ describe("crafting workbench", () => {
         );
         fireEvent.click(screen.getByText("Enchantment requirement"));
         const targetPicker = screen.getByRole("combobox", { name: "Require enchantment" });
-        fireEvent.change(targetPicker, { target: { value: "Maximum Life" } });
+        changeControl(targetPicker, { target: { value: "Maximum Life" } });
         fireEvent.keyDown(targetPicker, { key: "ArrowDown" });
         fireEvent.click(
             await screen.findByRole("option", {
@@ -6759,7 +6758,7 @@ describe("crafting workbench", () => {
         );
         fireEvent.click(screen.getByText("Final item property conditions"));
         fireEvent.click(button("Require Flat Life"));
-        fireEvent.change(screen.getByLabelText("Minimum Flat Life"), { target: { value: "10" } });
+        changeControl(screen.getByLabelText("Minimum Flat Life"), { target: { value: "10" } });
         fireEvent.click(button("Calculate odds"));
         expect(screen.queryByRole("alert")).toBeNull();
         const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
@@ -6794,11 +6793,11 @@ describe("crafting workbench", () => {
         expect(card.textContent).toContain("Quality: +20%");
         fireEvent.click(button("Redo"));
         expect(card.textContent).toContain("Grants +1 to Maximum Life");
-        fireEvent.change(screen.getByLabelText("Base quality (%)"), { target: { value: "19" } });
+        changeControl(screen.getByLabelText("Base quality (%)"), { target: { value: "19" } });
         expect(
             within(card).getByRole("region", { name: "Final item properties" }).textContent,
         ).toContain("Flat Life9");
-        fireEvent.change(screen.getByLabelText("Base quality (%)"), { target: { value: "20" } });
+        changeControl(screen.getByLabelText("Base quality (%)"), { target: { value: "20" } });
         fireEvent.click(screen.getByText("Save, load, and export"));
         fireEvent.click(button("Save project"));
         const key = `poe-boats:crafting:poe1:${catalog.patch}`;
@@ -6809,7 +6808,7 @@ describe("crafting workbench", () => {
         expect(saved.target.properties).toEqual({ flatLife: { min: 10 } });
         fireEvent.click(within(card).getByRole("button", { name: "Remove enchantment" }));
         expect(card.textContent).not.toContain("Grants +1 to Maximum Life");
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -6840,12 +6839,12 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ influenced: project }));
         mount();
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "influenced" },
         });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Reforge an Influenced Rare" } });
+        changeControl(picker, { target: { value: "Reforge an Influenced Rare" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: `Harvest · ${recipe.name}` }));
         fireEvent.click(button("Calculate odds"));
@@ -6919,10 +6918,10 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ amulet: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "amulet" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "amulet" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: name } });
+        changeControl(picker, { target: { value: name } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(
             await screen.findByRole("option", { name: new RegExp(`Allocates ${name}$`) }),
@@ -6932,7 +6931,7 @@ describe("crafting workbench", () => {
         );
         fireEvent.click(screen.getByText("Anointment requirements"));
         const targetPicker = screen.getByRole("combobox", { name: "Require anointment" });
-        fireEvent.change(targetPicker, { target: { value: name } });
+        changeControl(targetPicker, { target: { value: name } });
         fireEvent.keyDown(targetPicker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: `Allocates ${name}` }));
         fireEvent.click(button("Calculate odds"));
@@ -6955,7 +6954,7 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Redo"));
         expect(card.textContent).toContain(`Allocates ${name}`);
         fireEvent.click(within(card).getByRole("button", { name: "Remove anointment" }));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -6989,19 +6988,19 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ jewel: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "jewel" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "jewel" } });
         fireEvent.click(button("Load project"));
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Potent Liquid Melancholy" } });
+        changeControl(picker, { target: { value: "Potent Liquid Melancholy" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: /^Potent Liquid Melancholy$/ }));
         expect(
             screen.getByRole("region", { name: "Liquid Emotion outcome" }).textContent,
         ).toContain("Debilitate");
-        fireEvent.change(screen.getByLabelText("Modifier source"), {
+        changeControl(screen.getByLabelText("Modifier source"), {
             target: { value: "emotion" },
         });
-        fireEvent.change(screen.getByRole("textbox", { name: "Search modifiers" }), {
+        changeControl(screen.getByRole("textbox", { name: "Search modifiers" }), {
             target: { value: "Debilitate" },
         });
         const pool = screen.getByRole("region", { name: "Modifier pool" });
@@ -7027,7 +7026,7 @@ describe("crafting workbench", () => {
         expect(screen.queryByText("Emulator spending")).toBeNull();
         fireEvent.click(button("Redo"));
         expect(card.textContent).toContain("Debilitate");
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -7048,13 +7047,13 @@ describe("crafting workbench", () => {
         const requirements = screen.getByRole("region", { name: "Crafting requirements" });
         fireEvent.click(within(requirements).getByText("Stat value conditions"));
         const picker = within(requirements).getByRole("combobox", { name: "Add stat requirement" });
-        fireEvent.change(picker, { target: { value: "base_maximum_life" } });
+        changeControl(picker, { target: { value: "base_maximum_life" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(await screen.findByRole("option", { name: /· base_maximum_life$/ }));
-        fireEvent.change(within(requirements).getByLabelText("Minimum stat value"), {
+        changeControl(within(requirements).getByLabelText("Minimum stat value"), {
             target: { value: "20" },
         });
-        fireEvent.change(within(requirements).getByLabelText("Count values from"), {
+        changeControl(within(requirements).getByLabelText("Count values from"), {
             target: { value: "explicit" },
         });
         expect(within(requirements).getByText("Current item total: 0")).toBeDefined();
@@ -7071,10 +7070,10 @@ describe("crafting workbench", () => {
         fireEvent.click(within(processRegion).getByText("Edit step condition"));
         const step = within(processRegion).getByRole("region", { name: "Step 1 condition" });
         fireEvent.click(within(step).getByText("Stat value conditions"));
-        fireEvent.change(within(step).getByLabelText("Minimum stat value"), {
+        changeControl(within(step).getByLabelText("Minimum stat value"), {
             target: { value: "15" },
         });
-        fireEvent.change(within(step).getByLabelText("Maximum stat value"), {
+        changeControl(within(step).getByLabelText("Maximum stat value"), {
             target: { value: "30" },
         });
         fireEvent.click(screen.getByText("Save, load, and export"));
@@ -7093,7 +7092,7 @@ describe("crafting workbench", () => {
         );
         fireEvent.click(button("Calculate odds"));
         expect(screen.getByRole("alert").textContent).toContain("at least one target");
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -7108,7 +7107,7 @@ describe("crafting workbench", () => {
         const transmute = catalog.crafting.currencies.find(
             (entry) => entry.action === "transmute_to_magic",
         )!;
-        fireEvent.change(screen.getByLabelText("Currency sequence"), {
+        changeControl(screen.getByLabelText("Currency sequence"), {
             target: { value: transmute.id },
         });
         fireEvent.click(button("Use currency sequence"));
@@ -7141,7 +7140,7 @@ describe("crafting workbench", () => {
         mount("calculate");
         const requirements = screen.getByRole("region", { name: "Crafting requirements" });
         fireEvent.click(within(requirements).getByText("Item conditions"));
-        fireEvent.change(within(requirements).getByLabelText("Required rarity"), {
+        changeControl(within(requirements).getByLabelText("Required rarity"), {
             target: { value: "normal" },
         });
         fireEvent.click(screen.getByRole("checkbox", { name: "Combine crafting steps" }));
@@ -7150,7 +7149,7 @@ describe("crafting workbench", () => {
         fireEvent.click(within(processRegion).getByText("Edit step condition"));
         const condition = within(processRegion).getByRole("region", { name: "Step 1 condition" });
         fireEvent.click(within(condition).getByText("Item conditions"));
-        fireEvent.change(within(condition).getByLabelText("Maximum total affixes"), {
+        changeControl(within(condition).getByLabelText("Maximum total affixes"), {
             target: { value: "0" },
         });
         expect(
@@ -7172,7 +7171,7 @@ describe("crafting workbench", () => {
         expect(screen.getByRole("region", { name: "Crafting results" }).textContent).toContain(
             "100",
         );
-        fireEvent.change(within(processRegion).getByLabelText("Step action"), {
+        changeControl(within(processRegion).getByLabelText("Step action"), {
             target: { value: "craft" },
         });
         expect(
@@ -7186,11 +7185,11 @@ describe("crafting workbench", () => {
         const alteration = catalog.crafting.currencies.find(
             (entry) => entry.action === "reroll_magic",
         )!;
-        fireEvent.change(screen.getByLabelText("Currency sequence"), {
+        changeControl(screen.getByLabelText("Currency sequence"), {
             target: { value: alteration.id },
         });
         expect(button("Use currency sequence").hasAttribute("disabled")).toBe(true);
-        fireEvent.change(screen.getByRole("combobox", { name: "Rarity" }), {
+        changeControl(screen.getByRole("combobox", { name: "Rarity" }), {
             target: { value: "magic" },
         });
         expect(button("Use currency sequence").hasAttribute("disabled")).toBe(false);
@@ -7287,7 +7286,7 @@ describe("crafting workbench", () => {
         );
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "process" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "process" } });
         fireEvent.click(button("Load project"));
         expect(screen.getByRole("region", { name: "Crafting process" })).toBeDefined();
         fireEvent.click(button("Calculate odds"));
@@ -7344,7 +7343,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ waystone: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "waystone" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "waystone" } });
         fireEvent.click(button("Load project"));
         const card = screen.getByRole("region", { name: "Current item" });
         const before = card.textContent;
@@ -7382,7 +7381,7 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Undo"));
         expect(card.textContent).toBe(before);
         expect(screen.queryByText("Emulator spending")).toBeNull();
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -7399,13 +7398,13 @@ describe("crafting workbench", () => {
     it("selects a level 30 Aspect, targets its tier, and preserves the craft through undo and save", async () => {
         mount();
         const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.change(picker, { target: { value: "Level 30 Aspect of the Spider" } });
+        changeControl(picker, { target: { value: "Level 30 Aspect of the Spider" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         fireEvent.click(
             await screen.findByRole("option", { name: /Level 30 Aspect of the Spider/ }),
         );
         expect(screen.queryByLabelText("Beast level")).toBeNull();
-        fireEvent.change(screen.getByLabelText("Modifier source"), {
+        changeControl(screen.getByLabelText("Modifier source"), {
             target: { value: "aspect" },
         });
         const pool = screen.getByRole("region", { name: "Modifier pool" });
@@ -7484,17 +7483,17 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ quality: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "quality" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "quality" } });
         fireEvent.click(button("Load project"));
         const catalyst = data.crafting.catalysts.find((entry) =>
             entry.tags.includes(game === "poe1" ? "resource" : "life"),
         )!;
-        fireEvent.change(screen.getByRole("combobox", { name: "Catalyst" }), {
+        changeControl(screen.getByRole("combobox", { name: "Catalyst" }), {
             target: { value: catalyst.id },
         });
         const card = screen.getByRole("region", { name: "Current item" });
         expect(card.textContent).toContain("+18 to maximum Life");
-        fireEvent.change(screen.getByRole("spinbutton", { name: /Catalyst quality/ }), {
+        changeControl(screen.getByRole("spinbutton", { name: /Catalyst quality/ }), {
             target: { value: "10" },
         });
         expect(card.textContent).toContain("+16 to maximum Life");
@@ -7504,11 +7503,11 @@ describe("crafting workbench", () => {
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.item.catalyst).toEqual({ id: catalyst.id, quality: 20 });
         expect(saved.item.mods[0].values).toEqual([15]);
-        fireEvent.change(screen.getByRole("combobox", { name: "Catalyst" }), {
+        changeControl(screen.getByRole("combobox", { name: "Catalyst" }), {
             target: { value: "" },
         });
         expect(card.textContent).toContain("+15 to maximum Life");
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -7558,7 +7557,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ ranges: project }));
         mount("calculate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "ranges" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "ranges" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(screen.getByText("Import or export item text"));
         const field = screen.getByRole("textbox", { name: "Item text" });
@@ -7567,7 +7566,7 @@ describe("crafting workbench", () => {
             format === "blueprint"
                 ? `Rarity: Rare\nTest\n${data.bases[base]!.name}\nCrafted: true\nPrefix: {range:0.5}IncreasedLife1\nSuffix: None\nItem Level: 86\nImplicits: 0\n{prefix}+${value} to maximum Life`
                 : `Rarity: Rare\nTest\n${data.bases[base]!.name}\nItem Level: 86\nImplicits: 0\n{range:0.5}{modGroup:IncreasedLife1}${current.mod("IncreasedLife1").text}`;
-        fireEvent.change(field, { target: { value: text } });
+        changeControl(field, { target: { value: text } });
         fireEvent.click(button("Preview import"));
         expect(screen.queryByRole("alert")).toBeNull();
         expect(screen.getByRole("region", { name: "Item import preview" }).textContent).toContain(
@@ -7586,7 +7585,7 @@ describe("crafting workbench", () => {
         expect(simulation.result().meanCost).toBe(2);
         act(() => worker.onmessage?.({ data: { type: "done", result: simulation.result() } }));
         fireEvent.click(button("Export current item text"));
-        expect(field).toHaveProperty("value", expect.stringContaining(`+${value} to maximum Life`));
+        expectControlValue(field, expect.stringContaining(`+${value} to maximum Life`));
         expect((field as HTMLTextAreaElement).value).not.toContain("{range:");
         fireEvent.click(button("Save project"));
         expect(
@@ -7596,16 +7595,16 @@ describe("crafting workbench", () => {
         expect(card.textContent).toContain("normal");
         fireEvent.click(button("Redo"));
         expect(card.textContent).toContain(`+${value} to maximum Life`);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        fireEvent.change(field, { target: { value: text.replace("{range:0.5}", "{range:1.5}") } });
+        changeControl(field, { target: { value: text.replace("{range:0.5}", "{range:1.5}") } });
         fireEvent.click(button("Preview import"));
         expect(screen.getByRole("alert").textContent).toContain("between 0 and 1");
         expect(screen.queryByRole("region", { name: "Item import preview" })).toBeNull();
         expect(card.textContent).toContain(`+${value} to maximum Life`);
-        fireEvent.change(field, {
+        changeControl(field, {
             target: {
                 value: text.replace(
                     "Item Level: 86",
@@ -7656,24 +7655,25 @@ describe("crafting workbench", () => {
         mount();
         fireEvent.click(screen.getByText("Import or export item text"));
         const text = `Rarity: RARE\nTest\nPlate Vest\nItem Level: 86\nImplicits: 0\n+100 to Armour\n+35 to maximum Life`;
-        fireEvent.change(screen.getByRole("textbox", { name: "Item text" }), {
+        changeControl(screen.getByRole("textbox", { name: "Item text" }), {
             target: { value: text },
         });
         fireEvent.click(button("Preview import"));
+        const matches = screen.getByRole("combobox", { name: "Matching item" });
+        fireEvent.click(matches);
         const options = within(
-            screen.getByRole("combobox", { name: "Matching item" }),
+            document.getElementById(matches.getAttribute("aria-controls")!)!,
         ).getAllByRole("option");
         expect(options.length).toBeGreaterThan(1);
         const hybrid = options.findIndex((option) => option.textContent?.includes("Crocodile"));
         expect(hybrid).toBeGreaterThanOrEqual(0);
-        fireEvent.change(screen.getByRole("combobox", { name: "Matching item" }), {
-            target: { value: String(hybrid) },
-        });
+        fireEvent.mouseMove(options[hybrid]!);
+        fireEvent.click(options[hybrid]!);
         expect(screen.getByRole("region", { name: "Item import preview" }).textContent).toContain(
             "1/3 prefixes",
         );
         fireEvent.click(button("Import selected item"));
-        fireEvent.change(screen.getByRole("textbox", { name: "Item text" }), {
+        changeControl(screen.getByRole("textbox", { name: "Item text" }), {
             target: { value: `${text}\nUnknown modifier` },
         });
         fireEvent.click(button("Preview import"));
@@ -7716,7 +7716,7 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ lich: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "lich" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "lich" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(screen.getByRole("checkbox", { name: /^Omen of the Sovereign/ }));
         fireEvent.click(button("Apply craft"));
@@ -7791,11 +7791,11 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ echoes: project }));
         mount("emulate", data);
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "echoes" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "echoes" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(screen.getByRole("checkbox", { name: /^Omen of Abyssal Echoes/ }));
         fireEvent.click(screen.getByText("Custom prices in chaos"));
-        fireEvent.change(screen.getByRole("spinbutton", { name: omen.name }), {
+        changeControl(screen.getByRole("spinbutton", { name: omen.name }), {
             target: { value: "7" },
         });
         fireEvent.click(button(`Reveal with ${omen.name}`));
@@ -7818,7 +7818,7 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Redo"));
         expect(button("Reroll reveal choices").hasAttribute("disabled")).toBe(true);
         fireEvent.click(button("Save project"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -7858,9 +7858,9 @@ describe("crafting workbench", () => {
         );
         mount();
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "beast" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "beast" } });
         fireEvent.click(button("Load project"));
-        fireEvent.change(screen.getByLabelText("Beast level"), { target: { value: "86" } });
+        changeControl(screen.getByLabelText("Beast level"), { target: { value: "86" } });
         fireEvent.click(button("Apply craft"));
         expect(screen.queryByRole("alert")).toBeNull();
         expect(screen.getByRole("region", { name: "Current item" }).textContent).toContain(
@@ -7909,15 +7909,15 @@ describe("crafting workbench", () => {
         );
         mount();
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "awakening" },
         });
         fireEvent.click(button("Load project"));
-        fireEvent.change(screen.getByLabelText("Donor item"), {
+        changeControl(screen.getByLabelText("Donor item"), {
             target: { value: donor.id },
         });
         fireEvent.click(screen.getByText("Custom prices in chaos"));
-        fireEvent.change(screen.getByLabelText("Donor · Elder donor"), {
+        changeControl(screen.getByLabelText("Donor · Elder donor"), {
             target: { value: "50" },
         });
         fireEvent.click(button("Apply craft"));
@@ -7938,7 +7938,7 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Apply craft"));
         const crafted = screen.getByRole("region", { name: "Current item" }).textContent;
         fireEvent.click(screen.getByText("Item inventory (0)"));
-        fireEvent.change(screen.getByLabelText("Inventory item name"), {
+        changeControl(screen.getByLabelText("Inventory item name"), {
             target: { value: "First attempt" },
         });
         fireEvent.click(button("Store current item"));
@@ -7978,7 +7978,7 @@ describe("crafting workbench", () => {
         );
         mount();
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "veiled" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "veiled" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(button("Reveal choices"));
         const panel = screen.getByRole("region", { name: "Reveal modifier" });
@@ -8011,13 +8011,13 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Apply craft"));
         const crafted = screen.getByRole("region", { name: "Current item" }).textContent;
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Project name"), {
+        changeControl(screen.getByLabelText("Project name"), {
             target: { value: "Life armour" },
         });
         fireEvent.click(button("Save project"));
         fireEvent.click(button("Reset"));
         expect(screen.getByRole("region", { name: "Current item" }).textContent).not.toBe(crafted);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "Life armour" },
         });
         fireEvent.click(button("Load project"));
@@ -8042,7 +8042,7 @@ describe("crafting workbench", () => {
         expect(screen.getByRole("region", { name: "Crafting results" })).toBeDefined();
         fireEvent.click(button("Stop simulation"));
         expect(worker.terminate).toHaveBeenCalled();
-        fireEvent.change(screen.getByLabelText("Item level"), { target: { value: "80" } });
+        changeControl(screen.getByLabelText("Item level"), { target: { value: "80" } });
         act(() => worker.onmessage?.({ data: { type: "done", result: simulation.result() } }));
         expect(screen.queryByRole("region", { name: "Crafting results" })).toBeNull();
         view.unmount();
@@ -8050,14 +8050,14 @@ describe("crafting workbench", () => {
 
     it("selects a tier or better as one alternative group and exposes recipe guarantees", () => {
         mount("calculate");
-        fireEvent.change(screen.getByRole("textbox", { name: "Search modifiers" }), {
+        changeControl(screen.getByRole("textbox", { name: "Search modifiers" }), {
             target: { value: "maximum Life" },
         });
         fireEvent.click(screen.getAllByRole("button", { name: "Tier or better" })[2]!);
         expect(screen.getByRole("region", { name: "Crafting requirements" }).textContent).toContain(
             "Group 1",
         );
-        fireEvent.change(screen.getByLabelText("Modifier source"), {
+        changeControl(screen.getByLabelText("Modifier source"), {
             target: { value: "essence" },
         });
         expect(screen.getByText(/provided by extracted recipes/)).toBeDefined();
@@ -8101,13 +8101,13 @@ describe("crafting workbench", () => {
         localStorage.setItem(key, JSON.stringify({ allflame: project }));
         mount("calculate");
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "allflame" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "allflame" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(screen.getByText("Fossil optimizer"));
         const optimizer = within(screen.getByText("Fossil optimizer").closest("details")!);
         expect(optimizer.getByRole("note").textContent).toContain("Uses Allflame");
         fireEvent.click(optimizer.getByText("Optimizer prices in chaos"));
-        fireEvent.change(optimizer.getByLabelText("Dead Man's Sulphur"), {
+        changeControl(optimizer.getByLabelText("Dead Man's Sulphur"), {
             target: { value: "0.01" },
         });
         fireEvent.click(button("Compare fossils"));
@@ -8158,7 +8158,7 @@ describe("crafting workbench", () => {
         mount("calculate");
         fireEvent.click(screen.getAllByRole("button", { name: "Require" })[0]!);
         fireEvent.click(screen.getByText("Fossil optimizer"));
-        fireEvent.change(screen.getByLabelText("Maximum resonator sockets"), {
+        changeControl(screen.getByLabelText("Maximum resonator sockets"), {
             target: { value: "2" },
         });
         fireEvent.click(button("Compare fossils"));
@@ -8185,7 +8185,7 @@ describe("crafting workbench", () => {
         expect(screen.getByText("1 / 3 combinations completed")).toBeDefined();
         fireEvent.click(button("Stop optimizer"));
         expect(worker.terminate).toHaveBeenCalled();
-        fireEvent.change(screen.getByLabelText("Maximum resonator sockets"), {
+        changeControl(screen.getByLabelText("Maximum resonator sockets"), {
             target: { value: "1" },
         });
         expect(screen.queryByText("1 / 3 combinations completed")).toBeNull();

@@ -1,7 +1,9 @@
 import { lazy, Suspense, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Field, FieldLabel } from "~/components/ui/field";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import {
@@ -72,21 +74,21 @@ export function ProcessEditor({
                     currency. All steps count toward the step limit.
                 </p>
                 <div className="mt-4 space-y-2">
-                    <label className="block space-y-1 text-xs">
+                    <Label className="block space-y-1 text-xs">
                         Currency sequence
-                        <select
+                        <FormSelect
                             className={controlClass}
                             value={sequenceId}
-                            onChange={(event) => setSequenceId(event.target.value)}
+                            onValueChange={(selectedValue) => setSequenceId(selectedValue)}
                         >
-                            <option value="">Choose a sequence</option>
+                            <FormSelectItem value="">Choose a sequence</FormSelectItem>
                             {sequences.map((sequence) => (
-                                <option key={sequence.id} value={sequence.id}>
+                                <FormSelectItem key={sequence.id} value={sequence.id}>
                                     {sequence.name}
-                                </option>
+                                </FormSelectItem>
                             ))}
-                        </select>
-                    </label>
+                        </FormSelect>
+                    </Label>
                     {selected ? (
                         <p className="text-xs text-muted-foreground">
                             Starts from a {selected.rarity} item that can become rare. Fills
@@ -211,24 +213,26 @@ export function ProcessEditor({
                             }
                         />
                     </Field>
-                    <label className="block space-y-1 text-xs">
+                    <Label className="block space-y-1 text-xs">
                         Step action
-                        <select
+                        <FormSelect
                             className={controlClass}
                             value={step.method ? "craft" : "check"}
-                            onChange={(event) =>
+                            onValueChange={(selectedValue) =>
                                 change(step.id, {
                                     method:
-                                        event.target.value === "craft"
+                                        selectedValue === "craft"
                                             ? structuredClone(project.method)
                                             : undefined,
                                 })
                             }
                         >
-                            <option value="craft">Craft, then check condition</option>
-                            <option value="check">Check condition only</option>
-                        </select>
-                    </label>
+                            <FormSelectItem value="craft">
+                                Craft, then check condition
+                            </FormSelectItem>
+                            <FormSelectItem value="check">Check condition only</FormSelectItem>
+                        </FormSelect>
+                    </Label>
                     {step.method ? (
                         <MethodPicker
                             engine={engine}
@@ -377,24 +381,24 @@ export function ProcessEditor({
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 {(["onSuccess", "onFailure"] as const).map((key) => (
-                                    <label key={key} className="space-y-1 text-xs">
+                                    <Label key={key} className="block space-y-1 text-xs">
                                         {key === "onSuccess"
                                             ? "Condition passed"
                                             : "Condition failed"}
-                                        <select
+                                        <FormSelect
                                             className={controlClass}
                                             value={step[key]}
-                                            onChange={(event) =>
-                                                change(step.id, { [key]: event.target.value })
+                                            onValueChange={(selectedValue) =>
+                                                change(step.id, { [key]: selectedValue })
                                             }
                                         >
                                             {destinations.map((entry) => (
-                                                <option key={entry.id} value={entry.id}>
+                                                <FormSelectItem key={entry.id} value={entry.id}>
                                                     {entry.name}
-                                                </option>
+                                                </FormSelectItem>
                                             ))}
-                                        </select>
-                                    </label>
+                                        </FormSelect>
+                                    </Label>
                                 ))}
                             </div>
                         </>
