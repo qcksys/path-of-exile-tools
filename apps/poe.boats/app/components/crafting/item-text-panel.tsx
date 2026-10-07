@@ -175,7 +175,11 @@ export function ItemTextPanel({
                             onClick={() => {
                                 onImport(match.item);
                                 setMatches([]);
-                                setNotice("Item imported. Undo restores the previous item.");
+                                setNotice(
+                                    item
+                                        ? "Item imported. Undo restores the previous item."
+                                        : "Item imported.",
+                                );
                             }}
                         >
                             Import selected item
