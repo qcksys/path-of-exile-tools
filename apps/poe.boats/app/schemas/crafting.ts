@@ -131,44 +131,46 @@ const influencesSchema = z
     .array(z.number().int().min(0).max(5))
     .max(6)
     .refine((values) => new Set(values).size === values.length, "Influences must be unique.");
-export const rolledModSchema = z.object({
-    id,
-    essence: z.literal(true).optional(),
-    values: z.array(z.number().int()),
-    fractured: z.boolean().default(false),
-    crafted: z.boolean().default(false),
-    desecrated: z.literal(true).optional(),
-    sanctification: z.number().int().positive().optional(),
-    corruptionScale: z
-        .number()
-        .int()
-        .min(jewelCorruptionRange.min)
-        .max(jewelCorruptionRange.max)
-        .optional(),
-    grantedPassive: id.optional(),
-    attributeSource: id.optional(),
-    conversion: z
-        .object({
-            source: id,
-            steps: z
-                .array(
-                    z.object({
-                        socket: z.number().int().min(0).max(6),
-                        order: z.number().int().min(0).max(6),
-                    }),
-                )
-                .min(1)
-                .max(7),
-        })
-        .optional(),
-    origin: z
-        .discriminatedUnion("kind", [
-            z.object({ kind: z.literal("awakener"), level: itemLevel }),
-            z.object({ kind: z.literal("recombine"), level: itemLevel }),
-            z.object({ kind: z.literal("beast"), level: itemLevel, recipe: id }),
-        ])
-        .optional(),
-});
+export const rolledModSchema = z
+    .object({
+        id,
+        essence: z.literal(true).optional(),
+        values: z.array(z.number().int()),
+        fractured: z.boolean().default(false),
+        crafted: z.boolean().default(false),
+        desecrated: z.literal(true).optional(),
+        sanctification: z.number().int().positive().optional(),
+        corruptionScale: z
+            .number()
+            .int()
+            .min(jewelCorruptionRange.min)
+            .max(jewelCorruptionRange.max)
+            .optional(),
+        grantedPassive: id.optional(),
+        attributeSource: id.optional(),
+        conversion: z
+            .object({
+                source: id,
+                steps: z
+                    .array(
+                        z.object({
+                            socket: z.number().int().min(0).max(6),
+                            order: z.number().int().min(0).max(6),
+                        }),
+                    )
+                    .min(1)
+                    .max(7),
+            })
+            .optional(),
+        origin: z
+            .discriminatedUnion("kind", [
+                z.object({ kind: z.literal("awakener"), level: itemLevel }),
+                z.object({ kind: z.literal("recombine"), level: itemLevel }),
+                z.object({ kind: z.literal("beast"), level: itemLevel, recipe: id }),
+            ])
+            .optional(),
+    })
+    .meta({ id: "CraftingRolledModifier" });
 const craftingItemFieldsSchema = z.object({
     baseId: id,
     level: itemLevel,
@@ -217,33 +219,39 @@ const craftingItemFieldsSchema = z.object({
 export const craftingRevealContextSchema = craftingItemFieldsSchema.extend({
     socketedJewel: craftingItemFieldsSchema.strict().optional(),
 });
-const craftingItemCoreSchema = craftingItemFieldsSchema.extend({
-    reveal: z
-        .object({
-            mod: id,
-            source: id,
-            mark: id.optional(),
-            index: z.number().int().min(0).max(5).optional(),
-            choices: z.array(id).max(3),
-            offeredOn: craftingRevealContextSchema.optional(),
-            omens: z.array(id).max(4).optional(),
-            echoes: z
-                .object({ omen: id, remaining: z.union([z.literal(0), z.literal(1)]) })
-                .optional(),
-        })
-        .optional(),
-});
-export const craftingItemStateSchema = craftingItemCoreSchema.extend({
-    socketedJewel: craftingItemCoreSchema.strict().optional(),
-});
+const craftingItemCoreSchema = craftingItemFieldsSchema
+    .extend({
+        reveal: z
+            .object({
+                mod: id,
+                source: id,
+                mark: id.optional(),
+                index: z.number().int().min(0).max(5).optional(),
+                choices: z.array(id).max(3),
+                offeredOn: craftingRevealContextSchema.optional(),
+                omens: z.array(id).max(4).optional(),
+                echoes: z
+                    .object({ omen: id, remaining: z.union([z.literal(0), z.literal(1)]) })
+                    .optional(),
+            })
+            .optional(),
+    })
+    .meta({ id: "CraftingItemCore" });
+export const craftingItemStateSchema = craftingItemCoreSchema
+    .extend({
+        socketedJewel: craftingItemCoreSchema.strict().optional(),
+    })
+    .meta({ id: "CraftingItemState" });
 export const craftingFlagSchema = craftingItemCoreSchema
     .pick({ corrupted: true, mirrored: true, split: true, sanctified: true })
     .keyof();
-export const craftingItemSchema = craftingItemStateSchema.extend({
-    imprint: craftingItemStateSchema.optional(),
-    allflameCopies: z.array(craftingItemStateSchema).min(1).max(4).optional(),
-    allflameCost: craftingDataSchema.shape.bench.element.shape.cost.min(1).optional(),
-});
+export const craftingItemSchema = craftingItemStateSchema
+    .extend({
+        imprint: craftingItemStateSchema.optional(),
+        allflameCopies: z.array(craftingItemStateSchema).min(1).max(4).optional(),
+        allflameCost: craftingDataSchema.shape.bench.element.shape.cost.min(1).optional(),
+    })
+    .meta({ id: "CraftingItem" });
 const inventoryTabNameSchema = z
     .string()
     .trim()
@@ -353,7 +361,7 @@ export const craftingMethodSchema = z
         }
         return input;
     }, craftingMethodOptionsSchema)
-    .meta(z.toJSONSchema(craftingMethodOptionsSchema, { io: "input" }));
+    .meta({ id: "CraftingMethod" });
 const affixCountRangeSchema = z
     .object({
         min: z.number().int().min(0).max(9),
@@ -538,7 +546,11 @@ function nestedTargetSchema(depth: number): z.ZodType<CraftingTarget> {
                           .max(12),
                   })
                   .optional()
-            : z.never({ error: "Requirements exceed the maximum nesting depth." }).optional(),
+            : z
+                  .never({ error: "Requirements exceed the maximum nesting depth." })
+                  // OpenAPI's converter needs a type override; not:{} still rejects every value.
+                  .meta({ type: "object", not: {} })
+                  .optional(),
     });
 }
 

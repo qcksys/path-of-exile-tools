@@ -6,6 +6,13 @@ The app uses React Router framework routes (the Remix successor) on Cloudflare W
 
 ## Coverage
 
+Crafting schemas publish named OpenAPI components for repeated item, modifier and method shapes.
+The workbench project uses the same converter as other operations; embedding native JSON Schema
+with root-relative `$defs` would produce invalid references inside the OpenAPI document. Contract
+tests resolve every local reference and bound document size, while the production browser test
+checks Scalar rendering at normal speed and fourfold CPU slowdown. The terminal target-depth
+schema remains impossible (`not: {}`), matching its existing runtime `z.never()` validation.
+
 | UI capability | HTTP family under `/api/v1` | MCP / shared implementation |
 | --- | --- | --- |
 | Connected recombinator plan to a new graph tab | `crafting/graph/from-recombinator` | `create_crafting_graph_from_recombinator_plan`; shared `projectFromRecombinatorPlan` preserves all connected recombinations, distinct input acquisitions, bench preparation, conditional crafted-mod removal, the selected final step and modifier/base targets. Requires explicit concrete bases and minimum/maximum rolls; prices remain unknown. Browser previews before saving a new local tab. Custom modifiers, manual probability flags and idealized essence preparations are refused explicitly. The graph uses retained full-item crafting rules, so it does not claim identical odds to the standalone abstract model. |
