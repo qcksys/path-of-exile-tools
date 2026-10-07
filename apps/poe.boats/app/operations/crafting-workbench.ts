@@ -40,11 +40,7 @@ const workbench = {
     readOnly: true,
     method: "post",
 } as const;
-// The native converter represents the terminal z.never() at the target's depth limit.
-const project = craftingProjectSchema.meta({
-    ...z.toJSONSchema(craftingProjectSchema),
-    id: "CraftingWorkbenchProject",
-});
+const project = craftingProjectSchema.meta({ id: "CraftingWorkbenchProject" });
 const invalid = (error: unknown) =>
     new OperationError(error instanceof Error ? error.message : "Invalid crafting request.", 400);
 

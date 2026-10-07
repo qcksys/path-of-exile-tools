@@ -1,5 +1,9 @@
 # Browser coverage
 
+The API-reference case exercises the real Scalar client at normal speed and fourfold CPU slowdown,
+using the same assertion deadline. It bounds the production contract size and rejects browser
+errors or unresolved-reference warnings, in addition to checking the visible API heading and route.
+
 CI runs browser tests in a separate job from unit and MySQL tests. Both must succeed for the
 `validate` check and deployment gate to pass. Each job retains a 20-minute limit; the browser step
 has a 15-minute limit to leave time for failure artifacts. The line reporter identifies each test
