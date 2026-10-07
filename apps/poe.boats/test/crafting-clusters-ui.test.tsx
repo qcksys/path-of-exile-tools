@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { CraftingWorkbench } from "../app/components/crafting/workbench";
 import { seededRandom } from "../app/lib/crafting-engine";
 import { craftingProjectSchema } from "../app/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog, currency, engine } from "./crafting-fixtures";
 
 class WorkerStub {
@@ -46,7 +47,7 @@ function mount(mode = "emulate") {
 }
 async function passive(name: string) {
     const picker = screen.getByRole("combobox", { name: "Cluster passive type" });
-    fireEvent.change(picker, { target: { value: name } });
+    changeControl(picker, { target: { value: name } });
     fireEvent.keyDown(picker, { key: "ArrowDown" });
     fireEvent.click(await screen.findByRole("option", { name }));
 }
@@ -73,7 +74,7 @@ it("edits passive type and count, updates the item and pool, and restores histor
     const view = mount();
     const current = within(screen.getByRole("region", { name: "Current item" }));
     expect(current.getByText("Adds (8–12) Passive Skills")).toBeDefined();
-    fireEvent.change(screen.getByRole("combobox", { name: "Cluster passive count" }), {
+    changeControl(screen.getByRole("combobox", { name: "Cluster passive count" }), {
         target: { value: "8" },
     });
     await passive("Spell Damage");
@@ -95,10 +96,7 @@ it("edits passive type and count, updates the item and pool, and restores histor
     view.unmount();
     mount();
     expect(draft().item).toEqual(crafted);
-    expect(screen.getByRole("combobox", { name: "Cluster passive count" })).toHaveProperty(
-        "value",
-        "8",
-    );
+    expectControlValue(screen.getByRole("combobox", { name: "Cluster passive count" }), "8");
 });
 
 it("keeps the item unchanged when a new passive type would invalidate an existing notable", async () => {
@@ -146,7 +144,7 @@ it.each([
     expect(current.getByText(effects)).toBeDefined();
     expect(current.getByText("Applies when allocated on the passive tree.")).toBeDefined();
 
-    fireEvent.change(screen.getByLabelText("Search modifiers"), {
+    changeControl(screen.getByLabelText("Search modifiers"), {
         target: { value: "Calamitous" },
     });
     const pool = within(screen.getByRole("region", { name: "Modifier pool" }));
@@ -168,7 +166,7 @@ it.each([
     "simulate",
 ])("sends selected Cluster Jewel properties to the shared %s worker", async (mode) => {
     mount(mode);
-    fireEvent.change(screen.getByRole("combobox", { name: "Cluster passive count" }), {
+    changeControl(screen.getByRole("combobox", { name: "Cluster passive count" }), {
         target: { value: "9" },
     });
     await passive("Spell Damage");

@@ -31,6 +31,7 @@ import {
     marketGraph,
 } from "../../crafting-market-fixtures";
 import { nnnGraph, rage } from "../../crafting-nnn-fixtures";
+import { selectValue } from "./control-helpers";
 import { choose } from "./recombinator-helpers";
 
 async function stored(page: Page) {
@@ -77,9 +78,10 @@ for (const game of ["poe1", "poe2"] as const) {
         await page.getByRole("button", { name: "Calculate process", exact: true }).click();
         const samples = page.getByRole("region", { name: "Sampled output items", exact: true });
         await expect(samples).toBeVisible();
-        await samples
-            .getByRole("combobox", { name: "Sampled trial", exact: true })
-            .selectOption("1");
+        await selectValue(
+            samples.getByRole("combobox", { name: "Sampled trial", exact: true }),
+            "1",
+        );
         await expect(
             samples.getByRole("textbox", { name: "Sampled item text", exact: true }),
         ).toHaveValue(exportCraftingItemText(new CraftingEngine(catalog), result.samples[1].item));
@@ -126,9 +128,13 @@ for (const game of ["poe1", "poe2"] as const) {
             await expect(
                 dialog.getByRole("button", { name: "Apply method options", exact: true }),
             ).toBeDisabled();
-            await dialog
-                .getByRole("combobox", { name: "Reference item for method options", exact: true })
-                .selectOption(JSON.stringify(["buy", "base"]));
+            await selectValue(
+                dialog.getByRole("combobox", {
+                    name: "Reference item for method options",
+                    exact: true,
+                }),
+                JSON.stringify(["buy", "base"]),
+            );
             await choose(
                 page,
                 "Crafting method",
@@ -136,9 +142,10 @@ for (const game of ["poe1", "poe2"] as const) {
                 game === "poe1" ? "Fossils + resonator" : "Generate rare item",
             );
             if (game === "poe1")
-                await dialog
-                    .getByRole("combobox", { name: "Fossil weight model", exact: true })
-                    .selectOption("multiplicative");
+                await selectValue(
+                    dialog.getByRole("combobox", { name: "Fossil weight model", exact: true }),
+                    "multiplicative",
+                );
         }
         await configure();
         await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
@@ -181,8 +188,8 @@ for (const game of ["poe1", "poe2"] as const) {
         await toggle.check();
         const query = editor.getByRole("group", { name: "Apply condition", exact: true });
         await query.getByRole("button", { name: "Add condition group", exact: true }).click();
-        await query.getByLabel("Condition type", { exact: true }).selectOption("rarity");
-        await query.getByLabel("Required rarity", { exact: true }).selectOption("Normal");
+        await selectValue(query.getByLabel("Condition type", { exact: true }), "rarity");
+        await selectValue(query.getByLabel("Required rarity", { exact: true }), "Normal");
         await page.getByRole("button", { name: "Calculate process", exact: true }).click();
         await expect(page.getByRole("region", { name: "Process estimate" })).toContainText(
             "10.00 chaos",
@@ -204,7 +211,9 @@ for (const game of ["poe1", "poe2"] as const) {
         });
         await page.reload();
         await expect(toggle).toBeChecked();
-        await expect(query.getByLabel("Required rarity", { exact: true })).toHaveValue("Normal");
+        await expect(
+            query.getByRole("combobox", { name: "Required rarity", exact: true }),
+        ).toContainText("Normal");
         await toggle.uncheck();
         expect(
             (await stored(page)).projects[0]!.graph.nodes.find((node) => node.kind === "craft")!
@@ -262,7 +271,7 @@ for (const game of ["poe1", "poe2"] as const) {
         await page.getByRole("button", { name: "Edit prepared item", exact: true }).click();
         await expect(dialog.getByLabel("Base quality (%)", { exact: true })).toHaveValue("0");
         await dialog.getByLabel("Base quality (%)", { exact: true }).fill("20");
-        await dialog.getByLabel("Corrupted", { exact: true }).check();
+        await dialog.getByRole("checkbox", { name: "Corrupted", exact: true }).check();
         const applied = page.waitForResponse("**/api/v1/crafting/graph/purchase-item");
         await dialog.getByRole("button", { name: "Apply item to purchase", exact: true }).click();
         const response = await applied;
@@ -277,7 +286,9 @@ for (const game of ["poe1", "poe2"] as const) {
         await page.reload();
         await page.getByRole("button", { name: "Edit prepared item", exact: true }).click();
         await expect(dialog.getByLabel("Base quality (%)", { exact: true })).toHaveValue("20");
-        await expect(dialog.getByLabel("Corrupted", { exact: true })).toBeChecked();
+        await expect(
+            dialog.getByRole("checkbox", { name: "Corrupted", exact: true }),
+        ).toBeChecked();
         await dialog.getByRole("button", { name: "Close", exact: true }).click();
         expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBe(draft);
     });
@@ -337,7 +348,7 @@ for (const game of ["poe1", "poe2"] as const) {
         await page.getByText("Process cost history", { exact: true }).click();
         await page.getByLabel("History start (UTC)").fill("2026-10-02");
         await page.getByLabel("History end (UTC)").fill("2026-10-23");
-        await page.getByLabel("History samples").selectOption("2");
+        await selectValue(page.getByLabel("History samples"), "2");
         const previousWorkers = workers;
         await page.getByRole("button", { name: "Calculate cost history", exact: true }).click();
         const history = page.getByRole("region", { name: "Historical process costs" });
@@ -459,9 +470,10 @@ for (const game of ["poe1", "poe2"] as const) {
         await prices.getByRole("button", { name: "Find exchange prices", exact: true }).click();
         const row = prices.getByRole("region", { name: "Exchange price for Orb of Transmutation" });
         await expect(row).toContainText("2 chaos per unit");
-        await prices
-            .getByRole("combobox", { name: "Exchange estimate window", exact: true })
-            .selectOption("adaptive-v1");
+        await selectValue(
+            prices.getByRole("combobox", { name: "Exchange estimate window", exact: true }),
+            "adaptive-v1",
+        );
         await expect(row).toHaveCount(0);
         await prices.getByRole("button", { name: "Find exchange prices", exact: true }).click();
         await expect(row).toContainText("Estimate window: 6 hours");
@@ -514,9 +526,10 @@ test("full method editing refuses removal of a recovered input and keeps the dra
     const original = (await stored(page)).projects[0]!.graph;
     await page.getByRole("button", { name: "Edit full method options", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Configure crafting method", exact: true });
-    await dialog
-        .getByRole("combobox", { name: "Reference item for method options", exact: true })
-        .selectOption(JSON.stringify(["a", "buy"]));
+    await selectValue(
+        dialog.getByRole("combobox", { name: "Reference item for method options", exact: true }),
+        JSON.stringify(["a", "buy"]),
+    );
     await expect(
         dialog.getByRole("combobox", { name: "Recombination donor", exact: true }),
     ).toHaveCount(0);
@@ -536,9 +549,10 @@ test("full method editing adds a separately consumed graph input without an inve
     await importGraph(page, conditionalTransmuteGraph("poe1"));
     await page.getByRole("button", { name: "Edit full method options", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Configure crafting method", exact: true });
-    await dialog
-        .getByRole("combobox", { name: "Reference item for method options", exact: true })
-        .selectOption(JSON.stringify(["buy", "base"]));
+    await selectValue(
+        dialog.getByRole("combobox", { name: "Reference item for method options", exact: true }),
+        JSON.stringify(["buy", "base"]),
+    );
     await choose(page, "Crafting method", "Recombine", "Recombine items");
     await expect(
         dialog.getByRole("combobox", { name: "Recombination donor", exact: true }),
@@ -682,9 +696,10 @@ test("equipment prices bind, refresh after reopening, and require an explicit ov
     await expect(editor.getByRole("region", { name: "Equipment price history" })).toContainText(
         "20",
     );
-    await editor
-        .getByRole("combobox", { name: "Equipment price window", exact: true })
-        .selectOption("adaptive-v1");
+    await selectValue(
+        editor.getByRole("combobox", { name: "Equipment price window", exact: true }),
+        "adaptive-v1",
+    );
     await expect(editor.getByRole("button", { name: "Use live median", exact: true })).toHaveCount(
         0,
     );
@@ -806,7 +821,7 @@ for (const game of [1, 2]) {
         const purchase = input.alternatives.find((entry) => entry.kind === "purchase")!;
         const copy = exportCraftingItemText(new CraftingEngine(itemCatalog), purchase.item);
         await requirements.getByLabel("Copied item text", { exact: true }).fill(copy);
-        await requirements.getByLabel("Rarity", { exact: true }).uncheck();
+        await requirements.getByRole("checkbox", { name: "Rarity", exact: true }).uncheck();
         await requirements
             .getByRole("button", { name: "Preview item requirements", exact: true })
             .click();
@@ -896,17 +911,17 @@ test("ambiguous pasted requirements require an explicit interpretation and error
         exact: true,
     });
     await expect(apply).toHaveCount(0);
-    await choice.selectOption("0");
+    await selectValue(choice, "0");
     await expect(apply).toBeVisible();
     await page.screenshot({ path: "test-results/pasted-item-requirements.png", fullPage: true });
     await apply.click();
     await expect(
         requirements.getByRole("combobox", { name: "Crafted modifier", exact: true }).first(),
-    ).toHaveValue("false");
-    await requirements
-        .getByRole("combobox", { name: "Crafted modifier", exact: true })
-        .first()
-        .selectOption("any");
+    ).toContainText("Excluded");
+    await selectValue(
+        requirements.getByRole("combobox", { name: "Crafted modifier", exact: true }).first(),
+        "any",
+    );
     const applied = (await stored(page)).projects[0]!.graph.nodes.find(
         (node) => node.id === "combine",
     )!.output;
@@ -971,9 +986,10 @@ test("prepared Temple gloves pass from the workbench into a saved current projec
 }) => {
     await page.goto("/1/crafting");
     await choose(page, "Item base", "Slink Gloves", "Slink Gloves · Gloves");
-    await page
-        .getByRole("combobox", { name: "Modifier source", exact: true })
-        .selectOption("incursion");
+    await selectValue(
+        page.getByRole("combobox", { name: "Modifier source", exact: true }),
+        "incursion",
+    );
     await page
         .locator('[data-modifier-id="ColdResistEnhancedModAilments__"]')
         .getByRole("button", { name: "Add to item", exact: true })
@@ -1000,9 +1016,9 @@ test("build references follow changes while value copies and exports stay indepe
     await page.getByLabel("Build name", { exact: true }).fill("Physical build");
     await page.getByRole("button", { name: "Create build", exact: true }).click();
     const plan = page.getByLabel("Item plan for Physical build", { exact: true });
-    await plan.selectOption({ label: "Two donor recovery" });
+    await selectValue(plan, { label: "Two donor recovery" });
     await page.getByRole("button", { name: "Add item to build", exact: true }).click();
-    await page.getByLabel("Save mode for Physical build", { exact: true }).selectOption("value");
+    await selectValue(page.getByLabel("Save mode for Physical build", { exact: true }), "value");
     await page.getByRole("button", { name: "Add item to build", exact: true }).click();
     await page.getByLabel("Project name", { exact: true }).fill("Revised donor process");
     await page.getByLabel("Project name", { exact: true }).press("Tab");
@@ -1044,8 +1060,8 @@ test("recovery routes, input queries and manual ordering survive reload", async 
         exact: true,
     });
     await requirements.getByRole("button", { name: "Add condition group", exact: true }).click();
-    await requirements.getByLabel("Condition type", { exact: true }).selectOption("range");
-    await requirements.getByLabel("Item property", { exact: true }).selectOption("openSuffixes");
+    await selectValue(requirements.getByLabel("Condition type", { exact: true }), "range");
+    await selectValue(requirements.getByLabel("Item property", { exact: true }), "openSuffixes");
     await requirements.getByLabel("openSuffixes min", { exact: true }).fill("3");
     await editor.getByText("1. Recover first", { exact: true }).click();
     await editor.getByRole("button", { name: "Move down", exact: true }).first().click();
@@ -1099,9 +1115,10 @@ test("historical projects retain their rules until a correction is explicitly ad
 }) => {
     await importGraph(page);
     await page.getByText("Crafting version", { exact: true }).click();
-    await page
-        .getByRole("combobox", { name: "Retained era and revision", exact: true })
-        .selectOption("3.29:r1");
+    await selectValue(
+        page.getByRole("combobox", { name: "Retained era and revision", exact: true }),
+        "3.29:r1",
+    );
     await page.getByRole("button", { name: "Apply selected version", exact: true }).click();
     await expect(
         page.getByRole("button", { name: "Correction available · adopt r5", exact: true }),

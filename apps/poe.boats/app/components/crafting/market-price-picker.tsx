@@ -2,6 +2,10 @@ import type { ItemQuery } from "@poe-tools/item-query";
 import { decodeCohortPriceReference, selectCohortPrice } from "@poe-tools/market";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import { craftingMarketItemIssue } from "~/lib/crafting-market";
@@ -150,38 +154,42 @@ export function MarketPricePicker({
                     are asking-price estimates, not completed sales.
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                    <label>
+                    <Label>
                         Market league
-                        <input
+                        <Input
                             className={graphControl}
                             value={league ?? ""}
                             onChange={(event) => onLeagueChange(event.target.value)}
                         />
-                    </label>
-                    <label>
+                    </Label>
+                    <Label>
                         Market realm
-                        <select
+                        <FormSelect
                             className={graphControl}
                             value={realm}
-                            onChange={(event) => setRealm(event.target.value as typeof realm)}
+                            onValueChange={(selectedValue) =>
+                                setRealm(selectedValue as typeof realm)
+                            }
                         >
-                            <option value="pc">PC</option>
-                            <option value="xbox">Xbox</option>
-                            <option value="sony">PlayStation</option>
-                        </select>
-                    </label>
+                            <FormSelectItem value="pc">PC</FormSelectItem>
+                            <FormSelectItem value="xbox">Xbox</FormSelectItem>
+                            <FormSelectItem value="sony">PlayStation</FormSelectItem>
+                        </FormSelect>
+                    </Label>
                 </div>
-                <label className="block">
+                <Label className="block">
                     Equipment price window
-                    <select
+                    <FormSelect
                         className={graphControl}
                         value={window}
-                        onChange={(event) => setWindow(event.target.value as typeof window)}
+                        onValueChange={(selectedValue) => setWindow(selectedValue as typeof window)}
                     >
-                        <option value="hourly">Latest hour</option>
-                        <option value="adaptive-v1">Adaptive (1, 6 or 24 hours)</option>
-                    </select>
-                </label>
+                        <FormSelectItem value="hourly">Latest hour</FormSelectItem>
+                        <FormSelectItem value="adaptive-v1">
+                            Adaptive (1, 6 or 24 hours)
+                        </FormSelectItem>
+                    </FormSelect>
+                </Label>
                 {window === "adaptive-v1" && (
                     <p className="text-muted-foreground">
                         Below 10 sellers, widen when all source hours are present and hourly medians
@@ -189,16 +197,15 @@ export function MarketPricePicker({
                         observation. These policy thresholds and confidence scores are uncalibrated.
                     </p>
                 )}
-                <label className="flex items-start gap-2">
-                    <input
-                        type="checkbox"
+                <Label className="flex items-start gap-2">
+                    <Checkbox
                         checked={assumption !== undefined}
-                        onChange={(event) =>
-                            setRepresentative({ scope, enabled: event.target.checked })
+                        onCheckedChange={(checked) =>
+                            setRepresentative({ scope, enabled: checked })
                         }
                     />
                     Use donor-family prices with this item as the representative
-                </label>
+                </Label>
                 <p className="text-muted-foreground">
                     Family listings can have indistinguishable modifier text but different modifier
                     identities or crafting eligibility. Choosing a family price saves the assumption

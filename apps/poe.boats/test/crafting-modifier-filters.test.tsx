@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { ModBrowser } from "~/components/crafting/mod-browser";
 import { CraftingEngine, eldritchTier, seededRandom } from "~/lib/crafting-engine";
 import { type CraftingItem, type CraftingMethod, craftingCatalogSchema } from "~/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog } from "./crafting-fixtures";
 
 const catalogs = [
@@ -58,7 +59,7 @@ const rows = () => [...poolRegion().querySelectorAll<HTMLElement>("[data-modifie
 const row = (id: string) => rows().find((entry) => entry.dataset.modifierId === id)!;
 const ids = () => rows().map((entry) => entry.dataset.modifierId!);
 const change = (label: string, value: string) =>
-    fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    changeControl(screen.getByLabelText(label), { target: { value } });
 const requirements = () => screen.getByLabelText("Requirements").textContent;
 
 afterEach(cleanup);
@@ -107,12 +108,12 @@ describe("influence modifier previews", () => {
             ([, base]) => base.item_class === "LifeFlask",
         )![0];
         view.rerender(<Browser {...props} item={engine.createItem(flask)} />);
-        expect(screen.getByLabelText("Modifier source")).toHaveProperty("value", "natural");
+        expectControlValue(screen.getByLabelText("Modifier source"), "natural");
         expect(screen.queryByRole("option", { name: "Shaper modifiers" })).toBeNull();
         const other = new CraftingEngine(catalogs[1]!);
         const base = Object.keys(other.catalog.bases)[0]!;
         view.rerender(<Browser {...props} engine={other} item={other.createItem(base)} />);
-        expect(screen.getByLabelText("Modifier source")).toHaveProperty("value", "natural");
+        expectControlValue(screen.getByLabelText("Modifier source"), "natural");
         expect(screen.queryByRole("option", { name: "Shaper modifiers" })).toBeNull();
     });
 });
@@ -131,7 +132,7 @@ describe.each(catalogs)("$game modifier filters", (data) => {
         const view = render(<Browser {...props} />);
         change("Modifier source", "revealed");
         const source = engine.revealSources(item)[0]!;
-        expect(screen.getByLabelText("Preview reveal source")).toHaveProperty("value", source.id);
+        expectControlValue(screen.getByLabelText("Preview reveal source"), source.id);
         const preview = engine.revealPreview(item, source.id);
         const id = ids()[0]!;
         const share = `Preview offer ${(preview.probabilities.get(id)! * 100).toFixed(3)}%`;
@@ -147,7 +148,7 @@ describe.each(catalogs)("$game modifier filters", (data) => {
         expect(props.onAdd).toHaveBeenCalledWith(id, "revealed");
         view.rerender(<Browser {...props} showWeightPercentages={false} />);
         expect(within(row(id)).queryByText(share)).toBeNull();
-        expect(screen.getByLabelText("Preview reveal source")).toHaveProperty("value", source.id);
+        expectControlValue(screen.getByLabelText("Preview reveal source"), source.id);
         expect(item).toEqual(before);
     });
 
@@ -157,12 +158,9 @@ describe.each(catalogs)("$game modifier filters", (data) => {
         const props = { engine, item, method, onAdd: vi.fn() };
         const view = render(<Browser {...props} />);
         change("Modifier source", "revealed");
-        expect(screen.getByLabelText("Preview reveal source")).toHaveProperty("value", method.id);
+        expectControlValue(screen.getByLabelText("Preview reveal source"), method.id);
         change("Preview reveal source", sources[0]!.id);
-        expect(screen.getByLabelText("Preview reveal source")).toHaveProperty(
-            "value",
-            sources[0]!.id,
-        );
+        expectControlValue(screen.getByLabelText("Preview reveal source"), sources[0]!.id);
         expect(method.id).toBe(sources.at(-1)!.id);
         if (data.game === "poe2") {
             const low = data.crafting.desecration.find(
@@ -170,12 +168,9 @@ describe.each(catalogs)("$game modifier filters", (data) => {
             )!.id;
             view.rerender(<Browser {...props} item={{ ...item, level: 64 }} />);
             change("Preview reveal source", low);
-            expect(screen.getByLabelText("Preview reveal source")).toHaveProperty("value", low);
+            expectControlValue(screen.getByLabelText("Preview reveal source"), low);
             view.rerender(<Browser {...props} item={{ ...item, level: 65 }} />);
-            expect(screen.getByLabelText("Preview reveal source")).toHaveProperty(
-                "value",
-                method.id,
-            );
+            expectControlValue(screen.getByLabelText("Preview reveal source"), method.id);
             expect(
                 within(screen.getByLabelText("Preview reveal source")).queryByRole("option", {
                     name: /Gnawed/,
@@ -278,11 +273,11 @@ describe.each(catalogs)("$game modifier filters", (data) => {
         const view = render(<Browser {...props} />);
         change("Modifier tag", unavailableTag);
         view.rerender(<Browser {...props} item={flask} />);
-        expect(screen.getByLabelText("Modifier tag")).toHaveProperty("value", unavailableTag);
+        expectControlValue(screen.getByLabelText("Modifier tag"), unavailableTag);
         expect(ids()).toEqual([]);
         fireEvent.click(screen.getByRole("button", { name: `Remove ${unavailableTag} filter` }));
         expect(ids().length).toBeGreaterThan(0);
-        expect(screen.getByLabelText("Modifier tag")).toHaveProperty("value", "");
+        expectControlValue(screen.getByLabelText("Modifier tag"), "");
     });
 
     describe.each(["columns", "tabs"] as const)("%s layout", (layout) => {
@@ -338,7 +333,7 @@ describe.each(catalogs)("$game modifier filters", (data) => {
             const searched = ids();
             expect(searched.length).toBeGreaterThan(0);
             view.rerender(<Browser {...props} showTagFilter />);
-            expect(screen.getByLabelText("Modifier tag")).toHaveProperty("value", "cold");
+            expectControlValue(screen.getByLabelText("Modifier tag"), "cold");
             expect(ids()).toEqual(searched);
             view.rerender(<Browser {...props} showTagFilter={false} />);
             change("Search modifiers", "");
@@ -346,7 +341,7 @@ describe.each(catalogs)("$game modifier filters", (data) => {
             expect(screen.queryByRole("group", { name: "Active tag filters" })).toBeNull();
             expect(ids().length).toBeGreaterThan(0);
             view.rerender(<Browser {...props} showTagFilter />);
-            expect(screen.getByLabelText("Modifier tag")).toHaveProperty("value", "");
+            expectControlValue(screen.getByLabelText("Modifier tag"), "");
         });
 
         it("uses full source and affix denominators and toggles percentages without changing raw weights", () => {

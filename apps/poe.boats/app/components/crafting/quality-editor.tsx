@@ -170,18 +170,18 @@ export function QualityEditor({
             ) : null}
             {catalysts.length ? (
                 <>
-                    <label className="block space-y-1 text-xs">
+                    <Label className="block space-y-1 text-xs">
                         Catalyst
-                        <select
+                        <FormSelect
                             className={controlClass}
                             value={item.catalyst?.id ?? ""}
-                            onChange={(event) =>
+                            onValueChange={(selectedValue) =>
                                 onChange({
                                     ...item,
-                                    quality: event.target.value ? 0 : item.quality,
-                                    catalyst: event.target.value
+                                    quality: selectedValue ? 0 : item.quality,
+                                    catalyst: selectedValue
                                         ? {
-                                              id: event.target.value,
+                                              id: selectedValue,
                                               quality: Math.min(
                                                   item.catalyst?.quality ?? 20,
                                                   maximum,
@@ -191,18 +191,18 @@ export function QualityEditor({
                                 })
                             }
                         >
-                            <option value="">No catalyst quality</option>
+                            <FormSelectItem value="">No catalyst quality</FormSelectItem>
                             {catalysts.map((catalyst) => (
-                                <option key={catalyst.id} value={catalyst.id}>
+                                <FormSelectItem key={catalyst.id} value={catalyst.id}>
                                     {catalystName(engine.catalog, catalyst.id)}
-                                </option>
+                                </FormSelectItem>
                             ))}
-                        </select>
-                    </label>
+                        </FormSelect>
+                    </Label>
                     {item.catalyst ? (
-                        <label className="block space-y-1 text-xs">
+                        <Label className="block space-y-1 text-xs">
                             Catalyst quality (%)
-                            <input
+                            <Input
                                 className={controlClass}
                                 type="number"
                                 min={0}
@@ -225,7 +225,7 @@ export function QualityEditor({
                                     ? ` · Starting items can retain up to ${retainedMaximum}% from Infusers and maximum-quality modifiers.`
                                     : ""}
                             </span>
-                        </label>
+                        </Label>
                     ) : null}
                 </>
             ) : null}
@@ -241,4 +241,6 @@ export function QualityEditor({
 
 import { useId } from "react";
 import { Field, FieldGroup, FieldLabel } from "~/components/ui/field";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";

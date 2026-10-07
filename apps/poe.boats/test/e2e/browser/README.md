@@ -1,5 +1,12 @@
 # Browser coverage
 
+`crafting-presets.spec.ts` creates each of the nine common PoE 1 crafts through the preset picker,
+calculates it in the real retained worker and compares the full result with the HTTP operation.
+It checks successful target items, missing-price reporting, independent new tabs, editing and reload.
+Prepared donors are purchases; the examples do not assume free inputs or assert current market prices.
+PoE 1 mechanics are not offered on the PoE 2 preset picker. Shared select helpers interact with the
+Base UI popup and its accessible options instead of assigning a native select value.
+
 The API-reference case exercises the real Scalar client at normal speed and fourfold CPU slowdown,
 using the same assertion deadline. It bounds the production contract size and rejects browser
 errors or unresolved-reference warnings, in addition to checking the visible API heading and route.

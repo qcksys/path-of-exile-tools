@@ -14,6 +14,7 @@ import { CraftingWorkbench } from "~/components/crafting/workbench";
 import { CraftingEngine, seededRandom } from "~/lib/crafting-engine";
 import { modifierTiers } from "~/lib/crafting-modifier-details";
 import { craftingCatalogSchema } from "~/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog } from "./crafting-fixtures";
 
 const catalogs = [
@@ -27,8 +28,11 @@ const button = (name: string) => screen.getByRole("button", { name });
 const individualText = (card: HTMLElement) =>
     card.querySelector('[aria-label="Individual explicit modifiers"]')?.textContent;
 async function select(label: string, name: string) {
-    fireEvent.click(screen.getByRole("combobox", { name: label }));
-    const option = within(await screen.findByRole("listbox")).getByRole("option", { name });
+    const control = screen.getByRole("combobox", { name: label });
+    fireEvent.click(control);
+    const option = within(
+        document.getElementById(control.getAttribute("aria-controls")!)!,
+    ).getByRole("option", { name });
     act(() => option.focus());
     fireEvent.keyDown(option, { key: "Enter" });
 }
@@ -231,7 +235,7 @@ describe.each(catalogs)("$game display preferences", (data) => {
             "IncreasedLife8",
             data.game === "poe1" ? "LocalBaseArmourAndLife1" : "LocalIncreasedArmourAndLife1",
         ]) {
-            fireEvent.change(screen.getByLabelText("Search modifiers"), { target: { value: id } });
+            changeControl(screen.getByLabelText("Search modifiers"), { target: { value: id } });
             fireEvent.click(button("Add to item"));
         }
         const card = screen.getByRole("region", { name: "Current item" });
@@ -253,7 +257,7 @@ describe.each(catalogs)("$game display preferences", (data) => {
         for (const summary of within(card).getAllByText("Raw stat values and ranges"))
             fireEvent.click(summary);
         const changed = data.mods.IncreasedLife8!.stats[0]!.min;
-        fireEvent.change(rolls()[0]!, { target: { value: String(changed) } });
+        changeControl(rolls()[0]!, { target: { value: String(changed) } });
         expect(combined().textContent).toContain(`+${changed + original[1]!} to maximum Life`);
         fireEvent.click(button("Undo"));
         expect(combined().textContent).toContain(`+${original[0]! + original[1]!} to maximum Life`);
@@ -270,7 +274,7 @@ describe.each(catalogs)("$game display preferences", (data) => {
         const project = JSON.parse(localStorage.getItem(storage)!)["My crafting project"];
         expect(project.item.mods[0].values[0]).toBe(changed);
         expect(project.item.mods[1].values[1]).toBe(original[1]);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -285,10 +289,10 @@ describe.each(catalogs)("$game display preferences", (data) => {
         );
         const id = data.game === "poe1" ? "ColdResist1" : "IncreasedLife8";
         const card = screen.getByRole("region", { name: "Current item" });
-        fireEvent.change(screen.getByLabelText("Modifier source"), {
+        changeControl(screen.getByLabelText("Modifier source"), {
             target: { value: "essence" },
         });
-        fireEvent.change(screen.getByLabelText("Search modifiers"), { target: { value: id } });
+        changeControl(screen.getByLabelText("Search modifiers"), { target: { value: id } });
         fireEvent.click(button("Add to item"));
         const metadata = card.querySelector<HTMLElement>("[data-modifier-details]")!;
         const engine = new CraftingEngine(data);
@@ -309,7 +313,7 @@ describe.each(catalogs)("$game display preferences", (data) => {
         expect(card.querySelector("[data-modifier-details]")).toBeNull();
         fireEvent.click(button("Redo"));
         expect(card.textContent).toBe(content);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -335,7 +339,7 @@ describe.each(catalogs)("$game display preferences", (data) => {
         const crafted = individualText(item);
         const metadata = () => item.querySelector<HTMLElement>("[data-modifier-details]")!;
         expect(metadata().hidden).toBe(false);
-        fireEvent.change(screen.getByLabelText("Required rarity"), { target: { value: "rare" } });
+        changeControl(screen.getByLabelText("Required rarity"), { target: { value: "rare" } });
         fireEvent.click(button("Save project"));
         const key = `poe-boats:crafting:${data.game}:${data.patch}`;
         const project = localStorage.getItem(key);
@@ -383,7 +387,7 @@ describe.each(catalogs)("$game display preferences", (data) => {
         await select("Item ordering", "Drop level (ascending)");
         const picker = screen.getByRole("combobox", { name: "Item base" });
         const selected = picker.getAttribute("value");
-        fireEvent.change(picker, { target: { value: "Body Armour" } });
+        changeControl(picker, { target: { value: "Body Armour" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         const options = within(await screen.findByRole("listbox")).getAllByRole("option");
         const expected = Object.values(data.bases)
@@ -397,10 +401,10 @@ describe.each(catalogs)("$game display preferences", (data) => {
                 .map((base) => `${base.name} · ${base.item_class} · drop level ${base.drop_level}`),
         );
         fireEvent.keyDown(picker, { key: "Escape" });
-        expect(picker).toHaveProperty("value", selected);
+        expectControlValue(picker, selected);
         expect(screen.getByRole("region", { name: "Current item" }).textContent).toBe(item);
         await select("Item ordering", "Alphabetical");
-        fireEvent.change(picker, { target: { value: "Body Armour" } });
+        changeControl(picker, { target: { value: "Body Armour" } });
         fireEvent.keyDown(picker, { key: "ArrowDown" });
         const alphabetical = within(await screen.findByRole("listbox")).getAllByRole("option");
         expect(alphabetical.map((option) => option.textContent)).toEqual(
@@ -426,7 +430,7 @@ describe.each(catalogs)("$game display preferences", (data) => {
                 <CraftingWorkbench catalog={data} />
             </MemoryRouter>,
         );
-        fireEvent.change(screen.getByLabelText("Required rarity"), { target: { value: "rare" } });
+        changeControl(screen.getByLabelText("Required rarity"), { target: { value: "rare" } });
         fireEvent.click(button("Calculate odds"));
         expect(postMessage).toHaveBeenCalledTimes(1);
         fireEvent.click(button("Display settings"));
@@ -483,7 +487,7 @@ it("shows the same extracted spawn-level override in the modifier browser and it
             <CraftingWorkbench catalog={catalogs[1]!} mode="emulate" />
         </MemoryRouter>,
     );
-    fireEvent.change(screen.getByLabelText("Search modifiers"), {
+    changeControl(screen.getByLabelText("Search modifiers"), {
         target: { value: "ArmourAppliesToElementalDamage1" },
     });
     const levels = "ilvl 30 · modifier level 1";

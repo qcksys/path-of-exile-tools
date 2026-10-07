@@ -2,6 +2,9 @@ import type { ItemCondition, ItemQuery, NumericRange } from "@poe-tools/item-que
 import { useId, useMemo } from "react";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import type { CraftingCatalog } from "~/schemas/crafting";
 import type { CraftingRulesetRef } from "~/schemas/crafting-rulesets";
 import { QueryFromItemText } from "./query-from-item-text";
@@ -20,9 +23,9 @@ export function RangeFields({
     return (
         <div className="flex gap-2">
             {(["min", "max"] as const).map((bound) => (
-                <label key={bound} className="min-w-0 flex-1 text-xs text-muted-foreground">
+                <Label key={bound} className="block min-w-0 flex-1 text-xs text-muted-foreground">
                     {bound === "min" ? "Minimum" : "Maximum"}
-                    <input
+                    <Input
                         className={graphControl}
                         aria-label={`${label} ${bound}`}
                         type="number"
@@ -37,7 +40,7 @@ export function RangeFields({
                             })
                         }
                     />
-                </label>
+                </Label>
             ))}
         </div>
     );
@@ -99,54 +102,51 @@ export function GraphQueryEditor({
                         value={condition.tier ?? {}}
                         onChange={(tier) => update({ ...condition, tier })}
                     />
-                    <label className="block text-xs">
+                    <Label className="block text-xs">
                         Affix side
-                        <select
+                        <FormSelect
                             className={graphControl}
                             value={condition.side ?? "any"}
-                            onChange={(event) =>
+                            onValueChange={(selectedValue) =>
                                 update({
                                     ...condition,
                                     side:
-                                        event.target.value === "any"
+                                        selectedValue === "any"
                                             ? undefined
-                                            : (event.target.value as
-                                                  | "prefix"
-                                                  | "suffix"
-                                                  | "implicit"),
+                                            : (selectedValue as "prefix" | "suffix" | "implicit"),
                                 })
                             }
                         >
-                            <option value="any">Any</option>
-                            <option value="prefix">Prefix</option>
-                            <option value="suffix">Suffix</option>
-                            <option value="implicit">Implicit</option>
-                        </select>
-                    </label>
-                    <label className="block text-xs">
+                            <FormSelectItem value="any">Any</FormSelectItem>
+                            <FormSelectItem value="prefix">Prefix</FormSelectItem>
+                            <FormSelectItem value="suffix">Suffix</FormSelectItem>
+                            <FormSelectItem value="implicit">Implicit</FormSelectItem>
+                        </FormSelect>
+                    </Label>
+                    <Label className="block text-xs">
                         Fractured
-                        <select
+                        <FormSelect
                             className={graphControl}
                             value={
                                 condition.fractured === undefined
                                     ? "any"
                                     : String(condition.fractured)
                             }
-                            onChange={(event) =>
+                            onValueChange={(selectedValue) =>
                                 update({
                                     ...condition,
                                     fractured:
-                                        event.target.value === "any"
+                                        selectedValue === "any"
                                             ? undefined
-                                            : event.target.value === "true",
+                                            : selectedValue === "true",
                                 })
                             }
                         >
-                            <option value="any">Any</option>
-                            <option value="true">Required</option>
-                            <option value="false">Excluded</option>
-                        </select>
-                    </label>
+                            <FormSelectItem value="any">Any</FormSelectItem>
+                            <FormSelectItem value="true">Required</FormSelectItem>
+                            <FormSelectItem value="false">Excluded</FormSelectItem>
+                        </FormSelect>
+                    </Label>
                     <Button
                         size="sm"
                         variant="ghost"
@@ -154,28 +154,28 @@ export function GraphQueryEditor({
                     >
                         Any modifier identity
                     </Button>
-                    <label className="block text-xs">
+                    <Label className="block text-xs">
                         Crafted modifier
-                        <select
+                        <FormSelect
                             className={graphControl}
                             value={
                                 condition.crafted === undefined ? "any" : String(condition.crafted)
                             }
-                            onChange={(event) =>
+                            onValueChange={(selectedValue) =>
                                 update({
                                     ...condition,
                                     crafted:
-                                        event.target.value === "any"
+                                        selectedValue === "any"
                                             ? undefined
-                                            : event.target.value === "true",
+                                            : selectedValue === "true",
                                 })
                             }
                         >
-                            <option value="any">Any</option>
-                            <option value="true">Required</option>
-                            <option value="false">Excluded</option>
-                        </select>
-                    </label>
+                            <FormSelectItem value="any">Any</FormSelectItem>
+                            <FormSelectItem value="true">Required</FormSelectItem>
+                            <FormSelectItem value="false">Excluded</FormSelectItem>
+                        </FormSelect>
+                    </Label>
                     <p className="text-xs">Number of matching modifiers</p>
                     <RangeFields
                         label="Matching modifiers"
@@ -187,14 +187,14 @@ export function GraphQueryEditor({
         if (condition.kind === "range")
             return (
                 <>
-                    <select
+                    <FormSelect
                         aria-label="Item property"
                         className={graphControl}
                         value={condition.field}
-                        onChange={(event) =>
+                        onValueChange={(selectedValue) =>
                             update({
                                 ...condition,
-                                field: event.target.value as typeof condition.field,
+                                field: selectedValue as typeof condition.field,
                             })
                         }
                     >
@@ -207,7 +207,7 @@ export function GraphQueryEditor({
                             "openPrefixes",
                             "openSuffixes",
                         ].map((field) => (
-                            <option key={field} value={field}>
+                            <FormSelectItem key={field} value={field}>
                                 {(
                                     {
                                         ilvl: "Item level",
@@ -215,9 +215,9 @@ export function GraphQueryEditor({
                                         openSuffixes: "Empty suffixes",
                                     } as Record<string, string>
                                 )[field] ?? field}
-                            </option>
+                            </FormSelectItem>
                         ))}
-                    </select>
+                    </FormSelect>
                     <RangeFields
                         label={condition.field}
                         value={condition.value}
@@ -228,14 +228,14 @@ export function GraphQueryEditor({
         if (condition.kind === "flag")
             return (
                 <div className="flex gap-2">
-                    <select
+                    <FormSelect
                         aria-label="Item flag"
                         className={graphControl}
                         value={condition.field}
-                        onChange={(event) =>
+                        onValueChange={(selectedValue) =>
                             update({
                                 ...condition,
-                                field: event.target.value as typeof condition.field,
+                                field: selectedValue as typeof condition.field,
                             })
                         }
                     >
@@ -250,39 +250,43 @@ export function GraphQueryEditor({
                             "influenced",
                             "destroyed",
                         ].map((flag) => (
-                            <option key={flag}>{flag}</option>
+                            <FormSelectItem key={flag} value={flag}>
+                                {flag}
+                            </FormSelectItem>
                         ))}
-                    </select>
-                    <select
+                    </FormSelect>
+                    <FormSelect
                         aria-label="Flag requirement"
                         className={graphControl}
                         value={String(condition.value)}
-                        onChange={(event) =>
-                            update({ ...condition, value: event.target.value === "true" })
+                        onValueChange={(selectedValue) =>
+                            update({ ...condition, value: selectedValue === "true" })
                         }
                     >
-                        <option value="true">Required</option>
-                        <option value="false">Excluded</option>
-                    </select>
+                        <FormSelectItem value="true">Required</FormSelectItem>
+                        <FormSelectItem value="false">Excluded</FormSelectItem>
+                    </FormSelect>
                 </div>
             );
         if (condition.kind === "rarity")
             return (
-                <select
+                <FormSelect
                     aria-label="Required rarity"
                     className={graphControl}
                     value={condition.values[0]}
-                    onChange={(event) =>
+                    onValueChange={(selectedValue) =>
                         update({
                             ...condition,
-                            values: [event.target.value as (typeof condition.values)[number]],
+                            values: [selectedValue as (typeof condition.values)[number]],
                         })
                     }
                 >
                     {["Normal", "Magic", "Rare", "Unique"].map((rarity) => (
-                        <option key={rarity}>{rarity}</option>
+                        <FormSelectItem key={rarity} value={rarity}>
+                            {rarity}
+                        </FormSelectItem>
                     ))}
-                </select>
+                </FormSelect>
             );
         if (condition.kind === "base" && condition.field === "baseId")
             return (
@@ -309,13 +313,13 @@ export function GraphQueryEditor({
             );
         if (condition.kind === "base" || condition.kind === "influence")
             return (
-                <label className="block text-xs">
+                <Label className="block text-xs">
                     {condition.kind === "influence"
                         ? "Any of these influences"
                         : condition.field === "itemClass"
                           ? "Any of these item classes"
                           : "Any of these base names"}
-                    <input
+                    <Input
                         key={condition.values.join(",")}
                         className={graphControl}
                         defaultValue={condition.values.join(", ")}
@@ -330,7 +334,7 @@ export function GraphQueryEditor({
                     <span className="text-muted-foreground">
                         Separate alternatives with commas.
                     </span>
-                </label>
+                </Label>
             );
         return null;
     };
@@ -350,23 +354,23 @@ export function GraphQueryEditor({
                     className="space-y-3 rounded-md border border-border p-3"
                 >
                     <div className="flex items-center gap-2">
-                        <select
+                        <FormSelect
                             aria-label={`${label} group ${groupIndex + 1}`}
                             className={graphControl}
                             value={group.type}
-                            onChange={(event) =>
+                            onValueChange={(selectedValue) =>
                                 groupChange(groupIndex, {
                                     ...group,
-                                    type: event.target.value as typeof group.type,
-                                    value: event.target.value === "count" ? { min: 1 } : undefined,
+                                    type: selectedValue as typeof group.type,
+                                    value: selectedValue === "count" ? { min: 1 } : undefined,
                                 })
                             }
                         >
-                            <option value="and">All conditions</option>
-                            <option value="or">Any condition</option>
-                            <option value="not">None of these</option>
-                            <option value="count">Count matching conditions</option>
-                        </select>
+                            <FormSelectItem value="and">All conditions</FormSelectItem>
+                            <FormSelectItem value="or">Any condition</FormSelectItem>
+                            <FormSelectItem value="not">None of these</FormSelectItem>
+                            <FormSelectItem value="count">Count matching conditions</FormSelectItem>
+                        </FormSelect>
                         <Button
                             variant="ghost"
                             size="sm"
@@ -405,12 +409,12 @@ export function GraphQueryEditor({
                                 className="space-y-2 border-t border-border pt-3"
                             >
                                 <div className="flex gap-2">
-                                    <select
+                                    <FormSelect
                                         aria-label="Condition type"
                                         className={graphControl}
                                         value={condition.kind}
-                                        onChange={(event) => {
-                                            const kind = event.target.value;
+                                        onValueChange={(selectedValue) => {
+                                            const kind = selectedValue;
                                             if (kind === "mod") update({ kind, count: { min: 1 } });
                                             if (kind === "range")
                                                 update({
@@ -430,17 +434,19 @@ export function GraphQueryEditor({
                                                 });
                                         }}
                                     >
-                                        <option value="mod">Modifier</option>
-                                        <option value="range">Item property</option>
-                                        <option value="flag">Flag</option>
-                                        <option value="rarity">Rarity</option>
-                                        <option value="base">Base</option>
+                                        <FormSelectItem value="mod">Modifier</FormSelectItem>
+                                        <FormSelectItem value="range">Item property</FormSelectItem>
+                                        <FormSelectItem value="flag">Flag</FormSelectItem>
+                                        <FormSelectItem value="rarity">Rarity</FormSelectItem>
+                                        <FormSelectItem value="base">Base</FormSelectItem>
                                         {!["mod", "range", "flag", "rarity", "base"].includes(
                                             condition.kind,
                                         ) && (
-                                            <option value={condition.kind}>{condition.kind}</option>
+                                            <FormSelectItem value={condition.kind}>
+                                                {condition.kind}
+                                            </FormSelectItem>
                                         )}
-                                    </select>
+                                    </FormSelect>
                                     <Button
                                         variant="ghost"
                                         size="sm"

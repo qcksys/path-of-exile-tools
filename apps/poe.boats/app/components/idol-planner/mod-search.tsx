@@ -10,6 +10,7 @@ import {
     CommandItem,
     CommandList,
 } from "~/components/ui/command";
+import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { useFavorites } from "~/context/favorites-context";
@@ -22,7 +23,6 @@ import {
 } from "~/data/idol-bases";
 import { useLocale, useTranslations } from "~/i18n";
 import { cn } from "~/lib/utils";
-
 import { getModifierOptions, type ModifierOption } from "~/operations/planner-catalog";
 
 export { getModifierOptions, type ModifierOption } from "~/operations/planner-catalog";
@@ -148,9 +148,9 @@ export function ModSearch({
                             checked={showFavoritesOnly}
                             onCheckedChange={(checked) => setShowFavoritesOnly(checked === true)}
                         />
-                        <label htmlFor="favorites-filter" className="cursor-pointer text-sm">
+                        <Label htmlFor="favorites-filter" className="cursor-pointer text-sm">
                             {t("editor.favoritesOnly")}
-                        </label>
+                        </Label>
                     </div>
                     <CommandList className="max-h-[300px]">
                         <CommandEmpty>{t("editor.noModsFound")}</CommandEmpty>
@@ -195,7 +195,8 @@ export function ModSearch({
                                                 <Tooltip>
                                                     <TooltipTrigger
                                                         render={
-                                                            <button
+                                                            <Button
+                                                                variant="ghost"
                                                                 type="button"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();

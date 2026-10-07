@@ -10,6 +10,7 @@ import { methodPinKey, PinnedMethods } from "~/components/crafting/pinned-method
 import { CraftingWorkbench } from "~/components/crafting/workbench";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import { type CraftingMethod, craftingCatalogSchema } from "~/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 
 const catalogs = Object.fromEntries(
     ["poe1", "poe2"].map((game) => [
@@ -22,7 +23,7 @@ const catalogs = Object.fromEntries(
 const storageKey = (game = "poe1") => `poe-boats:crafting:pinned-methods:${game}`;
 const pinButton = () => screen.getByRole("button", { name: "Pin current crafting method" });
 async function choose(label: string, name: string) {
-    fireEvent.change(screen.getByRole("combobox", { name: label }), { target: { value: name } });
+    changeControl(screen.getByRole("combobox", { name: label }), { target: { value: name } });
     fireEvent.keyDown(screen.getByRole("combobox", { name: label }), { key: "ArrowDown" });
     fireEvent.click(await screen.findByRole("option", { name }));
 }
@@ -86,10 +87,7 @@ describe.each(["poe1", "poe2"] as const)("%s pinned crafting methods", (game) =>
         await choose("Crafting method", transmutation.name);
         fireEvent.click(pinButton());
         await choose("Pinned crafting methods", alchemy.name);
-        expect(screen.getByRole("combobox", { name: "Crafting method" })).toHaveProperty(
-            "value",
-            alchemy.name,
-        );
+        expectControlValue(screen.getByRole("combobox", { name: "Crafting method" }), alchemy.name);
         view.unmount();
         render(<Picker value={{ kind: "currency", id: transmutation.id }} />);
         await choose("Pinned crafting methods", alchemy.name);
@@ -118,8 +116,8 @@ describe.each(["poe1", "poe2"] as const)("%s pinned crafting methods", (game) =>
                 .getByRole("button", { name: "Pin current crafting method" })
                 .getAttribute("aria-pressed"),
         ).toBe("true");
-        expect(step.getByRole("combobox", { name: "Pinned crafting methods" })).toHaveProperty(
-            "value",
+        expectControlValue(
+            step.getByRole("combobox", { name: "Pinned crafting methods" }),
             alchemy.name,
         );
         expect(localStorage.getItem(storageKey(game === "poe1" ? "poe2" : "poe1"))).toBeNull();
@@ -185,8 +183,8 @@ describe("pinned method storage and applicability", () => {
             JSON.stringify([option.pin, option.pin, "currency:removed"]),
         );
         const view = render(<PinnedMethods {...props} />);
-        expect(screen.getByRole("combobox", { name: "Pinned crafting methods" })).toHaveProperty(
-            "value",
+        expectControlValue(
+            screen.getByRole("combobox", { name: "Pinned crafting methods" }),
             currency.name,
         );
         view.rerender(<PinnedMethods {...props} options={[]} />);
@@ -196,8 +194,8 @@ describe("pinned method storage and applicability", () => {
         view.rerender(
             <PinnedMethods {...props} options={[{ ...option, label: "Updated catalog label" }]} />,
         );
-        expect(screen.getByRole("combobox", { name: "Pinned crafting methods" })).toHaveProperty(
-            "value",
+        expectControlValue(
+            screen.getByRole("combobox", { name: "Pinned crafting methods" }),
             "Updated catalog label",
         );
     });

@@ -7,6 +7,7 @@ import type { ModifierLayout } from "~/components/crafting/display-settings";
 import { ModBrowser } from "~/components/crafting/mod-browser";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import { type CraftingItem, craftingCatalogSchema } from "~/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog } from "./crafting-fixtures";
 
 const catalogs = [
@@ -21,9 +22,9 @@ const ids = (element: HTMLElement) =>
     );
 const region = (name: string) => screen.getByRole("region", { name });
 const search = (value: string) =>
-    fireEvent.change(screen.getByLabelText("Search modifiers"), { target: { value } });
+    changeControl(screen.getByLabelText("Search modifiers"), { target: { value } });
 const source = (value: string) =>
-    fireEvent.change(screen.getByLabelText("Modifier source"), { target: { value } });
+    changeControl(screen.getByLabelText("Modifier source"), { target: { value } });
 const next = (name: string) =>
     fireEvent.click(
         within(screen.getByRole("navigation", { name: `${name} pages` })).getByRole("button", {
@@ -121,7 +122,7 @@ describe.each(catalogs)("$game modifier layouts", (data) => {
         const requirements = screen.getByLabelText("Requirements").textContent;
         expect(JSON.parse(requirements!).groups[0].mods).toEqual([id]);
         view.rerender(<Browser engine={engine} item={item} layout="columns" onAdd={onAdd} />);
-        expect(screen.getByLabelText("Search modifiers")).toHaveProperty("value", "ColdResist1");
+        expectControlValue(screen.getByLabelText("Search modifiers"), "ColdResist1");
         expect(screen.getByLabelText("Requirements").textContent).toBe(requirements);
         const row = region("Suffixes").querySelector<HTMLElement>(`[data-modifier-id="${id}"]`)!;
         expect(within(row).getByRole("button", { name: "Remove target" })).toBeDefined();
@@ -152,7 +153,7 @@ describe.each(catalogs)("$game modifier layouts", (data) => {
             "1 / 1",
         );
         search("");
-        fireEvent.change(screen.getByLabelText("Modifier tag"), { target: { value: "life" } });
+        changeControl(screen.getByLabelText("Modifier tag"), { target: { value: "life" } });
         expect(
             [...ids(region("Prefixes")), ...ids(region("Suffixes"))].every((id) =>
                 data.mods[id]!.implicit_tags.includes("life"),

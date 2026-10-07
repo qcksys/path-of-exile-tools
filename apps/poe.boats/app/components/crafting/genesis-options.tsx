@@ -1,3 +1,6 @@
+import { Checkbox } from "~/components/ui/checkbox";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Label } from "~/components/ui/label";
 import type { CraftingCatalog, CraftingMethod } from "~/schemas/crafting";
 import { genesisEffect } from "../../../../../packages/poe-game-data/src/crafting-genesis";
 import { controlClass } from "./method-picker";
@@ -28,25 +31,25 @@ export function GenesisOptions({
                 Matching increases and reductions add together; tier rating removes the lowest
                 eligible tiers without redistributing their weight.
             </p>
-            <label className="block space-y-1">
+            <Label className="block space-y-1">
                 Modifier tier rating bonuses
-                <select
+                <FormSelect
                     className={controlClass}
                     value={tiers.filter(([id]) => method.nodes.includes(id)).length}
-                    onChange={(event) =>
+                    onValueChange={(selectedValue) =>
                         onChange({
                             ...method,
                             nodes: [
                                 ...method.nodes.filter(
                                     (id) => !tiers.some(([node]) => node === id),
                                 ),
-                                ...tiers.slice(0, Number(event.target.value)).map(([id]) => id),
+                                ...tiers.slice(0, Number(selectedValue)).map(([id]) => id),
                             ],
                         })
                     }
                 >
                     {Array.from({ length: tiers.length + 1 }, (_, count) => count).map((count) => (
-                        <option key={count} value={count}>
+                        <FormSelectItem key={count} value={count}>
                             {count} bonuses · +
                             {tiers
                                 .slice(0, count)
@@ -57,28 +60,27 @@ export function GenesisOptions({
                                     0,
                                 )}{" "}
                             rating
-                        </option>
+                        </FormSelectItem>
                     ))}
-                </select>
-            </label>
+                </FormSelect>
+            </Label>
             <fieldset className="grid max-h-64 gap-2 overflow-y-auto rounded border p-3 sm:grid-cols-2">
                 <legend className="px-1">Modifier chances</legend>
                 {weights.map(([id, passive]) => (
-                    <label key={id} className="flex items-start gap-2 text-xs">
-                        <input
-                            type="checkbox"
+                    <Label key={id} className="flex items-start gap-2 text-xs">
+                        <Checkbox
                             checked={method.nodes.includes(id)}
-                            onChange={(event) =>
+                            onCheckedChange={(checked) =>
                                 onChange({
                                     ...method,
-                                    nodes: event.target.checked
+                                    nodes: checked
                                         ? [...method.nodes, id]
                                         : method.nodes.filter((entry) => entry !== id),
                                 })
                             }
                         />
                         {passive.text}
-                    </label>
+                    </Label>
                 ))}
             </fieldset>
             <p className="text-xs text-muted-foreground">

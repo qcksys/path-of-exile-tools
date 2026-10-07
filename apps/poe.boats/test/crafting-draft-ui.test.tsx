@@ -11,6 +11,7 @@ import {
     craftingCatalogSchema,
     craftingProjectSchema,
 } from "../app/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog } from "./crafting-fixtures";
 import { retainedRevealFixture } from "./crafting-retained-reveal-fixtures";
 
@@ -30,7 +31,7 @@ function mount(data: CraftingCatalog = catalog) {
             </MemoryRouter>
         </StrictMode>,
     );
-    fireEvent.change(screen.getByLabelText("Search modifiers"), { target: { value: "Prime" } });
+    changeControl(screen.getByLabelText("Search modifiers"), { target: { value: "Prime" } });
     return view;
 }
 function saveControls() {
@@ -59,16 +60,16 @@ describe.each([catalog, poe2])("$game automatic crafting drafts", (data) => {
         const view = mount(data);
         fireEvent.click(screen.getByText("Item inventory (0)"));
         fireEvent.click(screen.getByText("Manage inventory tabs"));
-        fireEvent.change(screen.getByLabelText("Tab name"), { target: { value: "Keep" } });
+        changeControl(screen.getByLabelText("Tab name"), { target: { value: "Keep" } });
         fireEvent.click(button("Add tab"));
-        fireEvent.change(screen.getByLabelText("Inventory item name"), {
+        changeControl(screen.getByLabelText("Inventory item name"), {
             target: { value: "Attempt" },
         });
         fireEvent.click(button("Store current item"));
-        fireEvent.change(screen.getByLabelText("Tab name"), { target: { value: "Empty" } });
+        changeControl(screen.getByLabelText("Tab name"), { target: { value: "Empty" } });
         fireEvent.click(button("Add tab"));
         saveControls();
-        fireEvent.change(screen.getByLabelText("Project name"), { target: { value: "Organized" } });
+        changeControl(screen.getByLabelText("Project name"), { target: { value: "Organized" } });
         fireEvent.click(button("Save project"));
         const expected = draft(data);
         expect(expected.inventoryTabs).toEqual(["Keep", "Empty"]);
@@ -77,44 +78,44 @@ describe.each([catalog, poe2])("$game automatic crafting drafts", (data) => {
         mount(data);
         expect(draft(data)).toEqual(expected);
         fireEvent.click(screen.getByText("Item inventory (1)"));
-        fireEvent.change(screen.getByLabelText("Inventory tab"), { target: { value: "Keep" } });
+        changeControl(screen.getByLabelText("Inventory tab"), { target: { value: "Keep" } });
         expect(screen.getByRole("button", { name: "Load Attempt" })).toBeDefined();
         fireEvent.click(screen.getByText("Manage inventory tabs"));
-        fireEvent.change(screen.getByLabelText("Tab name"), { target: { value: "Renamed" } });
+        changeControl(screen.getByLabelText("Tab name"), { target: { value: "Renamed" } });
         fireEvent.click(button("Rename tab"));
         expect(draft(data).inventory[0]!.tab).toBe("Renamed");
         saveControls();
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "Organized" },
         });
         fireEvent.click(button("Load project"));
         expect(draft(data)).toEqual(expected);
-        expect(screen.getByLabelText("Inventory tab")).toHaveProperty("value", "");
-        fireEvent.change(screen.getByLabelText("Inventory tab"), { target: { value: "Keep" } });
+        expectControlValue(screen.getByLabelText("Inventory tab"), "");
+        changeControl(screen.getByLabelText("Inventory tab"), { target: { value: "Keep" } });
         expect(screen.getByRole("button", { name: "Load Attempt" })).toBeDefined();
         expect(screen.queryByRole("alert")).toBeNull();
     });
 
     it("restores the current undo position and setup without changing a named project", () => {
         const view = mount(data);
-        fireEvent.change(screen.getByLabelText("Random seed"), { target: { value: "123" } });
+        changeControl(screen.getByLabelText("Random seed"), { target: { value: "123" } });
         fireEvent.click(button("Apply craft"));
         saveControls();
-        fireEvent.change(screen.getByLabelText("Project name"), {
+        changeControl(screen.getByLabelText("Project name"), {
             target: { value: "Checkpoint" },
         });
         fireEvent.click(button("Save project"));
         const named = localStorage.getItem(savedKey(data));
-        fireEvent.change(screen.getByLabelText("Base quality (%)"), { target: { value: "12" } });
+        changeControl(screen.getByLabelText("Base quality (%)"), { target: { value: "12" } });
         const retained = item().textContent;
-        fireEvent.change(screen.getByLabelText("Base quality (%)"), { target: { value: "16" } });
+        changeControl(screen.getByLabelText("Base quality (%)"), { target: { value: "16" } });
         fireEvent.click(button("Undo"));
         expect(item().textContent).toBe(retained);
         const expected = draft(data);
         view.unmount();
         mount(data);
         expect(item().textContent).toBe(retained);
-        expect(screen.getByLabelText("Random seed")).toHaveProperty("value", "123");
+        expectControlValue(screen.getByLabelText("Random seed"), "123");
         expect(button("Undo")).toHaveProperty("disabled", true);
         expect(button("Redo")).toHaveProperty("disabled", true);
         expect(screen.queryByText("Emulator spending")).toBeNull();
@@ -122,11 +123,11 @@ describe.each([catalog, poe2])("$game automatic crafting drafts", (data) => {
         expect(draft(data)).toEqual(expected);
         expect(localStorage.getItem(savedKey(data))).toBe(named);
         saveControls();
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "Checkpoint" },
         });
         fireEvent.click(button("Load project"));
-        expect(screen.getByLabelText("Base quality (%)")).toHaveProperty("value", "0");
+        expectControlValue(screen.getByLabelText("Base quality (%)"), "0");
     });
 
     it("restores retained reveal offers after a conflicting manual addition", () => {
@@ -148,7 +149,7 @@ describe.each([catalog, poe2])("$game automatic crafting drafts", (data) => {
         });
         localStorage.setItem(key(data), JSON.stringify(project));
         const view = mount(data);
-        fireEvent.change(screen.getByLabelText("Search modifiers"), { target: { value: blocker } });
+        changeControl(screen.getByLabelText("Search modifiers"), { target: { value: blocker } });
         fireEvent.click(button("Add to item"));
         const expected = draft(data);
         view.unmount();
@@ -171,19 +172,19 @@ describe.each([catalog, poe2])("$game automatic crafting drafts", (data) => {
 describe("automatic draft storage boundaries", () => {
     it("keeps games and builds separate", () => {
         const first = mount();
-        fireEvent.change(screen.getByLabelText("Item level"), { target: { value: "44" } });
+        changeControl(screen.getByLabelText("Item level"), { target: { value: "44" } });
         const stored = localStorage.getItem(key());
         first.unmount();
         const second = mount(poe2);
-        expect(screen.getByLabelText("Item level")).toHaveProperty("value", "86");
-        fireEvent.change(screen.getByLabelText("Item level"), { target: { value: "50" } });
+        expectControlValue(screen.getByLabelText("Item level"), "86");
+        changeControl(screen.getByLabelText("Item level"), { target: { value: "50" } });
         second.unmount();
         const otherBuild = { ...catalog, patch: "another-build" };
         const third = mount(otherBuild);
-        expect(screen.getByLabelText("Item level")).toHaveProperty("value", "86");
+        expectControlValue(screen.getByLabelText("Item level"), "86");
         third.unmount();
         mount();
-        expect(screen.getByLabelText("Item level")).toHaveProperty("value", "44");
+        expectControlValue(screen.getByLabelText("Item level"), "44");
         expect(localStorage.getItem(key())).toBe(stored);
         expect(draft(poe2).item.level).toBe(50);
     });
@@ -196,17 +197,17 @@ describe("automatic draft storage boundaries", () => {
         const named = localStorage.getItem(savedKey());
         fireEvent.click(screen.getByRole("checkbox", { name: "Automatically save this draft" }));
         expect(localStorage.getItem(key())).toBe("false");
-        fireEvent.change(screen.getByLabelText("Item level"), { target: { value: "90" } });
+        changeControl(screen.getByLabelText("Item level"), { target: { value: "90" } });
         expect(localStorage.getItem(key())).toBe("false");
         view.unmount();
         mount();
-        expect(screen.getByLabelText("Rarity")).toHaveProperty("value", "normal");
-        expect(screen.getByLabelText("Item level")).toHaveProperty("value", "86");
+        expectControlValue(screen.getByLabelText("Rarity"), "normal");
+        expectControlValue(screen.getByLabelText("Item level"), "86");
         saveControls();
         const toggle = screen.getByRole("checkbox", { name: "Automatically save this draft" });
-        expect(toggle).toHaveProperty("checked", false);
+        expect(toggle.getAttribute("aria-checked")).toBe(String(false));
         fireEvent.click(toggle);
-        fireEvent.change(screen.getByLabelText("Item level"), { target: { value: "88" } });
+        changeControl(screen.getByLabelText("Item level"), { target: { value: "88" } });
         expect(draft().item.level).toBe(88);
         expect(localStorage.getItem(savedKey())).toBe(named);
     });
@@ -228,7 +229,7 @@ describe("automatic draft storage boundaries", () => {
         mount();
         expect(screen.getByRole("alert").textContent).toContain("could not be restored");
         expect(localStorage.getItem(key())).toBe(raw);
-        fireEvent.change(screen.getByLabelText("Item level"), { target: { value: "50" } });
+        changeControl(screen.getByLabelText("Item level"), { target: { value: "50" } });
         expect(localStorage.getItem(key())).toBe(raw);
         saveControls();
         fireEvent.click(screen.getByRole("checkbox", { name: "Automatically save this draft" }));
@@ -245,7 +246,7 @@ describe("automatic draft storage boundaries", () => {
         mount();
         expect(screen.getByRole("alert").textContent).toContain("could not be restored");
         fireEvent.click(button("Apply craft"));
-        expect(screen.getByLabelText("Rarity")).toHaveProperty("value", "rare");
+        expectControlValue(screen.getByLabelText("Rarity"), "rare");
     });
 
     it("retains the previous draft and reports write failures without losing current edits", () => {
@@ -261,11 +262,11 @@ describe("automatic draft storage boundaries", () => {
             return write.call(this, name, value);
         });
         fireEvent.click(button("Apply craft"));
-        expect(screen.getByLabelText("Rarity")).toHaveProperty("value", "rare");
+        expectControlValue(screen.getByLabelText("Rarity"), "rare");
         expect(screen.getByRole("alert").textContent).toContain("could not be saved");
         expect(localStorage.getItem(key())).toBe(previous);
         vi.restoreAllMocks();
-        fireEvent.change(screen.getByLabelText("Item level"), { target: { value: "90" } });
+        changeControl(screen.getByLabelText("Item level"), { target: { value: "90" } });
         expect(screen.queryByRole("alert")).toBeNull();
         expect(draft().item.rarity).toBe("rare");
         expect(draft().item.level).toBe(90);

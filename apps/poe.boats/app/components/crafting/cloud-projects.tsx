@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Label } from "~/components/ui/label";
 import { useCraftingCloud } from "~/hooks/use-crafting-cloud";
 import { craftingCloudRequest } from "~/lib/crafting-cloud-client";
 import { craftingBundleFingerprint, workspaceBundle } from "~/lib/crafting-cloud-sync";
@@ -192,38 +194,42 @@ export function CloudCraftingProjects({
                             calculation.
                         </p>
                         <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
-                            <label className="text-xs">
+                            <Label className="block text-xs">
                                 Share target
-                                <select
+                                <FormSelect
                                     className={graphControl}
                                     value={target ? `${target.kind}:${target.id}` : ""}
-                                    onChange={(event) => setSelected(event.target.value)}
+                                    onValueChange={(selectedValue) => setSelected(selectedValue)}
                                 >
                                     {!targets.length && (
-                                        <option value="">Create a project first</option>
+                                        <FormSelectItem value="">
+                                            Create a project first
+                                        </FormSelectItem>
                                     )}
                                     {targets.map((entry) => (
-                                        <option
+                                        <FormSelectItem
                                             key={`${entry.kind}:${entry.id}`}
                                             value={`${entry.kind}:${entry.id}`}
                                         >
                                             {entry.kind === "build" ? "Build" : "Item"}:{" "}
                                             {entry.name}
-                                        </option>
+                                        </FormSelectItem>
                                     ))}
-                                </select>
-                            </label>
-                            <label className="text-xs">
+                                </FormSelect>
+                            </Label>
+                            <Label className="block text-xs">
                                 Link behavior
-                                <select
+                                <FormSelect
                                     className={graphControl}
                                     value={mode}
-                                    onChange={(event) => setMode(event.target.value as typeof mode)}
+                                    onValueChange={(selectedValue) =>
+                                        setMode(selectedValue as typeof mode)
+                                    }
                                 >
-                                    <option value="frozen">Frozen snapshot</option>
-                                    <option value="live">Live saved process</option>
-                                </select>
-                            </label>
+                                    <FormSelectItem value="frozen">Frozen snapshot</FormSelectItem>
+                                    <FormSelectItem value="live">Live saved process</FormSelectItem>
+                                </FormSelect>
+                            </Label>
                             <Button
                                 className="self-end"
                                 size="sm"

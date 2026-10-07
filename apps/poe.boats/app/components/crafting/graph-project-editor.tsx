@@ -1,6 +1,10 @@
 import { itemQuerySchema } from "@poe-tools/item-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import { liveExchangePrices } from "~/lib/crafting-exchange";
 import { livePurchasePrices } from "~/lib/crafting-market";
@@ -244,9 +248,9 @@ export function GraphProjectEditor({
     return (
         <div className="space-y-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
-                <label className="min-w-64 flex-1 text-xs text-muted-foreground">
+                <Label className="block min-w-64 flex-1 text-xs text-muted-foreground">
                     Project name
-                    <input
+                    <Input
                         key={graph.name}
                         className={`${graphControl} mt-1 text-xl font-semibold text-foreground`}
                         defaultValue={graph.name}
@@ -255,8 +259,8 @@ export function GraphProjectEditor({
                                 update({ ...graph, name: event.target.value });
                         }}
                     />
-                </label>
-                <div className="flex gap-2">
+                </Label>
+                <div className="flex flex-wrap gap-2">
                     <Button variant="outline" onClick={onCopy}>
                         Duplicate project
                     </Button>
@@ -315,9 +319,9 @@ export function GraphProjectEditor({
                         if (target) void adopt(target);
                     }}
                 >
-                    <label>
+                    <Label>
                         Retained era and revision
-                        <select
+                        <FormSelect
                             name="revision"
                             className={graphControl}
                             defaultValue={`${ruleset.era}:${ruleset.revision}`}
@@ -325,15 +329,15 @@ export function GraphProjectEditor({
                             {index.revisions
                                 .filter((entry) => entry.game === graph.game)
                                 .map((entry) => (
-                                    <option
+                                    <FormSelectItem
                                         key={`${entry.era}:${entry.revision}`}
                                         value={`${entry.era}:${entry.revision}`}
                                     >
                                         {entry.label} · {entry.revision}
-                                    </option>
+                                    </FormSelectItem>
                                 ))}
-                        </select>
-                    </label>
+                        </FormSelect>
+                    </Label>
                     <Button type="submit" variant="outline" size="sm">
                         Apply selected version
                     </Button>
@@ -500,9 +504,9 @@ export function GraphProjectEditor({
                             Prices & calculation
                         </summary>
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                            <label className="text-xs">
+                            <Label className="block text-xs">
                                 Sampled trials
-                                <input
+                                <Input
                                     className={graphControl}
                                     type="number"
                                     min="1"
@@ -512,10 +516,10 @@ export function GraphProjectEditor({
                                         update({ ...graph, iterations: Number(event.target.value) })
                                     }
                                 />
-                            </label>
-                            <label className="text-xs">
+                            </Label>
+                            <Label className="block text-xs">
                                 Maximum steps per trial
-                                <input
+                                <Input
                                     className={graphControl}
                                     type="number"
                                     min="1"
@@ -525,7 +529,7 @@ export function GraphProjectEditor({
                                         update({ ...graph, maxSteps: Number(event.target.value) })
                                     }
                                 />
-                            </label>
+                            </Label>
                             {costs.map(([id, name]) => (
                                 <GraphPriceInput
                                     key={id}
@@ -558,7 +562,7 @@ export function GraphProjectEditor({
                                         key={outcome.id}
                                         className="space-y-3 border-t border-border pt-3"
                                     >
-                                        <input
+                                        <Input
                                             key={outcome.name}
                                             aria-label="Outcome name"
                                             className={graphControl}
@@ -594,18 +598,17 @@ export function GraphProjectEditor({
                                                 })
                                             }
                                         />
-                                        <label className="flex gap-2 text-xs">
-                                            <input
-                                                type="checkbox"
+                                        <Label className="flex gap-2 text-xs">
+                                            <Checkbox
                                                 checked={outcome.success}
-                                                onChange={(event) =>
+                                                onCheckedChange={(checked) =>
                                                     update({
                                                         ...graph,
                                                         outcomes: graph.outcomes.map((entry) =>
                                                             entry.id === outcome.id
                                                                 ? {
                                                                       ...entry,
-                                                                      success: event.target.checked,
+                                                                      success: checked,
                                                                   }
                                                                 : entry,
                                                         ),
@@ -613,32 +616,34 @@ export function GraphProjectEditor({
                                                 }
                                             />
                                             Count as a successful result
-                                        </label>
-                                        <label className="block text-xs">
+                                        </Label>
+                                        <Label className="block text-xs">
                                             Disposition
-                                            <select
+                                            <FormSelect
                                                 className={graphControl}
                                                 value={outcome.disposition}
-                                                onChange={(event) =>
+                                                onValueChange={(selectedValue) =>
                                                     update({
                                                         ...graph,
                                                         outcomes: graph.outcomes.map((entry) =>
                                                             entry.id === outcome.id
                                                                 ? {
                                                                       ...entry,
-                                                                      disposition: event.target
-                                                                          .value as typeof outcome.disposition,
+                                                                      disposition:
+                                                                          selectedValue as typeof outcome.disposition,
                                                                   }
                                                                 : entry,
                                                         ),
                                                     })
                                                 }
                                             >
-                                                <option value="keep">Keep</option>
-                                                <option value="sell">Sell</option>
-                                                <option value="discard">Discard</option>
-                                            </select>
-                                        </label>
+                                                <FormSelectItem value="keep">Keep</FormSelectItem>
+                                                <FormSelectItem value="sell">Sell</FormSelectItem>
+                                                <FormSelectItem value="discard">
+                                                    Discard
+                                                </FormSelectItem>
+                                            </FormSelect>
+                                        </Label>
                                         {outcome.disposition === "sell" && (
                                             <GraphPriceInput
                                                 label="Sale price"

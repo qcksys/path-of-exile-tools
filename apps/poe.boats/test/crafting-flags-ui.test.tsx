@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { CraftingWorkbench } from "../app/components/crafting/workbench";
 import { craftingCatalogSchema } from "../app/schemas/crafting";
+import { changeControl } from "./control-helpers";
 
 class WorkerStub {
     static instances: WorkerStub[] = [];
@@ -60,12 +61,12 @@ for (const game of ["poe1", "poe2"] as const) {
             fireEvent.click(checkbox("Corrupted"));
             expect(card.getByText("Corrupted")).toBeDefined();
             fireEvent.click(checkbox("Mirrored"));
-            expect(checkbox("Corrupted")).toHaveProperty("checked", false);
+            expect(checkbox("Corrupted").getAttribute("aria-checked")).toBe(String(false));
             expect(card.getByText("Mirrored")).toBeDefined();
             fireEvent.click(button("Undo"));
-            expect(checkbox("Corrupted")).toHaveProperty("checked", true);
+            expect(checkbox("Corrupted").getAttribute("aria-checked")).toBe(String(true));
             fireEvent.click(button("Redo"));
-            expect(checkbox("Mirrored")).toHaveProperty("checked", true);
+            expect(checkbox("Mirrored").getAttribute("aria-checked")).toBe(String(true));
             fireEvent.click(checkbox("Mirrored"));
             fireEvent.click(checkbox(flag));
             expect(card.getByText(flag)).toBeDefined();
@@ -80,11 +81,11 @@ for (const game of ["poe1", "poe2"] as const) {
                 ],
             ).toBe(true);
             fireEvent.click(checkbox(flag));
-            fireEvent.change(screen.getByLabelText("Saved project"), {
+            changeControl(screen.getByLabelText("Saved project"), {
                 target: { value: "My crafting project" },
             });
             fireEvent.click(button("Load project"));
-            expect(checkbox(flag)).toHaveProperty("checked", true);
+            expect(checkbox(flag).getAttribute("aria-checked")).toBe(String(true));
         });
 
         it("dispatches flag-only requirements, saves false conditions, and clears them", () => {

@@ -1,3 +1,5 @@
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Label } from "~/components/ui/label";
 import { tangledFossilOutcomes } from "~/lib/crafting-fossils";
 import type { CraftingCatalog } from "~/schemas/crafting";
 import { controlClass } from "./method-picker";
@@ -21,42 +23,42 @@ export function TangledFossilPicker({
                     const other = side === "positive" ? "negative" : "positive";
                     const tags = [...new Set(outcomes.map((entry) => entry[side][0]!.tag))].sort();
                     return (
-                        <label key={side} className="space-y-1">
+                        <Label key={side} className="block space-y-1">
                             <span>
                                 {side === "positive"
                                     ? "Greatly more modifiers"
                                     : "Blocked modifiers"}
                             </span>
-                            <select
+                            <FormSelect
                                 className={controlClass}
                                 value={selected?.[side][0]?.tag ?? ""}
-                                onChange={(event) => {
+                                onValueChange={(selectedValue) => {
                                     const choice =
                                         outcomes.find(
                                             (entry) =>
-                                                entry[side][0]!.tag === event.target.value &&
+                                                entry[side][0]!.tag === selectedValue &&
                                                 entry[other][0]!.tag === selected?.[other][0]?.tag,
                                         ) ??
                                         outcomes.find(
-                                            (entry) => entry[side][0]!.tag === event.target.value,
+                                            (entry) => entry[side][0]!.tag === selectedValue,
                                         );
                                     if (choice) onChange(choice.id);
                                 }}
                             >
-                                <option value="" disabled>
+                                <FormSelectItem value="" disabled>
                                     Choose a modifier type
-                                </option>
+                                </FormSelectItem>
                                 {tags.map((tag) => (
-                                    <option
+                                    <FormSelectItem
                                         key={tag}
                                         value={tag}
                                         disabled={tag === selected?.[other][0]?.tag}
                                     >
                                         {tag}
-                                    </option>
+                                    </FormSelectItem>
                                 ))}
-                            </select>
-                        </label>
+                            </FormSelect>
+                        </Label>
                     );
                 })}
             </div>

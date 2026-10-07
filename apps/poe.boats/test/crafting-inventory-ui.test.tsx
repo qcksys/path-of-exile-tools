@@ -11,6 +11,7 @@ import {
     craftingCatalogSchema,
     craftingProjectSchema,
 } from "~/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog } from "./crafting-fixtures";
 
 const catalogs = [
@@ -58,10 +59,10 @@ describe.each(catalogs)("$game inventory tabs", (data) => {
     }
     const button = (name: string) => screen.getByRole("button", { name });
     function nameTab(name: string) {
-        fireEvent.change(screen.getByLabelText("Tab name"), { target: { value: name } });
+        changeControl(screen.getByLabelText("Tab name"), { target: { value: name } });
     }
     function selectTab(name: string) {
-        fireEvent.change(screen.getByLabelText("Inventory tab"), { target: { value: name } });
+        changeControl(screen.getByLabelText("Inventory tab"), { target: { value: name } });
     }
 
     it("creates, renames and removes tabs without losing snapshots or changing their rolls", () => {
@@ -70,9 +71,9 @@ describe.each(catalogs)("$game inventory tabs", (data) => {
         fireEvent.click(screen.getByText("Manage inventory tabs"));
         nameTab("  Keep  ");
         fireEvent.click(button("Add tab"));
-        expect(screen.getByLabelText("Inventory tab")).toHaveProperty("value", "Keep");
+        expectControlValue(screen.getByLabelText("Inventory tab"), "Keep");
         expect(screen.queryByRole("button", { name: "Load Original" })).toBeNull();
-        fireEvent.change(screen.getByLabelText("Inventory item name"), {
+        changeControl(screen.getByLabelText("Inventory item name"), {
             target: { value: "Attempt" },
         });
         fireEvent.click(button("Store current item"));
@@ -90,7 +91,7 @@ describe.each(catalogs)("$game inventory tabs", (data) => {
         expect(stored.tab).toBe("Keep");
         fireEvent.click(button("Remove tab"));
         expect(changed.mock.lastCall![1]).toEqual([]);
-        expect(screen.getByLabelText("Inventory tab")).toHaveProperty("value", "");
+        expectControlValue(screen.getByLabelText("Inventory tab"), "");
         expect(button("Load Original")).toBeDefined();
         fireEvent.click(button("Load Attempt"));
         expect(loaded.mock.lastCall).toEqual([item, "Attempt"]);
@@ -101,14 +102,14 @@ describe.each(catalogs)("$game inventory tabs", (data) => {
     it("moves snapshots between tabs and deletes only the selected snapshot", () => {
         const other = { id: "other", name: "Other", item, tab: "Keep" };
         const { changed } = mount([entry, other], ["Keep", "Donors"]);
-        fireEvent.change(screen.getByLabelText("Move Original to tab"), {
+        changeControl(screen.getByLabelText("Move Original to tab"), {
             target: { value: "Keep" },
         });
         expect(screen.queryByRole("button", { name: "Load Original" })).toBeNull();
         selectTab("Keep");
         expect(button("Load Original")).toBeDefined();
         expect(button("Load Other")).toBeDefined();
-        fireEvent.change(screen.getByLabelText("Move Original to tab"), {
+        changeControl(screen.getByLabelText("Move Original to tab"), {
             target: { value: "Donors" },
         });
         selectTab("Donors");

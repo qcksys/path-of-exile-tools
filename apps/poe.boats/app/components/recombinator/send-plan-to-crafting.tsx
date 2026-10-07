@@ -10,6 +10,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "~/components/ui/dialog";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Label } from "~/components/ui/label";
 import { useCraftingWorkspace } from "~/hooks/use-crafting-workspace";
 import { catalogBaseOptions } from "~/lib/recombinator-catalog";
 import type { RecombinatorDraft } from "~/lib/recombinator-plan";
@@ -177,55 +179,55 @@ export function SendPlanToCrafting({
                     return (
                         <fieldset key={entry.id} className="space-y-2 rounded border p-3">
                             <legend className="px-1 font-medium">{entry.name}</legend>
-                            <label className="block text-sm">
+                            <Label className="block text-sm">
                                 Concrete base
-                                <select
+                                <FormSelect
                                     className={control}
                                     value={choice?.baseId ?? ""}
-                                    onChange={(event) => change({ baseId: event.target.value })}
+                                    onValueChange={(selectedValue) =>
+                                        change({ baseId: selectedValue })
+                                    }
                                 >
-                                    <option value="">Choose a base</option>
+                                    <FormSelectItem value="">Choose a base</FormSelectItem>
                                     {bases.map((base) => (
-                                        <option key={base.id} value={base.id}>
+                                        <FormSelectItem key={base.id} value={base.id}>
                                             {base.name}
-                                        </option>
+                                        </FormSelectItem>
                                     ))}
-                                </select>
-                            </label>
+                                </FormSelect>
+                            </Label>
                             <div className="grid grid-cols-2 gap-2">
-                                <label className="text-sm">
+                                <Label className="block text-sm">
                                     Rarity
-                                    <select
+                                    <FormSelect
                                         className={control}
                                         value={choice?.rarity ?? "rare"}
-                                        onChange={(event) =>
+                                        onValueChange={(selectedValue) =>
                                             change({
-                                                rarity: event.target
-                                                    .value as Choices[string]["rarity"],
+                                                rarity: selectedValue as Choices[string]["rarity"],
                                             })
                                         }
                                     >
-                                        <option value="normal">Normal</option>
-                                        <option value="magic">Magic</option>
-                                        <option value="rare">Rare</option>
-                                    </select>
-                                </label>
-                                <label className="text-sm">
+                                        <FormSelectItem value="normal">Normal</FormSelectItem>
+                                        <FormSelectItem value="magic">Magic</FormSelectItem>
+                                        <FormSelectItem value="rare">Rare</FormSelectItem>
+                                    </FormSelect>
+                                </Label>
+                                <Label className="block text-sm">
                                     Assumed rolls
-                                    <select
+                                    <FormSelect
                                         className={control}
                                         value={choice?.rolls ?? "minimum"}
-                                        onChange={(event) =>
+                                        onValueChange={(selectedValue) =>
                                             change({
-                                                rolls: event.target
-                                                    .value as Choices[string]["rolls"],
+                                                rolls: selectedValue as Choices[string]["rolls"],
                                             })
                                         }
                                     >
-                                        <option value="minimum">Minimum</option>
-                                        <option value="maximum">Maximum</option>
-                                    </select>
-                                </label>
+                                        <FormSelectItem value="minimum">Minimum</FormSelectItem>
+                                        <FormSelectItem value="maximum">Maximum</FormSelectItem>
+                                    </FormSelect>
+                                </Label>
                             </div>
                         </fieldset>
                     );

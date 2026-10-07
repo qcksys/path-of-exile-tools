@@ -13,6 +13,7 @@ import {
     calculateProcessExact,
 } from "~/lib/crafting-simulation";
 import { craftingCatalogSchema, craftingProjectSchema } from "~/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog } from "./crafting-fixtures";
 
 class CraftingWorker {
@@ -37,7 +38,9 @@ const button = (name: string) =>
     });
 async function selectRouteDestination(control: HTMLElement, name: string) {
     fireEvent.click(control);
-    const option = within(await screen.findByRole("listbox")).getByRole("option", { name });
+    const option = within(
+        document.getElementById(control.getAttribute("aria-controls")!)!,
+    ).getByRole("option", { name });
     act(() => option.focus());
     fireEvent.keyDown(option, { key: "Enter" });
 }
@@ -117,11 +120,11 @@ function fixture(data = catalog) {
                 <CraftingWorkbench catalog={data} mode={mode} />
             </MemoryRouter>,
         );
-        fireEvent.change(screen.getByLabelText("Search modifiers"), {
+        changeControl(screen.getByLabelText("Search modifiers"), {
             target: { value: "IncreasedLife1" },
         });
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "process" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "process" } });
         fireEvent.click(button("Load project"));
     }
     return { engine, project, key, mount };
@@ -160,8 +163,12 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         fireEvent.click(button("Create process from calculator"));
         expect(previous.terminate).toHaveBeenCalled();
         expect(screen.queryByText("Create process from calculator")).toBeNull();
-        expect(screen.getByLabelText("Condition failed")).toHaveProperty("value", "restart");
-        expect(screen.getByLabelText("Combine crafting steps")).toHaveProperty("checked", true);
+        expectControlValue(screen.getByLabelText("Condition failed"), "restart");
+        expect(
+            screen
+                .getByRole("checkbox", { name: "Combine crafting steps" })
+                .getAttribute("aria-checked"),
+        ).toBe(String(true));
         expect(screen.getByRole("region", { name: "Current item" }).textContent).toBe(before);
         expect(screen.getByText("Emulator spending").closest("details")!.textContent).toBe(
             spendingBefore,
@@ -203,7 +210,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
                 <CraftingWorkbench catalog={data} />
             </MemoryRouter>,
         );
-        expect(screen.getByLabelText("Condition failed")).toHaveProperty("value", "restart");
+        expectControlValue(screen.getByLabelText("Condition failed"), "restart");
         expect(CraftingWorker.instances).toHaveLength(2);
     });
 
@@ -218,7 +225,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         };
         const previousSteps = structuredClone(project.steps);
         mount();
-        fireEvent.change(screen.getByLabelText("Item level"), { target: { value: "100" } });
+        changeControl(screen.getByLabelText("Item level"), { target: { value: "100" } });
         const before = screen.getByRole("region", { name: "Current item" }).textContent;
         expect(screen.getByText(/Replaces the existing process\./)).toBeDefined();
         fireEvent.click(button("Replace process from calculator"));
@@ -232,16 +239,13 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         expect(saved.item).toEqual({ ...project.item, level: 100 });
         expect(project.steps).toEqual(previousSteps);
         expect(screen.getByRole("region", { name: "Current item" }).textContent).toBe(before);
-        fireEvent.change(screen.getByLabelText("Step action"), { target: { value: "check" } });
+        changeControl(screen.getByLabelText("Step action"), { target: { value: "check" } });
         fireEvent.click(button("Save project"));
         const edited = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(edited.steps[0].method).toBeUndefined();
         expect(edited.method).toEqual(project.method);
         fireEvent.click(button("Undo"));
-        expect(screen.getByLabelText("Item level")).toHaveProperty(
-            "value",
-            String(project.item.level),
-        );
+        expectControlValue(screen.getByLabelText("Item level"), String(project.item.level));
         expect(screen.queryByText("Emulator spending")).toBeNull();
     });
 
@@ -259,21 +263,21 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
             project: { simulationLimit: { kind: "manual" }, iterations: project.iterations },
         });
         fireEvent.click(button("Stop simulation"));
-        fireEvent.change(screen.getByLabelText("Stop simulation after"), {
+        changeControl(screen.getByLabelText("Stop simulation after"), {
             target: { value: "trials" },
         });
-        expect(screen.getByLabelText("Trials")).toHaveProperty("value", String(project.iterations));
+        expectControlValue(screen.getByLabelText("Trials"), String(project.iterations));
     });
 
     it("persists continuous simulation and retains its last batch when stopped", () => {
         const { key, mount } = fixture(data);
         mount();
-        fireEvent.change(screen.getByLabelText("Stop simulation after"), {
+        changeControl(screen.getByLabelText("Stop simulation after"), {
             target: { value: "manual" },
         });
         expect(screen.queryByLabelText("Simulation action limit")).toBeNull();
         expect(screen.queryByLabelText("Successful item target")).toBeNull();
-        fireEvent.change(screen.getByLabelText("Calculator trials"), { target: { value: "1" } });
+        changeControl(screen.getByLabelText("Calculator trials"), { target: { value: "1" } });
         fireEvent.click(button("Save project"));
         expect(
             JSON.parse(localStorage.getItem(key)!)["My crafting project"].simulationLimit,
@@ -308,18 +312,18 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         expect(screen.getByRole("region", { name: "Crafting results" }).textContent).not.toContain(
             "13 trials",
         );
-        fireEvent.change(screen.getByLabelText("Stop simulation after"), {
+        changeControl(screen.getByLabelText("Stop simulation after"), {
             target: { value: "successes" },
         });
-        expect(screen.getByLabelText("Successful item target")).toHaveProperty("value", "100");
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        expectControlValue(screen.getByLabelText("Successful item target"), "100");
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        expect(screen.getByLabelText("Stop simulation after")).toHaveProperty("value", "manual");
+        expectControlValue(screen.getByLabelText("Stop simulation after"), "manual");
         fireEvent.click(button("Mass simulate"));
         const next = CraftingWorker.instances[1]!;
-        fireEvent.change(screen.getByLabelText("Random seed"), { target: { value: "77" } });
+        changeControl(screen.getByLabelText("Random seed"), { target: { value: "77" } });
         expect(next.terminate).toHaveBeenCalled();
         act(() => next.onmessage?.({ data: { type: "progress", result } }));
         expect(screen.queryByRole("region", { name: "Crafting results" })).toBeNull();
@@ -411,13 +415,15 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         project.steps[0]!.onSuccess = "success";
         project.steps[0]!.onFailure = "failure";
         mount();
-        fireEvent.change(screen.getByLabelText("Store outcomes"), {
+        changeControl(screen.getByLabelText("Store outcomes"), {
             target: { value: "successes" },
         });
-        fireEvent.change(screen.getByLabelText("Maximum stored outcomes"), {
+        changeControl(screen.getByLabelText("Maximum stored outcomes"), {
             target: { value: "2" },
         });
-        fireEvent.click(screen.getByLabelText("Successful item affix distribution"));
+        fireEvent.click(
+            screen.getByRole("checkbox", { name: "Successful item affix distribution" }),
+        );
         fireEvent.click(button("Mass simulate"));
         const worker = CraftingWorker.instances[0]!;
         const sent = worker.postMessage.mock.calls[0]![0];
@@ -461,18 +467,19 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         expect(JSON.parse(localStorage.getItem(key)!)["My crafting project"].item).toEqual(
             project.item,
         );
-        fireEvent.change(screen.getByLabelText("Store outcomes"), { target: { value: "none" } });
+        changeControl(screen.getByLabelText("Store outcomes"), { target: { value: "none" } });
         expect(screen.queryByLabelText("Maximum stored outcomes")).toBeNull();
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        expect(screen.getByLabelText("Store outcomes")).toHaveProperty("value", "successes");
-        expect(screen.getByLabelText("Maximum stored outcomes")).toHaveProperty("value", "2");
-        expect(screen.getByLabelText("Successful item affix distribution")).toHaveProperty(
-            "checked",
-            true,
-        );
+        expectControlValue(screen.getByLabelText("Store outcomes"), "successes");
+        expectControlValue(screen.getByLabelText("Maximum stored outcomes"), "2");
+        expect(
+            screen
+                .getByRole("checkbox", { name: "Successful item affix distribution" })
+                .getAttribute("aria-checked"),
+        ).toBe(String(true));
     });
 
     it("cancels an active run when retention changes and shows disabled storage independently", () => {
@@ -480,9 +487,11 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         mount();
         fireEvent.click(button("Mass simulate"));
         const active = CraftingWorker.instances[0]!;
-        fireEvent.change(screen.getByLabelText("Store outcomes"), { target: { value: "none" } });
+        changeControl(screen.getByLabelText("Store outcomes"), { target: { value: "none" } });
         expect(active.terminate).toHaveBeenCalled();
-        fireEvent.click(screen.getByLabelText("Successful item affix distribution"));
+        fireEvent.click(
+            screen.getByRole("checkbox", { name: "Successful item affix distribution" }),
+        );
         fireEvent.click(button("Mass simulate"));
         const worker = CraftingWorker.instances[1]!;
         const simulation = new CraftingSimulation(
@@ -499,14 +508,14 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
     it("saves fixed simulation limits, sends them to the worker and displays the reached target", () => {
         const { project, key, mount } = fixture(data);
         mount();
-        expect(screen.getByLabelText("Stop simulation after")).toHaveProperty("value", "trials");
-        fireEvent.change(screen.getByLabelText("Stop simulation after"), {
+        expectControlValue(screen.getByLabelText("Stop simulation after"), "trials");
+        changeControl(screen.getByLabelText("Stop simulation after"), {
             target: { value: "successes" },
         });
-        fireEvent.change(screen.getByLabelText("Successful item target"), {
+        changeControl(screen.getByLabelText("Successful item target"), {
             target: { value: "2" },
         });
-        fireEvent.change(screen.getByLabelText("Maximum trials"), { target: { value: "17" } });
+        changeControl(screen.getByLabelText("Maximum trials"), { target: { value: "17" } });
         fireEvent.click(button("Mass simulate"));
         const worker = CraftingWorker.instances[0]!;
         const sent = worker.postMessage.mock.calls[0]![0];
@@ -529,26 +538,26 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         );
         expect(saved.simulationLimit).toEqual({ kind: "successes", count: 2 });
         expect(saved.item).toEqual(project.item);
-        fireEvent.change(screen.getByLabelText("Stop simulation after"), {
+        changeControl(screen.getByLabelText("Stop simulation after"), {
             target: { value: "trials" },
         });
         expect(screen.queryByLabelText("Successful item target")).toBeNull();
-        expect(screen.getByLabelText("Trials")).toHaveProperty("value", "17");
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        expectControlValue(screen.getByLabelText("Trials"), "17");
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        expect(screen.getByLabelText("Stop simulation after")).toHaveProperty("value", "successes");
-        expect(screen.getByLabelText("Successful item target")).toHaveProperty("value", "2");
+        expectControlValue(screen.getByLabelText("Stop simulation after"), "successes");
+        expectControlValue(screen.getByLabelText("Successful item target"), "2");
     });
 
     it("displays unfinished processes without invalid averages and can use their retained item", () => {
         const { project, key, mount } = fixture(data);
         mount();
-        fireEvent.change(screen.getByLabelText("Stop simulation after"), {
+        changeControl(screen.getByLabelText("Stop simulation after"), {
             target: { value: "actions" },
         });
-        fireEvent.change(screen.getByLabelText("Simulation action limit"), {
+        changeControl(screen.getByLabelText("Simulation action limit"), {
             target: { value: "1" },
         });
         fireEvent.click(button("Mass simulate"));
@@ -600,7 +609,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         fireEvent.click(source.getByRole("button", { name: "Copy step" }));
         expect(screen.queryByRole("region", { name: "Crafting results" })).toBeNull();
         const copy = within(screen.getByRole("article", { name: "Keep life (copy) editor" }));
-        fireEvent.change(copy.getByRole("textbox", { name: "Step name" }), {
+        changeControl(copy.getByRole("textbox", { name: "Step name" }), {
             target: { value: "Independent copy" },
         });
         fireEvent.click(copy.getByRole("button", { name: "Always pass" }));
@@ -629,7 +638,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         expect(new Set(saved.steps.map((step) => step.id)).size).toBe(4);
         expect(saved.item).toEqual(project.item);
         expect(calculateProcessExact(engine, saved).probability).toBe(result.probability);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -680,7 +689,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
             [...input.steps[0].branches].reverse().map((branch) => branch.id),
         );
         expect(calculateProcessExact(engine, saved).probability).toBe(0);
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -721,7 +730,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         fireEvent.click(second.getByText("Edit route 2 condition"));
         fireEvent.click(second.getByRole("button", { name: "Always pass" }));
         fireEvent.click(second.getByText("Item conditions", { exact: true }));
-        fireEvent.change(second.getByLabelText("Required rarity"), { target: { value: "rare" } });
+        changeControl(second.getByLabelText("Required rarity"), { target: { value: "rare" } });
         await selectRouteDestination(
             editor.getByRole("combobox", { name: "No route matched" }),
             "Finish as failure",
@@ -761,7 +770,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         const { engine, project, key, mount } = fixture(data);
         mount();
         fireEvent.click(screen.getByText("Custom prices in chaos"));
-        fireEvent.change(screen.getByLabelText("Starting item cost (chaos)"), {
+        changeControl(screen.getByLabelText("Starting item cost (chaos)"), {
             target: { value: "8" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -784,7 +793,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         );
         fireEvent.click(button("Save project"));
         expect(JSON.parse(localStorage.getItem(key)!)["My crafting project"].baseCost).toBe(8);
-        fireEvent.change(screen.getByLabelText("Starting item cost (chaos)"), {
+        changeControl(screen.getByLabelText("Starting item cost (chaos)"), {
             target: { value: "" },
         });
         expect(screen.queryByRole("region", { name: "Crafting results" })).toBeNull();
@@ -797,14 +806,14 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
             }),
         );
         expect(screen.getByText(/Starting item costs are excluded/)).toBeDefined();
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        expect(screen.getByLabelText("Starting item cost (chaos)")).toHaveProperty("value", "8");
+        expectControlValue(screen.getByLabelText("Starting item cost (chaos)"), "8");
         fireEvent.click(button("Calculate odds"));
         const running = CraftingWorker.instances[2]!;
-        fireEvent.change(screen.getByLabelText("Starting item cost (chaos)"), {
+        changeControl(screen.getByLabelText("Starting item cost (chaos)"), {
             target: { value: "0" },
         });
         expect(running.terminate).toHaveBeenCalled();
@@ -862,7 +871,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         fireEvent.click(button("Undo"));
         expect(quantity()).toBe("5");
         fireEvent.click(button("Save project"));
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
@@ -885,7 +894,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
             screen.getByRole("article", { name: "Keep life editor" }),
         );
         const editor = within(screen.getByRole("article", { name: "Keep life editor" }));
-        fireEvent.change(editor.getByLabelText("Step description"), {
+        changeControl(editor.getByLabelText("Step description"), {
             target: { value: "Retry from the starting item if life is lost" },
         });
         fireEvent.click(button("Calculate odds"));
@@ -904,7 +913,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         expect(first.getByRole("row", { name: "Passed Final check 0.875" })).toBeDefined();
         expect(first.getByRole("row", { name: "Failed restart 0.875" })).toBeDefined();
         expect(node.textContent).toContain("1.75 visits / attempt");
-        fireEvent.change(editor.getByLabelText("Step name"), { target: { value: "Annul safely" } });
+        changeControl(editor.getByLabelText("Step name"), { target: { value: "Annul safely" } });
         expect(screen.getByRole("article", { name: "Annul safely route results" })).toBeDefined();
         expect(screen.getByRole("region", { name: "Crafting results" })).toBeDefined();
         fireEvent.click(button("Save project"));
@@ -918,12 +927,12 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         fireEvent.click(button("Reset layout"));
         expect(node.style.transform).toContain("translate(0px,0px)");
         expect(screen.getByRole("region", { name: "Process route results" })).toBeDefined();
-        fireEvent.change(screen.getByLabelText("Saved project"), {
+        changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
         expect(node.style.transform).toContain("translate(105px,65px)");
-        expect(editor.getByLabelText("Step name")).toHaveProperty("value", "Annul safely");
+        expectControlValue(editor.getByLabelText("Step name"), "Annul safely");
         fireEvent.click(button("Calculate odds"));
         const next = CraftingWorker.instances[1]!;
         const simulation = new CraftingSimulation(data, next.postMessage.mock.calls[0]![0].project);
@@ -936,7 +945,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         expect(
             screen.getByRole("article", { name: "Annul safely route results" }).textContent,
         ).toContain(`${sampled.routes!.annul!.visits / 10} visits`);
-        fireEvent.change(editor.getByLabelText("Condition passed"), {
+        changeControl(editor.getByLabelText("Condition passed"), {
             target: { value: "success" },
         });
         expect(screen.queryByRole("region", { name: "Process route results" })).toBeNull();
@@ -965,7 +974,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         expect(
             screen.getByRole("article", { name: "Final check route results" }).textContent,
         ).toContain("0 visits · 0 chaos / attempt");
-        fireEvent.change(screen.getAllByLabelText("Step description")[0]!, {
+        changeControl(screen.getAllByLabelText("Step description")[0]!, {
             target: { value: "Retain the paid Annulment on a later error" },
         });
         expect(worker.terminate).not.toHaveBeenCalled();
@@ -1042,7 +1051,7 @@ it.each([
     expect(screen.getByRole("region", { name: "Process route results" })).toBeDefined();
     if (reason === "stop") fireEvent.click(button("Stop process"));
     else if (reason === "route-edit")
-        fireEvent.change(screen.getAllByLabelText("Condition failed")[0]!, {
+        changeControl(screen.getAllByLabelText("Condition failed")[0]!, {
             target: { value: "failure" },
         });
     else if (reason === "error")

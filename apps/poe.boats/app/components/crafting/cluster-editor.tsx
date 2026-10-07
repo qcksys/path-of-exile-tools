@@ -1,5 +1,7 @@
 import { useId } from "react";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Label } from "~/components/ui/label";
 import { clusterRule, clusterSkills } from "~/lib/crafting-clusters";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import type { CraftingItem } from "~/schemas/crafting";
@@ -34,34 +36,34 @@ export function ClusterEditor({
                     onChange({ ...item, cluster: { ...item.cluster!, passive: value } })
                 }
             />
-            <label className="block space-y-1 text-xs">
+            <Label className="block space-y-1 text-xs">
                 <span>Cluster passive count</span>
-                <select
+                <FormSelect
                     className={controlClass}
                     value={item.cluster.nodes ?? ""}
-                    onChange={(event) =>
+                    onValueChange={(selectedValue) =>
                         onChange({
                             ...item,
                             cluster: {
                                 ...item.cluster!,
-                                nodes: event.target.value ? Number(event.target.value) : undefined,
+                                nodes: selectedValue ? Number(selectedValue) : undefined,
                             },
                         })
                     }
                 >
-                    <option value="">
+                    <FormSelectItem value="">
                         Unknown ({rule.minNodes}–{rule.maxNodes})
-                    </option>
+                    </FormSelectItem>
                     {Array.from(
                         { length: rule.maxNodes - rule.minNodes + 1 },
                         (_, index) => rule.minNodes + index,
                     ).map((nodes) => (
-                        <option key={nodes} value={nodes}>
+                        <FormSelectItem key={nodes} value={nodes}>
                             {nodes}
-                        </option>
+                        </FormSelectItem>
                     ))}
-                </select>
-            </label>
+                </FormSelect>
+            </Label>
             <p className="text-xs text-muted-foreground">
                 Passive type determines the modifier pool. Count records your starting jewel and is
                 retained when crafting. Remove incompatible modifiers before changing type.

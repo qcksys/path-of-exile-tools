@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { liveExchangePrices } from "~/lib/crafting-exchange";
 import { livePurchasePrices } from "~/lib/crafting-market";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
@@ -223,9 +226,9 @@ export function ProcessCostHistory({ graph }: { graph: CraftingGraph }) {
                     void run(event.currentTarget);
                 }}
             >
-                <label>
+                <Label>
                     History start (UTC)
-                    <input
+                    <Input
                         className={graphControl}
                         type="date"
                         name="start"
@@ -234,25 +237,25 @@ export function ProcessCostHistory({ graph }: { graph: CraftingGraph }) {
                             .toISOString()
                             .slice(0, 10)}
                     />
-                </label>
-                <label>
+                </Label>
+                <Label>
                     History end (UTC)
-                    <input
+                    <Input
                         className={graphControl}
                         type="date"
                         name="end"
                         required
                         defaultValue={new Date().toISOString().slice(0, 10)}
                     />
-                </label>
-                <label>
+                </Label>
+                <Label>
                     History samples
-                    <select className={graphControl} name="points" defaultValue="8">
-                        <option value="2">2</option>
-                        <option value="8">8</option>
-                        <option value="24">24</option>
-                    </select>
-                </label>
+                    <FormSelect className={graphControl} name="points" defaultValue="8">
+                        <FormSelectItem value="2">2</FormSelectItem>
+                        <FormSelectItem value="8">8</FormSelectItem>
+                        <FormSelectItem value="24">24</FormSelectItem>
+                    </FormSelect>
+                </Label>
                 <Button type="submit" disabled={busy}>
                     Calculate cost history
                 </Button>

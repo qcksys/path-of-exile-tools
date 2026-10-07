@@ -3,7 +3,9 @@ import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Field, FieldGroup, FieldLabel } from "~/components/ui/field";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { anointmentKey, anointmentText, availableAnointments } from "~/lib/crafting-anointing";
 import {
@@ -930,18 +932,18 @@ export function TargetEditor({
                             </li>
                         ))}
                     </ul>
-                    <label className="flex items-center gap-2 text-xs">
+                    <Label className="flex items-center gap-2 text-xs">
                         {group.negated ? "Fewer than" : "Require at least"}
-                        <select
+                        <FormSelect
                             className="rounded border border-input bg-background px-2 py-1"
                             aria-label={`Group ${index + 1} match threshold`}
                             value={group.minimum}
-                            onChange={(event) =>
+                            onValueChange={(selectedValue) =>
                                 onChange({
                                     ...target,
                                     groups: target.groups.map((entry) =>
                                         entry === group
-                                            ? { ...entry, minimum: Number(event.target.value) }
+                                            ? { ...entry, minimum: Number(selectedValue) }
                                             : entry,
                                     ),
                                 })
@@ -950,13 +952,13 @@ export function TargetEditor({
                             {Array.from({ length: maximumAffixes }, (_, index) => index + 1)
                                 .filter((count) => count <= group.mods.length)
                                 .map((count) => (
-                                    <option key={count} value={count}>
+                                    <FormSelectItem key={count} value={count}>
                                         {count}
-                                    </option>
+                                    </FormSelectItem>
                                 ))}
-                        </select>
+                        </FormSelect>
                         modifier(s) from this group
-                    </label>
+                    </Label>
                     <FieldGroup className="mt-3">
                         <Field orientation="horizontal">
                             <Checkbox
@@ -1009,42 +1011,42 @@ export function TargetEditor({
                 </div>
             ))}
             {target.groups.length > 1 ? (
-                <label className="block space-y-1 text-xs">
+                <Label className="block space-y-1 text-xs">
                     Group matching
-                    <select
+                    <FormSelect
                         className={controlClass}
                         value={target.minimumGroups}
-                        onChange={(event) =>
-                            onChange({ ...target, minimumGroups: Number(event.target.value) })
+                        onValueChange={(selectedValue) =>
+                            onChange({ ...target, minimumGroups: Number(selectedValue) })
                         }
                     >
-                        <option value={0}>All groups</option>
+                        <FormSelectItem value={0}>All groups</FormSelectItem>
                         {target.groups.map((group, index) => (
-                            <option key={group.mods.join(",")} value={index + 1}>
+                            <FormSelectItem key={group.mods.join(",")} value={index + 1}>
                                 At least {index + 1} group(s)
-                            </option>
+                            </FormSelectItem>
                         ))}
-                    </select>
-                </label>
+                    </FormSelect>
+                </Label>
             ) : null}
             <div className="grid grid-cols-2 gap-2">
                 {(["openPrefixes", "openSuffixes"] as const).map((key) => (
-                    <label key={key} className="space-y-1 text-xs">
+                    <Label key={key} className="block space-y-1 text-xs">
                         {key === "openPrefixes" ? "Open prefixes" : "Open suffixes"}
-                        <select
+                        <FormSelect
                             className={controlClass}
                             value={target[key]}
-                            onChange={(event) =>
-                                onChange({ ...target, [key]: Number(event.target.value) })
+                            onValueChange={(selectedValue) =>
+                                onChange({ ...target, [key]: Number(selectedValue) })
                             }
                         >
                             {[0, 1, 2, 3, 4, 5, 6].map((count) => (
-                                <option key={count} value={count}>
+                                <FormSelectItem key={count} value={count}>
                                     {count === 0 ? "Any" : `At least ${count}`}
-                                </option>
+                                </FormSelectItem>
                             ))}
-                        </select>
-                    </label>
+                        </FormSelect>
+                    </Label>
                 ))}
             </div>
             <StatTargetEditor engine={engine} item={item} target={target} onChange={onChange} />
@@ -1103,12 +1105,11 @@ export function TargetEditor({
                                         (rule) => rule.itemClass === engine.base(item).item_class,
                                     )
                                     .map((rule) => (
-                                        <label
+                                        <Label
                                             key={rule.influence}
                                             className="flex items-center gap-2 text-xs"
                                         >
-                                            <input
-                                                type="checkbox"
+                                            <Checkbox
                                                 checked={
                                                     target.influences?.includes(rule.influence) ??
                                                     false
@@ -1118,10 +1119,10 @@ export function TargetEditor({
                                                     (target.influences?.length ?? 0) >= 2 &&
                                                     !target.influences?.includes(rule.influence)
                                                 }
-                                                onChange={(event) =>
+                                                onCheckedChange={(checked) =>
                                                     onChange({
                                                         ...target,
-                                                        influences: event.target.checked
+                                                        influences: checked
                                                             ? [
                                                                   ...(target.influences ?? []),
                                                                   rule.influence,
@@ -1134,49 +1135,49 @@ export function TargetEditor({
                                                 }
                                             />
                                             Require {influenceNames[rule.influence]}
-                                        </label>
+                                        </Label>
                                     ))}
                             </div>
                         </fieldset>
                     ) : null}
-                    <label className="block space-y-1 text-xs">
+                    <Label className="block space-y-1 text-xs">
                         Required rarity
-                        <select
+                        <FormSelect
                             className={controlClass}
                             value={target.rarity ?? ""}
-                            onChange={(event) =>
+                            onValueChange={(selectedValue) =>
                                 onChange({
                                     ...target,
-                                    rarity: event.target.value
-                                        ? (event.target.value as CraftingTarget["rarity"])
+                                    rarity: selectedValue
+                                        ? (selectedValue as CraftingTarget["rarity"])
                                         : undefined,
                                 })
                             }
                         >
-                            <option value="">Any rarity</option>
-                            <option value="normal">normal</option>
-                            <option value="magic">magic</option>
-                            <option value="rare">rare</option>
-                        </select>
-                    </label>
-                    <label className="block space-y-1 text-xs">
+                            <FormSelectItem value="">Any rarity</FormSelectItem>
+                            <FormSelectItem value="normal">normal</FormSelectItem>
+                            <FormSelectItem value="magic">magic</FormSelectItem>
+                            <FormSelectItem value="rare">rare</FormSelectItem>
+                        </FormSelect>
+                    </Label>
+                    <Label className="block space-y-1 text-xs">
                         Open affixes of either type
-                        <select
+                        <FormSelect
                             className={controlClass}
                             value={target.openAffixes ?? 0}
-                            onChange={(event) =>
-                                onChange({ ...target, openAffixes: Number(event.target.value) })
+                            onValueChange={(selectedValue) =>
+                                onChange({ ...target, openAffixes: Number(selectedValue) })
                             }
                         >
                             {Array.from({ length: maximumAffixes + 1 }, (_, count) => count).map(
                                 (count) => (
-                                    <option key={count} value={count}>
+                                    <FormSelectItem key={count} value={count}>
                                         {count ? `At least ${count}` : "Any"}
-                                    </option>
+                                    </FormSelectItem>
                                 ),
                             )}
-                        </select>
-                    </label>
+                        </FormSelect>
+                    </Label>
                     {(
                         [
                             ["affixCount", "Total affixes"],
@@ -1189,10 +1190,10 @@ export function TargetEditor({
                             <legend className="text-xs">{label}</legend>
                             <div className="grid grid-cols-2 gap-2">
                                 {(["min", "max"] as const).map((bound) => (
-                                    <label key={bound} className="space-y-1 text-xs">
+                                    <Label key={bound} className="block space-y-1 text-xs">
                                         {bound === "min" ? "Minimum" : "Maximum"}{" "}
                                         {label.toLowerCase()}
-                                        <input
+                                        <Input
                                             className={controlClass}
                                             type="number"
                                             min={0}
@@ -1220,7 +1221,7 @@ export function TargetEditor({
                                                 })
                                             }
                                         />
-                                    </label>
+                                    </Label>
                                 ))}
                             </div>
                         </fieldset>
