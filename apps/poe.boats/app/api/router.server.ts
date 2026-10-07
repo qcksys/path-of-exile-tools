@@ -1,4 +1,5 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
+import { Scalar } from "@scalar/hono-api-reference";
 import { bodyLimit } from "hono/body-limit";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -146,7 +147,13 @@ api.doc31("/openapi.json", {
             "The same operations power the UI, versioned HTTP API, and /mcp tools. Browser-local operations accept and return state; saved-set operations require an account.",
     },
 });
-api.get("/docs", (context) => context.redirect("/integrations"));
+api.get(
+    "/docs",
+    Scalar({
+        url: "/api/openapi.json",
+        pageTitle: "API Reference · POE.BOATS",
+    }),
+);
 api.notFound((context) => context.json({ error: "Endpoint not found." }, 404));
 api.onError((error, context) => {
     if (error instanceof HTTPException && error.status === 400)
