@@ -56,10 +56,15 @@ export function CatalogPicker({
     const presented = useMemo(
         () =>
             options
-                .map((option) => ({
-                    ...option,
-                    item: items[option.itemId ?? option.id.replace(/^poe[12]:/, "")] ?? option.item,
-                }))
+                .map((option) => {
+                    const presentation = items[option.itemId ?? option.id.replace(/^poe[12]:/, "")];
+                    return {
+                        ...option,
+                        item: option.item
+                            ? { ...option.item, art: presentation?.art ?? option.item.art }
+                            : presentation,
+                    };
+                })
                 .sort((a, b) =>
                     a.item && b.item
                         ? compareItemPresentations(a.item, b.item)
