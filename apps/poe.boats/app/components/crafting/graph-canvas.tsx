@@ -11,10 +11,13 @@ import {
     useUpdateNodeInternals,
 } from "@xyflow/react";
 import { useEffect, useMemo } from "react";
+import { Badge } from "~/components/ui/badge";
 import { connectGraphInput } from "~/lib/crafting-graph-authoring";
+import { cn } from "~/lib/utils";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import type { CraftingGraphResult } from "~/schemas/crafting-graph-result";
 import "@xyflow/react/dist/style.css";
+import { Button } from "~/components/ui/button";
 
 type FlowNode = Node<
     {
@@ -35,20 +38,27 @@ function CraftingFlowNode({ id, data }: NodeProps<FlowNode>) {
     }, [id, data.ports, updateNodeInternals]);
     return (
         <div
-            className={`w-56 rounded-lg border bg-card shadow-md ${data.active ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+            className={cn(
+                "w-56 rounded-lg border-t-4 border bg-card shadow-md",
+                data.kind === "acquire" ? "border-chart-1/50" : "border-chart-2/50",
+                data.active && "ring-2 ring-primary/50",
+            )}
         >
             <div className="flex items-center justify-between border-b border-border px-3 py-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-                <span>{data.kind === "acquire" ? "Acquisition" : "Craft"}</span>
-                {data.final && <span className="text-primary">Final step</span>}
+                <Badge variant={data.kind === "acquire" ? "acquisition" : "craft"}>
+                    {data.kind === "acquire" ? "Acquisition" : "Craft"}
+                </Badge>
+                {data.final && <Badge variant="outcome">Final step</Badge>}
             </div>
-            <button
+            <Button
+                variant="ghost"
                 type="button"
-                className="nodrag w-full px-3 py-3 text-left text-sm font-semibold"
+                className="nodrag h-auto min-h-12 w-full justify-start whitespace-normal px-3 py-3 text-left text-sm font-semibold"
                 onClick={data.select}
                 aria-label={`Edit ${data.label}`}
             >
                 {data.label}
-            </button>
+            </Button>
             {data.ports.map((port, index) => (
                 <Handle
                     key={port.id}
@@ -163,7 +173,11 @@ export function GraphCanvas({
                                     sourceHandle: "item",
                                     targetHandle: branch.destination.inputId,
                                     label: `Recover: ${branch.name}`,
-                                    style: { stroke: "var(--chart-4)", strokeDasharray: "6 4" },
+                                    style: {
+                                        stroke: "var(--chart-4)",
+                                        strokeWidth: 2,
+                                        strokeDasharray: "6 4",
+                                    },
                                     markerEnd: { type: MarkerType.ArrowClosed },
                                 },
                             ]
@@ -171,53 +185,64 @@ export function GraphCanvas({
                   )
                 : [];
         return [...production, ...recovery].map((edge) => ({
+            style: { stroke: "var(--chart-1)", strokeWidth: 2 },
             ...edge,
             labelStyle: { fill: "var(--foreground)" },
             labelBgStyle: { fill: "var(--card)" },
         }));
     });
     return (
-        <section
-            className="h-[480px] rounded-lg border border-border bg-muted/20 [--xy-controls-button-background-color:var(--card)] [--xy-controls-button-color:var(--foreground)] [--xy-controls-button-border-color:var(--border)] [--xy-controls-button-background-color-hover:var(--muted)]"
-            aria-label="Crafting project graph"
-        >
-            <ReactFlow<FlowNode>
-                nodes={nodes}
-                edges={edges}
-                nodeTypes={nodeTypes}
-                onNodesChange={onNodesChange}
-                edgesReconnectable={false}
-                deleteKeyCode={null}
-                fitView
-                minZoom={0.25}
-                maxZoom={1.5}
-                onConnect={(connection) => {
-                    try {
-                        if (connection.targetHandle)
-                            onChange(
-                                connectGraphInput(
-                                    graph,
-                                    connection.target,
-                                    connection.targetHandle,
-                                    connection.source,
-                                ),
-                            );
-                    } catch (error) {
-                        onError(error);
-                    }
-                }}
-                onNodeDragStop={(_, node) =>
-                    onChange({
-                        ...graph,
-                        nodes: graph.nodes.map((entry) =>
-                            entry.id === node.id ? { ...entry, position: node.position } : entry,
-                        ),
-                    })
-                }
+        <div className="flex flex-col gap-2">
+            <fieldset className="flex flex-wrap gap-2" aria-label="Graph color legend">
+                <Badge variant="acquisition">Acquisitions</Badge>
+                <Badge variant="craft">Crafting steps</Badge>
+                <Badge variant="recovery">Recovery · dashed</Badge>
+                <Badge variant="outcome">Final outcome</Badge>
+            </fieldset>
+            <section
+                className="h-[480px] rounded-lg border border-border bg-muted/20 [--xy-controls-button-background-color:var(--card)] [--xy-controls-button-color:var(--foreground)] [--xy-controls-button-border-color:var(--border)] [--xy-controls-button-background-color-hover:var(--muted)]"
+                aria-label="Crafting project graph"
             >
-                <Background gap={24} color="var(--border)" />
-                <Controls />
-            </ReactFlow>
-        </section>
+                <ReactFlow<FlowNode>
+                    nodes={nodes}
+                    edges={edges}
+                    nodeTypes={nodeTypes}
+                    onNodesChange={onNodesChange}
+                    edgesReconnectable={false}
+                    deleteKeyCode={null}
+                    fitView
+                    minZoom={0.25}
+                    maxZoom={1.5}
+                    onConnect={(connection) => {
+                        try {
+                            if (connection.targetHandle)
+                                onChange(
+                                    connectGraphInput(
+                                        graph,
+                                        connection.target,
+                                        connection.targetHandle,
+                                        connection.source,
+                                    ),
+                                );
+                        } catch (error) {
+                            onError(error);
+                        }
+                    }}
+                    onNodeDragStop={(_, node) =>
+                        onChange({
+                            ...graph,
+                            nodes: graph.nodes.map((entry) =>
+                                entry.id === node.id
+                                    ? { ...entry, position: node.position }
+                                    : entry,
+                            ),
+                        })
+                    }
+                >
+                    <Background gap={24} color="var(--border)" />
+                    <Controls />
+                </ReactFlow>
+            </section>
+        </div>
     );
 }

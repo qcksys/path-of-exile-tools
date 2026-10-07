@@ -7,6 +7,10 @@ import {
 } from "@poe-tools/item-query";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
 import {
     type CraftingItemQueryTextResult,
     craftingItemQueryTextResultSchema,
@@ -131,10 +135,10 @@ export function QueryFromItemText({
                     is always included.
                 </p>
                 <div className="space-y-1">
-                    <label className="block text-xs" htmlFor={textId}>
+                    <Label className="block text-xs" htmlFor={textId}>
                         Copied item text
-                    </label>
-                    <textarea
+                    </Label>
+                    <Textarea
                         id={textId}
                         className={`${control} min-h-36 font-mono text-xs`}
                         maxLength={50_000}
@@ -144,16 +148,15 @@ export function QueryFromItemText({
                 </div>
                 <div className="space-y-1">
                     {Object.entries(selectionLabels).map(([key, label]) => (
-                        <label className="flex items-center gap-2 text-xs" key={key}>
-                            <input
-                                type="checkbox"
+                        <Label className="flex items-center gap-2 text-xs" key={key}>
+                            <Checkbox
                                 checked={selection[key as keyof ItemQuerySelection]}
-                                onChange={(event) =>
-                                    setSelection({ ...selection, [key]: event.target.checked })
+                                onCheckedChange={(checked) =>
+                                    setSelection({ ...selection, [key]: checked })
                                 }
                             />
                             {label}
-                        </label>
+                        </Label>
                     ))}
                 </div>
                 <Button
@@ -170,24 +173,22 @@ export function QueryFromItemText({
                     </p>
                 )}
                 {result && result.matches.length > 1 && (
-                    <label className="block space-y-1 text-xs">
+                    <Label className="block space-y-1 text-xs">
                         Item interpretation
                         <span className="block text-muted-foreground">
                             {result.matches.length} matches. Select the base and modifiers you
                             intended before applying.
                         </span>
-                        <select
+                        <FormSelect
                             className={control}
                             value={chosen ?? ""}
-                            onChange={(event) =>
-                                setChosen(
-                                    event.target.value === "" ? null : Number(event.target.value),
-                                )
+                            onValueChange={(selectedValue) =>
+                                setChosen(selectedValue === "" ? null : Number(selectedValue))
                             }
                         >
-                            <option value="">Choose an interpretation</option>
+                            <FormSelectItem value="">Choose an interpretation</FormSelectItem>
                             {result.matches.map((entry, index) => (
-                                <option key={JSON.stringify(entry.item)} value={index}>
+                                <FormSelectItem key={JSON.stringify(entry.item)} value={index}>
                                     {index + 1}. {entry.record.item.baseType} ·{" "}
                                     {entry.item.baseId.split("/").at(-1)} ·{" "}
                                     {entry.record.facts.modifiers
@@ -196,10 +197,10 @@ export function QueryFromItemText({
                                                 `${mod.name ?? mod.id}${mod.tier === undefined ? "" : ` T${mod.tier}`}`,
                                         )
                                         .join(" / ")}
-                                </option>
+                                </FormSelectItem>
                             ))}
-                        </select>
-                    </label>
+                        </FormSelect>
+                    </Label>
                 )}
                 {match && (
                     <section aria-label="Item requirements preview" className="space-y-2">

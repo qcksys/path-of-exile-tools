@@ -8,6 +8,7 @@ import { projectFromItem } from "../app/lib/crafting-graph-authoring";
 import { calculateCraftingGraph } from "../app/lib/crafting-graph-simulation";
 import { validateRulesetIndex } from "../app/lib/crafting-rulesets";
 import { craftingWorkspaceStorageKey } from "../app/lib/crafting-workspace-storage";
+import { changeControl, expectControlValue } from "./control-helpers";
 import { engine } from "./crafting-fixtures";
 import { firstItem, quote } from "./crafting-graph-fixtures";
 
@@ -42,11 +43,11 @@ it("shows missing or destroyed results without offering a new crafting input", (
     );
     expect(screen.queryByRole("button", { name: "Use item in new project" })).toBeNull();
     expect(screen.getByText("Destroyed items cannot become crafting inputs.")).toBeTruthy();
-    expect(screen.getByRole("textbox", { name: "Sampled item JSON" })).toHaveProperty(
-        "value",
+    expectControlValue(
+        screen.getByRole("textbox", { name: "Sampled item JSON" }),
         JSON.stringify(samples.samples[0]!.item, null, 2),
     );
-    fireEvent.change(screen.getByRole("combobox", { name: "Sampled trial" }), {
+    changeControl(screen.getByRole("combobox", { name: "Sampled trial" }), {
         target: { value: "1" },
     });
     expect(screen.getByText("This trial did not return a final item.")).toBeTruthy();
@@ -70,7 +71,7 @@ it("cancels a pending item handoff when another sampled trial is selected", asyn
     );
     fireEvent.click(screen.getByRole("button", { name: "Use item in new project" }));
     expect(fetch).toHaveBeenCalledTimes(1);
-    fireEvent.change(screen.getByRole("combobox", { name: "Sampled trial" }), {
+    changeControl(screen.getByRole("combobox", { name: "Sampled trial" }), {
         target: { value: "1" },
     });
     await act(async () => {

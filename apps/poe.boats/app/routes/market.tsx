@@ -2,6 +2,10 @@ import { Form, Link, useNavigation } from "react-router";
 import { AppFooter } from "~/components/app-footer";
 import { AppHeader } from "~/components/app-header";
 import { MarketPriceChart } from "~/components/market-price-chart";
+import { Button } from "~/components/ui/button";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import { marketNumber as number } from "~/lib/market-number";
@@ -54,35 +58,45 @@ export default function Market({ loaderData }: Route.ComponentProps) {
                     className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
                     key={`${filters.realm}:${filters.league}:${filters.days}:${filters.q}`}
                 >
-                    <label className="grid gap-1 text-sm">
+                    <Label className="grid gap-1 text-sm">
                         Realm
-                        <select name="realm" defaultValue={filters.realm} className={fieldClass}>
-                            <option value="pc">PoE 1 · PC</option>
-                            <option value="poe2">PoE 2</option>
-                            <option value="xbox">Xbox</option>
-                            <option value="sony">PlayStation</option>
-                        </select>
-                    </label>
-                    <label className="grid gap-1 text-sm">
+                        <FormSelect
+                            name="realm"
+                            defaultValue={filters.realm}
+                            className={fieldClass}
+                        >
+                            <FormSelectItem value="pc">PoE 1 · PC</FormSelectItem>
+                            <FormSelectItem value="poe2">PoE 2</FormSelectItem>
+                            <FormSelectItem value="xbox">Xbox</FormSelectItem>
+                            <FormSelectItem value="sony">PlayStation</FormSelectItem>
+                        </FormSelect>
+                    </Label>
+                    <Label className="grid gap-1 text-sm">
                         Season
-                        <select name="league" defaultValue={filters.league} className={fieldClass}>
-                            <option value="">Latest available</option>
+                        <FormSelect
+                            name="league"
+                            defaultValue={filters.league}
+                            className={fieldClass}
+                        >
+                            <FormSelectItem value="">Latest available</FormSelectItem>
                             {seasons.map((entry) => (
-                                <option key={entry.league}>{entry.league}</option>
+                                <FormSelectItem key={entry.league} value={entry.league}>
+                                    {entry.league}
+                                </FormSelectItem>
                             ))}
-                        </select>
-                    </label>
-                    <label className="grid gap-1 text-sm">
+                        </FormSelect>
+                    </Label>
+                    <Label className="grid gap-1 text-sm">
                         Period
-                        <select name="days" defaultValue={filters.days} className={fieldClass}>
-                            <option value="7">Last 7 days</option>
-                            <option value="30">Last 30 days</option>
-                            <option value="90">Last 90 days</option>
-                        </select>
-                    </label>
-                    <label className="grid min-w-48 flex-1 gap-1 text-sm">
+                        <FormSelect name="days" defaultValue={filters.days} className={fieldClass}>
+                            <FormSelectItem value="7">Last 7 days</FormSelectItem>
+                            <FormSelectItem value="30">Last 30 days</FormSelectItem>
+                            <FormSelectItem value="90">Last 90 days</FormSelectItem>
+                        </FormSelect>
+                    </Label>
+                    <Label className="grid min-w-48 flex-1 gap-1 text-sm">
                         Item or variant
-                        <input
+                        <Input
                             type="search"
                             name="q"
                             defaultValue={filters.q}
@@ -90,14 +104,15 @@ export default function Market({ loaderData }: Route.ComponentProps) {
                             className={fieldClass}
                             maxLength={100}
                         />
-                    </label>
-                    <button
+                    </Label>
+                    <Button
+                        variant="ghost"
                         type="submit"
                         className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground"
                         disabled={navigation.state !== "idle"}
                     >
                         {navigation.state === "idle" ? "Apply filters" : "Loading…"}
-                    </button>
+                    </Button>
                 </Form>
                 <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
                     Likely sales are estimates, not confirmed trades. An item must disappear for at

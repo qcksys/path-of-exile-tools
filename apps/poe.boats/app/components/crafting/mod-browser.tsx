@@ -1,6 +1,9 @@
 import { useId, useMemo, useState } from "react";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { eldritchFamilyKey, eldritchLabel } from "~/lib/crafting-eldritch";
 import { type CraftingEngine, eldritchTier } from "~/lib/crafting-engine";
 import { graspingMailBase, graspingPool } from "~/lib/crafting-grasping";
@@ -308,7 +311,7 @@ export function ModBrowser({
                         {matching !== filtered.length ? ` · ${filtered.length} shown` : ""}
                     </span>
                 </div>
-                <input
+                <Input
                     aria-label="Search modifiers"
                     className={controlClass}
                     placeholder="Search life, resistance, damage…"
@@ -318,105 +321,122 @@ export function ModBrowser({
                         setPages(initialModifierPages);
                     }}
                 />
-                <label className="block text-xs text-muted-foreground">
+                <Label className="block text-xs text-muted-foreground">
                     Modifier source
-                    <select
+                    <FormSelect
                         className={`${controlClass} mt-1`}
                         value={source}
-                        onChange={(event) => {
-                            setSource(event.target.value);
+                        onValueChange={(selectedValue) => {
+                            setSource(selectedValue);
                             setSide("all");
                             setTagFilters([]);
                             setPages(initialModifierPages);
                         }}
                     >
-                        <option value="natural">Natural modifier pool</option>
+                        <FormSelectItem value="natural">Natural modifier pool</FormSelectItem>
                         {influences.map((entry) => (
-                            <option key={entry.influence} value={`influence:${entry.influence}`}>
+                            <FormSelectItem
+                                key={entry.influence}
+                                value={`influence:${entry.influence}`}
+                            >
                                 {entry.name} modifiers
-                            </option>
+                            </FormSelectItem>
                         ))}
-                        <option value="essence">Essence guarantees</option>
+                        <FormSelectItem value="essence">Essence guarantees</FormSelectItem>
                         {engine.catalog.game === "poe1" &&
                             engine.base(item).item_class === "Gloves" && (
-                                <option value="incursion">
+                                <FormSelectItem value="incursion">
                                     Incursion glove suffixes (prepared items)
-                                </option>
+                                </FormSelectItem>
                             )}
                         {engine.catalog.game === "poe2" ? (
-                            <option value="emotion">Liquid Emotion guarantees</option>
+                            <FormSelectItem value="emotion">
+                                Liquid Emotion guarantees
+                            </FormSelectItem>
                         ) : null}
-                        <option value="revealed">
+                        <FormSelectItem value="revealed">
                             {engine.catalog.game === "poe1"
                                 ? "Unveiled modifiers"
                                 : "Desecrated modifiers"}
-                        </option>
+                        </FormSelectItem>
                         {engine.catalog.game === "poe1" ? (
                             <>
-                                <option value="bench">Crafting bench</option>
+                                <FormSelectItem value="bench">Crafting bench</FormSelectItem>
                                 {engine.base(item).item_class === "Body Armour" ? (
-                                    <option value="breach">Breach modifiers (wiki weights)</option>
+                                    <FormSelectItem value="breach">
+                                        Breach modifiers (wiki weights)
+                                    </FormSelectItem>
                                 ) : null}
-                                <option value="corrupted-essence">
+                                <FormSelectItem value="corrupted-essence">
                                     Glyphic essence guarantees
-                                </option>
-                                <option value="aspect">Beastcraft Aspects</option>
-                                <option value="attribute">Genteel attribute conversions</option>
-                                <option value="ukatoa">Ukatoa amulet implicits</option>
-                                <option value="reroll_rare_infamous">Infamous modifiers</option>
-                                <option value="add_deepwater_hazard_belt_mod">
+                                </FormSelectItem>
+                                <FormSelectItem value="aspect">Beastcraft Aspects</FormSelectItem>
+                                <FormSelectItem value="attribute">
+                                    Genteel attribute conversions
+                                </FormSelectItem>
+                                <FormSelectItem value="ukatoa">
+                                    Ukatoa amulet implicits
+                                </FormSelectItem>
+                                <FormSelectItem value="reroll_rare_infamous">
+                                    Infamous modifiers
+                                </FormSelectItem>
+                                <FormSelectItem value="add_deepwater_hazard_belt_mod">
                                     Ducat Trap and Mine modifiers
-                                </option>
-                                <option value="add_pantheon_aspect">Pantheon Aspects</option>
-                                <option value="eldritch">Eldritch implicits</option>
-                                <option value="gilded">Gilded Fossil implicit</option>
+                                </FormSelectItem>
+                                <FormSelectItem value="add_pantheon_aspect">
+                                    Pantheon Aspects
+                                </FormSelectItem>
+                                <FormSelectItem value="eldritch">Eldritch implicits</FormSelectItem>
+                                <FormSelectItem value="gilded">
+                                    Gilded Fossil implicit
+                                </FormSelectItem>
                             </>
                         ) : null}
-                        <option value="corrupted">Corrupted implicits</option>
-                    </select>
-                </label>
+                        <FormSelectItem value="corrupted">Corrupted implicits</FormSelectItem>
+                    </FormSelect>
+                </Label>
                 {previewSource ? (
-                    <label className="block text-xs text-muted-foreground">
+                    <Label className="block text-xs text-muted-foreground">
                         Preview reveal source
-                        <select
+                        <FormSelect
                             className={`${controlClass} mt-1`}
                             value={previewSource.id}
-                            onChange={(event) => {
-                                setRevealSource(event.target.value);
+                            onValueChange={(selectedValue) => {
+                                setRevealSource(selectedValue);
                                 setPages(initialModifierPages);
                             }}
                         >
                             {revealSources.map((entry) => (
-                                <option key={entry.id} value={entry.id}>
+                                <FormSelectItem key={entry.id} value={entry.id}>
                                     {entry.name}
-                                </option>
+                                </FormSelectItem>
                             ))}
-                        </select>
-                    </label>
+                        </FormSelect>
+                    </Label>
                 ) : null}
                 <div className="grid grid-cols-2 gap-2">
                     {explicit && layout === "columns" ? (
-                        <select
+                        <FormSelect
                             aria-label="Affix type"
                             className={controlClass}
                             value={side}
-                            onChange={(event) => {
-                                setSide(event.target.value);
+                            onValueChange={(selectedValue) => {
+                                setSide(selectedValue);
                                 setPages(initialModifierPages);
                             }}
                         >
-                            <option value="all">Prefixes + suffixes</option>
-                            <option value="prefix">Prefixes</option>
-                            <option value="suffix">Suffixes</option>
-                        </select>
+                            <FormSelectItem value="all">Prefixes + suffixes</FormSelectItem>
+                            <FormSelectItem value="prefix">Prefixes</FormSelectItem>
+                            <FormSelectItem value="suffix">Suffixes</FormSelectItem>
+                        </FormSelect>
                     ) : null}
                     {showTagFilter ? (
-                        <select
+                        <FormSelect
                             aria-label="Modifier tag"
                             className={controlClass}
                             value={lastTag ? `${lastTag.excluded ? "!" : ""}${lastTag.tag}` : ""}
-                            onChange={(event) => {
-                                const value = event.target.value;
+                            onValueChange={(selectedValue) => {
+                                const value = selectedValue;
                                 const excluded = value.startsWith("!");
                                 const tag = excluded ? value.slice(1) : value;
                                 setTagFilters((current) =>
@@ -430,18 +450,18 @@ export function ModBrowser({
                                 setPages(initialModifierPages);
                             }}
                         >
-                            <option value="">All tags</option>
+                            <FormSelectItem value="">All tags</FormSelectItem>
                             {tags.map((entry) => (
-                                <option key={entry} value={entry}>
+                                <FormSelectItem key={entry} value={entry}>
                                     {entry}
-                                </option>
+                                </FormSelectItem>
                             ))}
                             {tags.map((entry) => (
-                                <option key={`!${entry}`} value={`!${entry}`}>
+                                <FormSelectItem key={`!${entry}`} value={`!${entry}`}>
                                     non-{entry}
-                                </option>
+                                </FormSelectItem>
                             ))}
-                        </select>
+                        </FormSelect>
                     ) : null}
                 </div>
                 {tagFilters.length ? (
@@ -496,22 +516,22 @@ export function ModBrowser({
                         }}
                     />
                 ) : null}
-                <label className="block text-xs text-muted-foreground">
+                <Label className="block text-xs text-muted-foreground">
                     Add requirements to
-                    <select
+                    <FormSelect
                         className={`${controlClass} mt-1`}
                         value={group}
-                        onChange={(event) => setGroup(event.target.value)}
+                        onValueChange={(selectedValue) => setGroup(selectedValue)}
                     >
-                        <option value="new">A new required group</option>
+                        <FormSelectItem value="new">A new required group</FormSelectItem>
                         {activeTarget.groups.map((entry, index) => (
-                            <option key={entry.mods.join(",")} value={index}>
+                            <FormSelectItem key={entry.mods.join(",")} value={index}>
                                 Group {index + 1} (
                                 {entry.negated ? "exclude matches" : "alternative tier / modifier"})
-                            </option>
+                            </FormSelectItem>
                         ))}
-                    </select>
-                </label>
+                    </FormSelect>
+                </Label>
                 <p className="text-xs text-muted-foreground">
                     {selectedInfluence
                         ? `${selectedInfluence.name} preview. Percentages include ordinary modifiers and ${engine.effectiveInfluences(item).includes(selectedInfluence.influence) ? "all active influences" : "this influence alone"}, using the selected fossil effects. Previewing leaves the item unchanged; adding a modifier also adds its influence when allowed. Existing modifiers and occupied slots are checked when adding or crafting.`

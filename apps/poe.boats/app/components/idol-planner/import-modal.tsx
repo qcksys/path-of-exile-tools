@@ -10,6 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "~/components/ui/dialog";
+import { Label } from "~/components/ui/label";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Textarea } from "~/components/ui/textarea";
 import { useTranslations } from "~/i18n";
@@ -126,9 +127,9 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
 
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <label htmlFor="idol-text" className="font-medium text-sm">
+                                <Label htmlFor="idol-text" className="font-medium text-sm">
                                     {t("import.pasteHere")}
-                                </label>
+                                </Label>
                                 <Button variant="outline" size="sm" onClick={handlePaste}>
                                     <ClipboardPaste className="mr-1 h-4 w-4" />
                                     {t("import.pasteFromClipboard")}

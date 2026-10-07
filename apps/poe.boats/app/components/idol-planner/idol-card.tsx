@@ -91,14 +91,15 @@ function ModifierLine({
                 </span>
             )}
             {showTradeButton && (
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     onClick={handleTradeSearch}
                     className="shrink-0 rounded p-0.5 opacity-0 transition-opacity hover:bg-accent group-hover/mod:opacity-100"
                     title="Search Trade"
                 >
                     <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                </button>
+                </Button>
             )}
         </div>
     );
@@ -252,7 +253,8 @@ export function IdolCardMini({
                 <Tooltip>
                     <TooltipTrigger
                         render={
-                            <button
+                            <Button
+                                variant="ghost"
                                 type="button"
                                 draggable={draggable}
                                 onDragStart={onDragStart}

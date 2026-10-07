@@ -3,6 +3,7 @@ import { craftingWorkspaceStorageKey } from "../../../app/lib/crafting-workspace
 import { craftingWorkspaceSchema } from "../../../app/schemas/crafting-workspace";
 import { engine } from "../../crafting-fixtures";
 import { workbenchProject } from "../../crafting-workbench-fixtures";
+import { selectValue } from "./control-helpers";
 import { choose } from "./recombinator-helpers";
 
 test("a connected recombination plan previews concrete donors and restores all steps in a new tab", async ({
@@ -19,15 +20,15 @@ test("a connected recombination plan previews concrete donors and restores all s
     for (const field of await dialog
         .getByRole("combobox", { name: "Concrete base", exact: true })
         .all())
-        await field.selectOption({ index: 1 });
+        await selectValue(field, { index: 1 });
     await preview.click();
     await expect(dialog.getByRole("region", { name: "Crafting plan preview" })).toContainText(
         "4 purchased inputs · 3 craft steps",
     );
-    await dialog
-        .getByRole("combobox", { name: "Assumed rolls", exact: true })
-        .first()
-        .selectOption("maximum");
+    await selectValue(
+        dialog.getByRole("combobox", { name: "Assumed rolls", exact: true }).first(),
+        "maximum",
+    );
     await expect(
         dialog.getByRole("button", { name: "Create project from plan", exact: true }),
     ).toHaveCount(0);
@@ -71,12 +72,14 @@ test("a recombinator input previews explicit rolls and becomes a saved crafting 
         .first()
         .click();
     const dialog = page.getByRole("dialog", { name: "Prepare Item 1 for crafting", exact: true });
-    await expect(dialog.getByLabel("Concrete item base")).not.toHaveValue("");
+    await expect(dialog.getByRole("combobox", { name: "Concrete item base" })).toContainText(
+        "Despot Axe",
+    );
     await dialog.getByRole("button", { name: "Preview prepared input", exact: true }).click();
     await expect(dialog.getByRole("region", { name: "Prepared input preview" })).toContainText(
         "Despot Axe",
     );
-    await dialog.getByLabel("Assumed modifier rolls").selectOption("maximum");
+    await selectValue(dialog.getByLabel("Assumed modifier rolls"), "maximum");
     await expect(
         dialog.getByRole("button", { name: "Create project from prepared input" }),
     ).toHaveCount(0);
@@ -127,7 +130,7 @@ test("generic inputs require a concrete base and custom text is refused without 
     await expect(
         dialog.getByRole("button", { name: "Preview prepared input", exact: true }),
     ).toBeDisabled();
-    await dialog.getByLabel("Concrete item base").selectOption({ label: "Vaal Regalia" });
+    await selectValue(dialog.getByLabel("Concrete item base"), { label: "Vaal Regalia" });
     await expect(
         dialog.getByRole("button", { name: "Preview prepared input", exact: true }),
     ).toBeEnabled();
@@ -139,7 +142,7 @@ test("generic inputs require a concrete base and custom text is refused without 
         .first()
         .click();
     dialog = page.getByRole("dialog", { name: "Prepare Item 1 for crafting", exact: true });
-    await dialog.getByLabel("Concrete item base").selectOption({ label: "Vaal Regalia" });
+    await selectValue(dialog.getByLabel("Concrete item base"), { label: "Vaal Regalia" });
     await dialog.getByRole("button", { name: "Preview prepared input", exact: true }).click();
     await expect(dialog.getByRole("alert")).toContainText("custom modifier text");
     await expect(

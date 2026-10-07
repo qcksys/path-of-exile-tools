@@ -21,6 +21,7 @@ import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import { exportCraftingItemText } from "~/lib/crafting-item-text";
 import { bindCohortPurchasePrice } from "~/lib/crafting-market";
 import { FossilOptimizer, fossilOptimizationSchema } from "~/lib/crafting-optimizer";
+import { craftingPresets, listCraftingPresets, projectFromPreset } from "~/lib/crafting-presets";
 import { rulesetReference } from "~/lib/crafting-rulesets";
 import { CraftingProcess } from "~/lib/crafting-simulation";
 import {
@@ -137,6 +138,61 @@ async function mcp(method: string, params?: unknown, authenticated = false) {
 
 describe("transport parity", () => {
     beforeEach(() => vi.restoreAllMocks());
+
+    it.each([
+        "poe1",
+        "poe2",
+    ] as const)("lists %s common crafts identically over HTTP and MCP", async (game) => {
+        const input = { game };
+        const response = await api.request(
+            "https://poe.boats/api/v1/crafting/presets",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
+            },
+            { runtime },
+        );
+        const expected = { presets: listCraftingPresets(game) };
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual(expected);
+        const rpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", { name: "list_crafting_presets", arguments: input })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(expected);
+    });
+
+    it.each(craftingPresets)("creates $name identically over HTTP and MCP", async (preset) => {
+        const ruleset = historyIndex.revisions.find(
+            (entry) => entry.game === "poe1" && entry.revision === "r5",
+        )!;
+        const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId: preset.id };
+        const expected = projectFromPreset(fixtureEngine, ruleset, preset.id);
+        const response = await api.request(
+            "https://poe.boats/api/v1/crafting/graph/from-preset",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
+            },
+            { runtime },
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ graph: { ...expected, id: expect.any(String) } });
+        const rpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", {
+                    name: "create_crafting_graph_from_preset",
+                    arguments: input,
+                })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual({
+            graph: { ...expected, id: expect.any(String) },
+        });
+    });
 
     it.each([
         "poe1",
@@ -1322,6 +1378,16 @@ describe("transport parity", () => {
     });
 
     it.each([
+        [
+            "create_crafting_graph_from_preset",
+            "/graph/from-preset",
+            { game: "poe2", ruleset: graphFixture().ruleset, presetId: "tailwind-boots" },
+        ],
+        [
+            "create_crafting_graph_from_preset",
+            "/graph/from-preset",
+            { game: "poe1", ruleset: graphFixture().ruleset, presetId: "unknown" },
+        ],
         [
             "edit_crafting_graph",
             "/graph/edit",

@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { CraftingWorkbench } from "../app/components/crafting/workbench";
 import { craftingCatalogSchema } from "../app/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 
 class WorkerStub {
     static instances: WorkerStub[] = [];
@@ -45,9 +46,9 @@ for (const game of ["poe1", "poe2"] as const) {
                     <CraftingWorkbench catalog={catalog} mode={mode} />
                 </MemoryRouter>,
             );
-            fireEvent.change(screen.getByLabelText("Rarity"), { target: { value: "rare" } });
+            changeControl(screen.getByLabelText("Rarity"), { target: { value: "rare" } });
             if (game === "poe1")
-                fireEvent.change(screen.getByLabelText("Memory strands"), {
+                changeControl(screen.getByLabelText("Memory strands"), {
                     target: { value: "82" },
                 });
             fireEvent.click(screen.getByRole("checkbox", { name: "Unidentified starting item" }));
@@ -61,8 +62,10 @@ for (const game of ["poe1", "poe2"] as const) {
             fireEvent.click(screen.getByRole("button", { name: "Apply craft" }));
             expect(card.queryByText(/Explicit modifiers are unknown/)).toBeNull();
             expect(
-                screen.getByRole("checkbox", { name: "Unidentified starting item" }),
-            ).toHaveProperty("disabled", true);
+                screen
+                    .getByRole("checkbox", { name: "Unidentified starting item" })
+                    .getAttribute("aria-disabled"),
+            ).toBe("true");
             expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
                 wisdom.name,
             );
@@ -78,13 +81,12 @@ for (const game of ["poe1", "poe2"] as const) {
             expect(saved.method).toEqual({ kind: "currency", id: wisdom.id });
             fireEvent.click(screen.getByRole("button", { name: "Redo" }));
             expect(card.queryByText(/Explicit modifiers are unknown/)).toBeNull();
-            if (game === "poe1")
-                expect(screen.getByLabelText("Memory strands")).toHaveProperty("value", "82");
+            if (game === "poe1") expectControlValue(screen.getByLabelText("Memory strands"), "82");
         });
         it("sends the unknown template and Wisdom method to the calculator worker", () => {
             prepare("calculate");
             fireEvent.click(screen.getByText("Item conditions"));
-            fireEvent.change(screen.getByLabelText("Required rarity"), {
+            changeControl(screen.getByLabelText("Required rarity"), {
                 target: { value: "rare" },
             });
             fireEvent.click(screen.getByRole("button", { name: "Calculate odds" }));

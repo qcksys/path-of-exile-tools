@@ -5,6 +5,8 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "~/components/ui/accordion";
+import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
 import { Slider } from "~/components/ui/slider";
 import { Switch } from "~/components/ui/switch";
 import { useTradeSettings } from "~/context/trade-settings-context";
@@ -51,12 +53,12 @@ export function WeightFilterAccordion({
                                 checked={tradeSettings.filterByMaxWeight}
                                 onCheckedChange={(v) => updateSettings({ filterByMaxWeight: v })}
                             />
-                            <label
+                            <Label
                                 htmlFor="filter-by-weight"
                                 className="text-muted-foreground text-xs"
                             >
                                 {t("trade.filterByMaxWeight")}
-                            </label>
+                            </Label>
                         </div>
 
                         {tradeSettings.filterByMaxWeight && (
@@ -71,16 +73,17 @@ export function WeightFilterAccordion({
                                             })
                                         }
                                     />
-                                    <label
+                                    <Label
                                         htmlFor="separate-weights"
                                         className="text-muted-foreground text-xs"
                                     >
                                         {t("trade.separateWeights")}
-                                    </label>
+                                    </Label>
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                    <button
+                                    <Button
+                                        variant="ghost"
                                         type="button"
                                         onClick={() =>
                                             updateSettings({
@@ -94,8 +97,9 @@ export function WeightFilterAccordion({
                                         }`}
                                     >
                                         ≥ {t("trade.gte")}
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
                                         type="button"
                                         onClick={() =>
                                             updateSettings({
@@ -109,7 +113,7 @@ export function WeightFilterAccordion({
                                         }`}
                                     >
                                         ≤ {t("trade.lte")}
-                                    </button>
+                                    </Button>
                                     <span className="text-muted-foreground text-xs">
                                         {t("trade.weightThreshold")}
                                     </span>
@@ -118,7 +122,7 @@ export function WeightFilterAccordion({
                                 {tradeSettings.separateWeightFilters ? (
                                     <>
                                         <div className="space-y-1">
-                                            <label
+                                            <Label
                                                 htmlFor="max-prefix-weight"
                                                 className="text-muted-foreground text-xs"
                                             >
@@ -127,7 +131,7 @@ export function WeightFilterAccordion({
                                                     {tradeSettings.maxPrefixWeight ??
                                                         weightRange.max}
                                                 </span>
-                                            </label>
+                                            </Label>
                                             <Slider
                                                 id="max-prefix-weight"
                                                 min={weightRange.min}
@@ -150,7 +154,7 @@ export function WeightFilterAccordion({
                                             />
                                         </div>
                                         <div className="space-y-1">
-                                            <label
+                                            <Label
                                                 htmlFor="max-suffix-weight"
                                                 className="text-muted-foreground text-xs"
                                             >
@@ -159,7 +163,7 @@ export function WeightFilterAccordion({
                                                     {tradeSettings.maxSuffixWeight ??
                                                         weightRange.max}
                                                 </span>
-                                            </label>
+                                            </Label>
                                             <Slider
                                                 id="max-suffix-weight"
                                                 min={weightRange.min}
@@ -184,7 +188,7 @@ export function WeightFilterAccordion({
                                     </>
                                 ) : (
                                     <div className="space-y-1">
-                                        <label
+                                        <Label
                                             htmlFor="max-weight"
                                             className="text-muted-foreground text-xs"
                                         >
@@ -192,7 +196,7 @@ export function WeightFilterAccordion({
                                             <span className="font-medium text-foreground">
                                                 {tradeSettings.maxWeight ?? weightRange.max}
                                             </span>
-                                        </label>
+                                        </Label>
                                         <Slider
                                             id="max-weight"
                                             min={weightRange.min}
@@ -220,12 +224,12 @@ export function WeightFilterAccordion({
                                             checked={matchAffixType}
                                             onCheckedChange={onMatchAffixTypeChange}
                                         />
-                                        <label
+                                        <Label
                                             htmlFor="match-affix-type"
                                             className="text-muted-foreground text-xs"
                                         >
                                             {t("trade.matchAffixType")}
-                                        </label>
+                                        </Label>
                                     </div>
                                 )}
                             </>

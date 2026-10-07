@@ -1,5 +1,8 @@
 import { useId, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import {
     exportCraftingItemText,
@@ -46,9 +49,9 @@ export function ItemTextPanel({
                     blueprints are also supported when their IDs exist in the build; any
                     accompanying modifier summary must agree with the selected rolls.
                 </p>
-                <label className="block space-y-1 text-sm">
+                <Label className="block space-y-1 text-sm">
                     Item text
-                    <textarea
+                    <Textarea
                         className={`${controlClass} min-h-48 font-mono text-xs`}
                         aria-describedby={`${id}-help`}
                         value={text}
@@ -60,7 +63,7 @@ export function ItemTextPanel({
                             setNotice("");
                         }}
                     />
-                </label>
+                </Label>
                 <div className="flex flex-wrap gap-2">
                     <Button
                         disabled={!text.trim()}
@@ -120,16 +123,18 @@ export function ItemTextPanel({
                     <div className="space-y-3">
                         {matches.length > 1 ? (
                             <div className="space-y-1 text-sm">
-                                <label htmlFor={`${id}-match`}>Matching item</label>
-                                <select
+                                <Label htmlFor={`${id}-match`}>Matching item</Label>
+                                <FormSelect
                                     id={`${id}-match`}
                                     aria-describedby={`${id}-matches-help`}
                                     className={controlClass}
                                     value={selected}
-                                    onChange={(event) => setSelected(Number(event.target.value))}
+                                    onValueChange={(selectedValue) =>
+                                        setSelected(Number(selectedValue))
+                                    }
                                 >
                                     {matches.map(({ item }, index) => (
-                                        <option key={JSON.stringify(item)} value={index}>
+                                        <FormSelectItem key={JSON.stringify(item)} value={index}>
                                             {index + 1}. {engine.base(item).name} ·{" "}
                                             {item.baseId.split("/").at(-1)} ·{" "}
                                             {item.mods
@@ -138,9 +143,9 @@ export function ItemTextPanel({
                                                         `${engine.mod(mod.id).name} (ilvl ${engine.mod(mod.id).required_level})`,
                                                 )
                                                 .join(" / ")}
-                                        </option>
+                                        </FormSelectItem>
                                     ))}
-                                </select>
+                                </FormSelect>
                                 <p
                                     id={`${id}-matches-help`}
                                     className="text-xs text-muted-foreground"

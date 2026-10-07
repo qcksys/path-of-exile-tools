@@ -3,6 +3,10 @@ import { decodeCohortPriceReference, decodeExchangePriceReference } from "@poe-t
 import { useId, useMemo } from "react";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { connectGraphInput, removeGraphNode } from "~/lib/crafting-graph-authoring";
 import { replaceGraphMethod } from "~/lib/crafting-graph-method";
@@ -40,9 +44,9 @@ export function GraphPriceInput({
     label: string;
 }) {
     return (
-        <label className="block space-y-1 text-xs">
+        <Label className="block space-y-1 text-xs">
             {label} ({currency})
-            <input
+            <Input
                 className={graphControl}
                 type="number"
                 min="0"
@@ -91,7 +95,7 @@ export function GraphPriceInput({
                         Actual modifier identity and crafting eligibility may differ.
                     </span>
                 )}
-        </label>
+        </Label>
     );
 }
 
@@ -126,30 +130,29 @@ export function GraphDestinationEditor({
     ];
     return (
         <div className="space-y-2">
-            <label className="text-xs">
+            <Label className="block text-xs">
                 Route result
-                <select
+                <FormSelect
                     className={graphControl}
                     value={JSON.stringify(value)}
-                    onChange={(event) =>
+                    onValueChange={(selectedValue) =>
                         onChange(
                             choices.find(
-                                (choice) =>
-                                    JSON.stringify(choice.destination) === event.target.value,
+                                (choice) => JSON.stringify(choice.destination) === selectedValue,
                             )!.destination,
                         )
                     }
                 >
                     {choices.map((choice) => (
-                        <option
+                        <FormSelectItem
                             key={JSON.stringify(choice.destination)}
                             value={JSON.stringify(choice.destination)}
                         >
                             {choice.label}
-                        </option>
+                        </FormSelectItem>
                     ))}
-                </select>
-            </label>
+                </FormSelect>
+            </Label>
             {value.kind === "sell" && (
                 <GraphPriceInput
                     label="Sale revenue"
@@ -243,9 +246,9 @@ export function GraphNodeEditor({
             className="space-y-5 rounded-lg border border-border bg-card p-4"
         >
             <div className="flex items-center gap-2">
-                <label className="min-w-0 flex-1 text-xs">
+                <Label className="block min-w-0 flex-1 text-xs">
                     Step name
-                    <input
+                    <Input
                         key={node.name}
                         defaultValue={node.name}
                         className={graphControl}
@@ -254,7 +257,7 @@ export function GraphNodeEditor({
                                 update({ ...node, name: event.target.value });
                         }}
                     />
-                </label>
+                </Label>
                 <Button
                     size="sm"
                     variant="ghost"
@@ -269,46 +272,44 @@ export function GraphNodeEditor({
                     Remove step
                 </Button>
             </div>
-            <label className="flex gap-2 text-xs">
-                <input
-                    type="radio"
-                    name="graph-entry"
-                    checked={graph.entry === node.id}
-                    onChange={() => onChange({ ...graph, entry: node.id })}
-                />
+            <Button
+                variant="outline"
+                aria-pressed={graph.entry === node.id}
+                onClick={() => onChange({ ...graph, entry: node.id })}
+            >
                 Use this as the final production step
-            </label>
+            </Button>
             {node.kind === "acquire" ? (
                 <>
-                    <label className="block text-xs">
+                    <Label className="block text-xs">
                         Acquisition choice
-                        <select
+                        <FormSelect
                             className={graphControl}
                             value={
                                 node.choice.mode === "automatic"
                                     ? "automatic"
                                     : node.choice.alternativeId
                             }
-                            onChange={(event) =>
+                            onValueChange={(selectedValue) =>
                                 update({
                                     ...node,
                                     choice:
-                                        event.target.value === "automatic"
+                                        selectedValue === "automatic"
                                             ? { mode: "automatic" }
-                                            : { mode: "pinned", alternativeId: event.target.value },
+                                            : { mode: "pinned", alternativeId: selectedValue },
                                 })
                             }
                         >
-                            <option value="automatic">
+                            <FormSelectItem value="automatic">
                                 Automatic · lowest known expected cost
-                            </option>
+                            </FormSelectItem>
                             {node.alternatives.map((entry) => (
-                                <option key={entry.id} value={entry.id}>
+                                <FormSelectItem key={entry.id} value={entry.id}>
                                     Pin: {entry.name}
-                                </option>
+                                </FormSelectItem>
                             ))}
-                        </select>
-                    </label>
+                        </FormSelect>
+                    </Label>
                     {node.alternatives.map((alternative) => {
                         const estimate = result?.acquisitions[node.id]?.alternatives.find(
                             (entry) => entry.id === alternative.id,
@@ -376,9 +377,9 @@ export function GraphNodeEditor({
                                                 }
                                             }}
                                         />
-                                        <label className="block text-xs">
+                                        <Label className="block text-xs">
                                             Purchased item level
-                                            <input
+                                            <Input
                                                 type="number"
                                                 min="1"
                                                 max="100"
@@ -394,28 +395,29 @@ export function GraphNodeEditor({
                                                     })
                                                 }
                                             />
-                                        </label>
-                                        <label className="block text-xs">
+                                        </Label>
+                                        <Label className="block text-xs">
                                             Purchased item rarity
-                                            <select
+                                            <FormSelect
                                                 className={graphControl}
                                                 value={alternative.item.rarity}
-                                                onChange={(event) =>
+                                                onValueChange={(selectedValue) =>
                                                     set({
                                                         ...alternative,
                                                         item: {
                                                             ...alternative.item,
-                                                            rarity: event.target
-                                                                .value as typeof alternative.item.rarity,
+                                                            rarity: selectedValue as typeof alternative.item.rarity,
                                                         },
                                                     })
                                                 }
                                             >
-                                                <option value="normal">Normal</option>
-                                                <option value="magic">Magic</option>
-                                                <option value="rare">Rare</option>
-                                            </select>
-                                        </label>
+                                                <FormSelectItem value="normal">
+                                                    Normal
+                                                </FormSelectItem>
+                                                <FormSelectItem value="magic">Magic</FormSelectItem>
+                                                <FormSelectItem value="rare">Rare</FormSelectItem>
+                                            </FormSelect>
+                                        </Label>
                                         <GraphPriceInput
                                             label="Purchase price"
                                             currency={graph.currency}
@@ -557,24 +559,24 @@ export function GraphNodeEditor({
                                         />
                                     </>
                                 ) : (
-                                    <label className="block text-xs">
+                                    <Label className="block text-xs">
                                         Produce using
-                                        <select
+                                        <FormSelect
                                             className={graphControl}
                                             value={alternative.nodeId}
-                                            onChange={(event) =>
-                                                set({ ...alternative, nodeId: event.target.value })
+                                            onValueChange={(selectedValue) =>
+                                                set({ ...alternative, nodeId: selectedValue })
                                             }
                                         >
                                             {graph.nodes
                                                 .filter((entry) => entry.id !== node.id)
                                                 .map((entry) => (
-                                                    <option key={entry.id} value={entry.id}>
+                                                    <FormSelectItem key={entry.id} value={entry.id}>
                                                         {entry.name}
-                                                    </option>
+                                                    </FormSelectItem>
                                                 ))}
-                                        </select>
-                                    </label>
+                                        </FormSelect>
+                                    </Label>
                                 )}
                                 {estimate && (
                                     <p className="text-xs text-muted-foreground">
@@ -675,21 +677,20 @@ export function GraphNodeEditor({
                     />
                     {rulesetAllowsConditionalSteps(ruleset) && (
                         <div className="space-y-3 rounded border border-border p-3">
-                            <label className="flex gap-2 text-sm">
-                                <input
-                                    type="checkbox"
+                            <Label className="flex gap-2 text-sm">
+                                <Checkbox
                                     checked={Boolean(node.applyWhen)}
-                                    onChange={(event) =>
+                                    onCheckedChange={(checked) =>
                                         update({
                                             ...node,
-                                            applyWhen: event.target.checked
+                                            applyWhen: checked
                                                 ? itemQuerySchema.parse({ game: graph.game })
                                                 : undefined,
                                         })
                                     }
                                 />
                                 Only apply when the first input matches
-                            </label>
+                            </Label>
                             {node.applyWhen && (
                                 <>
                                     <p className="text-xs text-muted-foreground">
@@ -725,11 +726,10 @@ export function GraphNodeEditor({
                     )}
                     {(node.method.kind === "currency" || node.method.kind === "essence") &&
                         ruleset.availability.allflame && (
-                            <label className="flex gap-2 text-xs">
-                                <input
-                                    type="checkbox"
+                            <Label className="flex gap-2 text-xs">
+                                <Checkbox
                                     checked={Boolean(node.method.allflame)}
-                                    onChange={(event) => {
+                                    onCheckedChange={(checked) => {
                                         if (
                                             node.method.kind !== "currency" &&
                                             node.method.kind !== "essence"
@@ -739,32 +739,32 @@ export function GraphNodeEditor({
                                             ...node,
                                             method: {
                                                 ...node.method,
-                                                allflame: event.target.checked ? true : undefined,
+                                                allflame: checked ? true : undefined,
                                             },
                                         });
                                     }}
                                 />
                                 Use Allflame variant where supported
-                            </label>
+                            </Label>
                         )}
                     {node.inputs.map((port) => (
                         <details key={port.id} open className="rounded border border-border p-3">
                             <summary className="text-sm font-medium">
                                 {port.name} · consumed by this step
                             </summary>
-                            <label className="mt-2 block text-xs">
+                            <Label className="mt-2 block text-xs">
                                 Item source
-                                <select
+                                <FormSelect
                                     className={graphControl}
                                     value={port.source}
-                                    onChange={(event) => {
+                                    onValueChange={(selectedValue) => {
                                         try {
                                             onChange(
                                                 connectGraphInput(
                                                     graph,
                                                     node.id,
                                                     port.id,
-                                                    event.target.value,
+                                                    selectedValue,
                                                 ),
                                             );
                                         } catch (error) {
@@ -775,12 +775,12 @@ export function GraphNodeEditor({
                                     {graph.nodes
                                         .filter((entry) => entry.id !== node.id)
                                         .map((entry) => (
-                                            <option key={entry.id} value={entry.id}>
+                                            <FormSelectItem key={entry.id} value={entry.id}>
                                                 {entry.name}
-                                            </option>
+                                            </FormSelectItem>
                                         ))}
-                                </select>
-                            </label>
+                                </FormSelect>
+                            </Label>
                             <div className="mt-3">
                                 <GraphQueryEditor
                                     label={`${port.name} requirements`}
@@ -832,7 +832,7 @@ export function GraphNodeEditor({
                                 {index + 1}. {branch.name}
                             </summary>
                             <div className="mt-3 space-y-3">
-                                <input
+                                <Input
                                     key={branch.name}
                                     className={graphControl}
                                     aria-label="Branch name"

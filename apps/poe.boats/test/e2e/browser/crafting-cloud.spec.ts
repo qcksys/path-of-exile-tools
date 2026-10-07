@@ -17,6 +17,7 @@ import {
     retainedRevision,
     retainedTransmuteGraph,
 } from "../../crafting-history-fixtures";
+import { selectValue } from "./control-helpers";
 
 const stamp = "2026-10-07T00:00:00.000Z";
 async function bundleFor(game: "poe1" | "poe2") {
@@ -315,8 +316,8 @@ test("live build links follow referenced plans while value copies remain indepen
     await cloud.getByRole("button", { name: "Enable private cloud sync" }).click();
     await expect(cloud).toContainText("Private cloud drafts are up to date");
     await cloud.getByText("Share an item plan or build", { exact: true }).click();
-    await cloud.getByLabel("Share target").selectOption("build:build");
-    await cloud.getByLabel("Link behavior").selectOption("live");
+    await selectValue(cloud.getByLabel("Share target"), "build:build");
+    await selectValue(cloud.getByLabel("Link behavior"), "live");
     await cloud.getByRole("button", { name: "Publish share link" }).click();
     await cloud.getByRole("link", { name: "Live · Shared build" }).click();
     const tabs = page.getByRole("tablist", { name: "Shared build items" });

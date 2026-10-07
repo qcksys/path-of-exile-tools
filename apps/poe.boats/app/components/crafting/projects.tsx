@@ -2,9 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { useCraftingWorkspace } from "~/hooks/use-crafting-workspace";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import { projectFromItem } from "~/lib/crafting-graph-authoring";
+import { projectFromPreset } from "~/lib/crafting-presets";
 import {
     CRAFTING_RULESET_INDEX_URL,
     resolveRuleset,
@@ -17,6 +21,7 @@ import { type CraftingWorkspaceCommand, craftingBundleSchema } from "~/schemas/c
 import { CloudCraftingProjects } from "./cloud-projects";
 import { GraphProjectEditor } from "./graph-project-editor";
 import { graphControl } from "./graph-query-editor";
+import { CraftingPresetPicker } from "./preset-picker";
 
 export function downloadCraftingJson(value: unknown, name: string) {
     const url = URL.createObjectURL(
@@ -146,13 +151,13 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                     >
                         New project
                     </Button>
-                    <label className="cursor-pointer rounded-md border border-input px-3 py-2 text-sm">
+                    <Label className="relative block cursor-pointer rounded-md border border-input px-3 py-2 text-sm">
                         Import JSON
-                        <input
+                        <Input
                             aria-label="Import crafting projects"
                             type="file"
                             accept="application/json,.json"
-                            className="sr-only"
+                            className="sr-only left-0 top-0 size-px border-0 p-0"
                             onChange={async (event) => {
                                 const file = event.target.files?.[0];
                                 event.target.value = "";
@@ -170,7 +175,7 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                                 }
                             }}
                         />
-                    </label>
+                    </Label>
                 </div>
             </header>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -222,6 +227,22 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                     )}
                 </div>
             )}
+            <CraftingPresetPicker
+                game={catalog.game}
+                disabled={!workspace.ready || !currentRuleset}
+                onCreate={(presetId) =>
+                    safely(() => {
+                        if (!currentRuleset)
+                            throw new Error("No published ruleset matches this catalog.");
+                        edit({
+                            action: "createProject",
+                            graph: projectFromPreset(engine, currentRuleset, presetId),
+                        });
+                        setCopy(undefined);
+                        setCreating(false);
+                    })
+                }
+            />
             {creating && (
                 <form
                     className="grid items-end gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4 md:grid-cols-[1fr_2fr_100px_auto]"
@@ -243,15 +264,15 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                         });
                     }}
                 >
-                    <label className="text-xs">
+                    <Label className="block text-xs">
                         Project name
-                        <input
+                        <Input
                             required
                             className={graphControl}
                             value={name}
                             onChange={(event) => setName(event.target.value)}
                         />
-                    </label>
+                    </Label>
                     <CatalogPicker
                         id="new-project-base"
                         label="Starting base"
@@ -259,9 +280,9 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                         value={bases.find((base) => base.id === baseId)}
                         onSelect={setBaseId}
                     />
-                    <label className="text-xs">
+                    <Label className="block text-xs">
                         Item level
-                        <input
+                        <Input
                             required
                             className={graphControl}
                             type="number"
@@ -270,7 +291,7 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                             value={level}
                             onChange={(event) => setLevel(Number(event.target.value))}
                         />
-                    </label>
+                    </Label>
                     <Button type="submit">Create project</Button>
                 </form>
             )}
@@ -287,7 +308,8 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                                   key={id}
                                   className={`flex shrink-0 items-center border-b-2 ${workspace.state.activeProjectId === id && !copy ? "border-primary bg-primary/5" : "border-transparent"}`}
                               >
-                                  <button
+                                  <Button
+                                      variant="ghost"
                                       type="button"
                                       role="tab"
                                       tabIndex={workspace.state.activeProjectId === id ? 0 : -1}
@@ -337,8 +359,9 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                                       }
                                   >
                                       {project.graph.name}
-                                  </button>
-                                  <button
+                                  </Button>
+                                  <Button
+                                      variant="ghost"
                                       type="button"
                                       className="px-2 py-3 text-muted-foreground"
                                       aria-label={`Close ${project.graph.name}`}
@@ -349,7 +372,7 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                                       }
                                   >
                                       ×
-                                  </button>
+                                  </Button>
                               </div>,
                           ]
                         : [];
@@ -483,7 +506,7 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                                 });
                             }}
                         >
-                            <input
+                            <Input
                                 required
                                 name="buildName"
                                 aria-label="Build name"
@@ -500,7 +523,7 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                                 className="space-y-3 rounded border border-border p-3"
                             >
                                 <div className="flex items-center gap-2">
-                                    <input
+                                    <Input
                                         aria-label="Saved build name"
                                         key={build.name}
                                         className={`${graphControl} flex-1 font-semibold`}
@@ -637,27 +660,34 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                                         );
                                     }}
                                 >
-                                    <select
+                                    <FormSelect
                                         required
                                         name="projectId"
                                         aria-label={`Item plan for ${build.name}`}
                                         className={graphControl}
                                     >
-                                        <option value="">Choose item plan</option>
+                                        <FormSelectItem value="">Choose item plan</FormSelectItem>
                                         {projects.map((project) => (
-                                            <option key={project.graph.id} value={project.graph.id}>
+                                            <FormSelectItem
+                                                key={project.graph.id}
+                                                value={project.graph.id}
+                                            >
                                                 {project.graph.name}
-                                            </option>
+                                            </FormSelectItem>
                                         ))}
-                                    </select>
-                                    <select
+                                    </FormSelect>
+                                    <FormSelect
                                         name="kind"
                                         aria-label={`Save mode for ${build.name}`}
                                         className={graphControl}
                                     >
-                                        <option value="reference">Reference · follow edits</option>
-                                        <option value="value">Copy · edit independently</option>
-                                    </select>
+                                        <FormSelectItem value="reference">
+                                            Reference · follow edits
+                                        </FormSelectItem>
+                                        <FormSelectItem value="value">
+                                            Copy · edit independently
+                                        </FormSelectItem>
+                                    </FormSelect>
                                     <Button size="sm" variant="outline" type="submit">
                                         Add item to build
                                     </Button>
