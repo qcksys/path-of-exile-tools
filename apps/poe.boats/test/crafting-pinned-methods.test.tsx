@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { readFileSync } from "node:fs";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
@@ -11,6 +12,7 @@ import { CraftingWorkbench } from "~/components/crafting/workbench";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import { type CraftingMethod, craftingCatalogSchema } from "~/schemas/crafting";
 import { changeControl, expectControlValue } from "./control-helpers";
+import { chooseStartingItem } from "./starting-item-helper";
 
 const catalogs = Object.fromEntries(
     ["poe1", "poe2"].map((game) => [
@@ -130,12 +132,15 @@ describe.each(["poe1", "poe2"] as const)("%s pinned crafting methods", (game) =>
     });
 
     it("uses pins in calculator, emulator and simulator steps without changing crafting history", async () => {
-        const mount = (mode: string) =>
-            render(
+        const mount = (mode: string) => {
+            const view = render(
                 <MemoryRouter>
                     <CraftingWorkbench catalog={catalog} mode={mode} />
                 </MemoryRouter>,
             );
+            chooseStartingItem(catalog);
+            return view;
+        };
         let view = mount("calculate");
         fireEvent.click(pinButton());
         view.unmount();

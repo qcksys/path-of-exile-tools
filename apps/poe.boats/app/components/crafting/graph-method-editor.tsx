@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
 import {
     Dialog,
@@ -7,8 +8,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "~/components/ui/dialog";
-import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
-import { Label } from "~/components/ui/label";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import type { CraftingMethod } from "~/schemas/crafting";
 import {
@@ -16,7 +15,7 @@ import {
     craftingGraphSchema,
     type GraphCraftNode,
 } from "~/schemas/crafting-graph";
-import { controlClass, MethodPicker } from "./method-picker";
+import { MethodPicker } from "./method-picker";
 
 export function GraphMethodEditor({
     graph,
@@ -128,22 +127,24 @@ export function GraphMethodEditor({
                     changes the method; actual inputs come from the graph and may have different
                     properties after earlier crafts. Calculation checks their eligibility.
                 </DialogDescription>
-                <Label className="block space-y-1 text-sm">
-                    Reference item for method options
-                    <FormSelect
-                        className={controlClass}
-                        value={referenceId}
-                        onValueChange={(selectedValue) => setReferenceId(selectedValue)}
-                        disabled={busy}
-                    >
-                        <FormSelectItem value="">Choose a purchased item</FormSelectItem>
-                        {references.map((entry) => (
-                            <FormSelectItem key={entry.id} value={entry.id}>
-                                {entry.name}
-                            </FormSelectItem>
-                        ))}
-                    </FormSelect>
-                </Label>
+                <CatalogPicker
+                    id="method-reference-item"
+                    label="Reference item for method options"
+                    options={references.map((entry) => ({
+                        id: entry.id,
+                        label: entry.name,
+                        itemId: entry.item.baseId,
+                    }))}
+                    value={
+                        reference && {
+                            id: reference.id,
+                            label: reference.name,
+                            itemId: reference.item.baseId,
+                        }
+                    }
+                    onSelect={setReferenceId}
+                    disabled={busy}
+                />
                 {!references.length && (
                     <p>Add a purchased item to configure available method options.</p>
                 )}

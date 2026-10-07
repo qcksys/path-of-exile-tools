@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { readFileSync } from "node:fs";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
@@ -15,6 +16,7 @@ import {
 import { craftingCatalogSchema, craftingProjectSchema } from "~/schemas/crafting";
 import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog } from "./crafting-fixtures";
+import { chooseStartingItem } from "./starting-item-helper";
 
 class CraftingWorker {
     static instances: CraftingWorker[] = [];
@@ -120,6 +122,7 @@ function fixture(data = catalog) {
                 <CraftingWorkbench catalog={data} mode={mode} />
             </MemoryRouter>,
         );
+        chooseStartingItem(data);
         changeControl(screen.getByLabelText("Search modifiers"), {
             target: { value: "IncreasedLife1" },
         });
@@ -210,6 +213,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
                 <CraftingWorkbench catalog={data} />
             </MemoryRouter>,
         );
+        chooseStartingItem(data);
         expectControlValue(screen.getByLabelText("Condition failed"), "restart");
         expect(CraftingWorker.instances).toHaveLength(2);
     });

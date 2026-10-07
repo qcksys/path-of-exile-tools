@@ -15,6 +15,7 @@ import {
     validateRulesetIndex,
 } from "~/lib/crafting-rulesets";
 import { exportCraftingBundle, resolveCraftingBuild } from "~/lib/crafting-workspace";
+import { craftingItemOptions } from "~/lib/item-presentation";
 import type { CraftingCatalog } from "~/schemas/crafting";
 import type { CraftingRuleset, CraftingRulesetIndex } from "~/schemas/crafting-rulesets";
 import { type CraftingWorkspaceCommand, craftingBundleSchema } from "~/schemas/crafting-workspace";
@@ -41,19 +42,14 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
     const [creating, setCreating] = useState(false);
     const [copy, setCopy] = useState<{ buildId: string; memberId: string }>();
     const [name, setName] = useState("New crafting project");
-    const [baseId, setBaseId] = useState(
-        () =>
-            Object.entries(catalog.bases).find(
-                ([, base]) => base.item_class === "Ring" && base.rarities.includes("normal"),
-            )?.[0] ?? Object.keys(catalog.bases)[0]!,
-    );
+    const [baseId, setBaseId] = useState("");
     const [level, setLevel] = useState(86);
     const engine = useMemo(() => new CraftingEngine(catalog), [catalog]);
     const bases = useMemo(
         () =>
-            Object.entries(catalog.bases)
-                .filter(([, base]) => base.rarities.includes("normal"))
-                .map(([id, base]) => ({ id, label: `${base.name} · ${base.item_class}` })),
+            craftingItemOptions(catalog).filter((option) =>
+                catalog.bases[option.id]!.rarities.includes("normal"),
+            ),
         [catalog],
     );
     const gameNumber = catalog.game === "poe1" ? 1 : 2;
@@ -147,7 +143,10 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                     </Link>
                     <Button
                         disabled={!workspace.ready || !currentRuleset}
-                        onClick={() => setCreating(!creating)}
+                        onClick={() => {
+                            if (!creating) setBaseId("");
+                            setCreating(!creating);
+                        }}
                     >
                         New project
                     </Button>
@@ -292,7 +291,9 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                             onChange={(event) => setLevel(Number(event.target.value))}
                         />
                     </Label>
-                    <Button type="submit">Create project</Button>
+                    <Button type="submit" disabled={!baseId}>
+                        Create project
+                    </Button>
                 </form>
             )}
             <div

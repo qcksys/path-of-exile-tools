@@ -44,6 +44,7 @@ export function PreparationEditor({
         const mod = catalog.mods.find((entry) => entry.id === recipe.mod)!;
         return {
             id: recipe.id,
+            itemId: recipe.kind === "essence" ? recipe.id.split(":")[0] : undefined,
             label: `${recipe.name} · ${mod.side === "prefixes" ? "Prefix" : "Suffix"}: ${mod.text}`,
         };
     });

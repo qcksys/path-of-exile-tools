@@ -1,14 +1,18 @@
 import { itemQuerySchema } from "@poe-tools/item-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import { liveExchangePrices } from "~/lib/crafting-exchange";
+import { projectFromItem } from "~/lib/crafting-graph-authoring";
 import { livePurchasePrices } from "~/lib/crafting-market";
 import { availableCorrection } from "~/lib/crafting-rulesets";
+import { craftingItemOptions } from "~/lib/item-presentation";
 import type { CraftingCatalog } from "~/schemas/crafting";
 import { type CraftingGraph, craftingGraphSchema } from "~/schemas/crafting-graph";
 import {
@@ -45,6 +49,8 @@ export function GraphProjectEditor({
     const graph = project.graph;
     const [catalog, setCatalog] = useState<CraftingCatalog>();
     const [selected, setSelected] = useState(graph.entry);
+    const [fullWidth, setFullWidth] = useState(false);
+    const [addingInput, setAddingInput] = useState(false);
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
     const [refreshTick, setRefreshTick] = useState(0);
@@ -457,41 +463,66 @@ export function GraphProjectEditor({
                     ruleset={ruleset}
                 />
             )}
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
+            <div
+                className={
+                    fullWidth ? "grid gap-4" : "grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]"
+                }
+            >
                 <div className="min-w-0 space-y-4">
                     <div className="flex flex-wrap gap-2">
                         <Button variant="outline" size="sm" onClick={addCraft} disabled={!engine}>
                             Add craft step
                         </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                                const source = graph.nodes.find((node) => node.kind === "acquire");
-                                if (!source) return;
-                                const id = crypto.randomUUID();
-                                update({
-                                    ...graph,
-                                    nodes: [
-                                        ...graph.nodes,
-                                        {
-                                            ...structuredClone(source),
-                                            id,
-                                            name: "Additional input",
-                                            position: undefined,
-                                        },
-                                    ],
-                                });
-                                setSelected(id);
-                            }}
-                        >
-                            Add item input
-                        </Button>
+                        <Dialog open={addingInput} onOpenChange={setAddingInput}>
+                            <DialogTrigger
+                                render={<Button variant="outline" size="sm" disabled={!engine} />}
+                            >
+                                Add item input
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogTitle>Add item input</DialogTitle>
+                                {engine && (
+                                    <CatalogPicker
+                                        id="additional-input-base"
+                                        label="New input base"
+                                        options={craftingItemOptions(engine.catalog)}
+                                        onSelect={(baseId) => {
+                                            try {
+                                                const input = projectFromItem(
+                                                    ruleset,
+                                                    engine.createItem(baseId, 86),
+                                                    "Additional input",
+                                                ).nodes[0]!;
+                                                const id = crypto.randomUUID();
+                                                update({
+                                                    ...graph,
+                                                    nodes: [
+                                                        ...graph.nodes,
+                                                        {
+                                                            ...input,
+                                                            id,
+                                                            name: "Additional input",
+                                                            position: undefined,
+                                                        },
+                                                    ],
+                                                });
+                                                setSelected(id);
+                                                setAddingInput(false);
+                                            } catch (error) {
+                                                fail(error);
+                                            }
+                                        }}
+                                    />
+                                )}
+                            </DialogContent>
+                        </Dialog>
                         <span className="self-center text-xs text-muted-foreground">
                             Connect outputs to inputs. Dashed lines return recoverable items.
                         </span>
                     </div>
                     <GraphCanvas
+                        fullWidth={fullWidth}
+                        onFullWidthChange={setFullWidth}
                         graph={graph}
                         selected={node.id}
                         onSelect={select}

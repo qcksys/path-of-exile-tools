@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
@@ -7,6 +8,7 @@ import { seededRandom } from "../app/lib/crafting-engine";
 import { craftingProjectSchema } from "../app/schemas/crafting";
 import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog, currency, engine } from "./crafting-fixtures";
+import { chooseStartingItem } from "./starting-item-helper";
 
 class WorkerStub {
     static instances: WorkerStub[] = [];
@@ -39,11 +41,13 @@ const initial = () =>
         maxActions: 1,
     });
 function mount(mode = "emulate") {
-    return render(
+    const view = render(
         <MemoryRouter>
             <CraftingWorkbench catalog={catalog} mode={mode} />
         </MemoryRouter>,
     );
+    chooseStartingItem(catalog);
+    return view;
 }
 async function passive(name: string) {
     const picker = screen.getByRole("combobox", { name: "Cluster passive type" });

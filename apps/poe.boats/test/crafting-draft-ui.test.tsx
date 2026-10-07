@@ -14,6 +14,7 @@ import {
 import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog } from "./crafting-fixtures";
 import { retainedRevealFixture } from "./crafting-retained-reveal-fixtures";
+import { chooseStartingItem } from "./starting-item-helper";
 
 const poe2 = craftingCatalogSchema.parse(
     JSON.parse(readFileSync("public/game-data/crafting-poe2.json", "utf8")),
@@ -31,6 +32,7 @@ function mount(data: CraftingCatalog = catalog) {
             </MemoryRouter>
         </StrictMode>,
     );
+    chooseStartingItem(data);
     changeControl(screen.getByLabelText("Search modifiers"), { target: { value: "Prime" } });
     return view;
 }

@@ -6,6 +6,7 @@ import {
     itemQuerySelectionSchema,
 } from "@poe-tools/item-query";
 import { useEffect, useId, useRef, useState } from "react";
+import { CatalogItemArt } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
@@ -189,6 +190,7 @@ export function QueryFromItemText({
                             <FormSelectItem value="">Choose an interpretation</FormSelectItem>
                             {result.matches.map((entry, index) => (
                                 <FormSelectItem key={JSON.stringify(entry.item)} value={index}>
+                                    <CatalogItemArt id={entry.item.baseId} game={game} />
                                     {index + 1}. {entry.record.item.baseType} ·{" "}
                                     {entry.item.baseId.split("/").at(-1)} ·{" "}
                                     {entry.record.facts.modifiers

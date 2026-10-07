@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { CatalogItemArt } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Label } from "~/components/ui/label";
@@ -19,7 +20,7 @@ export function ItemTextPanel({
     onImport,
 }: {
     engine: CraftingEngine;
-    item: CraftingItem;
+    item?: CraftingItem;
     onImport: (item: CraftingItem) => void;
 }) {
     const id = useId();
@@ -81,8 +82,10 @@ export function ItemTextPanel({
                     </Button>
                     <Button
                         variant="outline"
+                        disabled={!item}
                         onClick={() =>
                             safely(() => {
+                                if (!item) return;
                                 setText(exportCraftingItemText(engine, item));
                                 setMatches([]);
                                 setNotice("Current item exported as Path of Building text.");
@@ -135,6 +138,10 @@ export function ItemTextPanel({
                                 >
                                     {matches.map(({ item }, index) => (
                                         <FormSelectItem key={JSON.stringify(item)} value={index}>
+                                            <CatalogItemArt
+                                                id={item.baseId}
+                                                game={engine.catalog.game}
+                                            />
                                             {index + 1}. {engine.base(item).name} ·{" "}
                                             {item.baseId.split("/").at(-1)} ·{" "}
                                             {item.mods
