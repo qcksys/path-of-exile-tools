@@ -2,6 +2,7 @@ import type { CraftingItem, RolledMod } from "../schemas/crafting";
 import type { RecombinatorItem } from "../schemas/recombinator";
 import type { CraftingEngine } from "./crafting-engine";
 import { isBreachModifier } from "./crafting-grasping";
+import { isIncursionModifier } from "./crafting-incursion";
 import { recombineOnBase } from "./recombinator";
 
 export function supportsRecombination(engine: CraftingEngine, item: Pick<CraftingItem, "baseId">) {
@@ -26,12 +27,71 @@ function recombinationTags(engine: CraftingEngine, item: CraftingItem) {
     ];
 }
 
+export function isRecombinationEssenceModifier(
+    engine: CraftingEngine,
+    item: CraftingItem,
+    id: string,
+) {
+    const itemClass = engine.base(item).item_class;
+    return (
+        engine.catalog.game === "poe1" &&
+        engine.catalog.crafting.essences.some((essence) => essence.mods[itemClass] === id)
+    );
+}
+
+export function nonNativeEssenceSources(
+    engine: CraftingEngine,
+    item: CraftingItem,
+    other?: CraftingItem,
+) {
+    if (!supportsRecombination(engine, item)) return [];
+    engine.validateItem(item);
+    if (other) {
+        engine.validateItem(other);
+        if (engine.base(other).item_class !== engine.base(item).item_class)
+            throw new Error("Compare NNN sources on the same item class.");
+    }
+    const tags = recombinationTags(engine, item);
+    const otherTags = other ? recombinationTags(engine, other) : undefined;
+    const native = (id: string, tags: string[]) => {
+        const mod = engine.mod(id);
+        return (
+            (mod.spawn_weights.find((entry) => tags.includes(entry.tag))?.weight ?? 0) > 0 &&
+            (mod.generation_weights.find((entry) => tags.includes(entry.tag))?.weight ?? 100) > 0
+        );
+    };
+    return engine.catalog.crafting.essences.flatMap((essence) => {
+        const id = essence.mods[engine.base(item).item_class];
+        if (!id) return [];
+        const mod = engine.mod(id);
+        if (
+            mod.domain !== "item" ||
+            mod.is_essence_only ||
+            !["prefix", "suffix"].includes(mod.generation_type) ||
+            native(id, tags)
+        )
+            return [];
+        return [
+            {
+                id: essence.id,
+                name: essence.name,
+                modId: id,
+                side: mod.generation_type as "prefix" | "suffix",
+                nativeOnOther: otherTags ? native(id, otherTags) : null,
+                rerollsRare: essence.level >= 5,
+                itemLevelLimit: essence.itemLevelLimit ?? null,
+            },
+        ];
+    });
+}
+
 export function recombinationOutcomes(
     engine: CraftingEngine,
     left: CraftingItem,
     right: CraftingItem,
 ) {
     for (const item of [left, right]) {
+        engine.validateItem(item);
         if (!supportsRecombination(engine, item))
             throw new Error("Recombination requires an extracted PoE 1 equipment class.");
         if (item.corrupted || item.mirrored || item.destroyed || item.reveal)
@@ -52,15 +112,16 @@ export function recombinationOutcomes(
                 (mod.generation_weights.find((entry) => tags.includes(entry.tag))?.weight ?? 100) >
                     0;
             if (
-                mod.is_essence_only ||
                 !(
                     natural ||
+                    isRecombinationEssenceModifier(engine, item, rolled.id) ||
                     isBreachModifier(engine.catalog, item, rolled.id) ||
+                    isIncursionModifier(engine.catalog, item, rolled.id) ||
                     (mod.domain === "crafted" && mod.implicit_tags.includes("unveiled_mod"))
                 )
             )
                 throw new Error(
-                    "This recombination model supports natural modifiers, Breach modifiers and unveiled bench crafts.",
+                    "This recombination model supports natural and extracted essence modifiers, Breach modifiers, the three Incursion glove suffixes and unveiled bench crafts.",
                 );
         }
     }
@@ -99,7 +160,11 @@ export function recombinationOutcomes(
                     id: key,
                     group: mod.groups[0]!,
                     groups: mod.groups,
-                    exclusive: rolled.crafted || isBreachModifier(engine.catalog, item, rolled.id),
+                    exclusive:
+                        rolled.crafted ||
+                        mod.is_essence_only ||
+                        isBreachModifier(engine.catalog, item, rolled.id) ||
+                        isIncursionModifier(engine.catalog, item, rolled.id),
                     nonNative: rolled.fractured && source !== baseIndex,
                     crafted: rolled.crafted,
                     spawn: mod.spawn_weights.map((entry): [string, number] => [

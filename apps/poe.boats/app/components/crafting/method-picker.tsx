@@ -68,12 +68,14 @@ export function MethodPicker({
     value,
     onChange,
     inventory = [],
+    connectedInputs = false,
 }: {
     engine: CraftingEngine;
     item: CraftingItem;
     value: CraftingMethod;
     onChange: (method: CraftingMethod) => void;
     inventory?: CraftingProject["inventory"];
+    connectedInputs?: boolean;
 }) {
     const id = useId();
     const data = engine.catalog.crafting;
@@ -1382,7 +1384,13 @@ export function MethodPicker({
                     </p>
                 </div>
             ) : null}
-            {value.kind === "socket_jewel" ? (
+            {connectedInputs && (
+                <p className="text-xs text-muted-foreground">
+                    Consumed items come from the graph's input connections. Configure their sources
+                    and prices in the project.
+                </p>
+            )}
+            {value.kind === "socket_jewel" && !connectedInputs ? (
                 <section aria-label="Jewel socket contents" className="space-y-2 text-xs">
                     <CatalogPicker
                         id={`${id}-socket-jewel`}
@@ -1425,7 +1433,7 @@ export function MethodPicker({
                     inventory first if you want to load it as the current item for further crafting.
                 </p>
             ) : null}
-            {value.kind === "recombine" ? (
+            {value.kind === "recombine" && !connectedInputs ? (
                 <section aria-label="Recombination model" className="space-y-2 text-xs">
                     <CatalogPicker
                         id={`${id}-recombine-donor`}
@@ -1470,17 +1478,21 @@ export function MethodPicker({
                         . These are model probabilities, not extracted server probabilities.
                     </p>
                     <p>
-                        Supports natural modifiers, ordinary influenced modifiers and unveiled bench
-                        crafts within the shared model's exclusive-modifier limits. Influenced
-                        modifiers require their influence on the surviving base. Fractures can be
-                        retained only when their own input survives, and can still be lost. Strands
-                        stay with that base without combining, consumption or tier filtering.
-                        Imprint checkpoints, corruption, mirroring, elevated modifiers and altered
-                        affix limits remain unsupported.
+                        Supports natural modifiers, extracted essence modifiers, ordinary influenced
+                        modifiers and unveiled bench crafts within the shared model's
+                        exclusive-modifier limits. Natural essence modifiers that cannot roll on the
+                        chosen base contribute to the input count but cannot survive;
+                        essence-exclusive modifiers remain eligible. Influenced modifiers require
+                        their influence on the surviving base. Fractures can be retained only when
+                        their own input survives, and can still be lost. Strands stay with that base
+                        without combining, consumption or tier filtering. Imprint checkpoints,
+                        corruption, mirroring, elevated modifiers and altered affix limits remain
+                        unsupported.
                     </p>
                 </section>
             ) : null}
             {value.kind === "currency" &&
+            !connectedInputs &&
             data.currencies.find((entry) => entry.id === value.id)?.action ===
                 "transfer_item_influence" ? (
                 <div className="space-y-2">

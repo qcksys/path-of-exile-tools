@@ -3,6 +3,8 @@
  * Both shapes are kept JSON-stable so older clients keep working.
  */
 
+import type { CohortHourly, MarketCohortDefinition } from "@poe-tools/market";
+
 export interface UniqueHourlyRow {
     realm?: string;
     league: string;
@@ -23,6 +25,7 @@ export interface UniqueHourlyRow {
     iconAsset: string | null;
     name: string | null; // resolved (from basemap) when unid; otherwise item.name
     baseType: string;
+    /** -1 when the source omits its deprecated numeric frame. */
     frameType: number;
     identified: boolean;
 
@@ -71,4 +74,9 @@ export interface BasemapSnapshotPayload {
     }>;
 }
 
-export type IngestPayload = UniqueHourlyPayload | CurrencyHourlyPayload | BasemapSnapshotPayload;
+export type IngestPayload =
+    | UniqueHourlyPayload
+    | CurrencyHourlyPayload
+    | BasemapSnapshotPayload
+    | { stream: "equipment"; rows: CohortHourly[] }
+    | { stream: "equipment-definitions"; rows: MarketCohortDefinition[] };

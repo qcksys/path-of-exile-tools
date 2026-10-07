@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import { CraftingPage } from "~/routes/crafting/page";
 import { craftingCatalogSchema } from "~/schemas/crafting";
 import { catalog } from "./crafting-fixtures";
+import { stubCraftingWorkers } from "./crafting-worker-fixtures";
 
 vi.mock("~/components/app-header", () => ({ AppHeader: () => <header>App navigation</header> }));
 vi.mock("~/components/app-footer", () => ({ AppFooter: () => <footer>Data provenance</footer> }));
@@ -31,6 +32,7 @@ function page(game: "poe1" | "poe2", mode = "calculate") {
 }
 beforeEach(() => {
     localStorage.clear();
+    stubCraftingWorkers();
     vi.stubGlobal(
         "ResizeObserver",
         class {
@@ -50,13 +52,7 @@ describe.each(catalogs)("$game fullscreen crafting", (data) => {
     it("keeps an active calculation running until the user stops it", async () => {
         const terminate = vi.fn();
         const postMessage = vi.fn();
-        vi.stubGlobal(
-            "Worker",
-            class {
-                terminate = terminate;
-                postMessage = postMessage;
-            },
-        );
+        stubCraftingWorkers({ terminate, postMessage });
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(data)));
         render(page(data.game));
         await screen.findByRole("heading", { name: "Crafting workbench" });

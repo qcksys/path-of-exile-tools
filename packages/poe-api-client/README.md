@@ -106,6 +106,9 @@ try {
 | `account`    | `leagues`, `characters`, `character`, `stashes`, `stash`, `leagueAccount` | `account:*`                      |
 | `guild`      | `stashes`, `stash`                                                        | `account:guild:stashes`          |
 | `itemFilter` | `list`, `get`, `create`, `update`                                         | `account:item_filter`            |
-| `public`     | `stashTabs`, `currencyExchange`                                           | `service:psapi`, `service:cxapi` |
+| `public`     | `stashTabs`                                                             | `service:psapi` |
+| `public`     | `currencyExchange`                                                      | None; public CDN |
 
 For endpoints not yet modeled, use the raw `ky` instance: `poe.http.get("some-new-endpoint").json()`.
+
+Currency exchange requests use `https://web.poecdn.com/api/currency-exchange` and never resolve or attach the OAuth token. The default realm applies to these requests; `pc` is represented by an omitted path segment. Exchange prices describe completed hourly trades, not current buy offers. Canonical item IDs identify each market and its traded-volume and ratio fields. See the [GGG exchange reference](https://www.pathofexile.com/developer/docs/reference#currencyexchange).

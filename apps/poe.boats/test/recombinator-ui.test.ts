@@ -1,12 +1,22 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createElement } from "react";
+import {
+    act,
+    cleanup,
+    fireEvent,
+    render as renderComponent,
+    screen,
+    waitFor,
+} from "@testing-library/react";
+import { createElement, type ReactElement } from "react";
+import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { RecombinatorSimulator } from "~/components/recombinator/simulator";
 import { calculateRecombinatorPlan } from "~/lib/recombinator";
 import { catalogModLabel } from "~/lib/recombinator-catalog";
 import type { RecombinatorPlan } from "~/schemas/recombinator";
 import { armourMod, catalogFixture, fireMod, lifeMod } from "./fixtures/recombinator-catalog";
+
+const render = (element: ReactElement) => renderComponent(element, { wrapper: MemoryRouter });
 
 class CalculatorWorker {
     onmessage: ((event: { data: unknown }) => void) | null = null;

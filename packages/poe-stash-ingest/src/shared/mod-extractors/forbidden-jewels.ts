@@ -1,4 +1,5 @@
 import type { Item } from "@poe-tools/api-client";
+import { isUniqueItem } from "#src/shared/capture.ts";
 import { explicitModLines } from "#src/shared/mod-extractors/lines.ts";
 import type { ModExtractor, ModSignature } from "#src/shared/mod-extractors/types.ts";
 
@@ -10,7 +11,7 @@ export const forbiddenJewelExtractor: ModExtractor = {
     kind: "forbidden-jewel",
     value: (signature) => String(signature.allocatedNotable),
     matches(item: Item): boolean {
-        return item.frameType === 3 && item.identified && NAMES.has(item.name);
+        return isUniqueItem(item) && item.identified && NAMES.has(item.name);
     },
     extract(item: Item): ModSignature | null {
         for (const line of explicitModLines(item)) {

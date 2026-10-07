@@ -1,5 +1,10 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import type { PoeApiClient, PublicStashChange } from "@poe-tools/api-client";
+import {
+    captureEquipment,
+    defaultEquipmentClassifier,
+    type EquipmentClassifier,
+} from "#src/ps/equipment.ts";
 import { evaluateSales, recordRemovals } from "#src/ps/sales.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { learnBasemap } from "#src/shared/basemap.ts";
@@ -24,6 +29,7 @@ export interface PsIngestResult {
     inserted: number;
     updated: number;
     removed: number;
+    equipmentObserved: number;
     leagues: Map<string, { stashes: number; items: number }>;
     finalCursor: string;
     caughtUp: boolean;
@@ -100,7 +106,8 @@ async function applyStashChange(
             itemKey: itemKey(item, iconAsset),
             iconAsset,
             identified: item.identified,
-            frameType: item.frameType,
+            // Unknown legacy frame; preserve the source frameTypeId in rawItem.
+            frameType: item.frameType ?? -1,
             typeLine: item.typeLine,
             baseType: item.baseType,
             name: item.identified ? item.name : null,
@@ -207,11 +214,20 @@ async function applyStashChange(
 export async function ingestPs(
     conn: DuckDBConnection,
     client: PoeApiClient,
-    opts: { pages: number; cursor?: string; league?: string | null },
+    opts: {
+        pages: number;
+        cursor?: string;
+        league?: string | null;
+        equipment?: EquipmentClassifier;
+        observedAt?: Date;
+    },
 ): Promise<PsIngestResult> {
     if (!Number.isSafeInteger(opts.pages) || opts.pages < 1)
         throw new Error("pages must be a positive integer");
+    if (REALM === "poe2")
+        throw new Error("PoE 2 equipment uses manual prices; public-stash capture is unavailable.");
     await configureSource(conn, REALM ?? "pc", opts.league ?? null);
+    const equipment = opts.equipment ?? (await defaultEquipmentClassifier());
     const result: PsIngestResult = {
         pages: 0,
         stashes: 0,
@@ -219,6 +235,7 @@ export async function ingestPs(
         inserted: 0,
         updated: 0,
         removed: 0,
+        equipmentObserved: 0,
         leagues: new Map(),
         finalCursor: opts.cursor ?? "",
         caughtUp: false,
@@ -246,6 +263,12 @@ export async function ingestPs(
                     result.leagues.set(lg, acc);
                 }
                 const r = await applyStashChange(conn, change);
+                result.equipmentObserved += await captureEquipment(
+                    conn,
+                    change,
+                    equipment,
+                    opts.observedAt ?? new Date(),
+                );
                 result.inserted += r.inserted;
                 result.updated += r.updated;
                 result.removed += r.removed;
@@ -260,6 +283,7 @@ export async function ingestPs(
         console.log(
             `page ${i + 1}/${opts.pages}: stashes=${page.stashes.length} ` +
                 `ins=${result.inserted} upd=${result.updated} rem=${result.removed} ` +
+                `equipment=${result.equipmentObserved} ` +
                 `next=${cursor.slice(0, 12)}…`,
         );
 

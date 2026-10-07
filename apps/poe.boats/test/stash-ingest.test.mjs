@@ -5,6 +5,10 @@ import { ingestCx } from "../../../packages/poe-stash-ingest/src/cx/ingest.ts";
 import { rollupCx } from "../../../packages/poe-stash-ingest/src/cx/rollup.ts";
 import { ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest.ts";
 import { rollupPs } from "../../../packages/poe-stash-ingest/src/ps/rollup.ts";
+import {
+    isUniqueItem,
+    shouldCapture,
+} from "../../../packages/poe-stash-ingest/src/shared/capture.ts";
 import { getCursor } from "../../../packages/poe-stash-ingest/src/shared/cursor.ts";
 import { openDb, queryAll } from "../../../packages/poe-stash-ingest/src/shared/db.ts";
 import { extractModSignature } from "../../../packages/poe-stash-ingest/src/shared/mod-extractors/index.ts";
@@ -96,6 +100,82 @@ afterEach(async () => {
 });
 
 describe("public stash lifecycle", () => {
+    it("preserves unique identity, raw frames and basemap learning without a legacy frame", async () => {
+        const current = {
+            ...item,
+            frameType: undefined,
+            frameTypeId: "opaque-source-frame",
+            rarity: "Unique",
+        };
+        page([
+            {
+                ...stash,
+                items: [current, { ...current, id: "unidentified", identified: false, name: "" }],
+            },
+        ]);
+        expect((await ingestPs(db.conn, client, { pages: 1 })).inserted).toBe(2);
+        const rows = await queryAll(
+            db.conn,
+            "SELECT item_id, item_key, frame_type, raw_item FROM ps_listing ORDER BY item_id",
+        );
+        expect(
+            rows.map(({ item_id, item_key, frame_type }) => ({ item_id, item_key, frame_type })),
+        ).toEqual([
+            { item_id: "item-1", item_key: "Headhunter", frame_type: -1 },
+            { item_id: "unidentified", item_key: "unid:2DItems/Belts/Headhunter", frame_type: -1 },
+        ]);
+        expect(JSON.parse(rows[0].raw_item)).toMatchObject({
+            frameTypeId: "opaque-source-frame",
+            rarity: "Unique",
+        });
+        expect(await queryAll(db.conn, "SELECT name, base_type FROM icon_basemap")).toEqual([
+            { name: "Headhunter", base_type: "Leather Belt" },
+        ]);
+        network.mockImplementationOnce(async (_url, init) =>
+            receive(JSON.parse(String(init?.body))),
+        );
+        expect((await rollupPs(db.conn, { hour })).rows).toBe(2);
+        page([{ ...stash, items: [item] }], "legacy-update");
+        expect((await ingestPs(db.conn, client, { pages: 1 })).updated).toBe(1);
+        expect(
+            await queryAll(
+                db.conn,
+                "SELECT item_key, frame_type FROM ps_listing WHERE item_id = 'item-1'",
+            ),
+        ).toEqual([{ item_key: "Headhunter", frame_type: 3 }]);
+    });
+    it("prefers explicit rarity and does not infer an opaque frame's meaning", () => {
+        expect(isUniqueItem({ frameType: 3 })).toBe(true);
+        expect(isUniqueItem({ rarity: "Rare", frameType: 3 })).toBe(false);
+        expect(
+            shouldCapture({ ...item, frameType: undefined, frameTypeId: "opaque-source-frame" }),
+        ).toBe(false);
+        expect(shouldCapture({ ...item, frameType: undefined, rarity: "Currency" })).toBe(true);
+    });
+    it.each([
+        [
+            "Forbidden Flame",
+            "Allocates Unstoppable if you have the matching modifier on Forbidden Flesh",
+        ],
+        ["Forbidden Shako", "Socketed Gems are Supported by Level 35 Ice Bite"],
+        [
+            "Impossible Escape",
+            "Passives in Radius of Iron Reflexes can be Allocated without being connected to your tree",
+        ],
+        ["Watcher's Eye", "20% increased Fire Damage while affected by Anger"],
+    ])("preserves %s signatures across current and legacy payloads", (name, mod) => {
+        const legacy = { ...item, name, explicitMods: [mod] };
+        const signature = extractModSignature(legacy);
+        expect(signature).not.toBeNull();
+        expect(
+            extractModSignature({
+                ...legacy,
+                frameType: undefined,
+                frameTypeId: "opaque-source-frame",
+                rarity: "Unique",
+            }),
+        ).toEqual(signature);
+    });
     it("inserts, updates price, removes missing items, and saves the cursor", async () => {
         page();
         expect((await ingestPs(db.conn, client, { pages: 1 })).inserted).toBe(1);
