@@ -40,10 +40,32 @@ jobs:
         run: vp run -r build
       - name: Type check
         run: vp run -r typecheck
-      - name: Unit tests
-        run: vp run --filter '*' test --exclude '**/env.test.ts'
       - name: Ingest end-to-end tests (MySQL Testcontainers)
         run: vp run poe-boats#test:e2e
+
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    env:
+      APP_ENV: test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - name: Build
+        run: vp run -r build
+      - name: Unit tests
+        run: vp run --filter '*' test --exclude '**/env.test.ts' --shard=${{ matrix.shard }}/2
 
   browser:
     runs-on: ubuntu-latest
@@ -79,16 +101,18 @@ jobs:
 
   validate:
     if: always()
-    needs: [checks, browser]
+    needs: [checks, unit, browser]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Require both validation jobs to succeed
+      - name: Require all validation jobs to succeed
         env:
           CHECKS_RESULT: ${{ needs.checks.result }}
+          UNIT_RESULT: ${{ needs.unit.result }}
           BROWSER_RESULT: ${{ needs.browser.result }}
         run: |
           test "$CHECKS_RESULT" = success
+          test "$UNIT_RESULT" = success
           test "$BROWSER_RESULT" = success
 
   deploy:
