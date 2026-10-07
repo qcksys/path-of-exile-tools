@@ -12,7 +12,7 @@
     },
     "devDependencies": {
         "@biomejs/biome": "catalog:",
-        "@changesets/cli": "^2.31.0",
+        "@changesets/cli": "catalog:",
         "vite-plus": "catalog:"
     },
     "engines": {
