@@ -74,6 +74,7 @@ import {
     isBreachModifier,
 } from "./crafting-grasping";
 import { enchantmentStat } from "./crafting-heist";
+import { isIncursionModifier } from "./crafting-incursion";
 import {
     memoryConsumption,
     memoryTierPool,
@@ -104,7 +105,11 @@ import {
     retainedCatalystLimit,
     taintedCatalystOutcomes,
 } from "./crafting-quality";
-import { recombinationOutcomes, supportsRecombination } from "./crafting-recombination";
+import {
+    isRecombinationEssenceModifier,
+    recombinationOutcomes,
+    supportsRecombination,
+} from "./crafting-recombination";
 import { revealChoiceProbabilities, revealCountWeights } from "./crafting-reveal-probabilities";
 import {
     hasAbyssSockets,
@@ -1752,7 +1757,8 @@ export class CraftingEngine {
                     if (
                         !supportsRecombination(this, item) ||
                         mod.domain !== "item" ||
-                        mod.is_essence_only
+                        (mod.is_essence_only &&
+                            !isRecombinationEssenceModifier(this, item, entry.id))
                     )
                         throw new Error("Invalid recombination origin for this modifier.");
                 } else {
@@ -1838,7 +1844,13 @@ export class CraftingEngine {
                 origin &&
                 !natural &&
                 !(origin.kind === "awakener" && elevated) &&
-                !(origin.kind === "recombine" && isBreachModifier(this.catalog, item, entry.id))
+                !(
+                    origin.kind === "recombine" &&
+                    (isBreachModifier(this.catalog, item, entry.id) ||
+                        isIncursionModifier(this.catalog, item, entry.id) ||
+                        (mod.is_essence_only &&
+                            isRecombinationEssenceModifier(this, item, entry.id)))
+                )
             )
                 throw new Error(
                     "This modifier is unavailable at its recorded crafting origin level.",
@@ -1876,7 +1888,8 @@ export class CraftingEngine {
                 !hidden &&
                 !specialReveal &&
                 !ducat &&
-                !isBreachModifier(this.catalog, item, sourceId)
+                !isBreachModifier(this.catalog, item, sourceId) &&
+                !isIncursionModifier(this.catalog, item, sourceId)
             )
                 throw new Error("This modifier is not available on this item base and level.");
         }

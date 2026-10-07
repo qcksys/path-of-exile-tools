@@ -71,9 +71,9 @@ describe("environment configuration", () => {
 
     describe.each(packages)("%s 1Password cache", (_name, directory) => {
         it.each([
-            [undefined, "1h"],
-            ["local", "1h"],
-            ["dev", "1h"],
+            [undefined, "12h"],
+            ["local", "12h"],
+            ["dev", "12h"],
             ["test", undefined],
             ["prod", undefined],
         ])("uses the expected TTL for APP_ENV=%s", async (environment, expectedTtl) => {

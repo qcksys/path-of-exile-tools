@@ -19,3 +19,4 @@ scripts/**/.cache/
 playwright-report/
 test-results/
 env.d.ts
+/public/game-data/history/

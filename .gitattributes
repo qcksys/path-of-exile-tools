@@ -1,0 +1,4 @@
+# Preserve exact bytes in content-addressed crafting history.
+apps/poe.boats/crafting-history/engines/*.mjs -text -whitespace linguist-generated=true
+apps/poe.boats/crafting-history/catalogs/*.json.gz -text linguist-generated=true
+packages/poe-market/data/*.json linguist-generated=true

@@ -1,4 +1,5 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
+import { pruneEquipment } from "#src/ps/equipment-prune.ts";
 import { queryAll } from "#src/shared/db.ts";
 
 export interface PruneOptions {
@@ -15,6 +16,7 @@ export interface PruneResult {
     droppedByCap: number;
     droppedHourlyRows: number;
     afterRows: number;
+    equipment: { listings: number; hourlyRows: number };
 }
 
 async function countRows(conn: DuckDBConnection): Promise<number> {
@@ -100,5 +102,13 @@ export async function prune(conn: DuckDBConnection, opts: PruneOptions): Promise
     }
 
     const after = opts.dryRun ? before - droppedByAge - droppedByCap : await countRows(conn);
-    return { beforeRows: before, droppedByAge, droppedByCap, droppedHourlyRows, afterRows: after };
+    const equipment = await pruneEquipment(conn, opts);
+    return {
+        beforeRows: before,
+        droppedByAge,
+        droppedByCap,
+        droppedHourlyRows,
+        afterRows: after,
+        equipment,
+    };
 }

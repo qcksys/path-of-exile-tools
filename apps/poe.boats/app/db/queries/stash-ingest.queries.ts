@@ -1,6 +1,9 @@
+import { type CohortHourly, cohortBaseTypes, type MarketCohortDefinition } from "@poe-tools/market";
 import { sql } from "drizzle-orm";
 import type { TDatabase } from "~/db/client.ts";
 import { tStashBasemapSnapshot } from "~/db/schema/stash.basemap-snapshot";
+import { tStashCohort } from "~/db/schema/stash.cohort";
+import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import {
     type TStashCurrencyHourlyI,
     tStashCurrencyHourly,
@@ -8,6 +11,41 @@ import {
 import { type TStashUniqueHourlyI, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 
 const UPSERT_CHUNK = 200;
+
+export async function insertStashCohorts(
+    db: TDatabase,
+    rows: MarketCohortDefinition[],
+): Promise<number> {
+    for (const batch of chunk(rows, UPSERT_CHUNK))
+        await db
+            .insert(tStashCohort)
+            .values(batch.map((row) => ({ ...row, baseTypes: cohortBaseTypes(row) })))
+            .onDuplicateKeyUpdate({ set: { id: sql`${tStashCohort.id}` } });
+    return rows.length;
+}
+
+export async function upsertStashCohortHourly(
+    db: TDatabase,
+    rows: CohortHourly[],
+): Promise<number> {
+    for (const batch of chunk(rows, UPSERT_CHUNK)) {
+        await db
+            .insert(tStashCohortHourly)
+            .values(batch)
+            .onDuplicateKeyUpdate({
+                set: {
+                    listingCount: sql`values(${tStashCohortHourly.listingCount})`,
+                    uniqueSellers: sql`values(${tStashCohortHourly.uniqueSellers})`,
+                    unknownCount: sql`values(${tStashCohortHourly.unknownCount})`,
+                    prices: sql`values(${tStashCohortHourly.prices})`,
+                    confidenceMethod: sql`values(${tStashCohortHourly.confidenceMethod})`,
+                    firstSeenAt: sql`values(${tStashCohortHourly.firstSeenAt})`,
+                    lastSeenAt: sql`values(${tStashCohortHourly.lastSeenAt})`,
+                },
+            });
+    }
+    return rows.length;
+}
 
 function chunk<T>(arr: T[], size: number): T[][] {
     const out: T[][] = [];

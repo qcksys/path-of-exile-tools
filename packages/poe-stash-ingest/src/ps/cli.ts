@@ -8,6 +8,24 @@ program
     .showHelpAfterError();
 
 program
+    .command("inspect")
+    .description(
+        "Read up to five stash pages and report sanitized modifier metadata coverage; no database or summary writes.",
+    )
+    .option("-p, --pages <n>", "pages to inspect (maximum five)", positiveInteger, 1)
+    .option("-c, --cursor <id>", "starting cursor; omission reads the oldest available page")
+    .action(async (opts) => {
+        const { createPoeClient, REALM } = await import("#src/shared/auth.ts");
+        const { inspectPublicStashes } = await import("#src/ps/inspect.ts");
+        for await (const result of inspectPublicStashes(createPoeClient().public, {
+            pages: opts.pages,
+            cursor: opts.cursor,
+            realm: REALM,
+        }))
+            console.log(JSON.stringify(result, null, 2));
+    });
+
+program
     .command("ingest")
     .description("Walk N pages of psapi, upsert listings, learn basemap, extract mod signatures.")
     .option("-p, --pages <n>", "number of pages to fetch", positiveInteger, 3)
@@ -34,7 +52,7 @@ program
             console.log(
                 `done — pages=${result.pages} stashes=${result.stashes} ` +
                     `(public=${result.publicStashes}) ins=${result.inserted} ` +
-                    `upd=${result.updated} rem=${result.removed}\nleagues: ${top}`,
+                    `upd=${result.updated} rem=${result.removed} equipment=${result.equipmentObserved}\nleagues: ${top}`,
             );
         } finally {
             await db.close();
@@ -53,15 +71,18 @@ program
     .option("--dry-run", "print summary; do not POST")
     .action(async (opts) => {
         const { rollupPs } = await import("#src/ps/rollup.ts");
+        const { rollupEquipment } = await import("#src/ps/equipment-rollup.ts");
         const { openDb } = await import("#src/shared/db.ts");
         const { parseLeagueFilter } = await import("#src/shared/leagues.ts");
         const db = await openDb();
         try {
-            await rollupPs(db.conn, {
+            const options = {
                 hour: opts.hour ? Number(opts.hour) : undefined,
                 league: parseLeagueFilter(opts.league),
                 dryRun: !!opts.dryRun,
-            });
+            };
+            await rollupPs(db.conn, options);
+            await rollupEquipment(db.conn, options);
         } finally {
             await db.close();
         }
@@ -132,7 +153,8 @@ program
                 `prune${opts.dryRun ? " (dry-run)" : ""}: ` +
                     `before=${result.beforeRows} ageDrop=${result.droppedByAge} ` +
                     `capDrop=${result.droppedByCap} after=${result.afterRows} ` +
-                    `hourlyDrop=${result.droppedHourlyRows}`,
+                    `hourlyDrop=${result.droppedHourlyRows} ` +
+                    `equipmentDrop=${result.equipment.listings} equipmentHourlyDrop=${result.equipment.hourlyRows}`,
             );
         } finally {
             await db.close();
@@ -156,8 +178,12 @@ program
         const db = await openDb();
         const client = createPoeClient();
         let cursor = opts.cursor;
+        const stop = new AbortController();
+        const shutdown = () => stop.abort();
+        process.once("SIGTERM", shutdown);
+        process.once("SIGINT", shutdown);
         try {
-            do {
+            const cycle = async () => {
                 try {
                     const result = await runPipeline(db.conn, client, {
                         pages: Number(opts.pages),
@@ -166,17 +192,20 @@ program
                         currency: opts.currency,
                     });
                     console.log(JSON.stringify(result));
-                } catch (error) {
-                    if (!opts.watch) throw error;
-                    console.error(
-                        "Processing failed; saved cursors and pending deliveries will be retried.",
-                        error,
-                    );
+                } finally {
+                    if (await getCursor(db.conn, "psapi")) cursor = undefined;
                 }
-                if (await getCursor(db.conn, "psapi")) cursor = undefined;
-                if (opts.watch) await new Promise((resolve) => setTimeout(resolve, 60_000));
-            } while (opts.watch);
+            };
+            if (opts.watch) {
+                const { watchCycles } = await import("#src/shared/watch.ts");
+                await watchCycles(cycle, {
+                    signal: stop.signal,
+                    statusFile: process.env.INGEST_STATUS_FILE,
+                });
+            } else await cycle();
         } finally {
+            process.removeListener("SIGTERM", shutdown);
+            process.removeListener("SIGINT", shutdown);
             await db.close();
         }
     });

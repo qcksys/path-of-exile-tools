@@ -8,7 +8,7 @@ export const catalog = craftingCatalogSchema.parse(
 );
 export const engine = new CraftingEngine(catalog);
 export const baseId = "Metadata/Items/Armours/BodyArmours/BodyStr1";
-export const currency = (action: string): CraftingMethod => {
+export const currency = (action: string): Extract<CraftingMethod, { kind: "currency" }> => {
     const entry = catalog.crafting.currencies.find((entry) => entry.action === action);
     if (!entry) throw new Error(`Missing fixture currency: ${action}`);
     return { kind: "currency", id: entry.id };

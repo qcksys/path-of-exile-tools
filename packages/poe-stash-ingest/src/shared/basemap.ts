@@ -1,4 +1,5 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
+import { isUniqueItem } from "#src/shared/capture.ts";
 
 export async function learnBasemap(
     conn: DuckDBConnection,
@@ -8,10 +9,11 @@ export async function learnBasemap(
         baseType: string;
         identified: boolean;
         frameType: number;
+        rarity?: string | null;
     }>,
 ): Promise<void> {
     const mappings = items.filter(
-        (item) => item.iconAsset && item.identified && item.frameType === 3 && item.name,
+        (item) => item.iconAsset && item.identified && isUniqueItem(item) && item.name,
     );
     if (!mappings.length) return;
     await conn.run(

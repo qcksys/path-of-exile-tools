@@ -1,12 +1,18 @@
 import { z } from "zod";
 import type { TDatabase } from "~/db/client";
+import type { LoadedCraftingRevision } from "~/lib/crafting-ruleset-loader";
 import type { AppSession } from "~/lib/session.server";
+import type { CraftingCatalog } from "~/schemas/crafting";
+import type { CraftingRuleset, CraftingRulesetIndex } from "~/schemas/crafting-rulesets";
 import type { RecombinatorCatalog } from "~/schemas/recombinator-catalog";
 import { OperationError } from "./errors";
 
 export interface OperationContext {
     db: TDatabase;
     loadCatalog: () => Promise<RecombinatorCatalog>;
+    loadWorkbenchCatalog: (game: "poe1" | "poe2") => Promise<CraftingCatalog>;
+    loadCraftingRulesets: () => Promise<CraftingRulesetIndex>;
+    loadCraftingRevision: (ruleset: CraftingRuleset) => Promise<LoadedCraftingRevision>;
     origin: string;
     caller: AppSession["user"] | null;
 }

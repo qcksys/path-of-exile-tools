@@ -1,8 +1,19 @@
+import { useSearchParams } from "react-router";
 import { authClient } from "~/lib/auth.client";
 
 const Login = () => {
+    const [params] = useSearchParams();
+    const requested = params.get("returnTo");
+    const callbackURL =
+        requested === "/1/crafting/projects" || requested === "/2/crafting/projects"
+            ? requested
+            : "/";
     const handleGoogleLogin = () => {
-        authClient.signIn.social({ provider: "google" });
+        authClient.signIn.social({
+            provider: "google",
+            callbackURL,
+            newUserCallbackURL: callbackURL,
+        });
     };
 
     return (

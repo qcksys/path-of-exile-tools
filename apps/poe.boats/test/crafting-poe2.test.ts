@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vite-plus/test";
 import { CraftingEngine, seededRandom } from "../app/lib/crafting-engine";
 import { availableOmens } from "../app/lib/crafting-omens";
+import { nonNativeEssenceSources } from "../app/lib/crafting-recombination";
 import {
     type CraftingItem,
     type CraftingMethod,
@@ -23,6 +24,9 @@ const currency = (action: string): Extract<CraftingMethod, { kind: "currency" }>
 });
 
 describe("PoE 2 crafting rules", () => {
+    it("does not apply PoE 1 NNN recombination rules to PoE 2 essences", () => {
+        expect(nonNativeEssenceSources(engine, engine.createItem(base))).toEqual([]);
+    });
     const omen = (suffix: string) =>
         catalog.crafting.currencies.find((entry) => entry.id.endsWith(`/${suffix}`))!.id;
     it("filters Homogenising rolls by existing tags and combines them with directional omens", () => {

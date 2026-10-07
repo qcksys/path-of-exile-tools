@@ -1,7 +1,10 @@
+import { cohortHourlySchema, marketCohortDefinitionSchema } from "@poe-tools/market";
 import { z } from "zod";
 import { dbContext, envContext } from "~/context";
 import {
+    insertStashCohorts,
     upsertStashBasemapSnapshot,
+    upsertStashCohortHourly,
     upsertStashCurrencyHourly,
     upsertStashUniqueHourly,
 } from "~/db/queries/stash-ingest.queries";
@@ -70,6 +73,11 @@ const PAYLOAD_SCHEMA = z.discriminatedUnion("stream", [
     z.object({ stream: z.literal("psapi"), rows: z.array(UNIQUE_ROW_SCHEMA).max(1000) }),
     z.object({ stream: z.literal("cxapi"), rows: z.array(CURRENCY_ROW_SCHEMA).max(1000) }),
     z.object({ stream: z.literal("basemap"), rows: z.array(BASEMAP_ROW_SCHEMA).max(2000) }),
+    z.object({ stream: z.literal("equipment"), rows: z.array(cohortHourlySchema).max(1000) }),
+    z.object({
+        stream: z.literal("equipment-definitions"),
+        rows: z.array(marketCohortDefinitionSchema).max(1000),
+    }),
 ]);
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -110,6 +118,10 @@ export async function action({ request, context }: Route.ActionArgs) {
         written = await upsertStashUniqueHourly(db, parsed.rows);
     } else if (parsed.stream === "cxapi") {
         written = await upsertStashCurrencyHourly(db, parsed.rows);
+    } else if (parsed.stream === "equipment") {
+        written = await upsertStashCohortHourly(db, parsed.rows);
+    } else if (parsed.stream === "equipment-definitions") {
+        written = await insertStashCohorts(db, parsed.rows);
     } else {
         written = await upsertStashBasemapSnapshot(db, parsed.rows);
     }
