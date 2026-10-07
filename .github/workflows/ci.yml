@@ -19,7 +19,7 @@ env:
   WRANGLER_SEND_METRICS: "false"
 
 jobs:
-  validate:
+  checks:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -44,18 +44,51 @@ jobs:
         run: vp run --filter '*' test --exclude '**/env.test.ts'
       - name: Ingest end-to-end tests (MySQL Testcontainers)
         run: vp run poe-boats#test:e2e
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      APP_ENV: test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - name: Build
+        run: vp run -r build
       - name: Install Chromium for browser tests
         run: vp exec --filter poe-boats playwright install --with-deps chromium
       - name: Browser end-to-end tests
-        run: vp run poe-boats#test:e2e:browser
+        timeout-minutes: 15
+        run: vp run poe-boats#test:e2e:browser --reporter=line
       - name: Upload browser failure artifacts
-        if: failure()
+        if: failure() || cancelled()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: browser-test-results
           path: apps/poe.boats/test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  validate:
+    if: always()
+    needs: [checks, browser]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require both validation jobs to succeed
+        env:
+          CHECKS_RESULT: ${{ needs.checks.result }}
+          BROWSER_RESULT: ${{ needs.browser.result }}
+        run: |
+          test "$CHECKS_RESULT" = success
+          test "$BROWSER_RESULT" = success
 
   deploy:
     needs: validate
