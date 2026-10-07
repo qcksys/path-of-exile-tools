@@ -24,24 +24,28 @@ export const fossilOptimizerSchema = z.object({
         .optional(),
 });
 export type FossilOptimizerOptions = z.infer<typeof fossilOptimizerSchema>;
-export type FossilCandidate = {
-    index: number;
-    method: Extract<CraftingMethod, { kind: "fossils" }>;
-    probability: number;
-    interval: [number, number];
-    trials: number;
-    successes: number;
-    cost: number | null;
-    costPerSuccess: number | null;
-};
-export type FossilOptimization = {
-    completed: number;
-    total: number;
-    failed: number;
-    errors: string[];
-    byAttempts: FossilCandidate[];
-    byCost: FossilCandidate[];
-};
+const count = z.number().int().nonnegative();
+const probability = z.number().min(0).max(1);
+export const fossilCandidateSchema = z.object({
+    index: count,
+    method: fossilMethodSchema,
+    probability,
+    interval: z.tuple([probability, probability]),
+    trials: count,
+    successes: count,
+    cost: z.number().nonnegative().nullable(),
+    costPerSuccess: z.number().nonnegative().nullable(),
+});
+export const fossilOptimizationSchema = z.object({
+    completed: count,
+    total: count,
+    failed: count,
+    errors: z.array(z.string()),
+    byAttempts: z.array(fossilCandidateSchema).max(20),
+    byCost: z.array(fossilCandidateSchema).max(20),
+});
+export type FossilCandidate = z.infer<typeof fossilCandidateSchema>;
+export type FossilOptimization = z.infer<typeof fossilOptimizationSchema>;
 
 export function fossilCombinations(ids: string[], maximum: number) {
     const combinations: string[][] = [];

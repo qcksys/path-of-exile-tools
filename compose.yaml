@@ -1,0 +1,57 @@
+name: poe-ingest
+
+services:
+  ingest:
+    build:
+      context: .
+      dockerfile: packages/poe-stash-ingest/Dockerfile
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 2m
+    environment:
+      PS_LOCAL_DB: /data/market.duckdb
+      POE_CLIENT_ID: ${POE_CLIENT_ID:-}
+      POE_CLIENT_SECRET_FILE: /run/secrets/poe_client_secret
+      POE_USER_AGENT_CONTACT: ${POE_USER_AGENT_CONTACT:-}
+      POE_CLIENT_VERSION: ${POE_CLIENT_VERSION:-0.0.0}
+      POE_REALM: ${POE_REALM:-pc}
+      POE_BOATS_INGEST_URL: ${POE_BOATS_INGEST_URL:-}
+      POE_BOATS_INGEST_TOKEN_FILE: /run/secrets/poe_boats_ingest_token
+      INGEST_LEAGUE: ${INGEST_LEAGUE:-all}
+      INGEST_PAGES: ${INGEST_PAGES:-50}
+      INGEST_CURRENCY: ${INGEST_CURRENCY:-true}
+      INGEST_STATUS_FILE: /data/status.json
+    secrets:
+      - poe_client_secret
+      - poe_boats_ingest_token
+    volumes:
+      - market-data:/data
+    healthcheck:
+      test: [CMD, node, src/container-health.ts]
+      interval: 1m
+      timeout: 5s
+      start_period: 5m
+      retries: 3
+
+  replay:
+    profiles: [replay]
+    build:
+      context: .
+      dockerfile: packages/poe-stash-ingest/Dockerfile
+    init: true
+    command: [replay]
+    network_mode: none
+    environment:
+      PS_LOCAL_DB: /data/replay.duckdb
+    volumes:
+      - replay-data:/data
+
+secrets:
+  poe_client_secret:
+    environment: POE_CLIENT_SECRET
+  poe_boats_ingest_token:
+    environment: POE_BOATS_INGEST_TOKEN
+
+volumes:
+  market-data:
+  replay-data:

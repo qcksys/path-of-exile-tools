@@ -4,9 +4,8 @@ import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
-import { usesAllflame } from "~/lib/crafting-allflame";
-import { BenchCraftConflict, CraftingEngine, seededRandom } from "~/lib/crafting-engine";
-import { craftingFlags, setCraftingFlag } from "~/lib/crafting-flags";
+import { CraftingEngine } from "~/lib/crafting-engine";
+import { craftingFlags } from "~/lib/crafting-flags";
 import { craftingInventory } from "~/lib/crafting-inventory";
 import { availableOmens } from "~/lib/crafting-omens";
 import {
@@ -16,12 +15,14 @@ import {
     validateProject,
 } from "~/lib/crafting-simulation";
 import { strongbox } from "~/lib/crafting-strongboxes";
+import { editCraftingStartingItem, emulateCraftingItem } from "~/lib/crafting-workbench";
 import {
     type CraftingCatalog,
     type CraftingItem,
     type CraftingProject,
     craftingProjectSchema,
 } from "~/schemas/crafting";
+import type { CraftingEmulationCommand } from "~/schemas/crafting-workbench";
 import { AllflameCopies, AllflameEditor } from "./allflame-panel";
 import { BlightEditor } from "./blight-editor";
 import { ClusterEditor } from "./cluster-editor";
@@ -35,11 +36,14 @@ import { LastChanges } from "./last-changes";
 import { MemoryEditor } from "./memory-editor";
 import { controlClass, MethodPicker } from "./method-picker";
 import { ModBrowser } from "./mod-browser";
+import { NnnEssences } from "./nnn-essences";
 import { PassiveEditor } from "./passive-editor";
 import { ProcessEditor } from "./process-editor";
 import { QualityEditor } from "./quality-editor";
 import { CraftingResults } from "./results";
 import { RevealPanel } from "./reveal-panel";
+import { SendMethodToProject } from "./send-method-to-project";
+import { SendItemToProject } from "./send-to-project";
 import { SocketEditor } from "./socket-editor";
 import { TargetEditor } from "./target-editor";
 import { useItemLibrary } from "./use-item-library";
@@ -56,7 +60,7 @@ function initialProject(engine: CraftingEngine): CraftingProject {
         format: 1,
         game: engine.catalog.game,
         patch: engine.catalog.patch,
-        item: engine.createItem(baseId),
+        item: editCraftingStartingItem(engine, { kind: "create", baseId, level: 86 }),
         method: { kind: "currency", id: currency.id },
         target: { groups: [] },
         steps: [],
@@ -77,14 +81,22 @@ type HistoryEntry = {
 
 export function CraftingWorkbench({
     catalog,
-    mode = "calculate",
+    mode: pageMode = "calculate",
+    editing,
 }: {
     catalog: CraftingCatalog;
     mode?: string;
+    editing?: { item: CraftingItem; onApply: (item: CraftingItem) => void; busy: boolean };
 }) {
+    const isolated = Boolean(editing);
+    const [editorMode, setEditorMode] = useState("emulate");
+    const mode = isolated ? editorMode : pageMode;
     const { preferences, setPreferences, storageError, display } = useDisplayPreferences();
     const engine = useMemo(() => new CraftingEngine(catalog), [catalog]);
-    const [project, setProject] = useState(() => initialProject(engine));
+    const [project, setProject] = useState(() => ({
+        ...initialProject(engine),
+        ...(editing ? { item: engine.validateItem(editing.item) } : {}),
+    }));
     const library = useItemLibrary(engine);
     const inventory = useMemo(
         () => craftingInventory(project.inventory, library.library.inventory),
@@ -159,6 +171,7 @@ export function CraftingWorkbench({
     }, [storageKey]);
 
     useEffect(() => {
+        if (isolated) return;
         try {
             const stored = localStorage.getItem(draftKey);
             if (stored !== null) {
@@ -189,10 +202,10 @@ export function CraftingWorkbench({
                 "The automatic draft could not be restored. Automatic saving is off; enable it to replace that draft.",
             );
         }
-    }, [catalog, draftKey]);
+    }, [catalog, draftKey, isolated]);
 
     useEffect(() => {
-        if (!draftReady) return;
+        if (isolated || !draftReady) return;
         try {
             localStorage.setItem(
                 draftKey,
@@ -204,7 +217,7 @@ export function CraftingWorkbench({
                 "The automatic draft could not be saved in this browser. Save or export your project before leaving.",
             );
         }
-    }, [autoSave, draftReady, draftKey, project]);
+    }, [autoSave, draftReady, draftKey, project, isolated]);
 
     function change(patch: Partial<CraftingProject>) {
         worker.current?.terminate();
@@ -234,7 +247,7 @@ export function CraftingWorkbench({
     ) {
         if (project.item.allflameCopies && item.allflameCopies && item !== project.item)
             throw new Error("Choose an Allflame copy before editing the item.");
-        const validated = engine.validateItem(item);
+        const validated = editCraftingStartingItem(engine, { kind: "validate", item });
         const next = [
             ...history.slice(0, cursor + 1),
             { id: nextHistoryId.current++, item: validated, label, spending, actions, baseItems },
@@ -275,34 +288,24 @@ export function CraftingWorkbench({
             "History and currency spending cleared. The current item is the new starting item.",
         );
     }
-    function apply() {
+    function emulate(command: CraftingEmulationCommand, label: string) {
         safely(() => {
             const current = history[cursor]!;
-            let conflict: BenchCraftConflict | undefined;
-            const applied = (() => {
-                try {
-                    return (
-                        usesAllflame(project.method)
-                            ? engine.prepareAllflame.bind(engine)
-                            : engine.apply.bind(engine)
-                    )(project.item, project.method, seededRandom(project.seed + current.actions));
-                } catch (error) {
-                    if (!(error instanceof BenchCraftConflict) || !error.cost.length) throw error;
-                    conflict = error;
-                    return { item: error.item, cost: error.cost };
-                }
-            })();
-            const spending = { ...current.spending };
-            for (const cost of applied.item.allflameCopies ? [] : applied.cost)
-                spending[cost.id] = (spending[cost.id] ?? 0) + cost.amount;
-            setItem(
-                applied.item,
-                engine.methodName(project.method),
-                spending,
-                current.actions + (applied.item.allflameCopies ? 0 : 1),
+            const applied = emulateCraftingItem(
+                engine,
+                project.item,
+                command,
+                project.seed + current.actions,
             );
-            if (conflict) throw conflict;
+            const spending = { ...current.spending };
+            for (const cost of applied.cost)
+                spending[cost.id] = (spending[cost.id] ?? 0) + cost.amount;
+            setItem(applied.item, label, spending, current.actions + applied.actions);
+            if (applied.error) throw new Error(applied.error);
         });
+    }
+    function apply() {
+        emulate({ kind: "apply", method: project.method }, engine.methodName(project.method));
     }
     function run(type: "calculate" | "sample" | "process" | "emulate-process") {
         safely(() => {
@@ -425,6 +428,20 @@ export function CraftingWorkbench({
                 className={preferences.compact ? "space-y-3" : "space-y-6"}
                 data-compact={preferences.compact}
             >
+                {editing && (
+                    <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded border bg-background p-3">
+                        <p className="text-sm text-muted-foreground">
+                            Apply the prepared item as a purchase, then enter its price in the
+                            graph.
+                        </p>
+                        <Button
+                            disabled={editing.busy || busy}
+                            onClick={() => editing.onApply(project.item)}
+                        >
+                            {editing.busy ? "Applying item…" : "Apply item to purchase"}
+                        </Button>
+                    </div>
+                )}
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <div>
                         <p className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -447,22 +464,61 @@ export function CraftingWorkbench({
                             ["calculate", "Calculate"],
                             ["simulate", "Simulate"],
                             ["emulate", "Emulate"],
+                            ["projects", "Projects"],
                         ] as const
-                    ).map(([value, label]) => (
-                        <Link
-                            key={value}
-                            to={`/${gameNumber}/crafting/${value}`}
-                            aria-current={mode === value ? "page" : undefined}
-                            className={`border-b-2 px-5 py-3 text-sm font-medium ${mode === value ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-                        >
-                            {label}
-                        </Link>
-                    ))}
+                    )
+                        .filter(([value]) => !isolated || value !== "projects")
+                        .map(([value, label]) =>
+                            isolated ? (
+                                <Button
+                                    key={value}
+                                    variant={mode === value ? "default" : "ghost"}
+                                    aria-pressed={mode === value}
+                                    onClick={() => setEditorMode(value)}
+                                >
+                                    {label}
+                                </Button>
+                            ) : (
+                                <Link
+                                    key={value}
+                                    to={`/${gameNumber}/crafting/${value}`}
+                                    aria-current={mode === value ? "page" : undefined}
+                                    className={`border-b-2 px-5 py-3 text-sm font-medium ${mode === value ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                                >
+                                    {label}
+                                </Link>
+                            ),
+                        )}
                 </nav>
+                {!isolated && (
+                    <SendItemToProject
+                        catalog={catalog}
+                        item={project.item}
+                        price={
+                            project.baseCost === undefined
+                                ? null
+                                : {
+                                      amount: project.baseCost,
+                                      currency: "chaos",
+                                      source: "manual",
+                                      confidence: null,
+                                  }
+                        }
+                    />
+                )}
+                {!isolated && !useProcess && (
+                    <SendMethodToProject catalog={catalog} project={project} />
+                )}
                 <DisplaySettings
                     value={preferences}
                     onChange={setPreferences}
                     storageError={storageError}
+                />
+                <NnnEssences
+                    engine={engine}
+                    item={project.item}
+                    prices={project.prices}
+                    onSelect={(id) => setProject({ ...project, method: { kind: "essence", id } })}
                 />
                 {catalog.game === "poe2" ? (
                     <p className="rounded border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
@@ -510,7 +566,11 @@ export function CraftingWorkbench({
                                         const next = initialProject(engine);
                                         restore({
                                             ...next,
-                                            item: engine.createItem(baseId, project.item.level),
+                                            item: editCraftingStartingItem(engine, {
+                                                kind: "create",
+                                                baseId,
+                                                level: project.item.level,
+                                            }),
                                             prices: project.prices,
                                             seed: project.seed,
                                         });
@@ -620,12 +680,12 @@ export function CraftingWorkbench({
                                                 onChange={(event) =>
                                                     safely(() =>
                                                         setItem(
-                                                            setCraftingFlag(
-                                                                engine,
-                                                                project.item,
-                                                                key,
-                                                                event.target.checked,
-                                                            ),
+                                                            editCraftingStartingItem(engine, {
+                                                                kind: "flag",
+                                                                item: project.item,
+                                                                flag: key,
+                                                                enabled: event.target.checked,
+                                                            }),
                                                             `Edit ${label.toLowerCase()} state`,
                                                         ),
                                                     )
@@ -745,77 +805,29 @@ export function CraftingWorkbench({
                             engine={engine}
                             item={project.item}
                             onSelect={(index) =>
-                                safely(() =>
-                                    setItem(
-                                        engine.selectUnrevealed(project.item, index),
-                                        "Select unrevealed affix",
-                                    ),
+                                emulate(
+                                    { kind: "select-unrevealed", index },
+                                    "Select unrevealed affix",
                                 )
                             }
                             onReveal={(omens) =>
-                                safely(() => {
-                                    const current = history[cursor]!;
-                                    const revealed = engine.prepareReveal(
-                                        project.item,
-                                        { kind: "reveal", preferred: [], omens },
-                                        seededRandom(project.seed + current.actions),
-                                    );
-                                    const spending = { ...current.spending };
-                                    for (const cost of revealed.cost)
-                                        spending[cost.id] = (spending[cost.id] ?? 0) + cost.amount;
-                                    setItem(
-                                        revealed.item,
-                                        "Revealed choices",
-                                        spending,
-                                        current.actions + 1,
-                                    );
-                                })
+                                emulate({ kind: "prepare-reveal", omens }, "Revealed choices")
                             }
                             onReroll={() =>
-                                safely(() =>
-                                    setItem(
-                                        engine.rerollReveal(
-                                            project.item,
-                                            seededRandom(project.seed + history[cursor]!.actions),
-                                        ),
-                                        "Rerolled reveal choices",
-                                        history[cursor]!.spending,
-                                        history[cursor]!.actions + 1,
-                                    ),
-                                )
+                                emulate({ kind: "reroll-reveal" }, "Rerolled reveal choices")
                             }
                             onChoose={(id) =>
-                                safely(() =>
-                                    setItem(
-                                        engine.chooseRevealed(
-                                            project.item,
-                                            id,
-                                            seededRandom(project.seed + history[cursor]!.actions),
-                                        ),
-                                        "Chose revealed modifier",
-                                        history[cursor]!.spending,
-                                        history[cursor]!.actions + 1,
-                                    ),
-                                )
+                                emulate({ kind: "choose-revealed", id }, "Chose revealed modifier")
                             }
                         />
                         <AllflameCopies
                             engine={engine}
                             item={project.item}
                             onChoose={(index) =>
-                                safely(() => {
-                                    const selected = engine.chooseAllflame(project.item, index);
-                                    const current = history[cursor]!;
-                                    const spending = { ...current.spending };
-                                    for (const cost of project.item.allflameCost!)
-                                        spending[cost.id] = (spending[cost.id] ?? 0) + cost.amount;
-                                    setItem(
-                                        selected,
-                                        `Kept Allflame copy ${index + 1}`,
-                                        spending,
-                                        current.actions + 1,
-                                    );
-                                })
+                                emulate(
+                                    { kind: "choose-allflame", index },
+                                    `Kept Allflame copy ${index + 1}`,
+                                )
                             }
                         />
                         <PassiveEditor
@@ -824,7 +836,11 @@ export function CraftingWorkbench({
                             onSelect={(id) =>
                                 safely(() =>
                                     setItem(
-                                        engine.setStartingPassive(project.item, id),
+                                        editCraftingStartingItem(engine, {
+                                            kind: "passive",
+                                            item: project.item,
+                                            id,
+                                        }),
                                         "Set allocated passive",
                                     ),
                                 )
@@ -902,10 +918,11 @@ export function CraftingWorkbench({
                                     onClick={() =>
                                         safely(() =>
                                             setItem(
-                                                engine.createItem(
-                                                    project.item.baseId,
-                                                    project.item.level,
-                                                ),
+                                                editCraftingStartingItem(engine, {
+                                                    kind: "create",
+                                                    baseId: project.item.baseId,
+                                                    level: project.item.level,
+                                                }),
                                                 "Reset item",
                                                 {},
                                                 0,
@@ -1067,12 +1084,13 @@ export function CraftingWorkbench({
                             onAdd={(id, source) =>
                                 safely(() => {
                                     setItem(
-                                        engine.addStartingMod(
-                                            project.item,
+                                        editCraftingStartingItem(engine, {
+                                            kind: "add-mod",
+                                            item: project.item,
                                             id,
-                                            seededRandom(project.seed),
+                                            seed: project.seed,
                                             source,
-                                        ),
+                                        }),
                                     );
                                 })
                             }
@@ -1483,22 +1501,26 @@ export function CraftingWorkbench({
                 />
                 <details className="rounded-lg border border-border bg-card p-4">
                     <summary className="cursor-pointer font-medium">Save, load, and export</summary>
-                    <label className="mt-4 flex items-center gap-2 text-sm">
-                        <input
-                            type="checkbox"
-                            checked={autoSave}
-                            onChange={(event) => {
-                                setAutoSave(event.target.checked);
-                                setDraftReady(true);
-                            }}
-                        />
-                        Automatically save this draft
-                    </label>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        Restores this item and crafting setup for this game and build. History,
-                        spending and results start fresh after a reload. Turning this off removes
-                        the automatic draft; named projects are kept.
-                    </p>
+                    {!isolated && (
+                        <>
+                            <label className="mt-4 flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={autoSave}
+                                    onChange={(event) => {
+                                        setAutoSave(event.target.checked);
+                                        setDraftReady(true);
+                                    }}
+                                />
+                                Automatically save this draft
+                            </label>
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                Restores this item and crafting setup for this game and build.
+                                History, spending and results start fresh after a reload. Turning
+                                this off removes the automatic draft; named projects are kept.
+                            </p>
+                        </>
+                    )}
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                         <div className="space-y-3">
                             <label className="block space-y-1 text-sm">

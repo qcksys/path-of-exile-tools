@@ -189,6 +189,12 @@ importers:
       '@planetscale/database':
         specifier: ^1.20.1
         version: 1.20.1
+      '@poe-tools/item-query':
+        specifier: workspace:*
+        version: link:../../packages/poe-item-query
+      '@poe-tools/market':
+        specifier: workspace:*
+        version: link:../../packages/poe-market
       '@qcksys/drizzle-extensions':
         specifier: ^0.3.0
         version: 0.3.0(drizzle-orm@1.0.0-beta.21(@cloudflare/workers-types@4.20260317.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.20.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.9(@azure/core-client@1.10.1))(@types/pg@8.15.6)(better-sqlite3@12.9.0)(bun-types@1.3.11)(mssql@11.0.1(@azure/core-client@1.10.1))(mysql2@3.24.5(@types/node@24.12.2))(valibot@1.3.1(typescript@5.9.3))(zod@4.3.6))(react@19.2.5)
@@ -454,6 +460,41 @@ importers:
         specifier: 'catalog:'
         version: 1.0.0(@opentelemetry/api@1.9.0)(@types/node@24.12.2)(@vitest/ui@5.0.1(vitest@5.0.1))(esbuild@0.27.7)(jiti@2.6.1)(jsdom@29.0.2(@noble/hashes@2.2.0))(msw@2.13.5(@types/node@24.12.2)(typescript@5.9.3))(tsx@4.21.0)(typescript@5.9.3)(yaml@2.9.1)
 
+  packages/poe-item-query:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 4.3.6
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.12.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.0.0(@opentelemetry/api@1.9.0)(@types/node@24.12.2)(@vitest/ui@5.0.1(vitest@5.0.1))(esbuild@0.27.7)(jiti@2.6.1)(jsdom@29.0.2(@noble/hashes@2.2.0))(msw@2.13.5(@types/node@24.12.2)(typescript@5.9.3))(tsx@4.21.0)(typescript@5.9.3)(yaml@2.9.1)
+
+  packages/poe-market:
+    dependencies:
+      '@poe-tools/item-query':
+        specifier: workspace:*
+        version: link:../poe-item-query
+      zod:
+        specifier: 'catalog:'
+        version: 4.3.6
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.12.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vite-plus:
+        specifier: 'catalog:'
+        version: 1.0.0(@opentelemetry/api@1.9.0)(@types/node@24.12.2)(@vitest/ui@5.0.1(vitest@5.0.1))(esbuild@0.27.7)(jiti@2.6.1)(jsdom@29.0.2(@noble/hashes@2.2.0))(msw@2.13.5(@types/node@24.12.2)(typescript@5.9.3))(tsx@4.21.0)(typescript@5.9.3)(yaml@2.9.1)
+
   packages/poe-stash-ingest:
     dependencies:
       '@duckdb/node-api':
@@ -465,6 +506,12 @@ importers:
       '@poe-tools/cli':
         specifier: workspace:*
         version: link:../poe-cli
+      '@poe-tools/item-query':
+        specifier: workspace:*
+        version: link:../poe-item-query
+      '@poe-tools/market':
+        specifier: workspace:*
+        version: link:../poe-market
       '@varlock/1password-plugin':
         specifier: 'catalog:'
         version: 2.0.4(varlock@1.21.1)
@@ -7737,7 +7784,7 @@ snapshots:
   '@jridgewell/trace-mapping@0.3.31':
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
 
   '@jridgewell/trace-mapping@0.3.9':
     dependencies:

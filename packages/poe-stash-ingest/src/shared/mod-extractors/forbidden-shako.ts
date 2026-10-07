@@ -1,4 +1,5 @@
 import type { Item } from "@poe-tools/api-client";
+import { isUniqueItem } from "#src/shared/capture.ts";
 import { explicitModLines } from "#src/shared/mod-extractors/lines.ts";
 import type { ModExtractor, ModSignature } from "#src/shared/mod-extractors/types.ts";
 
@@ -9,7 +10,7 @@ export const forbiddenShakoExtractor: ModExtractor = {
     kind: "forbidden-shako",
     value: (signature) => `${signature.skill}@${signature.level}`,
     matches(item: Item): boolean {
-        return item.frameType === 3 && item.identified && item.name === "Forbidden Shako";
+        return isUniqueItem(item) && item.identified && item.name === "Forbidden Shako";
     },
     extract(item: Item): ModSignature | null {
         // Multiple support mods can roll; we take the first as the signature.

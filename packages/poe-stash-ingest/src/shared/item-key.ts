@@ -1,4 +1,5 @@
 import type { Item } from "@poe-tools/api-client";
+import { isUniqueItem } from "#src/shared/capture.ts";
 import { type ModSignature, signatureValue } from "#src/shared/mod-extractors/index.ts";
 
 export interface SignatureBreakout {
@@ -37,7 +38,7 @@ export function itemKey(item: Item, iconAsset?: string | null): string {
     if (!item.identified) {
         return `unid:${iconAsset ?? item.baseType}`;
     }
-    if (item.frameType === 3 && item.name) {
+    if (isUniqueItem(item) && item.name) {
         return item.name;
     }
     return item.baseType;

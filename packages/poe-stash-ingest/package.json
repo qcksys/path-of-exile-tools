@@ -13,6 +13,7 @@
     },
     "scripts": {
         "env:check": "varlock load",
+        "docker:up": "varlock run -- docker compose -f ../../compose.yaml up -d --build ingest",
         "ps": "node src/ps/cli.ts",
         "cx": "node src/cx/cli.ts",
         "typecheck": "tsc --noEmit"
@@ -21,6 +22,8 @@
         "@duckdb/node-api": "^1.4.0-r.1",
         "@poe-tools/api-client": "workspace:*",
         "@poe-tools/cli": "workspace:*",
+        "@poe-tools/item-query": "workspace:*",
+        "@poe-tools/market": "workspace:*",
         "@varlock/1password-plugin": "catalog:",
         "varlock": "catalog:"
     },

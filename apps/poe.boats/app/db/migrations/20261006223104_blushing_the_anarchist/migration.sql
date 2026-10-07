@@ -1,0 +1,1 @@
+ALTER TABLE `qsPoeBoats__stash_cohort` ADD `baseTypes` json;

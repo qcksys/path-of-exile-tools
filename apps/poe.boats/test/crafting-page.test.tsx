@@ -2,10 +2,11 @@
 /** biome-ignore-all lint/style/useNamingConvention: Mocked React exports use PascalCase. */
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { afterEach, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { CraftingPage } from "~/routes/crafting/page";
 import type { CraftingCatalog } from "~/schemas/crafting";
 import { catalog } from "./crafting-fixtures";
+import { stubCraftingWorkers } from "./crafting-worker-fixtures";
 
 vi.mock("~/components/app-header", () => ({ AppHeader: () => null }));
 vi.mock("~/components/app-footer", () => ({
@@ -18,6 +19,7 @@ vi.mock("~/components/crafting/workbench", () => ({
         </div>
     ),
 }));
+beforeEach(() => stubCraftingWorkers());
 afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();

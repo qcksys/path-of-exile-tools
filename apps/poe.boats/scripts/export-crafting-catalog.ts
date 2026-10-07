@@ -279,8 +279,15 @@ export async function exportCraftingCatalog(directory: string, output: string) {
                 .filter((entry) => entry.mods.length > 1),
         },
     });
+    const contents = `${JSON.stringify(catalog)}\n`;
+    try {
+        if ((await readFile(output, "utf8")) === contents) return catalog;
+    } catch (error) {
+        if (!error || typeof error !== "object" || !("code" in error) || error.code !== "ENOENT")
+            throw error;
+    }
     await mkdir(dirname(output), { recursive: true });
-    await writeFile(`${output}.tmp`, `${JSON.stringify(catalog)}\n`);
+    await writeFile(`${output}.tmp`, contents);
     await rename(`${output}.tmp`, output);
     return catalog;
 }

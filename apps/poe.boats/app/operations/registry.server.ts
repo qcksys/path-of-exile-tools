@@ -8,6 +8,15 @@ import { ScarabPricesDataSchema } from "~/schemas/scarab";
 import { SharedSetSchema } from "~/schemas/share";
 import { loadArbitrageMarket } from "~/services/arbitrage.server";
 import { calculatorOperations } from "./calculators";
+import { craftingCloudOperations } from "./crafting-cloud";
+import { craftingGraphOperations } from "./crafting-graph";
+import { craftingItemQueryOperations } from "./crafting-item-queries";
+import { craftingMarketOperations } from "./crafting-market";
+import { craftingMethodProjectOperations } from "./crafting-method-project";
+import { craftingRulesetOperations } from "./crafting-rulesets";
+import { craftingTradeOperations } from "./crafting-trade";
+import { craftingWorkbenchOperations } from "./crafting-workbench";
+import { craftingWorkspaceOperations } from "./crafting-workspace";
 import { idolPlannerOperations } from "./idol-planner";
 import { defineOperation, EmptySchema, OkSchema } from "./operation";
 import { PlannerCommandSchema } from "./planner";
@@ -21,6 +30,7 @@ import {
     UpdateSetSchema,
 } from "./planner-contracts";
 import { preferenceOperations } from "./preferences";
+import { recombinatorCraftingOperations } from "./recombinator-crafting";
 import {
     createSavedSet,
     deleteSavedSet,
@@ -60,6 +70,16 @@ const season = z.object({
 
 export const operations = [
     ...calculatorOperations,
+    ...craftingGraphOperations,
+    ...craftingMethodProjectOperations,
+    ...recombinatorCraftingOperations,
+    ...craftingWorkbenchOperations,
+    ...craftingCloudOperations,
+    ...craftingItemQueryOperations,
+    ...craftingMarketOperations,
+    ...craftingTradeOperations,
+    ...craftingRulesetOperations,
+    ...craftingWorkspaceOperations,
     ...idolPlannerOperations,
     ...preferenceOperations,
     defineOperation({

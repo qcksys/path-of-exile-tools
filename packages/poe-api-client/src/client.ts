@@ -41,6 +41,7 @@ import { buildUserAgent, type UserAgentParts } from "./user-agent.ts";
  * OAuth authorization lives on a different host — see {@link "./oauth.ts"}.
  */
 export const POE_API_BASE_URL = "https://api.pathofexile.com";
+export const POE_EXCHANGE_BASE_URL = "https://web.poecdn.com/api/";
 
 /** Provider for the current OAuth access token. */
 export type TokenProvider = string | (() => string | Promise<string>);
@@ -56,7 +57,7 @@ export interface ClientOptions {
     baseUrl?: string;
     /** Called after every response with parsed rate-limit headers. */
     onRateLimit?: (info: RateLimitInfo) => void;
-    /** Escape hatch: provide a fully custom `ky` instance. `userAgent` and `token` are still applied. */
+    /** Custom `ky` transport. Exchange requests never attach the OAuth token. */
     ky?: KyInstance;
 }
 
@@ -89,7 +90,7 @@ async function resolveToken(token: TokenProvider): Promise<string> {
     return typeof token === "function" ? await token() : token;
 }
 
-function buildKy(options: ClientOptions): KyInstance {
+function buildKy(options: ClientOptions, authenticated = true): KyInstance {
     const userAgent =
         typeof options.userAgent === "string"
             ? options.userAgent
@@ -98,7 +99,7 @@ function buildKy(options: ClientOptions): KyInstance {
     const base =
         options.ky ??
         ky.create({
-            baseUrl: options.baseUrl ?? POE_API_BASE_URL,
+            baseUrl: options.baseUrl ?? (authenticated ? POE_API_BASE_URL : POE_EXCHANGE_BASE_URL),
             headers: {
                 "User-Agent": userAgent,
                 accept: "application/json",
@@ -111,9 +112,15 @@ function buildKy(options: ClientOptions): KyInstance {
         });
 
     return base.extend({
+        ...(!authenticated ? { baseUrl: options.baseUrl ?? POE_EXCHANGE_BASE_URL } : {}),
+        headers: { "User-Agent": userAgent, accept: "application/json" },
         hooks: {
             beforeRequest: [
                 async ({ request }) => {
+                    if (!authenticated) {
+                        request.headers.delete("Authorization");
+                        return;
+                    }
                     const token = await resolveToken(options.token);
                     request.headers.set("Authorization", `Bearer ${token}`);
                 },
@@ -249,7 +256,7 @@ export interface PublicApi {
     stashTabs(params?: { realm?: Realm; id?: string }): Promise<PublicStashPage>;
     /**
      * GET /currency-exchange[/{realm}][/{id}] — currency exchange snapshot.
-     * Scope: `service:cxapi`.
+     * Public CDN endpoint; no OAuth scope or bearer token is required.
      *
      * `id` is a unix timestamp (seconds, hour-aligned) identifying which
      * hourly digest to fetch. The endpoint is purely historical — the
@@ -302,6 +309,7 @@ export interface PoeApiClient {
  */
 export function createClient(options: ClientOptions): PoeApiClient {
     const http = buildKy(options);
+    const exchangeHttp = buildKy(options, false);
     const defaultRealm = options.realm;
 
     const realm = (override?: Realm): Realm | undefined => override ?? defaultRealm;
@@ -507,11 +515,12 @@ export function createClient(options: ClientOptions): PoeApiClient {
                     .json<PublicStashPage>();
             },
             async currencyExchange(params) {
-                return http
+                const exchangeRealm = realm(params?.realm);
+                return exchangeHttp
                     .get(
                         joinPath([
                             "currency-exchange",
-                            params?.realm,
+                            exchangeRealm === "pc" ? undefined : exchangeRealm,
                             params?.id !== undefined ? String(params.id) : undefined,
                         ]),
                     )

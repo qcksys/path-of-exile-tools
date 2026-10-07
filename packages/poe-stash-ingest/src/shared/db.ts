@@ -56,7 +56,39 @@ CREATE INDEX IF NOT EXISTS ps_sale_status ON ps_sale(status);
 CREATE TABLE IF NOT EXISTS pipeline_health (
     id INTEGER PRIMARY KEY, last_poll_at TIMESTAMP NOT NULL, caught_up BOOLEAN NOT NULL
 );
+CREATE TABLE IF NOT EXISTS ps_equipment_listing (
+    account_name VARCHAR NOT NULL,
+    item_id VARCHAR NOT NULL,
+    stash_id VARCHAR NOT NULL,
+    league VARCHAR NOT NULL,
+    revision VARCHAR NOT NULL,
+    matches JSON NOT NULL,
+    unknown_matches JSON NOT NULL,
+    price_amount DOUBLE,
+    price_currency VARCHAR,
+    raw_item JSON NOT NULL,
+    last_seen_at TIMESTAMP NOT NULL,
+    removed_at TIMESTAMP,
+    PRIMARY KEY (account_name, item_id)
+);
+CREATE INDEX IF NOT EXISTS ps_equipment_stash ON ps_equipment_listing(stash_id);
+CREATE TABLE IF NOT EXISTS ps_equipment_hour AS
+    SELECT * EXCLUDE (raw_item, removed_at),
+        epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
+    FROM ps_equipment_listing WHERE FALSE;
+CREATE UNIQUE INDEX IF NOT EXISTS ps_equipment_hour_pk
+    ON ps_equipment_hour(account_name, item_id, revision, observed_hour);
+CREATE INDEX IF NOT EXISTS ps_equipment_hour_time ON ps_equipment_hour(observed_hour, league);
+CREATE TABLE IF NOT EXISTS ps_equipment_cohort_hour (
+    revision VARCHAR NOT NULL, league VARCHAR NOT NULL, hour BIGINT NOT NULL,
+    cohort_id VARCHAR NOT NULL, changed_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (revision, league, hour, cohort_id)
+);
 CREATE TABLE IF NOT EXISTS pipeline_config (key VARCHAR PRIMARY KEY, value VARCHAR NOT NULL);
+CREATE TABLE IF NOT EXISTS ps_equipment_cohort (
+    revision VARCHAR NOT NULL, cohort_id VARCHAR NOT NULL, definition JSON NOT NULL,
+    PRIMARY KEY (revision, cohort_id)
+);
 
 CREATE TABLE IF NOT EXISTS icon_basemap (
     icon_asset VARCHAR PRIMARY KEY,

@@ -1,0 +1,91 @@
+{
+    "source": "https://api.pathofexile.com/public-stash-tabs",
+    "observedAt": "2026-10-07T10:37:21.547Z",
+    "cursor": "3278697332-3203624673-3129327201-3479175554-3367790506",
+    "note": "Sanitized attribute excerpts, not complete listings. Seller, stash, item IDs, names, notes and icons are omitted. No absent identity or tier fields were added.",
+    "items": [
+        {
+            "baseType": "Vaal Gauntlets",
+            "ilvl": 85,
+            "rarity": "Rare",
+            "identified": true,
+            "fractured": true,
+            "explicitMods": [
+                { "description": "+31 to Armour" },
+                { "description": "101% increased Armour" },
+                { "description": "+20 to maximum Life" },
+                { "description": "Regenerate 1.7 Life per second" },
+                { "description": "+14% to Lightning Resistance" },
+                { "description": "9% increased Stun and Block Recovery" },
+                { "description": "+47% to Cold Resistance", "flags": { "fractured": true } }
+            ],
+            "extended": { "prefixes": 3, "suffixes": 3 }
+        },
+        {
+            "baseType": "Helical Ring",
+            "ilvl": 85,
+            "rarity": "Rare",
+            "identified": true,
+            "fractured": true,
+            "explicitMods": [
+                { "description": "Grants Level 20 Aspect of Lunaris Skill" },
+                { "description": "+93 to Strength" },
+                { "description": "+52% to Chaos Resistance" },
+                { "description": "+55 to maximum Life", "flags": { "crafted": true } },
+                { "description": "+63% to Lightning Resistance", "flags": { "fractured": true } }
+            ],
+            "extended": { "prefixes": 1, "suffixes": 4 }
+        },
+        {
+            "baseType": "Torturer's Mask",
+            "ilvl": 85,
+            "rarity": "Rare",
+            "identified": true,
+            "fractured": true,
+            "explicitMods": [
+                { "description": "+22 to maximum Energy Shield" },
+                { "description": "+162 to maximum Life" },
+                { "description": "+73 to maximum Mana" },
+                { "description": "+35% to Chaos Resistance" },
+                {
+                    "description": "Trigger Socketed Spells when you Focus, with a 0.25 second Cooldown",
+                    "flags": { "crafted": true }
+                },
+                {
+                    "description": "+14% chance to Suppress Spell Damage",
+                    "flags": { "fractured": true }
+                }
+            ],
+            "extended": { "prefixes": 3, "suffixes": 3 }
+        },
+        {
+            "baseType": "Two-Stone Ring",
+            "ilvl": 85,
+            "rarity": "Magic",
+            "identified": true,
+            "fractured": true,
+            "explicitMods": [
+                { "description": "+46 to maximum Life" },
+                { "description": "+53 to Dexterity", "flags": { "fractured": true } }
+            ],
+            "extended": { "prefixes": 1, "suffixes": 1 }
+        },
+        {
+            "baseType": "Conqueror's Helmet",
+            "ilvl": 85,
+            "rarity": "Rare",
+            "identified": true,
+            "fractured": true,
+            "explicitMods": [
+                { "description": "+561 to Accuracy Rating" },
+                { "description": "+41 to Armour" },
+                { "description": "34% increased Armour" },
+                { "description": "+25 to maximum Life" },
+                { "description": "Regenerate 13 Life per second" },
+                { "description": "15% increased Stun and Block Recovery" },
+                { "description": "+59 to Intelligence", "flags": { "fractured": true } }
+            ],
+            "extended": { "prefixes": 2, "suffixes": 3 }
+        }
+    ]
+}

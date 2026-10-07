@@ -1,0 +1,110 @@
+{
+    "source": "https://api.pathofexile.com/public-stash-tabs",
+    "observedAt": "2026-10-07T11:28:29.317Z",
+    "cursor": "3278709839-3203629746-3129331984-3479181466-3367795994",
+    "note": "Sanitized modifier-context projections. Source properties, implicit/explicit modifiers, affix counts and relevant item-state flags are preserved when present. Seller, stash, item IDs, names, prices and icons are omitted. propertiesPresent records actual source-field presence, not an inferred zero quality.",
+    "items": [
+        {
+            "propertiesPresent": false,
+            "item": {
+                "baseType": "Onyx Amulet",
+                "rarity": "Rare",
+                "ilvl": 75,
+                "identified": true,
+                "implicitMods": [{ "description": "+13 to all Attributes" }],
+                "explicitMods": [
+                    { "description": "Adds 1 to 2 Physical Damage to Attacks" },
+                    { "description": "19% increased Fire Damage" },
+                    { "description": "+12% to Global Critical Strike Multiplier" },
+                    { "description": "+29 to maximum Mana" },
+                    { "description": "20% increased Rarity of Items found" },
+                    { "description": "+1 to Level of all Lightning Skill Gems" }
+                ],
+                "extended": { "prefixes": 3, "suffixes": 3 }
+            }
+        },
+        {
+            "propertiesPresent": true,
+            "item": {
+                "baseType": "Vermillion Ring",
+                "rarity": "Rare",
+                "ilvl": 85,
+                "identified": true,
+                "properties": [
+                    {
+                        "name": "Quality (Life and Mana Modifiers)",
+                        "values": [["+20%", 1]],
+                        "displayMode": 0,
+                        "type": 6
+                    }
+                ],
+                "implicitMods": [{ "description": "8% increased maximum Life" }],
+                "explicitMods": [
+                    { "description": "+37 to Strength" },
+                    { "description": "+117 to maximum Life" },
+                    { "description": "Regenerate 33.6 Life per second" },
+                    { "description": "+38% to Fire Resistance" },
+                    {
+                        "description": "Regenerate 30 Life per second",
+                        "flags": { "crafted": true }
+                    },
+                    { "description": "+50 to maximum Mana", "flags": { "crafted": true } }
+                ],
+                "extended": { "prefixes": 2, "suffixes": 3 }
+            }
+        },
+        {
+            "propertiesPresent": false,
+            "item": {
+                "baseType": "Ruby Ring",
+                "rarity": "Rare",
+                "ilvl": 72,
+                "identified": true,
+                "fractured": true,
+                "implicitMods": [{ "description": "+29% to Fire Resistance" }],
+                "explicitMods": [
+                    { "description": "+14 to maximum Energy Shield" },
+                    { "description": "+22% to Fire Resistance" },
+                    { "description": "0.27% of Physical Attack Damage Leeched as Mana" },
+                    { "description": "+44% to Cold Resistance", "flags": { "fractured": true } }
+                ],
+                "extended": { "prefixes": 1, "suffixes": 3 }
+            }
+        },
+        {
+            "propertiesPresent": true,
+            "item": {
+                "baseType": "Manifold Ring",
+                "rarity": "Rare",
+                "ilvl": 84,
+                "identified": true,
+                "fractured": true,
+                "properties": [
+                    {
+                        "name": "Quality (Prefix Modifiers)",
+                        "values": [["+20%", 1]],
+                        "displayMode": 0,
+                        "type": 6
+                    }
+                ],
+                "implicitMods": [
+                    { "description": "+1 Prefix Modifier allowed" },
+                    { "description": "-2 Suffix Modifiers allowed" },
+                    { "description": "Implicit Modifiers Cannot Be Changed" },
+                    { "description": "50% increased Prefix Modifier magnitudes" }
+                ],
+                "explicitMods": [
+                    { "description": "+161 to maximum Life" },
+                    { "description": "Gain 68 Life per Enemy Killed" },
+                    { "description": "68% increased Elemental Damage with Attack Skills" },
+                    { "description": "28% increased Damage", "flags": { "crafted": true } },
+                    {
+                        "description": "Adds 18 to 28 Physical Damage to Attacks",
+                        "flags": { "fractured": true }
+                    }
+                ],
+                "extended": { "prefixes": 4, "suffixes": 1 }
+            }
+        }
+    ]
+}

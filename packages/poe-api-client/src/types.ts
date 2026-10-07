@@ -165,7 +165,10 @@ export interface Item {
     isRelic?: boolean;
     foilVariation?: number;
     replica?: boolean;
-    frameType: number;
+    /** Deprecated by the API; retained for historical payloads. */
+    frameType?: number;
+    /** Optional here so historical payloads remain replayable. */
+    frameTypeId?: string;
     artFilename?: string;
     hybrid?: {
         isVaalGem?: boolean;
@@ -493,9 +496,10 @@ export interface PublicStashPage {
  */
 export interface CurrencyMarket {
     league: string;
-    /** Common currency code for each pair separated by a pipe. Example: `chaos|divine`. */
+    /** Canonical base item IDs separated by a pipe, in upstream hash order. */
     market_id: string;
-    /** The keys are the market currencies (e.g. `"chaos"`). */
+    market_pair?: string[];
+    /** Keys are canonical base item IDs, including exchangeable essences and other items. */
     volume_traded: Record<string, number>;
     lowest_stock: Record<string, number>;
     highest_stock: Record<string, number>;
