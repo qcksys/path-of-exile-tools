@@ -879,10 +879,24 @@ describe("transport parity", () => {
         }
     });
 
+    it("serves the Scalar reference without requiring an operation runtime", async () => {
+        const response = await api.request("https://poe.boats/api/docs");
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain("text/html");
+        const html = await response.text();
+        expect(html).toContain("<title>API Reference · POE.BOATS</title>");
+        expect(html).toContain("https://cdn.jsdelivr.net/npm/@scalar/api-reference");
+        expect(html).toContain('"url": "/api/openapi.json"');
+    });
+
     it("publishes every operation with complete input and output schemas", async () => {
         const response = await api.request("https://poe.boats/api/openapi.json");
         expect(response.status).toBe(200);
-        const document = DocumentSchema.parse(await response.json());
+        const source = await response.text();
+        expect(source.length).toBeLessThan(4_000_000);
+        expect(source.includes('"$ref":"#/components/schemas/ItemQuery"')).toBe(true);
+        expect(source.includes('"$ref":"#/components/schemas/CraftingMethod"')).toBe(true);
+        const document = DocumentSchema.parse(JSON.parse(source));
         for (const path of [
             "/api/v1/crafting/workbench/item",
             "/api/v1/crafting/workbench/item-text",

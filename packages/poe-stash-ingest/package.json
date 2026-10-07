@@ -19,7 +19,7 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "@duckdb/node-api": "^1.4.0-r.1",
+        "@duckdb/node-api": "catalog:",
         "@poe-tools/api-client": "workspace:*",
         "@poe-tools/cli": "workspace:*",
         "@poe-tools/item-query": "workspace:*",

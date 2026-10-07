@@ -21,12 +21,12 @@
         "@poe-tools/api-client": "workspace:*",
         "@poe-tools/cli": "workspace:*",
         "@varlock/1password-plugin": "catalog:",
-        "better-sqlite3": "^12.4.1",
+        "better-sqlite3": "catalog:",
         "drizzle-orm": "catalog:",
         "varlock": "catalog:"
     },
     "devDependencies": {
-        "@types/better-sqlite3": "^7.6.12",
+        "@types/better-sqlite3": "catalog:",
         "drizzle-kit": "catalog:",
         "typescript": "catalog:"
     }
