@@ -1,5 +1,10 @@
 # Browser coverage
 
+CI runs browser tests in a separate job from unit and MySQL tests. Both must succeed for the
+`validate` check and deployment gate to pass. Each job retains a 20-minute limit; the browser step
+has a 15-minute limit to leave time for failure artifacts. The line reporter identifies each test
+as it runs, and screenshots/traces are uploaded on failure or cancellation when available.
+
 Run `vp exec playwright test` from the app directory. Playwright builds the application and starts the
 real Cloudflare runtime through `test/e2e/server.ts`, using validated inert `.env.test` values and
 Varlock's serialized environment binding. The test server disables Wrangler's inspector explicitly:
