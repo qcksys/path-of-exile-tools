@@ -26,7 +26,7 @@ describe.each(["poe1", "poe2"] as const)("%s reveal miss control", (game) => {
             screen.getByRole("checkbox", {
                 name: "Keep modifier unrevealed when no preference matches",
             });
-        expect(control()).toHaveProperty("checked", false);
+        expect(control().getAttribute("aria-checked")).toBe(String(false));
         fireEvent.click(control());
         expect(onChange).toHaveBeenLastCalledWith({ ...value, skipOnMiss: true });
         view.rerender(
@@ -37,7 +37,7 @@ describe.each(["poe1", "poe2"] as const)("%s reveal miss control", (game) => {
                 onChange={onChange}
             />,
         );
-        expect(control()).toHaveProperty("checked", true);
+        expect(control().getAttribute("aria-checked")).toBe(String(true));
         expect(screen.getByText(/Offered choices are retained/)).toBeDefined();
         fireEvent.click(control());
         expect(onChange).toHaveBeenLastCalledWith({ ...value, skipOnMiss: false });

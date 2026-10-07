@@ -9,6 +9,7 @@ import { craftingWorkspaceSchema } from "../../../app/schemas/crafting-workspace
 import { engine } from "../../crafting-fixtures";
 import { firstItem, secondItem } from "../../crafting-graph-fixtures";
 import { fossilOptimizationFixture, workbenchProject } from "../../crafting-workbench-fixtures";
+import { selectValue } from "./control-helpers";
 
 declare global {
     interface Window {
@@ -60,11 +61,12 @@ test("partitioned fossil workers agree with HTTP and hand the chosen recipe to a
                 .getByRole("checkbox", { name: fossil.name, exact: true })
                 .uncheck();
     }
-    await page
-        .getByRole("combobox", { name: "Maximum resonator sockets", exact: true })
-        .selectOption("2");
+    await selectValue(
+        page.getByRole("combobox", { name: "Maximum resonator sockets", exact: true }),
+        "2",
+    );
     await page.getByRole("spinbutton", { name: "Trials per combination", exact: true }).fill("100");
-    await page.getByRole("combobox", { name: "Optimizer workers", exact: true }).selectOption("2");
+    await selectValue(page.getByRole("combobox", { name: "Optimizer workers", exact: true }), "2");
     await page.getByRole("button", { name: "Compare fossils", exact: true }).click();
     await expect.poll(() => page.evaluate(() => window.craftingResults.length)).toBe(2);
     const partitions = (await page.evaluate(() => window.craftingResults)).map((result) =>

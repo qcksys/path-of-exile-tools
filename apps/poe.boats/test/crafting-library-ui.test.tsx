@@ -10,6 +10,7 @@ import { CraftingWorkbench } from "~/components/crafting/workbench";
 import { CraftingEngine, seededRandom } from "~/lib/crafting-engine";
 import { validateProject } from "~/lib/crafting-simulation";
 import { craftingCatalogSchema, craftingProjectSchema } from "~/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 import { baseId, catalog, currency, engine } from "./crafting-fixtures";
 
 const poe2 = craftingCatalogSchema.parse(
@@ -19,7 +20,7 @@ const key = (data = catalog) => `poe-boats:crafting:${data.game}:${data.patch}`;
 const libraryKey = (data = catalog) => `${key(data)}:library:v1`;
 const button = (name: string) => screen.getByText(name, { selector: "button" });
 function shared() {
-    fireEvent.change(screen.getByLabelText("Inventory storage"), { target: { value: "library" } });
+    changeControl(screen.getByLabelText("Inventory storage"), { target: { value: "library" } });
 }
 function mountWorkbench(data = catalog, mode = "emulate") {
     const view = render(
@@ -27,12 +28,12 @@ function mountWorkbench(data = catalog, mode = "emulate") {
             <CraftingWorkbench catalog={data} mode={mode} />
         </MemoryRouter>,
     );
-    fireEvent.change(screen.getByLabelText("Search modifiers"), { target: { value: "Prime" } });
+    changeControl(screen.getByLabelText("Search modifiers"), { target: { value: "Prime" } });
     return view;
 }
 async function choose(label: string, name: string) {
     const picker = screen.getByRole("combobox", { name: label });
-    fireEvent.change(picker, { target: { value: name } });
+    changeControl(picker, { target: { value: name } });
     fireEvent.keyDown(picker, { key: "ArrowDown" });
     fireEvent.click(await screen.findByRole("option", { name }));
 }
@@ -108,7 +109,7 @@ describe.each([catalog, poe2])("$game library controls", (data) => {
     }
     async function upload(input: unknown, size = 100) {
         await act(async () =>
-            fireEvent.change(screen.getByLabelText("Import crafting library"), {
+            changeControl(screen.getByLabelText("Import crafting library"), {
                 target: {
                     files: [
                         {
@@ -135,10 +136,10 @@ describe.each([catalog, poe2])("$game library controls", (data) => {
         fireEvent.click(button("Replace library"));
         expect(JSON.parse(localStorage.getItem(libraryKey(data))!)).toEqual(library);
         fireEvent.click(screen.getByText("Item inventory (1)"));
-        fireEvent.change(screen.getByLabelText("Inventory tab"), { target: { value: "Keep" } });
+        changeControl(screen.getByLabelText("Inventory tab"), { target: { value: "Keep" } });
         fireEvent.click(screen.getByRole("button", { name: "Load Shared snapshot" }));
         expect(loaded.mock.lastCall).toEqual([item, "Shared snapshot"]);
-        fireEvent.change(screen.getByLabelText("Inventory storage"), {
+        changeControl(screen.getByLabelText("Inventory storage"), {
             target: { value: "project" },
         });
         fireEvent.click(screen.getByText("Item inventory (1)"));
@@ -168,16 +169,16 @@ describe.each([catalog, poe2])("$game library controls", (data) => {
         vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
             throw new Error("Full");
         });
-        fireEvent.change(screen.getByLabelText("Inventory item name"), {
+        changeControl(screen.getByLabelText("Inventory item name"), {
             target: { value: "Retry me" },
         });
         fireEvent.click(button("Store current item"));
-        expect(screen.getByLabelText("Inventory item name")).toHaveProperty("value", "Retry me");
+        expectControlValue(screen.getByLabelText("Inventory item name"), "Retry me");
         fireEvent.click(screen.getByText("Manage inventory tabs"));
-        fireEvent.change(screen.getByLabelText("Tab name"), { target: { value: "Keep" } });
+        changeControl(screen.getByLabelText("Tab name"), { target: { value: "Keep" } });
         fireEvent.click(button("Add tab"));
-        expect(screen.getByLabelText("Tab name")).toHaveProperty("value", "Keep");
-        expect(screen.getByLabelText("Inventory tab")).toHaveProperty("value", "");
+        expectControlValue(screen.getByLabelText("Tab name"), "Keep");
+        expectControlValue(screen.getByLabelText("Inventory tab"), "");
         expect(screen.getByText("Item inventory (0)")).toBeDefined();
         expect(localStorage.getItem(libraryKey(data))).toBeNull();
     });
@@ -234,18 +235,18 @@ describe.each([catalog, poe2])("$game library controls", (data) => {
         const view = mountWorkbench(data);
         shared();
         fireEvent.click(screen.getByText("Item inventory (0)"));
-        fireEvent.change(screen.getByLabelText("Inventory item name"), {
+        changeControl(screen.getByLabelText("Inventory item name"), {
             target: { value: "Armour" },
         });
         fireEvent.click(button("Store current item"));
         const stored = localStorage.getItem(libraryKey(data));
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "boots" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "boots" } });
         fireEvent.click(button("Load project"));
-        expect(screen.getByLabelText("Base quality (%)")).toHaveProperty("value", "0");
+        expectControlValue(screen.getByLabelText("Base quality (%)"), "0");
         expect(localStorage.getItem(libraryKey(data))).toBe(stored);
         fireEvent.click(screen.getByRole("button", { name: "Load Armour" }));
-        expect(screen.getByLabelText("Base quality (%)")).toHaveProperty("value", "12");
+        expectControlValue(screen.getByLabelText("Base quality (%)"), "12");
         expect(JSON.parse(localStorage.getItem(`${key(data)}:draft:v1`)!).inventory).toEqual([]);
         view.unmount();
         mountWorkbench(data);
@@ -290,7 +291,7 @@ it("copies a library donor into the ordinary method and process without dependin
     mountWorkbench(catalog, "simulate");
     const pickers = screen.getAllByLabelText("Donor item");
     expect(pickers).toHaveLength(2);
-    for (const picker of pickers) fireEvent.change(picker, { target: { value: "library:elder" } });
+    for (const picker of pickers) changeControl(picker, { target: { value: "library:elder" } });
     const saved = JSON.parse(localStorage.getItem(`${key()}:draft:v1`)!);
     expect(saved.inventory).toEqual([]);
     expect(saved.method.donor).toMatchObject({
@@ -303,7 +304,7 @@ it("copies a library donor into the ordinary method and process without dependin
         localStorage.removeItem(libraryKey());
         window.dispatchEvent(new StorageEvent("storage", { key: libraryKey() }));
     });
-    expect(screen.getAllByLabelText("Donor item")[0]).toHaveProperty("value", "library:elder");
+    expectControlValue(screen.getAllByLabelText("Donor item")[0], "library:elder");
     expect(validateProject(catalog, saved).method).toEqual(saved.method);
     expect(engine.apply(saved.item, saved.method, seededRandom(42)).item.influences).toEqual([
         0, 1,

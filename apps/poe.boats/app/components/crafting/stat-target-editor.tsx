@@ -1,6 +1,9 @@
 import { useId, useMemo } from "react";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { cleanModText } from "~/lib/crafting-text";
 import type { CraftingItem, CraftingTarget } from "~/schemas/crafting";
@@ -78,36 +81,37 @@ export function StatTargetEditor({
                         <legend className="max-w-full break-words px-1 text-xs">
                             {options.find((option) => option.id === stat.id)?.label ?? stat.id}
                         </legend>
-                        <label className="block space-y-1 text-xs">
+                        <Label className="block space-y-1 text-xs">
                             Count values from
-                            <select
+                            <FormSelect
                                 className={controlClass}
                                 value={stat.scope}
-                                onChange={(event) =>
+                                onValueChange={(selectedValue) =>
                                     onChange({
                                         ...target,
                                         stats: stats.map((entry) =>
                                             entry.id === stat.id
                                                 ? {
                                                       ...entry,
-                                                      scope: event.target
-                                                          .value as typeof stat.scope,
+                                                      scope: selectedValue as typeof stat.scope,
                                                   }
                                                 : entry,
                                         ),
                                     })
                                 }
                             >
-                                <option value="all">Explicit and implicit modifiers</option>
-                                <option value="explicit">Explicit modifiers</option>
-                                <option value="implicit">Implicit modifiers</option>
-                            </select>
-                        </label>
+                                <FormSelectItem value="all">
+                                    Explicit and implicit modifiers
+                                </FormSelectItem>
+                                <FormSelectItem value="explicit">Explicit modifiers</FormSelectItem>
+                                <FormSelectItem value="implicit">Implicit modifiers</FormSelectItem>
+                            </FormSelect>
+                        </Label>
                         <div className="grid grid-cols-2 gap-2">
                             {(["min", "max"] as const).map((bound) => (
-                                <label key={bound} className="space-y-1 text-xs">
+                                <Label key={bound} className="block space-y-1 text-xs">
                                     {bound === "min" ? "Minimum stat value" : "Maximum stat value"}
-                                    <input
+                                    <Input
                                         className={controlClass}
                                         type="number"
                                         step={1}
@@ -130,7 +134,7 @@ export function StatTargetEditor({
                                             })
                                         }
                                     />
-                                </label>
+                                </Label>
                             ))}
                         </div>
                         <p className="text-xs text-muted-foreground">

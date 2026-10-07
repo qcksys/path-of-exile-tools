@@ -5,6 +5,9 @@ import {
 } from "@poe-tools/market";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { bindExchangePrice } from "~/lib/crafting-exchange";
 import {
     type CraftingExchangeResult,
@@ -124,17 +127,19 @@ export function ExchangePricePicker({
                     trades, not current buy offers. Selecting a price enables refresh; editing its
                     amount restores a manual override. Gold and trading time are excluded.
                 </p>
-                <label className="block">
+                <Label className="block">
                     Exchange estimate window
-                    <select
+                    <FormSelect
                         className={graphControl}
                         value={window}
-                        onChange={(event) => setWindow(event.target.value as typeof window)}
+                        onValueChange={(selectedValue) => setWindow(selectedValue as typeof window)}
                     >
-                        <option value="hourly">Latest captured hour</option>
-                        <option value="adaptive-v1">Adaptive: 1, 6 or 24 hours</option>
-                    </select>
-                </label>
+                        <FormSelectItem value="hourly">Latest captured hour</FormSelectItem>
+                        <FormSelectItem value="adaptive-v1">
+                            Adaptive: 1, 6 or 24 hours
+                        </FormSelectItem>
+                    </FormSelect>
+                </Label>
                 {window === "adaptive-v1" && (
                     <p className="text-muted-foreground">
                         Widens while fewer than {adaptiveExchangePolicy.minimumItemVolume} input
@@ -145,34 +150,36 @@ export function ExchangePricePicker({
                     </p>
                 )}
                 <div className="grid gap-2 sm:grid-cols-2">
-                    <label>
+                    <Label>
                         Exchange league
-                        <input
+                        <Input
                             className={graphControl}
                             value={graph.league ?? ""}
                             onChange={(event) =>
                                 onChange({ ...graph, league: event.target.value || undefined })
                             }
                         />
-                    </label>
-                    <label>
+                    </Label>
+                    <Label>
                         Exchange realm
-                        <select
+                        <FormSelect
                             className={graphControl}
                             value={realm}
-                            onChange={(event) => setRealm(event.target.value as typeof realm)}
+                            onValueChange={(selectedValue) =>
+                                setRealm(selectedValue as typeof realm)
+                            }
                         >
                             {graph.game === "poe2" ? (
-                                <option value="poe2">PoE 2</option>
+                                <FormSelectItem value="poe2">PoE 2</FormSelectItem>
                             ) : (
                                 <>
-                                    <option value="pc">PC</option>
-                                    <option value="xbox">Xbox</option>
-                                    <option value="sony">PlayStation</option>
+                                    <FormSelectItem value="pc">PC</FormSelectItem>
+                                    <FormSelectItem value="xbox">Xbox</FormSelectItem>
+                                    <FormSelectItem value="sony">PlayStation</FormSelectItem>
                                 </>
                             )}
-                        </select>
-                    </label>
+                        </FormSelect>
+                    </Label>
                 </div>
                 <Button
                     size="sm"

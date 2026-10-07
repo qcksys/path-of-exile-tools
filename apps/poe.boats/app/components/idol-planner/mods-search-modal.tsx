@@ -124,7 +124,8 @@ const MODIFIER_ROW = memo(function modifierRow({
             <Tooltip>
                 <TooltipTrigger
                     render={
-                        <button
+                        <Button
+                            variant="ghost"
                             type="button"
                             onClick={handleToggle}
                             className="mt-0.5 shrink-0 rounded p-1 hover:bg-accent"
@@ -177,7 +178,8 @@ const MODIFIER_ROW = memo(function modifierRow({
             <Tooltip>
                 <TooltipTrigger
                     render={
-                        <button
+                        <Button
+                            variant="ghost"
                             type="button"
                             onClick={handleTradeSearch}
                             className="mt-0.5 shrink-0 rounded p-1 hover:bg-accent"

@@ -123,7 +123,8 @@ function ScarabSlot({
                                 render={
                                     <PopoverTrigger
                                         render={
-                                            <button
+                                            <Button
+                                                variant="ghost"
                                                 type="button"
                                                 className={cn(
                                                     "relative flex h-16 w-16 items-center justify-center rounded-lg border-2 transition-all hover:border-primary",

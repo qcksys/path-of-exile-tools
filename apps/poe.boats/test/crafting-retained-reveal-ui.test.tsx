@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import { CraftingWorkbench } from "../app/components/crafting/workbench";
 import { seededRandom } from "../app/lib/crafting-engine";
 import { craftingProjectSchema } from "../app/schemas/crafting";
+import { changeControl } from "./control-helpers";
 import { pickModifier, retainedRevealFixture } from "./crafting-retained-reveal-fixtures";
 
 beforeEach(() => {
@@ -49,14 +50,14 @@ describe.each(["poe1", "poe2"] as const)("%s retained reveal controls", (game) =
             </MemoryRouter>,
         );
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "legacy" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "legacy" } });
         fireEvent.click(screen.getByRole("button", { name: "Load project" }));
         const selected = () =>
             within(screen.getByRole("region", { name: "Reveal modifier" })).getByRole("button", {
                 name: new RegExp(`^${offered.reveal!.choices.indexOf(choice) + 1}\\.`),
             });
         expect(selected()).toHaveProperty("disabled", false);
-        fireEvent.change(screen.getByLabelText("Search modifiers"), {
+        changeControl(screen.getByLabelText("Search modifiers"), {
             target: { value: blocker },
         });
         const row = screen
@@ -114,7 +115,7 @@ describe.each(["poe1", "poe2"] as const)("%s retained reveal controls", (game) =
             </MemoryRouter>,
         );
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "retained" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "retained" } });
         const button = (name: string) => screen.getByText(name, { selector: "button" });
         fireEvent.click(button("Load project"));
         const selected = () =>

@@ -25,6 +25,7 @@ import {
     DialogTitle,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import {
@@ -490,12 +491,12 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
                             </div>
                             {editorMode === "regular" && (
                                 <div className="space-y-2">
-                                    <label
+                                    <Label
                                         htmlFor="idol-editor-name"
                                         className="font-medium text-sm"
                                     >
                                         {t("editor.name")} ({t("editor.optional")})
-                                    </label>
+                                    </Label>
                                     <Input
                                         id="idol-editor-name"
                                         value={name}

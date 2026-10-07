@@ -7,6 +7,7 @@ import { CraftingWorkbench } from "../app/components/crafting/workbench";
 import { CraftingEngine, seededRandom } from "../app/lib/crafting-engine";
 import { CraftingProcess } from "../app/lib/crafting-simulation";
 import { craftingCatalogSchema, craftingProjectSchema } from "../app/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 
 class CraftingWorker {
     static instances: CraftingWorker[] = [];
@@ -79,7 +80,7 @@ for (const game of ["poe1", "poe2"] as const) {
             </MemoryRouter>,
         );
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "test" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "test" } });
         fireEvent.click(button("Load project"));
     }
     function finishProcess() {
@@ -118,7 +119,7 @@ for (const game of ["poe1", "poe2"] as const) {
             expect(
                 within(screen.getByRole("region", { name: "Last changes" })).getByText("Removed"),
             ).toBeDefined();
-            fireEvent.change(screen.getByLabelText("Item level"), { target: { value: "100" } });
+            changeControl(screen.getByLabelText("Item level"), { target: { value: "100" } });
             expect(screen.queryByRole("alert")).toBeNull();
             expect(
                 within(screen.getByRole("region", { name: "Last changes" })).getByText(
@@ -160,7 +161,7 @@ for (const game of ["poe1", "poe2"] as const) {
             expect(entries()[0]!.getAttribute("aria-current")).toBe("step");
 
             fireEvent.click(button("Undo"));
-            fireEvent.change(screen.getByLabelText("Item level"), { target: { value: "85" } });
+            changeControl(screen.getByLabelText("Item level"), { target: { value: "85" } });
             expect(entries().map((entry) => entry.textContent)).toEqual([
                 "Edit item1 crafts · Current",
                 `${engine.methodName(method)}1 crafts`,
@@ -176,14 +177,14 @@ for (const game of ["poe1", "poe2"] as const) {
             ]);
             fireEvent.click(button("Save project"));
             expect(saved()).toEqual(before);
-            fireEvent.change(screen.getByLabelText("Saved project"), {
+            changeControl(screen.getByLabelText("Saved project"), {
                 target: { value: "My crafting project" },
             });
             fireEvent.click(button("Load project"));
             expect(entries().map((entry) => entry.textContent)).toEqual([
                 "Loaded item0 crafts · Current",
             ]);
-            expect(screen.getByLabelText("Item level")).toHaveProperty("value", "85");
+            expectControlValue(screen.getByLabelText("Item level"), "85");
             expect(button("Undo")).toHaveProperty("disabled", true);
         });
 
@@ -192,7 +193,7 @@ for (const game of ["poe1", "poe2"] as const) {
             fireEvent.click(screen.getByText("Actions history"));
             const level = screen.getByLabelText("Item level");
             for (let index = 0; index < 105; index++)
-                fireEvent.change(level, {
+                changeControl(level, {
                     target: { value: String(70 + (index % 2)) },
                 });
             expect(entries()).toHaveLength(101);
@@ -204,10 +205,10 @@ for (const game of ["poe1", "poe2"] as const) {
             fireEvent.click(button("Undo"));
             expect(entries()[0]!.textContent).toBe("Edit item0 crafts · Undone");
             expect(entries()[1]!.getAttribute("aria-current")).toBe("step");
-            expect(screen.getByLabelText("Item level")).toHaveProperty("value", "71");
+            expectControlValue(screen.getByLabelText("Item level"), "71");
             fireEvent.click(button("Redo"));
             expect(entries()[0]!.getAttribute("aria-current")).toBe("step");
-            expect(screen.getByLabelText("Item level")).toHaveProperty("value", "70");
+            expectControlValue(screen.getByLabelText("Item level"), "70");
         });
     });
 
@@ -250,7 +251,7 @@ for (const game of ["poe1", "poe2"] as const) {
 
         it("stops an in-flight process and ignores late progress, completion and errors", () => {
             mount();
-            fireEvent.change(screen.getByLabelText("Item level"), { target: { value: "85" } });
+            changeControl(screen.getByLabelText("Item level"), { target: { value: "85" } });
             fireEvent.click(screen.getByRole("checkbox", { name: "Combine crafting steps" }));
             const retained = currentItem();
             fireEvent.click(button("Apply process"));

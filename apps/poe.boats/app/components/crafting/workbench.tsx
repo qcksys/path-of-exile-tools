@@ -2,8 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Field, FieldDescription, FieldLabel } from "~/components/ui/field";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import { craftingFlags } from "~/lib/crafting-flags";
 import { craftingInventory } from "~/lib/crafting-inventory";
@@ -578,9 +581,9 @@ export function CraftingWorkbench({
                                 }
                             />
                             <div className="grid grid-cols-2 gap-3">
-                                <label className="space-y-1 text-xs">
+                                <Label className="block space-y-1 text-xs">
                                     Item level
-                                    <input
+                                    <Input
                                         className={controlClass}
                                         type="number"
                                         min={Math.max(1, chest?.minimumLevel ?? 1)}
@@ -595,29 +598,28 @@ export function CraftingWorkbench({
                                             )
                                         }
                                     />
-                                </label>
-                                <label className="space-y-1 text-xs">
+                                </Label>
+                                <Label className="block space-y-1 text-xs">
                                     Rarity
-                                    <select
+                                    <FormSelect
                                         className={controlClass}
                                         value={project.item.rarity}
-                                        onChange={(event) =>
+                                        onValueChange={(selectedValue) =>
                                             safely(() =>
                                                 setItem({
                                                     ...project.item,
-                                                    rarity: event.target
-                                                        .value as CraftingItem["rarity"],
+                                                    rarity: selectedValue as CraftingItem["rarity"],
                                                 }),
                                             )
                                         }
                                     >
                                         {base.rarities.map((rarity) => (
-                                            <option key={rarity} value={rarity}>
+                                            <FormSelectItem key={rarity} value={rarity}>
                                                 {rarity}
-                                            </option>
+                                            </FormSelectItem>
                                         ))}
-                                    </select>
-                                </label>
+                                    </FormSelect>
+                                </Label>
                             </div>
                             {chest ? (
                                 <p
@@ -630,20 +632,17 @@ export function CraftingWorkbench({
                                     Special encounters and Atlas changes are not modeled.
                                 </p>
                             ) : null}
-                            <label className="flex items-center gap-2 text-xs">
-                                <input
-                                    type="checkbox"
+                            <Label className="flex items-center gap-2 text-xs">
+                                <Checkbox
                                     checked={Boolean(project.item.unidentified)}
                                     disabled={!engine.identificationSupported(project.item)}
-                                    onChange={(event) =>
+                                    onCheckedChange={(checked) =>
                                         safely(() => {
                                             setItem({
                                                 ...project.item,
-                                                unidentified: event.target.checked
-                                                    ? true
-                                                    : undefined,
+                                                unidentified: checked ? true : undefined,
                                             });
-                                            if (event.target.checked) {
+                                            if (checked) {
                                                 const wisdom = catalog.crafting.currencies.find(
                                                     (entry) => entry.action === "identify",
                                                 )!;
@@ -655,7 +654,7 @@ export function CraftingWorkbench({
                                     }
                                 />
                                 Unidentified starting item
-                            </label>
+                            </Label>
                             <p className="text-xs text-muted-foreground">
                                 Choose magic or rare equipment with no explicit modifiers to model
                                 identification. Known modifiers must be removed first. Hidden
@@ -670,21 +669,20 @@ export function CraftingWorkbench({
                                 <legend className="text-xs">Item flags</legend>
                                 <div className="flex flex-wrap gap-3">
                                     {craftingFlags(catalog.game).map(({ key, label }) => (
-                                        <label
+                                        <Label
                                             key={key}
                                             className="flex items-center gap-2 text-xs"
                                         >
-                                            <input
-                                                type="checkbox"
+                                            <Checkbox
                                                 checked={Boolean(project.item[key])}
-                                                onChange={(event) =>
+                                                onCheckedChange={(checked) =>
                                                     safely(() =>
                                                         setItem(
                                                             editCraftingStartingItem(engine, {
                                                                 kind: "flag",
                                                                 item: project.item,
                                                                 flag: key,
-                                                                enabled: event.target.checked,
+                                                                enabled: checked,
                                                             }),
                                                             `Edit ${label.toLowerCase()} state`,
                                                         ),
@@ -692,7 +690,7 @@ export function CraftingWorkbench({
                                                 }
                                             />
                                             {label}
-                                        </label>
+                                        </Label>
                                     ))}
                                 </div>
                                 <p className="text-xs text-muted-foreground">
@@ -763,23 +761,22 @@ export function CraftingWorkbench({
                                         {catalog.crafting.influences
                                             .filter((entry) => entry.itemClass === base.item_class)
                                             .map((influence) => (
-                                                <label
+                                                <Label
                                                     key={influence.influence}
                                                     className="flex items-center gap-2 text-xs"
                                                 >
-                                                    <input
-                                                        type="checkbox"
+                                                    <Checkbox
                                                         disabled={engine.hasFixedInfluences(
                                                             project.item,
                                                         )}
                                                         checked={engine
                                                             .effectiveInfluences(project.item)
                                                             .includes(influence.influence)}
-                                                        onChange={(event) =>
+                                                        onCheckedChange={(checked) =>
                                                             safely(() =>
                                                                 setItem({
                                                                     ...project.item,
-                                                                    influences: event.target.checked
+                                                                    influences: checked
                                                                         ? [
                                                                               ...project.item
                                                                                   .influences,
@@ -795,7 +792,7 @@ export function CraftingWorkbench({
                                                         }
                                                     />
                                                     {influence.name}
-                                                </label>
+                                                </Label>
                                             ))}
                                     </div>
                                 </details>
@@ -857,16 +854,15 @@ export function CraftingWorkbench({
                         />
                         <section className="space-y-4 rounded-lg border border-border bg-card p-4">
                             {mode !== "simulate" ? (
-                                <label className="flex items-center gap-2 text-sm">
-                                    <input
-                                        type="checkbox"
+                                <Label className="flex items-center gap-2 text-sm">
+                                    <Checkbox
                                         checked={project.useProcess}
-                                        onChange={(event) =>
-                                            change({ useProcess: event.target.checked })
+                                        onCheckedChange={(checked) =>
+                                            change({ useProcess: checked })
                                         }
                                     />
                                     Combine crafting steps
-                                </label>
+                                </Label>
                             ) : null}
                             <MethodPicker
                                 engine={engine}
@@ -1146,13 +1142,13 @@ export function CraftingWorkbench({
                             <div className="grid grid-cols-2 gap-3">
                                 {mode !== "simulate" ||
                                 project.simulationLimit?.kind !== "manual" ? (
-                                    <label className="space-y-1 text-xs">
+                                    <Label className="block space-y-1 text-xs">
                                         {project.simulationLimit?.kind === "manual"
                                             ? "Calculator trials"
                                             : project.simulationLimit
                                               ? "Maximum trials"
                                               : "Trials"}
-                                        <input
+                                        <Input
                                             className={controlClass}
                                             type="number"
                                             min={1}
@@ -1162,11 +1158,11 @@ export function CraftingWorkbench({
                                                 change({ iterations: Number(event.target.value) })
                                             }
                                         />
-                                    </label>
+                                    </Label>
                                 ) : null}
-                                <label className="space-y-1 text-xs">
+                                <Label className="block space-y-1 text-xs">
                                     Random seed
-                                    <input
+                                    <Input
                                         className={controlClass}
                                         type="number"
                                         min={0}
@@ -1176,15 +1172,15 @@ export function CraftingWorkbench({
                                             change({ seed: Number(event.target.value) })
                                         }
                                     />
-                                </label>
+                                </Label>
                             </div>
-                            <label className="block space-y-1 text-xs">
+                            <Label className="block space-y-1 text-xs">
                                 Stop simulation after
-                                <select
+                                <FormSelect
                                     className={controlClass}
                                     value={project.simulationLimit?.kind ?? "trials"}
-                                    onChange={(event) => {
-                                        const kind = event.target.value;
+                                    onValueChange={(selectedValue) => {
+                                        const kind = selectedValue;
                                         change({
                                             simulationLimit:
                                                 kind === "successes" || kind === "actions"
@@ -1203,12 +1199,16 @@ export function CraftingWorkbench({
                                         });
                                     }}
                                 >
-                                    <option value="trials">Trial count</option>
-                                    <option value="successes">Successful items</option>
-                                    <option value="actions">Simulation actions</option>
-                                    <option value="manual">Until stopped</option>
-                                </select>
-                            </label>
+                                    <FormSelectItem value="trials">Trial count</FormSelectItem>
+                                    <FormSelectItem value="successes">
+                                        Successful items
+                                    </FormSelectItem>
+                                    <FormSelectItem value="actions">
+                                        Simulation actions
+                                    </FormSelectItem>
+                                    <FormSelectItem value="manual">Until stopped</FormSelectItem>
+                                </FormSelect>
+                            </Label>
                             {project.simulationLimit?.kind === "manual" ? (
                                 <p className="text-xs text-muted-foreground">
                                     Runs until you stop it, with no trial target. Each process trial
@@ -1220,11 +1220,11 @@ export function CraftingWorkbench({
                                 </p>
                             ) : project.simulationLimit ? (
                                 <>
-                                    <label className="block space-y-1 text-xs">
+                                    <Label className="block space-y-1 text-xs">
                                         {project.simulationLimit.kind === "successes"
                                             ? "Successful item target"
                                             : "Simulation action limit"}
-                                        <input
+                                        <Input
                                             className={controlClass}
                                             type="number"
                                             min={1}
@@ -1243,7 +1243,7 @@ export function CraftingWorkbench({
                                                 })
                                             }
                                         />
-                                    </label>
+                                    </Label>
                                     <p className="text-xs text-muted-foreground">
                                         Stops at this target or the maximum trial count. Every
                                         process step counts as one action, including condition
@@ -1254,9 +1254,9 @@ export function CraftingWorkbench({
                                 </>
                             ) : null}
                             {useProcess ? (
-                                <label className="block space-y-1 text-xs">
+                                <Label className="block space-y-1 text-xs">
                                     Maximum steps per trial
-                                    <input
+                                    <Input
                                         className={controlClass}
                                         type="number"
                                         min={1}
@@ -1266,15 +1266,15 @@ export function CraftingWorkbench({
                                             change({ maxActions: Number(event.target.value) })
                                         }
                                     />
-                                </label>
+                                </Label>
                             ) : null}
-                            <label className="block space-y-1 text-xs">
+                            <Label className="block space-y-1 text-xs">
                                 Store outcomes
-                                <select
+                                <FormSelect
                                     className={controlClass}
                                     value={project.sampleStorage?.mode ?? "preview"}
-                                    onChange={(event) => {
-                                        const mode = event.target.value;
+                                    onValueChange={(selectedValue) => {
+                                        const mode = selectedValue;
                                         change({
                                             sampleStorage:
                                                 mode === "all" ||
@@ -1289,18 +1289,22 @@ export function CraftingWorkbench({
                                         });
                                     }}
                                 >
-                                    <option value="preview">
+                                    <FormSelectItem value="preview">
                                         Preview: 10 outcomes, including first success
-                                    </option>
-                                    <option value="successes">Successful items</option>
-                                    <option value="all">All completed trials</option>
-                                    <option value="none">None</option>
-                                </select>
-                            </label>
+                                    </FormSelectItem>
+                                    <FormSelectItem value="successes">
+                                        Successful items
+                                    </FormSelectItem>
+                                    <FormSelectItem value="all">
+                                        All completed trials
+                                    </FormSelectItem>
+                                    <FormSelectItem value="none">None</FormSelectItem>
+                                </FormSelect>
+                            </Label>
                             {project.sampleStorage && project.sampleStorage.mode !== "none" ? (
-                                <label className="block space-y-1 text-xs">
+                                <Label className="block space-y-1 text-xs">
                                     Maximum stored outcomes
-                                    <input
+                                    <Input
                                         className={controlClass}
                                         type="number"
                                         min={1}
@@ -1315,18 +1319,17 @@ export function CraftingWorkbench({
                                             })
                                         }
                                     />
-                                </label>
+                                </Label>
                             ) : null}
-                            <label className="flex items-center gap-2 text-xs">
-                                <input
-                                    type="checkbox"
+                            <Label className="flex items-center gap-2 text-xs">
+                                <Checkbox
                                     checked={project.successDistribution ?? false}
-                                    onChange={(event) =>
-                                        change({ successDistribution: event.target.checked })
+                                    onCheckedChange={(checked) =>
+                                        change({ successDistribution: checked })
                                     }
                                 />
                                 Successful item affix distribution
-                            </label>
+                            </Label>
                             <p className="text-xs text-muted-foreground">
                                 Statistics include every completed trial, regardless of how many
                                 items are stored. Distribution tables group tiers across all
@@ -1456,9 +1459,9 @@ export function CraftingWorkbench({
                                     </Field>
                                 ) : null}
                                 {costs.map((cost) => (
-                                    <label key={cost.id} className="block space-y-1 text-xs">
+                                    <Label key={cost.id} className="block space-y-1 text-xs">
                                         {cost.name}
-                                        <input
+                                        <Input
                                             className={controlClass}
                                             type="number"
                                             min={0}
@@ -1473,7 +1476,7 @@ export function CraftingWorkbench({
                                                 change({ prices });
                                             }}
                                         />
-                                    </label>
+                                    </Label>
                                 ))}
                             </div>
                         </details>
@@ -1503,17 +1506,16 @@ export function CraftingWorkbench({
                     <summary className="cursor-pointer font-medium">Save, load, and export</summary>
                     {!isolated && (
                         <>
-                            <label className="mt-4 flex items-center gap-2 text-sm">
-                                <input
-                                    type="checkbox"
+                            <Label className="mt-4 flex items-center gap-2 text-sm">
+                                <Checkbox
                                     checked={autoSave}
-                                    onChange={(event) => {
-                                        setAutoSave(event.target.checked);
+                                    onCheckedChange={(checked) => {
+                                        setAutoSave(checked);
                                         setDraftReady(true);
                                     }}
                                 />
                                 Automatically save this draft
-                            </label>
+                            </Label>
                             <p className="mt-2 text-sm text-muted-foreground">
                                 Restores this item and crafting setup for this game and build.
                                 History, spending and results start fresh after a reload. Turning
@@ -1523,15 +1525,15 @@ export function CraftingWorkbench({
                     )}
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                         <div className="space-y-3">
-                            <label className="block space-y-1 text-sm">
+                            <Label className="block space-y-1 text-sm">
                                 Project name
-                                <input
+                                <Input
                                     className={controlClass}
                                     value={saveName}
                                     maxLength={80}
                                     onChange={(event) => setSaveName(event.target.value)}
                                 />
-                            </label>
+                            </Label>
                             <Button
                                 variant="outline"
                                 onClick={() =>
@@ -1555,21 +1557,23 @@ export function CraftingWorkbench({
                             </Button>
                         </div>
                         <div className="space-y-3">
-                            <label className="block space-y-1 text-sm">
+                            <Label className="block space-y-1 text-sm">
                                 Saved project
-                                <select
+                                <FormSelect
                                     className={controlClass}
                                     value={selectedSave}
-                                    onChange={(event) => setSelectedSave(event.target.value)}
+                                    onValueChange={(selectedValue) =>
+                                        setSelectedSave(selectedValue)
+                                    }
                                 >
-                                    <option value="">Choose a saved project</option>
+                                    <FormSelectItem value="">Choose a saved project</FormSelectItem>
                                     {saved.map((name) => (
-                                        <option key={name} value={name}>
+                                        <FormSelectItem key={name} value={name}>
                                             {name}
-                                        </option>
+                                        </FormSelectItem>
                                     ))}
-                                </select>
-                            </label>
+                                </FormSelect>
+                            </Label>
                             <Button
                                 variant="outline"
                                 disabled={!selectedSave}
@@ -1613,7 +1617,7 @@ export function CraftingWorkbench({
                         <Button variant="outline" onClick={() => file.current?.click()}>
                             Import JSON
                         </Button>
-                        <input
+                        <Input
                             ref={file}
                             className="hidden"
                             aria-label="Import crafting project"

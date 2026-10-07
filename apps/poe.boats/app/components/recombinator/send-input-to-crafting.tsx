@@ -10,6 +10,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "~/components/ui/dialog";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Label } from "~/components/ui/label";
 import { useCraftingWorkspace } from "~/hooks/use-crafting-workspace";
 import { catalogBaseOptions } from "~/lib/recombinator-catalog";
 import type { RecombinatorDraftItem } from "~/lib/recombinator-plan";
@@ -141,53 +143,53 @@ export function SendInputToCrafting({
                     plan. The purchase price is unknown. You can edit the prepared item in the
                     project's full workbench.
                 </DialogDescription>
-                <label className="space-y-1 text-sm">
+                <Label className="block space-y-1 text-sm">
                     Concrete item base
-                    <select
+                    <FormSelect
                         className={control}
                         value={baseId}
-                        onChange={(event) => {
+                        onValueChange={(selectedValue) => {
                             reset();
-                            setBaseId(event.target.value);
+                            setBaseId(selectedValue);
                         }}
                     >
-                        <option value="">Choose a base</option>
+                        <FormSelectItem value="">Choose a base</FormSelectItem>
                         {bases.map((base) => (
-                            <option key={base.id} value={base.id}>
+                            <FormSelectItem key={base.id} value={base.id}>
                                 {base.name}
-                            </option>
+                            </FormSelectItem>
                         ))}
-                    </select>
-                </label>
-                <label className="space-y-1 text-sm">
+                    </FormSelect>
+                </Label>
+                <Label className="block space-y-1 text-sm">
                     Input rarity
-                    <select
+                    <FormSelect
                         className={control}
                         value={rarity}
-                        onChange={(event) => {
+                        onValueChange={(selectedValue) => {
                             reset();
-                            setRarity(event.target.value);
+                            setRarity(selectedValue);
                         }}
                     >
-                        <option value="normal">Normal</option>
-                        <option value="magic">Magic</option>
-                        <option value="rare">Rare</option>
-                    </select>
-                </label>
-                <label className="space-y-1 text-sm">
+                        <FormSelectItem value="normal">Normal</FormSelectItem>
+                        <FormSelectItem value="magic">Magic</FormSelectItem>
+                        <FormSelectItem value="rare">Rare</FormSelectItem>
+                    </FormSelect>
+                </Label>
+                <Label className="block space-y-1 text-sm">
                     Assumed modifier rolls
-                    <select
+                    <FormSelect
                         className={control}
                         value={rolls}
-                        onChange={(event) => {
+                        onValueChange={(selectedValue) => {
                             reset();
-                            setRolls(event.target.value);
+                            setRolls(selectedValue);
                         }}
                     >
-                        <option value="minimum">Minimum values</option>
-                        <option value="maximum">Maximum values</option>
-                    </select>
-                </label>
+                        <FormSelectItem value="minimum">Minimum values</FormSelectItem>
+                        <FormSelectItem value="maximum">Maximum values</FormSelectItem>
+                    </FormSelect>
+                </Label>
                 <p className="text-xs text-muted-foreground">
                     Explicit and implicit rolls use this assumption. Other item properties start at
                     workbench defaults. Custom modifier text and manual probability flags must be

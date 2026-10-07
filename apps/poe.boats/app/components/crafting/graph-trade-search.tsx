@@ -1,6 +1,8 @@
 import type { ItemQuery } from "@poe-tools/item-query";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import type { CraftingCatalog } from "~/schemas/crafting";
 import { type CraftingTradeResult, craftingTradeResultSchema } from "~/schemas/crafting-trade";
 import { graphControl } from "./graph-query-editor";
@@ -89,15 +91,15 @@ export function GraphTradeSearch({
     }
     return (
         <div className="space-y-3 rounded-md border border-border p-3">
-            <label className="block text-xs">
+            <Label className="block text-xs">
                 Trade league
-                <input
+                <Input
                     className={graphControl}
                     value={league ?? ""}
                     placeholder="Enter the league name"
                     onChange={(event) => onLeagueChange(event.target.value)}
                 />
-            </label>
+            </Label>
             <Button
                 variant="outline"
                 size="sm"

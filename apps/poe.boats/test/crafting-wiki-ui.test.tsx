@@ -6,6 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { CraftingWorkbench } from "../app/components/crafting/workbench";
 import { graspingMailBase, isBreachModifier } from "../app/lib/crafting-grasping";
 import { craftingProjectSchema } from "../app/schemas/crafting";
+import { changeControl, expectControlValue } from "./control-helpers";
 import { baseId, catalog, currency, engine } from "./crafting-fixtures";
 
 class WorkerStub {
@@ -68,7 +69,7 @@ function mount(base: string) {
         </MemoryRouter>,
     );
     fireEvent.click(screen.getByText("Save, load, and export"));
-    fireEvent.change(storage().getByLabelText("Saved project"), { target: { value: "setup" } });
+    changeControl(storage().getByLabelText("Saved project"), { target: { value: "setup" } });
     fireEvent.click(button("Load project"));
 }
 const save = () => {
@@ -84,17 +85,17 @@ it("edits the Grasping recipe, emulates with undo, saves it and sends it to the 
         screen.getByLabelText("Grasping Mail recipe").parentElement!.parentElement!,
     );
     for (const lord of ["Xoph", "Tul", "Esh", "Uul-Netol", "Chayula"])
-        fireEvent.change(recipe.getByLabelText(`${lord} rings`), {
+        changeControl(recipe.getByLabelText(`${lord} rings`), {
             target: { value: lord === "Xoph" ? "60" : "0" },
         });
-    expect(screen.getByRole("combobox", { name: "Crafting method" })).toHaveProperty(
-        "value",
+    expectControlValue(
+        screen.getByRole("combobox", { name: "Crafting method" }),
         "Generate rare item",
     );
     fireEvent.click(button("Apply craft"));
     expect(screen.queryByRole("alert")).toBeNull();
     const generated = save();
-    fireEvent.change(screen.getByRole("combobox", { name: "Modifier source" }), {
+    changeControl(screen.getByRole("combobox", { name: "Modifier source" }), {
         target: { value: "breach" },
     });
     expect(screen.getByText(/PoE Wiki weights for the combined legacy Breach pool/)).toBeDefined();
@@ -118,7 +119,7 @@ it("manually selects a Heist enchantment, retains it through crafting and reload
     mount(baseId);
     fireEvent.click(screen.getByText("Heist enchantment (manual)"));
     const picker = screen.getByRole("combobox", { name: "Starting Heist enchantment" });
-    fireEvent.change(picker, {
+    changeControl(picker, {
         target: { value: "8% increased Explicit Life Modifier magnitudes" },
     });
     fireEvent.keyDown(picker, { key: "ArrowDown" });
@@ -136,12 +137,12 @@ it("manually selects a Heist enchantment, retains it through crafting and reload
     fireEvent.click(button("Undo"));
     expect(save().item.enchantments).toEqual(selected.item.enchantments);
     fireEvent.click(button("Clear starting Heist enchantment"));
-    fireEvent.change(storage().getByLabelText("Saved project"), {
+    changeControl(storage().getByLabelText("Saved project"), {
         target: { value: "My crafting project" },
     });
     fireEvent.click(button("Load project"));
-    expect(screen.getByRole("combobox", { name: "Starting Heist enchantment" })).toHaveProperty(
-        "value",
+    expectControlValue(
+        screen.getByRole("combobox", { name: "Starting Heist enchantment" }),
         "8% increased Explicit Life Modifier magnitudes",
     );
     fireEvent.click(button("Calculate odds"));

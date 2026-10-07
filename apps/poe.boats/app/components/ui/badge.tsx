@@ -10,6 +10,10 @@ const badgeVariants = cva(
             variant: {
                 default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
                 secondary: "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
+                acquisition: "border-chart-1/30 bg-chart-1/10 text-chart-1",
+                craft: "border-chart-2/30 bg-chart-2/10 text-chart-2",
+                recovery: "border-chart-4/30 bg-chart-4/10 text-chart-4",
+                outcome: "border-chart-3/30 bg-chart-3/10 text-chart-3",
                 destructive:
                     "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
                 outline:

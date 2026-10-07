@@ -7,6 +7,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "~/components/ui/dialog";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Label } from "~/components/ui/label";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import type { CraftingMethod } from "~/schemas/crafting";
 import {
@@ -126,22 +128,22 @@ export function GraphMethodEditor({
                     changes the method; actual inputs come from the graph and may have different
                     properties after earlier crafts. Calculation checks their eligibility.
                 </DialogDescription>
-                <label className="block space-y-1 text-sm">
+                <Label className="block space-y-1 text-sm">
                     Reference item for method options
-                    <select
+                    <FormSelect
                         className={controlClass}
                         value={referenceId}
-                        onChange={(event) => setReferenceId(event.target.value)}
+                        onValueChange={(selectedValue) => setReferenceId(selectedValue)}
                         disabled={busy}
                     >
-                        <option value="">Choose a purchased item</option>
+                        <FormSelectItem value="">Choose a purchased item</FormSelectItem>
                         {references.map((entry) => (
-                            <option key={entry.id} value={entry.id}>
+                            <FormSelectItem key={entry.id} value={entry.id}>
                                 {entry.name}
-                            </option>
+                            </FormSelectItem>
                         ))}
-                    </select>
-                </label>
+                    </FormSelect>
+                </Label>
                 {!references.length && (
                     <p>Add a purchased item to configure available method options.</p>
                 )}

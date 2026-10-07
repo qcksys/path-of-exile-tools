@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import { CraftingWorkbench } from "../app/components/crafting/workbench";
 import { seededRandom } from "../app/lib/crafting-engine";
 import { type CraftingItem, craftingProjectSchema } from "../app/schemas/crafting";
+import { changeControl } from "./control-helpers";
 import { baseId, catalog, engine } from "./crafting-fixtures";
 
 beforeEach(() => {
@@ -69,13 +70,15 @@ describe("bench replacement in the workbench", () => {
             </MemoryRouter>,
         );
         fireEvent.click(screen.getByText("Save, load, and export"));
-        fireEvent.change(screen.getByLabelText("Saved project"), { target: { value: "bench" } });
+        changeControl(screen.getByLabelText("Saved project"), { target: { value: "bench" } });
         fireEvent.click(button("Load project"));
         expect(
-            screen.getByRole("checkbox", {
-                name: "Skip addition when the bench modifier conflicts",
-            }),
-        ).toHaveProperty("checked", skipOnConflict);
+            screen
+                .getByRole("checkbox", {
+                    name: "Skip addition when the bench modifier conflicts",
+                })
+                .getAttribute("aria-checked"),
+        ).toBe(String(skipOnConflict));
         expect(screen.getByLabelText("Orb of Scouring")).toBeDefined();
         fireEvent.click(button("Apply craft"));
         const spending = within(screen.getByText("Emulator spending").closest("details")!);

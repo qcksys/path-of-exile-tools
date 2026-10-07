@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import type { CraftingItem, CraftingProject } from "~/schemas/crafting";
 import { controlClass } from "./method-picker";
@@ -38,37 +41,37 @@ export function InventoryPanel({
                     ? "Store item snapshots for any project in this game and build. The shared library is saved in this browser and exported separately."
                     : "Store item snapshots to compare crafting attempts. Inventory is included when saving or exporting this project."}
             </p>
-            <label className="block space-y-1 text-xs">
+            <Label className="block space-y-1 text-xs">
                 Inventory tab
-                <select
+                <FormSelect
                     className={controlClass}
                     value={tab}
-                    onChange={(event) => {
-                        setSelectedTab(event.target.value);
-                        setTabName(event.target.value);
+                    onValueChange={(selectedValue) => {
+                        setSelectedTab(selectedValue);
+                        setTabName(selectedValue);
                     }}
                 >
-                    <option value="">
+                    <FormSelectItem value="">
                         Unfiled ({entries.filter((entry) => !entry.tab).length})
-                    </option>
+                    </FormSelectItem>
                     {tabs.map((name) => (
-                        <option key={name} value={name}>
+                        <FormSelectItem key={name} value={name}>
                             {name} ({entries.filter((entry) => entry.tab === name).length})
-                        </option>
+                        </FormSelectItem>
                     ))}
-                </select>
-            </label>
+                </FormSelect>
+            </Label>
             <details className="space-y-2">
                 <summary className="cursor-pointer text-xs">Manage inventory tabs</summary>
-                <label className="block space-y-1 text-xs">
+                <Label className="block space-y-1 text-xs">
                     Tab name
-                    <input
+                    <Input
                         className={controlClass}
                         maxLength={60}
                         value={tabName}
                         onChange={(event) => setTabName(event.target.value)}
                     />
-                </label>
+                </Label>
                 <div className="flex flex-wrap gap-2">
                     <Button
                         size="xs"
@@ -128,16 +131,16 @@ export function InventoryPanel({
                     choosing crafting donors or socketed Jewels.
                 </p>
             </details>
-            <label className="block space-y-1 text-xs">
+            <Label className="block space-y-1 text-xs">
                 Inventory item name
-                <input
+                <Input
                     className={controlClass}
                     maxLength={100}
                     value={name}
                     placeholder={engine.base(item).name}
                     onChange={(event) => setName(event.target.value)}
                 />
-            </label>
+            </Label>
             <Button
                 variant="outline"
                 disabled={entries.length >= 100}
@@ -190,18 +193,18 @@ export function InventoryPanel({
                             {entry.item.mods.length} modifiers · ilvl {entry.item.level}
                         </p>
                         {tabs.length ? (
-                            <label className="block space-y-1 text-xs">
+                            <Label className="block space-y-1 text-xs">
                                 Move {entry.name} to tab
-                                <select
+                                <FormSelect
                                     className={controlClass}
                                     value={entry.tab ?? ""}
-                                    onChange={(event) =>
+                                    onValueChange={(selectedValue) =>
                                         onChange(
                                             entries.map((value) =>
                                                 value.id === entry.id
                                                     ? {
                                                           ...value,
-                                                          tab: event.target.value || undefined,
+                                                          tab: selectedValue || undefined,
                                                       }
                                                     : value,
                                             ),
@@ -209,14 +212,14 @@ export function InventoryPanel({
                                         )
                                     }
                                 >
-                                    <option value="">Unfiled</option>
+                                    <FormSelectItem value="">Unfiled</FormSelectItem>
                                     {tabs.map((name) => (
-                                        <option key={name} value={name}>
+                                        <FormSelectItem key={name} value={name}>
                                             {name}
-                                        </option>
+                                        </FormSelectItem>
                                     ))}
-                                </select>
-                            </label>
+                                </FormSelect>
+                            </Label>
                         ) : null}
                         <div className="flex gap-2">
                             <Button
