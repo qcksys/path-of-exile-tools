@@ -74,7 +74,7 @@ export function rulesetAllowsMethod(ruleset: CraftingRuleset, method: CraftingMe
 }
 
 export function rulesetAllowsConditionalSteps(ruleset: Pick<CraftingRuleset, "engine">) {
-    return ruleset.engine === "crafting-graph-5";
+    return ["crafting-graph-5", "crafting-graph-6"].includes(ruleset.engine);
 }
 
 export function validateRulesetGraph(ruleset: CraftingRuleset, input: unknown) {

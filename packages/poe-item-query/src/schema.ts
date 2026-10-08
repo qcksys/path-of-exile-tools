@@ -131,6 +131,8 @@ export const itemFactsSchema = z.strictObject({
     prefixes: count.optional(),
     suffixes: count.optional(),
     prefixLimit: count.optional(),
+    memoryStrands: count.optional(),
+    memoryStrandsSpent: count.optional(),
     suffixLimit: count.optional(),
     socketCount: count.optional(),
     linkedSockets: z
@@ -172,6 +174,8 @@ export const itemConditionSchema = z.discriminatedUnion("kind", [
             "suffixes",
             "openPrefixes",
             "openSuffixes",
+            "memoryStrands",
+            "memoryStrandsSpent",
         ]),
         value: rangeSchema,
     }),

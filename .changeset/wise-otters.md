@@ -17,3 +17,5 @@ Add full-width and fullscreen craft graphs, item artwork and detailed selectors 
 Keep idol inventory and editor actions usable on mobile, offer keyboard and tap controls for idol placement, and expose language selection on small screens. Confirm project and build deletion, show retryable sign-in errors, label icon controls, and provide mobile workbench section navigation.
 
 Remove the React Flow attribution badge from crafting project graphs, including fullscreen view.
+
+Expand common-craft examples with Heist block shields, NNN donors, overlapping prefix pairs, Janus rarity helmets and a Replica Alberon's Helical Ring with memory-strand and imprint recovery. Show outcome conditions, probability-weighted success and retry paths, measured automatic layouts, and pinnable item previews. Add a retained crafting revision for memory-strand queries, Janus recombination and essence-safe Unravelling while preserving older saved rules.

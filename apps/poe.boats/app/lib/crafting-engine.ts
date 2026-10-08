@@ -75,6 +75,7 @@ import {
 } from "./crafting-grasping";
 import { enchantmentStat } from "./crafting-heist";
 import { isIncursionModifier } from "./crafting-incursion";
+import { isJanusRarityModifier, janusRarityModifier } from "./crafting-janus";
 import {
     memoryConsumption,
     memoryTierPool,
@@ -1756,7 +1757,12 @@ export class CraftingEngine {
                 } else if (origin.kind === "recombine") {
                     if (
                         !supportsRecombination(this, item) ||
-                        mod.domain !== "item" ||
+                        (mod.domain !== "item" &&
+                            !isJanusRarityModifier(
+                                this.catalog,
+                                { ...item, level: origin.level },
+                                entry.id,
+                            )) ||
                         (mod.is_essence_only &&
                             !isRecombinationEssenceModifier(this, item, entry.id))
                     )
@@ -1848,6 +1854,11 @@ export class CraftingEngine {
                     origin.kind === "recombine" &&
                     (isBreachModifier(this.catalog, item, entry.id) ||
                         isIncursionModifier(this.catalog, item, entry.id) ||
+                        isJanusRarityModifier(
+                            this.catalog,
+                            { ...item, level: origin.level },
+                            entry.id,
+                        ) ||
                         (mod.is_essence_only &&
                             isRecombinationEssenceModifier(this, item, entry.id)))
                 )
@@ -1889,7 +1900,12 @@ export class CraftingEngine {
                 !specialReveal &&
                 !ducat &&
                 !isBreachModifier(this.catalog, item, sourceId) &&
-                !isIncursionModifier(this.catalog, item, sourceId)
+                !isIncursionModifier(this.catalog, item, sourceId) &&
+                !isJanusRarityModifier(
+                    this.catalog,
+                    { ...item, level: origin?.level ?? item.level },
+                    sourceId,
+                )
             )
                 throw new Error("This modifier is not available on this item base and level.");
         }
@@ -2254,6 +2270,9 @@ export class CraftingEngine {
         const options = { domain: this.revealDomain(), ignoreMeta: true };
         const entries = [
             ...this.pool(empty, options),
+            ...(isJanusRarityModifier(this.catalog, item, janusRarityModifier)
+                ? [{ id: janusRarityModifier, mod: this.mod(janusRarityModifier), weight: 0 }]
+                : []),
             ...(this.catalog.game === "poe2" &&
             this.catalog.crafting.desecration.some((ticket) =>
                 ticket.itemClasses.includes(this.base(item).item_class),
@@ -4366,9 +4385,7 @@ export class CraftingEngine {
                         item.mods.some(
                             (entry) =>
                                 !entry.fractured &&
-                                (entry.crafted ||
-                                    this.mod(entry.id).domain !== base.domain ||
-                                    this.mod(entry.id).is_essence_only),
+                                (entry.crafted || this.mod(entry.id).domain !== base.domain),
                         )
                     )
                         throw new Error(
@@ -4379,7 +4396,7 @@ export class CraftingEngine {
                         { ignoreMeta: true },
                     );
                     item.mods = item.mods.map((entry) => {
-                        if (entry.fractured) return entry;
+                        if (entry.fractured || this.mod(entry.id).is_essence_only) return entry;
                         const current = pool.find((candidate) => candidate.id === entry.id);
                         if (!current) return entry;
                         const selected = random.pick(

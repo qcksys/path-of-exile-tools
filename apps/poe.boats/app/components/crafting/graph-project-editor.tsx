@@ -517,19 +517,22 @@ export function GraphProjectEditor({
                             </DialogContent>
                         </Dialog>
                         <span className="self-center text-xs text-muted-foreground">
-                            Connect outputs to inputs. Dashed lines return recoverable items.
+                            Hover items for details. Retry paths show recovery or replacement.
                         </span>
                     </div>
-                    <GraphCanvas
-                        fullWidth={fullWidth}
-                        onFullWidthChange={setFullWidth}
-                        graph={graph}
-                        selected={node.id}
-                        onSelect={select}
-                        onChange={update}
-                        result={stale ? undefined : result}
-                        onError={fail}
-                    />
+                    {engine && (
+                        <GraphCanvas
+                            engine={engine}
+                            fullWidth={fullWidth}
+                            onFullWidthChange={setFullWidth}
+                            graph={graph}
+                            selected={node.id}
+                            onSelect={select}
+                            onChange={update}
+                            result={stale ? undefined : result}
+                            onError={fail}
+                        />
+                    )}
                     <details className="rounded-lg border border-border p-4" open>
                         <summary className="cursor-pointer text-sm font-semibold">
                             Prices & calculation
