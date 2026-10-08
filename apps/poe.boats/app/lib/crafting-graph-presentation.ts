@@ -89,6 +89,7 @@ export function layoutCraftingGraph(
     graph: CraftingGraph,
     heights: ReadonlyMap<string, number> = new Map(),
     widths: ReadonlyMap<string, number> = new Map(),
+    spacing = { column: 240, row: 100 },
 ) {
     const levels = new Map<string, number>();
     const positions = new Map<string, { x: number; y: number }>();
@@ -112,9 +113,9 @@ export function layoutCraftingGraph(
             const height = heights.get(node.id) ?? 360;
             const y = Math.max(bottom, centre(node) - height / 2);
             positions.set(node.id, { x, y });
-            bottom = y + height + 100;
+            bottom = y + height + spacing.row;
         }
-        x += Math.max(...nodes.map((node) => widths.get(node.id) ?? 320)) + 240;
+        x += Math.max(...nodes.map((node) => widths.get(node.id) ?? 320)) + spacing.column;
     }
     return positions;
 }

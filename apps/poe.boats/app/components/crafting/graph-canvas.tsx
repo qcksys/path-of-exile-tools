@@ -25,6 +25,7 @@ import { cn } from "~/lib/utils";
 import type { CraftingGraph, GraphNode, GraphOutcome } from "~/schemas/crafting-graph";
 import type { CraftingGraphResult } from "~/schemas/crafting-graph-result";
 import { type CraftingFlowEdge, GraphEdge, type GraphEdgePoint } from "./graph-edge";
+import type { GraphEditCommit } from "./graph-edit-session";
 import { type CraftingFlowNode, FlowStep } from "./graph-flow-node";
 import "@xyflow/react/dist/style.css";
 
@@ -63,6 +64,21 @@ export function GraphCanvas({
     previewStatus?: string;
 }) {
     const [fullscreen, setFullscreen] = useState(false);
+    const [simple, setSimple] = useState(
+        () =>
+            typeof localStorage !== "undefined" &&
+            localStorage.getItem("crafting-graph-simple") === "true",
+    );
+    const commits = useRef(new Map<string, GraphEditCommit>());
+    const closing = useRef<Promise<boolean> | undefined>(undefined);
+    const editorInteraction = useRef<Event | undefined>(undefined);
+    const markEditorInteraction = useCallback((event: Event) => {
+        editorInteraction.current = event;
+    }, []);
+    const registerCommit = useCallback((id: string, commit: GraphEditCommit | undefined) => {
+        if (commit) commits.current.set(id, commit);
+        else commits.current.delete(id);
+    }, []);
     const [editing, setEditing] = useState<
         { id: string; section: "step" | "outcomes" } | undefined
     >(() => {
@@ -87,7 +103,46 @@ export function GraphCanvas({
             localStorage.setItem(`crafting-graph-editor:${graph.id}`, JSON.stringify(editing));
         else localStorage.removeItem(`crafting-graph-editor:${graph.id}`);
     }, [editing, graph.id]);
+    const closeEditor = useCallback(async () => {
+        if (!editing) return true;
+        if (closing.current) return closing.current;
+        const id = editing.id;
+        closing.current = (async () => {
+            try {
+                if ((await commits.current.get(id)?.()) === false) return false;
+                setEditing((current) => (current?.id === id ? undefined : current));
+                return true;
+            } finally {
+                closing.current = undefined;
+            }
+        })();
+        return closing.current;
+    }, [editing]);
+    const edit = useCallback(
+        async (id: string, section: "step" | "outcomes") => {
+            if (editing?.id !== id && !(await closeEditor())) return;
+            if (!id.startsWith("outcome:")) onSelect(id);
+            setEditing({ id, section });
+        },
+        [editing, closeEditor, onSelect],
+    );
+    useEffect(() => {
+        if (!editing) return;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const dismiss = (event: PointerEvent) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                if (editorInteraction.current !== event) void closeEditor();
+            }, 0);
+        };
+        document.addEventListener("pointerdown", dismiss, true);
+        return () => {
+            document.removeEventListener("pointerdown", dismiss, true);
+            clearTimeout(timer);
+        };
+    }, [editing, closeEditor]);
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const lineStorageKey = `crafting-graph-lines:${graph.id}`;
     const [edgePoints, setEdgePoints] = useState<Record<string, GraphEdgePoint>>({});
     const fitted = useRef(false);
     const focusedEditor = useRef<string | undefined>(undefined);
@@ -108,17 +163,15 @@ export function GraphCanvas({
                 const next = { ...current };
                 if (point) next[id] = point;
                 else delete next[id];
-                localStorage.setItem(`crafting-graph-lines:${graph.id}`, JSON.stringify(next));
+                localStorage.setItem(lineStorageKey, JSON.stringify(next));
                 return next;
             });
         },
-        [graph.id],
+        [lineStorageKey],
     );
     useEffect(() => {
         try {
-            const saved = JSON.parse(
-                localStorage.getItem(`crafting-graph-lines:${graph.id}`) ?? "{}",
-            );
+            const saved = JSON.parse(localStorage.getItem(lineStorageKey) ?? "{}");
             setEdgePoints(
                 Object.fromEntries(
                     Object.entries(saved).filter(
@@ -137,7 +190,7 @@ export function GraphCanvas({
         } catch {
             setEdgePoints({});
         }
-    }, [graph.id]);
+    }, [lineStorageKey]);
     const [flow, setFlow] = useState<ReactFlowInstance<CraftingFlowNode, Edge> | null>(null);
     useEffect(() => {
         fitted.current = false;
@@ -166,22 +219,25 @@ export function GraphCanvas({
             ...graph.nodes.map((step) => ({
                 id: step.id,
                 type: "crafting" as const,
-                position: step.position ?? positions.get(step.id)!,
+                position: (!simple && step.position) || positions.get(step.id)!,
+                draggable: !simple,
                 data: {
                     graph,
                     engine,
                     step,
                     result,
+                    simple,
+                    registerCommit,
+                    markEditorInteraction,
                     active: selected === step.id,
                     editor:
                         editing?.id === step.id
                             ? renderStepEditor(step, editing.section)
                             : undefined,
                     editing: editing?.id === step.id,
-                    close: () => setEditing(undefined),
+                    close: () => void closeEditor(),
                     select: (section: "step" | "outcomes" = "step") => {
-                        onSelect(step.id);
-                        setEditing({ id: step.id, section });
+                        void edit(step.id, section);
                     },
                 },
             })),
@@ -199,14 +255,17 @@ export function GraphCanvas({
                     engine,
                     outcome,
                     result,
+                    simple,
+                    registerCommit,
+                    markEditorInteraction,
                     active: editing?.id === `outcome:${outcome.id}`,
                     editing: editing?.id === `outcome:${outcome.id}`,
                     editor:
                         editing?.id === `outcome:${outcome.id}`
                             ? renderOutcomeEditor(outcome)
                             : undefined,
-                    close: () => setEditing(undefined),
-                    select: () => setEditing({ id: `outcome:${outcome.id}`, section: "outcomes" }),
+                    close: () => void closeEditor(),
+                    select: () => void edit(`outcome:${outcome.id}`, "outcomes"),
                 },
             })),
             {
@@ -232,6 +291,11 @@ export function GraphCanvas({
             editing,
             renderStepEditor,
             renderOutcomeEditor,
+            simple,
+            registerCommit,
+            closeEditor,
+            edit,
+            markEditorInteraction,
         ],
     );
     const [nodes, setNodes, onNodesChange] = useNodesState<CraftingFlowNode>(projected);
@@ -241,13 +305,13 @@ export function GraphCanvas({
                 projected.map((node) => ({
                     ...node,
                     position:
-                        node.data.step?.position ??
+                        (simple ? undefined : node.data.step?.position) ??
                         current.find((entry) => entry.id === node.id)?.position ??
                         node.position,
                     measured: current.find((entry) => entry.id === node.id)?.measured,
                 })),
             ),
-        [projected, setNodes],
+        [projected, setNodes, simple],
     );
     const dimensions = nodes
         .map((node) => `${node.id}:${node.measured?.height ?? 0}:${node.measured?.width ?? 0}`)
@@ -257,24 +321,44 @@ export function GraphCanvas({
         if (!editing) focusedEditor.current = undefined;
         const current = flow.getNodes();
         if (current.some((node) => !node.measured?.height)) return;
+        if (
+            current.some(
+                (node) =>
+                    node.id !== "routing-bounds" &&
+                    node.id !== editing?.id &&
+                    (simple ? node.measured!.width! > 100 : node.measured!.width! < 300),
+            )
+        )
+            return;
         const heights = new Map(current.map((node) => [node.id, node.measured!.height!]));
         const layout = layoutCraftingGraph(
             graph,
             heights,
             new Map(current.map((node) => [node.id, node.measured?.width ?? 320])),
+            simple ? { column: 70, row: 35 } : undefined,
         );
-        for (const step of graph.nodes) if (step.position) layout.set(step.id, step.position);
-        const outcomeX = Math.max(...Array.from(layout.values(), (position) => position.x)) + 560;
+        for (const step of graph.nodes)
+            if (step.position && !simple) layout.set(step.id, step.position);
+        const outcomeX =
+            Math.max(
+                ...Array.from(
+                    layout,
+                    ([id, position]) =>
+                        position.x +
+                        (current.find((node) => node.id === id)?.measured?.width ??
+                            (simple ? 96 : 320)),
+                ),
+            ) + (simple ? 70 : 240);
         let outcomeY = 30;
         for (const outcome of graph.outcomes) {
             const id = `outcome:${outcome.id}`;
             layout.set(id, { x: outcomeX, y: outcomeY });
-            outcomeY += (heights.get(id) ?? 300) + 100;
+            outcomeY += (heights.get(id) ?? 300) + (simple ? 35 : 100);
         }
         const bottom = Math.max(
             ...Array.from(layout, ([id, position]) => position.y + (heights.get(id) ?? 360)),
         );
-        layout.set("routing-bounds", { x: 30, y: bottom + 70 + retries * 28 });
+        layout.set("routing-bounds", { x: 30, y: bottom + 70 + retries * (simple ? 12 : 36) });
         setNodes((current) =>
             current.map((node) => ({ ...node, position: layout.get(node.id) ?? node.position })),
         );
@@ -290,7 +374,7 @@ export function GraphCanvas({
                     maxZoom: 1,
                     nodes: editing
                         ? [{ id: editing.id }]
-                        : graph.nodes.length > 6
+                        : !simple && graph.nodes.length > 6
                           ? graph.nodes.slice(0, 3).map((node) => ({ id: node.id }))
                           : undefined,
                 });
@@ -300,7 +384,7 @@ export function GraphCanvas({
             }
         });
         return () => cancelAnimationFrame(frame);
-    }, [dimensions, flow, graph, setNodes, retries, editing]);
+    }, [dimensions, flow, graph, setNodes, retries, editing, simple]);
     const edges = useMemo(() => {
         const edges: CraftingFlowEdge[] = [];
         const add = (edge: Edge, color: string, chance: number | null = null, retry = false) =>
@@ -313,16 +397,22 @@ export function GraphCanvas({
                     ...(retry ? { strokeDasharray: "6 4" } : {}),
                 },
                 markerEnd: { type: MarkerType.ArrowClosed, color },
+                label: simple
+                    ? chance === null
+                        ? "?"
+                        : `${(chance * 100).toFixed(1)}%`
+                    : edge.label,
                 labelStyle: { fill: "var(--foreground)", fontSize: 11 },
                 labelBgStyle: { fill: "var(--card)" },
                 data: {
                     retry,
-                    point: edgePoints[edge.id],
+                    simple,
+                    point: simple ? undefined : edgePoints[edge.id],
                     onMove: moveEdge,
                     description: `${graph.nodes.find((node) => node.id === edge.source)?.name ?? edge.source} → ${graph.nodes.find((node) => node.id === edge.target)?.name ?? graph.outcomes.find((outcome) => `outcome:${outcome.id}` === edge.target)?.name ?? edge.target}. ${String(edge.label)}. ${chance === null ? "No observations yet; this is not a zero probability." : edge.id.startsWith("final:") ? `Observed across ${result?.trials ?? 0} trials, including any unfinished trials.` : graph.nodes.find((node) => node.id === edge.source)?.kind === "acquire" ? "Acquisition supplies its selected item; this 100% connection is deterministic, not a crafting success estimate." : `${result?.visits[edge.source]?.visits ?? 0} visits to the source step. Percentages are sampled route frequencies, not exact odds; a sampled 0% does not prove impossibility.`}`,
                     lane:
                         45 +
-                        edges.filter((edge) => edge.data?.retry).length * 36 +
+                        edges.filter((edge) => edge.data?.retry).length * (simple ? 12 : 36) +
                         Math.max(
                             ...nodes
                                 .filter((node) => node.id !== "routing-bounds")
@@ -444,7 +534,7 @@ export function GraphCanvas({
             );
         }
         return edges;
-    }, [graph, result, nodes, edgePoints, moveEdge]);
+    }, [graph, result, nodes, edgePoints, moveEdge, simple]);
     const canvas = (
         <section
             className={cn(
@@ -456,6 +546,19 @@ export function GraphCanvas({
             <div className="nodrag nopan nowheel max-h-[45%] shrink-0 overflow-y-auto border-b bg-card p-2">
                 <div className="flex flex-wrap items-center gap-2">
                     {toolbar}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        aria-pressed={simple}
+                        onClick={async () => {
+                            if (!(await closeEditor())) return;
+                            fitted.current = false;
+                            localStorage.setItem("crafting-graph-simple", String(!simple));
+                            setSimple(!simple);
+                        }}
+                    >
+                        Simple mode
+                    </Button>
                     <FormSelect
                         aria-label="Focus graph step"
                         value={focusId}
@@ -557,7 +660,7 @@ export function GraphCanvas({
                         onClick={() => {
                             fitted.current = false;
                             setEdgePoints({});
-                            localStorage.removeItem(`crafting-graph-lines:${graph.id}`);
+                            localStorage.removeItem(lineStorageKey);
                             onChange({
                                 ...graph,
                                 nodes: graph.nodes.map((node) => ({
@@ -580,7 +683,12 @@ export function GraphCanvas({
                             {fullWidth ? <MinimizeIcon /> : <ExpandIcon />}Full width
                         </Button>
                     )}
-                    <Dialog open={fullscreen} onOpenChange={setFullscreen}>
+                    <Dialog
+                        open={fullscreen}
+                        onOpenChange={async (open) => {
+                            if (await closeEditor()) setFullscreen(open);
+                        }}
+                    >
                         <DialogTrigger render={<Button variant="outline" size="sm" />}>
                             <MaximizeIcon />
                             Fullscreen graph
@@ -588,9 +696,9 @@ export function GraphCanvas({
                         <DialogContent className="flex h-dvh max-w-none flex-col rounded-none sm:max-w-none">
                             <DialogTitle>Crafting project graph</DialogTitle>
                             <p className="text-xs text-muted-foreground">
-                                Hover or focus an item to preview it. Click an item to pin its card.
-                                Edit steps and outcomes directly in their nodes. Drag connection
-                                labels to separate paths.
+                                {simple
+                                    ? "Process icons show each step's continuation percentage. Click a process to edit it; hover a connection for its outcome details."
+                                    : "Hover or focus an item to preview it. Click an item to pin its card. Edit steps and outcomes directly in their nodes. Drag connection labels to separate paths."}
                             </p>
                             {fullscreen && canvas}
                         </DialogContent>

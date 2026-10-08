@@ -7,7 +7,9 @@ import { type CraftingEngine, seededRandom } from "./crafting-engine";
 import { projectFromItem } from "./crafting-graph-authoring";
 import { validateCraftingGraph } from "./crafting-graph-validation";
 import { janusRarityModifier } from "./crafting-janus";
+import { elevatedBootsPreset } from "./crafting-preset-boots";
 import { helicalRingPreset } from "./crafting-preset-helical";
+import { alterationDonor } from "./crafting-preset-preparation";
 import { nonNativeEssenceSources } from "./crafting-recombination";
 import { validateRulesetGraph } from "./crafting-rulesets";
 
@@ -31,7 +33,7 @@ export const craftingPresets: readonly CraftingPreset[] = [
         game: "poe1",
         name: "Tailwind and Elusive boots",
         description:
-            "Buy boots with isolated Hunter Tailwind and Redeemer Elusive. Use an Awakener's Orb to keep both on the target boots; other rolls remain unconstrained.",
+            "Prepare and elevate Hunter Tailwind and Redeemer Onslaught donors, awaken them, keep T3+ resistance and add elevated Elusive, then unveil movement speed and craft life. Misses restore the receiver imprint or retry protected prefixes.",
     },
     {
         id: "physical-bow",
@@ -52,14 +54,14 @@ export const craftingPresets: readonly CraftingPreset[] = [
         game: "poe1",
         name: "Suppression chest",
         description:
-            "Transfer isolated T1 suppression from Zodiac Leather onto Necrotic Armour using an isolated non-native Strength essence donor. The target requires the Necrotic base.",
+            "Roll and isolate T1 suppression on Zodiac Leather, craft a non-native Strength essence donor, then recombine onto Necrotic Armour. Misses return to donor preparation.",
     },
     {
         id: "global-defence-chest",
         game: "poe1",
         name: "Global defence chest",
         description:
-            "Buy an isolated 50% global defences Grasping Mail donor and a flat energy shield Necrotic Armour donor, then recombine. Keep only both modifiers on Necrotic Armour.",
+            "Acquire the drop-only global defences Grasping Mail modifier, roll and isolate T1 flat energy shield on Necrotic Armour, then recombine. Recover surviving modifiers and rebuild missing donors.",
     },
     {
         id: "rarity-helmet",
@@ -295,25 +297,7 @@ export function projectFromPreset(
             entry = finish.id;
         }
     } else if (presetId === "tailwind-boots") {
-        const tailwind = "TailwindOnCriticalStrikeInfluence1";
-        const elusive = "ElusiveOnCriticalStrikeInfluence1";
-        const item = prepared("Two-Toned Boots", [tailwind]);
-        target = query([tailwind, elusive], item.baseId);
-        entry = craft(
-            "awaken",
-            "Awakener's Orb: keep Tailwind and Elusive",
-            [
-                buy("target", "Buy isolated Tailwind target boots", item, query([tailwind])),
-                buy(
-                    "donor",
-                    "Buy isolated Elusive donor boots",
-                    prepared("Two-Toned Boots", [elusive]),
-                    query([elusive]),
-                ),
-            ],
-            currency("transfer_item_influence"),
-            target,
-        ).id;
+        ({ entry, target } = elevatedBootsPreset({ engine, base, buy, craft, currency }));
     } else if (presetId === "rarity-helmet") {
         const janus = janusRarityModifier;
         const rarity = "ItemFoundRarityIncreasePrefix3";
@@ -385,22 +369,61 @@ export function projectFromPreset(
             (entry) => entry.name === "Screaming Essence of Rage",
         );
         if (!essence?.mods["Body Armour"]) throw new Error("Strength essence is unavailable.");
-        const item = engine.addStartingMod(
-            base("Necrotic Armour"),
-            essence.mods["Body Armour"],
-            random,
-            "essence",
+        const item = base("Necrotic Armour");
+        const strength = essence.mods["Body Armour"];
+        const essenceRoll = craft(
+            "strength-essence",
+            "Essence of Rage: roll non-native Strength",
+            [buy("strength-base", "Acquire unrolled Necrotic Armour", item)],
+            { kind: "essence", id: essence.id },
         );
+        const isolate = craft(
+            "strength",
+            "Annul until only non-native Strength remains",
+            [essenceRoll.id],
+            currency("remove_random_mod"),
+        );
+        isolate.applyWhen = itemQuerySchema.parse({
+            game: "poe1",
+            groups: [{ type: "and", filters: [{ kind: "mod", count: { min: 2 } }] }],
+        });
+        isolate.branches = [
+            {
+                id: "ready",
+                name: "Isolated NNN Strength donor",
+                query: itemQuerySchema.parse({
+                    game: "poe1",
+                    groups: [
+                        {
+                            type: "and",
+                            filters: [
+                                { kind: "mod", ids: [strength] },
+                                { kind: "mod", count: { min: 1, max: 1 } },
+                            ],
+                        },
+                    ],
+                }),
+                destination: { kind: "return" },
+            },
+            {
+                id: "annul",
+                name: "Strength survives: annul again",
+                query: query([strength]),
+                destination: { kind: "recover", nodeId: isolate.id, inputId: "input-0" },
+            },
+        ];
+        isolate.fallback = { kind: "recover", nodeId: essenceRoll.id, inputId: "input-0" };
         target = query([suppression], item.baseId);
         entry = combine(
             "transfer",
             [
-                buy(
+                alterationDonor(
+                    { engine, base, buy, craft, currency },
                     "suppression",
-                    "Buy isolated T1 suppression donor",
-                    engine.addStartingMod(donor, suppression, random),
+                    donor,
+                    suppression,
                 ),
-                buy("strength", "Buy isolated non-native Strength donor", item),
+                isolate.id,
             ],
             target,
         ).id;
@@ -416,13 +439,10 @@ export function projectFromPreset(
                     "Buy isolated global defences Grasping Mail",
                     prepared("Grasping Mail", ["BreachBodyAllDefences1"]),
                 ),
-                buy(
-                    "es",
-                    "Buy T1 flat ES Necrotic Armour",
-                    engine.addStartingMod(item, es, random),
-                ),
+                alterationDonor({ engine, base, buy, craft, currency }, "es", item, es),
             ],
             target,
+            [query(["BreachBodyAllDefences1"]), query([es], item.baseId)],
         ).id;
     } else {
         const item = base(presetId === "energy-shield-chest" ? "Vaal Regalia" : "Spine Bow");
@@ -509,6 +529,7 @@ export function projectFromPreset(
     graph.outcomes[0]!.query = target;
     graph.outcomes[0]!.name = preset.name;
     graph.iterations = 100;
+    if (presetId === "tailwind-boots") graph.maxSteps = 100_000;
     validateRulesetGraph(ruleset, graph);
     return validateCraftingGraph(engine.catalog, graph);
 }

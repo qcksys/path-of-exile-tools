@@ -72,7 +72,8 @@ for (const game of ["poe1", "poe2"] as const) {
     const button = (name: string) => screen.getByText(name, { selector: "button" });
     const currentItem = () => screen.getByRole("region", { name: "Current item" }).textContent;
     const spending = () => within(screen.getByText("Emulator spending").closest("details")!);
-    const amount = (label: string) => spending().getByText(label).nextElementSibling!.textContent;
+    const amount = (label: string) =>
+        spending().getByText(label).closest("dt")!.nextElementSibling!.textContent;
     const saved = () => JSON.parse(localStorage.getItem(key)!)["My crafting project"];
     function mount(input = project) {
         localStorage.setItem(key, JSON.stringify({ test: input }));

@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import type { CraftingCatalog, CraftingItem } from "~/schemas/crafting";
 import { type CraftingGraph, craftingGraphSchema } from "~/schemas/crafting-graph";
+import { useGraphEditCommit } from "./graph-edit-session";
 
 const Workbench = lazy(async () => ({ default: (await import("./workbench")).CraftingWorkbench }));
 
@@ -21,6 +22,7 @@ export function PurchaseItemWorkbench({
     onChange: (graph: CraftingGraph) => void;
 }) {
     const [original, setOriginal] = useState<CraftingItem>();
+    const candidate = useRef<CraftingItem | undefined>(undefined);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
     const request = useRef<AbortController | null>(null);
@@ -34,7 +36,8 @@ export function PurchaseItemWorkbench({
         setError("");
     }
     async function apply(item: CraftingItem) {
-        if (!original) return;
+        if (!original) return true;
+        if (busy) return false;
         request.current?.abort();
         const controller = new AbortController();
         request.current = controller;
@@ -67,27 +70,36 @@ export function PurchaseItemWorkbench({
             const next = craftingGraphSchema.parse(
                 data && typeof data === "object" && "graph" in data ? data.graph : undefined,
             );
-            if (controller.signal.aborted) return;
+            if (controller.signal.aborted) return false;
             if (latest.current.graph !== submitted)
                 throw new Error(
                     "The project changed while applying this item. Review it and apply again.",
                 );
             latest.current.onChange(next);
             close();
+            return true;
         } catch (error) {
             if (!controller.signal.aborted)
                 setError(error instanceof Error ? error.message : "Cannot apply this item.");
+            return false;
         } finally {
             if (!controller.signal.aborted) setBusy(false);
         }
     }
+    useGraphEditCommit(original ? () => apply(candidate.current ?? original) : undefined);
     return (
         <div className="space-y-3">
             <Button
                 variant="outline"
                 size="sm"
                 aria-expanded={Boolean(original)}
-                onClick={() => (original ? close() : setOriginal(structuredClone(item)))}
+                onClick={() => {
+                    if (original) close();
+                    else {
+                        candidate.current = item;
+                        setOriginal(structuredClone(item));
+                    }
+                }}
             >
                 Edit prepared item
             </Button>
@@ -119,6 +131,9 @@ export function PurchaseItemWorkbench({
                                     item: original,
                                     busy,
                                     onApply: (item) => void apply(item),
+                                    onDraftChange: (item) => {
+                                        candidate.current = item;
+                                    },
                                 }}
                             />
                         </Suspense>

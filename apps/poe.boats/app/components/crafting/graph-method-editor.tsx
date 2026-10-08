@@ -8,6 +8,7 @@ import {
     craftingGraphSchema,
     type GraphCraftNode,
 } from "~/schemas/crafting-graph";
+import { useGraphEditCommit } from "./graph-edit-session";
 import { MethodArt } from "./method-art";
 import { MethodPicker } from "./method-picker";
 
@@ -53,7 +54,8 @@ export function GraphMethodEditor({
         setError("");
     }
     async function apply() {
-        if (!draft) return;
+        if (!draft) return true;
+        if (busy) return false;
         const controller = new AbortController();
         request.current?.abort();
         request.current = controller;
@@ -85,20 +87,23 @@ export function GraphMethodEditor({
             const next = craftingGraphSchema.parse(
                 data && typeof data === "object" && "graph" in data ? data.graph : undefined,
             );
-            if (controller.signal.aborted) return;
+            if (controller.signal.aborted) return false;
             if (latest.current.graph !== submitted)
                 throw new Error(
                     "The project changed while applying this method. Review it and apply again.",
                 );
             latest.current.onChange(next);
             close();
+            return true;
         } catch (error) {
             if (!controller.signal.aborted)
                 setError(error instanceof Error ? error.message : "Cannot apply this method.");
+            return false;
         } finally {
             if (!controller.signal.aborted) setBusy(false);
         }
     }
+    useGraphEditCommit(draft ? apply : undefined);
     return (
         <div className="space-y-3">
             <Button

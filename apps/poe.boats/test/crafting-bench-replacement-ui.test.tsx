@@ -85,7 +85,9 @@ describe("bench replacement in the workbench", () => {
         expect(screen.getByLabelText("Orb of Scouring")).toBeDefined();
         fireEvent.click(button("Apply craft"));
         const spending = within(screen.getByText("Emulator spending").closest("details")!);
-        expect(spending.getByText("Orb of Scouring").nextElementSibling!.textContent).toBe("1");
+        expect(
+            spending.getByText("Orb of Scouring").closest("dt")!.nextElementSibling!.textContent,
+        ).toBe("1");
         if (!skipOnConflict) expect(screen.getByRole("alert").textContent).toContain("open prefix");
         fireEvent.click(button("Save project"));
         expect(saved().item.mods).toEqual(item.mods.filter((entry) => !entry.crafted));
