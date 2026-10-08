@@ -169,7 +169,7 @@ describe("transport parity", () => {
 
     it.each(craftingPresets)("creates $name identically over HTTP and MCP", async (preset) => {
         const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === "r6",
+            (entry) => entry.game === "poe1" && entry.revision === "r7",
         )!;
         const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId: preset.id };
         const expected = projectFromPreset(fixtureEngine, ruleset, preset.id);
@@ -610,7 +610,13 @@ describe("transport parity", () => {
         }
     });
 
-    it("shares supplemental lookup, full-recipe binding, refresh and scope refusals through HTTP and MCP", async () => {
+    it.each([
+        "lookup",
+        "binding",
+        "refresh",
+        "wrong league",
+        "incomplete recipe",
+    ] as const)("shares supplemental %s through HTTP and MCP", async (scenario) => {
         const graph = exchangeGraph();
         const id = "EinharMasterCraftMorrigan7";
         const sourceQuote = craftingSourceQuoteSchema.parse({
@@ -642,68 +648,61 @@ describe("transport parity", () => {
             .spyOn(craftingSources, "findCraftingSourcePrices")
             .mockResolvedValue(prices);
         const bound = bindCraftingSourcePrice(graph, fixtureEngine, id, sourceQuote);
-        for (const [name, path, input, expected] of [
-            [
+        const cases = {
+            lookup: [
                 "find_crafting_source_prices",
                 "/market/sources",
                 { graph, ids: [id], realm: "pc", assumption: sourceQuote.assumption },
                 prices,
             ],
-            [
+            binding: [
                 "bind_crafting_source_price",
                 "/market/sources/bind",
                 { graph, id, quote: sourceQuote },
                 { graph: bound },
             ],
-            [
+            refresh: [
                 "refresh_crafting_item_prices",
                 "/market/refresh",
                 { graph: bound },
                 { graph: bound, issues: [] },
             ],
-        ] as const) {
-            const response = await api.request(
-                `https://poe.boats/api/v1/crafting${path}`,
+            "wrong league": [
+                "bind_crafting_source_price",
+                "/market/sources/bind",
+                { graph, id, quote: { ...sourceQuote, league: "Other" } },
+                null,
+            ],
+            "incomplete recipe": [
+                "bind_crafting_source_price",
+                "/market/sources/bind",
                 {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(input),
+                    graph,
+                    id,
+                    quote: { ...sourceQuote, components: sourceQuote.components.slice(0, 2) },
                 },
-                { runtime },
-            );
-            expect(response.status, name).toBe(200);
+                null,
+            ],
+        } as const;
+        const [name, path, input, expected] = cases[scenario];
+        const response = await api.request(
+            `https://poe.boats/api/v1/crafting${path}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
+            },
+            { runtime },
+        );
+        expect(response.status).toBe(expected === null ? 400 : 200);
+        const rpc = RpcSchema.parse(
+            await (await mcp("tools/call", { name, arguments: input })).json(),
+        );
+        const result = CallToolResultSchema.parse(rpc.result);
+        if (expected === null) expect(result.isError).toBe(true);
+        else {
             expect(await response.json()).toEqual(expected);
-            const rpc = RpcSchema.parse(
-                await (await mcp("tools/call", { name, arguments: input })).json(),
-            );
-            expect(CallToolResultSchema.parse(rpc.result).structuredContent, name).toEqual(
-                expected,
-            );
-        }
-        for (const quote of [
-            { ...sourceQuote, league: "Other" },
-            { ...sourceQuote, components: sourceQuote.components.slice(0, 2) },
-        ]) {
-            const input = { graph, id, quote };
-            const response = await api.request(
-                "https://poe.boats/api/v1/crafting/market/sources/bind",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(input),
-                },
-                { runtime },
-            );
-            expect(response.status).toBe(400);
-            const rpc = RpcSchema.parse(
-                await (
-                    await mcp("tools/call", {
-                        name: "bind_crafting_source_price",
-                        arguments: input,
-                    })
-                ).json(),
-            );
-            expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
+            expect(result.structuredContent).toEqual(expected);
         }
         lookup.mockRestore();
     });
@@ -1281,6 +1280,22 @@ describe("transport parity", () => {
             },
         ],
         ["get_idol_catalog", {}],
+        [
+            "describe_simple_crafting_method",
+            {
+                graph: graphFixture(),
+                method: { kind: "currency", id: transmuteId },
+                item: firstItem,
+            },
+        ],
+        [
+            "configure_simple_crafting_outcome",
+            {
+                graph: conditionalTransmuteGraph("poe1"),
+                nodeId: "transmute",
+                goal: { kind: "once" },
+            },
+        ],
         ["list_idol_modifiers", { locale: "en" }],
         ["get_recombinator_catalog", {}],
         ["list_crafting_rulesets", { game: "poe1" }],
@@ -1483,6 +1498,15 @@ describe("transport parity", () => {
             "create_crafting_graph_from_preset",
             "/graph/from-preset",
             { game: "poe2", ruleset: graphFixture().ruleset, presetId: "tailwind-boots" },
+        ],
+        [
+            "configure_simple_crafting_outcome",
+            "/graph/simple-outcome",
+            {
+                graph: conditionalTransmuteGraph("poe1"),
+                nodeId: "transmute",
+                goal: { kind: "minimum", field: "memoryStrands", value: 70 },
+            },
         ],
         [
             "create_crafting_graph_from_preset",

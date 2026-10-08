@@ -126,6 +126,10 @@ export const modifierFactSchema = z
 export const itemFactsSchema = z.strictObject({
     baseId: id.optional(),
     itemClass: id.optional(),
+    qualityType: id.optional(),
+    catalystId: id.optional(),
+    quality: count.optional(),
+    catalystQuality: count.optional(),
     modifiers: z.array(modifierFactSchema).max(100).default([]),
     modifiersComplete: z.boolean().default(false),
     prefixes: count.optional(),
@@ -160,7 +164,7 @@ export const itemRecordSchema = z.strictObject({
 export const itemConditionSchema = z.discriminatedUnion("kind", [
     z.strictObject({
         kind: z.literal("base"),
-        field: z.enum(["baseType", "baseId", "itemClass"]),
+        field: z.enum(["baseType", "baseId", "itemClass", "qualityType", "catalystId"]),
         values: z.array(id).min(1).max(100),
     }),
     z.strictObject({ kind: z.literal("rarity"), values: z.array(raritySchema).min(1).max(7) }),
@@ -176,6 +180,8 @@ export const itemConditionSchema = z.discriminatedUnion("kind", [
             "openSuffixes",
             "memoryStrands",
             "memoryStrandsSpent",
+            "quality",
+            "catalystQuality",
         ]),
         value: rangeSchema,
     }),

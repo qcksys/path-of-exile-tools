@@ -9,9 +9,14 @@ import {
 } from "~/lib/crafting-graph-authoring";
 import { replaceGraphMethod } from "~/lib/crafting-graph-method";
 import { nonNativeEssenceSources } from "~/lib/crafting-recombination";
-import { resolveRuleset, validateRulesetGraph } from "~/lib/crafting-rulesets";
+import { resolveRuleset, rulesetAllowsMethod, validateRulesetGraph } from "~/lib/crafting-rulesets";
 import type { HistoricalCraftingSimulation } from "~/lib/crafting-runtime";
-import { craftingCatalogSchema, craftingItemSchema } from "~/schemas/crafting";
+import { configureSimpleCraft, simpleCraftCapability } from "~/lib/crafting-smart";
+import {
+    craftingCatalogSchema,
+    craftingItemSchema,
+    craftingMethodSchema,
+} from "~/schemas/crafting";
 import {
     graphAuthoringCommandSchema,
     projectFromItemInputSchema,
@@ -20,6 +25,7 @@ import {
 } from "~/schemas/crafting-graph-authoring";
 import { nonNativeEssenceSourceSchema } from "~/schemas/crafting-nnn";
 import type { CraftingRuleset } from "~/schemas/crafting-rulesets";
+import { simpleCraftCapabilitySchema, simpleCraftGoalSchema } from "~/schemas/crafting-smart";
 import { CraftingGraphContract, CraftingGraphResultContract } from "./crafting-contracts";
 import { OperationError } from "./errors";
 import { defineOperation } from "./operation";
@@ -45,10 +51,86 @@ export const craftingGraphCalculationSchema = z.object({
 export const craftingGraphOperations = [
     defineOperation({
         ...calculation,
+        path: "/graph/capability",
+        name: "describe_simple_crafting_method",
+        description:
+            "Describe a simple craft's supported target and eligibility for an actual input item, using the project's extracted catalog. Null means the method needs custom outcomes. Does not craft or save an item.",
+        input: z.object({
+            graph: CraftingGraphContract,
+            method: craftingMethodSchema,
+            item: craftingItemSchema.optional(),
+        }),
+        output: z.object({ capability: simpleCraftCapabilitySchema.nullable() }),
+        execute: async (input, context) => {
+            try {
+                const ruleset = resolveRuleset(
+                    await context.loadCraftingRulesets(),
+                    input.graph.game,
+                    input.graph.ruleset,
+                );
+                if (!rulesetAllowsMethod(ruleset, input.method))
+                    throw new Error("This craft is unavailable in the selected era.");
+                const loaded = await context.loadCraftingRevision(ruleset);
+                const engine = new CraftingEngine(craftingCatalogSchema.parse(loaded.catalog));
+                return {
+                    capability: simpleCraftCapability(
+                        engine,
+                        engine.validateMethod(input.method),
+                        input.item && engine.validateItem(input.item),
+                    ),
+                };
+            } catch (error) {
+                throw new OperationError(
+                    error instanceof Error ? error.message : "Cannot describe this craft.",
+                    400,
+                );
+            }
+        },
+    }),
+    defineOperation({
+        ...calculation,
+        path: "/graph/simple-outcome",
+        name: "configure_simple_crafting_outcome",
+        description:
+            "Configure apply-once or repeat-until-minimum for a supported simple craft. Generates only that craft's supported conditions and a retry loop that reuses the same item. Requires revision 7 or newer. Returns a draft without saving.",
+        input: z.object({
+            graph: CraftingGraphContract,
+            nodeId: z.string(),
+            goal: simpleCraftGoalSchema,
+        }),
+        output: z.object({ graph: CraftingGraphContract }),
+        execute: async (input, context) => {
+            try {
+                const ruleset = resolveRuleset(
+                    await context.loadCraftingRulesets(),
+                    input.graph.game,
+                    input.graph.ruleset,
+                );
+                if (ruleset.engine !== "crafting-graph-7")
+                    throw new Error("Adopt the latest revision to use simple outcomes.");
+                const loaded = await context.loadCraftingRevision(ruleset);
+                const engine = new CraftingEngine(craftingCatalogSchema.parse(loaded.catalog));
+                const graph = structuredClone(input.graph);
+                const node = graph.nodes.find((entry) => entry.id === input.nodeId);
+                if (node?.kind !== "craft") throw new Error("Choose a craft step.");
+                Object.assign(node, configureSimpleCraft(engine, node, input.goal));
+                validateRulesetGraph(ruleset, graph);
+                loaded.runtime.createSimulation(loaded.catalog, graph, { workLimit: 1 });
+                return { graph };
+            } catch (error) {
+                throw new OperationError(
+                    error instanceof Error ? error.message : "Cannot configure this craft.",
+                    400,
+                );
+            }
+        },
+    }),
+    defineOperation({
+        ...calculation,
         path: "/graph/method",
         name: "replace_crafting_graph_method",
         description:
-            "Edit a graph craft using full workbench method settings. Preserves existing input connections, conditions, routes and prices; a newly required second input initially uses the first input's source and consumes a separate item. Refuses stale method edits, inline inventory donors, unavailable era methods and removal of inputs used by recovery routes. Returns the edited draft without saving it.",
+            "Edit a graph craft using full workbench method settings. Preserves input connections and prices. In revision 7, selecting a different simple craft generates its supported target and retry routes; unchanged custom methods retain their conditions. A newly required second input consumes a separate item. Refuses stale edits, inline donors, unavailable methods and removal of inputs used by recovery routes. Returns a draft without saving it.",
         input: replaceGraphMethodInputSchema.extend({ graph: CraftingGraphContract }),
         output: z.object({ graph: CraftingGraphContract }),
         execute: async (input, context) => {
