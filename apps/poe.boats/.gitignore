@@ -17,6 +17,9 @@ build
 scripts/**/.cache/
 .vitest/
 playwright-report/
+blob-report/
+all-blob-reports/
+unit-results.json
 test-results/
 env.d.ts
 /public/game-data/history/
