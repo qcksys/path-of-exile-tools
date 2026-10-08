@@ -39,7 +39,7 @@ export function GraphCanvas({
     onChange,
     result,
     onError,
-    fullWidth = false,
+    fullWidth = true,
     onFullWidthChange,
     renderStepEditor,
     renderOutcomeEditor,

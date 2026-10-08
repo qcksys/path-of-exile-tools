@@ -75,7 +75,7 @@ for (const game of ["poe1", "poe2"] as const) {
     });
 }
 
-test("new projects require a base and the graph expands without changing the project", async ({
+test("new projects require a base and the graph defaults to full width", async ({
     page,
 }, testInfo) => {
     await page.goto("/1/crafting/projects");
@@ -87,12 +87,12 @@ test("new projects require a base and the graph expands without changing the pro
     const graph = page.getByRole("region", { name: "Crafting project graph", exact: true });
     await expect(graph.locator('[data-item-art="Plate Vest"] img').first()).toBeVisible();
     await expect(graph.getByRole("link", { name: "React Flow", exact: true })).toHaveCount(0);
+    const fullWidth = page.getByRole("button", { name: "Full width", exact: true });
+    await expect(fullWidth).toHaveAttribute("aria-pressed", "true");
     const initial = (await graph.boundingBox())!;
     await graph.screenshot({ path: testInfo.outputPath("graph-item-thumbnails.png") });
-    await page.getByRole("button", { name: "Full width", exact: true }).click();
-    await expect
-        .poll(async () => (await graph.boundingBox())!.width)
-        .toBeGreaterThan(initial.width);
+    await fullWidth.click();
+    await expect.poll(async () => (await graph.boundingBox())!.width).toBeLessThan(initial.width);
     await page.getByRole("button", { name: "Fullscreen graph", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Crafting project graph", exact: true });
     await expect(dialog).toBeVisible();
@@ -102,11 +102,9 @@ test("new projects require a base and the graph expands without changing the pro
         .toBe(page.viewportSize()!.height);
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Full width", exact: true })).toHaveAttribute(
-        "aria-pressed",
-        "true",
-    );
-    await page.getByRole("button", { name: "Full width", exact: true }).click();
+    await expect(fullWidth).toHaveAttribute("aria-pressed", "false");
+    await fullWidth.click();
+    await expect(fullWidth).toHaveAttribute("aria-pressed", "true");
     await expect.poll(async () => (await graph.boundingBox())!.width).toBe(initial.width);
     await page.getByRole("button", { name: "Add item input", exact: true }).click();
     await expect(page.getByRole("combobox", { name: "New input base", exact: true })).toHaveValue(

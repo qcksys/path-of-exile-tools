@@ -19,7 +19,7 @@ These browser catalogs share one request per game and provide GGG item artwork U
 attribute requirements and implicit descriptions. Pickers group equipment by type, then base level
 and requirements; unknown drop restrictions are not inferred from tags or release-state labels.
 Crafting calculations, saved item schemas and retained engine packages remain independent of this
-presentation data. Graph width/fullscreen controls and empty initial selectors are browser UI state.
+presentation data. Graphs default to full width; width/fullscreen controls and empty initial selectors are browser UI state.
 Item thumbnails also accompany recipe inputs and outputs, market rows and history, currency prices
 and spending, crafting presets, socketed augments, recipe rings, scarab effects, process steps and recombinator results. Market
 artwork uses the captured icon asset so unique variants keep their own art. Name-only recipe entries
