@@ -76,9 +76,19 @@ export function graphBranchChance(
 }
 export const graphChanceWidth = (chance: number | null) => (chance === null ? 1.5 : 1 + 7 * chance);
 
+export function graphContinueChance(result: CraftingGraphResult | undefined, node?: GraphNode) {
+    if (!node) return null;
+    if (node.kind === "acquire") return 1;
+    if (!result?.visits[node.id]?.visits) return null;
+    return [...node.branches, { id: "fallback", destination: node.fallback }]
+        .filter((branch) => branch.destination.kind === "return")
+        .reduce((total, branch) => total + (graphBranchChance(result, node.id, branch.id) ?? 0), 0);
+}
+
 export function layoutCraftingGraph(
     graph: CraftingGraph,
     heights: ReadonlyMap<string, number> = new Map(),
+    widths: ReadonlyMap<string, number> = new Map(),
 ) {
     const levels = new Map<string, number>();
     const positions = new Map<string, { x: number; y: number }>();
@@ -88,7 +98,8 @@ export function layoutCraftingGraph(
         levels.set(node.id, rank);
         rows.set(rank, [...(rows.get(rank) ?? []), node]);
     }
-    for (const [rank, nodes] of rows) {
+    let x = 30;
+    for (const [, nodes] of rows) {
         const centre = (node: GraphNode) => {
             const inputs = graphDependencies(node).map(
                 (id) => positions.get(id)!.y + (heights.get(id) ?? 360) / 2,
@@ -100,9 +111,10 @@ export function layoutCraftingGraph(
         for (const node of nodes) {
             const height = heights.get(node.id) ?? 360;
             const y = Math.max(bottom, centre(node) - height / 2);
-            positions.set(node.id, { x: 30 + rank * 560, y });
+            positions.set(node.id, { x, y });
             bottom = y + height + 100;
         }
+        x += Math.max(...nodes.map((node) => widths.get(node.id) ?? 320)) + 240;
     }
     return positions;
 }
@@ -148,6 +160,7 @@ export function graphPreviewItem(
             ? filter.ids
             : [],
     );
+    if (!mods.length) return null;
     return {
         ...item,
         rarity: mods.length ? "rare" : "normal",

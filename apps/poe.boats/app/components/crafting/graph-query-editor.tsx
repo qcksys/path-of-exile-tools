@@ -2,7 +2,6 @@ import type { ItemCondition, ItemQuery, NumericRange } from "@poe-tools/item-que
 import { useId, useMemo, useState } from "react";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -347,14 +346,12 @@ export function GraphQueryEditor({
     return (
         <fieldset className="space-y-3">
             <legend className="mb-2 text-sm font-medium">{label}</legend>
-            <Dialog
-                open={pendingBase !== null}
-                onOpenChange={(open) => {
-                    if (!open) setPendingBase(null);
-                }}
-            >
-                <DialogContent>
-                    <DialogTitle>Choose required base</DialogTitle>
+            {pendingBase !== null && (
+                <section
+                    aria-label="Choose required base"
+                    className="space-y-3 rounded-md border p-3"
+                >
+                    <p className="text-sm font-medium">Choose required base</p>
                     <CatalogPicker
                         id={`${uid}-pending-base`}
                         label="Required base"
@@ -374,8 +371,16 @@ export function GraphQueryEditor({
                             setPendingBase(null);
                         }}
                     />
-                </DialogContent>
-            </Dialog>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPendingBase(null)}
+                    >
+                        Cancel required base
+                    </Button>
+                </section>
+            )}
             <QueryFromItemText game={value.game} ruleset={ruleset} onApply={onChange} />
             {!value.groups.length && (
                 <p className="text-xs text-muted-foreground">

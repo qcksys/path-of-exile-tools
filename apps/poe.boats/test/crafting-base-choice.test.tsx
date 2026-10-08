@@ -82,8 +82,15 @@ it("waits for an explicit base before changing an outcome condition", () => {
     changeControl(screen.getByRole("combobox", { name: "Condition type" }), {
         target: { value: "base" },
     });
-    const dialog = within(screen.getByRole("dialog", { name: "Choose required base" }));
-    const picker = dialog.getByRole("combobox", { name: "Required base" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel required base" }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.queryByRole("region", { name: "Choose required base" })).toBeNull();
+    changeControl(screen.getByRole("combobox", { name: "Condition type" }), {
+        target: { value: "base" },
+    });
+    const panel = within(screen.getByRole("region", { name: "Choose required base" }));
+    const picker = panel.getByRole("combobox", { name: "Required base" });
     expect(picker).toHaveProperty("value", "");
     expect(onChange).not.toHaveBeenCalled();
     fireEvent.change(picker, { target: { value: "Coral Ring" } });

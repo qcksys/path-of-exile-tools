@@ -1,5 +1,5 @@
 import { PinIcon, PinOffIcon, XIcon } from "lucide-react";
-import { type ReactNode, useContext, useState } from "react";
+import { type ReactNode, useContext, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "~/components/ui/popover";
 import type { CraftingEngine } from "~/lib/crafting-engine";
@@ -22,6 +22,9 @@ export function ItemCardPopover({
 }) {
     const [open, setOpen] = useState(false);
     const [pinned, setPinned] = useState(false);
+    const trigger = useRef<HTMLButtonElement>(null);
+    const popup = useRef<HTMLDivElement>(null);
+    const restoringFocus = useRef(false);
     const display = useContext(CraftingDisplay);
     const preview = open ? (typeof item === "function" ? item() : item) : null;
     return (
@@ -39,10 +42,13 @@ export function ItemCardPopover({
             }}
         >
             <PopoverTrigger
+                ref={trigger}
                 openOnHover
                 delay={200}
                 closeDelay={150}
-                onFocus={() => setOpen(true)}
+                onFocus={() => {
+                    if (!restoringFocus.current) setOpen(true);
+                }}
                 render={
                     <Button
                         variant="ghost"
@@ -54,9 +60,21 @@ export function ItemCardPopover({
                 {children}
             </PopoverTrigger>
             <PopoverContent
+                ref={popup}
                 side="right"
                 className="nodrag nopan nowheel max-h-[80dvh] w-96 max-w-[calc(100vw-2rem)] overflow-y-auto"
                 initialFocus={false}
+                finalFocus={() => {
+                    if (
+                        popup.current?.contains(document.activeElement) ||
+                        document.activeElement === document.body
+                    ) {
+                        restoringFocus.current = true;
+                        trigger.current?.focus({ preventScroll: true });
+                        restoringFocus.current = false;
+                    }
+                    return false;
+                }}
             >
                 <div className="flex items-center gap-2">
                     <PopoverTitle className="flex-1 text-xs">{label}</PopoverTitle>

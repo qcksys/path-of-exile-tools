@@ -1,47 +1,35 @@
 import {
     Background,
-    BaseEdge,
     Controls,
     type Edge,
-    type EdgeProps,
     MarkerType,
     ReactFlow,
     type ReactFlowInstance,
     useNodesState,
 } from "@xyflow/react";
 import { ExpandIcon, MaximizeIcon, MinimizeIcon, NetworkIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
+import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { connectGraphInput } from "~/lib/crafting-graph-authoring";
 import {
     graphBranchChance,
     graphChanceWidth,
+    graphContinueChance,
     layoutCraftingGraph,
 } from "~/lib/crafting-graph-presentation";
 import { cn } from "~/lib/utils";
-import type { CraftingGraph } from "~/schemas/crafting-graph";
+import type { CraftingGraph, GraphNode, GraphOutcome } from "~/schemas/crafting-graph";
 import type { CraftingGraphResult } from "~/schemas/crafting-graph-result";
+import { type CraftingFlowEdge, GraphEdge, type GraphEdgePoint } from "./graph-edge";
 import { type CraftingFlowNode, FlowStep } from "./graph-flow-node";
 import "@xyflow/react/dist/style.css";
 
 const nodeTypes = { crafting: FlowStep };
-function RetryEdge({ sourceX, sourceY, targetX, targetY, data, ...props }: EdgeProps) {
-    const lane = Math.max(sourceY, targetY, Number(data?.bottom ?? 0)) + Number(data?.offset ?? 60);
-    const right = Number(data?.sourceRight ?? sourceX) + 40;
-    const left = Number(data?.targetLeft ?? targetX) - 40;
-    return (
-        <BaseEdge
-            {...props}
-            path={`M ${sourceX} ${sourceY} L ${sourceX} ${sourceY + 24} L ${right} ${sourceY + 24} L ${right} ${lane} L ${left} ${lane} L ${left} ${targetY + 24} L ${targetX} ${targetY + 24} L ${targetX} ${targetY}`}
-            labelX={(right + left) / 2}
-            labelY={lane}
-        />
-    );
-}
-const edgeTypes = { retry: RetryEdge };
+const edgeTypes = { route: GraphEdge };
 
 export function GraphCanvas({
     graph,
@@ -53,6 +41,11 @@ export function GraphCanvas({
     onError,
     fullWidth = false,
     onFullWidthChange,
+    renderStepEditor,
+    renderOutcomeEditor,
+    toolbar,
+    settings,
+    previewStatus,
 }: {
     graph: CraftingGraph;
     engine: CraftingEngine;
@@ -63,9 +56,93 @@ export function GraphCanvas({
     onError: (error: unknown) => void;
     fullWidth?: boolean;
     onFullWidthChange?: (value: boolean) => void;
+    renderStepEditor: (node: GraphNode, section: "step" | "outcomes") => ReactNode;
+    renderOutcomeEditor: (outcome: GraphOutcome) => ReactNode;
+    toolbar?: ReactNode;
+    settings?: ReactNode;
+    previewStatus?: string;
 }) {
     const [fullscreen, setFullscreen] = useState(false);
+    const [editing, setEditing] = useState<
+        { id: string; section: "step" | "outcomes" } | undefined
+    >(() => {
+        try {
+            const saved = JSON.parse(
+                localStorage.getItem(`crafting-graph-editor:${graph.id}`) ?? "null",
+            );
+            if (
+                saved &&
+                ["step", "outcomes"].includes(saved.section) &&
+                (graph.nodes.some((node) => node.id === saved.id) ||
+                    graph.outcomes.some((outcome) => `outcome:${outcome.id}` === saved.id))
+            )
+                return saved;
+        } catch {
+            /* No saved editor is needed to open the graph. */
+        }
+        return graph.nodes.length === 1 ? { id: graph.entry, section: "step" } : undefined;
+    });
+    useEffect(() => {
+        if (editing)
+            localStorage.setItem(`crafting-graph-editor:${graph.id}`, JSON.stringify(editing));
+        else localStorage.removeItem(`crafting-graph-editor:${graph.id}`);
+    }, [editing, graph.id]);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [edgePoints, setEdgePoints] = useState<Record<string, GraphEdgePoint>>({});
+    const fitted = useRef(false);
+    const focusedEditor = useRef<string | undefined>(undefined);
+    const [focusId, setFocusId] = useState(graph.nodes.length > 6 ? graph.nodes[0]!.id : selected);
+    const previousSelection = useRef(selected);
+    useEffect(() => {
+        if (previousSelection.current !== selected) {
+            previousSelection.current = selected;
+            setFocusId(selected);
+            setEditing((current) =>
+                current?.id === selected ? current : { id: selected, section: "step" },
+            );
+        }
+    }, [selected]);
+    const moveEdge = useCallback(
+        (id: string, point?: GraphEdgePoint) => {
+            setEdgePoints((current) => {
+                const next = { ...current };
+                if (point) next[id] = point;
+                else delete next[id];
+                localStorage.setItem(`crafting-graph-lines:${graph.id}`, JSON.stringify(next));
+                return next;
+            });
+        },
+        [graph.id],
+    );
+    useEffect(() => {
+        try {
+            const saved = JSON.parse(
+                localStorage.getItem(`crafting-graph-lines:${graph.id}`) ?? "{}",
+            );
+            setEdgePoints(
+                Object.fromEntries(
+                    Object.entries(saved).filter(
+                        ([, value]) =>
+                            value &&
+                            typeof value === "object" &&
+                            "x" in value &&
+                            "y" in value &&
+                            typeof value.x === "number" &&
+                            Number.isFinite(value.x) &&
+                            typeof value.y === "number" &&
+                            Number.isFinite(value.y),
+                    ),
+                ) as Record<string, GraphEdgePoint>,
+            );
+        } catch {
+            setEdgePoints({});
+        }
+    }, [graph.id]);
     const [flow, setFlow] = useState<ReactFlowInstance<CraftingFlowNode, Edge> | null>(null);
+    useEffect(() => {
+        fitted.current = false;
+        focusedEditor.current = undefined;
+    }, [flow]);
     const positions = useMemo(() => layoutCraftingGraph(graph), [graph]);
     const retries = graph.nodes.reduce(
         (count, node) =>
@@ -96,9 +173,15 @@ export function GraphCanvas({
                     step,
                     result,
                     active: selected === step.id,
-                    select: () => {
+                    editor:
+                        editing?.id === step.id
+                            ? renderStepEditor(step, editing.section)
+                            : undefined,
+                    editing: editing?.id === step.id,
+                    close: () => setEditing(undefined),
+                    select: (section: "step" | "outcomes" = "step") => {
                         onSelect(step.id);
-                        setFullscreen(false);
+                        setEditing({ id: step.id, section });
                     },
                 },
             })),
@@ -111,7 +194,20 @@ export function GraphCanvas({
                     x: Math.max(...Array.from(positions.values(), (position) => position.x)) + 560,
                     y: 30 + index * 400,
                 },
-                data: { graph, engine, outcome, result, active: false, select: () => {} },
+                data: {
+                    graph,
+                    engine,
+                    outcome,
+                    result,
+                    active: editing?.id === `outcome:${outcome.id}`,
+                    editing: editing?.id === `outcome:${outcome.id}`,
+                    editor:
+                        editing?.id === `outcome:${outcome.id}`
+                            ? renderOutcomeEditor(outcome)
+                            : undefined,
+                    close: () => setEditing(undefined),
+                    select: () => setEditing({ id: `outcome:${outcome.id}`, section: "outcomes" }),
+                },
             })),
             {
                 id: "routing-bounds",
@@ -125,7 +221,18 @@ export function GraphCanvas({
                 data: { graph, engine, active: false, select: () => {} },
             },
         ],
-        [graph, engine, positions, result, selected, onSelect, retries],
+        [
+            graph,
+            engine,
+            positions,
+            result,
+            selected,
+            onSelect,
+            retries,
+            editing,
+            renderStepEditor,
+            renderOutcomeEditor,
+        ],
     );
     const [nodes, setNodes, onNodesChange] = useNodesState<CraftingFlowNode>(projected);
     useEffect(
@@ -142,13 +249,20 @@ export function GraphCanvas({
             ),
         [projected, setNodes],
     );
-    const dimensions = nodes.map((node) => `${node.id}:${node.measured?.height ?? 0}`).join(";");
+    const dimensions = nodes
+        .map((node) => `${node.id}:${node.measured?.height ?? 0}:${node.measured?.width ?? 0}`)
+        .join(";");
     useEffect(() => {
         if (!flow) return;
+        if (!editing) focusedEditor.current = undefined;
         const current = flow.getNodes();
         if (current.some((node) => !node.measured?.height)) return;
         const heights = new Map(current.map((node) => [node.id, node.measured!.height!]));
-        const layout = layoutCraftingGraph(graph, heights);
+        const layout = layoutCraftingGraph(
+            graph,
+            heights,
+            new Map(current.map((node) => [node.id, node.measured?.width ?? 320])),
+        );
         for (const step of graph.nodes) if (step.position) layout.set(step.id, step.position);
         const outcomeX = Math.max(...Array.from(layout.values(), (position) => position.x)) + 560;
         let outcomeY = 30;
@@ -164,15 +278,35 @@ export function GraphCanvas({
         setNodes((current) =>
             current.map((node) => ({ ...node, position: layout.get(node.id) ?? node.position })),
         );
-        const frame = requestAnimationFrame(() => void flow.fitView({ padding: 0.12, maxZoom: 1 }));
+        const frame = requestAnimationFrame(() => {
+            const editorNode = current.find((node) => node.id === editing?.id);
+            const editorFocus =
+                editorNode &&
+                `${editorNode.id}:${editorNode.measured?.width}:${editorNode.measured?.height}`;
+            if (!fitted.current) {
+                fitted.current = true;
+                void flow.fitView({
+                    padding: 0.2,
+                    maxZoom: 1,
+                    nodes: editing
+                        ? [{ id: editing.id }]
+                        : graph.nodes.length > 6
+                          ? graph.nodes.slice(0, 3).map((node) => ({ id: node.id }))
+                          : undefined,
+                });
+            } else if (editing && focusedEditor.current !== editorFocus) {
+                focusedEditor.current = editorFocus;
+                void flow.fitView({ nodes: [{ id: editing.id }], padding: 0.2, maxZoom: 1 });
+            }
+        });
         return () => cancelAnimationFrame(frame);
-    }, [dimensions, flow, graph, setNodes, retries]);
+    }, [dimensions, flow, graph, setNodes, retries, editing]);
     const edges = useMemo(() => {
-        const edges: Edge[] = [];
+        const edges: CraftingFlowEdge[] = [];
         const add = (edge: Edge, color: string, chance: number | null = null, retry = false) =>
             edges.push({
                 ...edge,
-                type: retry ? "retry" : "smoothstep",
+                type: "route",
                 style: {
                     stroke: color,
                     strokeWidth: graphChanceWidth(chance),
@@ -182,21 +316,32 @@ export function GraphCanvas({
                 labelStyle: { fill: "var(--foreground)", fontSize: 11 },
                 labelBgStyle: { fill: "var(--card)" },
                 data: {
-                    offset: 45 + edges.filter((edge) => edge.type === "retry").length * 28,
-                    bottom: Math.max(
-                        ...nodes
-                            .filter((node) => node.id !== "routing-bounds")
-                            .map((node) => node.position.y + (node.measured?.height ?? 360)),
-                    ),
+                    retry,
+                    point: edgePoints[edge.id],
+                    onMove: moveEdge,
+                    description: `${graph.nodes.find((node) => node.id === edge.source)?.name ?? edge.source} → ${graph.nodes.find((node) => node.id === edge.target)?.name ?? graph.outcomes.find((outcome) => `outcome:${outcome.id}` === edge.target)?.name ?? edge.target}. ${String(edge.label)}. ${chance === null ? "No observations yet; this is not a zero probability." : edge.id.startsWith("final:") ? `Observed across ${result?.trials ?? 0} trials, including any unfinished trials.` : graph.nodes.find((node) => node.id === edge.source)?.kind === "acquire" ? "Acquisition supplies its selected item; this 100% connection is deterministic, not a crafting success estimate." : `${result?.visits[edge.source]?.visits ?? 0} visits to the source step. Percentages are sampled route frequencies, not exact odds; a sampled 0% does not prove impossibility.`}`,
+                    lane:
+                        45 +
+                        edges.filter((edge) => edge.data?.retry).length * 36 +
+                        Math.max(
+                            ...nodes
+                                .filter((node) => node.id !== "routing-bounds")
+                                .map((node) => node.position.y + (node.measured?.height ?? 360)),
+                        ),
                     sourceRight:
-                        (nodes.find((node) => node.id === edge.source)?.position.x ?? 0) + 320,
+                        (nodes.find((node) => node.id === edge.source)?.position.x ?? 0) +
+                        (nodes.find((node) => node.id === edge.source)?.measured?.width ?? 320),
                     targetLeft: nodes.find((node) => node.id === edge.target)?.position.x ?? 0,
                 },
             });
         for (const node of graph.nodes) {
             if (node.kind === "acquire") {
                 for (const option of node.alternatives)
-                    if (option.kind === "production")
+                    if (option.kind === "production") {
+                        const chance = graphContinueChance(
+                            result,
+                            graph.nodes.find((source) => source.id === option.nodeId),
+                        );
                         add(
                             {
                                 id: `${node.id}:alternative:${option.id}`,
@@ -204,23 +349,17 @@ export function GraphCanvas({
                                 target: node.id,
                                 sourceHandle: "item",
                                 targetHandle: option.id,
-                                label: option.name,
+                                label: `${option.name} · ${chance === null ? "not sampled" : `${(chance * 100).toFixed(1)}% continue`}`,
                             },
                             "var(--chart-1)",
+                            chance,
                         );
+                    }
                 continue;
             }
             for (const input of node.inputs) {
                 const source = graph.nodes.find((node) => node.id === input.source);
-                const chance =
-                    source?.kind === "craft"
-                        ? [...source.branches, { id: "fallback", destination: source.fallback }]
-                              .filter((branch) => branch.destination.kind === "return")
-                              .reduce<number | null>((total, branch) => {
-                                  const chance = graphBranchChance(result, source.id, branch.id);
-                                  return chance === null ? null : (total ?? 0) + chance;
-                              }, null)
-                        : null;
+                const chance = graphContinueChance(result, source);
                 add(
                     {
                         id: `${node.id}:input:${input.id}`,
@@ -228,7 +367,7 @@ export function GraphCanvas({
                         target: node.id,
                         sourceHandle: "item",
                         targetHandle: input.id,
-                        label: `${input.name}${chance === null ? "" : ` · ${(chance * 100).toFixed(1)}% continue`}`,
+                        label: `${input.name} · ${chance === null ? "not sampled" : `${(chance * 100).toFixed(1)}% continue`}`,
                     },
                     "#059669",
                     chance,
@@ -249,7 +388,7 @@ export function GraphCanvas({
                             target: destination.nodeId,
                             sourceHandle: "retry",
                             targetHandle: `recovery-${destination.inputId}`,
-                            label: `Recover · ${chance === null ? "?" : `${(chance * 100).toFixed(1)}%`}`,
+                            label: `${branch.name} · ${chance === null ? "not sampled" : `${(chance * 100).toFixed(1)}%`} recover`,
                         },
                         "#d97706",
                         chance,
@@ -305,59 +444,102 @@ export function GraphCanvas({
             );
         }
         return edges;
-    }, [graph, result, nodes]);
+    }, [graph, result, nodes, edgePoints, moveEdge]);
     const canvas = (
         <section
             className={cn(
-                "min-h-0 rounded-lg border border-border bg-muted/20 [--xy-controls-button-background-color:var(--card)] [--xy-controls-button-color:var(--foreground)] [--xy-controls-button-border-color:var(--border)] [--xy-controls-button-background-color-hover:var(--muted)]",
+                "flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-muted/20 [--xy-controls-button-background-color:var(--card)] [--xy-controls-button-color:var(--foreground)] [--xy-controls-button-border-color:var(--border)] [--xy-controls-button-background-color-hover:var(--muted)]",
                 fullscreen ? "flex-1" : "h-[640px]",
             )}
             aria-label="Crafting project graph"
         >
-            <ReactFlow<CraftingFlowNode>
-                proOptions={{ hideAttribution: true }}
-                nodes={nodes}
-                edges={edges}
-                nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
-                onInit={setFlow}
-                onNodesChange={onNodesChange}
-                edgesReconnectable={false}
-                deleteKeyCode={null}
-                fitView
-                minZoom={0.03}
-                maxZoom={1.5}
-                onConnect={(connection) => {
-                    try {
-                        if (connection.targetHandle)
-                            onChange(
-                                connectGraphInput(
-                                    graph,
-                                    connection.target,
-                                    connection.targetHandle,
-                                    connection.source,
-                                ),
-                            );
-                    } catch (error) {
-                        onError(error);
+            <div className="nodrag nopan nowheel max-h-[45%] shrink-0 overflow-y-auto border-b bg-card p-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    {toolbar}
+                    <FormSelect
+                        aria-label="Focus graph step"
+                        value={focusId}
+                        onValueChange={(id) => {
+                            setFocusId(id);
+                            void flow?.fitView({ nodes: [{ id }], padding: 0.25, maxZoom: 1 });
+                        }}
+                        className="max-w-56"
+                    >
+                        {graph.nodes.map((node) => (
+                            <FormSelectItem key={node.id} value={node.id}>
+                                {node.name}
+                            </FormSelectItem>
+                        ))}
+                        {graph.outcomes.map((outcome) => (
+                            <FormSelectItem key={outcome.id} value={`outcome:${outcome.id}`}>
+                                Outcome: {outcome.name}
+                            </FormSelectItem>
+                        ))}
+                    </FormSelect>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        aria-expanded={settingsOpen}
+                        onClick={() => setSettingsOpen(!settingsOpen)}
+                    >
+                        Prices & calculation
+                    </Button>
+                </div>
+                {settingsOpen && settings}
+                {previewStatus && (
+                    <p role="status" className="mt-2 text-xs text-muted-foreground">
+                        {previewStatus}
+                    </p>
+                )}
+            </div>
+            <div className="min-h-0 flex-1">
+                <ReactFlow<CraftingFlowNode>
+                    proOptions={{ hideAttribution: true }}
+                    nodes={nodes}
+                    edges={edges}
+                    nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    onInit={setFlow}
+                    onNodesChange={onNodesChange}
+                    edgesReconnectable={false}
+                    deleteKeyCode={null}
+                    fitView
+                    minZoom={0.03}
+                    maxZoom={1.5}
+                    onConnect={(connection) => {
+                        try {
+                            if (connection.targetHandle)
+                                onChange(
+                                    connectGraphInput(
+                                        graph,
+                                        connection.target,
+                                        connection.targetHandle,
+                                        connection.source,
+                                    ),
+                                );
+                        } catch (error) {
+                            onError(error);
+                        }
+                    }}
+                    onNodeDragStop={(_, node) =>
+                        onChange({
+                            ...graph,
+                            nodes: graph.nodes.map((entry) =>
+                                entry.id === node.id
+                                    ? { ...entry, position: node.position }
+                                    : entry,
+                            ),
+                        })
                     }
-                }}
-                onNodeDragStop={(_, node) =>
-                    onChange({
-                        ...graph,
-                        nodes: graph.nodes.map((entry) =>
-                            entry.id === node.id ? { ...entry, position: node.position } : entry,
-                        ),
-                    })
-                }
-            >
-                <Background gap={24} color="var(--border)" />
-                <Controls />
-            </ReactFlow>
+                >
+                    <Background gap={24} color="var(--border)" />
+                    <Controls />
+                </ReactFlow>
+            </div>
         </section>
     );
     return (
-        <div className="flex flex-col gap-2">
+        <div className={cn("flex flex-col gap-2", !fullWidth && "max-w-5xl")}>
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <fieldset className="flex flex-wrap gap-2" aria-label="Graph color legend">
                     <Badge variant="acquisition">Acquisitions</Badge>
@@ -372,15 +554,18 @@ export function GraphCanvas({
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
+                        onClick={() => {
+                            fitted.current = false;
+                            setEdgePoints({});
+                            localStorage.removeItem(`crafting-graph-lines:${graph.id}`);
                             onChange({
                                 ...graph,
                                 nodes: graph.nodes.map((node) => ({
                                     ...node,
                                     position: undefined,
                                 })),
-                            })
-                        }
+                            });
+                        }}
                     >
                         <NetworkIcon />
                         Auto arrange
@@ -404,7 +589,8 @@ export function GraphCanvas({
                             <DialogTitle>Crafting project graph</DialogTitle>
                             <p className="text-xs text-muted-foreground">
                                 Hover or focus an item to preview it. Click an item to pin its card.
-                                Select Edit to return to the step editor.
+                                Edit steps and outcomes directly in their nodes. Drag connection
+                                labels to separate paths.
                             </p>
                             {fullscreen && canvas}
                         </DialogContent>
@@ -412,9 +598,9 @@ export function GraphCanvas({
                 </div>
             </div>
             <p className="text-xs text-muted-foreground">
-                Line width shows sampled branch frequency per visit; final outcomes use completed
-                trials. ? means uncalculated. Dashed red paths recreate consumed inputs; amber paths
-                reuse surviving items.
+                Percentages and line width show sampled branch frequency per visit; final outcomes
+                use all trials. Unsampled paths are unknown. Drag labels to bend lines. Dashed red
+                paths recreate consumed inputs; amber paths reuse surviving items.
             </p>
             {!fullscreen && canvas}
         </div>

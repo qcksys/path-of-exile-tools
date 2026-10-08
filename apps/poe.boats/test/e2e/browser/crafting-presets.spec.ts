@@ -23,11 +23,17 @@ for (const preset of craftingPresets) {
             window.presetGraphResults = [];
             const RealWorker = window.Worker;
             window.Worker = class extends RealWorker {
+                manualCalculation = false;
+                postMessage(message: { type?: string; options?: unknown }) {
+                    this.manualCalculation = message.type === "calculate" && !message.options;
+                    super.postMessage(message);
+                }
                 constructor(url: string | URL, options?: WorkerOptions) {
                     super(url, options);
                     if (String(url).includes("/game-data/history/worker.mjs"))
                         this.addEventListener("message", ({ data }) => {
-                            if (data.type === "done") window.presetGraphResults.push(data.result);
+                            if (data.type === "done" && this.manualCalculation)
+                                window.presetGraphResults.push(data.result);
                         });
                 }
             };
@@ -47,6 +53,7 @@ for (const preset of craftingPresets) {
         await page.getByRole("button", { name: "Create from preset", exact: true }).click();
         await expect(page.getByRole("tab", { name: preset.name, exact: true })).toBeVisible();
         const trials = preset.id === "strength-helical-ring" ? 2 : 8;
+        await page.getByRole("button", { name: "Prices & calculation", exact: true }).click();
         await page
             .getByRole("spinbutton", { name: "Sampled trials", exact: true })
             .fill(String(trials));

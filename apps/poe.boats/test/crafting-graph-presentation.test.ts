@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vite-plus/test";
+import { graphPreviewRequest } from "../app/hooks/use-graph-preview";
 import { seededRandom } from "../app/lib/crafting-engine";
 import {
     graphBranchChance,
     graphChanceWidth,
+    graphContinueChance,
     graphPreviewItem,
     graphQueryText,
     layoutCraftingGraph,
 } from "../app/lib/crafting-graph-presentation";
+import { CraftingGraphSimulation } from "../app/lib/crafting-graph-simulation";
 import { CraftingGraphTrial } from "../app/lib/crafting-graph-trial";
 import { graphDependencies } from "../app/lib/crafting-graph-validation";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
@@ -21,13 +24,52 @@ const ruleset = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r6",
 )!;
 describe("crafting graph presentation", () => {
+    it("automatically samples every helical stage with actual modifiers and branch frequencies", () => {
+        const graph = {
+            ...projectFromPreset(engine, ruleset, "strength-helical-ring"),
+            iterations: 3,
+        };
+        const request = graphPreviewRequest(graph);
+        const simulation = new CraftingGraphSimulation(
+            engine.catalog,
+            request.graph,
+            request.options,
+        );
+        while (!simulation.done) simulation.runBatch();
+        const result = simulation.result();
+        expect(result.errors).toEqual({});
+        expect(result.complete).toBe(true);
+        for (const node of graph.nodes) {
+            expect(
+                result.samples.some((sample) => sample.nodeItems?.[node.id]),
+                node.id,
+            ).toBe(true);
+            if (node.kind === "craft") {
+                expect(result.visits[node.id]?.visits, node.id).toBeGreaterThan(0);
+                const branches = result.visits[node.id]!.branches;
+                expect(Object.values(branches).reduce((sum, count) => sum + count, 0)).toBe(
+                    result.visits[node.id]!.visits,
+                );
+            }
+        }
+        const samples = result.samples[0]!.nodeItems!;
+        const rage = engine.catalog.crafting.essences.find(
+            (entry) => entry.name === "Deafening Essence of Rage",
+        )!;
+        expect(samples.strength!.mods.some((mod) => mod.id === rage.mods.Ring)).toBe(true);
+        expect(samples["pre-regal-imprint"]!.mods.map((mod) => mod.id)).toContain("AllAttributes4");
+        expect(samples.hunter!.mods.length).toBe(5);
+    }, 30_000);
     it("places every source before its consumer, spaces measured nodes and ignores recovery cycles", () => {
         const graph = projectFromPreset(engine, ruleset, "energy-shield-chest");
         const heights = new Map(graph.nodes.map((node, index) => [node.id, 400 + index * 35]));
-        const positions = layoutCraftingGraph(graph, heights);
+        const widths = new Map(graph.nodes.map((node) => [node.id, 520]));
+        const positions = layoutCraftingGraph(graph, heights, widths);
         for (const node of graph.nodes) {
             for (const source of graphDependencies(node))
-                expect(positions.get(source)!.x).toBeLessThan(positions.get(node.id)!.x);
+                expect(positions.get(source)!.x + widths.get(source)!).toBeLessThan(
+                    positions.get(node.id)!.x,
+                );
             for (const other of graph.nodes) {
                 if (
                     node.id === other.id ||
@@ -42,7 +84,7 @@ describe("crafting graph presentation", () => {
                 ).toBe(true);
             }
         }
-        expect(layoutCraftingGraph(graph, heights)).toEqual(positions);
+        expect(layoutCraftingGraph(graph, heights, widths)).toEqual(positions);
     });
     it("distinguishes unknown chance from zero and scales lines by routed frequency", () => {
         const result = craftingGraphResultSchema.parse({
@@ -81,6 +123,20 @@ describe("crafting graph presentation", () => {
         expect(graphBranchChance(result, "pair", "hit")).toBe(0.3);
         expect(graphBranchChance(result, "pair", "fallback")).toBe(0);
         expect(graphChanceWidth(0.8)).toBeGreaterThan(graphChanceWidth(0.2));
+        const graph = graphFixture();
+        const craft = graph.nodes.find((node) => node.kind === "craft")!;
+        result.visits[craft.id] = {
+            visits: 10,
+            matches: {},
+            branches: { both: 3, first: 7 },
+            recovered: 7,
+        };
+        expect(graphContinueChance(undefined, craft)).toBeNull();
+        expect(graphContinueChance(result, craft)).toBe(0.3);
+        expect(
+            graphContinueChance(result, { ...craft, branches: [], fallback: { kind: "discard" } }),
+        ).toBe(0);
+        expect(graphContinueChance(result, graph.nodes[0])).toBe(1);
     });
     it("keeps prepared items exact and marks required output through query text", () => {
         const graph = graphFixture();

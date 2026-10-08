@@ -1,12 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogTitle,
-    DialogTrigger,
-} from "~/components/ui/dialog";
 import type { CraftingCatalog, CraftingItem } from "~/schemas/crafting";
 import { type CraftingGraph, craftingGraphSchema } from "~/schemas/crafting-graph";
 
@@ -89,33 +82,49 @@ export function PurchaseItemWorkbench({
         }
     }
     return (
-        <Dialog
-            open={Boolean(original)}
-            onOpenChange={(open) => (open ? setOriginal(structuredClone(item)) : close())}
-        >
-            <DialogTrigger render={<Button variant="outline" size="sm" />}>
+        <div className="space-y-3">
+            <Button
+                variant="outline"
+                size="sm"
+                aria-expanded={Boolean(original)}
+                onClick={() => (original ? close() : setOriginal(structuredClone(item)))}
+            >
                 Edit prepared item
-            </DialogTrigger>
-            <DialogContent className="max-h-[94dvh] w-[96vw] overflow-y-auto sm:max-w-[1500px]">
-                <DialogTitle>Prepare purchased item</DialogTitle>
-                <DialogDescription>
-                    Use the full workbench, then apply the item to this purchase. Changed items
-                    require a new price. Your standalone workbench draft is kept separately.
-                </DialogDescription>
-                {error && (
-                    <p role="alert" className="text-destructive">
-                        {error}
+            </Button>
+            {original && (
+                <section
+                    aria-label="Prepare purchased item"
+                    className="space-y-3 rounded border p-3"
+                >
+                    <div className="flex items-center justify-between gap-2">
+                        <h4 className="font-semibold">Prepare purchased item</h4>
+                        <Button variant="ghost" size="sm" onClick={close}>
+                            Cancel item edits
+                        </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        Use the full workbench, then apply the item to this purchase. Changed items
+                        require a new price. Your standalone workbench draft is kept separately.
                     </p>
-                )}
-                {original && (
-                    <Suspense fallback={<p role="status">Loading the workbench…</p>}>
-                        <Workbench
-                            catalog={catalog}
-                            editing={{ item: original, busy, onApply: (item) => void apply(item) }}
-                        />
-                    </Suspense>
-                )}
-            </DialogContent>
-        </Dialog>
+                    {error && (
+                        <p role="alert" className="text-destructive">
+                            {error}
+                        </p>
+                    )}
+                    {original && (
+                        <Suspense fallback={<p role="status">Loading the workbench…</p>}>
+                            <Workbench
+                                catalog={catalog}
+                                editing={{
+                                    item: original,
+                                    busy,
+                                    onApply: (item) => void apply(item),
+                                }}
+                            />
+                        </Suspense>
+                    )}
+                </section>
+            )}
+        </div>
     );
 }
