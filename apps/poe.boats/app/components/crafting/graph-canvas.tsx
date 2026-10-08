@@ -19,6 +19,8 @@ import {
     graphBranchChance,
     graphChanceWidth,
     graphContinueChance,
+    graphFinalAttemptChance,
+    graphOddsDescription,
     layoutCraftingGraph,
 } from "~/lib/crafting-graph-presentation";
 import { cn } from "~/lib/utils";
@@ -409,7 +411,7 @@ export function GraphCanvas({
                     simple,
                     point: simple ? undefined : edgePoints[edge.id],
                     onMove: moveEdge,
-                    description: `${graph.nodes.find((node) => node.id === edge.source)?.name ?? edge.source} → ${graph.nodes.find((node) => node.id === edge.target)?.name ?? graph.outcomes.find((outcome) => `outcome:${outcome.id}` === edge.target)?.name ?? edge.target}. ${String(edge.label)}. ${chance === null ? "No observations yet; this is not a zero probability." : edge.id.startsWith("final:") ? `Observed across ${result?.trials ?? 0} trials, including any unfinished trials.` : graph.nodes.find((node) => node.id === edge.source)?.kind === "acquire" ? "Acquisition supplies its selected item; this 100% connection is deterministic, not a crafting success estimate." : `${result?.visits[edge.source]?.visits ?? 0} visits to the source step. Percentages are sampled route frequencies, not exact odds; a sampled 0% does not prove impossibility.`}`,
+                    description: `${graph.nodes.find((node) => node.id === edge.source)?.name ?? edge.source} → ${graph.nodes.find((node) => node.id === edge.target)?.name ?? graph.outcomes.find((outcome) => `outcome:${outcome.id}` === edge.target)?.name ?? edge.target}. ${String(edge.label)}. ${chance === null ? "Chance unknown; this is not a zero probability." : edge.id.startsWith("final:") && !result?.visits[edge.source]?.modelOdds ? `Observed across ${result?.trials ?? 0} trials after retry loops, including any unfinished trials.` : graph.nodes.find((node) => node.id === edge.source)?.kind === "acquire" ? "Acquisition supplies its selected item; this connection is deterministic." : graphOddsDescription(result, edge.source)}`,
                     lane:
                         45 +
                         edges.filter((edge) => edge.data?.retry).length * (simple ? 12 : 36) +
@@ -518,8 +520,11 @@ export function GraphCanvas({
             }
         }
         for (const outcome of graph.outcomes) {
+            const attemptChance = graphFinalAttemptChance(result, graph.entry, outcome.id);
             const chance =
-                result?.outcomes.find((entry) => entry.id === outcome.id)?.probability ?? null;
+                attemptChance ??
+                result?.outcomes.find((entry) => entry.id === outcome.id)?.probability ??
+                null;
             add(
                 {
                     id: `final:${outcome.id}`,
@@ -527,7 +532,7 @@ export function GraphCanvas({
                     target: `outcome:${outcome.id}`,
                     sourceHandle: "item",
                     targetHandle: "outcome",
-                    label: `${outcome.name} · ${chance === null ? "chance unknown" : `${(chance * 100).toFixed(1)}% of trials`}`,
+                    label: `${outcome.name} · ${chance === null ? "chance unknown" : `${(chance * 100).toFixed(1)}% ${attemptChance === null ? "after retries" : "per attempt"}`}`,
                 },
                 outcome.success ? "#059669" : "#e11d48",
                 chance,
@@ -597,6 +602,7 @@ export function GraphCanvas({
             </div>
             <div className="min-h-0 flex-1">
                 <ReactFlow<CraftingFlowNode>
+                    className="overflow-clip!"
                     proOptions={{ hideAttribution: true }}
                     nodes={nodes}
                     edges={edges}
@@ -706,9 +712,9 @@ export function GraphCanvas({
                 </div>
             </div>
             <p className="text-xs text-muted-foreground">
-                Percentages and line width show sampled branch frequency per visit; final outcomes
-                use all trials. Unsampled paths are unknown. Drag labels to bend lines. Dashed red
-                paths recreate consumed inputs; amber paths reuse surviving items.
+                Modeled probabilities are per attempt; other routes show observed frequencies. Final
+                outcomes show success after retries. Unknown paths are not zero. Drag labels to bend
+                lines. Dashed red paths recreate consumed inputs; amber paths reuse surviving items.
             </p>
             {!fullscreen && canvas}
         </div>

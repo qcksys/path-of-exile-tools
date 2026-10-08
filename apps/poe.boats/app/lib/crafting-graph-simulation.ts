@@ -4,6 +4,7 @@ import type { AcquisitionComparison, AcquisitionEstimate } from "../schemas/craf
 import type { CraftingGraph, GraphNode } from "../schemas/crafting-graph";
 import type {
     CraftingGraphResult,
+    GraphModelOdds,
     GraphProductionEstimate,
 } from "../schemas/crafting-graph-result";
 
@@ -90,6 +91,12 @@ function accumulate(totals: Totals, result: GraphTrialResult) {
         if (visits.skipped) target.skipped = (target.skipped ?? 0) + visits.skipped;
         addCounts(target.matches, visits.matches);
         addCounts(target.branches, visits.branches);
+        if (visits.modelOdds) {
+            target.modelOdds ??= { attempts: 0, branches: {}, outcomes: {} };
+            target.modelOdds.attempts += visits.modelOdds.attempts;
+            addCounts(target.modelOdds.branches, visits.modelOdds.branches);
+            addCounts(target.modelOdds.outcomes, visits.modelOdds.outcomes);
+        }
     }
 }
 
@@ -112,6 +119,7 @@ export class CraftingGraphSimulation {
     private readonly acquisitions = new Map<string, AcquisitionComparison>();
     private readonly estimates = new Map<string, GraphProductionEstimate>();
     private readonly probabilities = new Map<string, Map<string, number>>();
+    private readonly oddsCache = new Map<string, GraphModelOdds>();
     private nextNode = 0;
     private stage: Stage | null = null;
     private totals = emptyTotals();
@@ -312,6 +320,8 @@ export class CraftingGraphSimulation {
                     trace: this.stage.phase === "final" && this.samples.length < 3,
                     acquisitions: this.acquisitions,
                     probabilities: this.probabilities,
+                    modelOdds: this.stage.phase === "final",
+                    oddsCache: this.oddsCache,
                 },
                 this.queries,
             );

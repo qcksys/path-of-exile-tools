@@ -11,6 +11,20 @@ const query = (groups: unknown[], game = "poe1") => itemQuerySchema.parse({ game
 const and = (filters: unknown[]) => query([{ type: "and", filters }]);
 
 describe("crafting trade translation", () => {
+    it("does not mistake smart quality identities for item bases", () => {
+        const result = buildCraftingTradeSearch(
+            catalog,
+            and([
+                { kind: "base", field: "baseId", values: [baseId] },
+                { kind: "base", field: "qualityType", values: ["a-map-chisel"] },
+                { kind: "base", field: "catalystId", values: ["a-catalyst"] },
+            ]),
+            "Standard",
+            poe1,
+        );
+        expect(result.payload.query.type).toBe(catalog.bases[baseId]!.name);
+        expect(result.warnings).toHaveLength(2);
+    });
     it("exports base, rarity, level, links, flags and open slots to official PoE 1 fields", () => {
         const result = buildCraftingTradeSearch(
             catalog,

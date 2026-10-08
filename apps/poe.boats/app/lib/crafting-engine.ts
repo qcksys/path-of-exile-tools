@@ -343,6 +343,24 @@ export class CraftingEngine {
             : undefined;
     }
 
+    recombinationDistribution(item: CraftingItem, donor: CraftingItem) {
+        const key = JSON.stringify([item, donor]);
+        let outcomes = this.recombinations.get(key);
+        if (!outcomes) {
+            outcomes = recombinationOutcomes(this, item, donor);
+            if (
+                this.recombinations.size >= 128 ||
+                [...this.recombinations.values()].reduce(
+                    (count, entries) => count + entries.length,
+                    outcomes.length,
+                ) > 10_000
+            )
+                this.recombinations.clear();
+            this.recombinations.set(key, outcomes);
+        }
+        return outcomes;
+    }
+
     mod(id: string) {
         const mod = this.catalog.mods[id];
         if (!mod) throw new Error(`Unknown modifier: ${id}`);
@@ -3949,20 +3967,7 @@ export class CraftingEngine {
         if (method.kind === "recombine") {
             if (!method.donor) throw new Error("Choose a donor item from inventory.");
             const donor = this.validateItem(method.donor.item);
-            const key = JSON.stringify([item, donor]);
-            let outcomes = this.recombinations.get(key);
-            if (!outcomes) {
-                outcomes = recombinationOutcomes(this, item, donor);
-                if (
-                    this.recombinations.size >= 128 ||
-                    [...this.recombinations.values()].reduce(
-                        (count, entries) => count + entries.length,
-                        outcomes.length,
-                    ) > 10_000
-                )
-                    this.recombinations.clear();
-                this.recombinations.set(key, outcomes);
-            }
+            const outcomes = this.recombinationDistribution(item, donor);
             return { item: structuredClone(random.pick(outcomes)), cost: this.costs(method) };
         }
         if (method.kind === "upgrade_augment")

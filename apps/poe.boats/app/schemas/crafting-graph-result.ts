@@ -10,6 +10,12 @@ const interval = z.tuple([probability, probability]);
 const counts = z.record(z.string(), count);
 const amounts = z.record(z.string(), amount);
 
+export const graphModelOddsSchema = z.object({
+    attempts: count,
+    branches: amounts,
+    outcomes: amounts,
+});
+
 export const graphTokenSchema = z.object({ id: z.string(), item: craftingItemSchema });
 export const graphNodeVisitsSchema = z.object({
     visits: count,
@@ -17,6 +23,7 @@ export const graphNodeVisitsSchema = z.object({
     branches: counts,
     recovered: count,
     skipped: count.optional(),
+    modelOdds: graphModelOddsSchema.optional(),
 });
 export const graphTraceEntrySchema = z.object({
     nodeId: z.string(),
@@ -101,6 +108,7 @@ export const craftingGraphResultSchema = z.object({
 
 export type GraphToken = z.infer<typeof graphTokenSchema>;
 export type GraphNodeVisits = z.infer<typeof graphNodeVisitsSchema>;
+export type GraphModelOdds = z.infer<typeof graphModelOddsSchema>;
 export type GraphTraceEntry = z.infer<typeof graphTraceEntrySchema>;
 export type GraphTrialResult = z.infer<typeof graphTrialResultSchema>;
 export type GraphProductionEstimate = z.infer<typeof graphProductionEstimateSchema>;

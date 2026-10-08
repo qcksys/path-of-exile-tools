@@ -75,6 +75,7 @@ export function buildCraftingTradeSearch(
     const translate = (condition: ItemCondition): Translation | undefined => {
         switch (condition.kind) {
             case "base": {
+                if (condition.field === "qualityType" || condition.field === "catalystId") return;
                 if (condition.values.length !== 1) return;
                 const value = condition.values[0]!;
                 if (condition.field === "itemClass") {

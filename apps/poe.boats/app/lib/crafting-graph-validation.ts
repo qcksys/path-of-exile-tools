@@ -3,8 +3,9 @@ import type { CraftingCatalog, CraftingMethod } from "../schemas/crafting";
 import { type CraftingGraph, craftingGraphSchema, type GraphNode } from "../schemas/crafting-graph";
 import { CraftingEngine } from "./crafting-engine";
 import { createCraftingItemQuery } from "./crafting-item-query";
+import { simpleCraftRouting } from "./crafting-smart";
 
-export const CRAFTING_GRAPH_ENGINE = "crafting-graph-6";
+export const CRAFTING_GRAPH_ENGINE = "crafting-graph-7";
 
 export function graphInputCount(catalog: CraftingCatalog, method: CraftingMethod) {
     return method.kind === "recombine" ||
@@ -134,6 +135,20 @@ export function validateCraftingGraph(catalog: CraftingCatalog, input: unknown):
                     "Graph methods take their donor or Jewel from an input port, not an embedded inventory copy.",
                 );
             engine.validateMethod(node.method);
+            if (node.smart) {
+                const routing = simpleCraftRouting(engine, node, node.smart);
+                for (const key of [
+                    "output",
+                    "applyWhen",
+                    "branches",
+                    "ordering",
+                    "fallback",
+                ] as const)
+                    if (JSON.stringify(node[key]) !== JSON.stringify(routing[key]))
+                        throw new Error(
+                            "Simple craft outcomes are generated from the selected goal. Configure the goal instead of editing its routes.",
+                        );
+            }
             if (node.applyWhen) query(node.applyWhen);
             for (const port of node.inputs) if (port.query) query(port.query);
             for (const branch of node.branches) query(branch.query);

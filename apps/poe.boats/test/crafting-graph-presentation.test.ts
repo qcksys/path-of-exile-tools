@@ -5,6 +5,7 @@ import {
     graphBranchChance,
     graphChanceWidth,
     graphContinueChance,
+    graphFinalAttemptChance,
     graphPreviewBaseId,
     graphPreviewItem,
     graphQueryText,
@@ -22,9 +23,34 @@ import { graphFixture } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r6",
+    (entry) => entry.game === "poe1" && entry.revision === "r7",
 )!;
 describe("crafting graph presentation", () => {
+    it("shows one-attempt recombination odds even when retries finish every ES chest", () => {
+        const graph = projectFromPreset(engine, ruleset, "energy-shield-chest");
+        const request = graphPreviewRequest(graph);
+        const simulation = new CraftingGraphSimulation(
+            engine.catalog,
+            request.graph,
+            request.options,
+        );
+        while (!simulation.done) simulation.runBatch();
+        const result = simulation.result();
+        const finish = graph.nodes.find((node) => node.id === "finish")!;
+        const samples = result.samples[0]!.nodeItems!;
+        const matcher = createCraftingItemQuery(engine);
+        const expected = recombinationOutcomes(engine, samples.pair!, samples["second-pair"]!)
+            .filter(({ value }) => matcher.matches(value, finish.output) === "match")
+            .reduce((sum, entry) => sum + entry.weight, 0);
+        expect(result.errors).toEqual({});
+        expect(result.probability).toBe(1);
+        expect(expected).toBeCloseTo(31 / 101, 10);
+        expect(graphContinueChance(result, finish)).toBeCloseTo(expected, 10);
+        expect(graphFinalAttemptChance(result, finish.id, graph.outcomes[0]!.id)).toBeCloseTo(
+            expected,
+            10,
+        );
+    });
     it("automatically samples every helical stage with actual modifiers and branch frequencies", () => {
         const graph = {
             ...projectFromPreset(engine, ruleset, "strength-helical-ring"),

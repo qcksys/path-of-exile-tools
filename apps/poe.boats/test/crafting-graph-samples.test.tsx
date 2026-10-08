@@ -21,7 +21,7 @@ const historyIndex = validateRulesetIndex(
     JSON.parse(readFileSync("crafting-history/index.json", "utf8")),
 );
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r6",
+    (entry) => entry.game === "poe1" && entry.revision === "r7",
 )!;
 const graph = { ...projectFromItem(ruleset, firstItem, "Sample output", quote(10)), iterations: 3 };
 const result = calculateCraftingGraph(engine.catalog, graph, {

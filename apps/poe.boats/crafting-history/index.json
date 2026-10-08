@@ -450,18 +450,93 @@
                 "disabled": [],
                 "allflame": false
             }
+        },
+        {
+            "era": "3.29",
+            "revision": "r7",
+            "engine": "crafting-graph-7",
+            "patch": "3.29.3.3",
+            "manifestSha256": "26d7c39c8a6e2f73d34fd3fc91b595223d7e31818305c45ee3573bde8dd3e8c5",
+            "craftingSha256": "5dac6135acc38d7886f18c91deddac716ecb61a8b90f0309a194a75d0021facf",
+            "format": 1,
+            "game": "poe1",
+            "label": "PoE 1 3.29",
+            "notes": "Adds simple-craft targets with generated retry paths and model probabilities per recombination attempt, distinct from success after retries. Revisions r1 through r6 remain in the history index with their original immutable engines.",
+            "publishedAt": "2026-10-08T21:32:49.287Z",
+            "catalog": {
+                "sha256": "18a55afea42bdf76cf84140bcbc342cfe6c0b22a477063005d12fad4c04f475d",
+                "bytes": 16966636
+            },
+            "implementation": {
+                "sha256": "68645aa81e1d0f8d14c3287bc6ca3eaa2d320e5256044674d462c1b69e86edb9",
+                "bytes": 377035
+            },
+            "availability": {
+                "kinds": [
+                    "generate",
+                    "recombine",
+                    "currency",
+                    "essence",
+                    "bench",
+                    "locus",
+                    "anoint",
+                    "fossils",
+                    "harvest",
+                    "beast",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": true
+            }
+        },
+        {
+            "era": "client-4.5",
+            "revision": "r7",
+            "engine": "crafting-graph-7",
+            "patch": "4.5.5.4",
+            "manifestSha256": "a2584927d6f0b9b20a775d4ce2735ff58a1ba44f43ded144e16e325fee1b9296",
+            "craftingSha256": "9788dd268fc1b330d60f9ef85f30d5dfa38ae2e65066e48b1ab4d095f9f68ed1",
+            "format": 1,
+            "game": "poe2",
+            "label": "PoE 2 (client 4.5)",
+            "notes": "Adds simple-craft targets and quality conditions with generated retry paths. Revisions r1 through r6 remain in the history index with their original immutable engines; equipment prices remain manual.",
+            "publishedAt": "2026-10-08T21:32:49.817Z",
+            "catalog": {
+                "sha256": "65d9fcea10d6ca3d9b1b450dc28764021a9aedad153d1687ea4f272dff5fcd7a",
+                "bytes": 7949181
+            },
+            "implementation": {
+                "sha256": "68645aa81e1d0f8d14c3287bc6ca3eaa2d320e5256044674d462c1b69e86edb9",
+                "bytes": 377035
+            },
+            "availability": {
+                "kinds": [
+                    "genesis",
+                    "generate",
+                    "socket_jewel",
+                    "remove_jewel",
+                    "currency",
+                    "essence",
+                    "augment",
+                    "upgrade_augment",
+                    "anoint",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": false
+            }
         }
     ],
     "latest": [
         {
             "game": "poe1",
             "era": "3.29",
-            "revision": "r6"
+            "revision": "r7"
         },
         {
             "game": "poe2",
             "era": "client-4.5",
-            "revision": "r6"
+            "revision": "r7"
         }
     ]
 }

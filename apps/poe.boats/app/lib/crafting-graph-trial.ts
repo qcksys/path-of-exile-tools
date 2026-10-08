@@ -2,7 +2,11 @@ import { type ItemRecord, matchItem } from "@poe-tools/item-query";
 import type { CraftingItem, CraftingMethod } from "../schemas/crafting";
 import type { AcquisitionComparison } from "../schemas/crafting-economy";
 import type { CraftingGraph, GraphCraftNode, GraphNode } from "../schemas/crafting-graph";
-import type { GraphToken, GraphTrialResult } from "../schemas/crafting-graph-result";
+import type {
+    GraphModelOdds,
+    GraphToken,
+    GraphTrialResult,
+} from "../schemas/crafting-graph-result";
 
 export type {
     GraphNodeVisits,
@@ -20,6 +24,7 @@ import {
 } from "./crafting-engine";
 import { createCraftingItemQuery } from "./crafting-item-query";
 import { orderCraftingBranches, routeCraftingItem } from "./crafting-query-routing";
+import { validateSimpleCraftInput } from "./crafting-smart";
 
 class GraphLimit extends Error {}
 class GraphTerminal extends Error {
@@ -37,6 +42,8 @@ export interface GraphTrialOptions {
     trace?: boolean;
     acquisitions?: ReadonlyMap<string, AcquisitionComparison>;
     probabilities?: ReadonlyMap<string, ReadonlyMap<string, number>>;
+    modelOdds?: boolean;
+    oddsCache?: Map<string, GraphModelOdds>;
 }
 
 export class CraftingGraphTrial {
@@ -209,10 +216,60 @@ export class CraftingGraphTrial {
         throw new Error("This crafting method does not consume a second item.");
     }
 
+    private recordOdds(node: GraphCraftNode, inputs: GraphToken[]) {
+        if (node.method.kind !== "recombine" || this.options.modelOdds === false) return;
+        const branches = orderCraftingBranches(this.branches(node), node.ordering);
+        const outcomes = orderCraftingBranches(
+            this.graph.outcomes.map((outcome) => ({
+                ...outcome,
+                probability: this.options.probabilities?.get("$outcomes")?.get(outcome.id),
+            })),
+            this.graph.outcomeOrdering,
+        );
+        const key = JSON.stringify([
+            node.id,
+            inputs.map((input) => input.item),
+            branches,
+            outcomes,
+        ]);
+        let odds = this.options.oddsCache?.get(key);
+        if (!odds) {
+            odds = { attempts: 1, branches: {}, outcomes: {} };
+            for (const { value, weight } of this.engine.recombinationDistribution(
+                inputs[0]!.item,
+                inputs[1]!.item,
+            )) {
+                const record = this.queries.record(value);
+                const route = routeCraftingItem(record, branches, "manual");
+                if (route.status === "unknown") return;
+                const id = route.branchId ?? "fallback";
+                odds.branches[id] = (odds.branches[id] ?? 0) + weight;
+                const destination =
+                    branches.find((branch) => branch.id === id)?.destination ?? node.fallback;
+                if (node.id === this.graph.entry && destination.kind === "return") {
+                    const outcome = routeCraftingItem(record, outcomes, "manual");
+                    if (outcome.status === "unknown") return;
+                    if (outcome.branchId)
+                        odds.outcomes[outcome.branchId] =
+                            (odds.outcomes[outcome.branchId] ?? 0) + weight;
+                }
+            }
+            if ((this.options.oddsCache?.size ?? 0) >= 128) this.options.oddsCache!.clear();
+            this.options.oddsCache?.set(key, odds);
+        }
+        const visits = this.visits(node.id);
+        visits.modelOdds ??= { attempts: 0, branches: {}, outcomes: {} };
+        visits.modelOdds.attempts++;
+        for (const field of ["branches", "outcomes"] as const)
+            for (const [id, probability] of Object.entries(odds[field]))
+                visits.modelOdds[field][id] = (visits.modelOdds[field][id] ?? 0) + probability;
+    }
+
     private craft(node: GraphCraftNode, inputs: GraphToken[]) {
         const method = this.bindMethod(node, inputs);
         let result: ReturnType<CraftingEngine["apply"]>;
         try {
+            validateSimpleCraftInput(this.engine, node, inputs[0]!.item);
             result = usesAllflame(method)
                 ? this.engine.prepareAllflame(inputs[0]!.item, method, this.random)
                 : this.engine.apply(inputs[0]!.item, method, this.random);
@@ -221,6 +278,7 @@ export class CraftingGraphTrial {
                 for (const cost of error.cost) this.spend(cost);
             throw error;
         }
+        this.recordOdds(node, inputs);
         for (const input of inputs) {
             if (!this.live.delete(input.id))
                 throw new Error("The graph attempted to consume an item more than once.");

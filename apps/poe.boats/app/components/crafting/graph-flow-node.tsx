@@ -21,6 +21,7 @@ import {
     graphBranchChance,
     graphContinueChance,
     graphDestinationText,
+    graphOddsDescription,
     graphPreviewBaseId,
     graphPreviewItem,
     graphQueryText,
@@ -129,7 +130,7 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                         help={`Outcome: ${outcome.name}`}
                     />
                     <GraphHelp
-                        content={`${outcome.name}\n${outcome.success ? "Successful" : "Unsuccessful"} terminal outcome. Percentage of all sampled trials. Click to edit.\n${graphQueryText(engine, outcome.query).join("\n")}`}
+                        content={`${outcome.name}\n${outcome.success ? "Successful" : "Unsuccessful"} terminal outcome. Percentage of sampled trials after all retry loops. This is not the chance of a single craft attempt. Click to edit.\n${graphQueryText(engine, outcome.query).join("\n")}`}
                     >
                         <Button
                             variant="ghost"
@@ -142,6 +143,7 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                                 {observed?.probability == null
                                     ? "?"
                                     : `${(observed.probability * 100).toFixed(1)}%`}
+                                <span className="block text-[10px]">after retries</span>
                             </span>
                         </Button>
                     </GraphHelp>
@@ -214,7 +216,7 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                 <p className="font-mono text-xs">
                     {observed?.probability == null
                         ? "Chance not calculated"
-                        : `${(observed.probability * 100).toFixed(1)}% of trials`}{" "}
+                        : `${(observed.probability * 100).toFixed(1)}% after retries`}{" "}
                     · {outcome.disposition}
                 </p>
                 {outcome.disposition === "sell" && (
@@ -266,7 +268,7 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
         >
             {compact && (
                 <GraphHelp
-                    content={`${step.name}\n${step.kind === "craft" ? engine.methodName(step.method) : "Acquire the selected input item"}\n${chance === null ? "Not sampled yet." : `${(chance * 100).toFixed(1)}% of visits continue with an item${step.kind === "acquire" ? " (deterministic acquisition)" : "; includes skipped crafts"}.`} This is the chance to advance from this step, not the final craft's probability. Click to edit.\n${branches.map((branch) => `${branch.name}: ${graphDestinationText(graph, branch.destination)}`).join("\n")}`}
+                    content={`${step.name}\n${step.kind === "craft" ? engine.methodName(step.method) : "Acquire the selected input item"}\n${chance === null ? "Not sampled yet." : `${(chance * 100).toFixed(1)}% continue. ${step.kind === "acquire" ? "Deterministic acquisition." : graphOddsDescription(result, id)}`} Click to edit.\n${branches.map((branch) => `${branch.name}: ${graphDestinationText(graph, branch.destination)}`).join("\n")}`}
                 >
                     <Button
                         variant="ghost"
@@ -556,7 +558,7 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                                             content={
                                                 chance === null
                                                     ? "This step has not been sampled yet. Unknown is different from a measured zero. The initial calculation runs in the background."
-                                                    : `${result?.visits[id]?.branches[branch.id] ?? 0} of ${result?.visits[id]?.visits ?? 0} visits took this route. This is a sampled conditional frequency, including repeat visits and skipped crafts. Zero observed results do not prove zero probability.`
+                                                    : graphOddsDescription(result, id)
                                             }
                                         >
                                             <Button
@@ -566,7 +568,7 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                                             >
                                                 {chance === null
                                                     ? "Not sampled"
-                                                    : `${(chance * 100).toFixed(1)}%`}
+                                                    : `${(chance * 100).toFixed(1)}%${result?.visits[id]?.modelOdds ? " / attempt" : " observed"}`}
                                             </Button>
                                         </GraphHelp>
                                     </p>

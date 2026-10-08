@@ -14,6 +14,7 @@ import { replaceGraphMethod } from "~/lib/crafting-graph-method";
 import { graphPreviewBaseId } from "~/lib/crafting-graph-presentation";
 import { bindCohortPurchasePrice } from "~/lib/crafting-market";
 import { rulesetAllowsConditionalSteps, rulesetAllowsMethod } from "~/lib/crafting-rulesets";
+import { graphCraftInput, simpleCraftCapability } from "~/lib/crafting-smart";
 import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
 import { craftingItemOptions } from "~/lib/item-presentation";
 import type { CraftingMethod } from "~/schemas/crafting";
@@ -29,6 +30,7 @@ import { ItemCard } from "./item-card";
 import { MarketPricePicker } from "./market-price-picker";
 import { NnnEssences } from "./nnn-essences";
 import { PurchaseItemWorkbench } from "./purchase-item-workbench";
+import { SimpleCraftEditor } from "./simple-craft-editor";
 
 function methodKey(method: CraftingMethod) {
     return method.kind === "fossils"
@@ -216,6 +218,17 @@ export function GraphNodeEditor({
         target?.scrollIntoView?.({ block: "nearest" });
     }, [initialSection, node.kind]);
     const uid = useId();
+    const craftInput = useMemo(
+        () => (node.kind === "craft" ? graphCraftInput(graph, node, result) : null),
+        [graph, node, result],
+    );
+    const simple = useMemo(
+        () =>
+            node.kind === "craft" && ruleset.engine === "crafting-graph-7"
+                ? simpleCraftCapability(engine, node.method, craftInput)
+                : null,
+        [engine, node, craftInput, ruleset.engine],
+    );
     const bases = useMemo(
         () =>
             craftingItemOptions(engine.catalog).filter((option) =>
@@ -258,12 +271,19 @@ export function GraphNodeEditor({
             options.unshift({ method: node.method, label: engine.methodName(node.method) });
         return options
             .filter((entry) => rulesetAllowsMethod(ruleset, entry.method))
+            .filter(
+                (entry) =>
+                    !craftInput ||
+                    methodKey(entry.method) ===
+                        (node.kind === "craft" ? methodKey(node.method) : "") ||
+                    simpleCraftCapability(engine, entry.method, craftInput)?.available !== false,
+            )
             .map((entry) => ({
                 ...entry,
                 id: methodKey(entry.method),
                 itemId: "id" in entry.method ? entry.method.id : undefined,
             }));
-    }, [engine, ruleset, node]);
+    }, [engine, ruleset, node, craftInput]);
     const reorder = (from: number, to: number) => {
         if (
             node.kind !== "craft" ||
@@ -710,14 +730,25 @@ export function GraphNodeEditor({
                             }
                         }}
                     />
-                    <GraphMethodEditor
-                        key={node.id}
-                        graph={graph}
-                        node={node}
-                        engine={engine}
-                        onChange={onChange}
-                    />
-                    {rulesetAllowsConditionalSteps(ruleset) && (
+                    {simple && (
+                        <SimpleCraftEditor
+                            node={node}
+                            engine={engine}
+                            capability={simple}
+                            onChange={update}
+                            onError={onError}
+                        />
+                    )}
+                    {!node.smart && (
+                        <GraphMethodEditor
+                            key={node.id}
+                            graph={graph}
+                            node={node}
+                            engine={engine}
+                            onChange={onChange}
+                        />
+                    )}
+                    {!node.smart && rulesetAllowsConditionalSteps(ruleset) && (
                         <div className="space-y-3 rounded border border-border p-3">
                             <Label className="flex gap-2 text-sm">
                                 <Checkbox
@@ -766,7 +797,8 @@ export function GraphNodeEditor({
                             survive on an ineligible base. These are modeled probabilities.
                         </p>
                     )}
-                    {(node.method.kind === "currency" || node.method.kind === "essence") &&
+                    {!node.smart &&
+                        (node.method.kind === "currency" || node.method.kind === "essence") &&
                         ruleset.availability.allflame && (
                             <Label className="flex gap-2 text-xs">
                                 <Checkbox
@@ -827,189 +859,205 @@ export function GraphNodeEditor({
                                         ))}
                                 </FormSelect>
                             </Label>
-                            <div className="mt-3">
-                                <GraphQueryEditor
-                                    label={`${port.name} requirements`}
-                                    ruleset={graph.ruleset}
-                                    catalog={engine.catalog}
-                                    value={
-                                        port.query ?? itemQuerySchema.parse({ game: graph.game })
-                                    }
-                                    onChange={(query) =>
-                                        update({
-                                            ...node,
-                                            inputs: node.inputs.map((entry) =>
-                                                entry.id === port.id ? { ...entry, query } : entry,
-                                            ),
-                                        })
-                                    }
-                                />
-                            </div>
-                        </details>
-                    ))}
-                    <div className="flex items-center justify-between" data-route-editor>
-                        <h3 className="text-sm font-semibold">Result routes</h3>
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => update({ ...node, ordering: "automatic" })}
-                        >
-                            {node.ordering === "automatic"
-                                ? "Automatic ordering"
-                                : "Restore automatic order"}
-                        </Button>
-                    </div>
-                    {node.branches.map((branch, index) => (
-                        <details
-                            key={branch.id}
-                            className="rounded border border-border p-3"
-                            draggable
-                            onDragStart={(event) =>
-                                event.dataTransfer.setData("text/plain", String(index))
-                            }
-                            onDragOver={(event) => event.preventDefault()}
-                            onDrop={(event) => {
-                                event.preventDefault();
-                                const from = Number(event.dataTransfer.getData("text/plain"));
-                                if (Number.isInteger(from)) reorder(from, index);
-                            }}
-                        >
-                            <summary className="cursor-pointer text-sm">
-                                {index + 1}. {branch.name}
-                            </summary>
-                            <div className="mt-3 space-y-3">
-                                <Input
-                                    key={branch.name}
-                                    className={graphControl}
-                                    aria-label="Branch name"
-                                    defaultValue={branch.name}
-                                    onBlur={(event) => {
-                                        if (event.target.value.trim())
+                            {!node.smart && (
+                                <div className="mt-3">
+                                    <GraphQueryEditor
+                                        label={`${port.name} requirements`}
+                                        ruleset={graph.ruleset}
+                                        catalog={engine.catalog}
+                                        value={
+                                            port.query ??
+                                            itemQuerySchema.parse({ game: graph.game })
+                                        }
+                                        onChange={(query) =>
                                             update({
                                                 ...node,
-                                                branches: node.branches.map((entry) =>
-                                                    entry.id === branch.id
-                                                        ? { ...entry, name: event.target.value }
+                                                inputs: node.inputs.map((entry) =>
+                                                    entry.id === port.id
+                                                        ? { ...entry, query }
                                                         : entry,
-                                                ),
-                                            });
-                                    }}
-                                />
-                                <GraphQueryEditor
-                                    label="Matching result"
-                                    ruleset={graph.ruleset}
-                                    value={branch.query}
-                                    catalog={engine.catalog}
-                                    onChange={(query) =>
-                                        update({
-                                            ...node,
-                                            branches: node.branches.map((entry) =>
-                                                entry.id === branch.id
-                                                    ? { ...entry, query }
-                                                    : entry,
-                                            ),
-                                        })
-                                    }
-                                />
-                                <GraphDestinationEditor
-                                    graph={graph}
-                                    value={branch.destination}
-                                    onChange={(destination) =>
-                                        update({
-                                            ...node,
-                                            branches: node.branches.map((entry) =>
-                                                entry.id === branch.id
-                                                    ? { ...entry, destination }
-                                                    : entry,
-                                            ),
-                                        })
-                                    }
-                                />
-                                <div className="flex gap-2">
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        disabled={!index}
-                                        onClick={() => reorder(index, index - 1)}
-                                    >
-                                        Move up
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        disabled={index === node.branches.length - 1}
-                                        onClick={() => reorder(index, index + 1)}
-                                    >
-                                        Move down
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() =>
-                                            update({
-                                                ...node,
-                                                branches: node.branches.filter(
-                                                    (entry) => entry.id !== branch.id,
                                                 ),
                                             })
                                         }
-                                    >
-                                        Remove route
-                                    </Button>
+                                    />
                                 </div>
-                            </div>
+                            )}
                         </details>
                     ))}
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                            update({
-                                ...node,
-                                branches: [
-                                    ...node.branches,
-                                    {
-                                        id: crypto.randomUUID(),
-                                        name: `Result ${node.branches.length + 1}`,
-                                        query: itemQuerySchema.parse({ game: graph.game }),
-                                        destination: { kind: "return" },
-                                    },
-                                ],
-                            })
-                        }
-                    >
-                        Add result route
-                    </Button>
-                    <div className="space-y-2 border-t border-border pt-3">
-                        <p className="text-xs font-medium">All other results</p>
-                        <GraphDestinationEditor
-                            graph={graph}
-                            value={node.fallback}
-                            onChange={(fallback) => update({ ...node, fallback })}
-                        />
-                    </div>
+                    {!node.smart && (
+                        <>
+                            <div className="flex items-center justify-between" data-route-editor>
+                                <h3 className="text-sm font-semibold">Result routes</h3>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => update({ ...node, ordering: "automatic" })}
+                                >
+                                    {node.ordering === "automatic"
+                                        ? "Automatic ordering"
+                                        : "Restore automatic order"}
+                                </Button>
+                            </div>
+                            {node.branches.map((branch, index) => (
+                                <details
+                                    key={branch.id}
+                                    className="rounded border border-border p-3"
+                                    draggable
+                                    onDragStart={(event) =>
+                                        event.dataTransfer.setData("text/plain", String(index))
+                                    }
+                                    onDragOver={(event) => event.preventDefault()}
+                                    onDrop={(event) => {
+                                        event.preventDefault();
+                                        const from = Number(
+                                            event.dataTransfer.getData("text/plain"),
+                                        );
+                                        if (Number.isInteger(from)) reorder(from, index);
+                                    }}
+                                >
+                                    <summary className="cursor-pointer text-sm">
+                                        {index + 1}. {branch.name}
+                                    </summary>
+                                    <div className="mt-3 space-y-3">
+                                        <Input
+                                            key={branch.name}
+                                            className={graphControl}
+                                            aria-label="Branch name"
+                                            defaultValue={branch.name}
+                                            onBlur={(event) => {
+                                                if (event.target.value.trim())
+                                                    update({
+                                                        ...node,
+                                                        branches: node.branches.map((entry) =>
+                                                            entry.id === branch.id
+                                                                ? {
+                                                                      ...entry,
+                                                                      name: event.target.value,
+                                                                  }
+                                                                : entry,
+                                                        ),
+                                                    });
+                                            }}
+                                        />
+                                        <GraphQueryEditor
+                                            label="Matching result"
+                                            ruleset={graph.ruleset}
+                                            value={branch.query}
+                                            catalog={engine.catalog}
+                                            onChange={(query) =>
+                                                update({
+                                                    ...node,
+                                                    branches: node.branches.map((entry) =>
+                                                        entry.id === branch.id
+                                                            ? { ...entry, query }
+                                                            : entry,
+                                                    ),
+                                                })
+                                            }
+                                        />
+                                        <GraphDestinationEditor
+                                            graph={graph}
+                                            value={branch.destination}
+                                            onChange={(destination) =>
+                                                update({
+                                                    ...node,
+                                                    branches: node.branches.map((entry) =>
+                                                        entry.id === branch.id
+                                                            ? { ...entry, destination }
+                                                            : entry,
+                                                    ),
+                                                })
+                                            }
+                                        />
+                                        <div className="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                disabled={!index}
+                                                onClick={() => reorder(index, index - 1)}
+                                            >
+                                                Move up
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                disabled={index === node.branches.length - 1}
+                                                onClick={() => reorder(index, index + 1)}
+                                            >
+                                                Move down
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() =>
+                                                    update({
+                                                        ...node,
+                                                        branches: node.branches.filter(
+                                                            (entry) => entry.id !== branch.id,
+                                                        ),
+                                                    })
+                                                }
+                                            >
+                                                Remove route
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </details>
+                            ))}
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                    update({
+                                        ...node,
+                                        branches: [
+                                            ...node.branches,
+                                            {
+                                                id: crypto.randomUUID(),
+                                                name: `Result ${node.branches.length + 1}`,
+                                                query: itemQuerySchema.parse({ game: graph.game }),
+                                                destination: { kind: "return" },
+                                            },
+                                        ],
+                                    })
+                                }
+                            >
+                                Add result route
+                            </Button>
+                            <div className="space-y-2 border-t border-border pt-3">
+                                <p className="text-xs font-medium">All other results</p>
+                                <GraphDestinationEditor
+                                    graph={graph}
+                                    value={node.fallback}
+                                    onChange={(fallback) => update({ ...node, fallback })}
+                                />
+                            </div>
+                        </>
+                    )}
                 </>
             )}
-            <details className="border-t border-border pt-3" data-output-editor>
-                <summary className="cursor-pointer text-sm">Output requirements</summary>
-                <div className="mt-3">
-                    <GraphQueryEditor
-                        label="Output item"
-                        ruleset={graph.ruleset}
-                        value={node.output}
-                        catalog={engine.catalog}
-                        onChange={(output) => update({ ...node, output })}
-                    />
-                    <GraphTradeSearch
-                        query={node.output}
-                        catalog={engine.catalog}
-                        league={graph.league}
-                        onLeagueChange={(league) =>
-                            onChange({ ...graph, league: league || undefined })
-                        }
-                    />
-                </div>
-            </details>
+            {(node.kind !== "craft" || !node.smart) && (
+                <details className="border-t border-border pt-3" data-output-editor>
+                    <summary className="cursor-pointer text-sm">Output requirements</summary>
+                    <div className="mt-3">
+                        <GraphQueryEditor
+                            label="Output item"
+                            ruleset={graph.ruleset}
+                            value={node.output}
+                            catalog={engine.catalog}
+                            onChange={(output) => update({ ...node, output })}
+                        />
+                        <GraphTradeSearch
+                            query={node.output}
+                            catalog={engine.catalog}
+                            league={graph.league}
+                            onLeagueChange={(league) =>
+                                onChange({ ...graph, league: league || undefined })
+                            }
+                        />
+                    </div>
+                </details>
+            )}
         </section>
     );
 }

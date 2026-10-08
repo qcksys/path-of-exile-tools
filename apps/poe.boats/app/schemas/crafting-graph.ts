@@ -3,6 +3,7 @@ import { z } from "zod";
 import { craftingItemSchema, craftingMethodSchema } from "./crafting";
 import { acquisitionChoiceSchema, craftingPriceSchema } from "./crafting-economy";
 import { craftingRulesetRefSchema } from "./crafting-rulesets";
+import { simpleCraftGoalSchema } from "./crafting-smart";
 
 export { craftingRulesetRefSchema } from "./crafting-rulesets";
 
@@ -66,6 +67,7 @@ export const graphNodeSchema = z.discriminatedUnion("kind", [
         output: itemQuerySchema,
         inputs: z.array(graphInputSchema).min(1).max(2),
         method: craftingMethodSchema,
+        smart: simpleCraftGoalSchema.optional(),
         applyWhen: itemQuerySchema.optional(),
         branches: z.array(graphBranchSchema).max(24).default([]),
         ordering: z.enum(["automatic", "manual"]).default("automatic"),

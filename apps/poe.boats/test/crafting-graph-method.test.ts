@@ -5,20 +5,25 @@ import { api } from "../app/api/router.server";
 import { createDbConnection } from "../app/db/client";
 import { CraftingEngine } from "../app/lib/crafting-engine";
 import { replaceGraphMethod } from "../app/lib/crafting-graph-method";
+import { configureSimpleCraft } from "../app/lib/crafting-smart";
 import { handleMcpRequest } from "../app/mcp/server.server";
 import type { OperationContext } from "../app/operations/operation";
 import type { CraftingMethod } from "../app/schemas/crafting";
 import { craftingGraphSchema } from "../app/schemas/crafting-graph";
 import { conditionalTransmuteGraph } from "./crafting-conditional-fixtures";
-import { engine } from "./crafting-fixtures";
+import { currency, engine } from "./crafting-fixtures";
 import { firstItem, graphFixture } from "./crafting-graph-fixtures";
-import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
+import {
+    historyIndex,
+    retainedRevision,
+    retainedTransmuteGraph,
+} from "./crafting-history-fixtures";
 import { workbenchCatalog } from "./crafting-workbench-fixtures";
 
 vi.mock("~/services/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r6",
+    (entry) => entry.game === "poe1" && entry.revision === "r7",
 )!;
 const fossil: CraftingMethod = {
     kind: "fossils",
@@ -30,6 +35,27 @@ const fossil: CraftingMethod = {
 };
 
 describe("graph method editing", () => {
+    it("preserves a selected minimum when saving an unchanged method", () => {
+        const graph = retainedTransmuteGraph(ruleset, engine.catalog);
+        const node = graph.nodes.find((entry) => entry.kind === "craft")!;
+        node.method = currency("apply_zana_influence");
+        Object.assign(
+            node,
+            configureSimpleCraft(engine, node, {
+                kind: "minimum",
+                field: "memoryStrands",
+                value: 80,
+            }),
+        );
+        expect(
+            replaceGraphMethod(engine, ruleset, {
+                graph,
+                nodeId: node.id,
+                expectedMethod: node.method,
+                method: node.method,
+            }),
+        ).toEqual(graph);
+    });
     it("keeps full method settings, prices, conditions and routes without mutating callers", () => {
         const graph = graphFixture();
         const node = graph.nodes.find((entry) => entry.kind === "craft")!;

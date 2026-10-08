@@ -10,7 +10,7 @@ import { catalog, engine } from "./crafting-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r6",
+    (entry) => entry.game === "poe1" && entry.revision === "r7",
 )!;
 
 describe("common crafting project presets", () => {

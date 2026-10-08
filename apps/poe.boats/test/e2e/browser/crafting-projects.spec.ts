@@ -6,6 +6,7 @@ import { projectFromItem } from "../../../app/lib/crafting-graph-authoring";
 import { createCraftingItemQuery } from "../../../app/lib/crafting-item-query";
 import { exportCraftingItemText } from "../../../app/lib/crafting-item-text";
 import { bindCohortPurchasePrice, livePurchasePrices } from "../../../app/lib/crafting-market";
+import { projectFromPreset } from "../../../app/lib/crafting-presets";
 import { bindCraftingSourcePrice, liveSourcePrices } from "../../../app/lib/crafting-sources";
 import { craftingWorkspaceStorageKey } from "../../../app/lib/crafting-workspace-storage";
 import { craftingCatalogSchema, craftingProjectSchema } from "../../../app/schemas/crafting";
@@ -71,6 +72,66 @@ async function importGraph(page: Page, graph = graphFixture()) {
         .click();
 }
 
+test("simple Remembrance targets save on click-away and generate same-item retry routes", async ({
+    page,
+}) => {
+    const ruleset = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r7",
+    )!;
+    const catalog = craftingCatalogSchema.parse((await retainedRevision(ruleset)).catalog);
+    const graph = retainedTransmuteGraph(ruleset, catalog);
+    graph.outcomes[0]!.query = { format: 1, game: "poe1", groups: [] };
+    await importGraph(page, graph);
+    await choose(page, "Crafting method", "Orb of Remembrance", "Orb of Remembrance");
+    const editor = page.getByRole("region", { name: "Selected step editor" });
+    await expect(editor.getByRole("spinbutton", { name: "Minimum memory strands" })).toHaveValue(
+        "70",
+    );
+    await expect(editor.getByText("Result routes", { exact: true })).toHaveCount(0);
+    await expect(editor.getByText("Output requirements", { exact: true })).toHaveCount(0);
+    await editor.getByRole("spinbutton", { name: "Minimum memory strands" }).fill("75");
+    await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
+    await expect(editor).toHaveCount(0);
+    await expect
+        .poll(async () =>
+            (await stored(page)).projects[0]!.graph.nodes.find((node) => node.id === "transmute"),
+        )
+        .toMatchObject({
+            smart: { kind: "minimum", field: "memoryStrands", value: 75 },
+            fallback: { kind: "recover", nodeId: "transmute", inputId: "base" },
+        });
+    await page.reload();
+    await page.getByRole("button", { name: "Edit Transmute", exact: true }).click();
+    await expect(editor.getByRole("spinbutton", { name: "Minimum memory strands" })).toHaveValue(
+        "75",
+    );
+    await editor
+        .getByRole("spinbutton", { name: "Minimum memory strands" })
+        .scrollIntoViewIfNeeded();
+    await page.screenshot({ path: "test-results/simple-remembrance.png", fullPage: true });
+});
+
+test("ES chest graph separates the 2p + 2p attempt from success after retries", async ({
+    page,
+}) => {
+    const ruleset = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r7",
+    )!;
+    const catalog = craftingCatalogSchema.parse((await retainedRevision(ruleset)).catalog);
+    const graph = projectFromPreset(new CraftingEngine(catalog), ruleset, "energy-shield-chest");
+    await importGraph(page, graph);
+    await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
+    const finish = page.locator('.react-flow__node[data-id="finish"]');
+    await expect(
+        finish.getByRole("button", { name: "30.7% / attempt", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText(/30\.7% per attempt/).first()).toBeVisible();
+    await expect(page.getByText(/100\.0% after retries/).first()).toBeVisible();
+    await page.getByRole("button", { name: "Simple mode", exact: true }).click();
+    await expect(finish).toContainText("30.7%");
+    await page.screenshot({ path: "test-results/es-chest-attempt-odds.png", fullPage: true });
+});
+
 for (const game of ["poe1", "poe2"] as const) {
     test(`${game} sampled items open new local projects with their original historical revision`, async ({
         page,
@@ -112,7 +173,7 @@ for (const game of ["poe1", "poe2"] as const) {
             alternatives: [{ item: result.samples[1].item, price: null }],
         });
         await expect(
-            page.getByRole("button", { name: "Correction available · adopt r6", exact: true }),
+            page.getByRole("button", { name: "Correction available · adopt r7", exact: true }),
         ).toBeVisible();
         await page.reload();
         await expect(page.getByRole("tab")).toHaveCount(2);
@@ -758,6 +819,15 @@ test("donor-family pricing requires a saved representative assumption", async ({
     await expect(use).toHaveCount(0);
     await find.click();
     await expect(use).toBeEnabled();
+    const scroll = await use.evaluate((button) => {
+        button.scrollIntoView({ block: "center", inline: "center", behavior: "instant" });
+        const graph = button.closest<HTMLElement>(".react-flow")!;
+        const editor = button.closest<HTMLElement>('[data-slot="scroll-area-viewport"]')!;
+        return { graphX: graph.scrollLeft, graphY: graph.scrollTop, editorY: editor.scrollTop };
+    });
+    expect(scroll.graphX).toBe(0);
+    expect(scroll.graphY).toBe(0);
+    expect(scroll.editorY).toBeGreaterThan(0);
     await use.click();
     await expect(editor.getByText("Donor-family assumption:", { exact: false })).toBeVisible();
     expect(
@@ -1145,7 +1215,7 @@ test("prepared Temple gloves pass from the workbench into a saved current projec
     await page.getByRole("button", { name: "Use item in new project", exact: true }).click();
     await expect(page).toHaveURL(/\/1\/crafting\/projects$/);
     const project = (await stored(page)).projects[0]!;
-    expect(project.graph.ruleset.revision).toBe("r6");
+    expect(project.graph.ruleset.revision).toBe("r7");
     const node = project.graph.nodes[0]!;
     expect(node.kind).toBe("acquire");
     if (node.kind === "acquire" && node.alternatives[0]?.kind === "purchase")
@@ -1269,7 +1339,7 @@ test("historical projects retain their rules until a correction is explicitly ad
     );
     await page.getByRole("button", { name: "Apply selected version", exact: true }).click();
     await expect(
-        page.getByRole("button", { name: "Correction available · adopt r6", exact: true }),
+        page.getByRole("button", { name: "Correction available · adopt r7", exact: true }),
     ).toBeVisible();
     expect((await stored(page)).projects[0]!.graph.ruleset).toMatchObject({
         era: "3.29",
@@ -1278,19 +1348,19 @@ test("historical projects retain their rules until a correction is explicitly ad
     });
     await page.reload();
     await expect(
-        page.getByRole("button", { name: "Correction available · adopt r6", exact: true }),
+        page.getByRole("button", { name: "Correction available · adopt r7", exact: true }),
     ).toBeVisible();
     expect((await stored(page)).projects[0]!.graph.ruleset.revision).toBe("r1");
     await page
-        .getByRole("button", { name: "Correction available · adopt r6", exact: true })
+        .getByRole("button", { name: "Correction available · adopt r7", exact: true })
         .click();
     await expect(
-        page.getByRole("button", { name: "Correction available · adopt r6", exact: true }),
+        page.getByRole("button", { name: "Correction available · adopt r7", exact: true }),
     ).toHaveCount(0);
     expect((await stored(page)).projects[0]!.graph.ruleset).toMatchObject({
         era: "3.29",
-        revision: "r6",
-        engine: "crafting-graph-6",
+        revision: "r7",
+        engine: "crafting-graph-7",
     });
 });
 
