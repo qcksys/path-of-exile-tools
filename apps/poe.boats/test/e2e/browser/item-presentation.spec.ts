@@ -76,6 +76,7 @@ test("new projects require a base and the graph expands without changing the pro
     await choose(page, "Starting base", "Plate Vest", "Plate Vest · Body Armour");
     await page.getByRole("button", { name: "Create project", exact: true }).click();
     const graph = page.getByRole("region", { name: "Crafting project graph", exact: true });
+    await expect(graph.getByRole("link", { name: "React Flow", exact: true })).toHaveCount(0);
     const initial = (await graph.boundingBox())!;
     await page.getByRole("button", { name: "Full width", exact: true }).click();
     await expect
@@ -84,6 +85,7 @@ test("new projects require a base and the graph expands without changing the pro
     await page.getByRole("button", { name: "Fullscreen graph", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Crafting project graph", exact: true });
     await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("link", { name: "React Flow", exact: true })).toHaveCount(0);
     await expect
         .poll(async () => Math.round((await dialog.boundingBox())!.height))
         .toBe(page.viewportSize()!.height);

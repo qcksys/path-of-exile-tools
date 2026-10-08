@@ -287,7 +287,7 @@ export function IdolCardMini({
                 {(onCopy || onRemove) && (
                     <div
                         className={cn(
-                            "absolute top-0.5 right-0.5 flex gap-0.5 transition-opacity group-hover/mini:opacity-100",
+                            "absolute top-0.5 right-0.5 flex gap-0.5 transition-opacity group-hover/mini:opacity-100 group-focus-within/mini:opacity-100",
                             isHovered ? "opacity-100" : "opacity-0",
                         )}
                     >
@@ -300,6 +300,7 @@ export function IdolCardMini({
                                             size="icon"
                                             className="h-5 w-5"
                                             onClick={handleCopy}
+                                            aria-label={`${t("actions.copyToInventory")}: ${idol.name || base.name}`}
                                         />
                                     }
                                 >
@@ -317,6 +318,7 @@ export function IdolCardMini({
                                             size="icon"
                                             className="h-5 w-5"
                                             onClick={handleRemove}
+                                            aria-label={`${t("grid.removeFromGrid")}: ${idol.name || base.name}`}
                                         />
                                     }
                                 >

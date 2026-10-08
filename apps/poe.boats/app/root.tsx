@@ -15,7 +15,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import { Toaster } from "~/components/ui/sonner";
 import { localeContext } from "~/context";
-import { createI18nInstance, DEFAULT_LOCALE } from "~/i18n";
+import { createI18nInstance, DEFAULT_LOCALE, useLocale } from "~/i18n";
 import { themeSessionResolver } from "~/sessions.server";
 
 export const links: Route.LinksFunction = () => [
@@ -45,7 +45,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 function InnerLayout({ children }: { children: ReactNode }) {
     const data = useLoaderData<typeof loader>();
     const [theme] = useTheme();
-    const locale = data?.locale ?? DEFAULT_LOCALE;
+    const locale = useLocale();
 
     return (
         <html lang={locale} className={clsx(theme)}>

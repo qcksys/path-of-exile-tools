@@ -35,6 +35,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
 function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
     return (
         <ComboboxPrimitive.Clear
+            aria-label="Clear selection"
             data-slot="combobox-clear"
             render={<InputGroupButton variant="ghost" size="icon-xs" />}
             className={cn(className)}
@@ -65,6 +66,11 @@ function ComboboxInput({
                         size="icon-xs"
                         variant="ghost"
                         render={<ComboboxTrigger />}
+                        aria-label={
+                            props["aria-label"]
+                                ? `Open ${props["aria-label"]} options`
+                                : "Open options"
+                        }
                         data-slot="input-group-button"
                         className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
                         disabled={disabled}

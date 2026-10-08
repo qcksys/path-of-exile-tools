@@ -27,7 +27,6 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import {
     Select,
     SelectContent,
@@ -434,15 +433,15 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="flex max-h-[85vh] max-w-250 flex-col overflow-hidden">
-                <DialogHeader>
+            <DialogContent className="flex max-h-[85dvh] flex-col overflow-hidden sm:max-w-250">
+                <DialogHeader className="shrink-0">
                     <DialogTitle>
                         {initialIdol ? t("editor.editIdol") : t("editor.createIdol")}
                     </DialogTitle>
                     <DialogDescription>{t("editor.description")}</DialogDescription>
                 </DialogHeader>
 
-                <ScrollArea className="h-0 flex-1 pr-4">
+                <div className="min-h-0 flex-1 overflow-y-auto pr-4">
                     <div className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -697,9 +696,9 @@ export function IdolEditor({ open, onOpenChange, onSave, initialIdol }: IdolEdit
                             </>
                         )}
                     </div>
-                </ScrollArea>
+                </div>
 
-                <DialogFooter>
+                <DialogFooter className="shrink-0">
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         {t("actions.cancel")}
                     </Button>

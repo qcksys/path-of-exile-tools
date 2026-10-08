@@ -123,6 +123,7 @@ function DraggableIdolCard({
                                 size="icon"
                                 className="h-6 w-6"
                                 onClick={handleFindOnTrade}
+                                aria-label={`${t("trade.findSimilar")}: ${item.idol.name || item.idol.baseType}`}
                             />
                         }
                     >
@@ -142,6 +143,7 @@ function DraggableIdolCard({
                                         e.stopPropagation();
                                         onIdolClick(item);
                                     }}
+                                    aria-label={`${t("inventory.edit")}: ${item.idol.name || item.idol.baseType}`}
                                 />
                             }
                         >
@@ -162,6 +164,7 @@ function DraggableIdolCard({
                                         e.stopPropagation();
                                         onDuplicateIdol(item.id);
                                     }}
+                                    aria-label={`${t("inventory.duplicate")}: ${item.idol.name || item.idol.baseType}`}
                                 />
                             }
                         >
@@ -182,6 +185,7 @@ function DraggableIdolCard({
                                         e.stopPropagation();
                                         onRemoveIdol(item.id);
                                     }}
+                                    aria-label={`${t("inventory.removeFromInventory")}: ${item.idol.name || item.idol.baseType}`}
                                 />
                             }
                         >
@@ -300,6 +304,7 @@ export function InventoryPanel({
                                     <Button
                                         variant="destructive"
                                         size="sm"
+                                        aria-label={t("inventory.clear")}
                                         onClick={() =>
                                             handleRequestDelete(inventory.map((i) => i.id))
                                         }
@@ -313,7 +318,7 @@ export function InventoryPanel({
                     )}
                 </div>
 
-                <ScrollArea className="h-0 flex-1">
+                <ScrollArea className="max-h-[50vh] lg:h-0 lg:max-h-none lg:flex-1">
                     {filteredInventory.length === 0 ? (
                         <div className="py-8 text-center text-muted-foreground">
                             {inventory.length === 0

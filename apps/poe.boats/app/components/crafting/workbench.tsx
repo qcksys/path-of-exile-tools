@@ -131,6 +131,12 @@ export function CraftingWorkbench({
     const [saveName, setSaveName] = useState("My crafting project");
     const [selectedSave, setSelectedSave] = useState("");
     const [autoSave, setAutoSave] = useState(true);
+    const itemSection = useRef<HTMLDivElement>(null);
+    const modifierSection = useRef<HTMLDivElement>(null);
+    const requirementSection = useRef<HTMLDivElement>(null);
+    const calculationSection = useRef<HTMLElement>(null);
+    const calculationAction = useRef<HTMLButtonElement>(null);
+    const resultSection = useRef<HTMLDivElement>(null);
     const [draftReady, setDraftReady] = useState(false);
     const [draftError, setDraftError] = useState("");
     const worker = useRef<Worker | null>(null);
@@ -587,7 +593,45 @@ export function CraftingWorkbench({
                         <div
                             className={`grid grid-cols-1 items-start lg:grid-cols-[290px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(360px,1fr)_340px] ${preferences.compact ? "gap-3 [&>div]:space-y-3 [&>div>section]:p-3 [&>div>details]:p-3" : "gap-5"}`}
                         >
-                            <div className="min-w-0 space-y-4">
+                            <nav
+                                aria-label="Workbench sections"
+                                className="sticky top-14 z-20 -mx-1 flex flex-wrap gap-1 rounded-lg border border-border bg-background p-1 lg:hidden"
+                            >
+                                {[
+                                    { label: "Item", ref: itemSection },
+                                    { label: "Modifiers", ref: modifierSection },
+                                    { label: "Requirements", ref: requirementSection },
+                                    {
+                                        label: mode === "simulate" ? "Run process" : "Calculate",
+                                        ref: calculationSection,
+                                    },
+                                    ...(result ? [{ label: "Results", ref: resultSection }] : []),
+                                ].map(({ label, ref }) => (
+                                    <Button
+                                        key={label}
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                            const target =
+                                                ref === calculationSection
+                                                    ? (calculationAction.current ?? ref.current)
+                                                    : ref.current;
+                                            target?.scrollIntoView({
+                                                block:
+                                                    ref === calculationSection ? "center" : "start",
+                                            });
+                                            target?.focus({ preventScroll: true });
+                                        }}
+                                    >
+                                        {label}
+                                    </Button>
+                                ))}
+                            </nav>
+                            <div
+                                ref={itemSection}
+                                tabIndex={-1}
+                                className="min-w-0 scroll-mt-36 space-y-4 focus-visible:ring-2 focus-visible:ring-ring"
+                            >
                                 <section
                                     className="space-y-4 rounded-lg border border-border bg-card p-4"
                                     aria-label="Item settings"
@@ -1116,7 +1160,11 @@ export function CraftingWorkbench({
                                     </details>
                                 ) : null}
                             </div>
-                            <div className="min-w-0 space-y-5">
+                            <div
+                                ref={modifierSection}
+                                tabIndex={-1}
+                                className="min-w-0 scroll-mt-36 space-y-5 focus-visible:ring-2 focus-visible:ring-ring"
+                            >
                                 {useProcess ? (
                                     <ProcessEditor
                                         engine={engine}
@@ -1169,13 +1217,23 @@ export function CraftingWorkbench({
                                 />
                             </div>
                             <div className="min-w-0 space-y-4 lg:col-span-2 xl:col-span-1">
-                                <TargetEditor
-                                    engine={engine}
-                                    item={project.item}
-                                    target={project.target}
-                                    onChange={(target) => change({ target })}
-                                />
-                                <section className="space-y-4 rounded-lg border border-border bg-card p-4">
+                                <div
+                                    ref={requirementSection}
+                                    tabIndex={-1}
+                                    className="scroll-mt-36 focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    <TargetEditor
+                                        engine={engine}
+                                        item={project.item}
+                                        target={project.target}
+                                        onChange={(target) => change({ target })}
+                                    />
+                                </div>
+                                <section
+                                    ref={calculationSection}
+                                    tabIndex={-1}
+                                    className="scroll-mt-36 space-y-4 rounded-lg border border-border bg-card p-4 focus-visible:ring-2 focus-visible:ring-ring"
+                                >
                                     <h2 className="font-semibold">
                                         {mode === "simulate" ? "Run process" : "Calculate chances"}
                                     </h2>
@@ -1500,6 +1558,7 @@ export function CraftingWorkbench({
                                     ) : (
                                         <div className="flex flex-wrap gap-2">
                                             <Button
+                                                ref={calculationAction}
                                                 onClick={() =>
                                                     run(
                                                         mode === "simulate"
@@ -1596,13 +1655,19 @@ export function CraftingWorkbench({
                                     </div>
                                 </details>
                                 {result ? (
-                                    <CraftingResults
-                                        engine={engine}
-                                        result={result}
-                                        onUse={(item) =>
-                                            safely(() => setItem(item, "Simulation sample"))
-                                        }
-                                    />
+                                    <div
+                                        ref={resultSection}
+                                        tabIndex={-1}
+                                        className="scroll-mt-36 focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                        <CraftingResults
+                                            engine={engine}
+                                            result={result}
+                                            onUse={(item) =>
+                                                safely(() => setItem(item, "Simulation sample"))
+                                            }
+                                        />
+                                    </div>
                                 ) : null}
                             </div>
                         </div>
