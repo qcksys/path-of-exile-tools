@@ -16,6 +16,7 @@ export const craftingExchangeInputSchema = z
         itemIds: z.array(z.string().min(1).max(500)).min(1).max(500),
         at: z.number().int().nonnegative().optional(),
         window: exchangePriceReferenceSchema.shape.window,
+        conversion: exchangePriceReferenceSchema.shape.conversion,
     })
     .refine(
         (input) => exchangeRealmMatchesGame(input.realm, input.game),

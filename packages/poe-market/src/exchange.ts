@@ -8,6 +8,7 @@ export const exchangePriceReferenceSchema = z.strictObject({
     itemId,
     quoteId: itemId,
     window: z.literal("adaptive-v1").optional(),
+    conversion: z.literal("reference-currency-v1").optional(),
 });
 export type ExchangePriceReference = z.infer<typeof exchangePriceReferenceSchema>;
 export const exchangeSnapshotSchema = z.object({
@@ -20,7 +21,7 @@ export const exchangeSnapshotSchema = z.object({
     highestRatio: z.record(z.string(), z.number().nonnegative()).nullable(),
 });
 export type ExchangeSnapshot = z.infer<typeof exchangeSnapshotSchema>;
-export const exchangeQuoteSchema = exchangePriceReferenceSchema.extend({
+const directExchangeQuoteSchema = exchangePriceReferenceSchema.extend({
     amount: z.number().positive(),
     hour: z.number().int().nonnegative().multipleOf(3600).nullable(),
     marketId: z.string().nullable(),
@@ -31,7 +32,50 @@ export const exchangeQuoteSchema = exchangePriceReferenceSchema.extend({
     windowStart: z.number().int().nonnegative().multipleOf(3600).optional(),
     estimator: z.enum(["traded-volume-ratio-v1", "adaptive-volume-ratio-v1", "currency-unit-v1"]),
 });
+export const exchangeQuoteSchema = directExchangeQuoteSchema.extend({
+    estimator: z.enum([
+        "traded-volume-ratio-v1",
+        "adaptive-volume-ratio-v1",
+        "currency-unit-v1",
+        "cross-rate-v1",
+    ]),
+    legs: z.tuple([directExchangeQuoteSchema, directExchangeQuoteSchema]).optional(),
+});
 export type ExchangeQuote = z.infer<typeof exchangeQuoteSchema>;
+
+export function convertExchangeQuote(
+    first: ExchangeQuote,
+    second: ExchangeQuote,
+): ExchangeQuote | null {
+    if (
+        first.realm !== second.realm ||
+        first.league !== second.league ||
+        first.quoteId !== second.itemId ||
+        first.itemId === second.quoteId ||
+        first.hour === null ||
+        first.hour !== second.hour ||
+        first.window !== second.window ||
+        first.windowStart !== second.windowStart ||
+        first.estimator === "cross-rate-v1" ||
+        second.estimator === "cross-rate-v1"
+    )
+        return null;
+    const amount = first.amount * second.amount;
+    if (!Number.isFinite(amount) || amount <= 0) return null;
+    return exchangeQuoteSchema.parse({
+        ...first,
+        quoteId: second.quoteId,
+        amount,
+        conversion: "reference-currency-v1",
+        estimator: "cross-rate-v1",
+        marketId: null,
+        low: null,
+        high: null,
+        itemVolume: null,
+        quoteVolume: null,
+        legs: [first, second],
+    });
+}
 
 const accountingCurrencies: Record<string, string> = {
     chaos: "Metadata/Items/Currency/CurrencyRerollRare",

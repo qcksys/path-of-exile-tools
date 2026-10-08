@@ -12,6 +12,7 @@ import { connectGraphInput, removeGraphNode } from "~/lib/crafting-graph-authori
 import { replaceGraphMethod } from "~/lib/crafting-graph-method";
 import { bindCohortPurchasePrice } from "~/lib/crafting-market";
 import { rulesetAllowsConditionalSteps, rulesetAllowsMethod } from "~/lib/crafting-rulesets";
+import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
 import { craftingItemOptions } from "~/lib/item-presentation";
 import type { CraftingMethod } from "~/schemas/crafting";
 import type { CraftingPrice } from "~/schemas/crafting-economy";
@@ -74,6 +75,13 @@ export function GraphPriceInput({
                       ? "Manual price"
                       : "Unpriced; excluded from a complete cost estimate"}
             </span>
+            {value?.source === "market" && decodeCraftingSourceReference(value.cohortId) && (
+                <span className="block text-muted-foreground">
+                    poe.ninja listing estimate · time shown is retrieval time · complete recipe
+                    includes the selected rare-beast assumption where applicable · historical source
+                    unavailable
+                </span>
+            )}
             {value?.source === "market" &&
                 decodeExchangePriceReference(value.cohortId)?.window === "adaptive-v1" && (
                     <span className="block text-muted-foreground">
