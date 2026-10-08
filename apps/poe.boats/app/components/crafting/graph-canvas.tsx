@@ -222,6 +222,7 @@ export function GraphCanvas({
             aria-label="Crafting project graph"
         >
             <ReactFlow<FlowNode>
+                proOptions={{ hideAttribution: true }}
                 nodes={nodes}
                 edges={edges}
                 nodeTypes={nodeTypes}
