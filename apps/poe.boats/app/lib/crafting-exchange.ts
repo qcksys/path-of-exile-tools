@@ -46,6 +46,7 @@ export function bindExchangePrice(
                     itemId: quote.itemId,
                     quoteId: quote.quoteId,
                     window: quote.window,
+                    conversion: quote.conversion,
                 }),
             },
         },

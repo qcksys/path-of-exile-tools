@@ -24,6 +24,7 @@ import { FossilOptimizer, fossilOptimizationSchema } from "~/lib/crafting-optimi
 import { craftingPresets, listCraftingPresets, projectFromPreset } from "~/lib/crafting-presets";
 import { rulesetReference } from "~/lib/crafting-rulesets";
 import { CraftingProcess } from "~/lib/crafting-simulation";
+import { bindCraftingSourcePrice } from "~/lib/crafting-sources";
 import {
     CraftingWorkbenchCalculation,
     editCraftingStartingItem,
@@ -39,8 +40,10 @@ import { editPlanner, newPlannerSet } from "~/operations/planner";
 import { operations } from "~/operations/registry.server";
 import { craftingCatalogSchema, craftingMethodSchema } from "~/schemas/crafting";
 import { craftingItemQueryTextResultSchema } from "~/schemas/crafting-item-query-text";
+import { craftingSourceQuoteSchema } from "~/schemas/crafting-sources";
 import type { CraftingItemEdit } from "~/schemas/crafting-workbench";
 import { STORAGE_VERSION, type StorageData } from "~/schemas/storage";
+import * as craftingSources from "~/services/crafting-sources.server";
 import { conditionalTransmuteGraph } from "./crafting-conditional-fixtures";
 import {
     exchangeGraph,
@@ -605,6 +608,104 @@ describe("transport parity", () => {
             );
             expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
         }
+    });
+
+    it("shares supplemental lookup, full-recipe binding, refresh and scope refusals through HTTP and MCP", async () => {
+        const graph = exchangeGraph();
+        const id = "EinharMasterCraftMorrigan7";
+        const sourceQuote = craftingSourceQuoteSchema.parse({
+            source: "poe.ninja",
+            game: "poe1",
+            realm: "pc",
+            league: graph.league,
+            currency: "chaos",
+            id,
+            assumption: "rare-beast-mountain-lynx-v1",
+            fetchedAt: "2026-10-08T04:00:00.000Z",
+            amount: 607,
+            components: [
+                ["craicic-sand-spitter", 1, 1],
+                ["black-morrigan", 1, 600],
+                ["mountain-lynx", 2, 3],
+            ].map(([detailsId, quantity, unitPrice]) => ({
+                detailsId,
+                name: detailsId,
+                quantity,
+                unitPrice,
+                listingCount: 100,
+                sourceUrl:
+                    "https://poe.ninja/poe1/api/economy/stash/current/item/overview?league=Standard&type=Beast",
+            })),
+        });
+        const prices = { quotes: { [id]: sourceQuote }, missing: {} };
+        const lookup = vi
+            .spyOn(craftingSources, "findCraftingSourcePrices")
+            .mockResolvedValue(prices);
+        const bound = bindCraftingSourcePrice(graph, fixtureEngine, id, sourceQuote);
+        for (const [name, path, input, expected] of [
+            [
+                "find_crafting_source_prices",
+                "/market/sources",
+                { graph, ids: [id], realm: "pc", assumption: sourceQuote.assumption },
+                prices,
+            ],
+            [
+                "bind_crafting_source_price",
+                "/market/sources/bind",
+                { graph, id, quote: sourceQuote },
+                { graph: bound },
+            ],
+            [
+                "refresh_crafting_item_prices",
+                "/market/refresh",
+                { graph: bound },
+                { graph: bound, issues: [] },
+            ],
+        ] as const) {
+            const response = await api.request(
+                `https://poe.boats/api/v1/crafting${path}`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
+                },
+                { runtime },
+            );
+            expect(response.status, name).toBe(200);
+            expect(await response.json()).toEqual(expected);
+            const rpc = RpcSchema.parse(
+                await (await mcp("tools/call", { name, arguments: input })).json(),
+            );
+            expect(CallToolResultSchema.parse(rpc.result).structuredContent, name).toEqual(
+                expected,
+            );
+        }
+        for (const quote of [
+            { ...sourceQuote, league: "Other" },
+            { ...sourceQuote, components: sourceQuote.components.slice(0, 2) },
+        ]) {
+            const input = { graph, id, quote };
+            const response = await api.request(
+                "https://poe.boats/api/v1/crafting/market/sources/bind",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
+                },
+                { runtime },
+            );
+            expect(response.status).toBe(400);
+            const rpc = RpcSchema.parse(
+                await (
+                    await mcp("tools/call", {
+                        name: "bind_crafting_source_price",
+                        arguments: input,
+                    })
+                ).json(),
+            );
+            expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
+        }
+        lookup.mockRestore();
     });
 
     it.each([

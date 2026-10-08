@@ -45,7 +45,7 @@ import { rollupEquipment } from "../../../../packages/poe-stash-ingest/src/ps/eq
 import { ingestPs } from "../../../../packages/poe-stash-ingest/src/ps/ingest.ts";
 import { rollupPs } from "../../../../packages/poe-stash-ingest/src/ps/rollup.ts";
 import { evaluateSales } from "../../../../packages/poe-stash-ingest/src/ps/sales.ts";
-import { getCursor } from "../../../../packages/poe-stash-ingest/src/shared/cursor.ts";
+import { getCursor, setCursor } from "../../../../packages/poe-stash-ingest/src/shared/cursor.ts";
 import {
     type DbHandle,
     openDb,
@@ -180,6 +180,7 @@ beforeEach(async () => {
 afterEach(async () => {
     await local?.close();
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
 });
 
 afterAll(async () => {
@@ -189,6 +190,82 @@ afterAll(async () => {
         );
     await connection?.end();
     await container?.stop();
+});
+
+it("converts captured indirect pairs only with positive matching-hour legs and preserves historical scope", async () => {
+    const divine = "Metadata/Items/Currency/CurrencyModValues";
+    const db = mysql as unknown as TDatabase;
+    await mysql.insert(tStashCurrencyHourly).values([
+        {
+            realm: "pc",
+            league: "Standard",
+            hour: HOUR,
+            marketId: `${transmuteId}|${divine}`,
+            volumeTraded: { [transmuteId]: 100, [divine]: 2 },
+        },
+        {
+            realm: "pc",
+            league: "Standard",
+            hour: HOUR,
+            marketId: `${divine}|${chaosId}`,
+            volumeTraded: { [divine]: 10, [chaosId]: 3600 },
+        },
+        {
+            realm: "pc",
+            league: "Standard",
+            hour: HOUR + 3600,
+            marketId: `${divine}|${chaosId}`,
+            volumeTraded: { [divine]: 10, [chaosId]: 4000 },
+        },
+    ]);
+    const input = {
+        game: "poe1" as const,
+        realm: "pc" as const,
+        league: "Standard",
+        currency: "chaos",
+        itemIds: [transmuteId],
+        at: HOUR,
+    };
+    expect((await findCraftingExchangePrices(db, input)).quotes).toEqual({});
+    const converted = await findCraftingExchangePrices(db, {
+        ...input,
+        conversion: "reference-currency-v1",
+    });
+    expect(converted.quotes[transmuteId]).toMatchObject({
+        amount: 7.2,
+        estimator: "cross-rate-v1",
+        hour: HOUR,
+    });
+    for (const wrong of [
+        { at: HOUR - 1 },
+        { at: HOUR + 3600 },
+        { league: "Other" },
+        { realm: "xbox" as const },
+    ])
+        expect(
+            (
+                await findCraftingExchangePrices(db, {
+                    ...input,
+                    ...wrong,
+                    conversion: "reference-currency-v1",
+                })
+            ).quotes,
+        ).toEqual({});
+    const bound = bindExchangePrice(exchangeGraph(), transmuteId, converted.quotes[transmuteId]!);
+    expect(
+        (await craftingMarketSnapshots(db, bound, engine, [HOUR])).points[0]?.graph?.prices[
+            transmuteId
+        ]?.amount,
+    ).toBe(7.2);
+});
+
+it("waits for a saved exchange hour to complete without fetching an upstream 404 or advancing its cursor", async () => {
+    const hour = Math.floor(Date.now() / 3_600_000) * 3600;
+    await setCursor(local.conn, "cxapi", String(hour));
+    const client = createClient({ baseUrl, userAgent: "hour-boundary-test", token: TOKEN });
+    expect(await ingestCx(local.conn, client, { catchUp: true, league: "Standard" })).toEqual([]);
+    expect(await getCursor(local.conn, "cxapi")).toBe(String(hour));
+    expect(await queryAll(local.conn, "SELECT * FROM cx_market_hour")).toEqual([]);
 });
 
 it("refreshes across compatible persisted revisions and recovers earlier prices without rewriting history", async () => {
@@ -851,6 +928,7 @@ it("updates a seeded currency market with a long ID through HTTP to MySQL", asyn
 });
 
 it("prices a whole craft from replayed exchange hours without mixing realms, leagues or zero-volume markets", async () => {
+    vi.spyOn(Date, "now").mockReturnValue((HOUR + 30 * 24 * 3600) * 1000);
     const client = createClient({
         baseUrl,
         userAgent: "exchange-e2e",

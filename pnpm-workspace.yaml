@@ -15,7 +15,7 @@ catalog:
   '@changesets/cli': ^2.31.0
   '@clack/prompts': ^1.8.1
   '@cloudflare/vite-plugin': ^1.33.1
-  '@duckdb/node-api': ^1.4.0-r.1
+  '@duckdb/node-api': 1.4.5-r.1
   "@fontsource-variable/geist": ^5.2.8
   '@hono/zod-openapi': ^1.6.3
   '@imagemagick/magick-wasm': ^0.0.44

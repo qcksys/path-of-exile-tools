@@ -15,8 +15,10 @@ import {
     livePurchasePrices,
 } from "~/lib/crafting-market";
 import { resolveRuleset } from "~/lib/crafting-rulesets";
+import { bindCraftingSourcePrice, liveSourcePrices } from "~/lib/crafting-sources";
 import { craftingCatalogSchema } from "~/schemas/crafting";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
+import { findCraftingSourcePrices } from "~/services/crafting-sources.server";
 import type { OperationContext } from "./operation";
 
 export async function craftingMarketEngine(graph: CraftingGraph, context: OperationContext) {
@@ -95,7 +97,11 @@ export async function refreshCraftingMarketPrices(
             );
             continue;
         }
-        const key = JSON.stringify([binding.reference.realm, binding.reference.window]);
+        const key = JSON.stringify([
+            binding.reference.realm,
+            binding.reference.window,
+            binding.reference.conversion,
+        ]);
         groups.set(key, [...(groups.get(key) ?? []), binding]);
     }
     for (const bindings of groups.values()) {
@@ -107,6 +113,7 @@ export async function refreshCraftingMarketPrices(
             currency: graph.currency,
             itemIds: bindings.map((binding) => binding.id),
             window: reference.window,
+            conversion: reference.conversion,
             at,
         });
         for (const { id } of bindings) {
@@ -116,6 +123,45 @@ export async function refreshCraftingMarketPrices(
                 issues.push(
                     `${id}: ${result.missing[id] ?? "The exchange price is unavailable; enter a manual price."}`,
                 );
+        }
+    }
+    const sources = new Map<string, ReturnType<typeof liveSourcePrices>>();
+    for (const binding of liveSourcePrices(graph)) {
+        const { reference, id } = binding;
+        if (at !== undefined) {
+            issues.push(
+                `${id}: poe.ninja current listing estimates have no captured historical source; enter a manual assumption for history.`,
+            );
+            continue;
+        }
+        if (
+            reference.game !== graph.game ||
+            reference.league !== graph.league ||
+            reference.currency !== graph.currency ||
+            reference.id !== id
+        ) {
+            issues.push(
+                `${id}: the saved source price does not match this input, game, league or currency.`,
+            );
+            continue;
+        }
+        const key = reference.assumption ?? "none";
+        sources.set(key, [...(sources.get(key) ?? []), binding]);
+    }
+    for (const bindings of sources.values()) {
+        const result = await findCraftingSourcePrices(graph, engine, {
+            realm: "pc",
+            ids: bindings.map(({ id }) => id),
+            assumption: bindings[0]!.reference.assumption,
+        });
+        for (const { id } of bindings) {
+            const quote = result.quotes[id];
+            if (quote) {
+                // Keep unchanged quotes stable across Worker isolates to avoid refresh/edit loops.
+                if (next.prices[id]?.amount !== quote.amount)
+                    next = bindCraftingSourcePrice(next, engine, id, quote);
+            } else
+                issues.push(`${id}: ${result.missing[id] ?? "The source price is unavailable."}`);
         }
     }
     return { graph: next, issues };
@@ -132,6 +178,7 @@ export async function craftingMarketSnapshots(
             ({ node, alternative }) => `purchase:${node.id}:${alternative.id}`,
         ),
         ...liveExchangePrices(graph).map(({ id }) => id),
+        ...liveSourcePrices(graph).map(({ id }) => id),
     ]);
     const prices = { ...graph.prices };
     for (const node of graph.nodes) {
