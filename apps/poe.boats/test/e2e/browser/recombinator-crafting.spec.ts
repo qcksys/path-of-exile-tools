@@ -72,8 +72,8 @@ test("a recombinator input previews explicit rolls and becomes a saved crafting 
         .first()
         .click();
     const dialog = page.getByRole("dialog", { name: "Prepare Item 1 for crafting", exact: true });
-    await expect(dialog.getByRole("combobox", { name: "Concrete item base" })).toContainText(
-        "Despot Axe",
+    await expect(dialog.getByRole("combobox", { name: "Concrete item base" })).toHaveValue(
+        "Despot Axe · Two Hand Axe",
     );
     await dialog.getByRole("button", { name: "Preview prepared input", exact: true }).click();
     await expect(dialog.getByRole("region", { name: "Prepared input preview" })).toContainText(
@@ -130,7 +130,7 @@ test("generic inputs require a concrete base and custom text is refused without 
     await expect(
         dialog.getByRole("button", { name: "Preview prepared input", exact: true }),
     ).toBeDisabled();
-    await selectValue(dialog.getByLabel("Concrete item base"), { label: "Vaal Regalia" });
+    await choose(page, "Concrete item base", "Vaal Regalia", "Vaal Regalia · Body Armour");
     await expect(
         dialog.getByRole("button", { name: "Preview prepared input", exact: true }),
     ).toBeEnabled();
@@ -142,7 +142,7 @@ test("generic inputs require a concrete base and custom text is refused without 
         .first()
         .click();
     dialog = page.getByRole("dialog", { name: "Prepare Item 1 for crafting", exact: true });
-    await selectValue(dialog.getByLabel("Concrete item base"), { label: "Vaal Regalia" });
+    await choose(page, "Concrete item base", "Vaal Regalia", "Vaal Regalia · Body Armour");
     await dialog.getByRole("button", { name: "Preview prepared input", exact: true }).click();
     await expect(dialog.getByRole("alert")).toContainText("custom modifier text");
     await expect(

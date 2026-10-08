@@ -19,6 +19,7 @@ import {
 } from "~/lib/crafting-simulation";
 import { strongbox } from "~/lib/crafting-strongboxes";
 import { editCraftingStartingItem, emulateCraftingItem } from "~/lib/crafting-workbench";
+import { craftingItemOptions } from "~/lib/item-presentation";
 import {
     type CraftingCatalog,
     type CraftingItem,
@@ -92,6 +93,7 @@ export function CraftingWorkbench({
     editing?: { item: CraftingItem; onApply: (item: CraftingItem) => void; busy: boolean };
 }) {
     const isolated = Boolean(editing);
+    const [hasItem, setHasItem] = useState(isolated);
     const [editorMode, setEditorMode] = useState("emulate");
     const mode = isolated ? editorMode : pageMode;
     const { preferences, setPreferences, storageError, display } = useDisplayPreferences();
@@ -141,25 +143,16 @@ export function CraftingWorkbench({
     const chest = strongbox(catalog, project.item);
     const baseOptions = useMemo(
         () =>
-            Object.entries(catalog.bases)
-                .map(([id, base]) => {
-                    const chest = strongbox(catalog, { baseId: id });
-                    return {
-                        id,
-                        label: chest
-                            ? `${base.name} · level ${Math.max(1, chest.minimumLevel)}–${chest.maximumLevel} · ${id.split("/").at(-1)}`
-                            : `${base.name} · ${base.item_class}${preferences.itemOrder === "dropLevel" ? ` · drop level ${base.drop_level}` : ""}`,
-                    };
-                })
-                .sort(
-                    (a, b) =>
-                        (preferences.itemOrder === "dropLevel"
-                            ? catalog.bases[a.id]!.drop_level - catalog.bases[b.id]!.drop_level
-                            : 0) ||
-                        a.label.localeCompare(b.label) ||
-                        a.id.localeCompare(b.id),
-                ),
-        [catalog, preferences.itemOrder],
+            craftingItemOptions(catalog).map((option) => {
+                const chest = strongbox(catalog, { baseId: option.id });
+                return {
+                    ...option,
+                    label: chest
+                        ? `${option.item.name} · level ${Math.max(1, chest.minimumLevel)}–${chest.maximumLevel} · ${option.id.split("/").at(-1)}`
+                        : option.label,
+                };
+            }),
+        [catalog],
     );
 
     useEffect(() => {
@@ -183,6 +176,7 @@ export function CraftingWorkbench({
                     setAutoSave(false);
                 } else {
                     const restored = validateProject(catalog, draft);
+                    setHasItem(true);
                     setProject(restored);
                     setHistory([
                         {
@@ -208,7 +202,7 @@ export function CraftingWorkbench({
     }, [catalog, draftKey, isolated]);
 
     useEffect(() => {
-        if (isolated || !draftReady) return;
+        if (isolated || !draftReady || (!hasItem && autoSave)) return;
         try {
             localStorage.setItem(
                 draftKey,
@@ -220,7 +214,7 @@ export function CraftingWorkbench({
                 "The automatic draft could not be saved in this browser. Save or export your project before leaving.",
             );
         }
-    }, [autoSave, draftReady, draftKey, project, isolated]);
+    }, [autoSave, draftReady, draftKey, project, isolated, hasItem]);
 
     function change(patch: Partial<CraftingProject>) {
         worker.current?.terminate();
@@ -251,6 +245,7 @@ export function CraftingWorkbench({
         if (project.item.allflameCopies && item.allflameCopies && item !== project.item)
             throw new Error("Choose an Allflame copy before editing the item.");
         const validated = editCraftingStartingItem(engine, { kind: "validate", item });
+        setHasItem(true);
         const next = [
             ...history.slice(0, cursor + 1),
             { id: nextHistoryId.current++, item: validated, label, spending, actions, baseItems },
@@ -261,6 +256,7 @@ export function CraftingWorkbench({
     }
     function restore(input: unknown) {
         const validated = validateProject(catalog, input);
+        setHasItem(true);
         change(validated);
         setHistory([
             {
@@ -461,7 +457,10 @@ export function CraftingWorkbench({
                         Client build {catalog.patch}
                     </span>
                 </div>
-                <nav aria-label="Crafting modes" className="flex gap-1 border-b border-border">
+                <nav
+                    aria-label="Crafting modes"
+                    className="flex flex-wrap gap-1 border-b border-border"
+                >
                     {(
                         [
                             ["calculate", "Calculate"],
@@ -493,1014 +492,1140 @@ export function CraftingWorkbench({
                             ),
                         )}
                 </nav>
-                {!isolated && (
-                    <SendItemToProject
-                        catalog={catalog}
-                        item={project.item}
-                        price={
-                            project.baseCost === undefined
-                                ? null
-                                : {
-                                      amount: project.baseCost,
-                                      currency: "chaos",
-                                      source: "manual",
-                                      confidence: null,
-                                  }
-                        }
-                    />
-                )}
-                {!isolated && !useProcess && (
-                    <SendMethodToProject catalog={catalog} project={project} />
-                )}
-                <DisplaySettings
-                    value={preferences}
-                    onChange={setPreferences}
-                    storageError={storageError}
-                />
-                <NnnEssences
-                    engine={engine}
-                    item={project.item}
-                    prices={project.prices}
-                    onSelect={(id) => setProject({ ...project, method: { kind: "essence", id } })}
-                />
-                {catalog.game === "poe2" ? (
-                    <p className="rounded border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
-                        PoE 2 uses the weights extracted from this client build. These are not
-                        empirically measured server weights, so calculated odds may differ from the
-                        game.
-                    </p>
-                ) : null}
-                {error ? (
-                    <div
-                        role="alert"
-                        className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
+                {!hasItem && (
+                    <section
+                        aria-label="Starting item"
+                        className="max-w-xl space-y-4 rounded-lg border border-border bg-card p-6"
                     >
-                        {error}
-                    </div>
-                ) : null}
-                {notice ? (
-                    <p role="status" className="text-sm text-muted-foreground">
-                        {notice}
-                    </p>
-                ) : null}
-                {draftError ? (
-                    <p role="alert" className="text-sm text-destructive">
-                        {draftError}
-                    </p>
-                ) : null}
-                <div
-                    className={`grid grid-cols-1 items-start lg:grid-cols-[290px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(360px,1fr)_340px] ${preferences.compact ? "gap-3 [&>div]:space-y-3 [&>div>section]:p-3 [&>div>details]:p-3" : "gap-5"}`}
-                >
-                    <div className="min-w-0 space-y-4">
-                        <section
-                            className="space-y-4 rounded-lg border border-border bg-card p-4"
-                            aria-label="Item settings"
-                        >
-                            <h2 className="font-semibold">Starting item</h2>
-                            <CatalogPicker
-                                id="crafting-base"
-                                label="Item base"
-                                options={baseOptions}
-                                value={baseOptions.find(
-                                    (entry) => entry.id === project.item.baseId,
-                                )}
-                                onSelect={(baseId) =>
-                                    safely(() => {
-                                        const next = initialProject(engine);
-                                        restore({
-                                            ...next,
-                                            item: editCraftingStartingItem(engine, {
-                                                kind: "create",
-                                                baseId,
-                                                level: project.item.level,
-                                            }),
-                                            prices: project.prices,
-                                            seed: project.seed,
-                                        });
-                                    })
-                                }
-                            />
-                            <div className="grid grid-cols-2 gap-3">
-                                <Label className="block space-y-1 text-xs">
-                                    Item level
-                                    <Input
-                                        className={controlClass}
-                                        type="number"
-                                        min={Math.max(1, chest?.minimumLevel ?? 1)}
-                                        max={chest?.maximumLevel ?? 100}
-                                        value={project.item.level}
-                                        onChange={(event) =>
-                                            safely(() =>
-                                                setItem({
-                                                    ...project.item,
-                                                    level: Number(event.target.value),
-                                                }),
-                                            )
-                                        }
-                                    />
-                                </Label>
-                                <Label className="block space-y-1 text-xs">
-                                    Rarity
-                                    <FormSelect
-                                        className={controlClass}
-                                        value={project.item.rarity}
-                                        onValueChange={(selectedValue) =>
-                                            safely(() =>
-                                                setItem({
-                                                    ...project.item,
-                                                    rarity: selectedValue as CraftingItem["rarity"],
-                                                }),
-                                            )
-                                        }
-                                    >
-                                        {base.rarities.map((rarity) => (
-                                            <FormSelectItem key={rarity} value={rarity}>
-                                                {rarity}
-                                            </FormSelectItem>
-                                        ))}
-                                    </FormSelect>
-                                </Label>
-                            </div>
-                            {chest ? (
-                                <p
-                                    className="text-xs text-muted-foreground"
-                                    role="note"
-                                    aria-label="Strongbox crafting scope"
-                                >
-                                    Models ordinary Strongbox affixes. Encounter properties and
-                                    dropped contents are separate from the affix calculation.
-                                    Special encounters and Atlas changes are not modeled.
-                                </p>
-                            ) : null}
-                            <Label className="flex items-center gap-2 text-xs">
-                                <Checkbox
-                                    checked={Boolean(project.item.unidentified)}
-                                    disabled={!engine.identificationSupported(project.item)}
-                                    onCheckedChange={(checked) =>
-                                        safely(() => {
-                                            setItem({
-                                                ...project.item,
-                                                unidentified: checked ? true : undefined,
-                                            });
-                                            if (checked) {
-                                                const wisdom = catalog.crafting.currencies.find(
-                                                    (entry) => entry.action === "identify",
-                                                )!;
-                                                change({
-                                                    method: { kind: "currency", id: wisdom.id },
-                                                });
-                                            }
-                                        })
-                                    }
-                                />
-                                Unidentified starting item
-                            </Label>
-                            <p className="text-xs text-muted-foreground">
-                                Choose magic or rare equipment with no explicit modifiers to model
-                                identification. Known modifiers must be removed first. Hidden
-                                special drop modifiers are not modeled.
+                        <h2 className="text-lg font-semibold">Choose a starting item</h2>
+                        <p className="text-sm text-muted-foreground">
+                            Select a base to begin, or load a saved project below.
+                        </p>
+                        {(error || draftError) && (
+                            <p role="alert" className="text-sm text-destructive">
+                                {error || draftError}
                             </p>
-                            <fieldset
-                                className="space-y-2"
-                                disabled={Boolean(
-                                    project.item.destroyed || project.item.allflameCopies,
-                                )}
-                            >
-                                <legend className="text-xs">Item flags</legend>
-                                <div className="flex flex-wrap gap-3">
-                                    {craftingFlags(catalog.game).map(({ key, label }) => (
-                                        <Label
-                                            key={key}
-                                            className="flex items-center gap-2 text-xs"
-                                        >
-                                            <Checkbox
-                                                checked={Boolean(project.item[key])}
-                                                onCheckedChange={(checked) =>
-                                                    safely(() =>
-                                                        setItem(
-                                                            editCraftingStartingItem(engine, {
-                                                                kind: "flag",
-                                                                item: project.item,
-                                                                flag: key,
-                                                                enabled: checked,
-                                                            }),
-                                                            `Edit ${label.toLowerCase()} state`,
-                                                        ),
-                                                    )
-                                                }
-                                            />
-                                            {label}
-                                        </Label>
-                                    ))}
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                    {catalog.game === "poe1"
-                                        ? "Corrupted and Mirrored replace one another."
-                                        : "Corrupted, Mirrored and Sanctified replace one another. Clearing corruption or Sanctification removes its value multipliers."}{" "}
-                                    Corruption-only outcomes must be removed before clearing
-                                    Corrupted.
-                                </p>
-                            </fieldset>
-                            <ClusterEditor
-                                engine={engine}
-                                item={project.item}
-                                onChange={(item) =>
-                                    safely(() => setItem(item, "Edit Cluster Jewel"))
-                                }
-                            />
-                            <QualityEditor
-                                engine={engine}
-                                item={project.item}
-                                onChange={(item) => safely(() => setItem(item, "Edit quality"))}
-                            />
-                            <BaseDefenceEditor
-                                engine={engine}
-                                item={project.item}
-                                onChange={(item) =>
-                                    safely(() => setItem(item, "Edit base defences"))
-                                }
-                            />
-                            <MemoryEditor
-                                engine={engine}
-                                item={project.item}
-                                onChange={(item) =>
-                                    safely(() => setItem(item, "Edit memory state"))
-                                }
-                            />
-                            <AllflameEditor
-                                engine={engine}
-                                item={project.item}
-                                onChange={(item) =>
-                                    safely(() => setItem(item, "Edit intangibility"))
-                                }
-                            />
-                            <BlightEditor
-                                engine={engine}
-                                item={project.item}
-                                onChange={(item) => safely(() => setItem(item, "Edit Blight map"))}
-                            />
-                            <SocketEditor
-                                engine={engine}
-                                item={project.item}
-                                onChange={(item) => safely(() => setItem(item, "Edit sockets"))}
-                            />
-                            {catalog.crafting.influences.some(
-                                (entry) => entry.itemClass === base.item_class,
-                            ) ? (
-                                <details>
-                                    <summary className="cursor-pointer text-xs text-muted-foreground">
-                                        Influences
-                                    </summary>
-                                    {engine.hasFixedInfluences(project.item) ? (
-                                        <p className="mt-2 text-xs text-muted-foreground">
-                                            All influences are fixed by this item's implicit
-                                            modifier.
-                                        </p>
-                                    ) : null}
-                                    <div className="mt-2 grid grid-cols-2 gap-2">
-                                        {catalog.crafting.influences
-                                            .filter((entry) => entry.itemClass === base.item_class)
-                                            .map((influence) => (
-                                                <Label
-                                                    key={influence.influence}
-                                                    className="flex items-center gap-2 text-xs"
-                                                >
-                                                    <Checkbox
-                                                        disabled={engine.hasFixedInfluences(
-                                                            project.item,
-                                                        )}
-                                                        checked={engine
-                                                            .effectiveInfluences(project.item)
-                                                            .includes(influence.influence)}
-                                                        onCheckedChange={(checked) =>
-                                                            safely(() =>
-                                                                setItem({
-                                                                    ...project.item,
-                                                                    influences: checked
-                                                                        ? [
-                                                                              ...project.item
-                                                                                  .influences,
-                                                                              influence.influence,
-                                                                          ]
-                                                                        : project.item.influences.filter(
-                                                                              (entry) =>
-                                                                                  entry !==
-                                                                                  influence.influence,
-                                                                          ),
-                                                                }),
-                                                            )
-                                                        }
-                                                    />
-                                                    {influence.name}
-                                                </Label>
-                                            ))}
-                                    </div>
-                                </details>
-                            ) : null}
-                        </section>
-                        <RevealPanel
-                            engine={engine}
-                            item={project.item}
-                            onSelect={(index) =>
-                                emulate(
-                                    { kind: "select-unrevealed", index },
-                                    "Select unrevealed affix",
-                                )
-                            }
-                            onReveal={(omens) =>
-                                emulate({ kind: "prepare-reveal", omens }, "Revealed choices")
-                            }
-                            onReroll={() =>
-                                emulate({ kind: "reroll-reveal" }, "Rerolled reveal choices")
-                            }
-                            onChoose={(id) =>
-                                emulate({ kind: "choose-revealed", id }, "Chose revealed modifier")
-                            }
-                        />
-                        <AllflameCopies
-                            engine={engine}
-                            item={project.item}
-                            onChoose={(index) =>
-                                emulate(
-                                    { kind: "choose-allflame", index },
-                                    `Kept Allflame copy ${index + 1}`,
-                                )
-                            }
-                        />
-                        <PassiveEditor
-                            engine={engine}
-                            item={project.item}
-                            onSelect={(id) =>
+                        )}
+                        <CatalogPicker
+                            id="crafting-base"
+                            label="Item base"
+                            options={baseOptions}
+                            onSelect={(baseId) =>
                                 safely(() =>
-                                    setItem(
-                                        editCraftingStartingItem(engine, {
-                                            kind: "passive",
-                                            item: project.item,
-                                            id,
+                                    restore({
+                                        ...initialProject(engine),
+                                        item: editCraftingStartingItem(engine, {
+                                            kind: "create",
+                                            baseId,
+                                            level: 86,
                                         }),
-                                        "Set allocated passive",
-                                    ),
+                                    }),
                                 )
                             }
                         />
-                        <ItemCard
-                            engine={engine}
-                            item={project.item}
-                            onChange={
-                                project.item.destroyed
-                                    ? undefined
-                                    : (item) => safely(() => setItem(item))
-                            }
-                        />
-                        <section className="space-y-4 rounded-lg border border-border bg-card p-4">
-                            {mode !== "simulate" ? (
-                                <Label className="flex items-center gap-2 text-sm">
-                                    <Checkbox
-                                        checked={project.useProcess}
-                                        onCheckedChange={(checked) =>
-                                            change({ useProcess: checked })
-                                        }
-                                    />
-                                    Combine crafting steps
-                                </Label>
-                            ) : null}
-                            <MethodPicker
-                                engine={engine}
+                    </section>
+                )}
+                {hasItem && (
+                    <>
+                        {!isolated && (
+                            <SendItemToProject
+                                catalog={catalog}
                                 item={project.item}
-                                value={project.method}
-                                inventory={inventory}
-                                onChange={(method) => change({ method })}
-                            />
-                            <Button
-                                className="w-full"
-                                disabled={
-                                    busy ||
-                                    (project.item.destroyed &&
-                                        !useProcess &&
-                                        !["generate", "genesis"].includes(project.method.kind))
+                                price={
+                                    project.baseCost === undefined
+                                        ? null
+                                        : {
+                                              amount: project.baseCost,
+                                              currency: "chaos",
+                                              source: "manual",
+                                              confidence: null,
+                                          }
                                 }
-                                onClick={useProcess ? () => run("emulate-process") : apply}
-                            >
-                                {useProcess ? "Apply process" : "Apply craft"}
-                            </Button>
-                            <div className="flex gap-2">
-                                <Button
-                                    className="flex-1"
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={cursor === 0}
-                                    onClick={() => {
-                                        setCursor(cursor - 1);
-                                        change({ item: history[cursor - 1]!.item });
-                                    }}
-                                >
-                                    Undo
-                                </Button>
-                                <Button
-                                    className="flex-1"
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={cursor === history.length - 1}
-                                    onClick={() => {
-                                        setCursor(cursor + 1);
-                                        change({ item: history[cursor + 1]!.item });
-                                    }}
-                                >
-                                    Redo
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                        safely(() =>
-                                            setItem(
-                                                editCraftingStartingItem(engine, {
-                                                    kind: "create",
-                                                    baseId: project.item.baseId,
-                                                    level: project.item.level,
-                                                }),
-                                                "Reset item",
-                                                {},
-                                                0,
-                                                1,
-                                            ),
-                                        )
-                                    }
-                                >
-                                    Reset
-                                </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                {history[cursor]!.label} · {history[cursor]!.actions} crafts
+                            />
+                        )}
+                        {!isolated && !useProcess && (
+                            <SendMethodToProject catalog={catalog} project={project} />
+                        )}
+                        <DisplaySettings
+                            value={preferences}
+                            onChange={setPreferences}
+                            storageError={storageError}
+                        />
+                        <NnnEssences
+                            engine={engine}
+                            item={project.item}
+                            prices={project.prices}
+                            onSelect={(id) =>
+                                setProject({ ...project, method: { kind: "essence", id } })
+                            }
+                        />
+                        {catalog.game === "poe2" ? (
+                            <p className="rounded border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
+                                PoE 2 uses the weights extracted from this client build. These are
+                                not empirically measured server weights, so calculated odds may
+                                differ from the game.
                             </p>
-                            <details className="rounded-md border border-border p-3">
-                                <summary className="cursor-pointer text-sm">
-                                    Actions history
-                                </summary>
-                                <p className="mt-2 text-xs text-muted-foreground">
-                                    The latest 100 changes and their starting state are kept for
-                                    this session. Use Undo and Redo to change the current state.
-                                </p>
-                                <ol
-                                    aria-label="Item history"
-                                    className="mt-3 max-h-72 list-decimal space-y-3 overflow-y-auto pl-6 text-xs"
-                                    reversed
-                                >
-                                    {history
-                                        .map((entry, index) => (
-                                            <li
-                                                key={entry.id}
-                                                aria-current={index === cursor ? "step" : undefined}
-                                                className={
-                                                    index > cursor
-                                                        ? "text-muted-foreground"
-                                                        : undefined
-                                                }
-                                            >
-                                                <p>{entry.label}</p>
-                                                <p className="text-muted-foreground">
-                                                    {entry.actions} crafts
-                                                    {index === cursor
-                                                        ? " · Current"
-                                                        : index > cursor
-                                                          ? " · Undone"
-                                                          : ""}
-                                                </p>
-                                            </li>
-                                        ))
-                                        .reverse()}
-                                </ol>
-                            </details>
-                            <Button
-                                className="w-full"
-                                variant="ghost"
-                                size="sm"
-                                disabled={history.length === 1}
-                                onClick={clearHistory}
-                                title="Keep the current item and clear undo/redo, craft counts and currency spending."
+                        ) : null}
+                        {error ? (
+                            <div
+                                role="alert"
+                                className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
                             >
-                                Clear history and spending
-                            </Button>
-                        </section>
-                        {cursor > 0 ? (
-                            <LastChanges
-                                engine={engine}
-                                before={history[cursor - 1]!.item}
-                                after={history[cursor]!.item}
-                            />
-                        ) : null}
-                        <InventoryStorage
-                            engine={engine}
-                            project={project}
-                            library={library}
-                            onChange={(inventory, inventoryTabs) =>
-                                change({ inventory, inventoryTabs })
-                            }
-                            onLoad={(item, name) => safely(() => setItem(item, `Loaded ${name}`))}
-                        />
-                        {Object.keys(history[cursor]!.spending).length ||
-                        project.baseCost !== undefined ? (
-                            <details className="rounded-lg border border-border p-4">
-                                <summary className="cursor-pointer text-sm">
-                                    Emulator spending
-                                </summary>
-                                <dl className="mt-3 space-y-2 text-xs">
-                                    {project.baseCost !== undefined ? (
-                                        <>
-                                            <div className="flex justify-between gap-2">
-                                                <dt>Starting items used</dt>
-                                                <dd className="font-mono">
-                                                    {history[cursor]!.baseItems}
-                                                </dd>
-                                            </div>
-                                            <div className="flex justify-between gap-2">
-                                                <dt>Starting item spending (chaos)</dt>
-                                                <dd className="font-mono">
-                                                    {(
-                                                        history[cursor]!.baseItems *
-                                                        project.baseCost
-                                                    ).toLocaleString(undefined, {
-                                                        maximumSignificantDigits: 6,
-                                                    })}
-                                                </dd>
-                                            </div>
-                                        </>
-                                    ) : null}
-                                    {Object.entries(history[cursor]!.spending).map(
-                                        ([id, amount]) => (
-                                            <div key={id} className="flex justify-between gap-2">
-                                                <dt>{engine.costName(id)}</dt>
-                                                <dd className="font-mono">
-                                                    {amount.toLocaleString()}
-                                                </dd>
-                                            </div>
-                                        ),
-                                    )}
-                                </dl>
-                            </details>
-                        ) : null}
-                    </div>
-                    <div className="min-w-0 space-y-5">
-                        {useProcess ? (
-                            <ProcessEditor
-                                engine={engine}
-                                project={project}
-                                inventory={inventory}
-                                routes={processRun?.routes ?? result?.routes}
-                                attempts={
-                                    processRun || result?.kind === "exact-process"
-                                        ? 1
-                                        : (result?.trials ?? 1)
-                                }
-                                routeLabel={
-                                    processRun
-                                        ? "Emulated process"
-                                        : result?.kind === "exact-process"
-                                          ? "Exact within the model"
-                                          : `${result?.trials ?? 0} sampled attempts`
-                                }
-                                activeStep={busy ? processRun?.nextStep : undefined}
-                                onChange={(steps, presentationOnly) =>
-                                    presentationOnly
-                                        ? setProject((current) => ({ ...current, steps }))
-                                        : change({ steps })
-                                }
-                            />
-                        ) : null}
-                        <ModBrowser
-                            layout={preferences.modifierLayout}
-                            filterEffect={preferences.filterEffect}
-                            showTagFilter={preferences.showTagFilter}
-                            showWeightPercentages={preferences.showWeightPercentages}
-                            engine={engine}
-                            item={project.item}
-                            method={project.method}
-                            target={project.target}
-                            onTarget={(target) => change({ target })}
-                            onAdd={(id, source) =>
-                                safely(() => {
-                                    setItem(
-                                        editCraftingStartingItem(engine, {
-                                            kind: "add-mod",
-                                            item: project.item,
-                                            id,
-                                            seed: project.seed,
-                                            source,
-                                        }),
-                                    );
-                                })
-                            }
-                        />
-                    </div>
-                    <div className="min-w-0 space-y-4 lg:col-span-2 xl:col-span-1">
-                        <TargetEditor
-                            engine={engine}
-                            item={project.item}
-                            target={project.target}
-                            onChange={(target) => change({ target })}
-                        />
-                        <section className="space-y-4 rounded-lg border border-border bg-card p-4">
-                            <h2 className="font-semibold">
-                                {mode === "simulate" ? "Run process" : "Calculate chances"}
-                            </h2>
-                            {!useProcess ? (
-                                <div className="space-y-2">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => {
-                                            change({
-                                                useProcess: true,
-                                                steps: [
-                                                    {
-                                                        id: `step-${crypto.randomUUID()}`,
-                                                        method: structuredClone(project.method),
-                                                        condition: structuredClone(project.target),
-                                                        onSuccess: "success",
-                                                        onFailure: "restart",
-                                                    },
-                                                ],
-                                            });
-                                            setNotice(
-                                                "Process created from the calculator. Edit its step and routes in Crafting process.",
-                                            );
-                                        }}
-                                    >
-                                        {project.steps.length
-                                            ? "Replace process from calculator"
-                                            : "Create process from calculator"}
-                                    </Button>
-                                    <p className="text-xs text-muted-foreground">
-                                        Copies the selected method and requirements into one step. A
-                                        miss restarts with the current item, up to the process step
-                                        limit. Item cost applies again on each restart.
-                                        {project.steps.length
-                                            ? " Replaces the existing process."
-                                            : ""}
-                                    </p>
-                                </div>
-                            ) : null}
-                            <div className="grid grid-cols-2 gap-3">
-                                {mode !== "simulate" ||
-                                project.simulationLimit?.kind !== "manual" ? (
-                                    <Label className="block space-y-1 text-xs">
-                                        {project.simulationLimit?.kind === "manual"
-                                            ? "Calculator trials"
-                                            : project.simulationLimit
-                                              ? "Maximum trials"
-                                              : "Trials"}
-                                        <Input
-                                            className={controlClass}
-                                            type="number"
-                                            min={1}
-                                            max={1000000}
-                                            value={project.iterations}
-                                            onChange={(event) =>
-                                                change({ iterations: Number(event.target.value) })
-                                            }
-                                        />
-                                    </Label>
-                                ) : null}
-                                <Label className="block space-y-1 text-xs">
-                                    Random seed
-                                    <Input
-                                        className={controlClass}
-                                        type="number"
-                                        min={0}
-                                        max={4294967295}
-                                        value={project.seed}
-                                        onChange={(event) =>
-                                            change({ seed: Number(event.target.value) })
-                                        }
-                                    />
-                                </Label>
+                                {error}
                             </div>
-                            <Label className="block space-y-1 text-xs">
-                                Stop simulation after
-                                <FormSelect
-                                    className={controlClass}
-                                    value={project.simulationLimit?.kind ?? "trials"}
-                                    onValueChange={(selectedValue) => {
-                                        const kind = selectedValue;
-                                        change({
-                                            simulationLimit:
-                                                kind === "successes" || kind === "actions"
-                                                    ? {
-                                                          kind,
-                                                          count:
-                                                              project.simulationLimit &&
-                                                              project.simulationLimit.kind !==
-                                                                  "manual"
-                                                                  ? project.simulationLimit.count
-                                                                  : 100,
-                                                      }
-                                                    : kind === "manual"
-                                                      ? { kind }
-                                                      : undefined,
-                                        });
-                                    }}
+                        ) : null}
+                        {notice ? (
+                            <p role="status" className="text-sm text-muted-foreground">
+                                {notice}
+                            </p>
+                        ) : null}
+                        {draftError ? (
+                            <p role="alert" className="text-sm text-destructive">
+                                {draftError}
+                            </p>
+                        ) : null}
+                        <div
+                            className={`grid grid-cols-1 items-start lg:grid-cols-[290px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(360px,1fr)_340px] ${preferences.compact ? "gap-3 [&>div]:space-y-3 [&>div>section]:p-3 [&>div>details]:p-3" : "gap-5"}`}
+                        >
+                            <div className="min-w-0 space-y-4">
+                                <section
+                                    className="space-y-4 rounded-lg border border-border bg-card p-4"
+                                    aria-label="Item settings"
                                 >
-                                    <FormSelectItem value="trials">Trial count</FormSelectItem>
-                                    <FormSelectItem value="successes">
-                                        Successful items
-                                    </FormSelectItem>
-                                    <FormSelectItem value="actions">
-                                        Simulation actions
-                                    </FormSelectItem>
-                                    <FormSelectItem value="manual">Until stopped</FormSelectItem>
-                                </FormSelect>
-                            </Label>
-                            {project.simulationLimit?.kind === "manual" ? (
-                                <p className="text-xs text-muted-foreground">
-                                    Runs until you stop it, with no trial target. Each process trial
-                                    keeps its step limit, and stored outcomes keep their storage
-                                    limit.
-                                    {mode !== "simulate"
-                                        ? " Calculator trials apply only to Calculate odds."
-                                        : null}
-                                </p>
-                            ) : project.simulationLimit ? (
-                                <>
-                                    <Label className="block space-y-1 text-xs">
-                                        {project.simulationLimit.kind === "successes"
-                                            ? "Successful item target"
-                                            : "Simulation action limit"}
-                                        <Input
-                                            className={controlClass}
-                                            type="number"
-                                            min={1}
-                                            max={1000000}
-                                            value={project.simulationLimit.count}
-                                            onChange={(event) =>
-                                                change({
-                                                    simulationLimit: {
-                                                        kind:
-                                                            project.simulationLimit?.kind ===
-                                                            "successes"
-                                                                ? "successes"
-                                                                : "actions",
-                                                        count: Number(event.target.value),
-                                                    },
-                                                })
-                                            }
-                                        />
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Stops at this target or the maximum trial count. Every
-                                        process step counts as one action, including condition
-                                        checks. An unfinished trial is reported separately. These
-                                        limits apply to simulation; Calculate odds uses the full
-                                        trial count when sampling is needed.
-                                    </p>
-                                </>
-                            ) : null}
-                            {useProcess ? (
-                                <Label className="block space-y-1 text-xs">
-                                    Maximum steps per trial
-                                    <Input
-                                        className={controlClass}
-                                        type="number"
-                                        min={1}
-                                        max={10000}
-                                        value={project.maxActions}
-                                        onChange={(event) =>
-                                            change({ maxActions: Number(event.target.value) })
-                                        }
-                                    />
-                                </Label>
-                            ) : null}
-                            <Label className="block space-y-1 text-xs">
-                                Store outcomes
-                                <FormSelect
-                                    className={controlClass}
-                                    value={project.sampleStorage?.mode ?? "preview"}
-                                    onValueChange={(selectedValue) => {
-                                        const mode = selectedValue;
-                                        change({
-                                            sampleStorage:
-                                                mode === "all" ||
-                                                mode === "successes" ||
-                                                mode === "none"
-                                                    ? {
-                                                          mode,
-                                                          limit:
-                                                              project.sampleStorage?.limit ?? 100,
-                                                      }
-                                                    : undefined,
-                                        });
-                                    }}
-                                >
-                                    <FormSelectItem value="preview">
-                                        Preview: 10 outcomes, including first success
-                                    </FormSelectItem>
-                                    <FormSelectItem value="successes">
-                                        Successful items
-                                    </FormSelectItem>
-                                    <FormSelectItem value="all">
-                                        All completed trials
-                                    </FormSelectItem>
-                                    <FormSelectItem value="none">None</FormSelectItem>
-                                </FormSelect>
-                            </Label>
-                            {project.sampleStorage && project.sampleStorage.mode !== "none" ? (
-                                <Label className="block space-y-1 text-xs">
-                                    Maximum stored outcomes
-                                    <Input
-                                        className={controlClass}
-                                        type="number"
-                                        min={1}
-                                        max={1000}
-                                        value={project.sampleStorage.limit}
-                                        onChange={(event) =>
-                                            change({
-                                                sampleStorage: {
-                                                    mode: project.sampleStorage!.mode,
-                                                    limit: Number(event.target.value),
-                                                },
+                                    <h2 className="font-semibold">Starting item</h2>
+                                    <CatalogPicker
+                                        id="crafting-base"
+                                        label="Item base"
+                                        options={baseOptions}
+                                        value={baseOptions.find(
+                                            (entry) => entry.id === project.item.baseId,
+                                        )}
+                                        onSelect={(baseId) =>
+                                            safely(() => {
+                                                const next = initialProject(engine);
+                                                restore({
+                                                    ...next,
+                                                    item: editCraftingStartingItem(engine, {
+                                                        kind: "create",
+                                                        baseId,
+                                                        level: project.item.level,
+                                                    }),
+                                                    prices: project.prices,
+                                                    seed: project.seed,
+                                                });
                                             })
                                         }
                                     />
-                                </Label>
-                            ) : null}
-                            <Label className="flex items-center gap-2 text-xs">
-                                <Checkbox
-                                    checked={project.successDistribution ?? false}
-                                    onCheckedChange={(checked) =>
-                                        change({ successDistribution: checked })
-                                    }
-                                />
-                                Successful item affix distribution
-                            </Label>
-                            <p className="text-xs text-muted-foreground">
-                                Statistics include every completed trial, regardless of how many
-                                items are stored. Distribution tables group tiers across all
-                                successful items.
-                            </p>
-                            {busy ? (
-                                <>
-                                    <Button
-                                        className="w-full"
-                                        variant="outline"
-                                        onClick={() => {
-                                            worker.current?.terminate();
-                                            worker.current = null;
-                                            setBusy(false);
-                                            setProcessRun(undefined);
-                                            setCancelled(emulationSteps === undefined);
-                                            if (emulationSteps !== undefined)
-                                                setNotice(
-                                                    "Process stopped. The current item and spending were left unchanged.",
-                                                );
-                                        }}
-                                    >
-                                        {emulationSteps === undefined
-                                            ? "Stop simulation"
-                                            : "Stop process"}
-                                    </Button>
-                                    <progress
-                                        aria-label={
-                                            emulationSteps === undefined
-                                                ? "Simulation progress"
-                                                : "Process progress"
-                                        }
-                                        className="h-2 w-full accent-primary"
-                                        value={
-                                            continuous
-                                                ? undefined
-                                                : (emulationSteps ?? result?.trials ?? 0)
-                                        }
-                                        max={
-                                            emulationSteps === undefined
-                                                ? project.iterations
-                                                : project.maxActions
-                                        }
-                                    />
-                                    <p role="status" className="text-xs text-muted-foreground">
-                                        {emulationSteps === undefined
-                                            ? continuous
-                                                ? `${result?.trials.toLocaleString() ?? 0} completed trials · Running until stopped`
-                                                : `${result?.trials.toLocaleString() ?? 0} / ${project.iterations.toLocaleString()} trials`
-                                            : `${emulationSteps.toLocaleString()} steps completed`}
-                                    </p>
-                                    {emulationSteps === undefined &&
-                                    result?.simulationLimit &&
-                                    result.simulationLimit.kind !== "manual" ? (
-                                        <p role="status" className="text-xs text-muted-foreground">
-                                            {(result.simulationLimit.kind === "successes"
-                                                ? result.successes
-                                                : (result.totalSteps ?? 0) +
-                                                  (result.unfinished?.steps ?? 0)
-                                            ).toLocaleString()}{" "}
-                                            / {result.simulationLimit.count.toLocaleString()}{" "}
-                                            {result.simulationLimit.kind === "successes"
-                                                ? "successful items"
-                                                : "simulation actions"}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <Label className="block space-y-1 text-xs">
+                                            Item level
+                                            <Input
+                                                className={controlClass}
+                                                type="number"
+                                                min={Math.max(1, chest?.minimumLevel ?? 1)}
+                                                max={chest?.maximumLevel ?? 100}
+                                                value={project.item.level}
+                                                onChange={(event) =>
+                                                    safely(() =>
+                                                        setItem({
+                                                            ...project.item,
+                                                            level: Number(event.target.value),
+                                                        }),
+                                                    )
+                                                }
+                                            />
+                                        </Label>
+                                        <Label className="block space-y-1 text-xs">
+                                            Rarity
+                                            <FormSelect
+                                                className={controlClass}
+                                                value={project.item.rarity}
+                                                onValueChange={(selectedValue) =>
+                                                    safely(() =>
+                                                        setItem({
+                                                            ...project.item,
+                                                            rarity: selectedValue as CraftingItem["rarity"],
+                                                        }),
+                                                    )
+                                                }
+                                            >
+                                                {base.rarities.map((rarity) => (
+                                                    <FormSelectItem key={rarity} value={rarity}>
+                                                        {rarity}
+                                                    </FormSelectItem>
+                                                ))}
+                                            </FormSelect>
+                                        </Label>
+                                    </div>
+                                    {chest ? (
+                                        <p
+                                            className="text-xs text-muted-foreground"
+                                            role="note"
+                                            aria-label="Strongbox crafting scope"
+                                        >
+                                            Models ordinary Strongbox affixes. Encounter properties
+                                            and dropped contents are separate from the affix
+                                            calculation. Special encounters and Atlas changes are
+                                            not modeled.
                                         </p>
                                     ) : null}
-                                </>
-                            ) : (
-                                <div className="flex flex-wrap gap-2">
-                                    <Button
-                                        onClick={() =>
-                                            run(mode === "simulate" ? "process" : "calculate")
-                                        }
-                                    >
-                                        {mode === "simulate" ? "Run simulation" : "Calculate odds"}
-                                    </Button>
-                                    {mode !== "simulate" ? (
-                                        <Button variant="outline" onClick={() => run("sample")}>
-                                            Mass simulate
-                                        </Button>
-                                    ) : null}
-                                </div>
-                            )}
-                            {cancelled ? (
-                                <p role="status" className="text-xs text-muted-foreground">
-                                    Stopped. Results show only completed trials.
-                                </p>
-                            ) : null}
-                            <p className="text-xs text-muted-foreground">
-                                Calculations enumerate small outcome sets exactly. Larger sets use
-                                the trial count and report a sampling interval.
-                            </p>
-                        </section>
-                        <details className="rounded-lg border border-border bg-card p-4">
-                            <summary className="cursor-pointer text-sm font-medium">
-                                Custom prices in chaos
-                            </summary>
-                            <div className="mt-3 space-y-3">
-                                {useProcess ? (
-                                    <Field>
-                                        <FieldLabel htmlFor="crafting-base-cost">
-                                            Starting item cost (chaos)
-                                        </FieldLabel>
-                                        <Input
-                                            id="crafting-base-cost"
-                                            aria-describedby="crafting-base-cost-description"
-                                            type="number"
-                                            min={0}
-                                            step="any"
-                                            placeholder="Excluded"
-                                            value={project.baseCost ?? ""}
-                                            onChange={(event) =>
-                                                change({
-                                                    baseCost:
-                                                        event.target.value === ""
-                                                            ? undefined
-                                                            : Number(event.target.value),
+                                    <Label className="flex items-center gap-2 text-xs">
+                                        <Checkbox
+                                            checked={Boolean(project.item.unidentified)}
+                                            disabled={!engine.identificationSupported(project.item)}
+                                            onCheckedChange={(checked) =>
+                                                safely(() => {
+                                                    setItem({
+                                                        ...project.item,
+                                                        unidentified: checked ? true : undefined,
+                                                    });
+                                                    if (checked) {
+                                                        const wisdom =
+                                                            catalog.crafting.currencies.find(
+                                                                (entry) =>
+                                                                    entry.action === "identify",
+                                                            )!;
+                                                        change({
+                                                            method: {
+                                                                kind: "currency",
+                                                                id: wisdom.id,
+                                                            },
+                                                        });
+                                                    }
                                                 })
                                             }
                                         />
-                                        <FieldDescription id="crafting-base-cost-description">
-                                            Processes count one starting item and each restart that
-                                            restores it. In the emulator, later crafts reuse the
-                                            current item. Blank excludes this cost; zero prices it
-                                            as free.
-                                        </FieldDescription>
-                                    </Field>
-                                ) : null}
-                                {costs.map((cost) => (
-                                    <Label key={cost.id} className="block space-y-1 text-xs">
-                                        {cost.name}
-                                        <Input
-                                            className={controlClass}
-                                            type="number"
-                                            min={0}
-                                            step="any"
-                                            placeholder="Not priced"
-                                            value={project.prices[cost.id] ?? ""}
-                                            onChange={(event) => {
-                                                const prices = { ...project.prices };
-                                                if (event.target.value === "")
-                                                    delete prices[cost.id];
-                                                else prices[cost.id] = Number(event.target.value);
-                                                change({ prices });
-                                            }}
-                                        />
+                                        Unidentified starting item
                                     </Label>
-                                ))}
+                                    <p className="text-xs text-muted-foreground">
+                                        Choose magic or rare equipment with no explicit modifiers to
+                                        model identification. Known modifiers must be removed first.
+                                        Hidden special drop modifiers are not modeled.
+                                    </p>
+                                    <fieldset
+                                        className="space-y-2"
+                                        disabled={Boolean(
+                                            project.item.destroyed || project.item.allflameCopies,
+                                        )}
+                                    >
+                                        <legend className="text-xs">Item flags</legend>
+                                        <div className="flex flex-wrap gap-3">
+                                            {craftingFlags(catalog.game).map(({ key, label }) => (
+                                                <Label
+                                                    key={key}
+                                                    className="flex items-center gap-2 text-xs"
+                                                >
+                                                    <Checkbox
+                                                        checked={Boolean(project.item[key])}
+                                                        onCheckedChange={(checked) =>
+                                                            safely(() =>
+                                                                setItem(
+                                                                    editCraftingStartingItem(
+                                                                        engine,
+                                                                        {
+                                                                            kind: "flag",
+                                                                            item: project.item,
+                                                                            flag: key,
+                                                                            enabled: checked,
+                                                                        },
+                                                                    ),
+                                                                    `Edit ${label.toLowerCase()} state`,
+                                                                ),
+                                                            )
+                                                        }
+                                                    />
+                                                    {label}
+                                                </Label>
+                                            ))}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {catalog.game === "poe1"
+                                                ? "Corrupted and Mirrored replace one another."
+                                                : "Corrupted, Mirrored and Sanctified replace one another. Clearing corruption or Sanctification removes its value multipliers."}{" "}
+                                            Corruption-only outcomes must be removed before clearing
+                                            Corrupted.
+                                        </p>
+                                    </fieldset>
+                                    <ClusterEditor
+                                        engine={engine}
+                                        item={project.item}
+                                        onChange={(item) =>
+                                            safely(() => setItem(item, "Edit Cluster Jewel"))
+                                        }
+                                    />
+                                    <QualityEditor
+                                        engine={engine}
+                                        item={project.item}
+                                        onChange={(item) =>
+                                            safely(() => setItem(item, "Edit quality"))
+                                        }
+                                    />
+                                    <BaseDefenceEditor
+                                        engine={engine}
+                                        item={project.item}
+                                        onChange={(item) =>
+                                            safely(() => setItem(item, "Edit base defences"))
+                                        }
+                                    />
+                                    <MemoryEditor
+                                        engine={engine}
+                                        item={project.item}
+                                        onChange={(item) =>
+                                            safely(() => setItem(item, "Edit memory state"))
+                                        }
+                                    />
+                                    <AllflameEditor
+                                        engine={engine}
+                                        item={project.item}
+                                        onChange={(item) =>
+                                            safely(() => setItem(item, "Edit intangibility"))
+                                        }
+                                    />
+                                    <BlightEditor
+                                        engine={engine}
+                                        item={project.item}
+                                        onChange={(item) =>
+                                            safely(() => setItem(item, "Edit Blight map"))
+                                        }
+                                    />
+                                    <SocketEditor
+                                        engine={engine}
+                                        item={project.item}
+                                        onChange={(item) =>
+                                            safely(() => setItem(item, "Edit sockets"))
+                                        }
+                                    />
+                                    {catalog.crafting.influences.some(
+                                        (entry) => entry.itemClass === base.item_class,
+                                    ) ? (
+                                        <details>
+                                            <summary className="cursor-pointer text-xs text-muted-foreground">
+                                                Influences
+                                            </summary>
+                                            {engine.hasFixedInfluences(project.item) ? (
+                                                <p className="mt-2 text-xs text-muted-foreground">
+                                                    All influences are fixed by this item's implicit
+                                                    modifier.
+                                                </p>
+                                            ) : null}
+                                            <div className="mt-2 grid grid-cols-2 gap-2">
+                                                {catalog.crafting.influences
+                                                    .filter(
+                                                        (entry) =>
+                                                            entry.itemClass === base.item_class,
+                                                    )
+                                                    .map((influence) => (
+                                                        <Label
+                                                            key={influence.influence}
+                                                            className="flex items-center gap-2 text-xs"
+                                                        >
+                                                            <Checkbox
+                                                                disabled={engine.hasFixedInfluences(
+                                                                    project.item,
+                                                                )}
+                                                                checked={engine
+                                                                    .effectiveInfluences(
+                                                                        project.item,
+                                                                    )
+                                                                    .includes(influence.influence)}
+                                                                onCheckedChange={(checked) =>
+                                                                    safely(() =>
+                                                                        setItem({
+                                                                            ...project.item,
+                                                                            influences: checked
+                                                                                ? [
+                                                                                      ...project
+                                                                                          .item
+                                                                                          .influences,
+                                                                                      influence.influence,
+                                                                                  ]
+                                                                                : project.item.influences.filter(
+                                                                                      (entry) =>
+                                                                                          entry !==
+                                                                                          influence.influence,
+                                                                                  ),
+                                                                        }),
+                                                                    )
+                                                                }
+                                                            />
+                                                            {influence.name}
+                                                        </Label>
+                                                    ))}
+                                            </div>
+                                        </details>
+                                    ) : null}
+                                </section>
+                                <RevealPanel
+                                    engine={engine}
+                                    item={project.item}
+                                    onSelect={(index) =>
+                                        emulate(
+                                            { kind: "select-unrevealed", index },
+                                            "Select unrevealed affix",
+                                        )
+                                    }
+                                    onReveal={(omens) =>
+                                        emulate(
+                                            { kind: "prepare-reveal", omens },
+                                            "Revealed choices",
+                                        )
+                                    }
+                                    onReroll={() =>
+                                        emulate(
+                                            { kind: "reroll-reveal" },
+                                            "Rerolled reveal choices",
+                                        )
+                                    }
+                                    onChoose={(id) =>
+                                        emulate(
+                                            { kind: "choose-revealed", id },
+                                            "Chose revealed modifier",
+                                        )
+                                    }
+                                />
+                                <AllflameCopies
+                                    engine={engine}
+                                    item={project.item}
+                                    onChoose={(index) =>
+                                        emulate(
+                                            { kind: "choose-allflame", index },
+                                            `Kept Allflame copy ${index + 1}`,
+                                        )
+                                    }
+                                />
+                                <PassiveEditor
+                                    engine={engine}
+                                    item={project.item}
+                                    onSelect={(id) =>
+                                        safely(() =>
+                                            setItem(
+                                                editCraftingStartingItem(engine, {
+                                                    kind: "passive",
+                                                    item: project.item,
+                                                    id,
+                                                }),
+                                                "Set allocated passive",
+                                            ),
+                                        )
+                                    }
+                                />
+                                <ItemCard
+                                    engine={engine}
+                                    item={project.item}
+                                    onChange={
+                                        project.item.destroyed
+                                            ? undefined
+                                            : (item) => safely(() => setItem(item))
+                                    }
+                                />
+                                <section className="space-y-4 rounded-lg border border-border bg-card p-4">
+                                    {mode !== "simulate" ? (
+                                        <Label className="flex items-center gap-2 text-sm">
+                                            <Checkbox
+                                                checked={project.useProcess}
+                                                onCheckedChange={(checked) =>
+                                                    change({ useProcess: checked })
+                                                }
+                                            />
+                                            Combine crafting steps
+                                        </Label>
+                                    ) : null}
+                                    <MethodPicker
+                                        engine={engine}
+                                        item={project.item}
+                                        value={project.method}
+                                        inventory={inventory}
+                                        onChange={(method) => change({ method })}
+                                    />
+                                    <Button
+                                        className="w-full"
+                                        disabled={
+                                            busy ||
+                                            (project.item.destroyed &&
+                                                !useProcess &&
+                                                !["generate", "genesis"].includes(
+                                                    project.method.kind,
+                                                ))
+                                        }
+                                        onClick={useProcess ? () => run("emulate-process") : apply}
+                                    >
+                                        {useProcess ? "Apply process" : "Apply craft"}
+                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            className="flex-1"
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={cursor === 0}
+                                            onClick={() => {
+                                                setCursor(cursor - 1);
+                                                change({ item: history[cursor - 1]!.item });
+                                            }}
+                                        >
+                                            Undo
+                                        </Button>
+                                        <Button
+                                            className="flex-1"
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={cursor === history.length - 1}
+                                            onClick={() => {
+                                                setCursor(cursor + 1);
+                                                change({ item: history[cursor + 1]!.item });
+                                            }}
+                                        >
+                                            Redo
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() =>
+                                                safely(() =>
+                                                    setItem(
+                                                        editCraftingStartingItem(engine, {
+                                                            kind: "create",
+                                                            baseId: project.item.baseId,
+                                                            level: project.item.level,
+                                                        }),
+                                                        "Reset item",
+                                                        {},
+                                                        0,
+                                                        1,
+                                                    ),
+                                                )
+                                            }
+                                        >
+                                            Reset
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        {history[cursor]!.label} · {history[cursor]!.actions} crafts
+                                    </p>
+                                    <details className="rounded-md border border-border p-3">
+                                        <summary className="cursor-pointer text-sm">
+                                            Actions history
+                                        </summary>
+                                        <p className="mt-2 text-xs text-muted-foreground">
+                                            The latest 100 changes and their starting state are kept
+                                            for this session. Use Undo and Redo to change the
+                                            current state.
+                                        </p>
+                                        <ol
+                                            aria-label="Item history"
+                                            className="mt-3 max-h-72 list-decimal space-y-3 overflow-y-auto pl-6 text-xs"
+                                            reversed
+                                        >
+                                            {history
+                                                .map((entry, index) => (
+                                                    <li
+                                                        key={entry.id}
+                                                        aria-current={
+                                                            index === cursor ? "step" : undefined
+                                                        }
+                                                        className={
+                                                            index > cursor
+                                                                ? "text-muted-foreground"
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        <p>{entry.label}</p>
+                                                        <p className="text-muted-foreground">
+                                                            {entry.actions} crafts
+                                                            {index === cursor
+                                                                ? " · Current"
+                                                                : index > cursor
+                                                                  ? " · Undone"
+                                                                  : ""}
+                                                        </p>
+                                                    </li>
+                                                ))
+                                                .reverse()}
+                                        </ol>
+                                    </details>
+                                    <Button
+                                        className="w-full"
+                                        variant="ghost"
+                                        size="sm"
+                                        disabled={history.length === 1}
+                                        onClick={clearHistory}
+                                        title="Keep the current item and clear undo/redo, craft counts and currency spending."
+                                    >
+                                        Clear history and spending
+                                    </Button>
+                                </section>
+                                {cursor > 0 ? (
+                                    <LastChanges
+                                        engine={engine}
+                                        before={history[cursor - 1]!.item}
+                                        after={history[cursor]!.item}
+                                    />
+                                ) : null}
+                                <InventoryStorage
+                                    engine={engine}
+                                    project={project}
+                                    library={library}
+                                    onChange={(inventory, inventoryTabs) =>
+                                        change({ inventory, inventoryTabs })
+                                    }
+                                    onLoad={(item, name) =>
+                                        safely(() => setItem(item, `Loaded ${name}`))
+                                    }
+                                />
+                                {Object.keys(history[cursor]!.spending).length ||
+                                project.baseCost !== undefined ? (
+                                    <details className="rounded-lg border border-border p-4">
+                                        <summary className="cursor-pointer text-sm">
+                                            Emulator spending
+                                        </summary>
+                                        <dl className="mt-3 space-y-2 text-xs">
+                                            {project.baseCost !== undefined ? (
+                                                <>
+                                                    <div className="flex justify-between gap-2">
+                                                        <dt>Starting items used</dt>
+                                                        <dd className="font-mono">
+                                                            {history[cursor]!.baseItems}
+                                                        </dd>
+                                                    </div>
+                                                    <div className="flex justify-between gap-2">
+                                                        <dt>Starting item spending (chaos)</dt>
+                                                        <dd className="font-mono">
+                                                            {(
+                                                                history[cursor]!.baseItems *
+                                                                project.baseCost
+                                                            ).toLocaleString(undefined, {
+                                                                maximumSignificantDigits: 6,
+                                                            })}
+                                                        </dd>
+                                                    </div>
+                                                </>
+                                            ) : null}
+                                            {Object.entries(history[cursor]!.spending).map(
+                                                ([id, amount]) => (
+                                                    <div
+                                                        key={id}
+                                                        className="flex justify-between gap-2"
+                                                    >
+                                                        <dt>{engine.costName(id)}</dt>
+                                                        <dd className="font-mono">
+                                                            {amount.toLocaleString()}
+                                                        </dd>
+                                                    </div>
+                                                ),
+                                            )}
+                                        </dl>
+                                    </details>
+                                ) : null}
                             </div>
-                        </details>
-                        {result ? (
-                            <CraftingResults
+                            <div className="min-w-0 space-y-5">
+                                {useProcess ? (
+                                    <ProcessEditor
+                                        engine={engine}
+                                        project={project}
+                                        inventory={inventory}
+                                        routes={processRun?.routes ?? result?.routes}
+                                        attempts={
+                                            processRun || result?.kind === "exact-process"
+                                                ? 1
+                                                : (result?.trials ?? 1)
+                                        }
+                                        routeLabel={
+                                            processRun
+                                                ? "Emulated process"
+                                                : result?.kind === "exact-process"
+                                                  ? "Exact within the model"
+                                                  : `${result?.trials ?? 0} sampled attempts`
+                                        }
+                                        activeStep={busy ? processRun?.nextStep : undefined}
+                                        onChange={(steps, presentationOnly) =>
+                                            presentationOnly
+                                                ? setProject((current) => ({ ...current, steps }))
+                                                : change({ steps })
+                                        }
+                                    />
+                                ) : null}
+                                <ModBrowser
+                                    layout={preferences.modifierLayout}
+                                    filterEffect={preferences.filterEffect}
+                                    showTagFilter={preferences.showTagFilter}
+                                    showWeightPercentages={preferences.showWeightPercentages}
+                                    engine={engine}
+                                    item={project.item}
+                                    method={project.method}
+                                    target={project.target}
+                                    onTarget={(target) => change({ target })}
+                                    onAdd={(id, source) =>
+                                        safely(() => {
+                                            setItem(
+                                                editCraftingStartingItem(engine, {
+                                                    kind: "add-mod",
+                                                    item: project.item,
+                                                    id,
+                                                    seed: project.seed,
+                                                    source,
+                                                }),
+                                            );
+                                        })
+                                    }
+                                />
+                            </div>
+                            <div className="min-w-0 space-y-4 lg:col-span-2 xl:col-span-1">
+                                <TargetEditor
+                                    engine={engine}
+                                    item={project.item}
+                                    target={project.target}
+                                    onChange={(target) => change({ target })}
+                                />
+                                <section className="space-y-4 rounded-lg border border-border bg-card p-4">
+                                    <h2 className="font-semibold">
+                                        {mode === "simulate" ? "Run process" : "Calculate chances"}
+                                    </h2>
+                                    {!useProcess ? (
+                                        <div className="space-y-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => {
+                                                    change({
+                                                        useProcess: true,
+                                                        steps: [
+                                                            {
+                                                                id: `step-${crypto.randomUUID()}`,
+                                                                method: structuredClone(
+                                                                    project.method,
+                                                                ),
+                                                                condition: structuredClone(
+                                                                    project.target,
+                                                                ),
+                                                                onSuccess: "success",
+                                                                onFailure: "restart",
+                                                            },
+                                                        ],
+                                                    });
+                                                    setNotice(
+                                                        "Process created from the calculator. Edit its step and routes in Crafting process.",
+                                                    );
+                                                }}
+                                            >
+                                                {project.steps.length
+                                                    ? "Replace process from calculator"
+                                                    : "Create process from calculator"}
+                                            </Button>
+                                            <p className="text-xs text-muted-foreground">
+                                                Copies the selected method and requirements into one
+                                                step. A miss restarts with the current item, up to
+                                                the process step limit. Item cost applies again on
+                                                each restart.
+                                                {project.steps.length
+                                                    ? " Replaces the existing process."
+                                                    : ""}
+                                            </p>
+                                        </div>
+                                    ) : null}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {mode !== "simulate" ||
+                                        project.simulationLimit?.kind !== "manual" ? (
+                                            <Label className="block space-y-1 text-xs">
+                                                {project.simulationLimit?.kind === "manual"
+                                                    ? "Calculator trials"
+                                                    : project.simulationLimit
+                                                      ? "Maximum trials"
+                                                      : "Trials"}
+                                                <Input
+                                                    className={controlClass}
+                                                    type="number"
+                                                    min={1}
+                                                    max={1000000}
+                                                    value={project.iterations}
+                                                    onChange={(event) =>
+                                                        change({
+                                                            iterations: Number(event.target.value),
+                                                        })
+                                                    }
+                                                />
+                                            </Label>
+                                        ) : null}
+                                        <Label className="block space-y-1 text-xs">
+                                            Random seed
+                                            <Input
+                                                className={controlClass}
+                                                type="number"
+                                                min={0}
+                                                max={4294967295}
+                                                value={project.seed}
+                                                onChange={(event) =>
+                                                    change({ seed: Number(event.target.value) })
+                                                }
+                                            />
+                                        </Label>
+                                    </div>
+                                    <Label className="block space-y-1 text-xs">
+                                        Stop simulation after
+                                        <FormSelect
+                                            className={controlClass}
+                                            value={project.simulationLimit?.kind ?? "trials"}
+                                            onValueChange={(selectedValue) => {
+                                                const kind = selectedValue;
+                                                change({
+                                                    simulationLimit:
+                                                        kind === "successes" || kind === "actions"
+                                                            ? {
+                                                                  kind,
+                                                                  count:
+                                                                      project.simulationLimit &&
+                                                                      project.simulationLimit
+                                                                          .kind !== "manual"
+                                                                          ? project.simulationLimit
+                                                                                .count
+                                                                          : 100,
+                                                              }
+                                                            : kind === "manual"
+                                                              ? { kind }
+                                                              : undefined,
+                                                });
+                                            }}
+                                        >
+                                            <FormSelectItem value="trials">
+                                                Trial count
+                                            </FormSelectItem>
+                                            <FormSelectItem value="successes">
+                                                Successful items
+                                            </FormSelectItem>
+                                            <FormSelectItem value="actions">
+                                                Simulation actions
+                                            </FormSelectItem>
+                                            <FormSelectItem value="manual">
+                                                Until stopped
+                                            </FormSelectItem>
+                                        </FormSelect>
+                                    </Label>
+                                    {project.simulationLimit?.kind === "manual" ? (
+                                        <p className="text-xs text-muted-foreground">
+                                            Runs until you stop it, with no trial target. Each
+                                            process trial keeps its step limit, and stored outcomes
+                                            keep their storage limit.
+                                            {mode !== "simulate"
+                                                ? " Calculator trials apply only to Calculate odds."
+                                                : null}
+                                        </p>
+                                    ) : project.simulationLimit ? (
+                                        <>
+                                            <Label className="block space-y-1 text-xs">
+                                                {project.simulationLimit.kind === "successes"
+                                                    ? "Successful item target"
+                                                    : "Simulation action limit"}
+                                                <Input
+                                                    className={controlClass}
+                                                    type="number"
+                                                    min={1}
+                                                    max={1000000}
+                                                    value={project.simulationLimit.count}
+                                                    onChange={(event) =>
+                                                        change({
+                                                            simulationLimit: {
+                                                                kind:
+                                                                    project.simulationLimit
+                                                                        ?.kind === "successes"
+                                                                        ? "successes"
+                                                                        : "actions",
+                                                                count: Number(event.target.value),
+                                                            },
+                                                        })
+                                                    }
+                                                />
+                                            </Label>
+                                            <p className="text-xs text-muted-foreground">
+                                                Stops at this target or the maximum trial count.
+                                                Every process step counts as one action, including
+                                                condition checks. An unfinished trial is reported
+                                                separately. These limits apply to simulation;
+                                                Calculate odds uses the full trial count when
+                                                sampling is needed.
+                                            </p>
+                                        </>
+                                    ) : null}
+                                    {useProcess ? (
+                                        <Label className="block space-y-1 text-xs">
+                                            Maximum steps per trial
+                                            <Input
+                                                className={controlClass}
+                                                type="number"
+                                                min={1}
+                                                max={10000}
+                                                value={project.maxActions}
+                                                onChange={(event) =>
+                                                    change({
+                                                        maxActions: Number(event.target.value),
+                                                    })
+                                                }
+                                            />
+                                        </Label>
+                                    ) : null}
+                                    <Label className="block space-y-1 text-xs">
+                                        Store outcomes
+                                        <FormSelect
+                                            className={controlClass}
+                                            value={project.sampleStorage?.mode ?? "preview"}
+                                            onValueChange={(selectedValue) => {
+                                                const mode = selectedValue;
+                                                change({
+                                                    sampleStorage:
+                                                        mode === "all" ||
+                                                        mode === "successes" ||
+                                                        mode === "none"
+                                                            ? {
+                                                                  mode,
+                                                                  limit:
+                                                                      project.sampleStorage
+                                                                          ?.limit ?? 100,
+                                                              }
+                                                            : undefined,
+                                                });
+                                            }}
+                                        >
+                                            <FormSelectItem value="preview">
+                                                Preview: 10 outcomes, including first success
+                                            </FormSelectItem>
+                                            <FormSelectItem value="successes">
+                                                Successful items
+                                            </FormSelectItem>
+                                            <FormSelectItem value="all">
+                                                All completed trials
+                                            </FormSelectItem>
+                                            <FormSelectItem value="none">None</FormSelectItem>
+                                        </FormSelect>
+                                    </Label>
+                                    {project.sampleStorage &&
+                                    project.sampleStorage.mode !== "none" ? (
+                                        <Label className="block space-y-1 text-xs">
+                                            Maximum stored outcomes
+                                            <Input
+                                                className={controlClass}
+                                                type="number"
+                                                min={1}
+                                                max={1000}
+                                                value={project.sampleStorage.limit}
+                                                onChange={(event) =>
+                                                    change({
+                                                        sampleStorage: {
+                                                            mode: project.sampleStorage!.mode,
+                                                            limit: Number(event.target.value),
+                                                        },
+                                                    })
+                                                }
+                                            />
+                                        </Label>
+                                    ) : null}
+                                    <Label className="flex items-center gap-2 text-xs">
+                                        <Checkbox
+                                            checked={project.successDistribution ?? false}
+                                            onCheckedChange={(checked) =>
+                                                change({ successDistribution: checked })
+                                            }
+                                        />
+                                        Successful item affix distribution
+                                    </Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        Statistics include every completed trial, regardless of how
+                                        many items are stored. Distribution tables group tiers
+                                        across all successful items.
+                                    </p>
+                                    {busy ? (
+                                        <>
+                                            <Button
+                                                className="w-full"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    worker.current?.terminate();
+                                                    worker.current = null;
+                                                    setBusy(false);
+                                                    setProcessRun(undefined);
+                                                    setCancelled(emulationSteps === undefined);
+                                                    if (emulationSteps !== undefined)
+                                                        setNotice(
+                                                            "Process stopped. The current item and spending were left unchanged.",
+                                                        );
+                                                }}
+                                            >
+                                                {emulationSteps === undefined
+                                                    ? "Stop simulation"
+                                                    : "Stop process"}
+                                            </Button>
+                                            <progress
+                                                aria-label={
+                                                    emulationSteps === undefined
+                                                        ? "Simulation progress"
+                                                        : "Process progress"
+                                                }
+                                                className="h-2 w-full accent-primary"
+                                                value={
+                                                    continuous
+                                                        ? undefined
+                                                        : (emulationSteps ?? result?.trials ?? 0)
+                                                }
+                                                max={
+                                                    emulationSteps === undefined
+                                                        ? project.iterations
+                                                        : project.maxActions
+                                                }
+                                            />
+                                            <p
+                                                role="status"
+                                                className="text-xs text-muted-foreground"
+                                            >
+                                                {emulationSteps === undefined
+                                                    ? continuous
+                                                        ? `${result?.trials.toLocaleString() ?? 0} completed trials · Running until stopped`
+                                                        : `${result?.trials.toLocaleString() ?? 0} / ${project.iterations.toLocaleString()} trials`
+                                                    : `${emulationSteps.toLocaleString()} steps completed`}
+                                            </p>
+                                            {emulationSteps === undefined &&
+                                            result?.simulationLimit &&
+                                            result.simulationLimit.kind !== "manual" ? (
+                                                <p
+                                                    role="status"
+                                                    className="text-xs text-muted-foreground"
+                                                >
+                                                    {(result.simulationLimit.kind === "successes"
+                                                        ? result.successes
+                                                        : (result.totalSteps ?? 0) +
+                                                          (result.unfinished?.steps ?? 0)
+                                                    ).toLocaleString()}{" "}
+                                                    /{" "}
+                                                    {result.simulationLimit.count.toLocaleString()}{" "}
+                                                    {result.simulationLimit.kind === "successes"
+                                                        ? "successful items"
+                                                        : "simulation actions"}
+                                                </p>
+                                            ) : null}
+                                        </>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-2">
+                                            <Button
+                                                onClick={() =>
+                                                    run(
+                                                        mode === "simulate"
+                                                            ? "process"
+                                                            : "calculate",
+                                                    )
+                                                }
+                                            >
+                                                {mode === "simulate"
+                                                    ? "Run simulation"
+                                                    : "Calculate odds"}
+                                            </Button>
+                                            {mode !== "simulate" ? (
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => run("sample")}
+                                                >
+                                                    Mass simulate
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    )}
+                                    {cancelled ? (
+                                        <p role="status" className="text-xs text-muted-foreground">
+                                            Stopped. Results show only completed trials.
+                                        </p>
+                                    ) : null}
+                                    <p className="text-xs text-muted-foreground">
+                                        Calculations enumerate small outcome sets exactly. Larger
+                                        sets use the trial count and report a sampling interval.
+                                    </p>
+                                </section>
+                                <details className="rounded-lg border border-border bg-card p-4">
+                                    <summary className="cursor-pointer text-sm font-medium">
+                                        Custom prices in chaos
+                                    </summary>
+                                    <div className="mt-3 space-y-3">
+                                        {useProcess ? (
+                                            <Field>
+                                                <FieldLabel htmlFor="crafting-base-cost">
+                                                    Starting item cost (chaos)
+                                                </FieldLabel>
+                                                <Input
+                                                    id="crafting-base-cost"
+                                                    aria-describedby="crafting-base-cost-description"
+                                                    type="number"
+                                                    min={0}
+                                                    step="any"
+                                                    placeholder="Excluded"
+                                                    value={project.baseCost ?? ""}
+                                                    onChange={(event) =>
+                                                        change({
+                                                            baseCost:
+                                                                event.target.value === ""
+                                                                    ? undefined
+                                                                    : Number(event.target.value),
+                                                        })
+                                                    }
+                                                />
+                                                <FieldDescription id="crafting-base-cost-description">
+                                                    Processes count one starting item and each
+                                                    restart that restores it. In the emulator, later
+                                                    crafts reuse the current item. Blank excludes
+                                                    this cost; zero prices it as free.
+                                                </FieldDescription>
+                                            </Field>
+                                        ) : null}
+                                        {costs.map((cost) => (
+                                            <Label
+                                                key={cost.id}
+                                                className="block space-y-1 text-xs"
+                                            >
+                                                {cost.name}
+                                                <Input
+                                                    className={controlClass}
+                                                    type="number"
+                                                    min={0}
+                                                    step="any"
+                                                    placeholder="Not priced"
+                                                    value={project.prices[cost.id] ?? ""}
+                                                    onChange={(event) => {
+                                                        const prices = { ...project.prices };
+                                                        if (event.target.value === "")
+                                                            delete prices[cost.id];
+                                                        else
+                                                            prices[cost.id] = Number(
+                                                                event.target.value,
+                                                            );
+                                                        change({ prices });
+                                                    }}
+                                                />
+                                            </Label>
+                                        ))}
+                                    </div>
+                                </details>
+                                {result ? (
+                                    <CraftingResults
+                                        engine={engine}
+                                        result={result}
+                                        onUse={(item) =>
+                                            safely(() => setItem(item, "Simulation sample"))
+                                        }
+                                    />
+                                ) : null}
+                            </div>
+                        </div>
+                        {catalog.game === "poe1" && mode === "calculate" && !base.strongbox ? (
+                            <FossilOptimizerPanel
                                 engine={engine}
-                                result={result}
-                                onUse={(item) => safely(() => setItem(item, "Simulation sample"))}
+                                project={project}
+                                onChoose={(method) => change({ method })}
+                                onPrices={(prices) => change({ prices })}
                             />
                         ) : null}
-                    </div>
-                </div>
-                {catalog.game === "poe1" && mode === "calculate" && !base.strongbox ? (
-                    <FossilOptimizerPanel
-                        engine={engine}
-                        project={project}
-                        onChoose={(method) => change({ method })}
-                        onPrices={(prices) => change({ prices })}
-                    />
-                ) : null}
+                    </>
+                )}
                 <ItemTextPanel
                     engine={engine}
-                    item={project.item}
-                    onImport={(item) => safely(() => setItem(item, "Imported item text"))}
+                    item={hasItem ? project.item : undefined}
+                    onImport={(item) =>
+                        safely(() =>
+                            hasItem
+                                ? setItem(item, "Imported item text")
+                                : restore({ ...initialProject(engine), item }),
+                        )
+                    }
                 />
                 <details className="rounded-lg border border-border bg-card p-4">
                     <summary className="cursor-pointer font-medium">Save, load, and export</summary>
@@ -1536,6 +1661,7 @@ export function CraftingWorkbench({
                             </Label>
                             <Button
                                 variant="outline"
+                                disabled={!hasItem}
                                 onClick={() =>
                                     safely(() => {
                                         if (!saveName.trim())
@@ -1594,6 +1720,7 @@ export function CraftingWorkbench({
                     <div className="mt-4 flex flex-wrap gap-3">
                         <Button
                             variant="outline"
+                            disabled={!hasItem}
                             onClick={() =>
                                 safely(() => {
                                     const data = JSON.stringify(

@@ -1,4 +1,5 @@
 import { type ReactNode, useMemo } from "react";
+import { CatalogItemArt } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { nonNativeEssenceSources } from "~/lib/crafting-recombination";
@@ -58,6 +59,11 @@ export function NnnEssences({
                         key={source.id}
                         className="flex items-start gap-2 border-t border-border pt-2 text-xs"
                     >
+                        <CatalogItemArt
+                            id={source.id}
+                            game={engine.catalog.game}
+                            className="size-10"
+                        />
                         <div className="min-w-0 flex-1">
                             <p className="font-medium">{source.name}</p>
                             <p className="text-muted-foreground">

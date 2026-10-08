@@ -1,10 +1,12 @@
 import type { ItemCondition, ItemQuery, NumericRange } from "@poe-tools/item-query";
-import { useId, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { craftingItemOptions } from "~/lib/item-presentation";
 import type { CraftingCatalog } from "~/schemas/crafting";
 import type { CraftingRulesetRef } from "~/schemas/crafting-rulesets";
 import { QueryFromItemText } from "./query-from-item-text";
@@ -60,6 +62,9 @@ export function GraphQueryEditor({
     ruleset: CraftingRulesetRef;
 }) {
     const uid = useId();
+    const [pendingBase, setPendingBase] = useState<{ group: number; condition: number } | null>(
+        null,
+    );
     const mods = useMemo(
         () =>
             Object.entries(catalog.mods).map(([id, mod]) => ({
@@ -68,10 +73,7 @@ export function GraphQueryEditor({
             })),
         [catalog],
     );
-    const bases = useMemo(
-        () => Object.entries(catalog.bases).map(([id, base]) => ({ id, label: base.name })),
-        [catalog],
-    );
+    const bases = useMemo(() => craftingItemOptions(catalog), [catalog]);
     const groupChange = (index: number, group: ItemQuery["groups"][number]) =>
         onChange({
             ...value,
@@ -341,6 +343,35 @@ export function GraphQueryEditor({
     return (
         <fieldset className="space-y-3">
             <legend className="mb-2 text-sm font-medium">{label}</legend>
+            <Dialog
+                open={pendingBase !== null}
+                onOpenChange={(open) => {
+                    if (!open) setPendingBase(null);
+                }}
+            >
+                <DialogContent>
+                    <DialogTitle>Choose required base</DialogTitle>
+                    <CatalogPicker
+                        id={`${uid}-pending-base`}
+                        label="Required base"
+                        options={bases}
+                        onSelect={(id) => {
+                            if (!pendingBase) return;
+                            const group = value.groups[pendingBase.group];
+                            if (group)
+                                groupChange(pendingBase.group, {
+                                    ...group,
+                                    filters: group.filters.map((condition, index) =>
+                                        index === pendingBase.condition
+                                            ? { kind: "base", field: "baseId", values: [id] }
+                                            : condition,
+                                    ),
+                                });
+                            setPendingBase(null);
+                        }}
+                    />
+                </DialogContent>
+            </Dialog>
             <QueryFromItemText game={value.game} ruleset={ruleset} onApply={onChange} />
             {!value.groups.length && (
                 <p className="text-xs text-muted-foreground">
@@ -427,10 +458,9 @@ export function GraphQueryEditor({
                                             if (kind === "rarity")
                                                 update({ kind, values: ["Rare"] });
                                             if (kind === "base")
-                                                update({
-                                                    kind,
-                                                    field: "baseId",
-                                                    values: [bases[0]!.id],
+                                                setPendingBase({
+                                                    group: groupIndex,
+                                                    condition: index,
                                                 });
                                         }}
                                     >

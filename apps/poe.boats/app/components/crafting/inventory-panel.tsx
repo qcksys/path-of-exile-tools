@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { ItemArt } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { useItemPresentations } from "~/hooks/use-item-presentations";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import type { CraftingItem, CraftingProject } from "~/schemas/crafting";
 import { controlClass } from "./method-picker";
@@ -25,6 +27,7 @@ export function InventoryPanel({
     onLoad: (item: CraftingItem, name: string) => void;
 }) {
     const [name, setName] = useState("");
+    const presentations = useItemPresentations(engine.catalog.game);
     const [selectedTab, setSelectedTab] = useState("");
     const [tabName, setTabName] = useState("");
     const tab = tabs.includes(selectedTab) ? selectedTab : "";
@@ -187,6 +190,12 @@ export function InventoryPanel({
             <ul className="space-y-3">
                 {visible.map((entry) => (
                     <li key={entry.id} className="space-y-2 border-t border-border pt-3">
+                        {presentations[entry.item.baseId] && (
+                            <ItemArt
+                                src={presentations[entry.item.baseId]!.art}
+                                name={engine.base(entry.item).name}
+                            />
+                        )}
                         <p className="break-words text-sm font-medium">{entry.name}</p>
                         <p className="text-xs text-muted-foreground">
                             {engine.base(entry.item).name} · {entry.item.rarity} ·{" "}

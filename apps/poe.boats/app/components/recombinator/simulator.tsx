@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowRight, FlaskConical, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CatalogItemArt } from "~/components/item-art";
 import { CatalogItemEditor } from "~/components/recombinator/catalog-item-editor";
 import { CraftingTree } from "~/components/recombinator/crafting-tree";
 import {
@@ -1063,6 +1064,10 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                 >
                                                     <SelectTrigger id="target-base">
                                                         <SelectValue>
+                                                            <CatalogItemArt
+                                                                id={requiredBase}
+                                                                game="poe1"
+                                                            />
                                                             {outputBases.find(
                                                                 (base) => base.id === requiredBase,
                                                             )?.name ?? "Any output base"}
@@ -1078,6 +1083,10 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                                     key={base.id}
                                                                     value={base.id}
                                                                 >
+                                                                    <CatalogItemArt
+                                                                        id={base.id}
+                                                                        game="poe1"
+                                                                    />
                                                                     {base.name}
                                                                 </SelectItem>
                                                             ))}

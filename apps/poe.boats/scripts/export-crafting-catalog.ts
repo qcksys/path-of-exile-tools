@@ -14,6 +14,8 @@ import {
 import { gildedImplicitId } from "../app/lib/crafting-fossils";
 import { heistEnchantmentKind } from "../app/lib/crafting-heist";
 import { supportedStrongbox } from "../app/lib/crafting-strongboxes";
+import { cleanModText } from "../app/lib/crafting-text";
+import { itemArtUrl, itemPresentationsSchema } from "../app/lib/item-presentation";
 import {
     type CraftingBase,
     craftingBaseSchema,
@@ -53,6 +55,30 @@ export async function exportCraftingCatalog(directory: string, output: string) {
         throw new Error("Package hash mismatch: crafting-data.json");
     const bases = baseItemsSchema.parse(rawBases);
     const mods = modsSchema.parse(rawMods);
+    const presentations = itemPresentationsSchema.parse(
+        Object.fromEntries(
+            Object.entries(bases)
+                .filter(([, base]) => base.name)
+                .map(([id, base]) => [
+                    id,
+                    {
+                        name: base.name,
+                        itemClass: base.item_class,
+                        art: itemArtUrl(base.visual_identity.dds_file),
+                        dropLevel: base.drop_level,
+                        requirements: base.requirements,
+                        implicits: base.implicits.flatMap((mod) =>
+                            mods[mod]?.text ? [cleanModText(mods[mod].text)] : [],
+                        ),
+                    },
+                ]),
+        ),
+    );
+    await mkdir(dirname(output), { recursive: true });
+    await writeFile(
+        resolve(dirname(output), `items-${manifest.game}.json`),
+        `${JSON.stringify(presentations)}\n`,
+    );
     const crafting = validateCraftingData(
         JSON.parse(craftingBytes.toString()),
         {

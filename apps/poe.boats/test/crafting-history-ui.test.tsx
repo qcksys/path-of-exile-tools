@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { readFileSync } from "node:fs";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
@@ -8,6 +9,7 @@ import { CraftingEngine, seededRandom } from "../app/lib/crafting-engine";
 import { CraftingProcess } from "../app/lib/crafting-simulation";
 import { craftingCatalogSchema, craftingProjectSchema } from "../app/schemas/crafting";
 import { changeControl, expectControlValue } from "./control-helpers";
+import { chooseStartingItem } from "./starting-item-helper";
 
 class CraftingWorker {
     static instances: CraftingWorker[] = [];
@@ -79,6 +81,7 @@ for (const game of ["poe1", "poe2"] as const) {
                 <CraftingWorkbench catalog={catalog} mode="emulate" />
             </MemoryRouter>,
         );
+        chooseStartingItem(catalog);
         fireEvent.click(screen.getByText("Save, load, and export"));
         changeControl(screen.getByLabelText("Saved project"), { target: { value: "test" } });
         fireEvent.click(button("Load project"));

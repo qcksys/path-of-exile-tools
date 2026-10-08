@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { readFileSync } from "node:fs";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
@@ -12,6 +13,7 @@ import { validateProject } from "~/lib/crafting-simulation";
 import { craftingCatalogSchema, craftingProjectSchema } from "~/schemas/crafting";
 import { changeControl, expectControlValue } from "./control-helpers";
 import { baseId, catalog, currency, engine } from "./crafting-fixtures";
+import { chooseStartingItem } from "./starting-item-helper";
 
 const poe2 = craftingCatalogSchema.parse(
     JSON.parse(readFileSync("public/game-data/crafting-poe2.json", "utf8")),
@@ -28,6 +30,7 @@ function mountWorkbench(data = catalog, mode = "emulate") {
             <CraftingWorkbench catalog={data} mode={mode} />
         </MemoryRouter>,
     );
+    chooseStartingItem(data);
     changeControl(screen.getByLabelText("Search modifiers"), { target: { value: "Prime" } });
     return view;
 }

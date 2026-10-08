@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 /** biome-ignore-all lint/style/useNamingConvention: Ring recipes retain canonical Breachlord names. */
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
@@ -8,6 +9,7 @@ import { graspingMailBase, isBreachModifier } from "../app/lib/crafting-grasping
 import { craftingProjectSchema } from "../app/schemas/crafting";
 import { changeControl, expectControlValue } from "./control-helpers";
 import { baseId, catalog, currency, engine } from "./crafting-fixtures";
+import { chooseStartingItem } from "./starting-item-helper";
 
 class WorkerStub {
     static instances: WorkerStub[] = [];
@@ -68,6 +70,7 @@ function mount(base: string) {
             <CraftingWorkbench catalog={catalog} mode="calculate" />
         </MemoryRouter>,
     );
+    chooseStartingItem(catalog);
     fireEvent.click(screen.getByText("Save, load, and export"));
     changeControl(storage().getByLabelText("Saved project"), { target: { value: "setup" } });
     fireEvent.click(button("Load project"));
