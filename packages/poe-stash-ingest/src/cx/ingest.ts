@@ -41,6 +41,7 @@ export async function ingestCx(
     }
 
     while (true) {
+        if (id > previousHour()) break;
         const snap = await client.public.currencyExchange({ realm: REALM, id });
         const leaguesSeen = new Set<string>();
 
