@@ -46,6 +46,7 @@ export const graphTrialResultSchema = z.object({
     visits: z.record(z.string(), graphNodeVisitsSchema),
     retained: z.array(graphTokenSchema),
     trace: z.array(graphTraceEntrySchema),
+    nodeItems: z.record(z.string(), craftingItemSchema).optional(),
     error: z.string().nullable(),
 });
 export const graphProductionEstimateSchema = z.object({

@@ -88,9 +88,13 @@ describe("retained crafting rulesets", () => {
             (entry) => entry.game === game && entry.revision === "r5",
         )!;
         const loaded = await retainedRevision(latest);
-        const simulation = loaded.runtime.createSimulation(loaded.catalog, graph, {
-            estimateIterations: 1,
-        });
+        const simulation = loaded.runtime.createSimulation(
+            loaded.catalog,
+            { ...graph, ruleset: rulesetReference(latest) },
+            {
+                estimateIterations: 1,
+            },
+        );
         while (!simulation.runBatch()) {
             /* Run the published implementation. */
         }

@@ -41,7 +41,7 @@ export function graphFixture(): CraftingGraph {
         game: catalog.game,
         ruleset: {
             era: "3.29",
-            revision: "r5",
+            revision: "r6",
             engine: CRAFTING_GRAPH_ENGINE,
             patch: catalog.patch,
             manifestSha256: catalog.manifestSha256,

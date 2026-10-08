@@ -3,6 +3,7 @@ import type { RecombinatorItem } from "../schemas/recombinator";
 import type { CraftingEngine } from "./crafting-engine";
 import { isBreachModifier } from "./crafting-grasping";
 import { isIncursionModifier } from "./crafting-incursion";
+import { isJanusRarityModifier } from "./crafting-janus";
 import { recombineOnBase } from "./recombinator";
 
 export function supportsRecombination(engine: CraftingEngine, item: Pick<CraftingItem, "baseId">) {
@@ -117,11 +118,16 @@ export function recombinationOutcomes(
                     isRecombinationEssenceModifier(engine, item, rolled.id) ||
                     isBreachModifier(engine.catalog, item, rolled.id) ||
                     isIncursionModifier(engine.catalog, item, rolled.id) ||
+                    isJanusRarityModifier(
+                        engine.catalog,
+                        { ...item, level: rolled.origin?.level ?? item.level },
+                        rolled.id,
+                    ) ||
                     (mod.domain === "crafted" && mod.implicit_tags.includes("unveiled_mod"))
                 )
             )
                 throw new Error(
-                    "This recombination model supports natural and extracted essence modifiers, Breach modifiers, the three Incursion glove suffixes and unveiled bench crafts.",
+                    "This recombination model supports natural and extracted essence modifiers, Breach modifiers, the three Incursion glove suffixes, Janus helmet rarity and unveiled bench crafts.",
                 );
         }
     }
@@ -164,7 +170,12 @@ export function recombinationOutcomes(
                         rolled.crafted ||
                         mod.is_essence_only ||
                         isBreachModifier(engine.catalog, item, rolled.id) ||
-                        isIncursionModifier(engine.catalog, item, rolled.id),
+                        isIncursionModifier(engine.catalog, item, rolled.id) ||
+                        isJanusRarityModifier(
+                            engine.catalog,
+                            { ...item, level: rolled.origin?.level ?? item.level },
+                            rolled.id,
+                        ),
                     nonNative: rolled.fractured && source !== baseIndex,
                     crafted: rolled.crafted,
                     spawn: mod.spawn_weights.map((entry): [string, number] => [
