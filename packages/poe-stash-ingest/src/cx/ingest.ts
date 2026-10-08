@@ -27,7 +27,13 @@ function previousHour(): number {
 export async function ingestCx(
     conn: DuckDBConnection,
     client: PoeApiClient,
-    opts: { fromHour?: number; catchUp: boolean; league?: string | null },
+    opts: {
+        fromHour?: number;
+        catchUp: boolean;
+        league?: string | null;
+        maxHours?: number;
+        onProgress?: (result: CxIngestResult) => Promise<void>;
+    },
 ): Promise<CxIngestResult[]> {
     await configureSource(conn, REALM ?? "pc", opts.league ?? null);
     const results: CxIngestResult[] = [];
@@ -43,30 +49,23 @@ export async function ingestCx(
     while (true) {
         if (id > previousHour()) break;
         const snap = await client.public.currencyExchange({ realm: REALM, id });
-        const leaguesSeen = new Set<string>();
+        const markets = snap.markets.filter(
+            (market) => !opts.league || market.league === opts.league,
+        );
+        const leaguesSeen = new Set(markets.map((market) => market.league));
 
         await withTransaction(conn, async () => {
-            for (const m of snap.markets) {
-                if (opts.league && m.league !== opts.league) continue;
-                leaguesSeen.add(m.league);
-                await conn.run(
-                    `INSERT INTO cx_market_hour (
-                        league, market_id, observed_hour,
-                        lowest_ratio, highest_ratio, volume_traded, lowest_stock, highest_stock
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                    ON CONFLICT (league, market_id, observed_hour) DO NOTHING`,
-                    [
-                        m.league,
-                        m.market_id,
-                        id,
-                        JSON.stringify(m.lowest_ratio),
-                        JSON.stringify(m.highest_ratio),
-                        JSON.stringify(m.volume_traded),
-                        JSON.stringify(m.lowest_stock),
-                        JSON.stringify(m.highest_stock),
-                    ],
-                );
-            }
+            await conn.run(
+                `INSERT INTO cx_market_hour (
+                    league, market_id, observed_hour,
+                    lowest_ratio, highest_ratio, volume_traded, lowest_stock, highest_stock
+                ) SELECT value->>'league', value->>'market_id', $1,
+                    value->'lowest_ratio', value->'highest_ratio', value->'volume_traded',
+                    value->'lowest_stock', value->'highest_stock'
+                FROM json_each($2::JSON)
+                ON CONFLICT (league, market_id, observed_hour) DO NOTHING`,
+                [id, JSON.stringify(markets)],
+            );
             await setCursor(conn, STREAM, String(snap.next_change_id));
         });
 
@@ -79,13 +78,14 @@ export async function ingestCx(
             caughtUp,
             nextHour: snap.next_change_id,
         });
+        await opts.onProgress?.(results[results.length - 1]!);
 
         console.log(
             `cxapi: hour=${id} leagues=${leaguesSeen.size} markets=${snap.markets.length}` +
                 (caughtUp ? " [caught up]" : ` next=${snap.next_change_id}`),
         );
 
-        if (caughtUp || !opts.catchUp) break;
+        if (caughtUp || !opts.catchUp || results.length >= (opts.maxHours ?? Infinity)) break;
         id = snap.next_change_id;
     }
 

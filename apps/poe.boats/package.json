@@ -6,6 +6,7 @@
     "scripts": {
         "dev": "portless poe-boats react-router dev",
         "dev:portless": "vp run dev",
+        "dev:local": "tsx scripts/local-server.ts",
         "build": "vp run game-data:recombinator && vp run game-data:crafting && vp run game-data:history && react-router build",
         "env:check": "varlock load",
         "game-data:recombinator": "tsx scripts/export-recombinator-catalog.ts",
@@ -60,6 +61,7 @@
         "isbot": "catalog:",
         "ky": "catalog:",
         "lucide-react": "catalog:",
+        "mysql2": "catalog:",
         "nanoid": "catalog:",
         "next-themes": "catalog:",
         "pino": "catalog:",
@@ -92,7 +94,6 @@
         "jsdom": "catalog:",
         "linkedom": "catalog:",
         "marked": "catalog:",
-        "mysql2": "catalog:",
         "portless": "catalog:",
         "tailwindcss": "catalog:",
         "tsx": "catalog:",

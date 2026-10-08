@@ -1,5 +1,8 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import type { PoeApiClient, PublicStashChange } from "@poe-tools/api-client";
+import { archivePage } from "#src/ps/capture-archive.ts";
+import { recordCheckpoint } from "#src/ps/checkpoints.ts";
+import { defaultCraftingCapture } from "#src/ps/crafting-capture.ts";
 import {
     captureEquipment,
     defaultEquipmentClassifier,
@@ -10,7 +13,7 @@ import { REALM } from "#src/shared/auth.ts";
 import { learnBasemap } from "#src/shared/basemap.ts";
 import { shouldCapture } from "#src/shared/capture.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
-import { withTransaction } from "#src/shared/db.ts";
+import { queryAll, withTransaction } from "#src/shared/db.ts";
 import { decodeIconAsset } from "#src/shared/icon.ts";
 import { itemKey } from "#src/shared/item-key.ts";
 import { extractModSignature, signatureValue } from "#src/shared/mod-extractors/index.ts";
@@ -181,7 +184,7 @@ async function applyStashChange(
                 mod_signature = excluded.mod_signature,
                 signature_value = excluded.signature_value,
                 raw_item = excluded.raw_item,
-                last_seen_at = now(),
+                last_seen_at = excluded.last_seen_at,
                 removed_at = NULL`,
             [JSON.stringify(rows)],
         );
@@ -215,6 +218,7 @@ export async function ingestPs(
     conn: DuckDBConnection,
     client: PoeApiClient,
     opts: {
+        onProgress?: (result: PsIngestResult) => Promise<void>;
         pages: number;
         cursor?: string;
         league?: string | null;
@@ -226,8 +230,10 @@ export async function ingestPs(
         throw new Error("pages must be a positive integer");
     if (REALM === "poe2")
         throw new Error("PoE 2 equipment uses manual prices; public-stash capture is unavailable.");
+    const realm = REALM ?? "pc";
     await configureSource(conn, REALM ?? "pc", opts.league ?? null);
     const equipment = opts.equipment ?? (await defaultEquipmentClassifier());
+    const accepts = await defaultCraftingCapture(equipment.manifest);
     const result: PsIngestResult = {
         pages: 0,
         stashes: 0,
@@ -249,8 +255,24 @@ export async function ingestPs(
         const page = await client.public.stashTabs(
             requestCursor ? { realm: REALM, id: requestCursor } : { realm: REALM },
         );
+        const captureId = await archivePage(
+            conn,
+            page,
+            {
+                realm,
+                league: opts.league ?? "all",
+                cursor: requestCursor,
+                capturedAt: Date.now(),
+            },
+            accepts,
+        );
 
         await withTransaction(conn, async () => {
+            const [clock] = await queryAll<{ millis: number }>(
+                conn,
+                "SELECT epoch_ms(current_timestamp) AS millis",
+            );
+            const observedAt = opts.observedAt ?? new Date(Number(clock!.millis));
             for (const change of page.stashes) {
                 if (change.public && opts.league && change.league !== opts.league) continue;
                 result.stashes++;
@@ -267,18 +289,30 @@ export async function ingestPs(
                     conn,
                     change,
                     equipment,
-                    opts.observedAt ?? new Date(),
+                    observedAt,
                 );
                 result.inserted += r.inserted;
                 result.updated += r.updated;
                 result.removed += r.removed;
             }
+            await recordCheckpoint(conn, page, {
+                realm,
+                league: opts.league ?? "all",
+                cursor: requestCursor,
+                capturedAt: observedAt.getTime(),
+            });
             await setCursor(conn, STREAM, page.next_change_id);
+            if (captureId)
+                await conn.run(
+                    "UPDATE ps_capture_page SET processed_at = current_timestamp WHERE id = $1",
+                    [captureId],
+                );
         });
 
         cursor = page.next_change_id;
         result.pages++;
         result.finalCursor = cursor;
+        await opts.onProgress?.(result);
 
         console.log(
             `page ${i + 1}/${opts.pages}: stashes=${page.stashes.length} ` +

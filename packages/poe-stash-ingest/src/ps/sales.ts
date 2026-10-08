@@ -23,6 +23,10 @@ export async function recordRemovals(
     }
     await conn.run(
         `INSERT INTO ps_sale BY NAME
+         WITH removed AS MATERIALIZED (
+             SELECT * FROM ps_listing
+             WHERE stash_id = $1 AND removed_at = current_timestamp
+         )
          SELECT l.* EXCLUDE (raw_item),
             CASE WHEN $2 THEN 'withdrawn'
                 WHEN NOT EXISTS (SELECT 1 FROM pipeline_health WHERE id = 1 AND caught_up
@@ -31,7 +35,7 @@ export async function recordRemovals(
                 ELSE 'pending' END AS status,
             NULL::TIMESTAMP AS eligible_since, m.price AS market_price,
             m.sellers AS market_sellers, current_timestamp::TIMESTAMP AS updated_at
-         FROM ps_listing l
+         FROM removed l
          LEFT JOIN LATERAL (
              SELECT median(seller_price) AS price, count(*) AS sellers FROM (
                  SELECT lower(p.account_name), median(p.price_amount) AS seller_price
@@ -48,7 +52,6 @@ export async function recordRemovals(
                  GROUP BY lower(p.account_name)
              ) peers
          ) m ON TRUE
-         WHERE l.stash_id = $1 AND l.removed_at = current_timestamp
          ON CONFLICT DO NOTHING`,
         [stashId, withdrawn],
     );

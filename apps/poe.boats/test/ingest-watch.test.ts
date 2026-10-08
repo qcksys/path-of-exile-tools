@@ -5,6 +5,19 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { watchCycles } from "../../../packages/poe-stash-ingest/src/shared/watch";
 
 describe("ingest worker lifecycle", () => {
+    it("continues promptly while behind, then resumes normal polling once caught up", async () => {
+        const stop = new AbortController();
+        const timeout = setTimeout(() => stop.abort(), 3500);
+        let attempts = 0;
+        try {
+            await watchCycles(async () => ({ caughtUp: ++attempts > 1 }), { signal: stop.signal });
+            expect(attempts).toBe(2);
+        } finally {
+            clearTimeout(timeout);
+            stop.abort();
+        }
+    });
+
     it("finishes an in-flight cycle, saves its health and stops without starting another", async () => {
         const directory = await mkdtemp(join(tmpdir(), "ingest-watch-"));
         const statusFile = join(directory, "status.json");

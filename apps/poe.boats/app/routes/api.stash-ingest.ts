@@ -1,6 +1,16 @@
-import { cohortHourlySchema, marketCohortDefinitionSchema } from "@poe-tools/market";
+import {
+    cohortHourlySchema,
+    ingestStatusSchema,
+    marketCohortDefinitionSchema,
+    stashCheckpointQuerySchema,
+    stashCheckpointUploadSchema,
+} from "@poe-tools/market";
 import { z } from "zod";
 import { dbContext, envContext } from "~/context";
+import {
+    insertStashCheckpoints,
+    readStashCheckpoints,
+} from "~/db/queries/stash-checkpoint.queries";
 import {
     insertStashCohorts,
     upsertStashBasemapSnapshot,
@@ -9,6 +19,7 @@ import {
     upsertStashUniqueHourly,
 } from "~/db/queries/stash-ingest.queries";
 import { sStashCurrencyHourlyI } from "~/db/schema/stash.currency-hourly";
+import { recordIngestStatus } from "~/operations/server-status.server";
 import { logger } from "~/services/logger";
 import type { Route } from "./+types/api.stash-ingest";
 
@@ -70,6 +81,11 @@ const BASEMAP_ROW_SCHEMA = z.object({
 });
 
 const PAYLOAD_SCHEMA = z.discriminatedUnion("stream", [
+    z.object({
+        stream: z.literal("stash-checkpoints"),
+        rows: z.array(stashCheckpointUploadSchema).max(500),
+    }),
+    z.object({ stream: z.literal("status"), rows: z.array(ingestStatusSchema).length(1) }),
     z.object({ stream: z.literal("psapi"), rows: z.array(UNIQUE_ROW_SCHEMA).max(1000) }),
     z.object({ stream: z.literal("cxapi"), rows: z.array(CURRENCY_ROW_SCHEMA).max(1000) }),
     z.object({ stream: z.literal("basemap"), rows: z.array(BASEMAP_ROW_SCHEMA).max(2000) }),
@@ -114,7 +130,11 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
 
     let written = 0;
-    if (parsed.stream === "psapi") {
+    if (parsed.stream === "stash-checkpoints") {
+        written = await insertStashCheckpoints(db, parsed.rows);
+    } else if (parsed.stream === "status") {
+        written = await recordIngestStatus(db, parsed.rows[0]!);
+    } else if (parsed.stream === "psapi") {
         written = await upsertStashUniqueHourly(db, parsed.rows);
     } else if (parsed.stream === "cxapi") {
         written = await upsertStashCurrencyHourly(db, parsed.rows);
@@ -128,4 +148,22 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     logger.info({ stream: parsed.stream, written }, "stash-ingest accepted");
     return Response.json({ stream: parsed.stream, written });
+}
+
+export async function loader({ request, context }: Route.LoaderArgs) {
+    const expected = context.get(envContext).STASH_INGEST_TOKEN;
+    if (!expected) return Response.json({ error: "Ingest disabled" }, { status: 503 });
+    if (request.headers.get("authorization") !== `Bearer ${expected}`)
+        return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const parsed = stashCheckpointQuerySchema.safeParse(
+        Object.fromEntries(new URL(request.url).searchParams),
+    );
+    if (!parsed.success)
+        return Response.json({ error: "Invalid checkpoint query" }, { status: 400 });
+    return Response.json(
+        { rows: await readStashCheckpoints(context.get(dbContext), parsed.data) },
+        {
+            headers: { "cache-control": "no-store" },
+        },
+    );
 }

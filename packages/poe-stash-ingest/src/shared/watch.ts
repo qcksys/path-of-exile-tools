@@ -2,13 +2,15 @@ import { writeFile } from "node:fs/promises";
 import { setTimeout } from "node:timers/promises";
 
 export async function watchCycles(
-    cycle: () => Promise<void>,
+    cycle: () => Promise<void | { caughtUp: boolean }>,
     options: { signal: AbortSignal; intervalMs?: number; statusFile?: string },
 ) {
     while (!options.signal.aborted) {
         let ok = false;
+        let intervalMs = options.intervalMs ?? 60_000;
         try {
-            await cycle();
+            const result = await cycle();
+            if (result?.caughtUp === false) intervalMs = 1200;
             ok = true;
         } catch (error) {
             console.error(
@@ -20,7 +22,7 @@ export async function watchCycles(
             await writeFile(options.statusFile, JSON.stringify({ ok, completedAt: Date.now() }));
         if (options.signal.aborted) break;
         try {
-            await setTimeout(options.intervalMs ?? 60_000, undefined, { signal: options.signal });
+            await setTimeout(intervalMs, undefined, { signal: options.signal });
         } catch (error) {
             if (!options.signal.aborted) throw error;
         }
