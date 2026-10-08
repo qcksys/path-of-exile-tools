@@ -5,6 +5,7 @@ import {
 } from "@poe-tools/market";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -130,11 +131,7 @@ export function ExchangePricePicker({
                     amount restores a manual override. Gold and trading time are excluded.
                 </p>
                 <Label className="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        checked={conversion}
-                        onChange={(event) => setConversion(event.target.checked)}
-                    />
+                    <Checkbox checked={conversion} onCheckedChange={setConversion} />
                     Convert missing direct pairs through chaos, divine or exalted
                 </Label>
                 {conversion && (

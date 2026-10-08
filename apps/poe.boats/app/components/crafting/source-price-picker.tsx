@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { bindCraftingSourcePrice } from "~/lib/crafting-sources";
@@ -92,11 +93,7 @@ export function SourcePricePicker({
                     process estimates need manual assumptions for these sources.
                 </p>
                 <Label className="flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        checked={assumption}
-                        onChange={(event) => setAssumption(event.target.checked)}
-                    />
+                    <Checkbox checked={assumption} onCheckedChange={setAssumption} />
                     Use Mountain Lynx listing prices for the extra rare beasts
                 </Label>
                 <p className="text-muted-foreground">
