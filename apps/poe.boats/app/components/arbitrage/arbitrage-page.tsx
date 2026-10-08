@@ -3,6 +3,7 @@ import { Form, Link, useNavigation } from "react-router";
 import { AppFooter } from "~/components/app-footer";
 import { AppHeader } from "~/components/app-header";
 import { ManualRecipeCalculator } from "~/components/arbitrage/manual-recipe-calculator";
+import { RecipeItems } from "~/components/arbitrage/recipe-items";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button, buttonVariants } from "~/components/ui/button";
@@ -308,14 +309,12 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
                                                     <div className="flex flex-col gap-1">
                                                         <a
                                                             href={recipe.source}
+                                                            aria-label={`${recipe.input.quantity} × ${recipe.input.name} → ${recipe.output.quantity} × ${recipe.output.name}`}
                                                             target="_blank"
                                                             rel="noreferrer"
                                                             className="font-medium underline underline-offset-4"
                                                         >
-                                                            {recipe.input.quantity} ×{" "}
-                                                            {recipe.input.name} →{" "}
-                                                            {recipe.output.quantity} ×{" "}
-                                                            {recipe.output.name}
+                                                            <RecipeItems recipe={recipe} />
                                                         </a>
                                                         <span className="text-xs text-muted-foreground">
                                                             {
@@ -426,7 +425,7 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
                                 <ul className="mt-2 grid gap-1 sm:grid-cols-2">
                                     {results.missingPrices.map((recipe) => (
                                         <li key={recipe.id}>
-                                            {recipe.input.name} → {recipe.output.name}
+                                            <RecipeItems recipe={recipe} />
                                         </li>
                                     ))}
                                 </ul>

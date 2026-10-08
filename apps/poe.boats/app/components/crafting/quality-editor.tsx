@@ -194,7 +194,11 @@ export function QualityEditor({
                             <FormSelectItem value="">No catalyst quality</FormSelectItem>
                             {catalysts.map((catalyst) => (
                                 <FormSelectItem key={catalyst.id} value={catalyst.id}>
-                                    {catalystName(engine.catalog, catalyst.id)}
+                                    <ItemName
+                                        id={catalyst.id}
+                                        name={catalystName(engine.catalog, catalyst.id)}
+                                        game={engine.catalog.game}
+                                    />
                                 </FormSelectItem>
                             ))}
                         </FormSelect>
@@ -240,6 +244,7 @@ export function QualityEditor({
 }
 
 import { useId } from "react";
+import { ItemName } from "~/components/item-art";
 import { Field, FieldGroup, FieldLabel } from "~/components/ui/field";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";

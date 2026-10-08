@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CatalogItemArt } from "~/components/item-art";
+import { CatalogItemArt, ItemName } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
@@ -14,6 +14,7 @@ import {
 } from "~/lib/crafting-optimizer";
 import { hasCraftingRequirements } from "~/lib/crafting-simulation";
 import type { CraftingMethod, CraftingProject } from "~/schemas/crafting";
+import { MethodArt } from "./method-art";
 import { controlClass } from "./method-picker";
 import { TangledFossilPicker } from "./tangled-fossil-picker";
 
@@ -269,7 +270,11 @@ export function FossilOptimizerPanel({
                     <div className="mt-3 grid max-h-60 gap-3 overflow-y-auto sm:grid-cols-2">
                         {costs.map((entry) => (
                             <Label key={entry.id} className="block space-y-1 text-xs">
-                                {entry.name}
+                                <ItemName
+                                    id={entry.id}
+                                    name={entry.name}
+                                    game={engine.catalog.game}
+                                />
                                 <Input
                                     className={controlClass}
                                     type="number"
@@ -362,7 +367,11 @@ export function FossilOptimizerPanel({
                                     className="flex flex-wrap items-center justify-between gap-2 rounded border p-3"
                                 >
                                     <div>
-                                        <p className="text-sm font-medium">
+                                        <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                                            <MethodArt
+                                                method={entry.method}
+                                                game={engine.catalog.game}
+                                            />
                                             {engine.methodName(entry.method)}
                                         </p>
                                         <p className="text-xs text-muted-foreground">

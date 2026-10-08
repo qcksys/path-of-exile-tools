@@ -10,10 +10,9 @@ export function useItemPresentations(game?: "poe1" | "poe2") {
         (typeof window !== "undefined" && window.location.pathname.startsWith("/2/")
             ? "poe2"
             : "poe1");
-    const [items, setItems] = useState(empty);
+    const [loaded, setLoaded] = useState<{ game: string; items: ItemPresentations }>();
     useEffect(() => {
         let active = true;
-        setItems(empty);
         let pending = catalogs.get(selectedGame);
         if (!pending) {
             pending = fetch(`/game-data/items-${selectedGame}.json`).then(async (response) => {
@@ -24,7 +23,7 @@ export function useItemPresentations(game?: "poe1" | "poe2") {
         }
         pending
             .then((catalog) => {
-                if (active) setItems(catalog);
+                if (active) setLoaded({ game: selectedGame, items: catalog });
             })
             .catch(() => {
                 catalogs.delete(selectedGame);
@@ -33,5 +32,5 @@ export function useItemPresentations(game?: "poe1" | "poe2") {
             active = false;
         };
     }, [selectedGame]);
-    return items;
+    return loaded?.game === selectedGame ? loaded.items : empty;
 }

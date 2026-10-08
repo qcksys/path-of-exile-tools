@@ -21,6 +21,30 @@ export const itemPresentationsSchema = z.record(z.string(), itemPresentationSche
 export type ItemPresentation = z.infer<typeof itemPresentationSchema>;
 export type ItemPresentations = z.infer<typeof itemPresentationsSchema>;
 
+const names = new WeakMap<ItemPresentations, Map<string, ItemPresentation>>();
+
+export function findItemPresentation(items: ItemPresentations, id?: string, name?: string) {
+    const item = id ? items[id.replace(/^poe[12]:/, "")] : undefined;
+    if (item || !name) return item;
+    let index = names.get(items);
+    if (!index) {
+        index = new Map();
+        for (const entry of Object.values(items)) {
+            const key = entry.name.toLowerCase();
+            if (!index.get(key)?.art) index.set(key, entry);
+        }
+        names.set(items, index);
+    }
+    return index.get(name.toLowerCase());
+}
+
+export function marketItemArtUrl(asset: string | null, game: "poe1" | "poe2" = "poe1") {
+    if (!asset) return "";
+    const path = asset.replace(/^Art\//, "").replace(/\.(dds|png|webp)$/, "");
+    if (!/^2DItems\/[\w /'-]+$/.test(path) || path.split("/").includes("..")) return "";
+    return itemArtUrl(`Art/${path}.dds`, game);
+}
+
 export function craftingItemOptions(catalog: CraftingCatalog) {
     return Object.entries(catalog.bases)
         .map(([id, base]) => ({
@@ -40,9 +64,12 @@ export function craftingItemOptions(catalog: CraftingCatalog) {
         .sort((a, b) => compareItemPresentations(a.item, b.item));
 }
 
-export function itemArtUrl(path: string) {
+export function itemArtUrl(path: string, game: "poe1" | "poe2" = "poe1") {
     if (!path.startsWith("Art/2DItems/") || !path.endsWith(".dds")) return "";
-    return `https://www.pathofexile.com/image/${path.slice(0, -4).split("/").map(encodeURIComponent).join("/")}.png`;
+    const asset = path.slice(0, -4).split("/").map(encodeURIComponent).join("/");
+    return game === "poe2"
+        ? `https://cdn.poe2db.tw/image/${asset}.webp`
+        : `https://www.pathofexile.com/image/${asset}.png`;
 }
 
 export function itemSubtitle(item: ItemPresentation) {

@@ -123,6 +123,7 @@ export function ProcessEditor({
                 <Suspense fallback={<p role="status">Loading process flow…</p>}>
                     <ProcessFlow
                         engine={engine}
+                        item={project.item}
                         steps={project.steps}
                         routes={routes}
                         attempts={attempts}

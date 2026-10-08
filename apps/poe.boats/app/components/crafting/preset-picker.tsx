@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CatalogItemArt } from "~/components/item-art";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
@@ -13,6 +14,19 @@ import {
 } from "~/components/ui/select";
 import { listCraftingPresets } from "~/lib/crafting-presets";
 import { type CraftingPresetId, craftingPresetIdSchema } from "~/schemas/crafting-presets";
+
+const presetBases: Record<CraftingPresetId, string> = {
+    "life-block-shield": "Heat-attuned Tower Shield",
+    "es-block-shield": "Titanium Spirit Shield",
+    "tailwind-boots": "Two-Toned Boots",
+    "physical-bow": "Spine Bow",
+    "elemental-bow": "Spine Bow",
+    "suppression-chest": "Necrotic Armour",
+    "global-defence-chest": "Necrotic Armour",
+    "rarity-helmet": "Hubris Circlet",
+    "energy-shield-chest": "Vaal Regalia",
+    "strength-helical-ring": "Helical Ring",
+};
 
 export function CraftingPresetPicker({
     game,
@@ -49,12 +63,17 @@ export function CraftingPresetPicker({
                             }}
                         >
                             <SelectTrigger id="craft-preset" className="w-full">
+                                <CatalogItemArt name={presetBases[selected]} game={game} />
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
                                     {presets.map((entry) => (
                                         <SelectItem key={entry.id} value={entry.id}>
+                                            <CatalogItemArt
+                                                name={presetBases[entry.id]}
+                                                game={game}
+                                            />
                                             {entry.name}
                                         </SelectItem>
                                     ))}

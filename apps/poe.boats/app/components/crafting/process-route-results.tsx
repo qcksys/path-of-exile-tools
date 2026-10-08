@@ -122,7 +122,13 @@ export function ProcessRouteResults({
                                 <dl className="mt-2 space-y-1">
                                     {Object.entries(route.spending).map(([id, amount]) => (
                                         <div className="flex justify-between gap-3" key={id}>
-                                            <dt>{engine.costName(id)}</dt>
+                                            <dt>
+                                                <ItemName
+                                                    id={id}
+                                                    name={engine.costName(id)}
+                                                    game={engine.catalog.game}
+                                                />
+                                            </dt>
                                             <dd className="font-mono">
                                                 {format(amount / denominator)}
                                             </dd>
@@ -137,3 +143,5 @@ export function ProcessRouteResults({
         </section>
     );
 }
+
+import { ItemName } from "~/components/item-art";

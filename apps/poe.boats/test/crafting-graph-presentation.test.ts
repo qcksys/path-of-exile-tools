@@ -5,6 +5,7 @@ import {
     graphBranchChance,
     graphChanceWidth,
     graphContinueChance,
+    graphPreviewBaseId,
     graphPreviewItem,
     graphQueryText,
     layoutCraftingGraph,
@@ -60,6 +61,16 @@ describe("crafting graph presentation", () => {
         expect(samples["pre-regal-imprint"]!.mods.map((mod) => mod.id)).toContain("AllAttributes4");
         expect(samples.hunter!.mods.length).toBe(5);
     }, 30_000);
+    it("resolves item thumbnails for acquisitions, crafts and final targets before simulation", () => {
+        const graph = projectFromPreset(engine, ruleset, "suppression-chest");
+        for (const node of graph.nodes) {
+            expect(graphPreviewBaseId(graph, node.id)).toBe(
+                graphPreviewItem(engine, graph, node.id)?.baseId,
+            );
+        }
+        expect(graphPreviewBaseId(graph, graph.entry, graph.outcomes[0]!.query)).toBeDefined();
+        expect(graphPreviewBaseId(graph, "missing")).toBeUndefined();
+    });
     it("places every source before its consumer, spaces measured nodes and ignores recovery cycles", () => {
         const graph = projectFromPreset(engine, ruleset, "energy-shield-chest");
         const heights = new Map(graph.nodes.map((node, index) => [node.id, 400 + index * 35]));
