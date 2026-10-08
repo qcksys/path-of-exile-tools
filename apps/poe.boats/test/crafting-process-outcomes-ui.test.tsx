@@ -62,8 +62,12 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         const costRegion = screen.getByRole("region", { name: "Stored outcome cost" });
         const cost = within(costRegion);
         expect(costRegion.textContent).toContain("Trial cost (chaos): —");
-        expect(cost.getByText(/Missing prices: Orb of Annulment/)).toBeDefined();
-        expect(cost.getByText("Orb of Annulment", { selector: "dt" })).toBeDefined();
+        expect(cost.getByText(/^Missing prices:/).textContent).toContain(
+            "Missing prices: Orb of Annulment",
+        );
+        expect(
+            cost.getAllByRole("term").some((entry) => entry.textContent === "Orb of Annulment"),
+        ).toBe(true);
         expect(cost.getByText("Starting item costs are excluded.")).toBeDefined();
     });
 

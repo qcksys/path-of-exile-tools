@@ -90,7 +90,12 @@ export function CraftingWorkbench({
 }: {
     catalog: CraftingCatalog;
     mode?: string;
-    editing?: { item: CraftingItem; onApply: (item: CraftingItem) => void; busy: boolean };
+    editing?: {
+        item: CraftingItem;
+        onApply: (item: CraftingItem) => void;
+        onDraftChange?: (item: CraftingItem) => void;
+        busy: boolean;
+    };
 }) {
     const isolated = Boolean(editing);
     const [hasItem, setHasItem] = useState(isolated);
@@ -102,6 +107,11 @@ export function CraftingWorkbench({
         ...initialProject(engine),
         ...(editing ? { item: engine.validateItem(editing.item) } : {}),
     }));
+    const draftChange = useRef(editing?.onDraftChange);
+    draftChange.current = editing?.onDraftChange;
+    useEffect(() => {
+        draftChange.current?.(project.item);
+    }, [project.item]);
     const library = useItemLibrary(engine);
     const inventory = useMemo(
         () => craftingInventory(project.inventory, library.library.inventory),
