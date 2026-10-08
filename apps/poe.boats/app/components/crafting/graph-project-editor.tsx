@@ -51,7 +51,7 @@ export function GraphProjectEditor({
     const graph = project.graph;
     const [catalog, setCatalog] = useState<CraftingCatalog>();
     const [selected, setSelected] = useState(graph.entry);
-    const [fullWidth, setFullWidth] = useState(false);
+    const [fullWidth, setFullWidth] = useState(true);
     const [addingInput, setAddingInput] = useState(false);
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
