@@ -1149,7 +1149,13 @@ export function CraftingWorkbench({
                                                         key={id}
                                                         className="flex justify-between gap-2"
                                                     >
-                                                        <dt>{engine.costName(id)}</dt>
+                                                        <dt>
+                                                            <ItemName
+                                                                id={id}
+                                                                name={engine.costName(id)}
+                                                                game={engine.catalog.game}
+                                                            />
+                                                        </dt>
                                                         <dd className="font-mono">
                                                             {amount.toLocaleString()}
                                                         </dd>
@@ -1631,7 +1637,11 @@ export function CraftingWorkbench({
                                                 key={cost.id}
                                                 className="block space-y-1 text-xs"
                                             >
-                                                {cost.name}
+                                                <ItemName
+                                                    id={cost.id}
+                                                    name={cost.name}
+                                                    game={engine.catalog.game}
+                                                />
                                                 <Input
                                                     className={controlClass}
                                                     type="number"
@@ -1984,3 +1994,5 @@ export function CraftingWorkbench({
         </CraftingDisplay>
     );
 }
+
+import { ItemName } from "~/components/item-art";

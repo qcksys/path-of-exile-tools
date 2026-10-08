@@ -607,6 +607,8 @@ export function GraphProjectEditor({
                                     <GraphPriceInput
                                         key={id}
                                         label={name}
+                                        itemId={id}
+                                        game={graph.game}
                                         currency={graph.currency}
                                         value={graph.prices[id] ?? null}
                                         onChange={(price) => {

@@ -47,7 +47,7 @@ describe("arbitrage page", () => {
     it("displays recipe quantities, estimates and trade links", () => {
         showPage();
         expect(screen.getByText("1 opportunities")).toBeTruthy();
-        expect(screen.getByText("3 × Clear Oil → 1 × Sepia Oil")).toBeTruthy();
+        expect(screen.getByRole("link", { name: "3 × Clear Oil → 1 × Sepia Oil" })).toBeTruthy();
         expect(screen.getByText("2 chaos")).toBeTruthy();
         expect(screen.getByRole("link", { name: "Buy Clear Oil" }).getAttribute("href")).toContain(
             "/trade/exchange/Standard",

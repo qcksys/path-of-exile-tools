@@ -57,6 +57,7 @@ for (const suffixCount of [0, 1, 2]) {
 
         await page.getByRole("checkbox", { name: "Matching only", exact: true }).check();
         const outcomes = page.getByRole("table");
+        await expect(outcomes.locator('[data-item-art="Despot Axe"]').first()).toBeVisible();
         await expect(outcomes.getByRole("row")).toHaveCount(suffixCount + 2);
         for (const row of await outcomes.getByRole("row").all()) {
             if (!(await row.getByRole("cell").count())) continue;

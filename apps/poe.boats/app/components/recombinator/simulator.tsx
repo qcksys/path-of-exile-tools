@@ -470,7 +470,13 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                 >
                                     <CardHeader>
                                         <CardTitle>Item {index + 1}</CardTitle>
-                                        <CardDescription>
+                                        <CardDescription className="flex items-center gap-2">
+                                            {entry.catalog && (
+                                                <CatalogItemArt
+                                                    id={entry.catalog.base.id}
+                                                    game="poe1"
+                                                />
+                                            )}
                                             {entry.catalog?.base.name ??
                                                 "Choose a base to get started"}
                                         </CardDescription>
@@ -747,6 +753,21 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                                 aria-label={`Step ${index + 1} input ${side === "left" ? "A" : "B"}`}
                                                             >
                                                                 <SelectValue>
+                                                                    {draft.items.find(
+                                                                        (item) =>
+                                                                            item.id === step[side],
+                                                                    )?.catalog && (
+                                                                        <CatalogItemArt
+                                                                            id={
+                                                                                draft.items.find(
+                                                                                    (item) =>
+                                                                                        item.id ===
+                                                                                        step[side],
+                                                                                )!.catalog!.base.id
+                                                                            }
+                                                                            game="poe1"
+                                                                        />
+                                                                    )}
                                                                     {sourceName(step[side]) ||
                                                                         "Unnamed source"}
                                                                 </SelectValue>
@@ -761,6 +782,15 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                                             key={item.id}
                                                                             value={item.id}
                                                                         >
+                                                                            {item.catalog && (
+                                                                                <CatalogItemArt
+                                                                                    id={
+                                                                                        item.catalog
+                                                                                            .base.id
+                                                                                    }
+                                                                                    game="poe1"
+                                                                                />
+                                                                            )}
                                                                             {item.name ||
                                                                                 "Unnamed item"}
                                                                         </SelectItem>
@@ -1200,7 +1230,11 @@ export function RecombinatorSimulator({ catalog }: { catalog?: RecombinatorCatal
                                                     >
                                                         <TableCell className="whitespace-normal break-words align-top">
                                                             {outcome.item.base ? (
-                                                                <p className="mb-2 text-xs text-muted-foreground">
+                                                                <p className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+                                                                    <CatalogItemArt
+                                                                        id={outcome.item.base.id}
+                                                                        game="poe1"
+                                                                    />
                                                                     {outcome.item.base.name}
                                                                 </p>
                                                             ) : null}

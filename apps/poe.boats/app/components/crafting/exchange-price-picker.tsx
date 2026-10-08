@@ -242,7 +242,9 @@ export function ExchangePricePicker({
                                 aria-label={`Exchange price for ${name}`}
                                 className="space-y-2 rounded bg-muted/30 p-3"
                             >
-                                <p className="font-medium">{name}</p>
+                                <p className="font-medium">
+                                    <ItemName id={id} name={name} game={graph.game} />
+                                </p>
                                 {quote ? (
                                     <>
                                         <p>
@@ -359,3 +361,5 @@ export function ExchangePricePicker({
         </details>
     );
 }
+
+import { ItemName } from "~/components/item-art";

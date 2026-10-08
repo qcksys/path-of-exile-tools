@@ -31,7 +31,9 @@ for (const game of ["poe1", "poe2"] as const) {
             .getByRole("option", { name: `${base.name} · Body Armour`, exact: true });
         await expect(option.getByRole("img", { name: base.name })).toHaveAttribute(
             "src",
-            /^https:\/\/www.pathofexile.com\/image\/Art\//,
+            game === "poe1"
+                ? /^https:\/\/www.pathofexile.com\/image\/Art\//
+                : /^https:\/\/cdn.poe2db.tw\/image\/Art\//,
         );
         await expect(page.getByRole("group", { name: "Body Armour", exact: true })).toBeVisible();
         await option.click();
@@ -39,6 +41,13 @@ for (const game of ["poe1", "poe2"] as const) {
         const card = page.getByRole("region", { name: "Current item", exact: true });
         await expect(card).toHaveAttribute("data-rarity", "normal");
         await expect(card.getByRole("img", { name: base.name })).toBeVisible();
+        await expect
+            .poll(() =>
+                card
+                    .getByRole("img", { name: base.name })
+                    .evaluate((image: HTMLImageElement) => image.naturalWidth),
+            )
+            .toBeGreaterThan(0);
         await card.screenshot({ path: testInfo.outputPath("item-card.png") });
         await expect
             .poll(async () =>
@@ -68,7 +77,7 @@ for (const game of ["poe1", "poe2"] as const) {
 
 test("new projects require a base and the graph expands without changing the project", async ({
     page,
-}) => {
+}, testInfo) => {
     await page.goto("/1/crafting/projects");
     await page.getByRole("button", { name: "New project", exact: true }).click();
     await expect(page.getByRole("combobox", { name: "Starting base" })).toHaveValue("");
@@ -76,8 +85,10 @@ test("new projects require a base and the graph expands without changing the pro
     await choose(page, "Starting base", "Plate Vest", "Plate Vest · Body Armour");
     await page.getByRole("button", { name: "Create project", exact: true }).click();
     const graph = page.getByRole("region", { name: "Crafting project graph", exact: true });
+    await expect(graph.locator('[data-item-art="Plate Vest"] img').first()).toBeVisible();
     await expect(graph.getByRole("link", { name: "React Flow", exact: true })).toHaveCount(0);
     const initial = (await graph.boundingBox())!;
+    await graph.screenshot({ path: testInfo.outputPath("graph-item-thumbnails.png") });
     await page.getByRole("button", { name: "Full width", exact: true }).click();
     await expect
         .poll(async () => (await graph.boundingBox())!.width)
@@ -110,4 +121,46 @@ test("new projects require a base and the graph expands without changing the pro
     await page.getByRole("button", { name: "New project", exact: true }).click();
     await expect(page.getByRole("combobox", { name: "Starting base" })).toHaveValue("");
     await expect(page.getByRole("button", { name: "Create project", exact: true })).toBeDisabled();
+});
+
+test("currency artwork remains usable in prices, pinned methods and mobile controls", async ({
+    page,
+}, testInfo) => {
+    const requests: string[] = [];
+    page.on("request", (request) => {
+        if (request.url().includes("/game-data/items-poe1.json")) requests.push(request.url());
+    });
+    await page.goto("/1/crafting/emulate");
+    await choose(page, "Item base", "Plate Vest", "Plate Vest · Body Armour");
+    await choose(page, "Crafting method", "Orb of Alchemy", "Orb of Alchemy");
+    await page.getByRole("button", { name: "Pin current crafting method" }).click();
+    const pinned = page.getByRole("region", { name: "Pinned methods" });
+    await expect(pinned.locator('[data-item-art="Orb of Alchemy"] img')).toBeVisible();
+    await expect(pinned.getByRole("combobox", { name: "Pinned crafting methods" })).toHaveValue(
+        "Orb of Alchemy",
+    );
+    await page.getByText("Custom prices in chaos", { exact: true }).click();
+    const prices = page
+        .locator("details")
+        .filter({ has: page.getByText("Custom prices in chaos", { exact: true }) });
+    await expect(prices.locator('[data-item-art="Orb of Alchemy"] img')).toBeVisible();
+    await prices.getByRole("spinbutton", { name: "Orb of Alchemy", exact: true }).fill("2");
+    expect(requests).toHaveLength(1);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await pinned.scrollIntoViewIfNeeded();
+    await pinned.screenshot({ path: testInfo.outputPath("pinned-currency-mobile.png") });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        390,
+    );
+});
+
+test("broken artwork keeps item labels and selection available", async ({ page }) => {
+    await page.route("https://www.pathofexile.com/image/**", (route) => route.abort());
+    await page.goto("/1/crafting/emulate");
+    await choose(page, "Item base", "Plate Vest", "Plate Vest · Body Armour");
+    const card = page.getByRole("region", { name: "Current item", exact: true });
+    await expect(card.getByLabel("Artwork unavailable for Plate Vest")).toBeVisible();
+    await expect(card.getByRole("heading", { name: "Plate Vest" })).toBeVisible();
+    await page.getByRole("button", { name: "Apply craft", exact: true }).click();
+    await expect(card).toHaveAttribute("data-rarity", "rare");
 });

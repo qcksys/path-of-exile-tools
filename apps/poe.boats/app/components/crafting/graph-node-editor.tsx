@@ -1,6 +1,7 @@
 import { itemQuerySchema } from "@poe-tools/item-query";
 import { decodeCohortPriceReference, decodeExchangePriceReference } from "@poe-tools/market";
 import { useEffect, useId, useMemo, useRef } from "react";
+import { CatalogItemArt } from "~/components/item-art";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -10,6 +11,7 @@ import { Label } from "~/components/ui/label";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { connectGraphInput, removeGraphNode } from "~/lib/crafting-graph-authoring";
 import { replaceGraphMethod } from "~/lib/crafting-graph-method";
+import { graphPreviewBaseId } from "~/lib/crafting-graph-presentation";
 import { bindCohortPurchasePrice } from "~/lib/crafting-market";
 import { rulesetAllowsConditionalSteps, rulesetAllowsMethod } from "~/lib/crafting-rulesets";
 import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
@@ -39,15 +41,22 @@ export function GraphPriceInput({
     currency,
     onChange,
     label,
+    itemId,
+    game,
 }: {
     value: CraftingPrice | null;
     currency: string;
     onChange: (price: CraftingPrice | null) => void;
     label: string;
+    itemId?: string;
+    game?: "poe1" | "poe2";
 }) {
     return (
         <Label className="block space-y-1 text-xs">
-            {label} ({currency})
+            <span className="flex items-center gap-2">
+                {itemId && <CatalogItemArt id={itemId} name={label} game={game} />}
+                {label} ({currency})
+            </span>
             <Input
                 className={graphControl}
                 type="number"
@@ -601,6 +610,10 @@ export function GraphNodeEditor({
                                                 .filter((entry) => entry.id !== node.id)
                                                 .map((entry) => (
                                                     <FormSelectItem key={entry.id} value={entry.id}>
+                                                        <CatalogItemArt
+                                                            id={graphPreviewBaseId(graph, entry.id)}
+                                                            game={graph.game}
+                                                        />
                                                         {entry.name}
                                                     </FormSelectItem>
                                                 ))}
@@ -805,6 +818,10 @@ export function GraphNodeEditor({
                                         .filter((entry) => entry.id !== node.id)
                                         .map((entry) => (
                                             <FormSelectItem key={entry.id} value={entry.id}>
+                                                <CatalogItemArt
+                                                    id={graphPreviewBaseId(graph, entry.id)}
+                                                    game={graph.game}
+                                                />
                                                 {entry.name}
                                             </FormSelectItem>
                                         ))}

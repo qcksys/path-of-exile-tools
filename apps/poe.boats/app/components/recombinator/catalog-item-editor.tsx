@@ -18,6 +18,7 @@ import { Separator } from "~/components/ui/separator";
 import { useItemPresentations } from "~/hooks/use-item-presentations";
 import {
     compareItemPresentations,
+    findItemPresentation,
     type ItemPresentation,
     itemSubtitle,
 } from "~/lib/item-presentation";
@@ -41,6 +42,7 @@ export function CatalogPicker({
     options,
     value,
     disabled,
+    game,
     onSelect,
 }: {
     id: string;
@@ -48,16 +50,17 @@ export function CatalogPicker({
     options: Option[];
     value?: Option;
     disabled?: boolean;
+    game?: "poe1" | "poe2";
     onSelect: (id: string) => void;
 }) {
     const [query, setQuery] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
-    const items = useItemPresentations();
+    const items = useItemPresentations(game);
     const presented = useMemo(
         () =>
             options
                 .map((option) => {
-                    const presentation = items[option.itemId ?? option.id.replace(/^poe[12]:/, "")];
+                    const presentation = findItemPresentation(items, option.itemId ?? option.id);
                     return {
                         ...option,
                         item: option.item

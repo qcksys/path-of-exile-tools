@@ -50,7 +50,9 @@ describe("crafting workbench", () => {
         await choose("Add map oil", engine.costName(oil));
         expect(
             within(screen.getByRole("group", { name: "Map oil selection" })).getByText(
-                `Oil 3: ${engine.costName(oil)}`,
+                (_, element) =>
+                    element?.tagName === "SPAN" &&
+                    element.textContent === `Oil 3: ${engine.costName(oil)}`,
             ),
         ).toBeDefined();
         fireEvent.click(button("Calculate odds"));

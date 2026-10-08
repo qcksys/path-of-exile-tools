@@ -233,7 +233,10 @@ export function MarketPricePicker({
                             key={`${candidate.definition.revision}:${candidate.definition.id}`}
                             className="space-y-2 rounded bg-muted/30 p-3"
                         >
-                            <p className="font-medium">{candidate.definition.name}</p>
+                            <p className="flex items-center gap-2 font-medium">
+                                <CatalogItemArt id={item.baseId} game={engine.catalog.game} />
+                                {candidate.definition.name}
+                            </p>
                             <p>
                                 {quote
                                     ? `${quote.median} ${currency} median · ${quote.count} listings · ${quote.sellers} sellers · ${(quote.confidence * 100).toFixed(0)}% data confidence`
@@ -278,7 +281,8 @@ export function MarketPricePicker({
                         className="max-h-64 overflow-auto"
                         aria-label="Equipment price history"
                     >
-                        <p className="mb-2 font-medium">
+                        <p className="mb-2 flex items-center gap-2 font-medium">
+                            <CatalogItemArt id={item.baseId} game={engine.catalog.game} />
                             {history.name} · latest 168 hourly observations (unaggregated)
                         </p>
                         <table className="w-full text-left">
@@ -305,3 +309,5 @@ export function MarketPricePicker({
         </details>
     );
 }
+
+import { CatalogItemArt } from "~/components/item-art";

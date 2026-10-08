@@ -44,7 +44,7 @@ export function PinnedMethods({
     onSelect,
 }: {
     game: CraftingCatalog["game"];
-    options: { id: string; label: string; pin: string }[];
+    options: { id: string; label: string; pin: string; itemId?: string }[];
     current: string;
     onSelect: (id: string) => void;
 }) {
@@ -89,6 +89,7 @@ export function PinnedMethods({
             {available.length > 0 && (
                 <CatalogPicker
                     id={`${id}-pinned-method`}
+                    game={game}
                     label="Pinned crafting methods"
                     options={available}
                     value={pinned ? selected : undefined}

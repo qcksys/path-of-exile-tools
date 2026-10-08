@@ -119,11 +119,7 @@ export function layoutCraftingGraph(
     return positions;
 }
 
-export function graphPreviewItem(
-    engine: CraftingEngine,
-    graph: CraftingGraph,
-    nodeId: string,
-): CraftingItem | null {
+function graphPreviewSource(graph: CraftingGraph, nodeId: string): CraftingItem | null {
     const seen = new Set<string>();
     const findBase = (id: string): CraftingItem | null => {
         if (seen.has(id)) return null;
@@ -144,8 +140,27 @@ export function graphPreviewItem(
         }
         return null;
     };
+    return findBase(nodeId);
+}
+
+export function graphPreviewBaseId(graph: CraftingGraph, nodeId: string, query?: ItemQuery) {
+    const node = graph.nodes.find((node) => node.id === nodeId);
+    if (!query && node?.kind === "acquire") return graphPreviewSource(graph, nodeId)?.baseId;
+    const output = query ?? node?.output;
+    const base = output?.groups
+        .filter((group) => group.type === "and")
+        .flatMap((group) => group.filters)
+        .find((filter) => filter.kind === "base" && filter.field === "baseId");
+    return base?.kind === "base" ? base.values[0] : graphPreviewSource(graph, nodeId)?.baseId;
+}
+
+export function graphPreviewItem(
+    engine: CraftingEngine,
+    graph: CraftingGraph,
+    nodeId: string,
+): CraftingItem | null {
     const node = graph.nodes.find((node) => node.id === nodeId)!;
-    const source = findBase(nodeId);
+    const source = graphPreviewSource(graph, nodeId);
     if (node.kind === "acquire" || !source) return source;
     const required = node.output.groups
         .filter((group) => group.type === "and")

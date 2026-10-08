@@ -190,12 +190,10 @@ export function InventoryPanel({
             <ul className="space-y-3">
                 {visible.map((entry) => (
                     <li key={entry.id} className="space-y-2 border-t border-border pt-3">
-                        {presentations[entry.item.baseId] && (
-                            <ItemArt
-                                src={presentations[entry.item.baseId]!.art}
-                                name={engine.base(entry.item).name}
-                            />
-                        )}
+                        <ItemArt
+                            src={presentations[entry.item.baseId]?.art ?? ""}
+                            name={engine.base(entry.item).name}
+                        />
                         <p className="break-words text-sm font-medium">{entry.name}</p>
                         <p className="text-xs text-muted-foreground">
                             {engine.base(entry.item).name} · {entry.item.rarity} ·{" "}

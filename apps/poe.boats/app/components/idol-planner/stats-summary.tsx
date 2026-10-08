@@ -1,9 +1,10 @@
 import { useMemo } from "react";
+import { ItemArt } from "~/components/item-art";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useScarabPrices } from "~/context/scarab-prices-context";
 import { getMapCraftingOptionById } from "~/data/map-crafting-options";
-import { getScarabById, getScarabEffect } from "~/data/scarab-data";
+import { getScarabById, getScarabEffect, getScarabName } from "~/data/scarab-data";
 import { useLocale, useTranslations } from "~/i18n";
 import type { SupportedLocale } from "~/i18n/types";
 import { highlightNumbers } from "~/lib/highlight-numbers";
@@ -151,8 +152,16 @@ function ScarabsSection({ scarabs, locale }: { scarabs: Scarab[]; locale: Suppor
                     </div>
                     <div className="space-y-1">
                         {catScarabs.map((scarab) => (
-                            <div key={scarab.id} className="text-secondary-foreground text-sm">
-                                {highlightNumbers(getScarabEffect(scarab, locale))}
+                            <div
+                                key={scarab.id}
+                                className="flex items-start gap-2 text-secondary-foreground text-sm"
+                            >
+                                <ItemArt
+                                    src={scarab.image ?? ""}
+                                    name={getScarabName(scarab, locale)}
+                                    className="size-7"
+                                />
+                                <span>{highlightNumbers(getScarabEffect(scarab, locale))}</span>
                             </div>
                         ))}
                     </div>

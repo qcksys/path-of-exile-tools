@@ -1,3 +1,4 @@
+import { ItemName } from "~/components/item-art";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -27,8 +28,12 @@ export function GraspingOptions({
                         })
                     }
                 >
-                    <FormSelectItem value="modern">60 Breachlord rings</FormSelectItem>
-                    <FormSelectItem value="legacy">60 legacy Breach Rings</FormSelectItem>
+                    <FormSelectItem value="modern">
+                        <ItemName name="60 Breachlord rings" artName="Breach Ring" game="poe1" />
+                    </FormSelectItem>
+                    <FormSelectItem value="legacy">
+                        <ItemName name="60 legacy Breach Rings" artName="Breach Ring" game="poe1" />
+                    </FormSelectItem>
                 </FormSelect>
             </Label>
             {rings !== "legacy" ? (
@@ -36,7 +41,11 @@ export function GraspingOptions({
                     <div className="grid grid-cols-2 gap-2">
                         {breachlords.map((lord) => (
                             <Label key={lord} className="block space-y-1 text-xs">
-                                {lord} rings
+                                <ItemName
+                                    name={`${lord} rings`}
+                                    artName="Breach Ring"
+                                    game="poe1"
+                                />
                                 <Input
                                     className={controlClass}
                                     type="number"

@@ -14,6 +14,8 @@ Add nine editable common-craft presets: life and energy shield on block shields,
 
 Add full-width and fullscreen craft graphs, item artwork and detailed selectors grouped by item type and ordered by base level and requirements. Start new workbenches, projects and additional inputs with an explicit base choice, preserve existing drafts, and style item cards with Path of Exile rarity headers and modifier colors.
 
+Extend item thumbnails across crafting methods, prices, spending, recipes, market listings, graphs, recombinator results and scarab summaries. Preserve accessible item labels, show placeholders for unavailable artwork, and load PoE 2 artwork from the PoE2DB mirror using extracted item identities.
+
 Keep idol inventory and editor actions usable on mobile, offer keyboard and tap controls for idol placement, and expose language selection on small screens. Confirm project and build deletion, show retryable sign-in errors, label icon controls, and provide mobile workbench section navigation.
 
 Remove the React Flow attribution badge from crafting project graphs, including fullscreen view.

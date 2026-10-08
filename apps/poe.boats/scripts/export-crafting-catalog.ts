@@ -64,7 +64,7 @@ export async function exportCraftingCatalog(directory: string, output: string) {
                     {
                         name: base.name,
                         itemClass: base.item_class,
-                        art: itemArtUrl(base.visual_identity.dds_file),
+                        art: itemArtUrl(base.visual_identity.dds_file, manifest.game),
                         dropLevel: base.drop_level,
                         requirements: base.requirements,
                         implicits: base.implicits.flatMap((mod) =>

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
     compareItemPresentations,
+    findItemPresentation,
     type ItemPresentation,
     itemArtUrl,
     itemSubtitle,
+    marketItemArtUrl,
 } from "../app/lib/item-presentation";
 
 const base: ItemPresentation = {
@@ -16,6 +18,37 @@ const base: ItemPresentation = {
 };
 
 describe("item presentation", () => {
+    it("resolves canonical and prefixed IDs before exact case-insensitive names", () => {
+        const items = {
+            plate: base,
+            duplicate: { ...base, art: "plate.png" },
+            orb: { ...base, name: "Chaos Orb", art: "chaos.png" },
+        };
+        expect(findItemPresentation(items, "poe1:orb", "Plate Vest")).toBe(items.orb);
+        expect(findItemPresentation(items, undefined, "plate vest")).toBe(items.duplicate);
+        expect(findItemPresentation(items, undefined, "Chaos")).toBeUndefined();
+        expect(findItemPresentation(items, "unknown")).toBeUndefined();
+        expect(findItemPresentation({ orb: { ...base, art: "poe2.png" } }, "orb")?.art).toBe(
+            "poe2.png",
+        );
+    });
+    it("reconstructs captured market assets without accepting arbitrary URLs or traversal", () => {
+        const expected = "https://www.pathofexile.com/image/Art/2DItems/Rings/Test%20Ring.png";
+        for (const path of [
+            "2DItems/Rings/Test Ring",
+            "Art/2DItems/Rings/Test Ring.dds",
+            "2DItems/Rings/Test Ring.png",
+        ])
+            expect(marketItemArtUrl(path)).toBe(expected);
+        for (const path of [
+            null,
+            "",
+            "https://example.com/icon.png",
+            "2DItems/../secret",
+            "2DItems/Test?x=1",
+        ])
+            expect(marketItemArtUrl(path)).toBe("");
+    });
     it("orders by type, base level and requirements before the name", () => {
         const items = [
             { ...base, name: "Alphabetical first", dropLevel: 10 },
@@ -44,5 +77,11 @@ describe("item presentation", () => {
         );
         expect(itemArtUrl("Art/2DItems/Test Item.dds")).toContain("Test%20Item.png");
         expect(itemArtUrl("Metadata/Items/Test.dds")).toBe("");
+        expect(itemArtUrl("Art/2DItems/Armours/BodyArmours/Basetypes/BodyStr01.dds", "poe2")).toBe(
+            "https://cdn.poe2db.tw/image/Art/2DItems/Armours/BodyArmours/Basetypes/BodyStr01.webp",
+        );
+        expect(marketItemArtUrl("2DItems/Armours/BodyArmours/Basetypes/BodyStr01", "poe2")).toBe(
+            itemArtUrl("Art/2DItems/Armours/BodyArmours/Basetypes/BodyStr01.dds", "poe2"),
+        );
     });
 });

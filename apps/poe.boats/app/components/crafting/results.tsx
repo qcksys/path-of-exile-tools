@@ -219,7 +219,13 @@ export function CraftingResults({
                     <dl className="space-y-2 text-sm" aria-label="Unfinished trial spending">
                         {Object.entries(result.unfinished.spending).map(([id, amount]) => (
                             <div key={id} className="flex justify-between gap-3">
-                                <dt>{engine.costName(id)}</dt>
+                                <dt>
+                                    <ItemName
+                                        id={id}
+                                        name={engine.costName(id)}
+                                        game={engine.catalog.game}
+                                    />
+                                </dt>
                                 <dd className="font-mono">{number(amount)}</dd>
                             </div>
                         ))}
@@ -253,7 +259,13 @@ export function CraftingResults({
                 <dl className="mt-3 space-y-2 text-sm">
                     {Object.entries(result.spending).map(([id, amount]) => (
                         <div key={id} className="flex justify-between gap-3">
-                            <dt>{engine.costName(id)}</dt>
+                            <dt>
+                                <ItemName
+                                    id={id}
+                                    name={engine.costName(id)}
+                                    game={engine.catalog.game}
+                                />
+                            </dt>
                             <dd className="font-mono">{number(amount)}</dd>
                         </div>
                     ))}
@@ -368,7 +380,13 @@ export function CraftingResults({
                                                     key={id}
                                                     className="flex justify-between gap-3"
                                                 >
-                                                    <dt>{engine.costName(id)}</dt>
+                                                    <dt>
+                                                        <ItemName
+                                                            id={id}
+                                                            name={engine.costName(id)}
+                                                            game={engine.catalog.game}
+                                                        />
+                                                    </dt>
                                                     <dd className="font-mono">{number(amount)}</dd>
                                                 </div>
                                             ),
@@ -377,9 +395,16 @@ export function CraftingResults({
                                     {sample.cost.unpriced.length ? (
                                         <p className="text-muted-foreground">
                                             Missing prices:{" "}
-                                            {sample.cost.unpriced
-                                                .map((id) => engine.costName(id))
-                                                .join(", ")}
+                                            {sample.cost.unpriced.map((id, index) => (
+                                                <span key={id}>
+                                                    {index > 0 ? ", " : ""}
+                                                    <ItemName
+                                                        id={id}
+                                                        name={engine.costName(id)}
+                                                        game={engine.catalog.game}
+                                                    />
+                                                </span>
+                                            ))}
                                             . Quantities are retained; the total is unknown.
                                         </p>
                                     ) : null}
@@ -413,3 +438,5 @@ export function CraftingResults({
         </section>
     );
 }
+
+import { ItemName } from "~/components/item-art";

@@ -12,6 +12,7 @@ import {
 } from "@xyflow/react";
 import { Box, GitMerge, Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { CatalogItemArt } from "~/components/item-art";
 import { ModifierIcons, ModifierLegend } from "~/components/recombinator/modifier-icons";
 import { Button } from "~/components/ui/button";
 import {
@@ -38,6 +39,7 @@ import "./crafting-tree.css";
 type CraftNode = Node<
     {
         name: string;
+        baseId?: string;
         kind: "item" | "step";
         index: number;
         affixes: TreeAffix[];
@@ -98,8 +100,12 @@ function CraftingNode({ data }: NodeProps<CraftNode>) {
                     )}
                     {data.kind === "item" ? "Item" : "Step"} {data.index + 1}
                 </span>
-                <span className="mb-1 block truncate text-sm font-semibold" title={data.name}>
-                    {data.name || "Unnamed"}
+                <span
+                    className="mb-1 flex items-center gap-2 text-sm font-semibold"
+                    title={data.name}
+                >
+                    {data.baseId && <CatalogItemArt id={data.baseId} game="poe1" />}
+                    <span className="truncate">{data.name || "Unnamed"}</span>
                 </span>
                 {data.kind === "item" ? (
                     <span className="block text-[11px] leading-5">
@@ -194,6 +200,7 @@ export function CraftingTree({
             style: { width: node.width, height: node.height },
             data: {
                 ...node,
+                baseId: draft.items.find((item) => item.id === node.id)?.catalog?.base.id,
                 active: node.kind === "step" && selectedStep === node.id,
                 outcomes: outcomes?.length,
                 hasTarget: required.length > 0 || exact || requiredBase !== "any",

@@ -1,5 +1,5 @@
 import { useContext, useMemo } from "react";
-import { ItemArt } from "~/components/item-art";
+import { CatalogItemArt, ItemArt, ItemName } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { useItemPresentations } from "~/hooks/use-item-presentations";
@@ -258,13 +258,11 @@ export function ItemCard({
                     {item.blight ? `${blightedMapName(engine.catalog, item)} ` : ""}
                     {base.name}
                 </h2>
-                {presentation && (
-                    <ItemArt
-                        src={presentation.art}
-                        name={base.name}
-                        className="mx-auto mt-3 h-20 w-20 bg-transparent"
-                    />
-                )}
+                <ItemArt
+                    src={presentation?.art ?? ""}
+                    name={base.name}
+                    className="mx-auto mt-3 h-20 w-20 bg-transparent"
+                />
                 {chest ? (
                     <details className="mt-2 text-xs text-muted-foreground">
                         <summary>Encounter properties</summary>
@@ -373,7 +371,12 @@ export function ItemCard({
                 ) : null}
                 {item.jewelSocket ? (
                     <p className="mt-2 text-sm text-primary">
-                        Jewel sockets: 1 · {augment(engine.catalog, item.jewelSocket).name}
+                        Jewel sockets: 1 ·{" "}
+                        <ItemName
+                            id={item.jewelSocket}
+                            name={augment(engine.catalog, item.jewelSocket).name}
+                            game={engine.catalog.game}
+                        />
                     </p>
                 ) : null}
                 {item.quality ? (
@@ -448,7 +451,12 @@ export function ItemCard({
                         className="space-y-1 border-b border-border/50 py-3 text-sm"
                     >
                         <p className="text-xs text-muted-foreground">
-                            Socket {index + 1} · {augment(engine.catalog, id).name}
+                            Socket {index + 1} ·{" "}
+                            <ItemName
+                                id={id}
+                                name={augment(engine.catalog, id).name}
+                                game={engine.catalog.game}
+                            />
                             {augment(engine.catalog, id).socketBound ? " · socket-bound" : ""}
                         </p>
                         <p className="whitespace-pre-line text-sky-700 dark:text-sky-300">
@@ -463,6 +471,15 @@ export function ItemCard({
                     const recipe = anointment(engine.catalog, id);
                     return (
                         <li key={id} className="space-y-2 border-b border-border/50 py-3 text-sm">
+                            <span className="flex flex-wrap gap-1">
+                                {recipe.items.map((itemId, index) => (
+                                    <CatalogItemArt
+                                        key={`${itemId}-${index}`}
+                                        id={itemId}
+                                        game={engine.catalog.game}
+                                    />
+                                ))}
+                            </span>
                             <p className="whitespace-pre-line text-sky-700 dark:text-sky-300">
                                 {anointmentText(engine.catalog, id)}
                                 {item.blight
@@ -542,7 +559,12 @@ export function ItemCard({
             ) : null}
             {item.implicitCraft ? (
                 <p className="border-t px-4 py-2 text-xs text-muted-foreground">
-                    {engine.costName(item.implicitCraft.currency)} · implicit replacement
+                    <ItemName
+                        id={item.implicitCraft.currency}
+                        name={engine.costName(item.implicitCraft.currency)}
+                        game={engine.catalog.game}
+                    />{" "}
+                    · implicit replacement
                     {!item.implicits.length ? " · no implicit remains" : ""}
                 </p>
             ) : null}
