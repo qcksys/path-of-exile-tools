@@ -6,6 +6,13 @@ The app uses React Router framework routes (the Remix successor) on Cloudflare W
 
 ## Coverage
 
+CI runs app tests in four shards and workspace package tests in a separate required job.
+The workbench UI suites are grouped by behavior so individual files can run on different
+workers; shared fixture catalogs are parsed once per test file. Browser cases use isolated
+page state and run across two shards with one worker each. CI starts the prebuilt server,
+retains per-shard timings and failure traces, and combines the browser reports. Updated
+pull requests cancel obsolete validation runs; branch deployments remain serialized.
+
 Item artwork and picker descriptions are presentation metadata. The verified crafting catalog exporter
 also generates `items-poe1.json` and `items-poe2.json` from the extracted base and modifier datasets.
 These browser catalogs share one request per game and provide official GGG artwork URLs, base levels,
