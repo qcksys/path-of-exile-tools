@@ -36,6 +36,8 @@ test("graph shows outcome detail, retry paths, pinnable items and measured layou
     await page.screenshot({ path: testInfo.outputPath("pinned-item.png"), fullPage: true });
     await page.getByRole("button", { name: "Close item card", exact: true }).click();
     await expect(card).toHaveCount(0);
+    await expect(preview).toBeFocused();
+    await preview.press("Tab");
     await preview.focus();
     await expect(card).toBeVisible();
     await page.keyboard.press("Escape");
