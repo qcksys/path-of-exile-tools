@@ -122,6 +122,10 @@ export class CraftingGraphTrial {
     }
 
     private recordMatch(item: CraftingItem, node: GraphNode) {
+        if (this.options.trace) {
+            this.state.nodeItems ??= {};
+            this.state.nodeItems[node.id] = item;
+        }
         const record = this.queries.record(item);
         if (node.kind === "craft")
             for (const branch of node.branches) {
@@ -292,6 +296,10 @@ export class CraftingGraphTrial {
                     alternative.kind === "production"
                         ? yield* this.produce(alternative.nodeId)
                         : this.token(structuredClone(alternative.item));
+                if (this.options.trace) {
+                    this.state.nodeItems ??= {};
+                    this.state.nodeItems[node.id] = token.item;
+                }
                 if (alternative.kind === "purchase") {
                     this.state.purchases++;
                     const id = `purchase:${node.id}:${alternative.id}`;

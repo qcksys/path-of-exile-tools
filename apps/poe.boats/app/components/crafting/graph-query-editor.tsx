@@ -208,6 +208,8 @@ export function GraphQueryEditor({
                             "suffixes",
                             "openPrefixes",
                             "openSuffixes",
+                            "memoryStrands",
+                            "memoryStrandsSpent",
                         ].map((field) => (
                             <FormSelectItem key={field} value={field}>
                                 {(
@@ -215,6 +217,8 @@ export function GraphQueryEditor({
                                         ilvl: "Item level",
                                         openPrefixes: "Empty prefixes",
                                         openSuffixes: "Empty suffixes",
+                                        memoryStrands: "Memory strands remaining",
+                                        memoryStrandsSpent: "Strands spent since imprint",
                                     } as Record<string, string>
                                 )[field] ?? field}
                             </FormSelectItem>

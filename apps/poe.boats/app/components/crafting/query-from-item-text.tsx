@@ -43,6 +43,8 @@ function conditionLabel(condition: ItemCondition, record: ItemRecord) {
             suffixes: "Suffixes",
             openPrefixes: "Empty prefixes",
             openSuffixes: "Empty suffixes",
+            memoryStrands: "Memory strands remaining",
+            memoryStrandsSpent: "Strands spent since imprint",
         };
         return `${labels[condition.field]}: at least ${condition.value.min}`;
     }

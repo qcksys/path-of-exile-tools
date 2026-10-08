@@ -2,10 +2,10 @@
     {
         "game": "poe1",
         "era": "3.29",
-        "revision": "r5",
+        "revision": "r6",
         "patchPrefix": "3.29",
         "label": "PoE 1 3.29",
-        "notes": "Adds conditional graph steps: query the first input before spending currency or acquiring another input, and route a non-matching item unchanged. Unknown matches stop the estimate. Existing game crafting probabilities are unchanged.",
+        "notes": "Adds memory-strand graph conditions, preserves essence-exclusive modifiers during Unravelling, and supports purchased Janus helmet rarity in recombination. Existing saved revisions remain unchanged.",
         "availability": {
             "kinds": [
                 "generate",
@@ -27,10 +27,10 @@
     {
         "game": "poe2",
         "era": "client-4.5",
-        "revision": "r5",
+        "revision": "r6",
         "patchPrefix": "4.5",
         "label": "PoE 2 (client 4.5)",
-        "notes": "Adds conditional graph steps: query the first input before spending currency or acquiring another input, and route a non-matching item unchanged. Unknown matches stop the estimate. PoE 2 crafting probabilities are unchanged; equipment prices remain manual.",
+        "notes": "Shared item-query schema adds memory-strand conditions for PoE 1 recipe compatibility. PoE 2 crafting probabilities are unchanged; equipment prices remain manual.",
         "availability": {
             "kinds": [
                 "genesis",

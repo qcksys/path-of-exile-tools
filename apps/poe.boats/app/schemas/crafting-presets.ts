@@ -11,6 +11,7 @@ export const craftingPresetIdSchema = z.enum([
     "global-defence-chest",
     "rarity-helmet",
     "energy-shield-chest",
+    "strength-helical-ring",
 ]);
 export const craftingPresetSchema = z.object({
     id: craftingPresetIdSchema,
