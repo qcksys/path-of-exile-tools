@@ -14,6 +14,7 @@
         "game-data:publish-history": "tsx scripts/publish-crafting-history.ts",
         "game-data:market": "tsx scripts/generate-market-cohorts.ts",
         "test": "vp test run",
+        "test:prepare": "vp run game-data:recombinator && vp run game-data:crafting && vp run game-data:history",
         "test:e2e": "vp test run --config vitest.e2e.config.ts",
         "test:e2e:browser": "playwright test",
         "test:watch": "vp test",

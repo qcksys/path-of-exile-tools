@@ -8,6 +8,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 export default defineConfig({
     testDir: "./test/e2e/browser",
     forbidOnly: !!process.env.CI,
+    fullyParallel: true,
     workers: 1,
     use: {
         baseURL,
@@ -16,7 +17,10 @@ export default defineConfig({
     },
     projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
     webServer: {
-        command: "vp run build && vp exec tsx test/e2e/server.ts",
+        command:
+            process.env.PLAYWRIGHT_SKIP_BUILD === "1"
+                ? "vp exec tsx test/e2e/server.ts"
+                : "vp run build && vp exec tsx test/e2e/server.ts",
         url: `${baseURL}/1/recombinator`,
         timeout: 120_000,
         env: {
