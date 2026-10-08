@@ -1,6 +1,6 @@
 import { itemQuerySchema } from "@poe-tools/item-query";
 import { decodeCohortPriceReference, decodeExchangePriceReference } from "@poe-tools/market";
-import { useId, useMemo } from "react";
+import { useEffect, useId, useMemo, useRef } from "react";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -174,6 +174,7 @@ export function GraphNodeEditor({
     onChange,
     result,
     onError,
+    initialSection = "step",
 }: {
     graph: CraftingGraph;
     node: GraphNode;
@@ -182,7 +183,21 @@ export function GraphNodeEditor({
     onChange: (graph: CraftingGraph) => void;
     result?: CraftingGraphResult;
     onError: (error: unknown) => void;
+    initialSection?: "step" | "outcomes";
 }) {
+    const editorRef = useRef<HTMLElement>(null);
+    useEffect(() => {
+        const editor = editorRef.current;
+        if (!editor) return;
+        const target =
+            initialSection === "outcomes"
+                ? editor.querySelector<HTMLElement>(
+                      node.kind === "craft" ? "[data-route-editor]" : "[data-output-editor]",
+                  )
+                : editor;
+        if (target instanceof HTMLDetailsElement) target.open = true;
+        target?.scrollIntoView?.({ block: "nearest" });
+    }, [initialSection, node.kind]);
     const uid = useId();
     const bases = useMemo(
         () =>
@@ -247,6 +262,7 @@ export function GraphNodeEditor({
     };
     return (
         <section
+            ref={editorRef}
             aria-label="Selected step editor"
             className="space-y-5 rounded-lg border border-border bg-card p-4"
         >
@@ -806,7 +822,7 @@ export function GraphNodeEditor({
                             </div>
                         </details>
                     ))}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between" data-route-editor>
                         <h3 className="text-sm font-semibold">Result routes</h3>
                         <Button
                             size="sm"
@@ -949,7 +965,7 @@ export function GraphNodeEditor({
                     </div>
                 </>
             )}
-            <details className="border-t border-border pt-3">
+            <details className="border-t border-border pt-3" data-output-editor>
                 <summary className="cursor-pointer text-sm">Output requirements</summary>
                 <div className="mt-3">
                     <GraphQueryEditor
