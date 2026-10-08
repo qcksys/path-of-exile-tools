@@ -1,13 +1,14 @@
 import { Handle, type Node, type NodeProps, Position, useUpdateNodeInternals } from "@xyflow/react";
 import { GitBranchIcon, PencilIcon, XIcon } from "lucide-react";
 import { type ComponentProps, type ReactNode, useEffect, useMemo } from "react";
-import { CatalogItemArt } from "~/components/item-art";
+import { CatalogItemArt, ItemName } from "~/components/item-art";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import {
     graphBranchChance,
     graphDestinationText,
+    graphPreviewBaseId,
     graphPreviewItem,
     graphQueryText,
 } from "~/lib/crafting-graph-presentation";
@@ -18,6 +19,7 @@ import type { CraftingGraph, GraphNode, GraphOutcome } from "~/schemas/crafting-
 import type { CraftingGraphResult } from "~/schemas/crafting-graph-result";
 import { GraphHelp } from "./graph-help";
 import { ItemCardPopover } from "./item-card-popover";
+import { MethodArt } from "./method-art";
 
 function GraphHandle({ help, ...props }: ComponentProps<typeof Handle> & { help: string }) {
     return (
@@ -131,6 +133,11 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                             : "Target illustration; calculate for actual final items."
                     }
                 >
+                    <CatalogItemArt
+                        id={sample?.baseId ?? graphPreviewBaseId(graph, graph.entry, outcome.query)}
+                        game={graph.game}
+                        className="size-9"
+                    />
                     <span className="my-2 font-semibold">{outcome.name}</span>
                 </ItemCardPopover>
                 <p className="font-mono text-xs">
@@ -160,11 +167,7 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
     const sample = result?.samples.find((sample) => sample.nodeItems?.[step.id])?.nodeItems?.[
         step.id
     ];
-    const baseId =
-        sample?.baseId ??
-        (step.kind === "acquire"
-            ? step.alternatives.find((option) => option.kind === "purchase")?.item.baseId
-            : undefined);
+    const baseId = sample?.baseId ?? graphPreviewBaseId(graph, id);
     const estimate = result?.estimates.find((entry) => entry.nodeId === id);
     const branches =
         step.kind === "craft"
@@ -333,11 +336,21 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
             <div hidden={data.editing} className="space-y-2 border-t px-3 py-2 text-xs">
                 {step.kind === "craft" ? (
                     <>
-                        <p className="font-medium text-chart-2">{engine.methodName(step.method)}</p>
+                        <p className="flex items-center gap-2 font-medium text-chart-2">
+                            <MethodArt method={step.method} game={graph.game} />
+                            {engine.methodName(step.method)}
+                        </p>
                         {step.inputs.map((input) => (
                             <div key={input.id}>
                                 <b>{input.name}</b>:{" "}
-                                {graph.nodes.find((node) => node.id === input.source)?.name}
+                                <ItemName
+                                    id={graphPreviewBaseId(graph, input.source)}
+                                    name={
+                                        graph.nodes.find((node) => node.id === input.source)
+                                            ?.name ?? input.source
+                                    }
+                                    game={graph.game}
+                                />
                                 {input.query && (
                                     <QueryLines lines={graphQueryText(engine, input.query)} />
                                 )}
@@ -368,7 +381,16 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                         </p>
                         {step.alternatives.map((option) => (
                             <p key={option.id}>
-                                {option.name}:{" "}
+                                <ItemName
+                                    id={
+                                        option.kind === "purchase"
+                                            ? option.item.baseId
+                                            : graphPreviewBaseId(graph, option.nodeId)
+                                    }
+                                    name={option.name}
+                                    game={graph.game}
+                                />
+                                :{" "}
                                 {option.kind === "production"
                                     ? "Produced upstream"
                                     : option.price

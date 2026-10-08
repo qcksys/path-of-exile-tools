@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { CatalogItemArt } from "~/components/item-art";
+import { CatalogItemArt, ItemName } from "~/components/item-art";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -414,6 +414,7 @@ export function MethodPicker({
             ? [
                   {
                       id: String(index),
+                      itemId: entry.id,
                       label: `Socket ${index + 1} · ${entry.name} → ${augment(engine.catalog, entry.higherTier).name}`,
                   },
               ]
@@ -660,6 +661,7 @@ export function MethodPicker({
                             ...(item.augments ?? [])
                                 .map((entry, index) => ({
                                     id: String(index),
+                                    itemId: entry,
                                     label: `Replace socket ${index + 1} · ${augment(engine.catalog, entry).name}`,
                                 }))
                                 .filter(
@@ -700,6 +702,7 @@ export function MethodPicker({
             ) : null}
             <CatalogPicker
                 id={`${id}-method`}
+                game={engine.catalog.game}
                 label="Crafting method"
                 options={options}
                 value={
@@ -1180,9 +1183,16 @@ export function MethodPicker({
                                   (id) => anointment(engine.catalog, id).items,
                               )
                             : anoint.items
-                        )
-                            .map((id) => engine.costName(id))
-                            .join(" → ")}
+                        ).map((id, index) => (
+                            <span key={`${id}-${index}`}>
+                                {index > 0 ? " → " : ""}
+                                <ItemName
+                                    id={id}
+                                    name={engine.costName(id)}
+                                    game={engine.catalog.game}
+                                />
+                            </span>
+                        ))}
                     </p>
                     {value.kind === "anoint" && anoint.type === "InfectedMap" ? (
                         <fieldset className="space-y-2" aria-label="Map oil selection">
@@ -1219,9 +1229,13 @@ export function MethodPicker({
                                 >
                                     <span>
                                         Oil {index + 1}:{" "}
-                                        {engine.costName(
-                                            anointment(engine.catalog, recipe).items[0]!,
-                                        )}
+                                        <ItemName
+                                            id={anointment(engine.catalog, recipe).items[0]!}
+                                            name={engine.costName(
+                                                anointment(engine.catalog, recipe).items[0]!,
+                                            )}
+                                            game={engine.catalog.game}
+                                        />
                                     </span>
                                     <Button
                                         size="xs"
@@ -1266,7 +1280,16 @@ export function MethodPicker({
                     {value.kind === "anoint" && value.oils?.length ? (
                         <p>
                             Additional oil:{" "}
-                            {value.oils.map((id) => engine.costName(id)).join(" + ")}
+                            {value.oils.map((id, index) => (
+                                <span key={`${id}-${index}`}>
+                                    {index > 0 ? " + " : ""}
+                                    <ItemName
+                                        id={id}
+                                        name={engine.costName(id)}
+                                        game={engine.catalog.game}
+                                    />
+                                </span>
+                            ))}
                         </p>
                     ) : null}
                 </section>

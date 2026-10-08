@@ -8,6 +8,7 @@ import {
     craftingGraphSchema,
     type GraphCraftNode,
 } from "~/schemas/crafting-graph";
+import { MethodArt } from "./method-art";
 import { MethodPicker } from "./method-picker";
 
 export function GraphMethodEditor({
@@ -128,6 +129,7 @@ export function GraphMethodEditor({
                     </p>
                     <CatalogPicker
                         id="method-reference-item"
+                        game={graph.game}
                         label="Reference item for method options"
                         options={references.map((entry) => ({
                             id: entry.id,
@@ -147,7 +149,8 @@ export function GraphMethodEditor({
                     {!references.length && (
                         <p>Add a purchased item to configure available method options.</p>
                     )}
-                    <p className="text-sm">
+                    <p className="flex items-center gap-2 text-sm">
+                        <MethodArt method={draft?.method ?? node.method} game={graph.game} />
                         Selected method: {engine.methodName(draft?.method ?? node.method)}
                     </p>
                     {draft && reference && (

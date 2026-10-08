@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { ItemName } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "~/components/ui/field";
@@ -46,8 +47,13 @@ export function AllflameOptions({
                 <FieldDescription role="note" aria-label="Allflame crafting model">
                     {quote ? (
                         <>
-                            {quote.amount.toLocaleString()} {engine.costName(quote.sulphur)} per
-                            craft. Offers {quote.bracket.outcomes.max}{" "}
+                            {quote.amount.toLocaleString()}{" "}
+                            <ItemName
+                                id={quote.sulphur}
+                                name={engine.costName(quote.sulphur)}
+                                game={engine.catalog.game}
+                            />{" "}
+                            per craft. Offers {quote.bracket.outcomes.max}{" "}
                             {quote.bracket.outcomes.max === 1 ? "outcome" : "copies"}.
                             {quote.bracket.outcomes.max > 1
                                 ? ` ${item.intangibility ?? 0}% chance of only one.`

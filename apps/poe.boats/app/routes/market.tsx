@@ -1,6 +1,7 @@
 import { Form, Link, useNavigation } from "react-router";
 import { AppFooter } from "~/components/app-footer";
 import { AppHeader } from "~/components/app-header";
+import { ItemArt } from "~/components/item-art";
 import { MarketPriceChart } from "~/components/market-price-chart";
 import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
@@ -8,6 +9,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
+import { marketItemArtUrl } from "~/lib/item-presentation";
 import { marketNumber as number } from "~/lib/market-number";
 import { marketFiltersSchema, marketLink } from "~/schemas/market";
 import type { Route } from "./+types/market";
@@ -27,7 +29,7 @@ const cellClass = "px-4 py-3 text-left";
 const utc = (hour: number) =>
     `${new Date(hour * 1000).toISOString().slice(0, 16).replace("T", " ")} UTC`;
 
-export default function Market({ loaderData }: Route.ComponentProps) {
+export default function Market({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
     const { filters, seasons, season, rows, history, hasMore } = loaderData;
     const navigation = useNavigation();
     const selected = history.at(-1);
@@ -134,7 +136,16 @@ export default function Market({ loaderData }: Route.ComponentProps) {
                                 >
                                     All markets
                                 </Link>
-                                <h2 className="mt-2 text-2xl font-semibold">
+                                <h2 className="mt-2 flex items-center gap-3 text-2xl font-semibold">
+                                    <ItemArt
+                                        src={marketItemArtUrl(
+                                            selected.iconAsset,
+                                            filters.realm === "poe2" ? "poe2" : "poe1",
+                                        )}
+                                        name={selected.name || selected.baseType}
+                                        className="size-16"
+                                        decorative
+                                    />
                                     {selected.name || selected.itemKey}
                                 </h2>
                                 <p className="text-sm text-muted-foreground">
@@ -265,8 +276,18 @@ export default function Market({ loaderData }: Route.ComponentProps) {
                                             <td className={cellClass}>
                                                 <Link
                                                     to={marketLink(filters, row)}
-                                                    className="font-medium text-primary hover:underline"
+                                                    className="flex items-center gap-3 font-medium text-primary hover:underline"
                                                 >
+                                                    <ItemArt
+                                                        src={marketItemArtUrl(
+                                                            row.iconAsset,
+                                                            filters.realm === "poe2"
+                                                                ? "poe2"
+                                                                : "poe1",
+                                                        )}
+                                                        name={row.name || row.baseType}
+                                                        decorative
+                                                    />
                                                     {row.name || row.itemKey}
                                                 </Link>
                                                 <p className="mt-1 max-w-md break-words text-xs text-muted-foreground">

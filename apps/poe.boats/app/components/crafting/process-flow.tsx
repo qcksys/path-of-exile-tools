@@ -16,6 +16,7 @@ import {
 } from "@xyflow/react";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { CatalogItemArt } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import {
@@ -27,7 +28,8 @@ import {
     validProcessConnection,
 } from "~/lib/crafting-flow";
 import { type CraftingRoutes, craftingBranchCount, craftingRoute } from "~/lib/crafting-routes";
-import type { CraftingStep } from "~/schemas/crafting";
+import type { CraftingItem, CraftingMethod, CraftingStep } from "~/schemas/crafting";
+import { MethodArt } from "./method-art";
 import "@xyflow/react/dist/style.css";
 import "./process-flow.css";
 
@@ -36,6 +38,9 @@ type ProcessNode = Node<
         label: string;
         detail: string;
         kind: "start" | "step" | "terminal";
+        game?: "poe1" | "poe2";
+        baseId?: string;
+        method?: CraftingMethod;
         visits?: number;
         active?: boolean;
         select?: () => void;
@@ -76,7 +81,12 @@ function ProcessFlowNode({ id, data }: NodeProps<ProcessNode>) {
             ) : (
                 <p className="font-semibold text-sm">{data.label}</p>
             )}
-            <p className="mt-1 line-clamp-3 text-xs text-muted-foreground" title={data.detail}>
+            <p
+                className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"
+                title={data.detail}
+            >
+                {data.baseId && <CatalogItemArt id={data.baseId} game={data.game} />}
+                {data.method && data.game && <MethodArt method={data.method} game={data.game} />}
                 {data.detail}
             </p>
             {data.visits !== undefined ? (
@@ -162,6 +172,7 @@ const edgeTypes = { loop: LoopEdge };
 
 export default function ProcessFlow({
     engine,
+    item,
     steps,
     onChange,
     onSelect,
@@ -171,6 +182,7 @@ export default function ProcessFlow({
     selectedStep,
 }: {
     engine: CraftingEngine;
+    item?: CraftingItem;
     steps: CraftingStep[];
     onChange: (steps: CraftingStep[], presentationOnly?: boolean) => void;
     onSelect: (id: string) => void;
@@ -191,6 +203,8 @@ export default function ProcessFlow({
                     label: "Starting item",
                     detail: "Connect to the first step",
                     kind: "start",
+                    baseId: item?.baseId,
+                    game: engine.catalog.game,
                 },
             },
             ...steps.map(
@@ -217,6 +231,8 @@ export default function ProcessFlow({
                                 ? engine.methodName(step.method)
                                 : "Check item without spending currency"),
                         kind: "step",
+                        method: step.method ?? undefined,
+                        game: engine.catalog.game,
                         active: step.id === activeStep || step.id === selectedStep,
                         visits: routes
                             ? (craftingRoute(routes, step.id)?.visits ?? 0) / Math.max(1, attempts)
@@ -251,7 +267,7 @@ export default function ProcessFlow({
                 }),
             ),
         ],
-        [steps, engine, routes, attempts, activeStep, selectedStep, onSelect],
+        [steps, engine, item?.baseId, routes, attempts, activeStep, selectedStep, onSelect],
     );
     const [nodes, setNodes, onNodesChange] = useNodesState<ProcessNode>(layout);
     useEffect(

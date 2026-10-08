@@ -131,7 +131,11 @@ export function PreparationEditor({
                     <p className="break-words text-sm">{mod.text}</p>
                     <p className="text-xs text-muted-foreground">
                         Recipe cost:{" "}
-                        {selected.cost.map((entry) => `${entry.amount} × ${entry.name}`).join(", ")}{" "}
+                        {selected.cost.map((entry) => (
+                            <span key={entry.name} className="mr-2 inline-flex items-center gap-1">
+                                {entry.amount} × <ItemName name={entry.name} game="poe1" />
+                            </span>
+                        ))}{" "}
                         per application.
                     </p>
                     {selected.kind === "essence" ? (
@@ -150,3 +154,5 @@ export function PreparationEditor({
         </FieldGroup>
     );
 }
+
+import { ItemName } from "~/components/item-art";

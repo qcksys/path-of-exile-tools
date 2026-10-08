@@ -15,11 +15,20 @@ pull requests cancel obsolete validation runs; branch deployments remain seriali
 
 Item artwork and picker descriptions are presentation metadata. The verified crafting catalog exporter
 also generates `items-poe1.json` and `items-poe2.json` from the extracted base and modifier datasets.
-These browser catalogs share one request per game and provide official GGG artwork URLs, base levels,
+These browser catalogs share one request per game and provide GGG item artwork URLs, base levels,
 attribute requirements and implicit descriptions. Pickers group equipment by type, then base level
 and requirements; unknown drop restrictions are not inferred from tags or release-state labels.
 Crafting calculations, saved item schemas and retained engine packages remain independent of this
 presentation data. Graph width/fullscreen controls and empty initial selectors are browser UI state.
+Item thumbnails also accompany recipe inputs and outputs, market rows and history, currency prices
+and spending, crafting presets, socketed augments, recipe rings, scarab effects, process steps and recombinator results. Market
+artwork uses the captured icon asset so unique variants keep their own art. Name-only recipe entries
+resolve against the same per-game catalog; generic manual recipes label their artwork as illustrative.
+Missing or failed images retain a thumbnail placeholder and the item label. Adjacent thumbnails are
+decorative for assistive technology; item previews retain descriptive alternative text.
+PoE 1 uses GGG's official image endpoint. PoE 2 uses the [PoE2DB artwork mirror](https://poe2db.tw/us/Rusted_Cuirass),
+because the equivalent paths on the PoE 1 endpoint return 404. Both derive paths from the extracted
+visual identity; artwork availability never changes item identity or crafting rules.
 
 Crafting schemas publish named OpenAPI components for repeated item, modifier and method shapes.
 The workbench project uses the same converter as other operations; embedding native JSON Schema

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { RecipeItems } from "~/components/arbitrage/recipe-items";
+import { CatalogItemArt } from "~/components/item-art";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Field, FieldLabel } from "~/components/ui/field";
@@ -15,6 +17,20 @@ import { calculateRecipeScenario } from "~/lib/arbitrage";
 import { RecipeScenarioSchema } from "~/schemas/arbitrage";
 
 const numberFormat = new Intl.NumberFormat("en", { maximumSignificantDigits: 4 });
+const recipeArtwork: Record<string, string> = {
+    "1:manual:magic": "Plate Vest",
+    "1:manual:rare": "Plate Vest",
+    "1:manual:corrupted": "Plate Vest",
+    "1:manual:life-flasks": "Small Life Flask",
+    "1:manual:mana-flasks": "Small Mana Flask",
+    "1:manual:hybrid-flasks": "Small Hybrid Flask",
+    "1:manual:maps": "Dunes Map",
+    "1:manual:scarabs": "Cartography Scarab of Escalation",
+    "1:manual:catalysts": "Fertile Catalyst",
+    "1:manual:ultimatums": "Inscribed Ultimatum",
+    "1:manual:tattoos": "Tattoo of the Ngamahu Firewalker",
+    "1:manual:runegrafts": "Runegraft of the River",
+};
 
 export function ManualRecipeCalculator() {
     const [recipeId, setRecipeId] = useState(MANUAL_VENDOR_RECIPES[0].id);
@@ -58,11 +74,19 @@ export function ManualRecipeCalculator() {
                         }}
                     >
                         <SelectTrigger id="manual-recipe" className="w-full">
+                            <CatalogItemArt
+                                name={recipeArtwork[recipe.id] ?? recipe.input.name}
+                                game="poe1"
+                            />
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                             {MANUAL_VENDOR_RECIPES.map((item) => (
                                 <SelectItem key={item.id} value={item.id}>
+                                    <CatalogItemArt
+                                        name={recipeArtwork[item.id] ?? item.input.name}
+                                        game="poe1"
+                                    />
                                     {item.name}
                                 </SelectItem>
                             ))}
@@ -74,10 +98,16 @@ export function ManualRecipeCalculator() {
                         {recipe.outcome === "random" ? "Random outcome" : "Check exact items"}
                     </Badge>
                     <p className="font-medium">
-                        {recipe.input.quantity} × {recipe.input.name} → {recipe.output.quantity} ×{" "}
-                        {recipe.output.name}
+                        <RecipeItems
+                            recipe={{ ...recipe, game: "1" }}
+                            artName={recipeArtwork[recipe.id]}
+                        />
                     </p>
                     <p className="text-sm text-muted-foreground">{recipe.conditions}</p>
+                    <p className="text-xs text-muted-foreground">
+                        Artwork illustrates the item type. Check your exact inputs and the vendor
+                        preview.
+                    </p>
                     <a
                         href={recipe.source}
                         target="_blank"
