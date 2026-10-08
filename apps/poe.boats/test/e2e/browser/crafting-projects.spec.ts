@@ -286,10 +286,21 @@ for (const game of ["poe1", "poe2"] as const) {
         await dialog.getByLabel("Base quality (%)", { exact: true }).fill("20");
         await dialog.getByRole("checkbox", { name: "Corrupted", exact: true }).check();
         const applied = page.waitForResponse("**/api/v1/crafting/graph/purchase-item");
-        await dialog.getByRole("button", { name: "Apply item to purchase", exact: true }).click();
+        if (game === "poe1")
+            await page.locator(".react-flow__pane").click({ position: { x: 10, y: 10 } });
+        else
+            await dialog
+                .getByRole("button", { name: "Apply item to purchase", exact: true })
+                .click();
         const response = await applied;
         expect(response.ok(), await response.text()).toBe(true);
         await expect(dialog).not.toBeVisible();
+        if (game === "poe1") {
+            await expect(page.getByRole("region", { name: "Selected step editor" })).toHaveCount(0);
+            await page
+                .getByRole("button", { name: `Edit ${graph.nodes[0]!.name}`, exact: true })
+                .click();
+        }
         await expect(page.getByLabel("Purchase price (chaos)", { exact: false })).toHaveValue("");
         const saved = (await stored(page)).projects[0]!.graph;
         expect(saved.nodes[0]).toMatchObject({
@@ -660,6 +671,36 @@ test("full method editing adds a separately consumed graph input without an inve
         ],
     });
     await expect(page.getByRole("combobox", { name: "Item source", exact: true })).toHaveCount(2);
+});
+
+test("clicking off a node commits method options and keeps invalid drafts open", async ({
+    page,
+}) => {
+    await importGraph(page, conditionalTransmuteGraph("poe1"));
+    await page.getByRole("button", { name: "Edit full method options", exact: true }).click();
+    const method = page.getByRole("region", { name: "Configure crafting method", exact: true });
+    await selectValue(
+        method.getByRole("combobox", { name: "Reference item for method options", exact: true }),
+        JSON.stringify(["buy", "base"]),
+    );
+    await choose(method, "Crafting method", "Recombine", "Recombine items");
+    await page.locator(".react-flow__pane").click({ position: { x: 10, y: 10 } });
+    await expect(method).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Selected step editor" })).toHaveCount(0);
+    expect((await stored(page)).projects[0]!.graph.nodes[1]).toMatchObject({
+        method: { kind: "recombine" },
+    });
+
+    await importGraph(page);
+    await page.getByRole("button", { name: "Edit full method options", exact: true }).click();
+    await selectValue(
+        method.getByRole("combobox", { name: "Reference item for method options", exact: true }),
+        JSON.stringify(["a", "buy"]),
+    );
+    await choose(method, "Crafting method", "Fossils", "Fossils + resonator");
+    await page.locator(".react-flow__pane").click({ position: { x: 10, y: 10 } });
+    await expect(method.getByRole("alert")).toContainText("Reconnect recovery routes");
+    await expect(method).toBeVisible();
 });
 
 test("donor-family pricing requires a saved representative assumption", async ({ page }) => {

@@ -265,3 +265,57 @@ test("terminal outcomes and required bases are edited inside their graph node", 
     await expect(outcome).toContainText("Negative outcome");
     await expect(outcome).toContainText("Spine Bow");
 });
+
+test("simple mode fits compact processes and click-away saves edits through scroll areas", async ({
+    page,
+}, testInfo) => {
+    await page.goto("/1/crafting/projects");
+    await select(page, "Crafting preset", "Physical bow");
+    await page.getByRole("button", { name: "Create from preset", exact: true }).click();
+    const graph = page.getByRole("region", { name: "Crafting project graph", exact: true });
+    await graph.getByRole("button", { name: "Simple mode", exact: true }).click();
+    await expect(graph.getByRole("button", { name: "Simple mode", exact: true })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+    );
+    await expect(graph.locator("[data-simple-node]")).toHaveCount(7);
+    await expect(graph.locator("[data-edge-label]")).toHaveCount(0);
+    await expect(graph.locator(".react-flow__edge title").first()).toContainText("→");
+    const node = graph.locator('.react-flow__node[data-id="donor-0"]');
+    await expect(node.locator("[data-stage-mods]")).toHaveCount(0);
+    await expect(node).toContainText("100.0%");
+    await node.getByRole("button", { name: "Edit Buy Merciless donor", exact: true }).click();
+    const editor = node.getByRole("region", { name: "Selected step editor" });
+    await expect(editor).toBeVisible();
+    const viewport = node.locator('[data-slot="scroll-area-viewport"]');
+    await expect(viewport).toBeVisible();
+    expect(await viewport.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
+        true,
+    );
+    await editor
+        .getByRole("textbox", { name: "Step name", exact: true })
+        .fill("Prepared physical donor");
+    await page.getByRole("heading", { name: "Crafting projects", exact: true }).click();
+    await expect(editor).toHaveCount(0);
+    await expect(
+        node.getByRole("button", { name: "Edit Prepared physical donor", exact: true }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(graph.getByRole("button", { name: "Simple mode", exact: true })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+    );
+    await expect(
+        node.getByRole("button", { name: "Edit Prepared physical donor", exact: true }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Fullscreen graph", exact: true }).click();
+    const fullscreen = page.getByRole("dialog", { name: "Crafting project graph", exact: true });
+    await expect(fullscreen.locator("[data-simple-node]")).toHaveCount(7);
+    await expect(fullscreen.getByRole("status")).not.toContainText("Generating");
+    await page.screenshot({ path: testInfo.outputPath("simple-graph.png") });
+    await fullscreen.getByRole("button", { name: "Simple mode", exact: true }).click();
+    await expect(fullscreen.locator("[data-simple-node]")).toHaveCount(0);
+    await expect(
+        fullscreen.getByRole("button", { name: "Preview Prepared physical donor", exact: true }),
+    ).toBeVisible();
+});

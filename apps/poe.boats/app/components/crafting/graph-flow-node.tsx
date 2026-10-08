@@ -1,12 +1,25 @@
 import { Handle, type Node, type NodeProps, Position, useUpdateNodeInternals } from "@xyflow/react";
-import { GitBranchIcon, PencilIcon, XIcon } from "lucide-react";
-import { type ComponentProps, type ReactNode, useEffect, useMemo } from "react";
+import {
+    EyeIcon,
+    FlagIcon,
+    GitBranchIcon,
+    GitMergeIcon,
+    HammerIcon,
+    PawPrintIcon,
+    PencilIcon,
+    ShoppingBagIcon,
+    SproutIcon,
+    XIcon,
+} from "lucide-react";
+import { type ComponentProps, type ReactNode, useCallback, useEffect, useMemo } from "react";
 import { CatalogItemArt, ItemName } from "~/components/item-art";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import {
     graphBranchChance,
+    graphContinueChance,
     graphDestinationText,
     graphPreviewBaseId,
     graphPreviewItem,
@@ -17,9 +30,17 @@ import { cleanModText, rolledModText } from "~/lib/crafting-text";
 import { cn } from "~/lib/utils";
 import type { CraftingGraph, GraphNode, GraphOutcome } from "~/schemas/crafting-graph";
 import type { CraftingGraphResult } from "~/schemas/crafting-graph-result";
+import { type GraphEditCommit, GraphEditSession } from "./graph-edit-session";
 import { GraphHelp } from "./graph-help";
 import { ItemCardPopover } from "./item-card-popover";
 import { MethodArt } from "./method-art";
+
+const processIcons: Record<string, typeof HammerIcon> = {
+    recombine: GitMergeIcon,
+    harvest: SproutIcon,
+    beast: PawPrintIcon,
+    reveal: EyeIcon,
+};
 
 function GraphHandle({ help, ...props }: ComponentProps<typeof Handle> & { help: string }) {
     return (
@@ -41,6 +62,9 @@ export type CraftingFlowNode = Node<
         editing?: boolean;
         editor?: ReactNode;
         close?: () => void;
+        simple?: boolean;
+        registerCommit?: (id: string, commit: GraphEditCommit | undefined) => void;
+        markEditorInteraction?: (event: Event) => void;
     },
     "crafting"
 >;
@@ -48,7 +72,12 @@ export type CraftingFlowNode = Node<
 export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
     const { engine, graph, step, outcome, result } = data;
     const update = useUpdateNodeInternals();
-    useEffect(() => update(id), [id, step, update, data.editing]);
+    useEffect(() => update(id), [id, step, update, data.editing, data.simple]);
+    const register = useCallback(
+        (commit: GraphEditCommit | undefined) => data.registerCommit?.(id, commit),
+        [id, data.registerCommit],
+    );
+    const compact = data.simple && !data.editing;
     const stageItem = useMemo(
         () =>
             step
@@ -59,28 +88,70 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
         [engine, graph, result, step],
     );
     const editor = data.editing && (
-        <div className="nodrag nopan nowheel max-h-[360px] scroll-pt-12 overflow-y-auto border-t">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card px-3 py-2 text-sm font-semibold">
-                Edit {step?.name ?? outcome?.name}
-                <GraphHelp content="Close these editing controls. Changes are saved to your local project as you edit.">
-                    <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        aria-label="Close node editor"
-                        onClick={data.close}
-                    >
-                        <XIcon />
-                    </Button>
-                </GraphHelp>
+        <GraphEditSession register={register}>
+            <div className="nodrag nopan nowheel border-t">
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card px-3 py-2 text-sm font-semibold">
+                    Edit {step?.name ?? outcome?.name}
+                    <GraphHelp content="Close these editing controls. Changes are saved to your local project as you edit.">
+                        <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            aria-label="Close node editor"
+                            onClick={data.close}
+                        >
+                            <XIcon />
+                        </Button>
+                    </GraphHelp>
+                </div>
+                <ScrollArea className="h-[310px] [&>[data-slot=scroll-area-viewport]]:scroll-pt-3">
+                    {data.editor}
+                </ScrollArea>
             </div>
-            {data.editor}
-        </div>
+        </GraphEditSession>
     );
     if (outcome) {
         const observed = result?.outcomes.find((entry) => entry.id === outcome.id);
         const sample = result?.samples.find((entry) => entry.outcomeId === outcome.id)?.item;
+        if (compact)
+            return (
+                <div
+                    data-simple-node
+                    className={cn(
+                        "w-24 rounded-lg border-2 bg-card p-2",
+                        outcome.success ? "border-emerald-500/60" : "border-rose-500/60",
+                    )}
+                >
+                    <GraphHandle
+                        type="target"
+                        position={Position.Left}
+                        id="outcome"
+                        isConnectable={false}
+                        help={`Outcome: ${outcome.name}`}
+                    />
+                    <GraphHelp
+                        content={`${outcome.name}\n${outcome.success ? "Successful" : "Unsuccessful"} terminal outcome. Percentage of all sampled trials. Click to edit.\n${graphQueryText(engine, outcome.query).join("\n")}`}
+                    >
+                        <Button
+                            variant="ghost"
+                            className="nodrag h-auto w-full flex-col p-1"
+                            aria-label={`Edit outcome ${outcome.name}`}
+                            onClick={() => data.select("outcomes")}
+                        >
+                            <FlagIcon className="size-7" />
+                            <span className="font-mono text-xs">
+                                {observed?.probability == null
+                                    ? "?"
+                                    : `${(observed.probability * 100).toFixed(1)}%`}
+                            </span>
+                        </Button>
+                    </GraphHelp>
+                </div>
+            );
         return (
             <div
+                onPointerDownCapture={(event) => {
+                    if (data.editing) data.markEditorInteraction?.(event.nativeEvent);
+                }}
                 className={cn(
                     "w-80 rounded-lg border-2 bg-card p-4 shadow-md",
                     data.editing && "w-[520px]",
@@ -176,16 +247,59 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                   { id: "fallback", name: "All other results", destination: step.fallback },
               ]
             : [];
+    const chance = graphContinueChance(result, step);
+    const ProcessIcon =
+        step.kind === "craft" ? (processIcons[step.method.kind] ?? HammerIcon) : ShoppingBagIcon;
     return (
         <div
+            onPointerDownCapture={(event) => {
+                if (data.editing) data.markEditorInteraction?.(event.nativeEvent);
+            }}
+            data-simple-node={compact || undefined}
             className={cn(
                 "w-80 rounded-lg border-t-4 border bg-card shadow-md",
+                compact && "w-24",
                 data.editing && "w-[520px]",
                 step.kind === "acquire" ? "border-chart-1/60" : "border-chart-2/60",
                 data.active && "ring-2 ring-primary/50",
             )}
         >
-            <div className="flex cursor-grab items-center justify-between border-b px-3 py-2 active:cursor-grabbing">
+            {compact && (
+                <GraphHelp
+                    content={`${step.name}\n${step.kind === "craft" ? engine.methodName(step.method) : "Acquire the selected input item"}\n${chance === null ? "Not sampled yet." : `${(chance * 100).toFixed(1)}% of visits continue with an item${step.kind === "acquire" ? " (deterministic acquisition)" : "; includes skipped crafts"}.`} This is the chance to advance from this step, not the final craft's probability. Click to edit.\n${branches.map((branch) => `${branch.name}: ${graphDestinationText(graph, branch.destination)}`).join("\n")}`}
+                >
+                    <Button
+                        variant="ghost"
+                        className="nodrag h-auto w-full flex-col gap-1 p-3"
+                        aria-label={`Edit ${step.name}`}
+                        onClick={() => data.select("step")}
+                    >
+                        {step.kind === "craft" ? (
+                            <span className="[&_img]:size-8">
+                                {("id" in step.method &&
+                                    step.method.id.startsWith("Metadata/Items/")) ||
+                                step.method.kind === "fossils" ? (
+                                    <MethodArt method={step.method} game={graph.game} />
+                                ) : (
+                                    <ProcessIcon className="size-8" />
+                                )}
+                            </span>
+                        ) : (
+                            <ShoppingBagIcon className="size-8" />
+                        )}
+                        <span className="font-mono text-xs">
+                            {chance === null ? "?" : `${(chance * 100).toFixed(1)}%`}
+                        </span>
+                    </Button>
+                </GraphHelp>
+            )}
+            <div
+                hidden={compact}
+                className={cn(
+                    "cursor-grab items-center justify-between border-b px-3 py-2 active:cursor-grabbing",
+                    !compact && "flex",
+                )}
+            >
                 <Badge variant={step.kind === "acquire" ? "acquisition" : "craft"}>
                     {step.kind === "acquire" ? "Acquisition" : "Craft"}
                 </Badge>
@@ -219,26 +333,28 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                     </Button>
                 </GraphHelp>
             </div>
-            <ItemCardPopover
-                engine={engine}
-                item={() => stageItem}
-                label={step.name}
-                note={
-                    sample
-                        ? "Sampled item from a trial at this step; other results can differ."
-                        : step.kind === "acquire"
-                          ? "Prepared purchase. Price is independent of the modifier rolls."
-                          : stageItem
-                            ? "Target illustration at minimum rolls. Other modifiers can vary. Sampled items appear after the initial calculation."
-                            : "Generating a sampled item for this stage. No modifier state is assumed before this step has been sampled."
-                }
-            >
-                {baseId && (
-                    <CatalogItemArt id={baseId} game={graph.game} className="size-9 shrink-0" />
-                )}
-                <span className="py-1 font-semibold">{step.name}</span>
-            </ItemCardPopover>
-            {stageItem && !data.editing && (
+            {!compact && (
+                <ItemCardPopover
+                    engine={engine}
+                    item={() => stageItem}
+                    label={step.name}
+                    note={
+                        sample
+                            ? "Sampled item from a trial at this step; other results can differ."
+                            : step.kind === "acquire"
+                              ? "Prepared purchase. Price is independent of the modifier rolls."
+                              : stageItem
+                                ? "Target illustration at minimum rolls. Other modifiers can vary. Sampled items appear after the initial calculation."
+                                : "Generating a sampled item for this stage. No modifier state is assumed before this step has been sampled."
+                    }
+                >
+                    {baseId && (
+                        <CatalogItemArt id={baseId} game={graph.game} className="size-9 shrink-0" />
+                    )}
+                    <span className="py-1 font-semibold">{step.name}</span>
+                </ItemCardPopover>
+            )}
+            {stageItem && !data.editing && !compact && (
                 <div className="border-t px-3 py-2 text-xs" data-stage-mods>
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                         {sample
@@ -294,7 +410,7 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                     type="target"
                     id={port.id}
                     position={Position.Left}
-                    style={{ top: 60 + index * 24 }}
+                    style={{ top: compact ? 24 + index * 22 : 60 + index * 24 }}
                     isConnectable={step.kind === "craft"}
                     aria-label={`${step.name} ${port.name}`}
                     help={`${port.name}: consumes an item from this connection. Drag a producing step's right connector here to change the source. Input requirements are checked before crafting.`}
@@ -306,7 +422,7 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                     type="target"
                     id={`recovery-${port.id}`}
                     position={Position.Bottom}
-                    style={{ left: 30 + index * 24 }}
+                    style={{ left: compact ? 15 + index * 18 : 30 + index * 24 }}
                     isConnectable={false}
                     help={`Recovery input: a surviving item is reused for ${port.name}, avoiding a fresh acquisition.`}
                 />
@@ -333,7 +449,7 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                 isConnectable={false}
                 help="Restart input: a failed downstream craft needs this input acquired or produced again."
             />
-            <div hidden={data.editing} className="space-y-2 border-t px-3 py-2 text-xs">
+            <div hidden={data.editing || compact} className="space-y-2 border-t px-3 py-2 text-xs">
                 {step.kind === "craft" ? (
                     <>
                         <p className="flex items-center gap-2 font-medium text-chart-2">
@@ -466,7 +582,10 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                     </div>
                 )}
             </div>
-            <div className="border-t px-3 py-2 font-mono text-xs text-muted-foreground">
+            <div
+                hidden={compact}
+                className="border-t px-3 py-2 font-mono text-xs text-muted-foreground"
+            >
                 {estimate?.expectedCost == null
                     ? estimate
                         ? "Cost unknown · missing prices"

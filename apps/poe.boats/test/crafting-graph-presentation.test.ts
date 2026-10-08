@@ -64,10 +64,16 @@ describe("crafting graph presentation", () => {
     it("resolves item thumbnails for acquisitions, crafts and final targets before simulation", () => {
         const graph = projectFromPreset(engine, ruleset, "suppression-chest");
         for (const node of graph.nodes) {
-            expect(graphPreviewBaseId(graph, node.id)).toBe(
-                graphPreviewItem(engine, graph, node.id)?.baseId,
-            );
+            const baseId = graphPreviewBaseId(graph, node.id);
+            expect(baseId).toBeDefined();
+            const item = graphPreviewItem(engine, graph, node.id);
+            if (item) expect(baseId).toBe(item.baseId);
         }
+        const roll = graph.nodes.find((node) => node.id === "suppression-alteration")!;
+        expect(graphPreviewItem(engine, graph, roll.id)).toBeNull();
+        expect(graphPreviewBaseId(graph, roll.id)).toBe(
+            graphPreviewBaseId(graph, "suppression-base"),
+        );
         expect(graphPreviewBaseId(graph, graph.entry, graph.outcomes[0]!.query)).toBeDefined();
         expect(graphPreviewBaseId(graph, "missing")).toBeUndefined();
     });
