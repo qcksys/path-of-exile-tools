@@ -1,7 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogTitle,
+} from "~/components/ui/dialog";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -40,6 +47,13 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
     const [index, setIndex] = useState<CraftingRulesetIndex>();
     const [error, setError] = useState("");
     const [creating, setCreating] = useState(false);
+    const [deleting, setDeleting] = useState<{
+        kind: "project" | "build";
+        id: string;
+        name: string;
+    }>();
+    const cancelDelete = useRef<HTMLButtonElement>(null);
+    const [deletionError, setDeletionError] = useState("");
     const [copy, setCopy] = useState<{ buildId: string; memberId: string }>();
     const [name, setName] = useState("New crafting project");
     const [baseId, setBaseId] = useState("");
@@ -481,12 +495,11 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                                     size="sm"
                                     variant="ghost"
                                     onClick={() =>
-                                        safely(() =>
-                                            edit({
-                                                action: "deleteProject",
-                                                projectId: project.graph.id,
-                                            }),
-                                        )
+                                        setDeleting({
+                                            kind: "project",
+                                            id: project.graph.id,
+                                            name: project.graph.name,
+                                        })
                                     }
                                 >
                                     Delete
@@ -547,9 +560,10 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                                         size="sm"
                                         variant="ghost"
                                         onClick={() =>
-                                            safely(() => {
-                                                edit({ action: "deleteBuild", buildId: build.id });
-                                                if (copy?.buildId === build.id) setCopy(undefined);
+                                            setDeleting({
+                                                kind: "build",
+                                                id: build.id,
+                                                name: build.name,
                                             })
                                         }
                                     >
@@ -698,6 +712,67 @@ export function CraftingProjects({ catalog }: { catalog: CraftingCatalog }) {
                     </section>
                 </div>
             </details>
+            <Dialog
+                open={Boolean(deleting)}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeleting(undefined);
+                        setDeletionError("");
+                    }
+                }}
+            >
+                <DialogContent initialFocus={cancelDelete}>
+                    <DialogTitle>
+                        Delete {deleting?.kind === "build" ? "build" : "item plan"}?
+                    </DialogTitle>
+                    <DialogDescription>
+                        Delete “{deleting?.name}”?{" "}
+                        {deleting?.kind === "build"
+                            ? "This also removes its embedded item-plan copies. Referenced item plans are kept."
+                            : "This removes the saved item plan and closes its tab."}{" "}
+                        This cannot be undone.
+                    </DialogDescription>
+                    {deletionError && (
+                        <p role="alert" className="text-sm text-destructive">
+                            {deletionError}
+                        </p>
+                    )}
+                    <DialogFooter>
+                        <Button
+                            ref={cancelDelete}
+                            variant="outline"
+                            onClick={() => {
+                                setDeleting(undefined);
+                                setDeletionError("");
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                if (!deleting) return;
+                                try {
+                                    if (deleting.kind === "project")
+                                        edit({ action: "deleteProject", projectId: deleting.id });
+                                    else {
+                                        edit({ action: "deleteBuild", buildId: deleting.id });
+                                        if (copy?.buildId === deleting.id) setCopy(undefined);
+                                    }
+                                    setDeleting(undefined);
+                                    setDeletionError("");
+                                } catch (error) {
+                                    setDeletionError(
+                                        error instanceof Error ? error.message : String(error),
+                                    );
+                                }
+                            }}
+                        >
+                            Delete {deleting?.kind === "build" ? "build" : "item plan"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

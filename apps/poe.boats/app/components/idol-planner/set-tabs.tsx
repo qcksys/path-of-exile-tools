@@ -129,6 +129,7 @@ export function SetTabs({
                                                             }
                                                             size="sm"
                                                             className="h-8 w-6 rounded-l-none px-1"
+                                                            aria-label={`${t("actions.moreOptions")}: ${set.name}`}
                                                         />
                                                     }
                                                 />
@@ -170,6 +171,7 @@ export function SetTabs({
                                 variant="outline"
                                 size="sm"
                                 onClick={onCreateSet}
+                                aria-label={t("idolSet.newSet")}
                                 className="shrink-0"
                             />
                         }
@@ -187,6 +189,7 @@ export function SetTabs({
                                 variant="outline"
                                 size="sm"
                                 onClick={handleImportClick}
+                                aria-label={t("idolSet.importShare")}
                                 className="shrink-0"
                             />
                         }

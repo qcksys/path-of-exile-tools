@@ -79,6 +79,12 @@ this behavior; crafting rules and acquisition pins remain unchanged.
 
 ## Adding a capability or Hono subrouter
 
+The idol planner's non-drag placement controls use the existing placement, movement and removal
+commands and `canPlaceInSet` validation. Project deletion confirmations, mobile workbench section
+navigation, accessible control labels and sign-in feedback are presentation changes; domain
+operations and transport contracts remain shared. Browser regressions cover keyboard placement,
+unavailable cells, persisted drafts, deletion cancellation, mobile layouts and sign-in retries.
+
 1. Implement or extract a feature function. For data owned by an account, take `OperationContext` and check its caller before reading or writing. For a local draft, take explicit state and return new state without accessing browser storage.
 2. Define input and result Zod schemas from the domain schemas. Use concrete result fields, including empty/error states. `defineOperation` checks the result at runtime; output-contract failures are internal errors, not client validation errors.
 3. Add `defineOperation({ name, family, path, method, description, ui, access, readOnly, input, output, execute })` to a feature catalog and include it in the registry. GET operations use flat query fields; calculations and commands use JSON POST bodies. A new `family` creates an `OpenAPIHono` subrouter automatically and mounts it with `api.route('/v1/<family>', subrouter)` beneath `/api`.

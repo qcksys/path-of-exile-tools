@@ -1,20 +1,32 @@
+import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { Button } from "~/components/ui/button";
 import { authClient } from "~/lib/auth.client";
 
 const Login = () => {
     const [params] = useSearchParams();
+    const [pending, setPending] = useState(false);
+    const [error, setError] = useState("");
     const requested = params.get("returnTo");
     const callbackURL =
         requested === "/1/crafting/projects" || requested === "/2/crafting/projects"
             ? requested
             : "/";
-    const handleGoogleLogin = () => {
-        authClient.signIn.social({
-            provider: "google",
-            callbackURL,
-            newUserCallbackURL: callbackURL,
-        });
+    const handleGoogleLogin = async () => {
+        setError("");
+        setPending(true);
+        try {
+            const result = await authClient.signIn.social({
+                provider: "google",
+                callbackURL,
+                newUserCallbackURL: callbackURL,
+            });
+            if (result.error) throw new Error("Sign-in failed");
+        } catch {
+            setError("Could not connect to Google sign-in. Check your connection and try again.");
+        } finally {
+            setPending(false);
+        }
     };
 
     return (
@@ -25,10 +37,17 @@ const Login = () => {
                 variant="ghost"
                 type="button"
                 onClick={handleGoogleLogin}
+                disabled={pending}
+                aria-busy={pending}
                 className="bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 font-medium px-6 py-3 rounded-lg transition-colors flex items-center gap-2"
             >
-                Continue with Google
+                {pending ? "Connecting to Google…" : "Continue with Google"}
             </Button>
+            {error && (
+                <p role="alert" className="max-w-sm text-center text-sm text-destructive">
+                    {error}
+                </p>
+            )}
         </main>
     );
 };

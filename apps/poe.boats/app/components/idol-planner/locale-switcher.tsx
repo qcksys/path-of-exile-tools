@@ -45,9 +45,12 @@ export function LocaleSwitcher() {
         <Tooltip>
             <TooltipTrigger render={<div />}>
                 <Select value={locale} onValueChange={handleChange}>
-                    <SelectTrigger className="w-[140px]">
-                        <Globe className="mr-2 h-4 w-4" />
-                        <SelectValue />
+                    <SelectTrigger
+                        aria-label={t("actions.changeLanguage")}
+                        className="w-14 justify-center px-2 sm:w-[140px]"
+                    >
+                        <Globe className="size-4 shrink-0" />
+                        <SelectValue className="hidden sm:flex" />
                     </SelectTrigger>
                     <SelectContent>
                         {SUPPORTED_LOCALES.map((loc) => (

@@ -17,7 +17,7 @@ export function LeagueSelector() {
     if (!isHydrated) {
         return (
             <Select disabled>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-label={t("actions.selectLeague")}>
                     <Trophy className="mr-2 h-4 w-4" />
                     <SelectValue placeholder={t("actions.loading")} />
                 </SelectTrigger>
@@ -34,7 +34,7 @@ export function LeagueSelector() {
                         if (value) setLeague(value);
                     }}
                 >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full" aria-label={t("actions.selectLeague")}>
                         <Trophy className="mr-2 h-4 w-4" />
                         <SelectValue />
                     </SelectTrigger>

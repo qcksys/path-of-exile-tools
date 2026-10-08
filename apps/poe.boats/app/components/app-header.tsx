@@ -34,7 +34,7 @@ export function AppHeader({ section, sectionBadge, tools }: AppHeaderProps = {})
                     {section && (
                         <>
                             <span className="text-muted-foreground">/</span>
-                            <span className="shrink-0 font-medium">{section}</span>
+                            <span className="truncate font-medium">{section}</span>
                         </>
                     )}
                     {sectionBadge && (
@@ -52,9 +52,7 @@ export function AppHeader({ section, sectionBadge, tools }: AppHeaderProps = {})
 
                 <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                     {tools}
-                    <span className="hidden sm:inline">
-                        <LocaleSwitcher />
-                    </span>
+                    <LocaleSwitcher />
                     <ModeToggle />
                     <Tooltip>
                         <TooltipTrigger
