@@ -257,12 +257,13 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                                 key={`${rolled.id}:${index}`}
                                 content={`${text}\n${mod.generation_type} · ${mod.name} · ${modifierLevelText(engine, rolled.id)}${rolled.essence || mod.is_essence_only ? " · Essence modifier" : ""}${rolled.crafted ? " · Bench crafted" : ""}\nRaw rolls: ${rolled.values.join(", ")}. Hover the item name for its full properties, modifier details and imprint.`}
                             >
-                                <button
+                                <Button
                                     type="button"
-                                    className="nodrag block cursor-help whitespace-pre-line text-left text-[var(--item-mod)]"
+                                    variant="ghost"
+                                    className="nodrag block h-auto cursor-help p-0 text-left text-[11px] whitespace-pre-line text-[var(--item-mod)]"
                                 >
                                     {text}
-                                </button>
+                                </Button>
                             </GraphHelp>
                         );
                     })}
@@ -273,12 +274,13 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                     )}
                     {stageItem.memoryStrands !== undefined && (
                         <GraphHelp content="Remaining memory strands on this sampled item. Strand spending since the stored imprint controls whether the helical recipe restores its checkpoint.">
-                            <button
+                            <Button
                                 type="button"
-                                className="nodrag mt-1 block text-left text-muted-foreground"
+                                variant="ghost"
+                                className="nodrag mt-1 block h-auto p-0 text-left text-[11px] text-muted-foreground"
                             >
                                 Memory strands: {stageItem.memoryStrands}
-                            </button>
+                            </Button>
                         </GraphHelp>
                     )}
                 </div>
@@ -419,14 +421,15 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                                                     : `${result?.visits[id]?.branches[branch.id] ?? 0} of ${result?.visits[id]?.visits ?? 0} visits took this route. This is a sampled conditional frequency, including repeat visits and skipped crafts. Zero observed results do not prove zero probability.`
                                             }
                                         >
-                                            <button
+                                            <Button
                                                 type="button"
-                                                className="nodrag shrink-0 cursor-help font-mono"
+                                                variant="ghost"
+                                                className="nodrag h-auto shrink-0 cursor-help p-0 font-mono text-xs text-inherit"
                                             >
                                                 {chance === null
                                                     ? "Not sampled"
                                                     : `${(chance * 100).toFixed(1)}%`}
-                                            </button>
+                                            </Button>
                                         </GraphHelp>
                                     </p>
                                     <p className="text-muted-foreground">
@@ -477,9 +480,13 @@ function QueryLines({ lines }: { lines: string[] }) {
                     <GraphHelp
                         content={`${line}\nAND requires all conditions; OR requires at least one; NOT excludes matching items. Only listed properties constrain a match. Counts and ranges include their endpoints.`}
                     >
-                        <button type="button" className="nodrag cursor-help text-left">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="nodrag h-auto cursor-help p-0 text-left text-[11px] whitespace-normal"
+                        >
                             {line}
-                        </button>
+                        </Button>
                     </GraphHelp>
                 </li>
             ))}

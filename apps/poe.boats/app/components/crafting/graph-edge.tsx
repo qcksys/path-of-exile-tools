@@ -8,6 +8,7 @@ import {
 } from "@xyflow/react";
 import { GripIcon } from "lucide-react";
 import { useRef, useState } from "react";
+import { Button } from "~/components/ui/button";
 import { GraphHelp } from "./graph-help";
 
 export type GraphEdgePoint = { x: number; y: number };
@@ -50,11 +51,12 @@ export function GraphEdge(props: EdgeProps<CraftingFlowEdge>) {
                 <GraphHelp
                     content={`${data?.description ?? ""}\nDrag this label to bend the connection. Arrow keys move it; hold Shift for larger steps. Double-click or press Delete to restore automatic routing. This changes the line's shape only.`}
                 >
-                    <button
+                    <Button
                         type="button"
+                        variant="outline"
                         aria-label={`Move connection: ${String(label)}`}
                         data-edge-label={id}
-                        className="nodrag nopan absolute flex max-w-64 cursor-grab items-center gap-1 rounded border bg-card px-2 py-1 text-[11px] shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-primary active:cursor-grabbing"
+                        className="nodrag nopan absolute flex h-auto max-w-64 cursor-grab items-center gap-1 rounded border bg-card px-2 py-1 text-[11px] whitespace-normal shadow-sm transition-none outline-none focus-visible:ring-2 focus-visible:ring-primary active:translate-y-0 active:cursor-grabbing"
                         style={{
                             transform: `translate(-50%, -50%) translate(${centre.x}px,${centre.y}px)`,
                             pointerEvents: "all",
@@ -109,7 +111,7 @@ export function GraphEdge(props: EdgeProps<CraftingFlowEdge>) {
                     >
                         <GripIcon className="size-3 shrink-0 opacity-50" />
                         <span>{label}</span>
-                    </button>
+                    </Button>
                 </GraphHelp>
             </EdgeLabelRenderer>
         </>
