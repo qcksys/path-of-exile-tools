@@ -802,6 +802,13 @@ for (const game of [1, 2]) {
         await page.goto(`/${game}/crafting/projects`);
         await page.getByRole("button", { name: "New project", exact: true }).click();
         await page.getByLabel("Project name", { exact: true }).fill(`Game ${game} ring`);
+        const itemCatalog = craftingCatalogSchema.parse(
+            await (await page.request.get(`/game-data/crafting-poe${game}.json`)).json(),
+        );
+        const base = Object.values(itemCatalog.bases).find(
+            (base) => base.item_class === "Ring" && base.rarities.includes("normal"),
+        )!;
+        await choose(page, "Starting base", base.name, `${base.name} · Ring`);
         await page.getByRole("button", { name: "Create project", exact: true }).click();
         await expect(
             page.getByRole("tab", { name: `Game ${game} ring`, exact: true }),
@@ -813,9 +820,6 @@ for (const game of [1, 2]) {
         await editor.getByText("Output requirements", { exact: true }).click();
         const requirements = editor.getByRole("group", { name: "Output item", exact: true });
         await requirements.getByText("Create requirements from item text", { exact: true }).click();
-        const itemCatalog = craftingCatalogSchema.parse(
-            await (await page.request.get(`/game-data/crafting-poe${game}.json`)).json(),
-        );
         const draft = (await stored(page)).projects[0]!.graph;
         const input = draft.nodes.find((node) => node.kind === "acquire")!;
         const purchase = input.alternatives.find((entry) => entry.kind === "purchase")!;
@@ -974,6 +978,7 @@ test("trade searches show modifier fidelity warnings and agree with the HTTP ope
 
 test("workbench hands its item to a new saved project", async ({ page }) => {
     await page.goto("/1/crafting");
+    await choose(page, "Item base", "Plate Vest", "Plate Vest · Body Armour");
     await page.getByRole("button", { name: "Use item in new project", exact: true }).click();
     await expect(page).toHaveURL(/\/1\/crafting\/projects$/);
     await expect(page.getByRole("tab")).toHaveCount(1);

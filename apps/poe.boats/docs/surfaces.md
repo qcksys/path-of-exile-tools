@@ -6,6 +6,14 @@ The app uses React Router framework routes (the Remix successor) on Cloudflare W
 
 ## Coverage
 
+Item artwork and picker descriptions are presentation metadata. The verified crafting catalog exporter
+also generates `items-poe1.json` and `items-poe2.json` from the extracted base and modifier datasets.
+These browser catalogs share one request per game and provide official GGG artwork URLs, base levels,
+attribute requirements and implicit descriptions. Pickers group equipment by type, then base level
+and requirements; unknown drop restrictions are not inferred from tags or release-state labels.
+Crafting calculations, saved item schemas and retained engine packages remain independent of this
+presentation data. Graph width/fullscreen controls and empty initial selectors are browser UI state.
+
 Crafting schemas publish named OpenAPI components for repeated item, modifier and method shapes.
 The workbench project uses the same converter as other operations; embedding native JSON Schema
 with root-relative `$defs` would produce invalid references inside the OpenAPI document. Contract

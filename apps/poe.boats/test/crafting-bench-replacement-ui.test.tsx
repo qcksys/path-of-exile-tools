@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
@@ -7,6 +8,7 @@ import { seededRandom } from "../app/lib/crafting-engine";
 import { type CraftingItem, craftingProjectSchema } from "../app/schemas/crafting";
 import { changeControl } from "./control-helpers";
 import { baseId, catalog, engine } from "./crafting-fixtures";
+import { chooseStartingItem } from "./starting-item-helper";
 
 beforeEach(() => {
     localStorage.clear();
@@ -69,6 +71,7 @@ describe("bench replacement in the workbench", () => {
                 <CraftingWorkbench catalog={catalog} mode="emulate" />
             </MemoryRouter>,
         );
+        chooseStartingItem(catalog);
         fireEvent.click(screen.getByText("Save, load, and export"));
         changeControl(screen.getByLabelText("Saved project"), { target: { value: "bench" } });
         fireEvent.click(button("Load project"));

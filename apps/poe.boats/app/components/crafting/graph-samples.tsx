@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { CatalogItemArt } from "~/components/item-art";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -62,6 +63,9 @@ export function GraphSamples({
                     {result.samples.map((entry, index) => (
                         // biome-ignore lint/suspicious/noArrayIndexKey: A trial's ordinal is its identity; this fixed prefix is never reordered.
                         <FormSelectItem key={index} value={index}>
+                            {entry.item && (
+                                <CatalogItemArt id={entry.item.baseId} game={graph.game} />
+                            )}
                             Trial {index + 1} ·{" "}
                             {graph.outcomes.find((outcome) => outcome.id === entry.outcomeId)
                                 ?.name ?? entry.status}

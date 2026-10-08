@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { readFileSync } from "node:fs";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
@@ -6,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import { CraftingWorkbench } from "../app/components/crafting/workbench";
 import { craftingCatalogSchema } from "../app/schemas/crafting";
 import { changeControl } from "./control-helpers";
+import { chooseStartingItem } from "./starting-item-helper";
 
 class WorkerStub {
     static instances: WorkerStub[] = [];
@@ -50,6 +52,7 @@ for (const game of ["poe1", "poe2"] as const) {
                     <CraftingWorkbench catalog={catalog} mode="emulate" />
                 </MemoryRouter>,
             );
+            chooseStartingItem(catalog);
             fireEvent.click(button("Apply craft"));
             const spending = screen.getByText("Emulator spending").closest("details")!.textContent;
             const flags = within(screen.getByRole("group", { name: "Item flags" }));
@@ -94,6 +97,7 @@ for (const game of ["poe1", "poe2"] as const) {
                     <CraftingWorkbench catalog={catalog} mode="calculate" />
                 </MemoryRouter>,
             );
+            chooseStartingItem(catalog);
             fireEvent.click(screen.getByText("Item conditions"));
             const mirroring = within(screen.getByRole("group", { name: "Required mirroring" }));
             fireEvent.click(mirroring.getByRole("button", { name: "Unmirrored" }));

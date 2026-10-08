@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { readFileSync } from "node:fs";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
@@ -17,6 +18,7 @@ import type { CraftingItem, CraftingProject } from "~/schemas/crafting";
 import { craftingCatalogSchema, craftingProjectSchema } from "~/schemas/crafting";
 import { changeControl, expectControlValue } from "./control-helpers";
 import { baseId, catalog, currency, engine } from "./crafting-fixtures";
+import { chooseStartingItem } from "./starting-item-helper";
 
 class CraftingWorker {
     static instances: CraftingWorker[] = [];
@@ -49,11 +51,13 @@ const button = (name: string) => {
     return (scope ? within(scope) : screen).getByRole("button", { name });
 };
 function mount(mode = "emulate", data = catalog) {
-    return render(
+    const view = render(
         <MemoryRouter>
             <CraftingWorkbench catalog={data} mode={mode} />
         </MemoryRouter>,
     );
+    chooseStartingItem(data);
+    return view;
 }
 
 describe("crafting workbench", () => {

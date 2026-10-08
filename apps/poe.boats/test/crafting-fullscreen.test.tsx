@@ -10,6 +10,7 @@ import { craftingCatalogSchema } from "~/schemas/crafting";
 import { changeControl, expectControlValue } from "./control-helpers";
 import { catalog } from "./crafting-fixtures";
 import { stubCraftingWorkers } from "./crafting-worker-fixtures";
+import { chooseStartingItem } from "./starting-item-helper";
 
 vi.mock("~/components/app-header", () => ({ AppHeader: () => <header>App navigation</header> }));
 vi.mock("~/components/app-footer", () => ({ AppFooter: () => <footer>Data provenance</footer> }));
@@ -57,6 +58,7 @@ describe.each(catalogs)("$game fullscreen crafting", (data) => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(data)));
         render(page(data.game));
         await screen.findByRole("heading", { name: "Crafting workbench" });
+        chooseStartingItem(data);
         changeControl(screen.getByLabelText("Required rarity"), {
             target: { value: "rare" },
         });
@@ -78,6 +80,7 @@ describe.each(catalogs)("$game fullscreen crafting", (data) => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(data)));
         render(page(data.game, mode));
         await screen.findByRole("heading", { name: "Crafting workbench" });
+        chooseStartingItem(data);
         const item = screen.getByRole("region", { name: "Current item" });
         const initial = item.textContent;
         if (mode === "simulate") fireEvent.click(screen.getByRole("link", { name: "Emulate" }));
@@ -109,6 +112,7 @@ describe.each(catalogs)("$game fullscreen crafting", (data) => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(data)));
         render(page(data.game));
         await screen.findByRole("heading", { name: "Crafting workbench" });
+        chooseStartingItem(data);
         fireEvent.click(toggle());
         const currency = data.crafting.currencies.find(
             (entry) => entry.action === "transmute_to_magic",

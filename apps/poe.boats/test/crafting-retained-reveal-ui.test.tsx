@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
@@ -7,6 +8,7 @@ import { seededRandom } from "../app/lib/crafting-engine";
 import { craftingProjectSchema } from "../app/schemas/crafting";
 import { changeControl } from "./control-helpers";
 import { pickModifier, retainedRevealFixture } from "./crafting-retained-reveal-fixtures";
+import { chooseStartingItem } from "./starting-item-helper";
 
 beforeEach(() => {
     localStorage.clear();
@@ -49,6 +51,7 @@ describe.each(["poe1", "poe2"] as const)("%s retained reveal controls", (game) =
                 <CraftingWorkbench catalog={catalog} mode="emulate" />
             </MemoryRouter>,
         );
+        chooseStartingItem(catalog);
         fireEvent.click(screen.getByText("Save, load, and export"));
         changeControl(screen.getByLabelText("Saved project"), { target: { value: "legacy" } });
         fireEvent.click(screen.getByRole("button", { name: "Load project" }));
@@ -114,6 +117,7 @@ describe.each(["poe1", "poe2"] as const)("%s retained reveal controls", (game) =
                 <CraftingWorkbench catalog={catalog} mode="emulate" />
             </MemoryRouter>,
         );
+        chooseStartingItem(catalog);
         fireEvent.click(screen.getByText("Save, load, and export"));
         changeControl(screen.getByLabelText("Saved project"), { target: { value: "retained" } });
         const button = (name: string) => screen.getByText(name, { selector: "button" });

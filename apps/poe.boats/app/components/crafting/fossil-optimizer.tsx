@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CatalogItemArt } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
@@ -251,6 +252,7 @@ export function FossilOptimizerPanel({
                                     )
                                 }
                             />
+                            <CatalogItemArt id={entry.id} game={engine.catalog.game} />
                             {entry.name}
                         </Label>
                     ))}

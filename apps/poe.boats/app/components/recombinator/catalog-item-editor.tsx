@@ -1,16 +1,26 @@
 import { useMemo, useState } from "react";
+import { ItemArt } from "~/components/item-art";
 import { ModifierFlags } from "~/components/recombinator/modifier-icons";
 import {
     Combobox,
     ComboboxContent,
     ComboboxEmpty,
+    ComboboxGroup,
     ComboboxInput,
     ComboboxItem,
+    ComboboxLabel,
     ComboboxList,
 } from "~/components/ui/combobox";
 import { Field, FieldGroup, FieldLabel } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import { InputGroupAddon } from "~/components/ui/input-group";
 import { Separator } from "~/components/ui/separator";
+import { useItemPresentations } from "~/hooks/use-item-presentations";
+import {
+    compareItemPresentations,
+    type ItemPresentation,
+    itemSubtitle,
+} from "~/lib/item-presentation";
 import {
     availableCatalogMods,
     catalogBaseOptions,
@@ -23,7 +33,7 @@ import { cn } from "~/lib/utils";
 import { type RecombinatorAffix, sharesAffixGroup } from "~/schemas/recombinator";
 import type { RecombinatorCatalog } from "~/schemas/recombinator-catalog";
 
-type Option = { id: string; label: string };
+type Option = { id: string; label: string; itemId?: string; item?: ItemPresentation };
 
 export function CatalogPicker({
     id,
@@ -42,20 +52,79 @@ export function CatalogPicker({
 }) {
     const [query, setQuery] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
+    const items = useItemPresentations();
+    const presented = useMemo(
+        () =>
+            options
+                .map((option) => {
+                    const presentation = items[option.itemId ?? option.id.replace(/^poe[12]:/, "")];
+                    return {
+                        ...option,
+                        item: option.item
+                            ? { ...option.item, art: presentation?.art ?? option.item.art }
+                            : presentation,
+                    };
+                })
+                .sort((a, b) =>
+                    a.item && b.item
+                        ? compareItemPresentations(a.item, b.item)
+                        : a.item
+                          ? -1
+                          : b.item
+                            ? 1
+                            : 0,
+                ),
+        [options, items],
+    );
+    const selected = presented.find((option) => option.id === value?.id) ?? value;
     const matches = useMemo(() => {
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
-        return options.filter((option) =>
-            words.every((word) => option.label.toLowerCase().includes(word)),
+        return presented.filter((option) =>
+            words.every((word) =>
+                `${option.label} ${option.item ? itemSubtitle(option.item) : ""}`
+                    .toLowerCase()
+                    .includes(word),
+            ),
         );
-    }, [options, query]);
+    }, [presented, query]);
+    const visible = matches.filter(
+        (option, index) => index < 60 || (query === null && option.id === selected?.id),
+    );
+    const groups = Map.groupBy(visible, (option) => option.item?.itemClass ?? "");
+    const renderOption = (option: Option) => (
+        <ComboboxItem
+            key={option.id}
+            value={option}
+            data-value={option.id}
+            aria-label={option.label}
+            className="items-center gap-3 py-2"
+        >
+            {option.item && <ItemArt src={option.item.art} name={option.item.name} />}
+            <span className="min-w-0 whitespace-normal break-words">
+                <span className="block">{option.label}</span>
+                {option.item && (
+                    <>
+                        <span className="block text-xs text-muted-foreground">
+                            {itemSubtitle(option.item)}
+                        </span>
+                        {option.item.implicits.length > 0 && (
+                            <span className="mt-1 block whitespace-pre-line text-xs text-muted-foreground">
+                                {option.item.implicits.join("\n")}
+                            </span>
+                        )}
+                    </>
+                )}
+            </span>
+        </ComboboxItem>
+    );
     return (
         <Field>
             <FieldLabel htmlFor={id}>{label}</FieldLabel>
             <Combobox
-                items={options}
-                filteredItems={matches.slice(0, 60)}
+                items={presented}
+                filteredItems={visible}
                 filter={null}
-                value={value ?? null}
+                value={selected ?? null}
                 inputValue={query ?? value?.label ?? ""}
                 onInputValueChange={setQuery}
                 itemToStringLabel={(option: Option) => option.label}
@@ -75,29 +144,53 @@ export function CatalogPicker({
                 <ComboboxInput
                     id={id}
                     aria-label={label}
-                    placeholder="Search…"
+                    placeholder={`Select ${label.toLowerCase()}…`}
                     onBlur={() => setQuery(null)}
-                />
+                >
+                    {selected?.item && (
+                        <InputGroupAddon align="inline-start">
+                            <ItemArt
+                                src={selected.item.art}
+                                name={selected.item.name}
+                                className="size-7"
+                            />
+                        </InputGroupAddon>
+                    )}
+                </ComboboxInput>
+                {selected?.item && (
+                    <div
+                        role="note"
+                        className="text-xs text-muted-foreground"
+                        aria-label={`${label} details`}
+                    >
+                        <p>{itemSubtitle(selected.item)}</p>
+                        {selected.item.implicits.length > 0 && (
+                            <p className="mt-1 whitespace-pre-line">
+                                {selected.item.implicits.join("\n")}
+                            </p>
+                        )}
+                    </div>
+                )}
                 <ComboboxContent>
                     <ComboboxEmpty>No eligible matches.</ComboboxEmpty>
                     <ComboboxList>
-                        {(option: Option) => (
-                            <ComboboxItem
-                                key={option.id}
-                                value={option}
-                                className="items-start py-2"
-                            >
-                                <span className="whitespace-normal break-words">
-                                    {option.label}
-                                </span>
-                            </ComboboxItem>
+                        {[...groups].map(([group, entries]) =>
+                            group ? (
+                                <ComboboxGroup key={group} items={entries}>
+                                    <ComboboxLabel>{group}</ComboboxLabel>
+                                    {entries.map(renderOption)}
+                                </ComboboxGroup>
+                            ) : (
+                                entries.map(renderOption)
+                            ),
                         )}
                     </ComboboxList>
-                    {matches.length > 60 ? (
+                    {matches.length > visible.length ? (
                         <>
                             <Separator />
                             <p className="px-3 py-2 text-xs text-muted-foreground">
-                                Showing 60 of {matches.length}. Type to narrow the list.
+                                Showing {visible.length} of {matches.length}. Type to narrow the
+                                list.
                             </p>
                         </>
                     ) : null}
