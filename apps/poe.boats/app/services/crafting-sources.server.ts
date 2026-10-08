@@ -12,9 +12,9 @@ const feedSchema = z.object({ lines: z.array(z.unknown()) });
 const lineSchema = z.object({
     detailsId: z.string(),
     name: z.string(),
-    chaosValue: z.number().nonnegative(),
-    divineValue: z.number().nonnegative(),
-    exaltedValue: z.number().nonnegative(),
+    chaosValue: z.number().nonnegative().optional(),
+    divineValue: z.number().nonnegative().optional(),
+    exaltedValue: z.number().nonnegative().optional(),
     listingCount: z.number().int().nonnegative(),
 });
 type Feed = { lines: z.infer<typeof lineSchema>[]; fetchedAt: string; sourceUrl: string };

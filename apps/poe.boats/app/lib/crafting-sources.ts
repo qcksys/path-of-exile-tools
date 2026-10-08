@@ -13,6 +13,8 @@ const beasts: Record<string, string> = {
     LegendaryBeastWolf: "farric-wolf-alpha",
     LegendaryBeastSandSpitter: "craicic-sand-spitter",
     LegendaryBeastShieldCrab: "craicic-shield-crab",
+    LegendaryBeastCrab: "craicic-savage-crab",
+    LegendaryBeastForestSnake: "saqawine-cobra",
     LegendaryBeastDevourer: "fenumal-devourer",
     LegendaryBeastSandSnake: "saqawine-blood-viper",
     LegendaryBeastCarrionQueen: "fenumal-queen",

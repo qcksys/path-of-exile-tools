@@ -21,6 +21,8 @@ const lines = [
     ["craicic-sand-spitter", 1],
     ["mountain-lynx", 3],
     ["craicic-croaker", 360],
+    ["craicic-savage-crab", 1],
+    ["saqawine-cobra", 1],
     ["locus-of-corruption-tier-3-temple", 1000],
 ].map(([detailsId, amount]) => ({
     detailsId,
@@ -46,12 +48,13 @@ describe("supplemental crafting prices", () => {
         const graph = { ...exchangeGraph(), league: "whole-recipe" };
         const result = await findCraftingSourcePrices(graph, engine, {
             ...options,
-            ids: [id, "EinharMasterCraft27"],
+            ids: [id, "EinharMasterCraft27", "EinharMasterCraft49"],
         });
         expect(result.missing).toEqual({});
         expect(result.quotes[id]?.amount).toBe(607);
         expect(result.quotes[id]?.components.map(({ quantity }) => quantity)).toEqual([1, 1, 2]);
         expect(result.quotes.EinharMasterCraft27?.amount).toBe(369);
+        expect(result.quotes.EinharMasterCraft49?.amount).toBe(8);
         expect(fetcher).toHaveBeenCalledTimes(1);
         const bound = bindCraftingSourcePrice(graph, engine, id, result.quotes[id]!);
         expect(bound.prices[id]).toMatchObject({ amount: 607, source: "market", confidence: null });
@@ -88,6 +91,24 @@ describe("supplemental crafting prices", () => {
             (await findCraftingSourcePrices(graph, engine, { ...options, realm: "xbox" })).quotes,
         ).toEqual({});
         expect(fetcher).not.toHaveBeenCalled();
+    });
+    it("accepts a chaos quote when the feed omits the rounded divine value", async () => {
+        const data = lines.map(({ divineValue: _, ...line }) => line);
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValue(new Response(JSON.stringify({ lines: data }))),
+        );
+        const graph = { ...exchangeGraph(), league: "omitted-currency" };
+        expect((await findCraftingSourcePrices(graph, engine, options)).quotes[id]?.amount).toBe(
+            607,
+        );
+        const divine = await findCraftingSourcePrices(
+            { ...graph, currency: "divine" },
+            engine,
+            options,
+        );
+        expect(divine.quotes).toEqual({});
+        expect(divine.missing[id]).toContain("No positive divine");
     });
     it("keeps the whole recipe unknown when any required component is absent, ambiguous or zero", async () => {
         for (const [index, data] of [
