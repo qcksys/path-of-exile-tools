@@ -819,6 +819,15 @@ test("donor-family pricing requires a saved representative assumption", async ({
     await expect(use).toHaveCount(0);
     await find.click();
     await expect(use).toBeEnabled();
+    const scroll = await use.evaluate((button) => {
+        button.scrollIntoView({ block: "center", inline: "center", behavior: "instant" });
+        const graph = button.closest<HTMLElement>(".react-flow")!;
+        const editor = button.closest<HTMLElement>('[data-slot="scroll-area-viewport"]')!;
+        return { graphX: graph.scrollLeft, graphY: graph.scrollTop, editorY: editor.scrollTop };
+    });
+    expect(scroll.graphX).toBe(0);
+    expect(scroll.graphY).toBe(0);
+    expect(scroll.editorY).toBeGreaterThan(0);
     await use.click();
     await expect(editor.getByText("Donor-family assumption:", { exact: false })).toBeVisible();
     expect(

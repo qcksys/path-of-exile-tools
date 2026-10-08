@@ -602,6 +602,7 @@ export function GraphCanvas({
             </div>
             <div className="min-h-0 flex-1">
                 <ReactFlow<CraftingFlowNode>
+                    className="overflow-clip!"
                     proOptions={{ hideAttribution: true }}
                     nodes={nodes}
                     edges={edges}
