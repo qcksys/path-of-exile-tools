@@ -6,9 +6,11 @@ import { projectFromItem } from "../../../app/lib/crafting-graph-authoring";
 import { createCraftingItemQuery } from "../../../app/lib/crafting-item-query";
 import { exportCraftingItemText } from "../../../app/lib/crafting-item-text";
 import { bindCohortPurchasePrice, livePurchasePrices } from "../../../app/lib/crafting-market";
+import { bindCraftingSourcePrice, liveSourcePrices } from "../../../app/lib/crafting-sources";
 import { craftingWorkspaceStorageKey } from "../../../app/lib/crafting-workspace-storage";
 import { craftingCatalogSchema, craftingProjectSchema } from "../../../app/schemas/crafting";
 import { craftingGraphSchema } from "../../../app/schemas/crafting-graph";
+import { craftingSourceQuoteSchema } from "../../../app/schemas/crafting-sources";
 import { craftingWorkspaceSchema } from "../../../app/schemas/crafting-workspace";
 import { conditionalTransmuteGraph } from "../../crafting-conditional-fixtures";
 import {
@@ -532,6 +534,83 @@ for (const game of ["poe1", "poe2"] as const) {
         await expect(price).toHaveValue("7");
     });
 }
+
+test("beast prices refresh on reopening and preserve manual overrides", async ({
+    page,
+}, testInfo) => {
+    const id = "EinharMasterCraftMorrigan7";
+    const graph = exchangeGraph();
+    const craft = graph.nodes[1]!;
+    if (craft.kind !== "craft") throw new Error("Fixture");
+    craft.method = { kind: "beast", id };
+    let amount = 607;
+    const currentQuote = () =>
+        craftingSourceQuoteSchema.parse({
+            source: "poe.ninja",
+            game: "poe1",
+            realm: "pc",
+            league: graph.league,
+            currency: "chaos",
+            id,
+            assumption: "rare-beast-mountain-lynx-v1",
+            amount,
+            fetchedAt: "2026-10-08T04:00:00.000Z",
+            components: [
+                { detailsId: "craicic-sand-spitter", quantity: 1, unitPrice: 1 },
+                { detailsId: "black-morrigan", quantity: 1, unitPrice: amount - 7 },
+                { detailsId: "mountain-lynx", quantity: 2, unitPrice: 3 },
+            ].map((component) => ({
+                ...component,
+                name: component.detailsId,
+                listingCount: 100,
+                sourceUrl: "https://poe.ninja/poe1/api/economy/stash/current/item/overview",
+            })),
+        });
+    await page.route("**/api/v1/crafting/market/sources", (route) => {
+        expect(route.request().postDataJSON().assumption).toBe("rare-beast-mountain-lynx-v1");
+        return route.fulfill({ json: { quotes: { [id]: currentQuote() }, missing: {} } });
+    });
+    await page.route("**/api/v1/crafting/market/refresh", (route) =>
+        route.fulfill({
+            json: {
+                graph: bindCraftingSourcePrice(
+                    craftingGraphSchema.parse(route.request().postDataJSON().graph),
+                    engine,
+                    id,
+                    currentQuote(),
+                ),
+                issues: [],
+            },
+        }),
+    );
+    await importGraph(page, graph);
+    await openGraphSettings(page);
+    const prices = page
+        .locator("details")
+        .filter({ has: page.locator("summary", { hasText: /^Prices & calculation$/ }) });
+    await prices.getByText("Beast & temple prices", { exact: true }).click();
+    await prices.getByRole("checkbox", { name: /Mountain Lynx/ }).check();
+    await prices.getByRole("button", { name: "Find beast & temple prices", exact: true }).click();
+    await expect(prices).toContainText("2 × mountain-lynx");
+    await prices.getByRole("button", { name: "Use source estimate", exact: true }).click();
+    const price = prices.getByRole("spinbutton", { name: /^Beastcraft · Modify an Item/ });
+    await expect(price).toHaveValue("607");
+    const status = page.getByRole("region", { name: "Live market prices" });
+    await expect(status).toContainText("Market prices refreshed.");
+    expect(liveSourcePrices((await stored(page)).projects[0]!.graph)).toHaveLength(1);
+    await page.screenshot({ path: testInfo.outputPath("beast-price-sources.png"), fullPage: true });
+    amount = 617;
+    await page.reload();
+    await openGraphSettings(page);
+    await expect(price).toHaveValue("617");
+    await expect(status).toContainText("Market prices refreshed.");
+    await price.fill("7");
+    await expect(status).toHaveCount(0);
+    expect(liveSourcePrices((await stored(page)).projects[0]!.graph)).toEqual([]);
+    await page.reload();
+    await openGraphSettings(page);
+    await expect(price).toHaveValue("7");
+});
 
 test("full method editing refuses removal of a recovered input and keeps the draft", async ({
     page,

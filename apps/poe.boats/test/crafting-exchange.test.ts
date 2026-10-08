@@ -10,6 +10,31 @@ import { catalog, engine } from "./crafting-fixtures";
 import { quote } from "./crafting-graph-fixtures";
 
 describe("crafting exchange bindings", () => {
+    it("retains optional conversion on a direct quote through refresh and historical cutoffs", async () => {
+        const db = createDbConnection("mysql://test:test@localhost/poe_test");
+        const converted = { ...exchangeQuote, conversion: "reference-currency-v1" as const };
+        const graph = bindExchangePrice(exchangeGraph(), transmuteId, converted);
+        const lookup = vi
+            .spyOn(queries, "findCraftingExchangePrices")
+            .mockResolvedValue({ quotes: { [transmuteId]: converted }, missing: {} });
+        try {
+            expect(
+                (await refreshCraftingMarketPrices(db, graph, engine, exchangeQuote.hour!)).issues,
+            ).toEqual([]);
+            expect(lookup).toHaveBeenCalledWith(
+                db,
+                expect.objectContaining({
+                    conversion: "reference-currency-v1",
+                    at: exchangeQuote.hour,
+                }),
+            );
+            expect(liveExchangePrices(graph)[0]?.reference.conversion).toBe(
+                "reference-currency-v1",
+            );
+        } finally {
+            lookup.mockRestore();
+        }
+    });
     it("retains adaptive policy through historical refresh and keeps hourly bindings in a separate lookup", async () => {
         const db = createDbConnection("mysql://test:test@localhost/poe_test");
         const otherId = "Metadata/Items/Currency/CurrencyRerollMagic";

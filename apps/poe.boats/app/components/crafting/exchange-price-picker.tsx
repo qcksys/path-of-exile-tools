@@ -5,6 +5,7 @@ import {
 } from "@poe-tools/market";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -31,6 +32,7 @@ export function ExchangePricePicker({
     );
     const [result, setResult] = useState<CraftingExchangeResult>();
     const [window, setWindow] = useState<"hourly" | "adaptive-v1">("hourly");
+    const [conversion, setConversion] = useState(false);
     const [history, setHistory] =
         useState<Array<{ hour: number; amount: number | null; volume: number | null }>>();
     const [busy, setBusy] = useState(false);
@@ -45,7 +47,7 @@ export function ExchangePricePicker({
         setError("");
         setBusy(false);
         return () => pending.current?.abort();
-    }, [graph.game, graph.league, graph.currency, realm, ids, window]);
+    }, [graph.game, graph.league, graph.currency, realm, ids, window, conversion]);
     async function lookup() {
         pending.current?.abort();
         const controller = new AbortController();
@@ -64,6 +66,7 @@ export function ExchangePricePicker({
                     currency: graph.currency,
                     itemIds: entries.map(([id]) => id),
                     window: window === "adaptive-v1" ? window : undefined,
+                    conversion: conversion ? "reference-currency-v1" : undefined,
                 }),
             });
             if (!response.ok)
@@ -127,6 +130,16 @@ export function ExchangePricePicker({
                     trades, not current buy offers. Selecting a price enables refresh; editing its
                     amount restores a manual override. Gold and trading time are excluded.
                 </p>
+                <Label className="flex items-center gap-2">
+                    <Checkbox checked={conversion} onCheckedChange={setConversion} />
+                    Convert missing direct pairs through chaos, divine or exalted
+                </Label>
+                {conversion && (
+                    <p className="text-muted-foreground">
+                        Both traded legs must use the same observed hour and estimate window.
+                        Converted estimates have no direct traded volume or observed range.
+                    </p>
+                )}
                 <Label className="block">
                     Exchange estimate window
                     <FormSelect
@@ -239,17 +252,30 @@ export function ExchangePricePicker({
                                             {graph.currency} per unit ·{" "}
                                             {quote.estimator === "currency-unit-v1"
                                                 ? "accounting currency"
-                                                : "traded-volume estimate"}
+                                                : quote.estimator === "cross-rate-v1"
+                                                  ? "converted traded-volume estimate"
+                                                  : "traded-volume estimate"}
                                         </p>
                                         {quote.hour !== null && (
                                             <p>
                                                 Observed{" "}
                                                 {new Date(quote.hour * 1000).toLocaleString()} ·{" "}
-                                                {quote.itemVolume?.toLocaleString()} units traded ·{" "}
+                                                {quote.itemVolume === null
+                                                    ? "no direct traded volume"
+                                                    : `${quote.itemVolume.toLocaleString()} units traded`}{" "}
+                                                ·{" "}
                                                 {quote.low === null
                                                     ? "range unavailable"
                                                     : `${quote.low.toPrecision(4)}–${quote.high!.toPrecision(4)} ${graph.currency} observed range`}{" "}
                                                 · confidence uncalibrated
+                                            </p>
+                                        )}
+                                        {quote.legs && (
+                                            <p>
+                                                Conversion: {quote.legs[0].amount.toPrecision(5)} ×{" "}
+                                                {quote.legs[1].amount.toPrecision(5)} via{" "}
+                                                {quote.legs[0].quoteId.split("/").at(-1)}. Both legs
+                                                observed in the same window.
                                             </p>
                                         )}
                                         {quote.windowStart !== undefined && quote.hour !== null && (
@@ -286,15 +312,16 @@ export function ExchangePricePicker({
                                             >
                                                 Use exchange estimate
                                             </Button>
-                                            {quote.hour !== null && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => void showHistory(quote)}
-                                                >
-                                                    View exchange history
-                                                </Button>
-                                            )}
+                                            {quote.hour !== null &&
+                                                quote.estimator !== "cross-rate-v1" && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => void showHistory(quote)}
+                                                    >
+                                                        View exchange history
+                                                    </Button>
+                                                )}
                                         </div>
                                     </>
                                 ) : (

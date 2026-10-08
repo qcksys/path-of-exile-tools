@@ -1,4 +1,5 @@
 import {
+    convertExchangeQuote,
     exchangeCurrencyId,
     exchangeSnapshotSchema,
     exchangeUnitQuote,
@@ -27,6 +28,38 @@ function pairIds(item: string, quote: string) {
     return [`${item}|${quote}`, `${quote}|${item}`];
 }
 export async function findCraftingExchangePrices(
+    db: TDatabase,
+    input: CraftingExchangeInput,
+): Promise<CraftingExchangeResult> {
+    const result = await findDirectExchangePrices(db, input);
+    if (!input.conversion || !exchangeCurrencyId(input.currency)) return result;
+    for (const currency of ["chaos", "divine", "exalted"]) {
+        const bridge = exchangeCurrencyId(currency)!;
+        if (bridge === exchangeCurrencyId(input.currency)) continue;
+        const itemIds = Object.keys(result.missing).filter(
+            (id) => id.startsWith("Metadata/Items/") && id !== bridge,
+        );
+        if (!itemIds.length) break;
+        const first = await findDirectExchangePrices(db, { ...input, currency, itemIds });
+        const second = await findDirectExchangePrices(db, { ...input, itemIds: [bridge] });
+        const conversion = second.quotes[bridge];
+        if (!conversion) continue;
+        for (const [id, leg] of Object.entries(first.quotes)) {
+            const quote = convertExchangeQuote(leg, conversion);
+            if (quote) {
+                result.quotes[id] = quote;
+                delete result.missing[id];
+            }
+        }
+    }
+    for (const quote of Object.values(result.quotes)) quote.conversion = input.conversion;
+    for (const id of Object.keys(result.missing))
+        if (id.startsWith("Metadata/Items/"))
+            result.missing[id] =
+                "No positive direct pair or matching-hour conversion through chaos, divine or exalted is available.";
+    return result;
+}
+async function findDirectExchangePrices(
     db: TDatabase,
     input: CraftingExchangeInput,
 ): Promise<CraftingExchangeResult> {

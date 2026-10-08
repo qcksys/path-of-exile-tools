@@ -11,6 +11,7 @@ import { liveExchangePrices } from "~/lib/crafting-exchange";
 import { projectFromItem } from "~/lib/crafting-graph-authoring";
 import { livePurchasePrices } from "~/lib/crafting-market";
 import { availableCorrection } from "~/lib/crafting-rulesets";
+import { liveSourcePrices } from "~/lib/crafting-sources";
 import { craftingItemOptions } from "~/lib/item-presentation";
 import type { CraftingCatalog } from "~/schemas/crafting";
 import { type CraftingGraph, craftingGraphSchema } from "~/schemas/crafting-graph";
@@ -28,6 +29,7 @@ import { GraphOutcomeEditor } from "./graph-outcome-editor";
 import { graphControl } from "./graph-query-editor";
 import { GraphSamples } from "./graph-samples";
 import { ProcessCostHistory } from "./process-cost-history";
+import { SourcePricePicker } from "./source-price-picker";
 
 export function GraphProjectEditor({
     project,
@@ -61,7 +63,11 @@ export function GraphProjectEditor({
     });
     const change = useRef(onChange);
     change.current = onChange;
-    const hasMarketPrices = livePurchasePrices(graph).length + liveExchangePrices(graph).length > 0;
+    const hasMarketPrices =
+        livePurchasePrices(graph).length +
+            liveExchangePrices(graph).length +
+            liveSourcePrices(graph).length >
+        0;
     const [calculation, setCalculation] = useState<{
         revision: number;
         key: string;
@@ -613,6 +619,12 @@ export function GraphProjectEditor({
                                 ))}
                             </div>
                             <ExchangePricePicker graph={graph} entries={costs} onChange={update} />
+                            <SourcePricePicker
+                                graph={graph}
+                                engine={engine}
+                                entries={costs}
+                                onChange={update}
+                            />
                         </details>
                     }
                 />
