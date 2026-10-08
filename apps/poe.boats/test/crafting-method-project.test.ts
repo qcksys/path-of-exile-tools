@@ -16,7 +16,7 @@ describe("selected craft handoff", () => {
     ] as const)("preserves %s state and prices in a runnable single-input graph", (game) => {
         const project = workbenchProject(game);
         const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === game && entry.revision === "r5",
+            (entry) => entry.game === game && entry.revision === "r6",
         )!;
         const input = projectFromMethodInputSchema.parse({
             game,
@@ -50,7 +50,7 @@ describe("selected craft handoff", () => {
 
     it("charges each full recombination donor exactly once and keeps the original rolls", () => {
         const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === "r5",
+            (entry) => entry.game === "poe1" && entry.revision === "r6",
         )!;
         const input = projectFromMethodInputSchema.parse({
             game: "poe1",
@@ -96,7 +96,7 @@ describe("selected craft handoff", () => {
 
     it("keeps missing prices unknown and refuses missing donors, mismatched prices and altered pins", () => {
         const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === "r5",
+            (entry) => entry.game === "poe1" && entry.revision === "r6",
         )!;
         const input = projectFromMethodInputSchema.parse({
             game: "poe1",

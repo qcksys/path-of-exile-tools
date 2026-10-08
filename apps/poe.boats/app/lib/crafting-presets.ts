@@ -6,6 +6,9 @@ import type { CraftingRuleset } from "../schemas/crafting-rulesets";
 import { type CraftingEngine, seededRandom } from "./crafting-engine";
 import { projectFromItem } from "./crafting-graph-authoring";
 import { validateCraftingGraph } from "./crafting-graph-validation";
+import { janusRarityModifier } from "./crafting-janus";
+import { helicalRingPreset } from "./crafting-preset-helical";
+import { nonNativeEssenceSources } from "./crafting-recombination";
 import { validateRulesetGraph } from "./crafting-rulesets";
 
 export const craftingPresets: readonly CraftingPreset[] = [
@@ -14,14 +17,14 @@ export const craftingPresets: readonly CraftingPreset[] = [
         game: "poe1",
         name: "Life on block shield",
         description:
-            "Transmute a Shaper Pinnacle Tower Shield, alter until life recovery on block, then regal. Misses reuse the magic shield.",
+            "Recombine life recovery on block onto a Shaper Heat-attuned Tower Shield with T1 block chance and +2% all maximum resistances. Rebuild consumed donors and recover usable misses.",
     },
     {
         id: "es-block-shield",
         game: "poe1",
         name: "Energy shield on block shield",
         description:
-            "Transmute a Shaper Titanium Spirit Shield, alter until energy shield recovery on block, then regal. Misses reuse the magic shield.",
+            "Build overlapping flat ES / percent ES and flat ES / block prefix pairs with non-native natural evasion essence donors. Recombine 2p + 2p, retaining Shaper ES recovery on block; recover partial donors.",
     },
     {
         id: "tailwind-boots",
@@ -35,14 +38,14 @@ export const craftingPresets: readonly CraftingPreset[] = [
         game: "poe1",
         name: "Physical bow",
         description:
-            "Combine T1 physical damage and hybrid physical donors, then add T1 flat physical damage. Recover usable partial results into their matching inputs.",
+            "Build physical / hybrid and physical / flat prefix pairs separately (1p + 1p), then recombine 2p + 2p for all three. Recover pairs and single-prefix misses into their preparation steps.",
     },
     {
         id: "elemental-bow",
         game: "poe1",
         name: "Elemental bow",
         description:
-            "Combine T1 fire and cold donors, then add T1 lightning damage. Recover usable partial results into their matching inputs.",
+            "Build fire / cold and fire / lightning prefix pairs separately (1p + 1p), then recombine 2p + 2p. Recover pairs and single-prefix misses into their preparation steps.",
     },
     {
         id: "suppression-chest",
@@ -63,14 +66,21 @@ export const craftingPresets: readonly CraftingPreset[] = [
         game: "poe1",
         name: "Rarity helmet",
         description:
-            "Buy a Hubris Circlet with fractured T1 rarity prefix. Repeat Deafening Essences of Greed until T1 rarity suffix; keep the guaranteed life and fractured rarity.",
+            "Transfer a purchased Janus unveiled rarity suffix alongside normal T1 rarity, life and chaos resistance. Build two pairs, then recombine; recover surviving pairs and single modifiers into preparation.",
     },
     {
         id: "energy-shield-chest",
         game: "poe1",
         name: "Triple energy shield chest",
         description:
-            "Combine T1 flat and percent energy shield donors, then add hybrid energy shield. Recover usable partial results into their matching inputs.",
+            "Build flat / percent ES and flat / hybrid ES pairs, then recombine 2p + 2p. NNN evasion/armour essence prefixes improve prefix-count selection without surviving on Vaal Regalia. Recover partial donors.",
+    },
+    {
+        id: "strength-helical-ring",
+        game: "poe1",
+        name: "Replica Alberon's strength-stacking Helical Ring",
+        description:
+            "70+ memory strands, low-consumption Strength essence, isolated Strength imprint, T1 all Attributes, accuracy/light radius regal, protected T3+ chaos reforge, Unravelling and a Hunter life-on-hit slam. Misses annul or restore the appropriate imprint.",
     },
 ];
 
@@ -168,13 +178,6 @@ export function projectFromPreset(
         nodes.push(node);
         return node;
     };
-    const retry = (node: GraphCraftNode, target: ItemQuery) => {
-        node.output = target;
-        node.branches = [
-            { id: "hit", name: "Target modifiers", query: target, destination: { kind: "return" } },
-        ];
-        node.fallback = { kind: "recover", nodeId: node.id, inputId: "input-0" };
-    };
     const combine = (
         id: string,
         sources: string[],
@@ -209,38 +212,88 @@ export function projectFromPreset(
     let target: ItemQuery;
     if (presetId === "life-block-shield" || presetId === "es-block-shield") {
         const life = presetId === "life-block-shield";
-        const item = base(life ? "Pinnacle Tower Shield" : "Titanium Spirit Shield");
+        const item = base(life ? "Heat-attuned Tower Shield" : "Titanium Spirit Shield");
         const mod = life
             ? "RecoverLifePercentOnBlockUber1_"
             : "RecoverEnergyShieldPercentOnBlockUber1";
         const influence = engine.catalog.crafting.modRules[mod]?.influence;
         if (influence == null) throw new Error("Shaper block recovery is unavailable.");
         item.influences = [influence];
-        target = query([mod], item.baseId);
-        const transmute = craft(
-            "transmute",
-            "Transmute shield",
-            [buy("base", "Buy Shaper shield base", item)],
-            currency("transmute_to_magic"),
-        );
-        const alter = craft(
-            "alter",
-            "Alter until recovery on block",
-            [transmute.id],
-            currency("reroll_magic"),
-        );
-        alter.applyWhen = itemQuerySchema.parse({
-            game: preset.game,
-            groups: [{ type: "not", filters: [{ kind: "mod", ids: [mod] }] }],
-        });
-        retry(alter, target);
-        entry = craft(
-            "regal",
-            "Regal the recovery shield",
-            [alter.id],
-            currency("upgrade_magic_to_rare"),
-            target,
-        ).id;
+        const block = "LocalIncreasedBlockPercentage7";
+        const donor = (id: string, name: string, ids: string[], nnn = false) => {
+            let value = ids.reduce((value, id) => engine.addStartingMod(value, id, random), item);
+            if (nnn) {
+                const essence = nonNativeEssenceSources(engine, value).find(
+                    (entry) => entry.side === "prefix",
+                )!;
+                value = engine.addStartingMod(value, essence.modId, random, "essence");
+            }
+            return buy(id, name, value, query(ids, item.baseId));
+        };
+        if (life) {
+            const maxRes = "MaximumAllResist2";
+            const pair = combine(
+                "heist-pair",
+                [
+                    donor("block", "Buy T1 block Heist base", [block]),
+                    donor("max-res", "Buy +2 all maximum resistance Heist donor", [maxRes]),
+                ],
+                query([block, maxRes], item.baseId),
+                [query([block], item.baseId), query([maxRes], item.baseId)],
+            );
+            const recovery = prepared("Pinnacle Tower Shield", [mod]);
+            target = query([block, maxRes, mod], item.baseId);
+            const finish = combine(
+                "transfer",
+                [
+                    pair.id,
+                    buy(
+                        "recovery",
+                        "Buy isolated Shaper life on block donor",
+                        recovery,
+                        query([mod]),
+                    ),
+                ],
+                target,
+                [pair.output, query([mod])],
+            );
+            finish.name = "Transfer life on block onto the Heist base";
+            entry = finish.id;
+        } else {
+            const flat = natural(item, "Incandescent");
+            const percent = natural(item, "Unfaltering");
+            const pair = combine(
+                "pair",
+                [
+                    donor("flat", "Buy isolated T1 flat ES donor", [flat]),
+                    donor("percent", "Buy percent ES + NNN evasion essence donor", [percent], true),
+                ],
+                query([flat, percent], item.baseId),
+                [query([flat], item.baseId), query([percent], item.baseId)],
+            );
+            const other = combine(
+                "block-pair",
+                [
+                    donor("flat-block", "Buy flat ES + ES recovery on block donor", [flat, mod]),
+                    donor("block", "Buy block + NNN evasion essence donor", [block], true),
+                ],
+                query([flat, block, mod], item.baseId),
+                [query([flat, mod], item.baseId), query([block], item.baseId)],
+            );
+            target = query([flat, percent, block, mod], item.baseId);
+            const finish = combine("finish", [pair.id, other.id], target, [
+                pair.output,
+                other.output,
+            ]);
+            finish.name = "2p + 2p: ES, block and recovery shield";
+            finish.branches.push({
+                id: "recover-flat",
+                name: "Flat ES survives: rebuild the ES pair",
+                query: query([flat], item.baseId),
+                destination: { kind: "recover", nodeId: pair.id, inputId: "input-0" },
+            });
+            entry = finish.id;
+        }
     } else if (presetId === "tailwind-boots") {
         const tailwind = "TailwindOnCriticalStrikeInfluence1";
         const elusive = "ElusiveOnCriticalStrikeInfluence1";
@@ -262,24 +315,69 @@ export function projectFromPreset(
             target,
         ).id;
     } else if (presetId === "rarity-helmet") {
-        const item = prepared("Hubris Circlet", ["ItemFoundRarityIncreasePrefix3"]);
-        item.mods[0]!.fractured = true;
-        const essence = engine.catalog.crafting.essences.find(
-            (entry) => entry.name === "Deafening Essence of Greed",
+        const janus = janusRarityModifier;
+        const rarity = "ItemFoundRarityIncreasePrefix3";
+        const life = "IncreasedLife9";
+        const chaos = "ChaosResist6";
+        const groups = [
+            [janus, rarity],
+            [life, chaos],
+        ];
+        const recoveryQuery = (mods: string[], pair: number) => {
+            const requirements = query(mods);
+            if (pair === 1)
+                requirements.groups.push({
+                    type: "not",
+                    filters: [{ kind: "mod", ids: [janus], count: { min: 1 } }],
+                });
+            return requirements;
+        };
+        const pairs = groups.map((mods, index) => {
+            const pair = combine(
+                `pair-${index}`,
+                mods.map((mod, position) =>
+                    buy(
+                        `donor-${index}-${position}`,
+                        mod === janus
+                            ? "Buy isolated Janus unveiled rarity donor"
+                            : `Buy isolated ${engine.mod(mod).name} donor`,
+                        prepared("Hubris Circlet", [mod]),
+                        query([mod]),
+                    ),
+                ),
+                query(mods),
+                mods.map((mod) => query([mod])),
+            );
+            pair.name = index
+                ? "Build life + chaos resistance pair"
+                : "Combine Janus + normal rarity";
+            return pair;
+        });
+        target = query(groups.flat(), base("Hubris Circlet").baseId);
+        const finish = combine(
+            "finish",
+            pairs.map((pair) => pair.id),
+            target,
+            groups.map((mods, index) => recoveryQuery(mods, index)),
         );
-        if (!essence?.mods.Helmet) throw new Error("Helmet life essence is unavailable.");
-        target = query(
-            [item.mods[0]!.id, "ItemFoundRarityIncrease4", essence.mods.Helmet],
-            item.baseId,
-        );
-        const node = craft(
-            "essence",
-            "Essence until T1 rarity suffix",
-            [buy("base", "Buy fractured T1 rarity helmet", item)],
-            { kind: "essence", id: essence.id },
-        );
-        retry(node, target);
-        entry = node.id;
+        finish.name = "Recombine double rarity, life and chaos resistance";
+        groups.forEach((mods, index) => {
+            mods.forEach((mod, position) => {
+                finish.branches.push({
+                    id: `recover-single-${index}-${position}`,
+                    name: `Recover ${engine.mod(mod).name} into pair preparation`,
+                    query: recoveryQuery([mod], index),
+                    destination: {
+                        kind: "recover",
+                        nodeId: pairs[index]!.id,
+                        inputId: `input-${position}`,
+                    },
+                });
+            });
+        });
+        entry = finish.id;
+    } else if (presetId === "strength-helical-ring") {
+        ({ entry, target } = helicalRingPreset({ engine, base, buy, craft, currency }));
     } else if (presetId === "suppression-chest") {
         const donor = base("Zodiac Leather");
         const suppression = natural(donor, "of Nullification");
@@ -343,6 +441,35 @@ export function projectFromPreset(
                 query([mod], item.baseId),
             ),
         );
+        if (presetId === "energy-shield-chest") {
+            const essences = nonNativeEssenceSources(engine, item).filter(
+                (entry) => entry.side === "prefix" && entry.rerollsRare,
+            );
+            for (const id of inputs) {
+                const node = nodes.find((node) => node.id === id)!;
+                if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase") continue;
+                const source = essences.find(
+                    (source) =>
+                        !engine
+                            .mod(source.modId)
+                            .groups.some(
+                                (group) =>
+                                    node.alternatives[0]?.kind === "purchase" &&
+                                    node.alternatives[0].item.mods.some((mod) =>
+                                        engine.mod(mod.id).groups.includes(group),
+                                    ),
+                            ),
+                );
+                if (!source) continue;
+                node.alternatives[0].item = engine.addStartingMod(
+                    node.alternatives[0].item,
+                    source.modId,
+                    random,
+                    "essence",
+                );
+                node.name += ` + NNN ${engine.mod(source.modId).name}`;
+            }
+        }
         const first = combine(
             "pair",
             inputs.slice(0, 2),
@@ -350,10 +477,31 @@ export function projectFromPreset(
             mods.slice(0, 2).map((id) => query([id], item.baseId)),
         );
         target = query(mods, item.baseId);
-        entry = combine("finish", [first.id, inputs[2]!], target, [
+        const second = combine(
+            "second-pair",
+            [inputs[0]!, inputs[2]!],
+            query([mods[0]!, mods[2]!], item.baseId),
+            [query([mods[0]!], item.baseId), query([mods[2]!], item.baseId)],
+        );
+        first.name = "1p + 1p: build the first prefix pair";
+        second.name = "1p + 1p: build the overlapping prefix pair";
+        const finish = combine("finish", [first.id, second.id], target, [
             first.output,
-            query([mods[2]!], item.baseId),
-        ]).id;
+            second.output,
+        ]);
+        finish.name = "2p + 2p: combine all three target prefixes";
+        for (const [index, mod] of mods.entries())
+            finish.branches.push({
+                id: `salvage-${index}`,
+                name: `Recover ${names[index]} into pair preparation`,
+                query: query([mod], item.baseId),
+                destination: {
+                    kind: "recover",
+                    nodeId: index === 2 ? second.id : first.id,
+                    inputId: index === 0 ? "input-0" : "input-1",
+                },
+            });
+        entry = finish.id;
     }
     const graph = projectFromItem(ruleset, base("Spine Bow"), preset.name);
     graph.nodes = nodes;

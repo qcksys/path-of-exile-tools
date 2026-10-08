@@ -6,7 +6,7 @@ import { workbenchCatalog } from "./crafting-workbench-fixtures";
 export function conditionalTransmuteGraph(game: "poe1" | "poe2") {
     const catalog = workbenchCatalog(game);
     const ruleset = historyIndex.revisions.find(
-        (entry) => entry.game === game && entry.revision === "r5",
+        (entry) => entry.game === game && entry.revision === "r6",
     )!;
     const graph = retainedTransmuteGraph(ruleset, catalog);
     const craft = graph.nodes.find((node) => node.kind === "craft")!;

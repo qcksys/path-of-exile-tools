@@ -38,11 +38,13 @@ export function ItemCard({
     item,
     onChange,
     label = "Current item",
+    collapsibleProperties = false,
 }: {
     engine: CraftingEngine;
     item: CraftingItem;
     onChange?: (item: CraftingItem) => void;
     label?: string;
+    collapsibleProperties?: boolean;
 }) {
     const { advanced, compact } = useContext(CraftingDisplay);
     const presentation = useItemPresentations(engine.catalog.game)[item.baseId];
@@ -383,25 +385,36 @@ export function ItemCard({
             </div>
             {Object.keys(properties).length ? (
                 <section aria-label="Final item properties" className="border-t px-4 py-3 text-xs">
-                    <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
-                        {craftingPropertyKeySchema.options
-                            .filter((key) => Object.hasOwn(properties, key))
-                            .map((key) => (
-                                <div key={key}>
-                                    <dt className="text-muted-foreground">
-                                        {itemPropertyNames[key]}
-                                    </dt>
-                                    <dd className="font-mono tabular-nums">
-                                        {properties[key] ?? "Set base roll"}
-                                    </dd>
-                                </div>
-                            ))}
-                    </dl>
-                    <p className="mt-2 text-muted-foreground">
-                        Item values after quality and modifiers. Total Resistance includes chaos;
-                        Flat Life excludes attributes and passive skills. DPS excludes skills,
-                        character bonuses and critical strikes.
-                    </p>
+                    <details open={collapsibleProperties ? undefined : true}>
+                        <summary
+                            className={
+                                collapsibleProperties
+                                    ? "cursor-pointer text-muted-foreground"
+                                    : "hidden"
+                            }
+                        >
+                            Item properties
+                        </summary>
+                        <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
+                            {craftingPropertyKeySchema.options
+                                .filter((key) => Object.hasOwn(properties, key))
+                                .map((key) => (
+                                    <div key={key}>
+                                        <dt className="text-muted-foreground">
+                                            {itemPropertyNames[key]}
+                                        </dt>
+                                        <dd className="font-mono tabular-nums">
+                                            {properties[key] ?? "Set base roll"}
+                                        </dd>
+                                    </div>
+                                ))}
+                        </dl>
+                        <p className="mt-2 text-muted-foreground">
+                            Item values after quality and modifiers. Total Resistance includes
+                            chaos; Flat Life excludes attributes and passive skills. DPS excludes
+                            skills, character bonuses and critical strikes.
+                        </p>
+                    </details>
                 </section>
             ) : null}
             {baseDefenceEntries(engine.catalog, item).length ? (

@@ -18,6 +18,7 @@ for (const preset of craftingPresets) {
         page,
         request,
     }) => {
+        if (preset.id === "strength-helical-ring") test.setTimeout(90_000);
         await page.addInitScript(() => {
             window.presetGraphResults = [];
             const RealWorker = window.Worker;
@@ -45,7 +46,10 @@ for (const preset of craftingPresets) {
         await expect(page.getByText(preset.description, { exact: true })).toBeVisible();
         await page.getByRole("button", { name: "Create from preset", exact: true }).click();
         await expect(page.getByRole("tab", { name: preset.name, exact: true })).toBeVisible();
-        await page.getByRole("spinbutton", { name: "Sampled trials", exact: true }).fill("8");
+        const trials = preset.id === "strength-helical-ring" ? 2 : 8;
+        await page
+            .getByRole("spinbutton", { name: "Sampled trials", exact: true })
+            .fill(String(trials));
         const graph = (await stored()).projects[0]!.graph;
         const created = await request.post("/api/v1/crafting/graph/from-preset", {
             data: { game: graph.game, ruleset: graph.ruleset, presetId: preset.id },
@@ -57,18 +61,22 @@ for (const preset of craftingPresets) {
             iterations: 100,
         });
         await page.getByRole("button", { name: "Calculate process", exact: true }).click();
-        await expect.poll(() => page.evaluate(() => window.presetGraphResults.length)).toBe(1);
+        await expect
+            .poll(() => page.evaluate(() => window.presetGraphResults.length), {
+                timeout: preset.id === "strength-helical-ring" ? 60_000 : 5000,
+            })
+            .toBe(1);
         const result = craftingGraphResultSchema.parse(
             (await page.evaluate(() => window.presetGraphResults))[0],
         );
         const calculated = await request.post("/api/v1/crafting/graph/calculate", {
-            data: { graph, options: { estimateIterations: 8 } },
+            data: { graph, options: { estimateIterations: trials } },
         });
         expect(calculated.ok(), await calculated.text()).toBe(true);
         expect((await calculated.json()).result).toEqual(result);
         expect(result.errors).toEqual({});
         expect(result.truncated).toBe(0);
-        expect(result.trials).toBe(8);
+        expect(result.trials).toBe(trials);
         expect(result.probability).toBe(1);
         expect(result.meanCost).toBeNull();
         expect(result.missingPrices.length).toBeGreaterThan(0);

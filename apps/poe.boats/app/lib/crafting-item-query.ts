@@ -82,6 +82,10 @@ export function createCraftingItemQuery(engine: CraftingEngine) {
                 modifiersComplete: identified && !item.reveal,
                 prefixes: counts.prefixes,
                 suffixes: counts.suffixes,
+                memoryStrands: item.memoryStrands ?? 0,
+                memoryStrandsSpent: item.imprint
+                    ? Math.max(0, (item.imprint.memoryStrands ?? 0) - (item.memoryStrands ?? 0))
+                    : undefined,
                 prefixLimit: limits.prefixes,
                 suffixLimit: limits.suffixes,
                 socketCount: item.sockets ?? 0,
