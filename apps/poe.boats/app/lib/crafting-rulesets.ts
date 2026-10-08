@@ -74,7 +74,7 @@ export function rulesetAllowsMethod(ruleset: CraftingRuleset, method: CraftingMe
 }
 
 export function rulesetAllowsConditionalSteps(ruleset: Pick<CraftingRuleset, "engine">) {
-    return ["crafting-graph-5", "crafting-graph-6"].includes(ruleset.engine);
+    return ["crafting-graph-5", "crafting-graph-6", "crafting-graph-7"].includes(ruleset.engine);
 }
 
 export function validateRulesetGraph(ruleset: CraftingRuleset, input: unknown) {
@@ -82,6 +82,8 @@ export function validateRulesetGraph(ruleset: CraftingRuleset, input: unknown) {
     resolveRuleset({ format: 1, revisions: [ruleset], latest: [] }, graph.game, graph.ruleset);
     for (const node of graph.nodes) {
         if (node.kind !== "craft") continue;
+        if (node.smart && ruleset.engine !== "crafting-graph-7")
+            throw new Error(`${node.name} requires a revision with simple crafting outcomes.`);
         if (!rulesetAllowsMethod(ruleset, node.method))
             throw new Error(`${node.name} uses a method unavailable in ${ruleset.label}.`);
         if (node.applyWhen && !rulesetAllowsConditionalSteps(ruleset))

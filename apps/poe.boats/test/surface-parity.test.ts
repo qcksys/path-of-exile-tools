@@ -169,7 +169,7 @@ describe("transport parity", () => {
 
     it.each(craftingPresets)("creates $name identically over HTTP and MCP", async (preset) => {
         const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === "r6",
+            (entry) => entry.game === "poe1" && entry.revision === "r7",
         )!;
         const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId: preset.id };
         const expected = projectFromPreset(fixtureEngine, ruleset, preset.id);
@@ -1281,6 +1281,22 @@ describe("transport parity", () => {
             },
         ],
         ["get_idol_catalog", {}],
+        [
+            "describe_simple_crafting_method",
+            {
+                graph: graphFixture(),
+                method: { kind: "currency", id: transmuteId },
+                item: firstItem,
+            },
+        ],
+        [
+            "configure_simple_crafting_outcome",
+            {
+                graph: conditionalTransmuteGraph("poe1"),
+                nodeId: "transmute",
+                goal: { kind: "once" },
+            },
+        ],
         ["list_idol_modifiers", { locale: "en" }],
         ["get_recombinator_catalog", {}],
         ["list_crafting_rulesets", { game: "poe1" }],
@@ -1483,6 +1499,15 @@ describe("transport parity", () => {
             "create_crafting_graph_from_preset",
             "/graph/from-preset",
             { game: "poe2", ruleset: graphFixture().ruleset, presetId: "tailwind-boots" },
+        ],
+        [
+            "configure_simple_crafting_outcome",
+            "/graph/simple-outcome",
+            {
+                graph: conditionalTransmuteGraph("poe1"),
+                nodeId: "transmute",
+                goal: { kind: "minimum", field: "memoryStrands", value: 70 },
+            },
         ],
         [
             "create_crafting_graph_from_preset",

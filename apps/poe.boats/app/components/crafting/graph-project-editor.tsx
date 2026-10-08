@@ -234,7 +234,9 @@ export function GraphProjectEditor({
                     inputs: [{ id: "item", name: "Item 1", source: graph.entry }],
                     method: { kind: "currency", id: method.id },
                     branches: [],
-                    ordering: "automatic",
+                    ...(ruleset.engine === "crafting-graph-7"
+                        ? { smart: { kind: "once" as const }, ordering: "manual" as const }
+                        : { ordering: "automatic" as const }),
                     fallback: { kind: "return" },
                 },
             ],
@@ -408,7 +410,7 @@ export function GraphProjectEditor({
                             : `${result.meanCost.toFixed(2)} ${graph.currency}`,
                     ],
                     [
-                        "Target probability",
+                        "Target probability after retries",
                         result?.probability === null || !result
                             ? "Not calculated"
                             : `${(result.probability * 100).toFixed(1)}%`,

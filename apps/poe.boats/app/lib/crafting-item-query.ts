@@ -7,6 +7,7 @@ import {
 import type { CraftingItem, RolledMod } from "../schemas/crafting";
 import type { CraftingEngine } from "./crafting-engine";
 import { modifierTiers } from "./crafting-modifier-details";
+import { mapQualityRecipe } from "./crafting-quality";
 import { linkedSocketRange } from "./crafting-sockets";
 
 const influenceNames = ["shaper", "elder", "crusader", "redeemer", "hunter", "warlord"];
@@ -73,6 +74,10 @@ export function createCraftingItemQuery(engine: CraftingEngine) {
             facts: {
                 baseId: item.baseId,
                 itemClass: base.item_class,
+                quality: item.quality,
+                qualityType: mapQualityRecipe(engine.catalog, item)?.id ?? "base",
+                catalystId: item.catalyst?.id ?? "none",
+                catalystQuality: item.catalyst?.quality ?? 0,
                 modifiers: identified
                     ? [
                           ...item.mods.map((rolled) => modifier(rolled)),

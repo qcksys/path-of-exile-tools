@@ -72,7 +72,23 @@ export function graphBranchChance(
     branchId: string,
 ) {
     const visits = result?.visits[nodeId];
+    if (visits?.modelOdds?.attempts)
+        return Math.min(1, (visits.modelOdds.branches[branchId] ?? 0) / visits.modelOdds.attempts);
     return visits?.visits ? (visits.branches[branchId] ?? 0) / visits.visits : null;
+}
+export function graphFinalAttemptChance(
+    result: CraftingGraphResult | undefined,
+    nodeId: string,
+    outcomeId: string,
+) {
+    const odds = result?.visits[nodeId]?.modelOdds;
+    return odds?.attempts ? Math.min(1, (odds.outcomes[outcomeId] ?? 0) / odds.attempts) : null;
+}
+export function graphOddsDescription(result: CraftingGraphResult | undefined, nodeId: string) {
+    const visits = result?.visits[nodeId];
+    return visits?.modelOdds?.attempts
+        ? `Model probability per craft attempt, averaged over the actual inputs to ${visits.modelOdds.attempts} attempts. Skipped crafts are excluded. Retry loops affect total cost and eventual success, not the odds of one attempt.`
+        : `Observed frequencies across ${visits?.visits ?? 0} visits, including retries and skipped crafts. These are sampled estimates; observing zero successes does not prove impossibility.`;
 }
 export const graphChanceWidth = (chance: number | null) => (chance === null ? 1.5 : 1 + 7 * chance);
 

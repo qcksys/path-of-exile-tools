@@ -5,6 +5,7 @@ import type { CraftingRuleset } from "../schemas/crafting-rulesets";
 import type { CraftingEngine } from "./crafting-engine";
 import { graphInputCount } from "./crafting-graph-validation";
 import { resolveRuleset, rulesetAllowsMethod } from "./crafting-rulesets";
+import { configureSimpleCraft, graphCraftInput, simpleCraftCapability } from "./crafting-smart";
 
 export function replaceGraphMethod(
     engine: CraftingEngine,
@@ -51,5 +52,34 @@ export function replaceGraphMethod(
         node.inputs.push({ id, name: "Item 2", source: node.inputs[0]!.source });
     }
     node.method = method;
+    if (
+        ruleset.engine === "crafting-graph-7" &&
+        JSON.stringify(input.expectedMethod) !== JSON.stringify(method)
+    ) {
+        const capability = simpleCraftCapability(engine, method, graphCraftInput(graph, node));
+        if (capability) {
+            if (capability.available === false) throw new Error(capability.reason!);
+            Object.assign(
+                node,
+                configureSimpleCraft(
+                    engine,
+                    node,
+                    capability.target
+                        ? {
+                              kind: "minimum",
+                              field: capability.target.field,
+                              value: capability.target.suggested,
+                          }
+                        : { kind: "once" },
+                ),
+            );
+        } else if (node.smart) {
+            delete node.smart;
+            delete node.applyWhen;
+            node.output = { format: 1, game: graph.game, groups: [] };
+            node.branches = [];
+            node.fallback = { kind: "return" };
+        }
+    }
     return craftingGraphSchema.parse(graph);
 }
