@@ -1,7 +1,13 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
-export async function choose(page: Page, label: string, query: string, option: string | RegExp) {
-    const input = page.getByRole("combobox", { name: label, exact: true });
+export async function choose(
+    scope: Page | Locator,
+    label: string,
+    query: string,
+    option: string | RegExp,
+) {
+    const page = "page" in scope ? scope.page() : scope;
+    const input = scope.getByRole("combobox", { name: label, exact: true });
     await input.fill(query);
     await input.press("ArrowDown");
     await page.getByRole("listbox").getByRole("option", { name: option, exact: true }).click();

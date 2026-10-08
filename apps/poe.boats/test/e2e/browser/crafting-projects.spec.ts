@@ -44,6 +44,11 @@ async function stored(page: Page) {
     return craftingWorkspaceSchema.parse(JSON.parse(raw!));
 }
 
+async function openGraphSettings(page: Page) {
+    const toggle = page.getByRole("button", { name: "Prices & calculation", exact: true });
+    if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+}
+
 async function importGraph(page: Page, graph = graphFixture()) {
     await page.goto(`/${graph.game === "poe2" ? "2" : "1"}/crafting/projects`);
     await page.getByLabel("Import crafting projects").setInputFiles({
@@ -58,6 +63,12 @@ async function importGraph(page: Page, graph = graphFixture()) {
         ),
     });
     await expect(page.getByRole("tab", { name: graph.name, exact: true })).toBeVisible();
+    await page
+        .getByRole("button", {
+            name: `Edit ${graph.nodes.find((node) => node.id === graph.entry)!.name}`,
+            exact: true,
+        })
+        .click();
 }
 
 for (const game of ["poe1", "poe2"] as const) {
@@ -124,7 +135,7 @@ for (const game of ["poe1", "poe2"] as const) {
         const original = (await stored(page)).projects[0]!.graph;
         const editor = page.getByRole("region", { name: "Selected step editor" });
         const open = editor.getByRole("button", { name: "Edit full method options", exact: true });
-        const dialog = page.getByRole("dialog", { name: "Configure crafting method", exact: true });
+        const dialog = page.getByRole("region", { name: "Configure crafting method", exact: true });
         async function configure() {
             await open.click();
             await expect(
@@ -138,7 +149,7 @@ for (const game of ["poe1", "poe2"] as const) {
                 JSON.stringify(["buy", "base"]),
             );
             await choose(
-                page,
+                dialog,
                 "Crafting method",
                 game === "poe1" ? "Fossils" : "Generate rare",
                 game === "poe1" ? "Fossils + resonator" : "Generate rare item",
@@ -264,10 +275,10 @@ for (const game of ["poe1", "poe2"] as const) {
         const key = `poe-boats:crafting:${game}:${data.patch}:draft:v1`;
         await page.evaluate(({ key, draft }) => localStorage.setItem(key, draft), { key, draft });
         await page.getByRole("button", { name: "Edit prepared item", exact: true }).click();
-        const dialog = page.getByRole("dialog", { name: "Prepare purchased item", exact: true });
+        const dialog = page.getByRole("region", { name: "Prepare purchased item", exact: true });
         await expect(dialog.getByLabel("Item level", { exact: true })).toHaveValue("86");
         await dialog.getByLabel("Base quality (%)", { exact: true }).fill("20");
-        await dialog.getByRole("button", { name: "Close", exact: true }).click();
+        await dialog.getByRole("button", { name: "Cancel item edits", exact: true }).click();
         await expect(dialog).not.toBeVisible();
         await expect(page.getByLabel("Purchase price (chaos)", { exact: false })).toHaveValue("10");
         await page.getByRole("button", { name: "Edit prepared item", exact: true }).click();
@@ -291,7 +302,7 @@ for (const game of ["poe1", "poe2"] as const) {
         await expect(
             dialog.getByRole("checkbox", { name: "Corrupted", exact: true }),
         ).toBeChecked();
-        await dialog.getByRole("button", { name: "Close", exact: true }).click();
+        await dialog.getByRole("button", { name: "Cancel item edits", exact: true }).click();
         expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBe(draft);
     });
 
@@ -463,6 +474,7 @@ for (const game of ["poe1", "poe2"] as const) {
             });
         });
         await importGraph(page, graph);
+        await openGraphSettings(page);
         const prices = page
             .locator("details")
             .filter({ has: page.locator("summary", { hasText: /^Prices & calculation$/ }) });
@@ -502,6 +514,7 @@ for (const game of ["poe1", "poe2"] as const) {
         );
         amount = 3;
         await page.reload();
+        await openGraphSettings(page);
         await expect(price).toHaveValue("3");
         await expect(
             prices.getByText(
@@ -517,6 +530,7 @@ for (const game of ["poe1", "poe2"] as const) {
         await expect(status).toHaveCount(0);
         expect(liveExchangePrices((await stored(page)).projects[0]!.graph)).toEqual([]);
         await page.reload();
+        await openGraphSettings(page);
         await expect(price).toHaveValue("7");
     });
 }
@@ -570,6 +584,7 @@ test("beast prices refresh on reopening and preserve manual overrides", async ({
         }),
     );
     await importGraph(page, graph);
+    await openGraphSettings(page);
     const prices = page
         .locator("details")
         .filter({ has: page.locator("summary", { hasText: /^Prices & calculation$/ }) });
@@ -586,12 +601,14 @@ test("beast prices refresh on reopening and preserve manual overrides", async ({
     await page.screenshot({ path: testInfo.outputPath("beast-price-sources.png"), fullPage: true });
     amount = 617;
     await page.reload();
+    await openGraphSettings(page);
     await expect(price).toHaveValue("617");
     await expect(status).toContainText("Market prices refreshed.");
     await price.fill("7");
     await expect(status).toHaveCount(0);
     expect(liveSourcePrices((await stored(page)).projects[0]!.graph)).toEqual([]);
     await page.reload();
+    await openGraphSettings(page);
     await expect(price).toHaveValue("7");
 });
 
@@ -601,7 +618,7 @@ test("full method editing refuses removal of a recovered input and keeps the dra
     await importGraph(page);
     const original = (await stored(page)).projects[0]!.graph;
     await page.getByRole("button", { name: "Edit full method options", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "Configure crafting method", exact: true });
+    const dialog = page.getByRole("region", { name: "Configure crafting method", exact: true });
     await selectValue(
         dialog.getByRole("combobox", { name: "Reference item for method options", exact: true }),
         JSON.stringify(["a", "buy"]),
@@ -609,7 +626,7 @@ test("full method editing refuses removal of a recovered input and keeps the dra
     await expect(
         dialog.getByRole("combobox", { name: "Recombination donor", exact: true }),
     ).toHaveCount(0);
-    await choose(page, "Crafting method", "Fossils", "Fossils + resonator");
+    await choose(dialog, "Crafting method", "Fossils", "Fossils + resonator");
     await dialog.getByRole("button", { name: "Apply method options", exact: true }).click();
     await expect(dialog.getByRole("alert")).toContainText("Reconnect recovery routes");
     expect((await stored(page)).projects[0]!.graph).toEqual(original);
@@ -624,12 +641,12 @@ test("full method editing adds a separately consumed graph input without an inve
 }) => {
     await importGraph(page, conditionalTransmuteGraph("poe1"));
     await page.getByRole("button", { name: "Edit full method options", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "Configure crafting method", exact: true });
+    const dialog = page.getByRole("region", { name: "Configure crafting method", exact: true });
     await selectValue(
         dialog.getByRole("combobox", { name: "Reference item for method options", exact: true }),
         JSON.stringify(["buy", "base"]),
     );
-    await choose(page, "Crafting method", "Recombine", "Recombine items");
+    await choose(dialog, "Crafting method", "Recombine", "Recombine items");
     await expect(
         dialog.getByRole("combobox", { name: "Recombination donor", exact: true }),
     ).toHaveCount(0);
@@ -789,6 +806,7 @@ test("equipment prices bind, refresh after reopening, and require an explicit ov
     expect(livePurchasePrices((await stored(page)).projects[0]!.graph)[0]?.reference).toMatchObject(
         { realm: "pc", league: "Standard", revision: "test-market", window: "adaptive-v1" },
     );
+    await openGraphSettings(page);
     await page.getByLabel("Sampled trials", { exact: true }).fill("3");
     const calculate = page.getByRole("button", { name: "Calculate process", exact: true });
     await expect(calculate).toBeEnabled();
@@ -936,6 +954,7 @@ for (const game of [1, 2]) {
         await editor.getByLabel("Trade league", { exact: true }).fill("Standard");
         await expect(tradeLink).toHaveCount(0);
         await page.getByRole("button", { name: "Add craft step", exact: true }).click();
+        await openGraphSettings(page);
         await page.getByLabel("Sampled trials", { exact: true }).fill("3");
         await page.getByLabel("Orb of Transmutation (chaos)", { exact: false }).fill("1");
         await page.getByRole("button", { name: "Calculate process", exact: true }).click();
@@ -956,6 +975,7 @@ for (const game of [1, 2]) {
             .getByRole("tab", { name: `Game ${game} ring`, exact: true })
             .first()
             .click();
+        await openGraphSettings(page);
         await expect(page.getByLabel("Sampled trials", { exact: true })).toHaveValue("3");
         await page
             .getByRole("button", { name: `Close Game ${game} ring`, exact: true })
@@ -1256,6 +1276,9 @@ test("NNN recombination preserves suppression and offers eligible essence prepar
         "31.00 chaos",
     );
     await expect(page.getByRole("region", { name: "Process estimate" })).toContainText("100.0%");
+    await selectValue(page.getByRole("combobox", { name: "Focus graph step" }), {
+        label: "NNN donor",
+    });
     await page.getByRole("button", { name: "Edit NNN donor", exact: true }).click();
     await page.getByText(/^Non-native natural essences \(/).click();
     const editor = page.getByRole("region", { name: "Selected step editor" });

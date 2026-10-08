@@ -19,3 +19,5 @@ Keep idol inventory and editor actions usable on mobile, offer keyboard and tap 
 Remove the React Flow attribution badge from crafting project graphs, including fullscreen view.
 
 Expand common-craft examples with Heist block shields, NNN donors, overlapping prefix pairs, Janus rarity helmets and a Replica Alberon's Helical Ring with memory-strand and imprint recovery. Show outcome conditions, probability-weighted success and retry paths, measured automatic layouts, and pinnable item previews. Add a retained crafting revision for memory-strand queries, Janus recombination and essence-safe Unravelling while preserving older saved rules.
+
+Automatically sample project graphs in a worker to show real item modifiers at each visited stage and percentages on outcome connections. Keep step, method, purchase and outcome editing inside the graph, add contextual help, and allow connection labels to be dragged or moved with the keyboard. Preserve adjusted line paths locally and provide readable navigation for long crafting chains. Restore keyboard focus after closing an item preview without reopening the card.

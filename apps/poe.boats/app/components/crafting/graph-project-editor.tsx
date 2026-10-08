@@ -2,11 +2,10 @@ import { itemQuerySchema } from "@poe-tools/item-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { graphCalculationKey, useGraphPreview } from "~/hooks/use-graph-preview";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import { liveExchangePrices } from "~/lib/crafting-exchange";
 import { projectFromItem } from "~/lib/crafting-graph-authoring";
@@ -26,7 +25,8 @@ import type { CraftingDraft } from "~/schemas/crafting-workspace";
 import { ExchangePricePicker } from "./exchange-price-picker";
 import { GraphCanvas } from "./graph-canvas";
 import { GraphNodeEditor, GraphPriceInput } from "./graph-node-editor";
-import { GraphQueryEditor, graphControl } from "./graph-query-editor";
+import { GraphOutcomeEditor } from "./graph-outcome-editor";
+import { graphControl } from "./graph-query-editor";
 import { GraphSamples } from "./graph-samples";
 import { ProcessCostHistory } from "./process-cost-history";
 import { SourcePricePicker } from "./source-price-picker";
@@ -70,8 +70,12 @@ export function GraphProjectEditor({
         0;
     const [calculation, setCalculation] = useState<{
         revision: number;
+        key: string;
         result: CraftingGraphResult;
     }>();
+    const calculationKey = graphCalculationKey(graph);
+    const currentCalculationKey = useRef(calculationKey);
+    currentCalculationKey.current = calculationKey;
     const worker = useRef<Worker | null>(null);
     const revision = useRef(project.revision);
     revision.current = project.revision;
@@ -160,16 +164,15 @@ export function GraphProjectEditor({
         loader.postMessage({ type: "catalog", graph });
         return () => loader.terminate();
     }, [ruleset, currentCatalog, fail]);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: Any draft revision invalidates the running calculation.
     useEffect(() => {
         worker.current?.terminate();
         worker.current = null;
         setBusy(false);
         return () => worker.current?.terminate();
-    }, [project.revision]);
+    }, [calculationKey]);
     const result = calculation?.result;
-    const stale = calculation && calculation.revision !== project.revision;
-    const node = graph.nodes.find((entry) => entry.id === selected) ?? graph.nodes[0]!;
+    const stale = calculation && calculation.key !== calculationKey;
+    const preview = useGraphPreview(graph, Boolean(engine) && !busy && (!result || Boolean(stale)));
     const select = useCallback((id: string) => setSelected(id), []);
     const costs = useMemo(() => {
         if (!engine) return [];
@@ -189,14 +192,16 @@ export function GraphProjectEditor({
         setBusy(true);
         setError("");
         const started = project.revision;
+        const startedKey = calculationKey;
         next.onmessage = ({ data }) => {
-            if (revision.current !== started) return;
+            if (currentCalculationKey.current !== startedKey) return;
             if (data.type === "error") {
                 fail(data.error);
                 setBusy(false);
             } else if (data.result) {
                 const parsed = craftingGraphResultSchema.safeParse(data.result);
-                if (parsed.success) setCalculation({ revision: started, result: parsed.data });
+                if (parsed.success)
+                    setCalculation({ revision: started, key: startedKey, result: parsed.data });
                 else fail("The calculation returned an invalid result.");
                 if (data.type === "done" || !parsed.success) {
                     setBusy(false);
@@ -469,25 +474,62 @@ export function GraphProjectEditor({
                     ruleset={ruleset}
                 />
             )}
-            <div
-                className={
-                    fullWidth ? "grid gap-4" : "grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]"
-                }
-            >
-                <div className="min-w-0 space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" size="sm" onClick={addCraft} disabled={!engine}>
-                            Add craft step
-                        </Button>
-                        <Dialog open={addingInput} onOpenChange={setAddingInput}>
-                            <DialogTrigger
-                                render={<Button variant="outline" size="sm" disabled={!engine} />}
+            {engine ? (
+                <GraphCanvas
+                    engine={engine}
+                    fullWidth={fullWidth}
+                    onFullWidthChange={setFullWidth}
+                    graph={graph}
+                    selected={selected}
+                    onSelect={select}
+                    onChange={update}
+                    result={stale ? preview.result : (result ?? preview.result)}
+                    previewStatus={
+                        result && !stale
+                            ? `Process sample: ${result.trials} trials${result.complete ? "" : " · incomplete"}.`
+                            : preview.error
+                              ? `Preview unavailable: ${preview.error}`
+                              : preview.busy
+                                ? "Generating item previews and outcome odds…"
+                                : `Initial sample: ${preview.result?.trials ?? 0} trials${preview.result && !preview.result.complete ? " · incomplete; some paths were not reached" : ""}. Calculate process for a larger estimate.`
+                    }
+                    onError={fail}
+                    renderStepEditor={(node, section) => (
+                        <GraphNodeEditor
+                            graph={graph}
+                            node={node}
+                            engine={engine}
+                            ruleset={ruleset}
+                            onChange={update}
+                            onError={fail}
+                            result={stale ? undefined : result}
+                            initialSection={section}
+                        />
+                    )}
+                    renderOutcomeEditor={(outcome) => (
+                        <GraphOutcomeEditor
+                            graph={graph}
+                            catalog={engine.catalog}
+                            outcomeId={outcome.id}
+                            onChange={update}
+                            onError={fail}
+                        />
+                    )}
+                    toolbar={
+                        <>
+                            <Button variant="outline" size="sm" onClick={addCraft}>
+                                Add craft step
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                aria-expanded={addingInput}
+                                onClick={() => setAddingInput(!addingInput)}
                             >
                                 Add item input
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogTitle>Add item input</DialogTitle>
-                                {engine && (
+                            </Button>
+                            {addingInput && (
+                                <div className="w-80 rounded border bg-card p-3">
                                     <CatalogPicker
                                         id="additional-input-base"
                                         label="New input base"
@@ -519,339 +561,76 @@ export function GraphProjectEditor({
                                             }
                                         }}
                                     />
-                                )}
-                            </DialogContent>
-                        </Dialog>
-                        <span className="self-center text-xs text-muted-foreground">
-                            Hover items for details. Retry paths show recovery or replacement.
-                        </span>
-                    </div>
-                    {engine && (
-                        <GraphCanvas
-                            engine={engine}
-                            fullWidth={fullWidth}
-                            onFullWidthChange={setFullWidth}
-                            graph={graph}
-                            selected={node.id}
-                            onSelect={select}
-                            onChange={update}
-                            result={stale ? undefined : result}
-                            onError={fail}
-                        />
-                    )}
-                    <details className="rounded-lg border border-border p-4" open>
-                        <summary className="cursor-pointer text-sm font-semibold">
-                            Prices & calculation
-                        </summary>
-                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                            <Label className="block text-xs">
-                                Sampled trials
-                                <Input
-                                    className={graphControl}
-                                    type="number"
-                                    min="1"
-                                    max="100000"
-                                    value={graph.iterations}
-                                    onChange={(event) =>
-                                        update({ ...graph, iterations: Number(event.target.value) })
-                                    }
-                                />
-                            </Label>
-                            <Label className="block text-xs">
-                                Maximum steps per trial
-                                <Input
-                                    className={graphControl}
-                                    type="number"
-                                    min="1"
-                                    max="1000000"
-                                    value={graph.maxSteps}
-                                    onChange={(event) =>
-                                        update({ ...graph, maxSteps: Number(event.target.value) })
-                                    }
-                                />
-                            </Label>
-                            {costs.map(([id, name]) => (
-                                <GraphPriceInput
-                                    key={id}
-                                    label={name}
-                                    currency={graph.currency}
-                                    value={graph.prices[id] ?? null}
-                                    onChange={(price) => {
-                                        const prices = { ...graph.prices };
-                                        if (price) prices[id] = price;
-                                        else delete prices[id];
-                                        update({ ...graph, prices });
-                                    }}
-                                />
-                            ))}
-                        </div>
-                        <ExchangePricePicker graph={graph} entries={costs} onChange={update} />
-                        {engine && (
+                                </div>
+                            )}
+                        </>
+                    }
+                    settings={
+                        <details className="rounded-lg border border-border p-4" open>
+                            <summary className="cursor-pointer text-sm font-semibold">
+                                Prices & calculation
+                            </summary>
+                            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                <Label className="block text-xs">
+                                    Sampled trials
+                                    <Input
+                                        className={graphControl}
+                                        type="number"
+                                        min="1"
+                                        max="100000"
+                                        value={graph.iterations}
+                                        onChange={(event) =>
+                                            update({
+                                                ...graph,
+                                                iterations: Number(event.target.value),
+                                            })
+                                        }
+                                    />
+                                </Label>
+                                <Label className="block text-xs">
+                                    Maximum steps per trial
+                                    <Input
+                                        className={graphControl}
+                                        type="number"
+                                        min="1"
+                                        max="1000000"
+                                        value={graph.maxSteps}
+                                        onChange={(event) =>
+                                            update({
+                                                ...graph,
+                                                maxSteps: Number(event.target.value),
+                                            })
+                                        }
+                                    />
+                                </Label>
+                                {costs.map(([id, name]) => (
+                                    <GraphPriceInput
+                                        key={id}
+                                        label={name}
+                                        currency={graph.currency}
+                                        value={graph.prices[id] ?? null}
+                                        onChange={(price) => {
+                                            const prices = { ...graph.prices };
+                                            if (price) prices[id] = price;
+                                            else delete prices[id];
+                                            update({ ...graph, prices });
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                            <ExchangePricePicker graph={graph} entries={costs} onChange={update} />
                             <SourcePricePicker
                                 graph={graph}
                                 engine={engine}
                                 entries={costs}
                                 onChange={update}
                             />
-                        )}
-                    </details>
-                    {catalog && (
-                        <details className="rounded-lg border border-border p-4">
-                            <summary className="cursor-pointer text-sm font-semibold">
-                                Terminal outcomes ({graph.outcomes.length})
-                            </summary>
-                            <p className="mt-2 text-xs text-muted-foreground">
-                                Only specified properties matter. More specific queries route first
-                                unless you choose manual order.
-                            </p>
-                            <div className="mt-4 space-y-4">
-                                {graph.outcomes.map((outcome, i) => (
-                                    <section
-                                        key={outcome.id}
-                                        className="space-y-3 border-t border-border pt-3"
-                                    >
-                                        <Input
-                                            key={outcome.name}
-                                            aria-label="Outcome name"
-                                            className={graphControl}
-                                            defaultValue={outcome.name}
-                                            onBlur={(event) => {
-                                                if (event.target.value.trim())
-                                                    update({
-                                                        ...graph,
-                                                        outcomes: graph.outcomes.map((entry) =>
-                                                            entry.id === outcome.id
-                                                                ? {
-                                                                      ...entry,
-                                                                      name: event.target.value,
-                                                                  }
-                                                                : entry,
-                                                        ),
-                                                    });
-                                            }}
-                                        />
-                                        <GraphQueryEditor
-                                            label="Outcome requirements"
-                                            ruleset={graph.ruleset}
-                                            catalog={catalog}
-                                            value={outcome.query}
-                                            onChange={(query) =>
-                                                update({
-                                                    ...graph,
-                                                    outcomes: graph.outcomes.map((entry) =>
-                                                        entry.id === outcome.id
-                                                            ? { ...entry, query }
-                                                            : entry,
-                                                    ),
-                                                })
-                                            }
-                                        />
-                                        <Label className="flex gap-2 text-xs">
-                                            <Checkbox
-                                                checked={outcome.success}
-                                                onCheckedChange={(checked) =>
-                                                    update({
-                                                        ...graph,
-                                                        outcomes: graph.outcomes.map((entry) =>
-                                                            entry.id === outcome.id
-                                                                ? {
-                                                                      ...entry,
-                                                                      success: checked,
-                                                                  }
-                                                                : entry,
-                                                        ),
-                                                    })
-                                                }
-                                            />
-                                            Count as a successful result
-                                        </Label>
-                                        <Label className="block text-xs">
-                                            Disposition
-                                            <FormSelect
-                                                className={graphControl}
-                                                value={outcome.disposition}
-                                                onValueChange={(selectedValue) =>
-                                                    update({
-                                                        ...graph,
-                                                        outcomes: graph.outcomes.map((entry) =>
-                                                            entry.id === outcome.id
-                                                                ? {
-                                                                      ...entry,
-                                                                      disposition:
-                                                                          selectedValue as typeof outcome.disposition,
-                                                                  }
-                                                                : entry,
-                                                        ),
-                                                    })
-                                                }
-                                            >
-                                                <FormSelectItem value="keep">Keep</FormSelectItem>
-                                                <FormSelectItem value="sell">Sell</FormSelectItem>
-                                                <FormSelectItem value="discard">
-                                                    Discard
-                                                </FormSelectItem>
-                                            </FormSelect>
-                                        </Label>
-                                        {outcome.disposition === "sell" && (
-                                            <GraphPriceInput
-                                                label="Sale price"
-                                                currency={graph.currency}
-                                                value={
-                                                    graph.prices[`outcome:${outcome.id}`] ??
-                                                    outcome.price
-                                                }
-                                                onChange={(price) => {
-                                                    const prices = { ...graph.prices };
-                                                    delete prices[`outcome:${outcome.id}`];
-                                                    update({
-                                                        ...graph,
-                                                        prices,
-                                                        outcomes: graph.outcomes.map((entry) =>
-                                                            entry.id === outcome.id
-                                                                ? { ...entry, price }
-                                                                : entry,
-                                                        ),
-                                                    });
-                                                }}
-                                            />
-                                        )}
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            disabled={i === 0}
-                                            onClick={() => {
-                                                const outcomes = [...graph.outcomes];
-                                                outcomes.splice(
-                                                    i - 1,
-                                                    0,
-                                                    outcomes.splice(i, 1)[0]!,
-                                                );
-                                                update({
-                                                    ...graph,
-                                                    outcomes,
-                                                    outcomeOrdering: "manual",
-                                                });
-                                            }}
-                                        >
-                                            Move outcome up
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            disabled={i === graph.outcomes.length - 1}
-                                            onClick={() => {
-                                                const outcomes = [...graph.outcomes];
-                                                outcomes.splice(
-                                                    i + 1,
-                                                    0,
-                                                    outcomes.splice(i, 1)[0]!,
-                                                );
-                                                update({
-                                                    ...graph,
-                                                    outcomes,
-                                                    outcomeOrdering: "manual",
-                                                });
-                                            }}
-                                        >
-                                            Move outcome down
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            disabled={graph.outcomes.length === 1}
-                                            onClick={() => {
-                                                const referenced = graph.nodes.some(
-                                                    (node) =>
-                                                        node.kind === "craft" &&
-                                                        [
-                                                            node.fallback,
-                                                            ...node.branches.map(
-                                                                (branch) => branch.destination,
-                                                            ),
-                                                        ].some(
-                                                            (destination) =>
-                                                                destination.kind === "terminal" &&
-                                                                destination.outcomeId ===
-                                                                    outcome.id,
-                                                        ),
-                                                );
-                                                if (referenced) {
-                                                    fail(
-                                                        "Redirect branches that finish at this outcome before removing it.",
-                                                    );
-                                                    return;
-                                                }
-                                                const prices = { ...graph.prices };
-                                                delete prices[`outcome:${outcome.id}`];
-                                                update({
-                                                    ...graph,
-                                                    prices,
-                                                    outcomes: graph.outcomes.filter(
-                                                        (entry) => entry.id !== outcome.id,
-                                                    ),
-                                                });
-                                            }}
-                                        >
-                                            Remove outcome
-                                        </Button>
-                                    </section>
-                                ))}
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                        update({
-                                            ...graph,
-                                            outcomes: [
-                                                ...graph.outcomes,
-                                                {
-                                                    id: crypto.randomUUID(),
-                                                    name: `Outcome ${graph.outcomes.length + 1}`,
-                                                    query: itemQuerySchema.parse({
-                                                        game: graph.game,
-                                                    }),
-                                                    success: false,
-                                                    disposition: "discard",
-                                                    price: null,
-                                                },
-                                            ],
-                                        })
-                                    }
-                                >
-                                    Add terminal outcome
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                        update({ ...graph, outcomeOrdering: "automatic" })
-                                    }
-                                >
-                                    {graph.outcomeOrdering === "automatic"
-                                        ? "Automatic outcome ordering"
-                                        : "Restore automatic outcome ordering"}
-                                </Button>
-                            </div>
                         </details>
-                    )}
-                </div>
-                <div className="min-w-0">
-                    {engine ? (
-                        <GraphNodeEditor
-                            onError={fail}
-                            key={node.id}
-                            graph={graph}
-                            node={node}
-                            engine={engine}
-                            ruleset={ruleset}
-                            onChange={update}
-                            result={stale ? undefined : result}
-                        />
-                    ) : (
-                        <p role="status">Loading this revision's item catalog…</p>
-                    )}
-                </div>
-            </div>
+                    }
+                />
+            ) : (
+                <p role="status">Loading this revision's item catalog…</p>
+            )}
         </div>
     );
 }

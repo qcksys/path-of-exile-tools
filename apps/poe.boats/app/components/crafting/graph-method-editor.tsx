@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogTitle,
-    DialogTrigger,
-} from "~/components/ui/dialog";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import type { CraftingMethod } from "~/schemas/crafting";
 import {
@@ -106,86 +99,93 @@ export function GraphMethodEditor({
         }
     }
     return (
-        <Dialog
-            open={Boolean(draft)}
-            onOpenChange={(open) => {
-                if (!open) return close();
-                setReferenceId("");
-                setDraft({
-                    original: structuredClone(node.method),
-                    method: structuredClone(node.method),
-                });
-            }}
-        >
-            <DialogTrigger render={<Button variant="outline" size="sm" />}>
+        <div className="space-y-3">
+            <Button
+                variant="outline"
+                size="sm"
+                aria-expanded={Boolean(draft)}
+                onClick={() => {
+                    if (draft) return close();
+                    setReferenceId("");
+                    setDraft({
+                        original: structuredClone(node.method),
+                        method: structuredClone(node.method),
+                    });
+                }}
+            >
                 Edit full method options
-            </DialogTrigger>
-            <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
-                <DialogTitle>Configure crafting method</DialogTitle>
-                <DialogDescription>
-                    Choose a reference item to show the workbench's available options. This only
-                    changes the method; actual inputs come from the graph and may have different
-                    properties after earlier crafts. Calculation checks their eligibility.
-                </DialogDescription>
-                <CatalogPicker
-                    id="method-reference-item"
-                    label="Reference item for method options"
-                    options={references.map((entry) => ({
-                        id: entry.id,
-                        label: entry.name,
-                        itemId: entry.item.baseId,
-                    }))}
-                    value={
-                        reference && {
-                            id: reference.id,
-                            label: reference.name,
-                            itemId: reference.item.baseId,
-                        }
-                    }
-                    onSelect={setReferenceId}
-                    disabled={busy}
-                />
-                {!references.length && (
-                    <p>Add a purchased item to configure available method options.</p>
-                )}
-                <p className="text-sm">
-                    Selected method: {engine.methodName(draft?.method ?? node.method)}
-                </p>
-                {draft && reference && (
-                    <fieldset disabled={busy} className="min-w-0 space-y-3">
-                        <p className="text-xs text-muted-foreground">
-                            {engine.base(reference.item).name} · item level {reference.item.level} ·{" "}
-                            {reference.item.rarity}
-                        </p>
-                        <MethodPicker
-                            engine={engine}
-                            item={reference.item}
-                            value={draft.method}
-                            connectedInputs
-                            onChange={(method) => setDraft({ ...draft, method })}
-                        />
-                    </fieldset>
-                )}
-                <p className="text-xs text-muted-foreground">
-                    Existing input connections, conditions and prices are preserved. A newly
-                    required second input initially uses the first input's source and consumes a
-                    separate item; review its connection after applying. Methods unavailable in this
-                    era are refused.
-                </p>
-                {error && (
-                    <p role="alert" className="text-sm text-destructive">
-                        {error}
+            </Button>
+            {draft && (
+                <section
+                    aria-label="Configure crafting method"
+                    className="space-y-3 rounded border p-3"
+                >
+                    <h4 className="font-semibold">Configure crafting method</h4>
+                    <p className="text-xs text-muted-foreground">
+                        Choose a reference item to show the workbench's available options. This only
+                        changes the method; actual inputs come from the graph and may have different
+                        properties after earlier crafts. Calculation checks their eligibility.
                     </p>
-                )}
-                <div className="flex gap-2">
-                    <Button disabled={busy || !reference} onClick={() => void apply()}>
-                        {busy ? "Applying…" : "Apply method options"}
-                    </Button>
-                    <Button variant="outline" onClick={close}>
-                        Cancel
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+                    <CatalogPicker
+                        id="method-reference-item"
+                        label="Reference item for method options"
+                        options={references.map((entry) => ({
+                            id: entry.id,
+                            label: entry.name,
+                            itemId: entry.item.baseId,
+                        }))}
+                        value={
+                            reference && {
+                                id: reference.id,
+                                label: reference.name,
+                                itemId: reference.item.baseId,
+                            }
+                        }
+                        onSelect={setReferenceId}
+                        disabled={busy}
+                    />
+                    {!references.length && (
+                        <p>Add a purchased item to configure available method options.</p>
+                    )}
+                    <p className="text-sm">
+                        Selected method: {engine.methodName(draft?.method ?? node.method)}
+                    </p>
+                    {draft && reference && (
+                        <fieldset disabled={busy} className="min-w-0 space-y-3">
+                            <p className="text-xs text-muted-foreground">
+                                {engine.base(reference.item).name} · item level{" "}
+                                {reference.item.level} · {reference.item.rarity}
+                            </p>
+                            <MethodPicker
+                                engine={engine}
+                                item={reference.item}
+                                value={draft.method}
+                                connectedInputs
+                                onChange={(method) => setDraft({ ...draft, method })}
+                            />
+                        </fieldset>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                        Existing input connections, conditions and prices are preserved. A newly
+                        required second input initially uses the first input's source and consumes a
+                        separate item; review its connection after applying. Methods unavailable in
+                        this era are refused.
+                    </p>
+                    {error && (
+                        <p role="alert" className="text-sm text-destructive">
+                            {error}
+                        </p>
+                    )}
+                    <div className="flex gap-2">
+                        <Button disabled={busy || !reference} onClick={() => void apply()}>
+                            {busy ? "Applying…" : "Apply method options"}
+                        </Button>
+                        <Button variant="outline" onClick={close}>
+                            Cancel
+                        </Button>
+                    </div>
+                </section>
+            )}
+        </div>
     );
 }
