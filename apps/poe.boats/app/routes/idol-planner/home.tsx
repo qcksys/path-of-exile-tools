@@ -9,6 +9,7 @@ import { InventoryPanel } from "~/components/idol-planner/inventory-panel";
 import { LeagueSelector } from "~/components/idol-planner/league-selector";
 import { MapDeviceComponent } from "~/components/idol-planner/map-device";
 import { ModsSearchModal } from "~/components/idol-planner/mods-search-modal";
+import { PlacementControls } from "~/components/idol-planner/placement-controls";
 import { SetTabs } from "~/components/idol-planner/set-tabs";
 import { ShareModal } from "~/components/idol-planner/share-modal";
 import { StatsSummary } from "~/components/idol-planner/stats-summary";
@@ -89,7 +90,7 @@ function HomeContent() {
     const inventory = activeSet?.inventory ?? [];
 
     return (
-        <div className="flex h-screen flex-col overflow-hidden">
+        <div className="flex min-h-screen flex-col lg:h-screen lg:overflow-hidden">
             <AppHeader section={t("app.idolPlanner")} sectionBadge={t("app.subtitle")} />
 
             <main className="container mx-auto flex min-h-0 flex-1 flex-col p-4">
@@ -103,8 +104,8 @@ function HomeContent() {
                     onDeleteSet={sets.deleteSet}
                 />
 
-                <div className="mt-4 grid min-h-0 flex-1 gap-4 overflow-y-auto lg:grid-cols-[280px_1fr_260px] lg:overflow-visible xl:grid-cols-[400px_1fr_350px]">
-                    <aside className="flex max-h-[50vh] min-h-0 flex-col gap-2 overflow-hidden lg:max-h-none">
+                <div className="mt-4 grid min-h-0 flex-1 items-start gap-4 lg:items-stretch lg:grid-cols-[280px_1fr_260px] xl:grid-cols-[400px_1fr_350px]">
+                    <aside className="flex min-w-0 min-h-0 flex-col gap-2 lg:overflow-hidden">
                         <Card className="shrink-0">
                             <CardContent className="flex flex-col gap-2 p-3">
                                 <Button
@@ -133,13 +134,27 @@ function HomeContent() {
                         />
                     </aside>
 
-                    <section className="flex flex-col items-center gap-4 overflow-x-auto">
+                    <section className="flex min-w-0 flex-col items-start gap-4 overflow-x-auto lg:items-center">
                         <Button variant="outline" size="sm" onClick={() => setShareModalOpen(true)}>
                             <Share2 className="mr-1 h-4 w-4" />
                             {t("actions.share")}
                         </Button>
                         {activeSet && (
                             <>
+                                <details className="w-full min-w-0 rounded-lg border border-border p-3">
+                                    <summary className="cursor-pointer text-sm font-medium">
+                                        Place or move without dragging
+                                    </summary>
+                                    <PlacementControls
+                                        key={activeSet.id}
+                                        inventory={inventory}
+                                        placements={activeSet.placements}
+                                        unlockedConditions={activeSet.unlockedConditions}
+                                        onPlace={(id, x, y) => sets.placeIdol(id, { x, y })}
+                                        onMove={(id, x, y) => sets.moveIdol(id, { x, y })}
+                                        onRemove={sets.removeIdolFromSet}
+                                    />
+                                </details>
                                 <div className="min-w-fit">
                                     <IdolGrid
                                         placements={activeSet.placements}
@@ -165,7 +180,7 @@ function HomeContent() {
                         )}
                     </section>
 
-                    <aside className="max-h-[50vh] min-h-0 lg:max-h-none">
+                    <aside className="min-w-0 min-h-0">
                         <StatsSummary
                             placements={activeSet?.placements ?? []}
                             inventory={inventory}
