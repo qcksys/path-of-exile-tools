@@ -207,6 +207,8 @@ for (const game of ["poe1", "poe2"] as const) {
         await expect(page.getByRole("region", { name: "Process estimate" })).toContainText(
             "10.00 chaos",
         );
+        await expect(editor).toHaveCount(0);
+        await page.getByRole("button", { name: `Edit ${craft.name}`, exact: true }).click();
         await expect(editor).toContainText("Skipped 3 times in 3 trials.");
         const saved = (await stored(page)).projects[0]!.graph;
         expect(saved.nodes.find((node) => node.kind === "craft")!.applyWhen).toEqual(
@@ -871,6 +873,10 @@ test("equipment prices bind, refresh after reopening, and require an explicit ov
     await status.getByRole("button", { name: "Refresh market prices" }).click();
     await expect(status).toContainText("could not be refreshed");
     await expect(calculate).toBeDisabled();
+    await expect(editor).toHaveCount(0);
+    await page
+        .getByRole("button", { name: `Edit ${marketGraph().nodes[0]!.name}`, exact: true })
+        .click();
     await expect(price).toHaveValue("25");
     await price.fill("7");
     await expect(status).toHaveCount(0);
