@@ -2,6 +2,8 @@
 import { once } from "node:events";
 import { createServer, type Server } from "node:http";
 import { fileURLToPath } from "node:url";
+import { gunzipSync } from "node:zlib";
+import { CallToolResultSchema } from "@modelcontextprotocol/sdk/types.js";
 import { itemQuerySchema, normalizeApiItem } from "@poe-tools/item-query";
 import { selectCohortPrice } from "@poe-tools/market";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
@@ -10,6 +12,7 @@ import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection } from "mysql2/promise";
 import { RouterContextProvider } from "react-router";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from "vite-plus/test";
+import { api } from "~/api/router.server";
 import { dbContext, envContext } from "~/context";
 import type { TDatabase } from "~/db/client";
 import {
@@ -21,6 +24,8 @@ import {
     findCraftingMarketPrices,
 } from "~/db/queries/crafting-market.queries";
 import { getMarketData } from "~/db/queries/market.queries";
+import { tIngestWorker } from "~/db/schema/ingest.worker";
+import { tStashCheckpoint, tStashDailySample } from "~/db/schema/stash.checkpoint";
 import { tStashCohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
@@ -30,17 +35,27 @@ import { bindExchangePrice } from "~/lib/crafting-exchange";
 import { calculateCraftingGraph } from "~/lib/crafting-graph-simulation";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import { bindCohortPurchasePrice, livePurchasePrices } from "~/lib/crafting-market";
+import { handleMcpRequest } from "~/mcp/server.server";
 import {
     craftingMarketSnapshots,
     refreshCraftingMarketPrices,
 } from "~/operations/crafting-market.server";
-import { action } from "~/routes/api.stash-ingest";
+import type { OperationContext } from "~/operations/operation";
+import { getServerStatus } from "~/operations/server-status.server";
+import { action, loader } from "~/routes/api.stash-ingest";
 import { craftingGraphSchema } from "~/schemas/crafting-graph";
 import { marketFiltersSchema } from "~/schemas/market";
-import { createClient } from "../../../../packages/poe-api-client/src/client.ts";
+import { createClient } from "../../../../packages/poe-api-client/dist/index.mjs";
 import { ingestCx } from "../../../../packages/poe-stash-ingest/src/cx/ingest.ts";
 import { rollupCx } from "../../../../packages/poe-stash-ingest/src/cx/rollup.ts";
 import { flushRollups } from "../../../../packages/poe-stash-ingest/src/pipeline.ts";
+import {
+    fetchCheckpoints,
+    flushCheckpoints,
+    probeSample,
+    recordCheckpoint,
+    validateSample,
+} from "../../../../packages/poe-stash-ingest/src/ps/checkpoints.ts";
 import { rollupEquipment } from "../../../../packages/poe-stash-ingest/src/ps/equipment-rollup.ts";
 import { ingestPs } from "../../../../packages/poe-stash-ingest/src/ps/ingest.ts";
 import { rollupPs } from "../../../../packages/poe-stash-ingest/src/ps/rollup.ts";
@@ -121,7 +136,7 @@ beforeAll(async () => {
     });
     server = createServer(async (incoming, outgoing) => {
         try {
-            if (incoming.url !== "/api/stash-ingest") {
+            if (new URL(incoming.url!, baseUrl).pathname !== "/api/stash-ingest") {
                 const next = upstreamResponses.shift();
                 outgoing.writeHead(next?.status ?? (next ? 200 : 500), {
                     "content-type": "application/json",
@@ -140,11 +155,14 @@ beforeAll(async () => {
             // Use the production SQL queries with MySQL's TCP transport in the test container.
             context.set(dbContext, mysql as unknown as TDatabase);
             context.set(envContext, { STASH_INGEST_TOKEN: TOKEN } as CloudflareBindings);
-            const response = await action({
-                request: new Request(`${baseUrl}/api/stash-ingest`, {
+            const handler = incoming.method === "GET" ? loader : action;
+            const response = await handler({
+                request: new Request(`${baseUrl}${incoming.url}`, {
                     method: incoming.method,
                     headers: { authorization: incoming.headers.authorization ?? "" },
-                    body: Buffer.concat(chunks).toString(),
+                    ...(incoming.method === "GET"
+                        ? {}
+                        : { body: Buffer.concat(chunks).toString() }),
                 }),
                 context,
                 params: {},
@@ -166,6 +184,9 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+    await mysql.delete(tStashDailySample);
+    await mysql.delete(tStashCheckpoint);
+    await mysql.delete(tIngestWorker);
     await mysql.delete(tStashCurrencyHourly);
     await mysql.delete(tStashUniqueHourly);
     await mysql.delete(tStashCohortHourly);
@@ -190,6 +211,265 @@ afterAll(async () => {
         );
     await connection?.end();
     await container?.stop();
+});
+
+it("durably retries immutable cursor metadata and one daily sample, with authenticated reads", async () => {
+    const page = { next_change_id: "second", stashes: [stash] };
+    const scope = {
+        realm: "pc" as const,
+        league: "Standard",
+        cursor: "first",
+        capturedAt: HOUR * 1000,
+    };
+    await recordCheckpoint(local.conn, page, scope);
+    await recordCheckpoint(
+        local.conn,
+        { ...page, next_change_id: "third" },
+        { ...scope, cursor: "second", capturedAt: scope.capturedAt + 1000 },
+    );
+    receiverStatus = 503;
+    await expect(flushCheckpoints(local.conn)).rejects.toThrow("503");
+    expect(await queryAll(local.conn, "SELECT id FROM ps_checkpoint WHERE delivered")).toEqual([]);
+    receiverStatus = undefined;
+    expect(await flushCheckpoints(local.conn)).toBe(2);
+    const original = await mysql.select().from(tStashDailySample);
+    expect(original).toHaveLength(1);
+    await local.conn.run("UPDATE ps_checkpoint SET delivered = FALSE");
+    expect(await flushCheckpoints(local.conn)).toBe(2);
+    expect(await mysql.select().from(tStashDailySample)).toEqual(original);
+    expect(await mysql.select().from(tStashCheckpoint)).toHaveLength(2);
+    const query = {
+        kind: "checkpoints" as const,
+        realm: "pc" as const,
+        league: "Standard",
+        from: HOUR * 1000,
+        to: (HOUR + 3600) * 1000,
+    };
+    const rows = await fetchCheckpoints(query);
+    expect(rows).toHaveLength(2);
+    expect(rows.every((row) => row.responseGzip === null)).toBe(true);
+    expect(
+        await fetchCheckpoints({ ...query, afterTime: rows[0]!.capturedAt, afterId: rows[0]!.id }),
+    ).toHaveLength(1);
+    expect(await fetchCheckpoints({ ...query, league: "Other" })).toEqual([]);
+    expect((await fetch(`${baseUrl}/api/stash-ingest?kind=sample`)).status).toBe(401);
+    const client = createClient({ baseUrl, userAgent: "checkpoint-test", token: TOKEN });
+    upstreamResponses.push({ body: page }, { body: { ...page, stashes: [] } });
+    expect(await validateSample(client, query)).toMatchObject({
+        status: "matched",
+        originalStashes: 1,
+    });
+    expect(await validateSample(client, query)).toMatchObject({
+        status: "changed",
+        fetchedStashes: 0,
+    });
+    expect(await mysql.select().from(tStashUniqueHourly)).toEqual([]);
+});
+
+it("probes selected-field hashes across pages without modifying capture or market history", async () => {
+    const second = { ...stash, id: "second" };
+    const scope = {
+        realm: "pc" as const,
+        league: "Standard",
+        cursor: "start",
+        capturedAt: HOUR * 1000,
+    };
+    await recordCheckpoint(
+        local.conn,
+        { next_change_id: "old-boundary", stashes: [stash, second] },
+        scope,
+    );
+    await flushCheckpoints(local.conn);
+    const checkpoints = await mysql.select().from(tStashCheckpoint);
+    const samples = await mysql.select().from(tStashDailySample);
+    const query = {
+        kind: "sample" as const,
+        realm: "pc" as const,
+        league: "Standard",
+        from: HOUR * 1000,
+        to: (HOUR + 3600) * 1000,
+    };
+    const client = createClient({ baseUrl, userAgent: "probe-test", token: TOKEN });
+    upstreamResponses.push(
+        {
+            body: {
+                next_change_id: "new-boundary",
+                stashes: [{ ...stash, lastCharacterName: "new-character" }],
+            },
+        },
+        { body: { next_change_id: "end", stashes: [second, { ...stash, id: "extra" }] } },
+    );
+    expect(await probeSample(client, query, { pages: 2, delayMs: 0 })).toMatchObject({
+        status: "selected-fields-matched",
+        version: "listing-v1",
+        fullMatched: 1,
+        selectedMatched: 2,
+        missing: 0,
+        extraStashes: 1,
+        pages: [
+            { page: 1, missing: 1 },
+            { page: 2, missing: 0 },
+        ],
+    });
+    upstreamResponses.push({ body: { next_change_id: "start", stashes: [] } });
+    expect(await probeSample(client, query, { pages: 5, delayMs: 0 })).toMatchObject({
+        status: "incomplete",
+        stopped: "cursor-repeated",
+        missing: 2,
+    });
+    await expect(probeSample(client, query, { pages: 26 })).rejects.toThrow("1 and 25");
+    upstreamResponses.push({ status: 400, body: { error: { message: "Cursor unavailable" } } });
+    expect(await probeSample(client, query, { pages: 2, delayMs: 0 })).toMatchObject({
+        status: "incomplete",
+        stopped: "source-unavailable",
+        sourceError: { status: 400 },
+        pages: [],
+    });
+    expect(await mysql.select().from(tStashCheckpoint)).toEqual(checkpoints);
+    expect(await mysql.select().from(tStashDailySample)).toEqual(samples);
+    expect(await mysql.select().from(tStashUniqueHourly)).toEqual([]);
+    expect(await queryAll(local.conn, "SELECT * FROM ps_listing")).toEqual([]);
+    expect(await getCursor(local.conn, "psapi")).toBeUndefined();
+});
+
+it.each([
+    "psapi-replay",
+    "equipment-replay",
+])("rejects retired restore stream %s", async (stream) => {
+    const response = await fetch(`${baseUrl}/api/stash-ingest`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${TOKEN}`, "content-type": "application/json" },
+        body: JSON.stringify({ stream, rows: [] }),
+    });
+    expect(response.status).toBe(400);
+    expect(await mysql.select().from(tStashUniqueHourly)).toEqual([]);
+    expect(await mysql.select().from(tStashCohortHourly)).toEqual([]);
+});
+
+it.each([
+    "pending",
+    "validated",
+])("refuses retired %s replay databases for capture and publication", async (state) => {
+    await local.conn.run("INSERT INTO pipeline_config VALUES ('replay', $1)", [state]);
+    const client = createClient({ baseUrl, userAgent: "retired-replay-test", token: TOKEN });
+    await expect(ingestPs(local.conn, client, { pages: 1 })).rejects.toThrow("retired");
+    await expect(rollupPs(local.conn, { hour: HOUR })).rejects.toThrow("retired");
+    await expect(rollupEquipment(local.conn, { hour: HOUR })).rejects.toThrow("retired");
+    expect(await mysql.select().from(tStashUniqueHourly)).toEqual([]);
+    expect(await mysql.select().from(tStashCohortHourly)).toEqual([]);
+});
+
+it("accepts authenticated worker heartbeats and exposes real coverage through HTTP and MCP", async () => {
+    const now = Date.now();
+    const heartbeat = {
+        workerId: "local-Allflame",
+        realm: "pc",
+        league: "Allflame",
+        state: "running",
+        stage: "currency",
+        startedAt: now,
+        reportedAt: now,
+        progressAt: now,
+        completedAt: null,
+        lastSuccessAt: null,
+        failedStages: [],
+        cycles: 1,
+        pages: 5,
+        equipmentObserved: 15,
+        stashCaughtUp: false,
+        currencyNextHour: HOUR,
+        deliveredHours: 0,
+        deliveredRows: 0,
+    };
+    const body = JSON.stringify({ stream: "status", rows: [heartbeat] });
+    expect((await fetch(`${baseUrl}/api/stash-ingest`, { method: "POST", body })).status).toBe(401);
+    expect(
+        (
+            await fetch(`${baseUrl}/api/stash-ingest`, {
+                method: "POST",
+                headers: { authorization: `Bearer ${TOKEN}` },
+                body,
+            })
+        ).status,
+    ).toBe(200);
+    await mysql.insert(tStashCurrencyHourly).values([
+        { realm: "pc", league: "Allflame", hour: HOUR, marketId: "first" },
+        { realm: "pc", league: "Allflame", hour: HOUR, marketId: "second" },
+        { realm: "pc", league: "Allflame", hour: HOUR + 7200, marketId: "first" },
+    ]);
+    const unused = async (): Promise<never> => {
+        throw new Error("Unexpected catalog lookup");
+    };
+    const runtime = async (): Promise<OperationContext> => ({
+        db: mysql as unknown as TDatabase,
+        caller: null,
+        origin: "https://poe.boats",
+        loadCatalog: unused,
+        loadWorkbenchCatalog: unused,
+        loadCraftingRulesets: unused,
+        loadCraftingRevision: unused,
+    });
+    const expected = await getServerStatus(mysql as unknown as TDatabase, { league: "Allflame" });
+    expect(expected.workers).toMatchObject([{ health: "running", stage: "currency", pages: 5 }]);
+    expect(expected.coverage).toEqual([
+        {
+            stream: "currency",
+            realm: "pc",
+            league: "Allflame",
+            firstHour: HOUR,
+            latestHour: HOUR + 7200,
+            hours: 2,
+            rows: 3,
+        },
+    ]);
+    const http = await api.request(
+        "https://poe.boats/api/v1/server/status?league=Allflame",
+        undefined,
+        { runtime },
+    );
+    expect(http.status).toBe(200);
+    expect(await http.json()).toMatchObject({
+        workers: expected.workers,
+        coverage: expected.coverage,
+    });
+    const rpc = await handleMcpRequest(
+        new Request("https://poe.boats/mcp", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                accept: "application/json, text/event-stream",
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "tools/call",
+                params: { name: "get_server_status", arguments: { league: "Allflame" } },
+            }),
+        }),
+        runtime,
+    );
+    const result = CallToolResultSchema.parse(((await rpc.json()) as { result: unknown }).result);
+    expect(result.isError).not.toBe(true);
+    expect(result.structuredContent).toMatchObject({
+        workers: expected.workers,
+        coverage: expected.coverage,
+    });
+    expect(
+        (
+            await api.request("https://poe.boats/api/v1/server/status?realm=invalid", undefined, {
+                runtime,
+            })
+        ).status,
+    ).toBe(400);
+    expect(
+        (await getServerStatus(mysql as unknown as TDatabase, { league: "Other" })).workers,
+    ).toEqual([]);
+    const invalid = await fetch(`${baseUrl}/api/stash-ingest`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${TOKEN}` },
+        body: JSON.stringify({ stream: "status", rows: [{ ...heartbeat, pages: -1 }] }),
+    });
+    expect(invalid.status).toBe(400);
 });
 
 it("converts captured indirect pairs only with positive matching-hour legs and preserves historical scope", async () => {
@@ -927,6 +1207,71 @@ it("updates a seeded currency market with a long ID through HTTP to MySQL", asyn
     });
 });
 
+it("bounds historical exchange cycles and resumes the next committed hour", async () => {
+    for (let offset = 1; offset <= 3; offset++)
+        upstreamResponses.push({
+            body: { next_change_id: HOUR + offset * 3600, markets: [market] },
+        });
+    const client = createClient({ baseUrl, userAgent: "backfill-e2e", token: TOKEN });
+    const progress: number[] = [];
+    const first = await ingestCx(local.conn, client, {
+        fromHour: HOUR,
+        catchUp: true,
+        maxHours: 2,
+        onProgress: async (result) => {
+            progress.push(result.nextHour);
+        },
+    });
+    expect(first.map((result) => result.hour)).toEqual([HOUR, HOUR + 3600]);
+    expect(progress).toEqual([HOUR + 3600, HOUR + 7200]);
+    expect(await getCursor(local.conn, "cxapi")).toBe(String(HOUR + 7200));
+    expect(upstreamResponses).toHaveLength(1);
+    const resumed = await ingestCx(local.conn, client, { catchUp: true, maxHours: 1 });
+    expect(resumed.map((result) => result.hour)).toEqual([HOUR + 7200]);
+    expect(await getCursor(local.conn, "cxapi")).toBe(String(HOUR + 10800));
+});
+
+it("captures a full exchange snapshot atomically, filtering leagues and tolerating replay", async () => {
+    const markets = Array.from({ length: 1000 }, (_, index) => ({
+        ...market,
+        market_id: `${MARKET_ID}-${index}`,
+    }));
+    const snapshot = {
+        next_change_id: HOUR + 3600,
+        markets: [...markets, { ...market, league: "Other league" }],
+    };
+    upstreamResponses.push({ body: snapshot }, { body: snapshot });
+    const client = createClient({ baseUrl, userAgent: "snapshot-e2e", token: TOKEN });
+    for (let replay = 0; replay < 2; replay++) {
+        const [result] = await ingestCx(local.conn, client, {
+            fromHour: HOUR,
+            catchUp: false,
+            league: "Standard",
+        });
+        expect(result).toMatchObject({ leagues: 1, markets: 1001, nextHour: HOUR + 3600 });
+    }
+    expect(
+        await queryAll(
+            local.conn,
+            `SELECT league, count(*)::INTEGER AS count,
+            min(observed_hour)::INTEGER AS hour FROM cx_market_hour GROUP BY league`,
+        ),
+    ).toEqual([{ league: "Standard", count: 1000, hour: HOUR }]);
+    upstreamResponses.push({
+        body: {
+            next_change_id: HOUR + 7200,
+            markets: [...markets, { ...market, market_id: null }],
+        },
+    });
+    await expect(
+        ingestCx(local.conn, client, { catchUp: false, league: "Standard" }),
+    ).rejects.toThrow();
+    expect(await getCursor(local.conn, "cxapi")).toBe(String(HOUR + 3600));
+    expect(
+        await queryAll(local.conn, "SELECT count(*)::INTEGER AS count FROM cx_market_hour"),
+    ).toEqual([{ count: 1000 }]);
+});
+
 it("prices a whole craft from replayed exchange hours without mixing realms, leagues or zero-volume markets", async () => {
     vi.spyOn(Date, "now").mockReturnValue((HOUR + 30 * 24 * 3600) * 1000);
     const client = createClient({
@@ -1219,6 +1564,16 @@ it("rolls back a failed page and replays it without duplicate observations", asy
     expect(await getCursor(local.conn, "psapi")).toBeUndefined();
     expect(await queryAll(local.conn, "SELECT * FROM ps_listing_hour")).toEqual([]);
     expect(await queryAll(local.conn, "SELECT * FROM icon_basemap")).toEqual([]);
+    expect(await queryAll(local.conn, "SELECT * FROM ps_checkpoint")).toEqual([]);
+    const [captured] = await queryAll<{ body: string; processed: boolean }>(
+        local.conn,
+        "SELECT to_base64(p.response_gzip) AS body, c.processed_at IS NOT NULL AS processed FROM ps_capture_page c JOIN ps_capture_payload p USING (response_hash)",
+    );
+    expect(captured?.processed).toBe(false);
+    expect(
+        JSON.parse(gunzipSync(Buffer.from(captured!.body, "base64")).toString()).stashes[1].items[0]
+            .baseType,
+    ).toBeNull();
     upstreamResponses.push({ body: { next_change_id: "page-2", stashes: [stash] } });
     await ingestPs(local.conn, client, { pages: 1 });
     await rollupPs(local.conn, { hour: Math.floor(Date.now() / 3_600_000) * 3600 });

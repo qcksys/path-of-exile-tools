@@ -5,9 +5,12 @@ Two-stream Path of Exile ingestor with a **DuckDB raw store** and **HTTP-pushed 
 - **`poe-stash-ps`** — public-stash (psapi) firehose
 - **`poe-stash-cx`** — currency-exchange (cxapi) hourly digest
 
-The local DuckDB file is the _transient_ hot store — bulk-write friendly, OLAP-friendly for the rollup `GROUP BY`. The remote MySQL on poe.boats receives **only** rolled-up hourly summaries and keeps them **forever**.
+The local DuckDB file holds compressed crafting-input observations and the working tables used for hourly summaries. Back up its persistent volume: saved cursors cannot reliably recover historical versions. Remote MySQL keeps hourly summaries, worker status, cursor metadata and one daily diagnostic sample; the filtered source archive stays on the ingestion server.
 
 ## Setup
+
+For the complete local app/MySQL/worker setup, historical backfill, monitoring and server
+operations, see the [ingestion server runbook](../../docs/ingestion-server.md). Historical backfill applies to exchange data only.
 
 ### Docker Compose (local pipeline)
 
@@ -53,9 +56,11 @@ docker compose down
 `stop` allows the active cycle to finish and closes DuckDB; `start` resumes committed cursors.
 `down` removes containers and leaves the named volume intact. `down --volumes` deletes that
 local history and should only be used when deliberately discarding it. Remote chart history is
-not deleted by either command. Health reflects the last completed cycle; a failed stage or no
-completion in ten minutes makes the worker unhealthy. Logs identify the failed stage and the
-watch loop retries it. Docker's restart policy restarts a crashed process, not an unhealthy one.
+not deleted by either command. Health reflects periodic heartbeats and committed stage progress:
+a failed stage, a heartbeat older than three minutes, or a running stage without progress for
+ten minutes makes the worker unhealthy. Logs identify the failed stage and the watch loop retries
+it. Docker's restart policy restarts a crashed process, not an unhealthy one. The receiving app's
+`/server-status` page shows the same worker report alongside actual stored history coverage.
 
 To seed a recent cursor on an empty volume, stop the worker, then run a one-off command with
 the same host credentials (`varlock run` from this package directory):
@@ -142,9 +147,104 @@ vp run '@poe-tools/stash-ingest#ps' process --league Allflame --pages 50 --watch
 
 The dev endpoint is `https://dev.poe.boats/api/stash-ingest`; `local` retains the configured local endpoint. Match the ingestor token to the app's token. The receiving app's database migrations must be applied before starting the new ingestor.
 
-`process` runs stash ingestion, sale evaluation, currency ingestion and delivery of pending completed hours. `--no-currency` disables the exchange source. Omit `--watch` for one cycle. Failed stages are reported, saved cursors resume committed work, and delivery retries use idempotent upserts. Run only one writer per DuckDB file. Stop the watch process with Ctrl+C.
+`process` runs stash ingestion, sale evaluation, currency ingestion and delivery of pending completed hours. `--no-currency` disables the exchange source. Omit `--watch` for one cycle. While stash capture is behind, successful cycles continue after 1.2 seconds; caught-up cycles and failures use the normal one-minute polling interval. Failed stages are reported, saved cursors resume committed work, and delivery retries use idempotent upserts. Run only one writer per DuckDB file. Stop the watch process with Ctrl+C.
 
-For a fresh database, seed a recent public-stash cursor with `--cursor <id>`; without one the API begins at its oldest available changes. Stash timestamps are **observation times**, not the original listing or trade times. Historical seasons can only show observations captured while they were available; the stream cannot reconstruct past sales. Initial catch-up removals are excluded from likely-sale inference.
+For a fresh database, seed a recent public-stash cursor with `--cursor <id>`; without one the API begins at the start of its available stream. Stash timestamps are **observation times**, not the original listing or trade times. Historical seasons can only show observations captured while they were available; the stream cannot reconstruct past sales. Initial catch-up removals are excluded from likely-sale inference.
+
+### Durable forward capture and diagnostic checkpoints
+
+GGG documents a stream of current and newly listed stashes, with stash IDs reappearing as the feed
+advances, rather than a date-indexed history ([official reference](https://www.pathofexile.com/developer/docs/reference#publicstashes)).
+Live tests on 2026-10-09 showed that the same cursor's contents and next cursor changed within
+seconds. A 66-stash saved sample yielded only 33 identical versions across a ten-page replay;
+two original IDs reappeared with changed selected fields and 31 were absent from those pages.
+A later 25-page probe found 33 identical versions, five changed versions and 28 absent original IDs.
+This is evidence against treating saved cursors as immutable snapshots, not proof of global absence.
+Saved observations and summaries are the history; historical cursor restoration has been removed.
+Hashes can detect differences, but cannot reconstruct a historical value that the API no longer returns.
+
+Capture is limited to the configured league and **crafting-relevant candidates**:
+
+- Selected good bases from the generated base cohorts and craftable jewel/cluster-jewel bases, even without an exact priced cohort match.
+- Uniques/relics, currency-tier materials and divination cards, including unidentified/unpriced items.
+- Craftable bases with fractures, synthesis, influence, Delve/memory/mutation flags or special modifier flags.
+- Potential special-modifier donors, including lower-tier bases, identified using generated catalog text for drop-only, Delve, veiled/unveiled and mercenary modifiers.
+
+All fields of selected items are retained, including unknown fields. Ordinary low-tier equipment,
+gems and unrelated items are excluded. Filtering precedes archiving; detailed price classification
+and extraction follow it. `capture-poe1.json` is regenerated alongside the market cohorts from the
+crafting catalog. Distinctive donor text permits uncertain matches and combined/scaled rolls;
+retention does not establish a modifier's identity or make it eligible for pricing. New game data
+requires regenerating/reviewing this policy; it cannot guarantee capture of future unknown categories.
+Stash records contain only selected items. Empty/private changes for previously captured stashes
+preserve removals; unrelated stashes/pages produce no archive payload.
+
+`ps_capture_payload` stores the filtered response as a gzip BLOB, deduplicated by its full
+content checksum. `ps_capture_page` retains each observation's scope, requested/next cursor and
+capture time. Different contents at the same cursor remain separate payloads. The archive commits
+before price processing, so a classification failure cannot discard the selected source items. Archiving
+failure stops processing before advancing the cursor. Successful processing marks the observation
+in the same transaction as its cursor update. Unprocessed observations remain available for inspection;
+this command set does not automatically rebuild prices from them.
+
+The archive has **no automatic deletion or age cap** and the pricing-table `prune` command never
+touches it. Preserve and back up the whole DuckDB database/WAL. Provision disk capacity and monitor
+growth; storage exhaustion stops capture instead of silently discarding source pages. This retention
+starts when the updated worker is installed; older unrecorded versions cannot be recovered.
+
+With the worker stopped, `pnpm ps capture-status` reports observation/payload counts, unprocessed
+pages, first/latest capture times, and original/compressed payload bytes. These byte counts exclude
+database indexes, working tables and WAL, so also monitor actual volume usage.
+
+Each advancing page is committed with its requested/next cursor, capture timestamp, counts and a
+SHA-256 checksum of the complete parsed response (object key ordering is ignored). The first nonempty
+page per UTC day is also retained as gzip/base64. The pipeline retries delivery to the authenticated
+receiver; PlanetScale keeps immutable checkpoint metadata and one sample per realm/league/day.
+An empty poll at an unchanged cursor does not create another checkpoint. Metadata reads exclude the
+sample body and paginate in batches of 500. Samples and cursor reads require the ingestion token.
+Deploy the receiver migration before updating ingestion workers. Pending uploads remain in DuckDB
+if the receiver is unavailable or does not support checkpoint delivery.
+
+Run from this package after the normal environment setup:
+
+```sh
+pnpm ps flush-checkpoints
+pnpm ps validate-replay --day 2026-10-08 --league Allflame
+pnpm ps probe-replay --day 2026-10-08 --league Allflame --pages 10
+pnpm ps capture-status
+```
+
+Dates are UTC; `--from` is inclusive and `--to` exclusive, with a maximum range of 31 days.
+Use the original capture scope (`all` if unfiltered) and the same `POE_REALM` for diagnostics.
+`validate-replay` is read-only and reports `matched`, `changed`, or `missing-sample`. A daily match
+validates that sample only; it does not prove the rest of the day's feed is unchanged.
+
+`probe-replay` compares each original stash against up to 25 following pages, using both complete
+stash hashes and versioned `listing-v1` hashes. It counts original versions found, selected-field
+changes, originals absent from the inspected pages, and extra stash IDs. Repeated IDs retain all
+observed versions for comparison. Page boundaries and ordering do not affect these comparisons.
+The command reports a nonzero exit when not every selected-field fingerprint is found; absence
+within the bounded probe is not proof that the record is unavailable everywhere in the feed.
+Requests are spaced five seconds apart. Source failures stop the probe and retain partial counts
+in its report, including HTTP status and `Retry-After` when supplied. It does not retry a rate limit.
+
+`listing-v1` covers stash identity/public status/account/league/name, item IDs, names/base types,
+rarity, identification, item level, stack size, price notes, corruption/replica/foil state and
+explicit/implicit/crafted/fractured/enchantment modifiers. Item and modifier ordering is ignored;
+legacy numeric rarity and string modifiers are normalized. Icons, layout, last character name,
+and unselected fields are ignored. A hash match therefore proves only these selected fields:
+properties, influences, sockets and other omitted fields can still differ. This is a diagnostic
+comparison only. It cannot publish reconstructed prices. Changing the selected fields or
+normalization requires a new version.
+
+The probe also measures the JSON/gzip size of a candidate manifest containing only hashed stash
+IDs and selected-field hashes. It does not persist this manifest, replace existing daily samples,
+or change the live cursor, listings or price history.
+
+The receiver rejects the retired `psapi-replay` and `equipment-replay` upload streams. Old historical
+replay databases are retained but refused for live capture and publication, even if previously
+marked validated. Normal live ingestion still applies its usual updates and sale corrections.
+Checkpoints, daily samples, existing summaries and source archives are preserved.
 
 `poe-stash-ps flush [--league <name>] [--dry-run]` replays up to 168 pending completed season-hours per call, oldest first. It includes failed deliveries, newly resolved unidentified items and later sale corrections. Repeat to drain a larger backlog. `rollup --hour <unix-seconds>` explicitly rebuilds a particular hour. Hours use UTC epoch seconds aligned to 3600.
 
@@ -162,7 +262,7 @@ Removal events are retained locally in `ps_sale` for correction. Pruning protect
 
 ## Extend item processing
 
-Ordinary uniques, currency and divination cards are captured automatically. Add another item family to `ITEM_CATEGORIES` in `src/shared/capture.ts`. Identity is defined in `src/shared/item-key.ts`.
+The raw archive retains crafting candidates selected by `src/ps/crafting-capture.ts` and the generated capture policy. Ordinary uniques, currency and divination cards are also normalized automatically. Add another item family to `ITEM_CATEGORIES` in `src/shared/capture.ts` to include it in that projection, and review its archive eligibility. Identity is defined in `src/shared/item-key.ts`.
 
 For a separately priced variant, add a `ModExtractor` under `src/shared/mod-extractors/` and register it in `EXTRACTORS`. Use `explicitModLines(item)` to support current modifier objects and legacy string modifiers. Implement `matches` and `extract`, returning a stable `kind` and deterministic JSON data; optionally provide `value` for a readable market key. Otherwise the signature is SHA-256 hashed. Sort unordered modifier collections before returning them. The ingestor persists the key, so adding an extractor requires no rollup SQL, receiver schema or UI changes. Add fixtures that prove equivalent variants group together and different variants remain separate. Existing historical observations keep the key under which they were captured.
 
@@ -180,12 +280,12 @@ poe-stash-ps prune    [--max-rows N] [--keep-days N] [--dry-run]
 
 #### Capture rule
 
-Every item is examined; we persist:
+The source archive uses the broader crafting-input rules above. The unique/currency price projection includes:
 
 - Every **unique** (`frameType=3`) — identified or not. Unidentified ones are keyed by their `iconAsset` so the boss-drop variants can be priced separately even before the text resolves.
 - Every **identified currency-tier** item (`frameType=5` / `6`, or `rarity=Currency`).
 
-Everything else is dropped. There is no name watchlist.
+Equipment classifiers populate their own price tables. Other retained crafting candidates need supported classifiers before they can contribute prices.
 
 #### Mod signatures
 

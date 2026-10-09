@@ -18,6 +18,10 @@ if (process.argv[2] === "replay") {
             process.env.INGEST_PAGES ?? "50",
         );
         if (process.env.INGEST_CURRENCY === "false") process.argv.push("--no-currency");
+        if (process.env.INGEST_CURRENCY_FROM_HOUR)
+            process.argv.push("--currency-from-hour", process.env.INGEST_CURRENCY_FROM_HOUR);
+        if (process.env.INGEST_CURRENCY_HOURS)
+            process.argv.push("--currency-hours", process.env.INGEST_CURRENCY_HOURS);
     }
     await import("#src/ps/cli.ts");
 }

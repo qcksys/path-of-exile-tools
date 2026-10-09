@@ -73,18 +73,24 @@ export async function captureEquipment(
     const hour = Math.floor(observedAt.getTime() / 3_600_000) * 3600;
     await conn.run(
         `INSERT OR REPLACE INTO ps_equipment_cohort_hour
+        WITH changed AS MATERIALIZED (
+            SELECT revision, league, observed_hour, matches FROM ps_equipment_hour
+            WHERE account_name = $1 AND observed_hour = $2
+            AND item_id IN (SELECT value->>'id' FROM json_each($3::JSON))
+        )
         SELECT DISTINCT revision, league, observed_hour, json_extract_string(c.value, '$'), current_timestamp
-        FROM ps_equipment_hour h, json_each(h.matches) c
-        WHERE account_name = $1 AND observed_hour = $2
-        AND item_id IN (SELECT value->>'id' FROM json_each($3::JSON))`,
+        FROM changed h, json_each(h.matches) c`,
         [account, hour, JSON.stringify(rows)],
     );
     await conn.run(
         `INSERT OR REPLACE INTO ps_equipment_cohort_hour
+        WITH changed AS MATERIALIZED (
+            SELECT revision, league, observed_hour, unknown_matches FROM ps_equipment_hour
+            WHERE account_name = $1 AND observed_hour = $2
+            AND item_id IN (SELECT value->>'id' FROM json_each($3::JSON))
+        )
         SELECT DISTINCT revision, league, observed_hour, json_extract_string(c.value, '$'), current_timestamp
-        FROM ps_equipment_hour h, json_each(h.unknown_matches) c
-        WHERE account_name = $1 AND observed_hour = $2
-        AND item_id IN (SELECT value->>'id' FROM json_each($3::JSON))`,
+        FROM changed h, json_each(h.unknown_matches) c`,
         [account, hour, JSON.stringify(rows)],
     );
     await conn.run(

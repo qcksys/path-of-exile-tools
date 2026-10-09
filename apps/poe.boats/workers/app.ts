@@ -1,6 +1,6 @@
 import { createRequestHandler, RouterContextProvider } from "react-router";
 import { dbContext, envContext, exeContext, localeContext, serverTimingContext } from "~/context";
-import { createDbConnection } from "~/db/client.ts";
+import { openDatabase } from "~/db/client.ts";
 import { detectLocale } from "~/lib/locale.server.ts";
 import { handleScheduled } from "~/scheduled/index.ts";
 import { ServerTiming } from "~/services/server-timing.server.ts";
@@ -21,7 +21,8 @@ export default {
 
         const context = new RouterContextProvider();
 
-        const db = createDbConnection(env.DATABASE_URL);
+        const database = await openDatabase(env.DATABASE_URL, env.DATABASE_DRIVER);
+        const db = database.db;
 
         context.set(envContext, env);
         context.set(exeContext, executionContext);
@@ -35,7 +36,12 @@ export default {
         const isGetOrHead = request.method === "GET" || request.method === "HEAD";
         const safeRequest = isGetOrHead ? new Request(request, { body: null }) : request;
 
-        const response = await requestHandler(safeRequest, context);
+        let response: Response;
+        try {
+            response = await requestHandler(safeRequest, context);
+        } finally {
+            executionContext.waitUntil(database.close());
+        }
 
         timing.stop("total");
 

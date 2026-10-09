@@ -5,7 +5,8 @@
     "type": "module",
     "exports": {
         ".": "./src/index.ts",
-        "./cohorts-poe1.json": "./data/cohorts-poe1.json"
+        "./cohorts-poe1.json": "./data/cohorts-poe1.json",
+        "./capture-poe1.json": "./data/capture-poe1.json"
     },
     "scripts": {
         "typecheck": "tsc --noEmit",

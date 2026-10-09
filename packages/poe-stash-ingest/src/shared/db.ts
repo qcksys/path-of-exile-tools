@@ -85,6 +85,20 @@ CREATE TABLE IF NOT EXISTS ps_equipment_cohort_hour (
     PRIMARY KEY (revision, league, hour, cohort_id)
 );
 CREATE TABLE IF NOT EXISTS pipeline_config (key VARCHAR PRIMARY KEY, value VARCHAR NOT NULL);
+CREATE TABLE IF NOT EXISTS ps_checkpoint (
+    id VARCHAR PRIMARY KEY, captured_at BIGINT NOT NULL, payload JSON NOT NULL, delivered BOOLEAN NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ps_daily_sample (day VARCHAR PRIMARY KEY, checkpoint_id VARCHAR NOT NULL);
+CREATE TABLE IF NOT EXISTS ps_capture_payload (
+    response_hash VARCHAR PRIMARY KEY, response_gzip BLOB NOT NULL, response_bytes BIGINT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ps_capture_page (
+    id VARCHAR PRIMARY KEY, realm VARCHAR NOT NULL, league VARCHAR NOT NULL,
+    cursor VARCHAR, next_cursor VARCHAR NOT NULL, captured_at BIGINT NOT NULL,
+    response_hash VARCHAR NOT NULL, processed_at TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS ps_capture_page_time ON ps_capture_page(captured_at);
+CREATE TABLE IF NOT EXISTS ps_capture_stash (stash_id VARCHAR PRIMARY KEY);
 CREATE TABLE IF NOT EXISTS ps_equipment_cohort (
     revision VARCHAR NOT NULL, cohort_id VARCHAR NOT NULL, definition JSON NOT NULL,
     PRIMARY KEY (revision, cohort_id)
@@ -133,7 +147,11 @@ export interface DbHandle {
 }
 
 export async function openDb(path = process.env.PS_LOCAL_DB ?? "./data.duckdb"): Promise<DbHandle> {
-    const instance = await DuckDBInstance.fromCache(path);
+    const instance = await DuckDBInstance.fromCache(path, {
+        // biome-ignore lint/style/useNamingConvention: DuckDB configuration key.
+        memory_limit: process.env.PS_MEMORY_LIMIT ?? "1GB",
+        threads: process.env.PS_THREADS ?? "2",
+    });
     const conn = await instance.connect();
     // Pin the session to UTC so TIMESTAMP columns store UTC clock-time and
     // `epoch(date_trunc('hour', ts))` agrees with JS `Date.now()/3.6e6` unix-hour math.
