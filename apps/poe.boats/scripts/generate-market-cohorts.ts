@@ -10,6 +10,7 @@ import { CraftingEngine } from "../app/lib/crafting-engine";
 import { incursionGloveModifiers } from "../app/lib/crafting-incursion";
 import { modifierTiers } from "../app/lib/crafting-modifier-details";
 import { craftingCatalogSchema } from "../app/schemas/crafting";
+import { writeCapturePolicy } from "./generate-capture-policy";
 import { marketModifierTextModel } from "./market-modifier-text";
 
 const bytes = await readFile("public/game-data/crafting-poe1.json");
@@ -340,6 +341,7 @@ await writeFile(
     "../../packages/poe-market/data/cohorts-poe1.json",
     `${JSON.stringify(manifest)}\n`,
 );
+await writeCapturePolicy(catalog);
 console.log(
     `Generated ${cohorts.length} cohorts for ${generatedNames.size} base names: ${revision}`,
 );

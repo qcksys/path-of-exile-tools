@@ -8,8 +8,12 @@ services:
     init: true
     restart: unless-stopped
     stop_grace_period: 2m
+    mem_limit: 2g
+    cpus: 1.0
     environment:
       PS_LOCAL_DB: /data/market.duckdb
+      PS_MEMORY_LIMIT: ${PS_MEMORY_LIMIT:-1GB}
+      PS_THREADS: ${PS_THREADS:-2}
       POE_CLIENT_ID: ${POE_CLIENT_ID:-}
       POE_CLIENT_SECRET_FILE: /run/secrets/poe_client_secret
       POE_USER_AGENT_CONTACT: ${POE_USER_AGENT_CONTACT:-}
@@ -21,6 +25,9 @@ services:
       INGEST_PAGES: ${INGEST_PAGES:-50}
       INGEST_CURRENCY: ${INGEST_CURRENCY:-true}
       INGEST_STATUS_FILE: /data/status.json
+      INGEST_WORKER_ID: ${INGEST_WORKER_ID:-}
+      INGEST_CURRENCY_FROM_HOUR: ${INGEST_CURRENCY_FROM_HOUR:-}
+      INGEST_CURRENCY_HOURS: ${INGEST_CURRENCY_HOURS:-1}
     secrets:
       - poe_client_secret
       - poe_boats_ingest_token

@@ -9,6 +9,7 @@ export default [
     route("api/*", "routes/api.ts"),
     route("mcp", "routes/mcp.ts"),
     route("integrations", "routes/integrations.tsx"),
+    route("server-status", "routes/server-status.tsx"),
     route("crafting/share/:id", "routes/crafting/share.tsx"),
     ...prefix("api", [
         route("auth/*", "routes/api.auth.$.ts"),

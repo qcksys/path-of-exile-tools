@@ -2,7 +2,7 @@ import type { IngestPayload } from "#src/shared/remote/types.ts";
 
 const DEFAULT_BATCH_SIZE = 500;
 
-function requireRemoteEnv(): { url: string; token: string } {
+export function requireRemoteEnv(): { url: string; token: string } {
     const url = process.env.POE_BOATS_INGEST_URL;
     const token = process.env.POE_BOATS_INGEST_TOKEN;
     if (!url) throw new Error("POE_BOATS_INGEST_URL is not set.");

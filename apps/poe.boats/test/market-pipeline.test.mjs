@@ -232,15 +232,33 @@ it("rejects relabeling stored observations as another realm", async () => {
     await expect(assertSourceRealm(db.conn, "poe2")).rejects.toThrow("realm");
 });
 
-it("still delivers pending hours when the next upstream ingest fails", async () => {
+it.each([
+    200, 503,
+])("still delivers pending hours when upstream fails and checkpoints return %s", async (status) => {
     await ingest([stash]);
     await db.conn.run("UPDATE ps_listing_hour SET observed_hour = observed_hour - 3600");
     client.public.stashTabs.mockRejectedValueOnce(new Error("upstream unavailable"));
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ written: 1 })));
+    const network = vi.fn().mockImplementation((_url, request) => {
+        const payload = JSON.parse(request.body);
+        return Promise.resolve(
+            Response.json(
+                { written: payload.rows.length },
+                { status: payload.stream === "stash-checkpoints" ? status : 200 },
+            ),
+        );
+    });
+    vi.stubGlobal("fetch", network);
     await expect(runPipeline(db.conn, client, { pages: 1, currency: false })).rejects.toThrow(
         "pipeline stages failed",
     );
     expect(await queryAll(db.conn, "SELECT * FROM rollup_state")).toHaveLength(1);
+    expect(network.mock.calls.map(([, request]) => JSON.parse(request.body).stream)).toEqual([
+        "stash-checkpoints",
+        "psapi",
+    ]);
+    expect(await queryAll(db.conn, "SELECT delivered FROM ps_checkpoint")).toEqual([
+        { delivered: status === 200 },
+    ]);
 });
 
 it("batches large stashes without losing raw modifiers, null fields, or icon counts", async () => {

@@ -1,7 +1,17 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import { queryAll } from "#src/shared/db.ts";
 
+async function assertLiveDatabase(conn: DuckDBConnection) {
+    const [state] = await queryAll<{ value: string }>(
+        conn,
+        "SELECT value FROM pipeline_config WHERE key = 'replay'",
+    );
+    if (state)
+        throw new Error("Historical replay databases are retired; use the live capture database.");
+}
+
 export async function assertSourceRealm(conn: DuckDBConnection, realm: string) {
+    await assertLiveDatabase(conn);
     const [source] = await queryAll<{ value: string }>(
         conn,
         "SELECT value FROM pipeline_config WHERE key = 'source'",
@@ -17,6 +27,7 @@ export async function configureSource(
     realm: string,
     league: string | null,
 ) {
+    await assertLiveDatabase(conn);
     const scope = JSON.stringify({ realm, league });
     const [existing] = await queryAll<{ value: string }>(
         conn,

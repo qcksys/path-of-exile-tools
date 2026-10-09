@@ -8,6 +8,86 @@ program
     .showHelpAfterError();
 
 program
+    .command("probe-replay")
+    .description(
+        "Read-only comparison of full and selected-field stash hashes across following pages.",
+    )
+    .requiredOption("--day <date>", "sample UTC date (YYYY-MM-DD)")
+    .requiredOption("-l, --league <name>", "checkpoint capture scope, including 'all'")
+    .option("--pages <n>", "maximum pages to inspect (1–25)", positiveInteger, 5)
+    .action(async (opts) => {
+        const { probeSample, checkpointRange } = await import("#src/ps/checkpoints.ts");
+        const { createPoeClient, REALM } = await import("#src/shared/auth.ts");
+        const to = new Date(Date.parse(`${opts.day}T00:00:00Z`) + 86_400_000)
+            .toISOString()
+            .slice(0, 10);
+        const result = await probeSample(
+            createPoeClient(),
+            checkpointRange(opts.league, opts.day, to, REALM),
+            { pages: Number(opts.pages) },
+        );
+        console.log(JSON.stringify(result));
+        if (result.status !== "selected-fields-matched")
+            throw new Error(
+                "Original selected-field fingerprints were not all found within the probe; market history was not changed.",
+            );
+    });
+
+program
+    .command("validate-replay")
+    .description(
+        "Compare one saved daily response with a fresh fetch; never changes listings or prices.",
+    )
+    .requiredOption("--day <date>", "sample UTC date (YYYY-MM-DD)")
+    .requiredOption("-l, --league <name>", "checkpoint capture scope, including 'all'")
+    .action(async (opts) => {
+        const { validateSample, checkpointRange } = await import("#src/ps/checkpoints.ts");
+        const { createPoeClient, REALM } = await import("#src/shared/auth.ts");
+        const to = new Date(Date.parse(`${opts.day}T00:00:00Z`) + 86_400_000)
+            .toISOString()
+            .slice(0, 10);
+        const result = await validateSample(
+            createPoeClient(),
+            checkpointRange(opts.league, opts.day, to, REALM),
+        );
+        console.log(JSON.stringify(result));
+        if (result.status !== "matched")
+            throw new Error("Daily replay sample did not match; market history was not changed.");
+    });
+
+program
+    .command("capture-status")
+    .description(
+        "Show retained raw capture counts and compressed storage size; stop the worker before opening its database.",
+    )
+    .action(async () => {
+        const { captureArchiveStatus } = await import("#src/ps/capture-archive.ts");
+        const { openDb } = await import("#src/shared/db.ts");
+        const db = await openDb();
+        try {
+            console.log(JSON.stringify(await captureArchiveStatus(db.conn)));
+        } finally {
+            await db.close();
+        }
+    });
+
+program
+    .command("flush-checkpoints")
+    .description(
+        "Retry durable cursor metadata and daily sample delivery without changing market history.",
+    )
+    .action(async () => {
+        const { flushCheckpoints } = await import("#src/ps/checkpoints.ts");
+        const { openDb } = await import("#src/shared/db.ts");
+        const db = await openDb();
+        try {
+            console.log({ delivered: await flushCheckpoints(db.conn) });
+        } finally {
+            await db.close();
+        }
+    });
+
+program
     .command("inspect")
     .description(
         "Read up to five stash pages and report sanitized modifier metadata coverage; no database or summary writes.",
@@ -168,6 +248,12 @@ program
     .option("-l, --league <name>", "season to capture", "all")
     .option("-c, --cursor <id>", "initial stash cursor; applied only on the first cycle")
     .option("--no-currency", "skip the currency exchange source")
+    .option(
+        "--currency-from-hour <unix>",
+        "initial exchange hour for a new currency cursor",
+        positiveInteger,
+    )
+    .option("--currency-hours <n>", "maximum exchange hours per cycle", positiveInteger, 1)
     .option("--watch", "continue processing every minute; Ctrl+C to stop")
     .action(async (opts) => {
         const { runPipeline } = await import("#src/pipeline.ts");
@@ -177,6 +263,13 @@ program
         const { parseLeagueFilter } = await import("#src/shared/leagues.ts");
         const db = await openDb();
         const client = createPoeClient();
+        const { REALM } = await import("#src/shared/auth.ts");
+        const { createStatusReporter } = await import("#src/shared/status.ts");
+        const status = createStatusReporter({
+            workerId: process.env.INGEST_WORKER_ID || `${REALM ?? "pc"}:${opts.league}`,
+            realm: REALM ?? "pc",
+            league: opts.league,
+        });
         let cursor = opts.cursor;
         const stop = new AbortController();
         const shutdown = () => stop.abort();
@@ -185,13 +278,23 @@ program
         try {
             const cycle = async () => {
                 try {
+                    await status.update({ cycles: status.current.cycles + 1 });
                     const result = await runPipeline(db.conn, client, {
                         pages: Number(opts.pages),
                         league: parseLeagueFilter(opts.league),
                         cursor,
                         currency: opts.currency,
+                        currencyHours: Number(opts.currencyHours),
+                        currencyFromHour: (await getCursor(db.conn, "cxapi"))
+                            ? undefined
+                            : opts.currencyFromHour,
+                        onStatus: status.update,
                     });
                     console.log(JSON.stringify(result));
+                    return { caughtUp: result.stash?.caughtUp ?? true };
+                } catch (error) {
+                    await status.update({ state: "error", completedAt: Date.now() });
+                    throw error;
                 } finally {
                     if (await getCursor(db.conn, "psapi")) cursor = undefined;
                 }
@@ -200,12 +303,12 @@ program
                 const { watchCycles } = await import("#src/shared/watch.ts");
                 await watchCycles(cycle, {
                     signal: stop.signal,
-                    statusFile: process.env.INGEST_STATUS_FILE,
                 });
             } else await cycle();
         } finally {
             process.removeListener("SIGTERM", shutdown);
             process.removeListener("SIGINT", shutdown);
+            await status.close();
             await db.close();
         }
     });

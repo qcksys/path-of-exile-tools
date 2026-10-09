@@ -75,6 +75,8 @@ export interface BasemapSnapshotPayload {
 }
 
 export type IngestPayload =
+    | { stream: "stash-checkpoints"; rows: import("@poe-tools/market").StashCheckpointUpload[] }
+    | { stream: "status"; rows: import("@poe-tools/market").IngestStatus[] }
     | UniqueHourlyPayload
     | CurrencyHourlyPayload
     | BasemapSnapshotPayload

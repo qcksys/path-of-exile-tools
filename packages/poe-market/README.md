@@ -37,7 +37,8 @@ The manifest revision hashes its catalog hash, cohort definitions and modifier-i
 Ingestion retains definitions
 for observed cohorts in DuckDB and sends them before summaries. Permanent definitions are keyed by
 revision and ID; newer definitions do not overwrite older ones. This preserves the meaning of an
-old chart after the generated current manifest changes. No production raw-event archive is added.
+old chart after the generated current manifest changes. Forward ingestion also retains filtered
+crafting-input observations locally; see the [capture policy](../poe-stash-ingest/README.md#durable-forward-capture-and-diagnostic-checkpoints).
 
 `ps_equipment_listing` keeps current captured item state. `ps_equipment_hour` keeps the last observed
 state per account, item, revision and UTC hour, deduplicating stash moves. Changing an item replaces

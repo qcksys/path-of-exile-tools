@@ -40,6 +40,7 @@ import {
     listSavedSets,
     updateSavedSet,
 } from "./saved-planner.server";
+import { serverStatusOperation } from "./server-status";
 import { createPlannerShare, getPlannerShare, getScarabPrices } from "./shares.server";
 
 const saved = {
@@ -70,6 +71,7 @@ const season = z.object({
 });
 
 export const operations = [
+    serverStatusOperation,
     ...calculatorOperations,
     ...craftingGraphOperations,
     ...craftingMethodProjectOperations,
