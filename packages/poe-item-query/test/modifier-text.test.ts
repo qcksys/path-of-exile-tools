@@ -89,6 +89,18 @@ it("does not confuse separate physical damage and accuracy with the hybrid affix
     expect(result.facts.modifiers.map((mod) => mod.id).sort()).toEqual(["accuracy", "physical"]);
 });
 
+it("resolves influenced donor text without using influence to guess ambiguous modifier identities", () => {
+    const input = item(["110% increased Physical Damage"], 1, 0);
+    input.item.influences = { shaper: true };
+    expect(compileModifierTextModel(model())(input).facts.modifiers).toMatchObject([
+        { id: "physical" },
+    ]);
+    const alternate = { ...modifiers[0]!, id: "other-influence" };
+    expect(
+        compileModifierTextModel(model([...modifiers, alternate]))(input).facts.modifiers,
+    ).toEqual([]);
+});
+
 it("retains only identities shared by every complete interpretation", () => {
     const alternate = { ...modifiers[0]!, id: "alternate" };
     const result = compileModifierTextModel(model([...modifiers, alternate]))(

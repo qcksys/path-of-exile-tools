@@ -27,6 +27,7 @@ const method = (
     resonator: catalog.crafting.currencies.find(
         (entry) =>
             entry.action === (normal ? "delve_currency_upgrade" : "delve_currency_reroll") &&
+            entry.id.includes("DelveStackableSocketableCurrency") &&
             entry.id.endsWith(String(names.length)),
     )!.id,
     logic: "additive",

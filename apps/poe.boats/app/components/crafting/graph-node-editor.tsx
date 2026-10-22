@@ -13,7 +13,11 @@ import { connectGraphInput, removeGraphNode } from "~/lib/crafting-graph-authori
 import { replaceGraphMethod } from "~/lib/crafting-graph-method";
 import { graphPreviewBaseId } from "~/lib/crafting-graph-presentation";
 import { bindCohortPurchasePrice } from "~/lib/crafting-market";
-import { rulesetAllowsConditionalSteps, rulesetAllowsMethod } from "~/lib/crafting-rulesets";
+import {
+    rulesetAllowsConditionalSteps,
+    rulesetAllowsMethod,
+    rulesetAllowsSimpleCraft,
+} from "~/lib/crafting-rulesets";
 import { graphCraftInput, simpleCraftCapability } from "~/lib/crafting-smart";
 import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
 import { craftingItemOptions } from "~/lib/item-presentation";
@@ -45,6 +49,7 @@ export function GraphPriceInput({
     label,
     itemId,
     game,
+    fallback,
 }: {
     value: CraftingPrice | null;
     currency: string;
@@ -52,6 +57,7 @@ export function GraphPriceInput({
     label: string;
     itemId?: string;
     game?: "poe1" | "poe2";
+    fallback?: CraftingPrice | null;
 }) {
     return (
         <Label className="block space-y-1 text-xs">
@@ -64,7 +70,7 @@ export function GraphPriceInput({
                 type="number"
                 min="0"
                 step="any"
-                placeholder="Unknown"
+                placeholder={fallback !== undefined ? "Use shared price" : "Unknown"}
                 value={value?.amount ?? ""}
                 onChange={(event) =>
                     onChange(
@@ -84,7 +90,11 @@ export function GraphPriceInput({
                     ? `Market estimate · ${value.observedAt ? new Date(value.observedAt).toLocaleString() : "unknown observation time"} · ${value.confidence === null ? "unknown confidence" : `${(value.confidence * 100).toFixed(0)}% data confidence`} · edit to override`
                     : value
                       ? "Manual price"
-                      : "Unpriced; excluded from a complete cost estimate"}
+                      : fallback !== undefined
+                        ? fallback
+                            ? `Uses shared price: ${fallback.amount} ${currency}`
+                            : "Shared price unknown"
+                        : "Unpriced; excluded from a complete cost estimate"}
             </span>
             {value?.source === "market" && decodeCraftingSourceReference(value.cohortId) && (
                 <span className="block text-muted-foreground">
@@ -100,7 +110,14 @@ export function GraphPriceInput({
                         observation.
                     </span>
                 )}
+            {value?.source === "market" && decodeCohortPriceReference(value.cohortId)?.exchange && (
+                <span className="block text-muted-foreground">
+                    Converted equipment price · one-hour listing median and matching-hour exchange
+                    rate · combined confidence is unknown
+                </span>
+            )}
             {value?.source === "market" &&
+                !decodeCohortPriceReference(value.cohortId)?.exchange &&
                 decodeCohortPriceReference(value.cohortId)?.window === "adaptive-v1" && (
                     <span className="block text-muted-foreground">
                         Adaptive equipment: 1-, 6- or 24-hour estimate. Time shown is the latest
@@ -224,7 +241,7 @@ export function GraphNodeEditor({
     );
     const simple = useMemo(
         () =>
-            node.kind === "craft" && ruleset.engine === "crafting-graph-7"
+            node.kind === "craft" && rulesetAllowsSimpleCraft(ruleset)
                 ? simpleCraftCapability(engine, node.method, craftInput)
                 : null,
         [engine, node, craftInput, ruleset.engine],

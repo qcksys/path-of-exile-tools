@@ -34,6 +34,7 @@ import {
 import { supportsSacredOrb } from "~/lib/crafting-defences";
 import { flaskEnchantmentPool } from "~/lib/crafting-enchantments";
 import type { CraftingEngine } from "~/lib/crafting-engine";
+import { resonatorAvailability } from "~/lib/crafting-fossils";
 import { genesisSupported } from "~/lib/crafting-genesis";
 import { graspingMailBase } from "~/lib/crafting-grasping";
 import { memoryConsumption } from "~/lib/crafting-memory";
@@ -87,6 +88,11 @@ export function MethodPicker({
     const resonators = data.currencies
         .filter((entry) =>
             ["delve_currency_upgrade", "delve_currency_reroll"].includes(entry.action),
+        )
+        .filter(
+            (entry) =>
+                resonatorAvailability(entry.id) !== "legacy" ||
+                (value.kind === "fossils" && value.resonator === entry.id),
         )
         .sort(
             (a, b) => Number(allflameCurrencies.has(b.id)) - Number(allflameCurrencies.has(a.id)),
@@ -1805,8 +1811,8 @@ export function MethodPicker({
                                         const resonator = resonators.find(
                                             (entry) =>
                                                 entry.action === current?.action &&
-                                                allflameCurrencies.has(entry.id) ===
-                                                    allflameCurrencies.has(current?.id ?? "") &&
+                                                (!value.allflame ||
+                                                    allflameCurrencies.has(entry.id)) &&
                                                 entry.id.endsWith(String(ids.length)),
                                         );
                                         if (resonator)
@@ -1920,6 +1926,11 @@ export function MethodPicker({
                                     <FormSelectItem key={entry.id} value={entry.id}>
                                         <CatalogItemArt id={entry.id} game={engine.catalog.game} />
                                         {entry.name}
+                                        {resonatorAvailability(entry.id) === "legacy"
+                                            ? " · Legacy, non-stackable"
+                                            : resonatorAvailability(entry.id) === "ruthless"
+                                              ? " · Ruthless / legacy"
+                                              : ""}
                                         {allflameCurrencies.has(entry.id)
                                             ? " · Allflame eligible"
                                             : ""}

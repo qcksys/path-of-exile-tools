@@ -34,6 +34,7 @@ export const craftingMarketInputSchema = z.strictObject({
     currency: z.string().min(1).max(100),
     window: cohortPriceReferenceSchema.shape.window,
     assumption: cohortPriceReferenceSchema.shape.assumption,
+    conversion: cohortPriceReferenceSchema.shape.conversion,
     at: z.number().int().nonnegative().optional(),
 });
 export const craftingMarketCandidateSchema = z.strictObject({
@@ -43,6 +44,8 @@ export const craftingMarketCandidateSchema = z.strictObject({
     reasons: z.array(z.string()),
     window: cohortPriceReferenceSchema.shape.window,
     assumption: cohortPriceReferenceSchema.shape.assumption,
+    conversion: cohortPriceReferenceSchema.shape.conversion,
+    exchange: cohortPriceReferenceSchema.shape.exchange,
 });
 export const craftingMarketResultSchema = z.strictObject({
     candidates: z.array(craftingMarketCandidateSchema),

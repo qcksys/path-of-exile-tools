@@ -29,6 +29,7 @@ const method = (
     resonator: catalog.crafting.currencies.find(
         (entry) =>
             entry.action === (normal ? "delve_currency_upgrade" : "delve_currency_reroll") &&
+            entry.id.includes("DelveStackableSocketableCurrency") &&
             entry.id.endsWith(String(names.length)),
     )!.id,
 });
@@ -289,6 +290,7 @@ describe("Bloodstained Fossil and corrupted implicits", () => {
         }
         expect(optimizer.result()).toMatchObject({ completed: 1, failed: 0, errors: [] });
         expect(optimizer.result().byAttempts[0]!.probability).toBeCloseTo(probability, 1);
+        expect(optimizer.result().byAttempts[0]!.cost).toBe(5);
         expect(craftingProjectSchema.parse(JSON.parse(JSON.stringify(project)))).toEqual(project);
     });
 });

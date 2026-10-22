@@ -340,7 +340,9 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Calculate odds"));
         const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
         expect(sent.method.ids).toEqual([sanctified.id]);
-        expect(sent.method.resonator).toBe(resonator.id);
+        expect(sent.method.resonator).toBe(
+            "Metadata/Items/Delve/DelveStackableSocketableCurrencyReroll1",
+        );
         fireEvent.click(button("Stop simulation"));
         const card = screen.getByRole("region", { name: "Current item" });
         const before = card.textContent;
@@ -498,7 +500,9 @@ describe("crafting workbench", () => {
         expect(sent.target.groups[0].fractured).toBe(true);
         expect(sent.method.ids).toEqual([opulent.id, fractured.id]);
         expect(sent.method.resonator).toMatch(/2$/);
-        expect(sent.method.resonator).toBe(`${resonator.id.slice(0, -1)}2`);
+        expect(sent.method.resonator).toBe(
+            "Metadata/Items/Delve/DelveStackableSocketableCurrencyReroll2",
+        );
         fireEvent.click(button("Stop simulation"));
         const card = screen.getByRole("region", { name: "Current item" });
         const before = card.textContent;

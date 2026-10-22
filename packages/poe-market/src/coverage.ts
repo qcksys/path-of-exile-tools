@@ -142,9 +142,7 @@ export function cohortPriceCoverage(
             kind: "mod",
             ids: [modifier.id],
             count: { min: 1 },
-            ...(modifier.tier !== undefined
-                ? { tier: { min: modifier.tier, max: modifier.tier } }
-                : {}),
+            // A canonical identity fixes the stat ranges; tier labels depend on the base and source.
             ...(modifier.fractured ? { fractured: true } : {}),
         };
         if (!guaranteed.some((condition) => implies(condition, requirement, item)))

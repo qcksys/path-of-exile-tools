@@ -62,6 +62,7 @@ export function fossilOptimizationFixture(allflame = false) {
             resonator: catalog.crafting.currencies.find(
                 (entry) =>
                     entry.action === "delve_currency_reroll" &&
+                    entry.id.includes("DelveStackableSocketableCurrency") &&
                     entry.id.endsWith("1") &&
                     (!allflame ||
                         catalog.crafting.allflame!.currencies.some(

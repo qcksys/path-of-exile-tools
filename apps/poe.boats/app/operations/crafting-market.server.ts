@@ -56,6 +56,7 @@ export async function refreshCraftingMarketPrices(
                 currency: graph.currency,
                 window: reference.window,
                 assumption: reference.assumption,
+                conversion: reference.conversion,
                 at,
             },
             reference.cohortId,

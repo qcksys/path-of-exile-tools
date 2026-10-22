@@ -23,6 +23,7 @@ const method = (ids: string[], normal = false): Extract<CraftingMethod, { kind: 
     resonator: catalog.crafting.currencies.find(
         (entry) =>
             entry.action === (normal ? "delve_currency_upgrade" : "delve_currency_reroll") &&
+            entry.id.includes("DelveStackableSocketableCurrency") &&
             entry.id.endsWith(String(ids.length)),
     )!.id,
     logic: "additive",
@@ -278,6 +279,9 @@ describe("extracted special fossils", () => {
             optimizer.result().byAttempts.find((entry) => entry.method.ids.length === 2)
                 ?.probability,
         ).toBeGreaterThan(0);
+        expect(
+            optimizer.result().byAttempts.find((entry) => entry.method.ids.length === 2)?.cost,
+        ).toBe(6);
         expect(
             optimizer
                 .result()

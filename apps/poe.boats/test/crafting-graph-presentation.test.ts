@@ -23,7 +23,7 @@ import { graphFixture } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r7",
+    (entry) => entry.game === "poe1" && entry.revision === "r8",
 )!;
 describe("crafting graph presentation", () => {
     it("shows one-attempt recombination odds even when retries finish every ES chest", () => {

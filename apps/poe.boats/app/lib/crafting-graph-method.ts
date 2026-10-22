@@ -4,7 +4,7 @@ import type { replaceGraphMethodInputSchema } from "../schemas/crafting-graph-au
 import type { CraftingRuleset } from "../schemas/crafting-rulesets";
 import type { CraftingEngine } from "./crafting-engine";
 import { graphInputCount } from "./crafting-graph-validation";
-import { resolveRuleset, rulesetAllowsMethod } from "./crafting-rulesets";
+import { resolveRuleset, rulesetAllowsMethod, rulesetAllowsSimpleCraft } from "./crafting-rulesets";
 import { configureSimpleCraft, graphCraftInput, simpleCraftCapability } from "./crafting-smart";
 
 export function replaceGraphMethod(
@@ -53,7 +53,7 @@ export function replaceGraphMethod(
     }
     node.method = method;
     if (
-        ruleset.engine === "crafting-graph-7" &&
+        rulesetAllowsSimpleCraft(ruleset) &&
         JSON.stringify(input.expectedMethod) !== JSON.stringify(method)
     ) {
         const capability = simpleCraftCapability(engine, method, graphCraftInput(graph, node));

@@ -7,6 +7,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { usesAllflame } from "~/lib/crafting-allflame";
 import type { CraftingEngine } from "~/lib/crafting-engine";
+import { resonatorAvailability } from "~/lib/crafting-fossils";
 import {
     type FossilOptimization,
     fossilCombinations,
@@ -69,6 +70,7 @@ export function FossilOptimizerPanel({
         ...engine.catalog.crafting.currencies.filter(
             (entry) =>
                 entry.action === action &&
+                resonatorAvailability(entry.id) !== "legacy" &&
                 Number(entry.id.at(-1)) <= maxSockets &&
                 (!allflame || allflameCurrencies.has(entry.id)),
         ),

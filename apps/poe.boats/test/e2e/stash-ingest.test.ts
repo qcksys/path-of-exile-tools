@@ -516,9 +516,18 @@ it("converts captured indirect pairs only with positive matching-hour legs and p
         estimator: "cross-rate-v1",
         hour: HOUR,
     });
+    expect(
+        (
+            await findCraftingExchangePrices(db, {
+                ...input,
+                at: HOUR + 3600,
+                conversion: "reference-currency-v1",
+            })
+        ).quotes[transmuteId],
+    ).toEqual(converted.quotes[transmuteId]);
     for (const wrong of [
         { at: HOUR - 1 },
-        { at: HOUR + 3600 },
+        { at: HOUR + 24 * 3600 },
         { league: "Other" },
         { realm: "xbox" as const },
     ])
@@ -555,6 +564,7 @@ it("refreshes across compatible persisted revisions and recovers earlier prices 
     current.latest.revision = "next-market";
     current.latest.hour += 3600;
     current.latest.prices.chaos!.median = 27;
+    vi.spyOn(Date, "now").mockReturnValue((current.latest.hour + 3600) * 1000);
     await mysql.insert(tStashCohort).values([marketCandidate.definition, current.definition]);
     await mysql.insert(tStashCohortHourly).values([marketCandidate.latest, current.latest]);
     const db = mysql as unknown as TDatabase;
@@ -615,6 +625,7 @@ it("offers stored donor-family quotes only under an explicit representative assu
         realm: "pc" as const,
         league: "Standard",
         currency: "chaos",
+        at: candidate.latest.hour,
     };
     const db = mysql as unknown as TDatabase;
     const exact = await findCraftingMarketPrices(db, input);
@@ -758,6 +769,7 @@ it("persists deduplicated equipment windows while retaining hourly history and h
 });
 
 it("replays equipment prices from early and middle league through capture, retry and permanent storage", async () => {
+    vi.spyOn(Date, "now").mockReturnValue((HOUR + 30 * 24 * 3600) * 1000);
     const client = createClient({ baseUrl, userAgent: "cohort-e2e", token: TOKEN });
     const equipment = {
         ...item,
@@ -980,6 +992,7 @@ it("replays equipment prices from early and middle league through capture, retry
 }, 60_000);
 
 it("prices fractured and isolated donor acquisitions from source observations stored in MySQL", async () => {
+    vi.spyOn(Date, "now").mockReturnValue((HOUR + 30 * 24 * 3600) * 1000);
     const fixtures = [
         {
             base: "Exquisite Blade",

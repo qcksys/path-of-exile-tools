@@ -1,0 +1,86 @@
+// @vitest-environment jsdom
+import { exchangeCurrencyId } from "@poe-tools/market";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vite-plus/test";
+import { MarketPricePicker } from "../app/components/crafting/market-price-picker";
+import { baseId, engine } from "./crafting-fixtures";
+import { marketCandidate } from "./crafting-market-fixtures";
+
+afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+});
+it("requires conversion consent, shows its sources, keeps history in the original currency and invalidates results", async () => {
+    const candidate = {
+        ...marketCandidate,
+        latest: {
+            ...marketCandidate.latest,
+            prices: { divine: marketCandidate.latest.prices.chaos },
+        },
+        conversion: "exchange-v1",
+        exchange: {
+            currency: "divine",
+            quote: {
+                realm: "pc",
+                league: "Standard",
+                itemId: exchangeCurrencyId("divine"),
+                quoteId: exchangeCurrencyId("chaos"),
+                amount: 100,
+                hour: marketCandidate.latest.hour,
+                marketId: `${exchangeCurrencyId("divine")}|${exchangeCurrencyId("chaos")}`,
+                low: null,
+                high: null,
+                itemVolume: 10,
+                quoteVolume: 1000,
+                estimator: "traded-volume-ratio-v1",
+            },
+        },
+    };
+    const fetcher = vi
+        .fn()
+        .mockImplementation((url: string) =>
+            Promise.resolve(
+                new Response(
+                    JSON.stringify(
+                        url.endsWith("history")
+                            ? { history: [candidate.latest], nextBefore: null }
+                            : { candidates: [candidate], truncated: false, message: null },
+                    ),
+                ),
+            ),
+        );
+    vi.stubGlobal("fetch", fetcher);
+    const select = vi.fn();
+    render(
+        <MarketPricePicker
+            engine={engine}
+            item={engine.createItem(baseId, 86)}
+            requirements={{ format: 1, game: "poe1", groups: [] }}
+            league="Standard"
+            currency="chaos"
+            price={null}
+            onLeagueChange={vi.fn()}
+            onSelect={select}
+        />,
+    );
+    fireEvent.click(screen.getByText("Equipment market price"));
+    const consent = screen.getByRole("checkbox", {
+        name: "Convert other listing currencies using the exchange",
+    });
+    expect(consent.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(consent);
+    fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
+    const bind = await screen.findByRole("button", { name: "Use live median" });
+    expect(JSON.parse(fetcher.mock.calls[0]![1].body).conversion).toBe("exchange-v1");
+    expect(screen.getByText(/2000 chaos median/)).toBeTruthy();
+    expect(screen.getByText(/Converted from 20 divine at 100 chaos per divine/)).toBeTruthy();
+    expect(select).not.toHaveBeenCalled();
+    fireEvent.click(bind);
+    expect(select).toHaveBeenCalledWith(candidate);
+    fireEvent.click(screen.getByRole("button", { name: "View price history" }));
+    expect(await screen.findByRole("columnheader", { name: "Median (divine)" })).toBeTruthy();
+    fireEvent.click(consent);
+    await waitFor(() =>
+        expect(screen.queryByRole("button", { name: "Use live median" })).toBeNull(),
+    );
+});

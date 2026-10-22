@@ -9,7 +9,9 @@ import {
 import { CraftingEngine } from "../app/lib/crafting-engine";
 import { incursionGloveModifiers } from "../app/lib/crafting-incursion";
 import { modifierTiers } from "../app/lib/crafting-modifier-details";
+import { validateRulesetIndex } from "../app/lib/crafting-rulesets";
 import { craftingCatalogSchema } from "../app/schemas/crafting";
+import { craftingPresetCohorts } from "./crafting-preset-cohorts";
 import { writeCapturePolicy } from "./generate-capture-policy";
 import { marketModifierTextModel } from "./market-modifier-text";
 
@@ -18,6 +20,20 @@ const catalogHash = createHash("sha256").update(bytes).digest("hex");
 const catalog = craftingCatalogSchema.parse(JSON.parse(bytes.toString()));
 if (catalog.game !== "poe1") throw new Error("Public stash cohorts require PoE 1 data.");
 const engine = new CraftingEngine(catalog);
+const history = validateRulesetIndex(
+    JSON.parse(await readFile("crafting-history/index.json", "utf8")),
+);
+const current = history.revisions.find((entry) =>
+    history.latest.some(
+        (latest) =>
+            latest.game === catalog.game &&
+            entry.game === latest.game &&
+            entry.era === latest.era &&
+            entry.revision === latest.revision,
+    ),
+);
+if (!current) throw new Error("The crafting presets require a current ruleset.");
+const presetCohorts = craftingPresetCohorts(engine, current);
 const equipment = new Set([
     "Two Hand Sword",
     "Wand",
@@ -263,6 +279,7 @@ for (const [itemClass, id] of donorMods) {
         }
     }
 }
+cohorts.push(...presetCohorts);
 const modifierIdentities = Object.entries(catalog.mods).flatMap(([id, mod]) =>
     mod.name && (mod.generation_type === "prefix" || mod.generation_type === "suffix")
         ? [

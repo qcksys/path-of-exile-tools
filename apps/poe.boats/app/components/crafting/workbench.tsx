@@ -7,6 +7,7 @@ import { Field, FieldDescription, FieldLabel } from "~/components/ui/field";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { discoverCraftingCosts } from "~/lib/crafting-cost-inputs";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import { craftingFlags } from "~/lib/crafting-flags";
 import { craftingInventory } from "~/lib/crafting-inventory";
@@ -51,6 +52,7 @@ import { SendItemToProject } from "./send-to-project";
 import { SocketEditor } from "./socket-editor";
 import { TargetEditor } from "./target-editor";
 import { useItemLibrary } from "./use-item-library";
+import { WorkbenchMarketPrices } from "./workbench-market-prices";
 
 function initialProject(engine: CraftingEngine): CraftingProject {
     const baseId =
@@ -409,33 +411,36 @@ export function CraftingWorkbench({
         });
     }
     const costs = useMemo(() => {
-        const all = [project.method, ...project.steps.map((step) => step.method)].flatMap(
-            (method) => {
-                if (!method) return [];
-                try {
-                    const bench =
-                        method.kind === "bench" &&
-                        catalog.crafting.bench.find((entry) => entry.id === method.id);
-                    return [
-                        ...engine.costs(method),
-                        ...(bench && (bench.mod || bench.enchantment)
-                            ? engine.benchRemovalCost(project.item, Boolean(bench.enchantment))
-                            : []),
-                    ];
-                } catch {
-                    return [];
-                }
-            },
+        const all = discoverCraftingCosts(
+            engine,
+            [project.method, ...project.steps.map((step) => step.method)],
+            [
+                ...Object.keys(history[cursor]!.spending),
+                ...Object.keys(result?.spending ?? {}),
+                ...(result?.unpriced ?? []),
+                ...Object.values(result?.routes ?? {}).flatMap((route) =>
+                    Object.keys(route.spending),
+                ),
+                ...Object.values(processRun?.routes ?? {}).flatMap((route) =>
+                    Object.keys(route.spending),
+                ),
+            ],
         );
         if (project.item.reveal)
             for (const omen of availableOmens(catalog, { kind: "reveal", preferred: [] }))
                 all.push({ id: omen.id, name: omen.name, amount: 1 });
-        for (const id of Object.keys(history[cursor]!.spending)) {
-            if (!all.some((entry) => entry.id === id))
-                all.push({ id, name: engine.costName(id), amount: 1 });
-        }
         return [...new Map(all.map((entry) => [entry.id, entry])).values()];
-    }, [engine, catalog, project.method, project.steps, project.item, history, cursor]);
+    }, [
+        engine,
+        catalog,
+        project.method,
+        project.steps,
+        project.item,
+        history,
+        cursor,
+        result,
+        processRun,
+    ]);
 
     return (
         <CraftingDisplay value={display}>
@@ -1672,6 +1677,13 @@ export function CraftingWorkbench({
                                                 />
                                             </Label>
                                         ))}
+                                        <WorkbenchMarketPrices
+                                            key={`${catalog.game}:${catalog.patch}`}
+                                            engine={engine}
+                                            project={project}
+                                            entries={costs.map(({ id, name }) => [id, name])}
+                                            onChange={(prices) => change({ prices })}
+                                        />
                                     </div>
                                 </details>
                                 {result ? (

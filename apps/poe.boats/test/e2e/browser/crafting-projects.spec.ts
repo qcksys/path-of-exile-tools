@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { cohortPriceCoverage } from "@poe-tools/market";
+import { cohortPriceCoverage, exchangeCurrencyId, quoteExchangeSnapshot } from "@poe-tools/market";
 import { CraftingEngine } from "../../../app/lib/crafting-engine";
 import { bindExchangePrice, liveExchangePrices } from "../../../app/lib/crafting-exchange";
 import { projectFromItem } from "../../../app/lib/crafting-graph-authoring";
@@ -76,7 +76,7 @@ test("simple Remembrance targets save on click-away and generate same-item retry
     page,
 }) => {
     const ruleset = historyIndex.revisions.find(
-        (entry) => entry.game === "poe1" && entry.revision === "r7",
+        (entry) => entry.game === "poe1" && entry.revision === "r8",
     )!;
     const catalog = craftingCatalogSchema.parse((await retainedRevision(ruleset)).catalog);
     const graph = retainedTransmuteGraph(ruleset, catalog);
@@ -115,7 +115,7 @@ test("ES chest graph separates the 2p + 2p attempt from success after retries", 
     page,
 }) => {
     const ruleset = historyIndex.revisions.find(
-        (entry) => entry.game === "poe1" && entry.revision === "r7",
+        (entry) => entry.game === "poe1" && entry.revision === "r8",
     )!;
     const catalog = craftingCatalogSchema.parse((await retainedRevision(ruleset)).catalog);
     const graph = projectFromPreset(new CraftingEngine(catalog), ruleset, "energy-shield-chest");
@@ -173,7 +173,7 @@ for (const game of ["poe1", "poe2"] as const) {
             alternatives: [{ item: result.samples[1].item, price: null }],
         });
         await expect(
-            page.getByRole("button", { name: "Correction available · adopt r7", exact: true }),
+            page.getByRole("button", { name: "Correction available · adopt r8", exact: true }),
         ).toBeVisible();
         await page.reload();
         await expect(page.getByRole("tab")).toHaveCount(2);
@@ -959,6 +959,133 @@ test("equipment prices bind, refresh after reopening, and require an explicit ov
     expect(errors).toEqual([]);
 });
 
+test("equipment currency conversion requires consent and preserves its source until a manual override", async ({
+    page,
+}, testInfo) => {
+    const candidate = structuredClone(marketCandidate);
+    candidate.latest.prices = { divine: marketCandidate.latest.prices.chaos! };
+    candidate.conversion = "exchange-v1";
+    const divine = exchangeCurrencyId("divine")!;
+    const chaos = exchangeCurrencyId("chaos")!;
+    candidate.exchange = {
+        currency: "divine",
+        quote: quoteExchangeSnapshot(
+            {
+                ...exchangeSnapshot,
+                hour: candidate.latest.hour,
+                marketId: `${divine}|${chaos}`,
+                volumeTraded: { [divine]: 10, [chaos]: 1000 },
+                lowestRatio: null,
+                highestRatio: null,
+            },
+            divine,
+            chaos,
+        )!,
+    };
+    const conversions: unknown[] = [];
+    await page.route("**/api/v1/crafting/market/cohorts", (route) => {
+        const conversion = route.request().postDataJSON().conversion;
+        conversions.push(conversion);
+        return route.fulfill({
+            json: {
+                candidates: [
+                    conversion === "exchange-v1"
+                        ? candidate
+                        : {
+                              ...candidate,
+                              conversion: undefined,
+                              exchange: undefined,
+                              covered: false,
+                              reasons: ["No asking price in chaos is available for this cohort."],
+                          },
+                ],
+                truncated: false,
+                message: null,
+            },
+        });
+    });
+    await page.route("**/api/v1/crafting/market/history", (route) =>
+        route.fulfill({ json: { history: [candidate.latest], nextBefore: null } }),
+    );
+    await page.route("**/api/v1/crafting/market/refresh", (route) => {
+        const graph = craftingGraphSchema.parse(route.request().postDataJSON().graph);
+        const binding = livePurchasePrices(graph)[0]!;
+        return route.fulfill({
+            json: {
+                graph: bindCohortPurchasePrice(
+                    graph,
+                    engine,
+                    binding.node.id,
+                    binding.alternative.id,
+                    candidate,
+                ),
+                issues: [],
+            },
+        });
+    });
+    await importGraph(page, marketGraph());
+    const editor = page.getByRole("region", { name: "Selected step editor" });
+    await editor.getByText("Equipment market price", { exact: true }).click();
+    const consent = editor.getByRole("checkbox", {
+        name: "Convert other listing currencies using the exchange",
+    });
+    const find = editor.getByRole("button", { name: "Find market prices", exact: true });
+    const use = editor.getByRole("button", { name: "Use live median", exact: true });
+    await expect(consent).not.toBeChecked();
+    await find.click();
+    await expect(use).toBeDisabled();
+    expect(conversions).toEqual([undefined]);
+    await consent.check();
+    await expect(use).toHaveCount(0);
+    expect(conversions).toEqual([undefined]);
+    await find.click();
+    await expect(use).toBeEnabled();
+    expect(conversions).toEqual([undefined, "exchange-v1"]);
+    await expect(editor.getByText("2000 chaos median", { exact: false })).toBeVisible();
+    await expect(
+        editor.getByText("Converted from 20 divine at 100 chaos per divine.", { exact: false }),
+    ).toBeVisible();
+    await editor.getByRole("button", { name: "View price history", exact: true }).click();
+    const history = editor.getByRole("region", { name: "Equipment price history" });
+    await expect(history.getByRole("columnheader", { name: "Median (divine)" })).toBeVisible();
+    await expect(history.getByRole("cell", { name: "20", exact: true })).toBeVisible();
+    await history.scrollIntoViewIfNeeded();
+    await page.screenshot({
+        path: testInfo.outputPath("equipment-exchange-conversion.png"),
+        fullPage: true,
+    });
+    await use.click();
+    const price = editor.getByLabel("Purchase price (chaos)", { exact: false });
+    await expect(price).toHaveValue("2000");
+    await expect
+        .poll(async () => livePurchasePrices((await stored(page)).projects[0]!.graph)[0]?.reference)
+        .toMatchObject({ conversion: "exchange-v1", exchange: candidate.exchange });
+    const bound = livePurchasePrices((await stored(page)).projects[0]!.graph)[0]!;
+    expect(bound.alternative.price).toMatchObject({
+        amount: 2000,
+        source: "market",
+        confidence: null,
+    });
+    await page.reload();
+    await expect(page.getByRole("region", { name: "Live market prices" })).toContainText(
+        "Market prices refreshed.",
+    );
+    await expect(price).toHaveValue("2000");
+    expect(
+        livePurchasePrices((await stored(page)).projects[0]!.graph)[0]?.reference.exchange,
+    ).toEqual(candidate.exchange);
+    await expect(editor).toContainText("Converted equipment price");
+    await price.fill("7");
+    await expect
+        .poll(async () => livePurchasePrices((await stored(page)).projects[0]!.graph))
+        .toEqual([]);
+    const purchase = (await stored(page)).projects[0]!.graph.nodes[0]!;
+    expect(purchase).toMatchObject({
+        alternatives: [{ price: { amount: 7, source: "manual", confidence: null } }],
+    });
+    await expect(editor.getByText("Converted equipment price", { exact: false })).toHaveCount(0);
+});
+
 test("equipment lookup cancels obsolete results and refuses incomplete price coverage", async ({
     page,
 }) => {
@@ -1215,7 +1342,7 @@ test("prepared Temple gloves pass from the workbench into a saved current projec
     await page.getByRole("button", { name: "Use item in new project", exact: true }).click();
     await expect(page).toHaveURL(/\/1\/crafting\/projects$/);
     const project = (await stored(page)).projects[0]!;
-    expect(project.graph.ruleset.revision).toBe("r7");
+    expect(project.graph.ruleset.revision).toBe("r8");
     const node = project.graph.nodes[0]!;
     expect(node.kind).toBe("acquire");
     if (node.kind === "acquire" && node.alternatives[0]?.kind === "purchase")
@@ -1339,7 +1466,7 @@ test("historical projects retain their rules until a correction is explicitly ad
     );
     await page.getByRole("button", { name: "Apply selected version", exact: true }).click();
     await expect(
-        page.getByRole("button", { name: "Correction available · adopt r7", exact: true }),
+        page.getByRole("button", { name: "Correction available · adopt r8", exact: true }),
     ).toBeVisible();
     expect((await stored(page)).projects[0]!.graph.ruleset).toMatchObject({
         era: "3.29",
@@ -1348,19 +1475,19 @@ test("historical projects retain their rules until a correction is explicitly ad
     });
     await page.reload();
     await expect(
-        page.getByRole("button", { name: "Correction available · adopt r7", exact: true }),
+        page.getByRole("button", { name: "Correction available · adopt r8", exact: true }),
     ).toBeVisible();
     expect((await stored(page)).projects[0]!.graph.ruleset.revision).toBe("r1");
     await page
-        .getByRole("button", { name: "Correction available · adopt r7", exact: true })
+        .getByRole("button", { name: "Correction available · adopt r8", exact: true })
         .click();
     await expect(
-        page.getByRole("button", { name: "Correction available · adopt r7", exact: true }),
+        page.getByRole("button", { name: "Correction available · adopt r8", exact: true }),
     ).toHaveCount(0);
     expect((await stored(page)).projects[0]!.graph.ruleset).toMatchObject({
         era: "3.29",
-        revision: "r7",
-        engine: "crafting-graph-7",
+        revision: "r8",
+        engine: "crafting-graph-8",
     });
 });
 

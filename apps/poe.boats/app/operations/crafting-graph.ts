@@ -9,7 +9,12 @@ import {
 } from "~/lib/crafting-graph-authoring";
 import { replaceGraphMethod } from "~/lib/crafting-graph-method";
 import { nonNativeEssenceSources } from "~/lib/crafting-recombination";
-import { resolveRuleset, rulesetAllowsMethod, validateRulesetGraph } from "~/lib/crafting-rulesets";
+import {
+    resolveRuleset,
+    rulesetAllowsMethod,
+    rulesetAllowsSimpleCraft,
+    validateRulesetGraph,
+} from "~/lib/crafting-rulesets";
 import type { HistoricalCraftingSimulation } from "~/lib/crafting-runtime";
 import { configureSimpleCraft, simpleCraftCapability } from "~/lib/crafting-smart";
 import {
@@ -106,7 +111,7 @@ export const craftingGraphOperations = [
                     input.graph.game,
                     input.graph.ruleset,
                 );
-                if (ruleset.engine !== "crafting-graph-7")
+                if (!rulesetAllowsSimpleCraft(ruleset))
                     throw new Error("Adopt the latest revision to use simple outcomes.");
                 const loaded = await context.loadCraftingRevision(ruleset);
                 const engine = new CraftingEngine(craftingCatalogSchema.parse(loaded.catalog));
@@ -130,7 +135,7 @@ export const craftingGraphOperations = [
         path: "/graph/method",
         name: "replace_crafting_graph_method",
         description:
-            "Edit a graph craft using full workbench method settings. Preserves input connections and prices. In revision 7, selecting a different simple craft generates its supported target and retry routes; unchanged custom methods retain their conditions. A newly required second input consumes a separate item. Refuses stale edits, inline donors, unavailable methods and removal of inputs used by recovery routes. Returns a draft without saving it.",
+            "Edit a graph craft using full workbench method settings. Preserves input connections and prices. In revisions 7 and 8, selecting a different simple craft generates its supported target and retry routes; unchanged custom methods retain their conditions. A newly required second input consumes a separate item. Refuses stale edits, inline donors, unavailable methods and removal of inputs used by recovery routes. Returns a draft without saving it.",
         input: replaceGraphMethodInputSchema.extend({ graph: CraftingGraphContract }),
         output: z.object({ graph: CraftingGraphContract }),
         execute: async (input, context) => {
