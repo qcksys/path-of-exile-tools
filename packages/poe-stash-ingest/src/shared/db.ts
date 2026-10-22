@@ -208,7 +208,17 @@ export async function withTransaction<T>(
         await conn.run("COMMIT");
         return result;
     } catch (error) {
-        await conn.run("ROLLBACK");
+        try {
+            await conn.run("ROLLBACK");
+        } catch (rollbackError) {
+            throw new AggregateError(
+                [error, rollbackError],
+                "Transaction failed and rollback also failed",
+                {
+                    cause: error,
+                },
+            );
+        }
         throw error;
     }
 }
