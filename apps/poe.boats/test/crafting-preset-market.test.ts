@@ -13,6 +13,7 @@ import { craftingPresets, projectFromPreset } from "../app/lib/crafting-presets"
 import { rolledModText } from "../app/lib/crafting-text";
 import type { CraftingItem } from "../app/schemas/crafting";
 import { craftingPresetCohorts } from "../scripts/crafting-preset-cohorts";
+import { marketModifierTextModel } from "../scripts/market-modifier-text";
 import { catalog, engine } from "./crafting-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
@@ -29,17 +30,18 @@ const capture = compileCraftingCapture(
     JSON.parse(readFileSync("../../packages/poe-market/data/capture-poe1.json", "utf8")),
 );
 const queries = createCraftingItemQuery(engine);
-const purchases = craftingPresets.flatMap((preset) =>
-    projectFromPreset(engine, ruleset, preset.id).nodes.flatMap((node) =>
+const purchases = craftingPresets.flatMap((preset) => {
+    const graph = projectFromPreset(engine, ruleset, preset.id);
+    return graph.nodes.flatMap((node) =>
         node.kind === "acquire"
             ? node.alternatives.flatMap((alternative) =>
                   alternative.kind === "purchase"
-                      ? [{ preset: preset.id, node, item: alternative.item }]
+                      ? [{ preset: preset.id, graph, node, item: alternative.item }]
                       : [],
               )
             : [],
-    ),
-);
+    );
+});
 
 function rawItem(item: CraftingItem, metadata = false) {
     const record = queries.record(item);
@@ -82,15 +84,16 @@ function rawItem(item: CraftingItem, metadata = false) {
 it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
     expect(purchases).toHaveLength(27);
     expect(cohorts).toHaveLength(26);
-    for (const cohort of cohorts) expect(manifest.cohorts).toContainEqual(cohort);
-    for (const { preset, node, item } of purchases) {
+    const definitions = new Map(manifest.cohorts.map((cohort) => [cohort.id, cohort]));
+    for (const cohort of cohorts) expect(definitions.get(cohort.id)).toEqual(cohort);
+    for (const { preset, graph: project, node, item } of purchases) {
         const record = queries.record(item);
         const matching = cohorts.filter(
             (cohort) => cohortPriceCoverage(cohort, record, node.output).covered,
         );
         expect(matching.length, `${preset}/${node.id}`).toBeGreaterThan(0);
         expect(capture(rawItem(item)), `${preset}/${node.id} capture`).toBe(true);
-        const graph = { ...projectFromPreset(engine, ruleset, preset), league: "Standard" };
+        const graph = { ...project, league: "Standard" };
         const cohort = matching[0]!;
         const bind = () =>
             bindCohortPurchasePrice(graph, engine, node.id, "buy", {
@@ -175,6 +178,32 @@ it("does not treat matching Two-Toned Boots display names as proof of canonical 
     ).toContain(cohort.id);
 });
 
+it("exports mandatory influence constraints separately from native spawn eligibility", () => {
+    const names = ["shaper", "elder", "crusader", "redeemer", "hunter", "warlord"];
+    const model = manifest.modifierTextModel!;
+    expect(model.modifiers.map((mod) => [mod.id, mod.requiredInfluence])).toEqual(
+        model.modifiers.map((mod) => [
+            mod.id,
+            names[catalog.crafting.modRules[mod.id]?.influence ?? -1],
+        ]),
+    );
+    expect(
+        model.modifiers.find((mod) => mod.id === "RecoverLifePercentOnBlockUber1_"),
+    ).toMatchObject({ requiredInfluence: "shaper" });
+    const { item } = purchases.find(
+        (entry) => entry.preset === "life-block-shield" && entry.node.id === "recovery",
+    )!;
+    expect(() => engine.validateItem({ ...item, influences: [] })).toThrow(
+        "This modifier requires its matching influence.",
+    );
+    const fixed = marketModifierTextModel(engine, new Set(["Astrolabe Amulet"])).bases[0]!;
+    expect(fixed.unsupported).toBeUndefined();
+    expect(fixed.fixedInfluences).toEqual({
+        values: names,
+        texts: [catalog.mods.CanHaveEveryInfluenceTypeImplicitE1!.text],
+    });
+});
+
 it("can populate 24 purchase inputs with optional identity metadata and preserves the three elemental ambiguities", () => {
     const unknown: string[] = [];
     for (const { preset, node, item } of purchases) {
@@ -195,7 +224,7 @@ it("can populate 24 purchase inputs with optional identity metadata and preserve
     ]);
 });
 
-it("preserves eleven ambiguous configured rolls when listings supply description and flags only", () => {
+it("populates 19 inputs from descriptions, flags and influence while preserving eight ambiguous rolls", () => {
     const unknown = purchases.flatMap(({ preset, node, item }) => {
         const cohort = cohorts.find(
             (cohort) => cohortPriceCoverage(cohort, queries.record(item), node.output).covered,
@@ -206,12 +235,9 @@ it("preserves eleven ambiguous configured rolls when listings supply description
         return [`${preset}/${node.id}`];
     });
     expect(unknown).toEqual([
-        "life-block-shield/recovery",
         "es-block-shield/flat",
         "es-block-shield/percent",
-        "es-block-shield/flat-block",
         "es-block-shield/block",
-        "tailwind-boots/onslaught-base",
         "elemental-bow/donor-0",
         "elemental-bow/donor-1",
         "elemental-bow/donor-2",
@@ -221,10 +247,10 @@ it("preserves eleven ambiguous configured rolls when listings supply description
 });
 
 it.each([
-    ["life-block-shield", "recovery", true],
+    ["life-block-shield", "recovery", false],
     ["es-block-shield", "percent", true],
-    ["es-block-shield", "flat-block", true],
-    ["tailwind-boots", "onslaught-base", true],
+    ["es-block-shield", "flat-block", false],
+    ["tailwind-boots", "onslaught-base", false],
     ["physical-bow", "donor-1", false],
     ["suppression-chest", "suppression-base", false],
     ["global-defence-chest", "defences", false],

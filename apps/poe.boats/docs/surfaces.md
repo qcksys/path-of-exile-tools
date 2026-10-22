@@ -124,6 +124,10 @@ Engine-derived item facts make lookup, binding and refresh require that proof; o
 cohorts remain browsable but cannot price an ambiguous variant. HTTP/MCP parity and the real-storage
 capture-to-query, binding and refresh regression verify that cheaper alternative variants do not
 enter the selected variant's price. Capturing identity adds no price until a listing is observed.
+Modifier inference also applies the client's explicit required-influence rules to captured influence
+flags. Missing or dual-influence evidence retains ambiguity; fixed all-influence bases require their
+native implicit text. Native spawn weights do not exclude legitimate non-native donors. Proven
+modifier metadata constrains inference without preventing other affixes from being identified.
 
 ## Adding a capability or Hono subrouter
 

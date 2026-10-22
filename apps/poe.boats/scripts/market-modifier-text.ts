@@ -5,6 +5,8 @@ import { modifierTiers } from "../app/lib/crafting-modifier-details";
 import { catalystEffect } from "../app/lib/crafting-quality";
 import { modifierEffectStats, rolledModText } from "../app/lib/crafting-text";
 
+const influenceNames = ["shaper", "elder", "crusader", "redeemer", "hunter", "warlord"] as const;
+
 function displayEquivalentFamilies(engine: CraftingEngine) {
     const signature = (id: string) => {
         const { required_level: _requiredLevel, ...mod } = engine.mod(id);
@@ -81,6 +83,9 @@ export function marketModifierTextModel(
                           side: mod.generation_type,
                           groups: mod.groups,
                           crafted: mod.domain === "crafted",
+                          // Client influence restrictions apply independently of native spawn weights.
+                          requiredInfluence:
+                              influenceNames[catalog.crafting.modRules[id]?.influence ?? -1],
                           text:
                               mod.text ??
                               (mod.stats.every((stat) => stat.min === 0 && stat.max === 0)
@@ -158,9 +163,31 @@ export function marketModifierTextModel(
             }
             return magnitude.prefix < 0 || magnitude.suffix < 0 ? null : magnitude;
         });
+        const fixedInfluences = ids.map((id) => {
+            const implicits = catalog.bases[id]!.implicits.filter((implicit) =>
+                engine
+                    .mod(implicit)
+                    .stats.some(
+                        (stat) => stat.id === "local_item_can_roll_all_influences" && stat.max > 0,
+                    ),
+            );
+            if (!implicits.length) return undefined;
+            if (implicits.some((id) => engine.mod(id).stats.some((stat) => stat.min !== stat.max)))
+                return null;
+            const texts = implicits.map((id) => engine.mod(id).text);
+            if (texts.some((text) => !text)) return null;
+            return {
+                values: engine
+                    .effectiveInfluences(engine.createItem(id, 100))
+                    .map((value) => influenceNames[value]!),
+                texts: texts as string[],
+            };
+        });
         const unsupported =
             magnitudes.some((value) => value === null) ||
-            new Set(magnitudes.map((value) => JSON.stringify(value))).size > 1;
+            new Set(magnitudes.map((value) => JSON.stringify(value))).size > 1 ||
+            fixedInfluences.some((value) => value === null) ||
+            new Set(fixedInfluences.map((value) => JSON.stringify(value))).size > 1;
         const magnitude = unsupported ? undefined : magnitudes[0];
         const catalystProperties = [
             ...new Set(
@@ -179,6 +206,7 @@ export function marketModifierTextModel(
             ...(catalystProperties.length ? { catalystProperties } : {}),
             ...(unsupported ? { unsupported: true } : {}),
             ...(magnitude ? { magnitude } : {}),
+            ...(fixedInfluences[0] ? { fixedInfluences: fixedInfluences[0] } : {}),
         };
     });
     return modifierTextModelSchema.parse({
