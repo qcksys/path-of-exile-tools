@@ -1,5 +1,7 @@
 // biome-ignore-all lint/style/useNamingConvention: Bestiary keys are canonical game-data identifiers.
+import { exchangeCurrencyId } from "@poe-tools/market";
 import type { CraftingEngine } from "~/lib/crafting-engine";
+import { craftingVendorUpgrade, validVendorIngredientQuote } from "~/lib/crafting-vendor-upgrades";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import {
     type CraftingSourceOptions,
@@ -8,6 +10,8 @@ import {
     commoditySourceQuoteSchema,
     commoditySourceReferenceSchema,
     craftingSourceReferenceSchema,
+    vendorUpgradeQuoteSchema,
+    vendorUpgradeReferenceSchema,
 } from "~/schemas/crafting-sources";
 
 const beasts: Record<string, string> = {
@@ -96,7 +100,11 @@ export function craftingCommodityIdentity(engine: CraftingEngine, id: string) {
         : null;
 }
 
-const prefixes = { "poe.ninja": "poeninja:v1:", "stash-commodity": "stash-commodity:v1:" };
+const prefixes = {
+    "poe.ninja": "poeninja:v1:",
+    "stash-commodity": "stash-commodity:v1:",
+    "vendor-upgrade": "vendor-upgrade:v1:",
+};
 export function decodeCraftingSourceReference(value?: string): CraftingSourceReference | null {
     const prefix = Object.values(prefixes).find((prefix) => value?.startsWith(prefix));
     if (!prefix) return null;
@@ -131,6 +139,51 @@ export function bindCraftingSourcePrice(
         throw new Error(
             "The source quote does not match this input, game, league or accounting currency.",
         );
+    if (quote.source === "vendor-upgrade") {
+        const parsed = vendorUpgradeQuoteSchema.parse(quote);
+        const path = craftingVendorUpgrade(engine, id, parsed.path.inputId);
+        const ingredient = parsed.ingredient;
+        if (JSON.stringify(path) !== JSON.stringify(parsed.path))
+            throw new Error(
+                "The vendor quote must preserve the exact verified recipe path and quantities.",
+            );
+        if (
+            ingredient.itemId !== path.inputId ||
+            ingredient.quoteId !== exchangeCurrencyId(parsed.currency) ||
+            ingredient.realm !== parsed.realm ||
+            ingredient.league !== parsed.league ||
+            ingredient.conversion !== parsed.conversion ||
+            !validVendorIngredientQuote(ingredient) ||
+            ingredient.hour === null ||
+            ingredient.hour > Math.floor(Date.now() / 3_600_000) * 3600 - 3600
+        )
+            throw new Error(
+                "The vendor ingredient needs a positive matching-scope exchange quote from a completed hour.",
+            );
+        if (
+            Math.abs(parsed.amount - path.quantity * ingredient.amount) >
+            Math.max(1, parsed.amount) * 1e-10
+        )
+            throw new Error(
+                "The vendor estimate must equal the verified ingredient quantity times its unit quote.",
+            );
+        const { amount: _, ...details } = parsed;
+        const reference = vendorUpgradeReferenceSchema.parse(details);
+        return {
+            ...graph,
+            prices: {
+                ...graph.prices,
+                [id]: {
+                    amount: parsed.amount,
+                    currency: parsed.currency,
+                    source: "market",
+                    confidence: null,
+                    observedAt: new Date(ingredient.hour * 1000).toISOString(),
+                    cohortId: `${prefixes[reference.source]}${encodeURIComponent(JSON.stringify(reference))}`,
+                },
+            },
+        };
+    }
     if (quote.source === "stash-commodity") {
         const parsed = commoditySourceQuoteSchema.parse(quote);
         if (parsed.hour > Math.floor(Date.now() / 3_600_000) * 3600 - 3600)

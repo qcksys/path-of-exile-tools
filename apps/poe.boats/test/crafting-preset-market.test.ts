@@ -18,7 +18,7 @@ import { catalog, engine } from "./crafting-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r8",
+    (entry) => entry.game === "poe1" && entry.revision === "r9",
 )!;
 const cohorts = craftingPresetCohorts(engine, ruleset);
 const manifest = marketCohortManifestSchema.parse(
@@ -42,7 +42,10 @@ const purchases = craftingPresets.flatMap((preset) => {
             : [],
     );
 });
-const originalPurchases = purchases.filter(({ alternative }) => alternative.id === "buy");
+const startingBases = purchases.filter(({ node }) => node.id.endsWith("-make-base"));
+const originalPurchases = purchases.filter(
+    ({ node, alternative }) => alternative.id === "buy" && !node.id.endsWith("-make-base"),
+);
 
 function rawItem(item: CraftingItem, metadata = false) {
     const record = queries.record(item);
@@ -83,8 +86,8 @@ function rawItem(item: CraftingItem, metadata = false) {
 }
 
 it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
-    expect(purchases).toHaveLength(42);
-    expect(cohorts).toHaveLength(41);
+    expect(purchases).toHaveLength(56);
+    expect(cohorts).toHaveLength(47);
     const definitions = new Map(manifest.cohorts.map((cohort) => [cohort.id, cohort]));
     for (const cohort of cohorts) expect(definitions.get(cohort.id)).toEqual(cohort);
     for (const { preset, graph: project, node, alternative, item } of purchases) {
@@ -224,6 +227,23 @@ it("can populate 24 original purchase inputs with optional identity metadata and
     ]);
 });
 
+it("captures all fourteen exact Normal preparation bases without modifier metadata", () => {
+    expect(startingBases).toHaveLength(14);
+    const matched = new Set<string>();
+    for (const { node, item } of startingBases) {
+        expect(item.rarity).toBe("normal");
+        expect(item.mods).toEqual([]);
+        const cohort = cohorts.find(
+            (cohort) => cohortPriceCoverage(cohort, queries.record(item), node.output).covered,
+        )!;
+        expect(
+            classifier.classify(normalizeApiItem("poe1", "stash", rawItem(item))).matches,
+        ).toContain(cohort.id);
+        matched.add(cohort.id);
+    }
+    expect(matched.size).toBe(6);
+});
+
 it("populates 19 original inputs from descriptions, flags and influence while preserving eight ambiguous rolls", () => {
     const unknown = originalPurchases.flatMap(({ preset, node, item }) => {
         const cohort = cohorts.find(
@@ -336,7 +356,9 @@ it.each([
 });
 
 it("does not price ambiguous elemental modifier identities from names, tiers or numeric rolls", () => {
-    for (const { node, item } of purchases.filter((entry) => entry.preset === "elemental-bow")) {
+    for (const { node, item } of purchases.filter(
+        (entry) => entry.preset === "elemental-bow" && entry.item.mods.length,
+    )) {
         const cohort = cohorts.find(
             (cohort) => cohortPriceCoverage(cohort, queries.record(item), node.output).covered,
         )!;

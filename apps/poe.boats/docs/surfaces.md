@@ -139,7 +139,15 @@ separate Magic purchase where the complete immediate recombination outcomes matc
 Rare purchase. Each rarity has an exact cohort; a Magic
 quote never prices a Rare item. New presets retain the original pinned purchase for previews, while
 users can select the Magic alternative or compare actually priced alternatives automatically. The
-ten presets contain 42 purchase alternatives across 27 acquisitions and 41 distinct exact cohorts.
+revision 9 presets also offer fourteen explicit preparation alternatives for isolated natural
+donors: acquire the exact Normal base, Transmute, roll Alterations and Annul an opposite affix.
+Losing the target returns to paid rolling on the same item. Real-engine tests cover every route's
+recovery charges, source-cost discovery and full-recipe output equivalence. Prices remain unknown
+until supplied, and the original Rare purchases stay pinned. Saved graphs and older revisions
+retain their recipes. The ten current presets contain 56 purchase alternatives across 41
+acquisitions and 47 distinct exact cohorts; fourteen production alternatives refer to the
+explicit preparation steps. Capture fixtures cover every new base without modifier metadata;
+definitions do not imply observed inventory or available quotes.
 
 Source lookup and binding also accept 106 verified PoE 1 PC essence identities through a distinct
 `stash-commodity` source. This uses already captured unit asking prices and preserves the completed
@@ -176,6 +184,8 @@ MCP exposes public tools to anonymous callers and adds account tools when authen
 Both transports reject foreign Origin headers, cap operation bodies at 1 MiB, and return non-cacheable results. No request-specific identity lives in module globals. `ASSETS` reads the bundled recombinator catalog without a public self-fetch. Crafting account storage uses the workspace/share migration; equipment history uses the cohort migrations.
 
 The browser reference at `/integrations` lists every operation, its schemas, and an explicit Run button. Submitting a write there performs the operation under the signed-in account. `/api/openapi.json` is the machine-readable OpenAPI 3.1 contract; `/api/docs` serves the Scalar API reference using that same contract on the current origin. The integrations page links to both.
+
+Crafting revision r9 estimates only dependencies reachable from the project entry and its selected acquisition routes. Pinned purchases leave their unused production alternatives explicitly unestimated; automatic choices still compare every route. Validation continues to cover the whole graph. Potential input and action costs, including skipped conditional actions, must be priced before a production route can supply a complete cost or win automatic selection. Retained revisions r1 through r8 keep their published behavior.
 
 ## References
 

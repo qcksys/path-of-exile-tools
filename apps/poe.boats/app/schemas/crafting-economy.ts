@@ -17,6 +17,7 @@ export const acquisitionEstimateSchema = z.strictObject({
     expectedCost: z.number().nonnegative().nullable(),
     currency: z.string().min(1),
     expectedActions: z.number().nonnegative().nullable(),
+    estimated: z.boolean().optional(),
     guaranteed: z.boolean(),
     confidence: z.number().min(0).max(1).nullable(),
     missingPrices: z.array(z.string()).default([]),

@@ -13,7 +13,7 @@ import { graphFixture, quote, runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r8",
+    (entry) => entry.game === "poe1" && entry.revision === "r9",
 )!;
 
 describe("common crafting project presets", () => {
@@ -129,7 +129,7 @@ describe("common crafting project presets", () => {
                   )
                 : [],
         );
-        expect(purchases).toHaveLength(4);
+        expect(purchases).toHaveLength(5);
         for (const { node, alternative } of purchases)
             expect(alternative.name).toBe(
                 alternative.id === "buy-magic" ? `${node.name} (Magic)` : node.name,

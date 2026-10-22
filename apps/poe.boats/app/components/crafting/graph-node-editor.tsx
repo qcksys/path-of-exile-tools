@@ -101,7 +101,9 @@ export function GraphPriceInput({
                 <span className="block text-muted-foreground">
                     {sourceReference.source === "stash-commodity"
                         ? `Captured per-item asking estimate${sourceReference.exchange ? ` · converted from ${sourceReference.exchange.amount.toLocaleString(undefined, { maximumSignificantDigits: 6 })} ${sourceReference.exchange.currency} using matching-hour exchange · combined confidence unknown` : ""} · ${value.samples ?? "unknown"} priced samples · time shown is the observed hour · captured history available`
-                        : "poe.ninja listing estimate · time shown is retrieval time · complete recipe includes the selected rare-beast assumption where applicable · historical source unavailable"}
+                        : sourceReference.source === "vendor-upgrade"
+                          ? `Vendor-upgrade ingredient estimate · ${sourceReference.path.quantity} × ${sourceReference.path.inputName} · ${sourceReference.ingredient.itemVolume ?? "unknown"} ingredient units traded · confidence unknown · time shown is the ingredient observation hour · fixed recipe path supports captured history`
+                          : "poe.ninja listing estimate · time shown is retrieval time · complete recipe includes the selected rare-beast assumption where applicable · historical source unavailable"}
                 </span>
             )}
             {value?.source === "market" &&
@@ -660,14 +662,20 @@ export function GraphNodeEditor({
                                 )}
                                 {estimate && (
                                     <p className="text-xs text-muted-foreground">
-                                        {estimate.expectedCost === null
-                                            ? "Cost unresolved"
-                                            : `${estimate.expectedCost.toFixed(2)} ${graph.currency}`}{" "}
-                                        ·{" "}
-                                        {estimate.guaranteed
-                                            ? "Guaranteed purchase"
-                                            : "Estimated crafting cost"}{" "}
-                                        · {estimate.expectedActions ?? "?"} expected actions
+                                        {estimate.estimated === false ? (
+                                            "Not estimated"
+                                        ) : (
+                                            <>
+                                                {estimate.expectedCost === null
+                                                    ? "Cost unresolved"
+                                                    : `${estimate.expectedCost.toFixed(2)} ${graph.currency}`}{" "}
+                                                ·{" "}
+                                                {estimate.guaranteed
+                                                    ? "Guaranteed purchase"
+                                                    : "Estimated crafting cost"}{" "}
+                                                · {estimate.expectedActions ?? "?"} expected actions
+                                            </>
+                                        )}
                                     </p>
                                 )}
                             </div>

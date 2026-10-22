@@ -1,0 +1,310 @@
+import { DatabaseSync } from "node:sqlite";
+import { convertExchangeQuote, quoteExchangeSnapshot } from "@poe-tools/market";
+import { drizzle } from "drizzle-orm/mysql-proxy";
+import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
+import { DB_TABLE_PREFIX } from "~/const";
+import type { TDatabase } from "~/db/client";
+import { CraftingEngine } from "~/lib/crafting-engine";
+import { bindCraftingSourcePrice, decodeCraftingSourceReference } from "~/lib/crafting-sources";
+import { craftingVendorUpgrade, craftingVendorUpgradePaths } from "~/lib/crafting-vendor-upgrades";
+import {
+    craftingMarketSnapshots,
+    refreshCraftingMarketPrices,
+} from "~/operations/crafting-market.server";
+import { craftingSourceQuoteSchema } from "~/schemas/crafting-sources";
+import { findCraftingSourcePrices } from "~/services/crafting-sources.server";
+import { exchangeGraph } from "./crafting-exchange-fixtures";
+import { catalog, engine } from "./crafting-fixtures";
+import {
+    vendorHour,
+    vendorInputId,
+    vendorMiddleId,
+    vendorOutputId,
+    vendorQuote,
+    vendorSnapshot,
+} from "./crafting-vendor-upgrade-fixtures";
+
+let sqlite: DatabaseSync;
+let db: TDatabase;
+const options = {
+    realm: "pc" as const,
+    ids: [vendorOutputId],
+    vendorUpgrade: { inputId: vendorInputId },
+};
+function capture(
+    changes: Partial<Omit<typeof vendorSnapshot, "volumeTraded">> & {
+        volumeTraded?: Record<string, number>;
+    } = {},
+) {
+    const entry = { ...vendorSnapshot, ...changes };
+    sqlite
+        .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_currency_hourly VALUES (?,?,?,?,?,?,?)`)
+        .run(
+            entry.realm,
+            entry.league,
+            entry.hour,
+            entry.marketId,
+            JSON.stringify(entry.volumeTraded),
+            null,
+            null,
+        );
+}
+beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime((vendorHour + 9000) * 1000);
+    sqlite = new DatabaseSync(":memory:");
+    sqlite.exec(
+        `CREATE TABLE ${DB_TABLE_PREFIX}stash_currency_hourly (realm TEXT, league TEXT, hour INTEGER, marketId TEXT, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT)`,
+    );
+    db = drizzle(async (sql, params) => {
+        const statement = sqlite.prepare(sql);
+        statement.setReturnArrays(true);
+        return {
+            rows: statement
+                .all(...params)
+                .map((row) =>
+                    Object.values(row).map((value) =>
+                        typeof value === "string" && value.startsWith("{")
+                            ? JSON.parse(value)
+                            : value,
+                    ),
+                ),
+        };
+    }) as unknown as TDatabase;
+});
+afterEach(() => {
+    sqlite.close();
+    vi.useRealTimers();
+});
+
+it("resolves the verified 9-Weeping route and refuses backwards, cross-family, unknown and other-game paths", () => {
+    expect(
+        craftingVendorUpgradePaths(engine, vendorOutputId).map((path) => [
+            path.inputId,
+            path.quantity,
+        ]),
+    ).toEqual([
+        [vendorMiddleId, 3],
+        [vendorInputId, 9],
+    ]);
+    expect(vendorQuote.path.steps.map((step) => step.recipeId)).toEqual([
+        "1:weeping-essence-of-rage",
+        "1:wailing-essence-of-rage",
+    ]);
+    for (const input of [
+        vendorOutputId,
+        "Metadata/Items/Currency/CurrencyEssenceRage4",
+        "Metadata/Items/Currency/CurrencyEssenceGreed1",
+        "missing",
+    ])
+        expect(() => craftingVendorUpgrade(engine, vendorOutputId, input)).toThrow(
+            "verified forward",
+        );
+    expect(
+        craftingVendorUpgradePaths(
+            new CraftingEngine({ ...catalog, game: "poe2" }),
+            vendorOutputId,
+        ),
+    ).toEqual([]);
+});
+
+it("prices the selected exact ingredient, retains its low volume and replaces a manual amount only on binding", async () => {
+    capture();
+    const graph = {
+        ...exchangeGraph(),
+        prices: {
+            [vendorOutputId]: {
+                amount: 91,
+                currency: "chaos",
+                source: "manual" as const,
+                confidence: null,
+            },
+        },
+    };
+    const result = await findCraftingSourcePrices(graph, engine, options, db);
+    expect(result).toEqual({ quotes: { [vendorOutputId]: vendorQuote }, missing: {} });
+    expect(graph.prices[vendorOutputId]?.amount).toBe(91);
+    const bound = bindCraftingSourcePrice(
+        graph,
+        engine,
+        vendorOutputId,
+        result.quotes[vendorOutputId]!,
+    );
+    expect(bound.prices[vendorOutputId]).toMatchObject({
+        amount: 18,
+        confidence: null,
+        observedAt: new Date(vendorHour * 1000).toISOString(),
+    });
+    expect(bound.prices[vendorOutputId]).not.toHaveProperty("samples");
+    expect(decodeCraftingSourceReference(bound.prices[vendorOutputId]?.cohortId)).toMatchObject({
+        path: vendorQuote.path,
+        ingredient: { itemVolume: 3, quoteVolume: 6 },
+    });
+});
+
+it("refuses forged paths, quantities, arithmetic, input quotes, scope, and incomplete hours", () => {
+    const graph = exchangeGraph();
+    for (const bad of [
+        { ...vendorQuote, path: { ...vendorQuote.path, quantity: 3 } },
+        {
+            ...vendorQuote,
+            path: { ...vendorQuote.path, steps: [...vendorQuote.path.steps].reverse() },
+        },
+        { ...vendorQuote, amount: 17 },
+        { ...vendorQuote, ingredient: { ...vendorQuote.ingredient, amount: 3 } },
+        { ...vendorQuote, ingredient: { ...vendorQuote.ingredient, itemId: vendorMiddleId } },
+        { ...vendorQuote, ingredient: { ...vendorQuote.ingredient, itemVolume: 0 } },
+        { ...vendorQuote, ingredient: { ...vendorQuote.ingredient, marketId: "wrong|pair" } },
+        {
+            ...vendorQuote,
+            ingredient: { ...vendorQuote.ingredient, windowStart: vendorHour - 3600 },
+        },
+        { ...vendorQuote, ingredient: { ...vendorQuote.ingredient, league: "Other" } },
+        { ...vendorQuote, ingredient: { ...vendorQuote.ingredient, hour: vendorHour + 7200 } },
+    ])
+        expect(() => bindCraftingSourcePrice(graph, engine, vendorOutputId, bad)).toThrow();
+    expect(() =>
+        bindCraftingSourcePrice({ ...graph, game: "poe2" }, engine, vendorOutputId, vendorQuote),
+    ).toThrow("does not match");
+});
+
+it("retains explicit conversion even with a direct quote, and verifies every matching-hour conversion leg", async () => {
+    capture();
+    const result = await findCraftingSourcePrices(
+        exchangeGraph(),
+        engine,
+        {
+            ...options,
+            vendorUpgrade: { inputId: vendorInputId, conversion: "reference-currency-v1" },
+        },
+        db,
+    );
+    const direct = result.quotes[vendorOutputId]!;
+    expect(direct).toMatchObject({
+        source: "vendor-upgrade",
+        conversion: "reference-currency-v1",
+        ingredient: { conversion: "reference-currency-v1" },
+    });
+    expect(() =>
+        bindCraftingSourcePrice(exchangeGraph(), engine, vendorOutputId, direct),
+    ).not.toThrow();
+    const divine = "Metadata/Items/Currency/CurrencyModValues";
+    const chaos = "Metadata/Items/Currency/CurrencyRerollRare";
+    const first = quoteExchangeSnapshot(
+        {
+            ...vendorSnapshot,
+            marketId: `${vendorInputId}|${divine}`,
+            volumeTraded: { [vendorInputId]: 3, [divine]: 1 },
+        },
+        vendorInputId,
+        divine,
+    )!;
+    const second = quoteExchangeSnapshot(
+        {
+            ...vendorSnapshot,
+            marketId: `${divine}|${chaos}`,
+            volumeTraded: { [divine]: 1, [chaos]: 300 },
+        },
+        divine,
+        chaos,
+    )!;
+    const ingredient = convertExchangeQuote(first, second)!;
+    const converted = {
+        ...vendorQuote,
+        conversion: "reference-currency-v1" as const,
+        ingredient,
+        amount: 900,
+    };
+    expect(
+        bindCraftingSourcePrice(exchangeGraph(), engine, vendorOutputId, converted).prices[
+            vendorOutputId
+        ]?.amount,
+    ).toBe(900);
+    for (const bad of [
+        { ...converted, conversion: undefined },
+        {
+            ...converted,
+            conversion: undefined,
+            ingredient: { ...ingredient, conversion: undefined },
+        },
+        { ...converted, ingredient: { ...ingredient, windowStart: vendorHour - 3600 } },
+        {
+            ...converted,
+            ingredient: {
+                ...ingredient,
+                legs: [first, { ...second, hour: vendorHour - 3600 }],
+            },
+        },
+        {
+            ...converted,
+            ingredient: {
+                ...ingredient,
+                legs: [{ ...first, amount: 1 }, second],
+            },
+        },
+    ])
+        expect(() =>
+            bindCraftingSourcePrice(
+                exchangeGraph(),
+                engine,
+                vendorOutputId,
+                craftingSourceQuoteSchema.parse(bad),
+            ),
+        ).toThrow();
+});
+
+it("keeps the fixed input and path when a closer-tier quote appears, and refreshes unchanged amounts with new provenance", async () => {
+    capture();
+    const bound = bindCraftingSourcePrice(exchangeGraph(), engine, vendorOutputId, vendorQuote);
+    capture({ hour: vendorHour + 3600 });
+    capture({
+        marketId: `${vendorMiddleId}|Metadata/Items/Currency/CurrencyRerollRare`,
+        volumeTraded: { [vendorMiddleId]: 10, "Metadata/Items/Currency/CurrencyRerollRare": 1 },
+    });
+    const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
+    expect(refreshed.issues).toEqual([]);
+    expect(refreshed.graph.prices[vendorOutputId]).toMatchObject({
+        amount: 18,
+        observedAt: new Date((vendorHour + 3600) * 1000).toISOString(),
+    });
+    expect(
+        decodeCraftingSourceReference(refreshed.graph.prices[vendorOutputId]?.cohortId),
+    ).toMatchObject({ path: vendorQuote.path });
+    const history = await craftingMarketSnapshots(db, refreshed.graph, engine, [vendorHour]);
+    expect(history.points[0]?.issues).toEqual([]);
+    expect(history.points[0]?.graph?.prices[vendorOutputId]?.observedAt).toBe(
+        new Date(vendorHour * 1000).toISOString(),
+    );
+});
+
+it("lets a newer zero block old ingredient prices; failed refresh preserves the amount while history reports the gap", async () => {
+    capture();
+    capture({
+        hour: vendorHour + 3600,
+        volumeTraded: { [vendorInputId]: 0, "Metadata/Items/Currency/CurrencyRerollRare": 0 },
+    });
+    const bound = bindCraftingSourcePrice(exchangeGraph(), engine, vendorOutputId, vendorQuote);
+    const result = await findCraftingSourcePrices(bound, engine, options, db);
+    expect(result.quotes).toEqual({});
+    expect(result.missing[vendorOutputId]).toBeTruthy();
+    const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
+    expect(refreshed.graph.prices[vendorOutputId]).toEqual(bound.prices[vendorOutputId]);
+    expect(refreshed.issues).toHaveLength(1);
+    const history = await craftingMarketSnapshots(db, bound, engine, [
+        vendorHour,
+        vendorHour + 3600,
+    ]);
+    expect(history.points[0]?.graph?.prices[vendorOutputId]?.amount).toBe(18);
+    expect(history.points[1]?.graph).toBeNull();
+});
+
+it("returns explicit refusal for unsupported requests without using a different source", async () => {
+    for (const request of [
+        { ...options, realm: "poe2" as const },
+        { ...options, vendorUpgrade: { inputId: vendorOutputId } },
+    ]) {
+        const result = await findCraftingSourcePrices(exchangeGraph(), engine, request, db);
+        expect(result.quotes).toEqual({});
+        expect(result.missing[vendorOutputId]).toBeTruthy();
+    }
+});

@@ -96,6 +96,70 @@ function magicGraph(data = poe2) {
 }
 
 describe("whole-graph calculation", () => {
+    it("skips exclusive production dependencies of a pinned purchase", () => {
+        const graph = magicGraph();
+        const prepared = graph.nodes.find((node) => node.id === "prepared")!;
+        if (prepared.kind !== "acquire") throw new Error("Expected acquisition");
+        prepared.choice = { mode: "pinned", alternativeId: "buy" };
+        graph.prices = {};
+        const result = calculateCraftingGraph(poe2, graph, { estimateIterations: 4 });
+        expect(result).toMatchObject({ complete: true, meanCost: 20, missingPrices: [] });
+        expect(result.estimates.map((estimate) => estimate.nodeId)).toEqual(["prepared"]);
+        expect(result.acquisitions.prepared?.alternatives[1]).toMatchObject({
+            estimated: false,
+            expectedCost: null,
+            expectedActions: null,
+        });
+        expect(result.work).toBeLessThan(100);
+    });
+
+    it("keeps a production dependency that is also used by the selected route", () => {
+        const graph = magicGraph();
+        const prepared = graph.nodes.find((node) => node.id === "prepared")!;
+        if (prepared.kind !== "acquire") throw new Error("Expected acquisition");
+        prepared.choice = { mode: "pinned", alternativeId: "buy" };
+        graph.entry = "transmute";
+        const result = calculateCraftingGraph(poe2, graph, { estimateIterations: 4 });
+        expect(result).toMatchObject({ complete: true, meanCost: 11 });
+        expect(result.estimates.map((estimate) => estimate.nodeId)).toEqual(["base", "transmute"]);
+    });
+
+    it("requires conditional action prices even when every sample skips the action", () => {
+        const graph = magicGraph(catalog);
+        const transmute = graph.nodes.find((node) => node.id === "transmute")!;
+        const prepared = graph.nodes.find((node) => node.id === "prepared")!;
+        if (transmute.kind !== "craft" || prepared.kind !== "acquire")
+            throw new Error("Expected fixture nodes");
+        const annul = catalog.crafting.currencies.find(
+            (currency) => currency.id === "Metadata/Items/Currency/CurrencyRemoveMod",
+        )!;
+        graph.nodes.push({
+            ...transmute,
+            id: "conditional-annul",
+            method: { kind: "currency", id: annul.id },
+            inputs: [{ id: "item", name: "Magic base", source: "transmute" }],
+            applyWhen: itemQuerySchema.parse({
+                game: "poe1",
+                groups: [{ type: "and", filters: [{ kind: "rarity", values: ["Rare"] }] }],
+            }),
+        });
+        const production = prepared.alternatives.find(
+            (alternative) => alternative.kind === "production",
+        )!;
+        production.nodeId = "conditional-annul";
+        const automatic = calculateCraftingGraph(catalog, graph, { estimateIterations: 4 });
+        expect(automatic).toMatchObject({ complete: true, meanCost: 20, missingPrices: [] });
+        expect(automatic.acquisitions.prepared).toMatchObject({ selectedId: "buy" });
+        expect(automatic.acquisitions.prepared?.alternatives[1]).toMatchObject({
+            expectedCost: null,
+            missingPrices: [annul.id],
+        });
+        prepared.choice = { mode: "pinned", alternativeId: "craft" };
+        const pinned = calculateCraftingGraph(catalog, graph, { estimateIterations: 4 });
+        expect(pinned).toMatchObject({ complete: true, meanCost: null, missingPrices: [annul.id] });
+        expect(pinned.spending[annul.id]).toBeUndefined();
+    });
+
     it.each([catalog, poe2])("compares purchasing and crafting using the $game engine", (data) => {
         const graph = magicGraph(data);
         const result = calculateCraftingGraph(data, graph, { estimateIterations: 4 });

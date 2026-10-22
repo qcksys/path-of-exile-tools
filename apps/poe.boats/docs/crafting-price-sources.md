@@ -58,19 +58,29 @@ omit preparation costs or change the available modifier pool. Such cohorts
 remain market evidence for a manual assumption, not a complete purchase price.
 The same validation applies to binding and refreshing existing prices.
 
-The cohort generator derives 41 purchase-specific definitions from all 42 purchase
+The cohort generator derives 47 purchase-specific definitions from all 56 purchase
 alternatives in the ten configured presets. These preserve canonical base identity,
 level, rarity, influences and explicit modifier counts/identities. Capture retains
 their bases, including influenced donors. Fifteen Magic alternatives are available
 for equivalent immediate recombination donors, including the flat-ES/recovery
-prefix/suffix pair; the presets retain
-their pinned Rare defaults. Users may explicitly choose a Magic alternative or
+prefix/suffix pair; the presets retain their pinned Rare defaults.
+Users may explicitly choose a Magic alternative or
 automatic acquisition, which considers only alternatives with known prices and
 refuses an entirely unpriced set.
 
-Fixtures with optional modifier identity metadata can populate 36 of the 42
-alternatives (24 original, 12 Magic); fixtures using documented descriptions,
-flags and required-influence constraints populate 30 (19 original, 11 Magic) at
+Revision 9 presets also offer explicit production alternatives for fourteen isolated
+natural Magic donors. Each acquires its exact Normal base, uses Transmutation and
+Alterations to roll the target, and uses Annulment to remove an opposite affix.
+Losing the target returns to Alterations on the same item. Base purchases and
+every currency attempt are charged separately; their prices start unknown.
+The fourteen new base acquisitions share six exact definitions. The paired ES
+recovery donor, NNN donors, Janus, Grasping Mail and boots receive no new rolling
+route. Older revisions and saved graphs retain their existing recipes.
+
+Fixtures with optional modifier identity metadata can populate 50 of the 56
+alternatives (24 original, 12 Magic, 14 preparation bases); fixtures using documented
+descriptions, flags and required-influence constraints populate 44 (19 original,
+11 Magic, 14 preparation bases) at
 their configured rolls. Overlapping displayed modifier identities remain unknown.
 Some different rolls can resolve uniquely, so these counts measure the fixtures,
 not guaranteed live coverage. A definition does not
@@ -160,3 +170,30 @@ alias is applied. Stackable alchemical resonators remain selectable as
 removed their normal acquisition sources but preserved existing items, and the
 [wiki's resonator history](https://www.poewiki.net/wiki/Resonator) records their
 Ruthless availability and conversion of old non-stackable items on pickup.
+
+PoE 1 essence vendor upgrades are a separate, explicit ingredient-cost estimate.
+The source picker resolves the selected lower-tier essence through the existing
+verified vendor-recipe catalog and exact, unique canonical essence/currency IDs.
+It accepts only forward three-for-one steps; no downgrade, corrupted essence,
+cross-family or PoE 2 substitution is inferred. For example, nine Weeping Essences
+of Rage produce three Wailing Essences of Rage and then one Screaming Essence of
+Rage ([Wailing recipe](https://www.poewiki.net/wiki/Wailing_Essence_of_Rage),
+[Screaming recipe](https://www.poewiki.net/wiki/Screaming_Essence_of_Rage)).
+
+`vendorUpgrade.inputId` explicitly selects the ingredient in the existing source
+lookup operation. The returned `vendor-upgrade` quote and saved binding retain
+the ordered recipe IDs, canonical input/output IDs, quantities, original positive
+exchange quote, observed hour and traded volume. Optional
+`reference-currency-v1` conversion retains both matching-hour exchange legs.
+The resulting amount is ingredient quantity multiplied by its unit quote, not
+a direct market quote for the produced essence. Confidence remains unknown:
+three traded ingredient units do not establish that the nine required units are
+available, and the estimate excludes acquisition gold and time.
+
+Refresh and historical snapshots keep the selected ingredient and recipe path;
+they do not choose a cheaper ancestor or silently switch to direct captured asks.
+The exchange resolver's cutoff and newer-zero rules still apply. A failed refresh
+keeps the saved amount with an explicit issue, while an unavailable historical
+point remains unknown. Direct essence asking prices remain separately selectable.
+Manual amounts change only on explicit selection; the standalone workbench copies
+the chosen estimate as a fixed numeric amount using its existing semantics.

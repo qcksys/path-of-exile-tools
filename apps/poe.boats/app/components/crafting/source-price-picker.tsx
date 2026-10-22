@@ -6,6 +6,7 @@ import type { CraftingEngine } from "~/lib/crafting-engine";
 import { bindCraftingSourcePrice, craftingCommodityIdentity } from "~/lib/crafting-sources";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import { type CraftingSourceResult, craftingSourceResultSchema } from "~/schemas/crafting-sources";
+import { VendorUpgradePricePicker, VendorUpgradeQuoteDetails } from "./vendor-upgrade-price-picker";
 
 export function SourcePricePicker({
     graph,
@@ -241,6 +242,8 @@ export function SourcePricePicker({
                                                         Captured asking-price history
                                                     </a>
                                                 </>
+                                            ) : quote.source === "vendor-upgrade" ? (
+                                                <VendorUpgradeQuoteDetails quote={quote} />
                                             ) : (
                                                 <>
                                                     <p>
@@ -282,6 +285,25 @@ export function SourcePricePicker({
                             );
                         })}
                     </>
+                )}
+                {hasCommodities && (
+                    <details className="space-y-3">
+                        <summary className="cursor-pointer font-medium">
+                            Vendor-upgrade ingredient estimates
+                        </summary>
+                        {inputs
+                            .filter(([id]) => craftingCommodityIdentity(engine, id))
+                            .map(([id, name]) => (
+                                <VendorUpgradePricePicker
+                                    key={id}
+                                    graph={graph}
+                                    engine={engine}
+                                    id={id}
+                                    name={name}
+                                    onChange={onChange}
+                                />
+                            ))}
+                    </details>
                 )}
             </div>
         </details>
