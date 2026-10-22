@@ -13,6 +13,7 @@ import { validateRulesetIndex } from "../app/lib/crafting-rulesets";
 import { craftingCatalogSchema } from "../app/schemas/crafting";
 import { craftingPresetCohorts } from "./crafting-preset-cohorts";
 import { writeCapturePolicy } from "./generate-capture-policy";
+import { marketBaseIdentities } from "./market-base-identities";
 import { marketModifierTextModel } from "./market-modifier-text";
 
 const bytes = await readFile("public/game-data/crafting-poe1.json");
@@ -341,8 +342,28 @@ for (const cohort of [...cohorts]) {
         });
     }
 }
+const baseIdentities = marketBaseIdentities(
+    engine,
+    new Set(
+        cohorts.flatMap((cohort) =>
+            cohort.query.groups.flatMap((group) =>
+                group.filters.flatMap((filter) =>
+                    filter.kind === "base" && filter.field === "baseType" ? filter.values : [],
+                ),
+            ),
+        ),
+    ),
+);
 const revision = createHash("sha256")
-    .update(JSON.stringify({ catalogHash, cohorts, modifierIdentities, modifierTextModel }))
+    .update(
+        JSON.stringify({
+            catalogHash,
+            cohorts,
+            modifierIdentities,
+            modifierTextModel,
+            baseIdentities,
+        }),
+    )
     .digest("hex");
 const manifest = marketCohortManifestSchema.parse({
     format: 1,
@@ -352,6 +373,7 @@ const manifest = marketCohortManifestSchema.parse({
     cohorts,
     modifierIdentities,
     modifierTextModel,
+    baseIdentities,
 });
 await mkdir("../../packages/poe-market/data", { recursive: true });
 await writeFile(

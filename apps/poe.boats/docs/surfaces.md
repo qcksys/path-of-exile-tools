@@ -116,8 +116,14 @@ Equipment lookup, binding and refresh also require the cohort to guarantee the c
 starting base, exact item level, rarity, affix counts, influences and supported flags.
 Broad base or donor medians cannot price an already prepared input. Exchange history remains
 accessible when a current quote is missing or lookup fails; inspecting it does not fill prices.
-The shared engine-aware item guard also refuses graph binding and refresh for ambiguous base
-variants sharing a display name, including Two-Toned Boots; raw cohort browsing remains available.
+For bases sharing a display name, the capture classifier resolves a canonical base ID only when
+the complete native implicit descriptions identify exactly one catalog variant. The generated
+model covers Two-Toned Boots and Two-Stone Rings; missing, altered, overlapping or unsupported
+implicit evidence remains unknown. Exact boot preset cohorts require the canonical base ID.
+Engine-derived item facts make lookup, binding and refresh require that proof; older display-name-only
+cohorts remain browsable but cannot price an ambiguous variant. HTTP/MCP parity and the real-storage
+capture-to-query, binding and refresh regression verify that cheaper alternative variants do not
+enter the selected variant's price. Capturing identity adds no price until a listing is observed.
 
 ## Adding a capability or Hono subrouter
 

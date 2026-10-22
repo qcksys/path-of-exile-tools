@@ -141,7 +141,13 @@ async function mcp(method: string, params?: unknown, authenticated = false) {
     );
 }
 
-const cohortPolicies = [undefined, "adaptive-v1", "display-equivalent-v1", "exchange-v1"] as const;
+const cohortPolicies = [
+    undefined,
+    "adaptive-v1",
+    "display-equivalent-v1",
+    "exchange-v1",
+    "canonical-base",
+] as const;
 
 function cohortPricingFixture(policy: (typeof cohortPolicies)[number]) {
     const window = policy === "adaptive-v1" ? policy : undefined;
@@ -169,7 +175,25 @@ function cohortPricingFixture(policy: (typeof cohortPolicies)[number]) {
             )!,
         };
     }
-    return { graph: family?.graph ?? marketGraph(), candidate, window };
+    const graph = family?.graph ?? marketGraph();
+    if (policy === "canonical-base") {
+        const node = graph.nodes[0]!;
+        if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
+            throw new Error("Fixture");
+        const item = fixtureEngine.createItem("Metadata/Items/Armours/Boots/BootsAtlas1", 86);
+        node.alternatives[0].item = item;
+        candidate.definition.query.groups[0]!.filters[0] = {
+            kind: "base",
+            field: "baseType",
+            values: ["Two-Toned Boots"],
+        };
+        candidate.definition.query.groups[0]!.filters.push({
+            kind: "base",
+            field: "baseId",
+            values: [item.baseId],
+        });
+    }
+    return { graph, candidate, window };
 }
 
 describe("transport parity", () => {

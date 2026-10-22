@@ -1,5 +1,6 @@
 import { expect, it } from "vite-plus/test";
 import {
+    compileModifierIdentities,
     compileModifierTextModel,
     itemQuerySchema,
     itemQuerySelectionSchema,
@@ -65,6 +66,57 @@ function item(descriptions: string[], prefixes: number, suffixes: number, fractu
         extended: { prefixes, suffixes },
     });
 }
+
+it("combines proven optional metadata with description-only affixes without replacing source tiers", () => {
+    const physical = modifiers[0]!;
+    const alternative = { ...physical, id: "alternative" };
+    const { id, name, side, text } = physical;
+    const resolveIdentity = compileModifierIdentities([
+        { id, name, side, text, level: 83 },
+        { id: alternative.id, name, side, text, level: 81 },
+    ]);
+    const input = item(["110% increased Physical Damage", "+47% to Cold Resistance"], 1, 1);
+    input.item.explicitMods![0] = {
+        description: "110% increased Physical Damage",
+        mods: [{ name: physical.name, tier: "P2", level: 83 }],
+    };
+    const known = resolveIdentity(normalizeApiItem("poe1", "stash", input.item));
+    expect(known.facts.modifiers).toMatchObject([{ id: "physical", tier: 2 }]);
+    const resolved = compileModifierTextModel(model([...modifiers, alternative]))(known);
+    expect(resolved.facts.modifiers).toHaveLength(2);
+    expect(resolved.facts.modifiers).toEqual(
+        expect.arrayContaining([known.facts.modifiers[0], expect.objectContaining({ id: "cold" })]),
+    );
+    expect(resolved.facts.modifiersComplete).toBe(false);
+    expect(resolved.item).toBe(known.item);
+});
+
+it("does not infer mixed-metadata affixes from unresolved identities or contradictory counts and flags", () => {
+    const physical = modifiers[0]!;
+    const input = item(["110% increased Physical Damage", "+47% to Cold Resistance"], 1, 1);
+    input.item.explicitMods![0] = {
+        description: "110% increased Physical Damage",
+        mods: [{ name: physical.name, tier: "P1", level: 83 }],
+    };
+    const resolve = compileModifierTextModel(model());
+    const unknown = normalizeApiItem("poe1", "stash", input.item);
+    expect(resolve(unknown)).toBe(unknown);
+    const { id, name, side, text } = physical;
+    const identify = compileModifierIdentities([{ id, name, side, text, level: 83 }]);
+    for (const changed of [
+        { ...input.item, extended: { prefixes: 0, suffixes: 1 } },
+        {
+            ...input.item,
+            explicitMods: [
+                { ...input.item.explicitMods![0], flags: { crafted: true } },
+                input.item.explicitMods![1],
+            ],
+        },
+    ]) {
+        const known = identify(normalizeApiItem("poe1", "stash", changed));
+        expect(resolve(known)).toBe(known);
+    }
+});
 
 it("recovers a compound modifier from combined displayed stats and source affix counts", () => {
     const input = item(

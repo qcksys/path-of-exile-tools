@@ -62,17 +62,6 @@ export function latestCompatibleCohort(
 
 export function craftingMarketItemIssue(engine: CraftingEngine, item: CraftingItem) {
     const base = engine.base(item);
-    if (
-        Object.entries(engine.catalog.bases).some(
-            ([id, candidate]) =>
-                !id.includes("Royale") &&
-                candidate.corrupted === base.corrupted &&
-                candidate.rarities.includes(item.rarity) &&
-                candidate.name === base.name &&
-                JSON.stringify(candidate) !== JSON.stringify(base),
-        )
-    )
-        return `Equipment cohorts cannot distinguish the canonical variants sharing the name ${base.name}. Their implicits or crafting properties differ. Enter a manual price.`;
     const baseline: Record<string, unknown> = engine.createItem(item.baseId, item.level);
     const coveredFields = new Set([
         "baseId",
@@ -92,7 +81,10 @@ export function craftingMarketItemIssue(engine: CraftingEngine, item: CraftingIt
         )
         .map(([field]) => field);
     const nativeImplicits = base.implicits;
-    if (item.implicits.some((modifier) => !nativeImplicits.includes(modifier.id)))
+    if (
+        JSON.stringify(item.implicits.map((modifier) => modifier.id).sort()) !==
+        JSON.stringify([...nativeImplicits].sort())
+    )
         extra.push("modified implicits");
     return extra.length
         ? `Equipment cohorts do not price this prepared state (${extra.join(", ")}). Enter a manual price or add preparation after acquiring the base.`

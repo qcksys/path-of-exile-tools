@@ -7,8 +7,11 @@ import {
 } from "@poe-tools/market";
 import { REALM } from "#src/shared/auth.ts";
 import { queryAll } from "#src/shared/db.ts";
-import { push } from "#src/shared/remote/push.ts";
+import { push, requireRemoteEnv } from "#src/shared/remote/push.ts";
 import { assertSourceRealm } from "#src/shared/source.ts";
+
+const deliveredDefinitions = new WeakMap<DuckDBConnection, { url: string; ids: Set<string> }>();
+const MAX_CACHED_DEFINITIONS = 100_000;
 
 export async function equipmentHourly(
     conn: DuckDBConnection,
@@ -186,15 +189,25 @@ export async function rollupEquipment(
             WHERE h.hour = $1 AND ($2 IS NULL OR h.league = $2)`,
             [hour, opts.league ?? null],
         );
-        await push(
-            {
-                stream: "equipment-definitions",
-                rows: definitions.map(({ definition }) =>
-                    marketCohortDefinitionSchema.parse(JSON.parse(definition)),
-                ),
-            },
-            { dryRun: opts.dryRun },
+        const parsed = definitions.map(({ definition }) =>
+            marketCohortDefinitionSchema.parse(JSON.parse(definition)),
         );
+        const url = opts.dryRun ? "" : requireRemoteEnv().url;
+        const previous = deliveredDefinitions.get(conn);
+        const delivered = previous?.url === url ? previous : { url, ids: new Set<string>() };
+        const key = (definition: (typeof parsed)[number]) =>
+            JSON.stringify([definition.revision, definition.id]);
+        const pending = parsed.filter((definition) => !delivered.ids.has(key(definition)));
+        if (pending.length) {
+            await push({ stream: "equipment-definitions", rows: pending }, { dryRun: opts.dryRun });
+            if (!opts.dryRun) {
+                if (delivered.ids.size + pending.length > MAX_CACHED_DEFINITIONS)
+                    delivered.ids.clear();
+                for (const definition of pending.slice(-MAX_CACHED_DEFINITIONS))
+                    delivered.ids.add(key(definition));
+                deliveredDefinitions.set(conn, delivered);
+            }
+        }
         await push({ stream: "equipment", rows }, { dryRun: opts.dryRun });
         if (!opts.dryRun)
             for (const league of new Set(rows.map((row) => row.league))) {

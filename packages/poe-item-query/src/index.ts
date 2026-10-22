@@ -1,3 +1,4 @@
+export * from "./base-identity.ts";
 export * from "./from-item.ts";
 export * from "./match.ts";
 export * from "./modifier-identity.ts";

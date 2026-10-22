@@ -26,6 +26,7 @@ function implies(actual: ItemCondition, required: ItemCondition, item: ItemRecor
             actual.field === "baseType" &&
             actual.values.every((name) => name === item.item.baseType) &&
             required.field === "baseId" &&
+            !item.facts.baseTypeAmbiguous &&
             !!item.facts.baseId &&
             required.values.includes(item.facts.baseId)
         );
@@ -103,6 +104,14 @@ export function cohortPriceCoverage(
     });
     const guarantees = (required: ItemCondition) =>
         guaranteed.some((actual) => implies(actual, required, item));
+    if (
+        item.facts.baseTypeAmbiguous &&
+        (!item.facts.baseId ||
+            !guarantees({ kind: "base", field: "baseId", values: [item.facts.baseId] }))
+    )
+        reasons.push(
+            "The cohort does not distinguish the canonical variants sharing this base name.",
+        );
     if (
         !guarantees({ kind: "base", field: "baseType", values: [item.item.baseType] }) &&
         !(

@@ -63,7 +63,7 @@ describe("crafting market price bindings", () => {
         }
     });
 
-    it("refuses to refresh a saved purchase whose display name has different canonical bases", async () => {
+    it("refreshes exact canonical base quotes and refuses legacy display-name-only definitions", async () => {
         const db = createDbConnection("mysql://test:test@localhost/poe_test");
         const graph = bindCohortPurchasePrice(
             marketGraph(),
@@ -79,12 +79,43 @@ describe("crafting market price bindings", () => {
             "Metadata/Items/Armours/Boots/BootsAtlas1",
             86,
         );
-        const lookup = vi.spyOn(marketQueries, "findCraftingMarketPrices");
+        const candidate = structuredClone(marketCandidate);
+        candidate.definition.query.groups[0]!.filters[0] = {
+            kind: "base",
+            field: "baseType",
+            values: ["Two-Toned Boots"],
+        };
+        const record = createCraftingItemQuery(engine).record(node.alternatives[0].item);
+        Object.assign(candidate, cohortPriceCoverage(candidate.definition, record, node.output));
+        const lookup = vi
+            .spyOn(marketQueries, "findCraftingMarketPrices")
+            .mockResolvedValue({ candidates: [candidate], truncated: false, message: null });
         try {
             const result = await refreshCraftingMarketPrices(db, graph, engine);
             expect(result.graph).toEqual(graph);
             expect(result.issues).toEqual([expect.stringContaining("canonical variants")]);
-            expect(lookup).not.toHaveBeenCalled();
+            expect(lookup).toHaveBeenCalledWith(
+                db,
+                expect.objectContaining({
+                    item: expect.objectContaining({
+                        facts: expect.objectContaining({ baseTypeAmbiguous: true }),
+                    }),
+                }),
+                expect.any(String),
+            );
+            candidate.definition.query.groups[0]!.filters.push({
+                kind: "base",
+                field: "baseId",
+                values: [node.alternatives[0].item.baseId],
+            });
+            Object.assign(
+                candidate,
+                cohortPriceCoverage(candidate.definition, record, node.output),
+            );
+            const exactGraph = bindCohortPurchasePrice(graph, engine, "base", "buy", candidate);
+            const refreshed = await refreshCraftingMarketPrices(db, exactGraph, engine);
+            expect(refreshed.issues).toEqual([]);
+            expect(refreshed.graph).toEqual(exactGraph);
         } finally {
             lookup.mockRestore();
         }

@@ -117,6 +117,41 @@ function exchange(hour: number, realm = "pc", league = "Standard") {
 }
 
 describe("equipment market lookup", () => {
+    it("requires canonical base evidence for shared-name variants while keeping legacy pools browsable", async () => {
+        capture(completed);
+        const configured = engine.createItem("Metadata/Items/Armours/Boots/BootsAtlas1", 86);
+        const record = createCraftingItemQuery(engine).record(configured);
+        const query = structuredClone(marketCandidate.definition.query);
+        query.groups[0]!.filters[0] = {
+            kind: "base",
+            field: "baseType",
+            values: ["Two-Toned Boots"],
+        };
+        const update = () =>
+            sqlite
+                .prepare(`UPDATE ${DB_TABLE_PREFIX}stash_cohort SET query = ?, baseTypes = ?`)
+                .run(JSON.stringify(query), JSON.stringify(["Two-Toned Boots"]));
+        update();
+        const legacy = await findCraftingMarketPrices(db, { ...input, item: record });
+        expect(legacy.candidates).toHaveLength(1);
+        expect(legacy.candidates[0]?.covered).toBe(false);
+        expect(legacy.candidates[0]?.reasons.join(" ")).toContain("canonical variants");
+        query.groups[0]!.filters.push({
+            kind: "base",
+            field: "baseId",
+            values: [configured.baseId],
+        });
+        update();
+        expect(
+            (await findCraftingMarketPrices(db, { ...input, item: record })).candidates[0]?.covered,
+        ).toBe(true);
+        const other = createCraftingItemQuery(engine).record(
+            engine.createItem("Metadata/Items/Armours/Boots/BootsAtlas2", 86),
+        );
+        expect((await findCraftingMarketPrices(db, { ...input, item: other })).candidates).toEqual(
+            [],
+        );
+    });
     it("rejects stale captures and the current incomplete hour", async () => {
         capture(completed - 14 * 86400);
         capture(completed + 3600);

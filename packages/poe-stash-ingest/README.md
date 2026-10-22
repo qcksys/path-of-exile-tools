@@ -61,6 +61,13 @@ a failed stage, a heartbeat older than three minutes, or a running stage without
 ten minutes makes the worker unhealthy. Logs identify the failed stage and the watch loop retries
 it. Docker's restart policy restarts a crashed process, not an unhealthy one. The receiving app's
 `/server-status` page shows the same worker report alongside actual stored history coverage.
+Local health updates do not wait for remote status delivery. The worker sends status reports
+serially, coalesces updates while a report is in flight, and waits for its final shutdown report
+using the existing request timeout. Slow status delivery therefore does not pause capture.
+Acknowledged immutable equipment definitions are reused for later rollups in the same worker
+session and receiver URL. New definitions are sent before their prices, and failed uploads are
+retried. Restart the worker after replacing the receiver database at the same URL so it resends
+the definitions; the cache is bounded and does not survive a restart.
 
 To seed a recent cursor on an empty volume, stop the worker, then run a one-off command with
 the same host credentials (`varlock run` from this package directory):

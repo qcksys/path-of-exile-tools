@@ -665,6 +665,64 @@ it("offers stored donor-family quotes only under an explicit representative assu
     expect(ordinary.candidates[0]?.assumption).toBeUndefined();
 });
 
+it("reuses only acknowledged equipment definitions for the same connection and receiver", async () => {
+    const client = createClient({ baseUrl, userAgent: "definition-e2e", token: TOKEN });
+    const page = {
+        next_change_id: "definitions-next",
+        stashes: [
+            {
+                ...stash,
+                items: [
+                    {
+                        ...item,
+                        name: "",
+                        baseType: "Necrotic Armour",
+                        typeLine: "Necrotic Armour",
+                        ilvl: 86,
+                        frameType: 0,
+                        sockets: [],
+                        explicitMods: [],
+                        note: "~price 20 chaos",
+                    },
+                ],
+            },
+        ],
+    };
+    const capture = async (conn: DbHandle["conn"]) => {
+        upstreamResponses.push({ body: page });
+        await ingestPs(conn, client, { pages: 1, observedAt: new Date(HOUR * 1000) });
+    };
+    await capture(local.conn);
+    const requests = vi.spyOn(globalThis, "fetch");
+    const definitionsSent = () =>
+        requests.mock.calls.filter(
+            ([, init]) =>
+                typeof init?.body === "string" &&
+                JSON.parse(init.body).stream === "equipment-definitions",
+        ).length;
+    await rollupEquipment(local.conn, { hour: HOUR, dryRun: true });
+    expect(definitionsSent()).toBe(0);
+    receiverStatus = 503;
+    await expect(rollupEquipment(local.conn, { hour: HOUR })).rejects.toThrow("503");
+    expect(definitionsSent()).toBe(1);
+    receiverStatus = undefined;
+    await rollupEquipment(local.conn, { hour: HOUR });
+    expect(definitionsSent()).toBe(2);
+    await rollupEquipment(local.conn, { hour: HOUR });
+    expect(definitionsSent()).toBe(2);
+    vi.stubEnv("POE_BOATS_INGEST_URL", `${baseUrl}/api/stash-ingest?receiver=other`);
+    await rollupEquipment(local.conn, { hour: HOUR });
+    expect(definitionsSent()).toBe(3);
+    const another = await openDb(":memory:");
+    try {
+        await capture(another.conn);
+        await rollupEquipment(another.conn, { hour: HOUR });
+        expect(definitionsSent()).toBe(4);
+    } finally {
+        await another.close();
+    }
+});
+
 it("persists deduplicated equipment windows while retaining hourly history and historical cutoffs", async () => {
     const client = createClient({ baseUrl, userAgent: "window-e2e", token: TOKEN });
     const equipment = {
@@ -1731,4 +1789,78 @@ it("stores a three-mod Watcher's Eye and groups equivalent mod orders", async ()
     });
     expect(rows[0]?.signatureData?.mods).toHaveLength(3);
     expect(rows[0]?.signatureValue.length).toBeLessThanOrEqual(255);
+});
+
+it("captures and prices the correct Two-Toned Boots variant while excluding other or unknown implicits", async () => {
+    const defaults = await defaultEquipmentClassifier();
+    const identities = defaults.manifest.baseIdentities!.filter(
+        (base) => base.baseType === "Two-Toned Boots",
+    );
+    expect(identities).toHaveLength(3);
+    upstreamResponses.push({
+        body: {
+            next_change_id: "canonical-boots",
+            stashes: [
+                {
+                    ...stash,
+                    items: [...identities, undefined].map((identity, index) => ({
+                        ...item,
+                        id: `boots-${index}`,
+                        name: "",
+                        typeLine: "Two-Toned Boots",
+                        baseType: "Two-Toned Boots",
+                        frameType: 0,
+                        rarity: "Normal",
+                        ilvl: 86,
+                        influences: { hunter: true },
+                        extended: { prefixes: 0, suffixes: 0 },
+                        implicitMods:
+                            identity?.implicits?.[0]?.map((description) => ({ description })) ?? [],
+                        note: `~price ${identity?.id.endsWith("BootsAtlas1") ? 40 : 1} chaos`,
+                    })),
+                },
+            ],
+        },
+    });
+    await ingestPs(
+        local.conn,
+        createClient({ baseUrl, userAgent: "canonical-base-e2e", token: TOKEN }),
+        { pages: 1, observedAt: new Date(HOUR * 1000) },
+    );
+    await rollupEquipment(local.conn, { hour: HOUR, league: "Standard" });
+    const configured = {
+        ...engine.createItem("Metadata/Items/Armours/Boots/BootsAtlas1", 86),
+        influences: [4],
+    };
+    const graph = marketGraph();
+    const node = graph.nodes[0]!;
+    if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
+        throw new Error("Fixture");
+    node.alternatives[0].item = configured;
+    const result = await findCraftingMarketPrices(mysql as unknown as TDatabase, {
+        item: createCraftingItemQuery(engine).record(configured),
+        requirements: node.output,
+        realm: "pc",
+        league: "Standard",
+        currency: "chaos",
+        at: HOUR,
+    });
+    const exact = result.candidates.find((candidate) => candidate.covered)!;
+    expect(exact).toBeDefined();
+    expect(exact.latest).toMatchObject({
+        listingCount: 1,
+        uniqueSellers: 1,
+        unknownCount: 1,
+        prices: { chaos: { median: 40, count: 1 } },
+    });
+    const bound = bindCohortPurchasePrice(graph, engine, "base", "buy", exact);
+    expect(livePurchasePrices(bound)[0]?.alternative.price?.amount).toBe(40);
+    const refreshed = await refreshCraftingMarketPrices(
+        mysql as unknown as TDatabase,
+        bound,
+        engine,
+        HOUR,
+    );
+    expect(refreshed.issues).toEqual([]);
+    expect(refreshed.graph).toEqual(bound);
 });
