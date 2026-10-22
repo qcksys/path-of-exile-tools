@@ -33,11 +33,21 @@ export async function archivePage(
     const id = randomUUID();
     // Commit before classification: a processing failure must not discard the only captured copy.
     await withTransaction(conn, async () => {
-        const [existing] = await queryAll(
+        let [existing] = await queryAll(
             conn,
             "SELECT response_hash FROM ps_capture_payload WHERE response_hash = $1",
             [hash],
         );
+        if (!existing) {
+            // The expression bypasses an ART index that may omit an intact row.
+            [existing] = await queryAll(
+                conn,
+                "SELECT response_hash FROM ps_capture_payload WHERE (response_hash || '') = $1",
+                [hash],
+            );
+            if (existing)
+                console.warn("Archived payload found by sequential fallback after an index miss.");
+        }
         if (!existing) {
             const json = JSON.stringify(filtered);
             await conn.run("INSERT INTO ps_capture_payload VALUES ($1, $2, $3)", [

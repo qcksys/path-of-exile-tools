@@ -149,6 +149,54 @@ it("persists observations across reopening and deduplicates payloads without los
     }
 });
 
+it("deduplicates an intact payload hidden from the indexed lookup without logging archive identifiers", async () => {
+    const db = await openDb(":memory:");
+    const scope = { realm: "pc", league: "Standard", capturedAt: 1000 };
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const read = db.conn.runAndReadAll.bind(db.conn);
+    try {
+        await archivePage(db.conn, page, scope, () => true);
+        expect(warning).not.toHaveBeenCalled();
+        const originalBodies = await queryAll(
+            db.conn,
+            "SELECT response_hash, to_base64(response_gzip) AS body FROM ps_capture_payload",
+        );
+        const indexedRead = vi
+            .spyOn(db.conn, "runAndReadAll")
+            .mockImplementation((sql, ...args) =>
+                read(
+                    sql.includes("FROM ps_capture_payload WHERE response_hash = $1")
+                        ? sql.replace(
+                              "WHERE response_hash = $1",
+                              "WHERE FALSE AND response_hash = $1",
+                          )
+                        : sql,
+                    ...args,
+                ),
+            );
+        try {
+            await archivePage(db.conn, page, { ...scope, capturedAt: 2000 }, () => true);
+        } finally {
+            indexedRead.mockRestore();
+        }
+        expect(await captureArchiveStatus(db.conn)).toMatchObject({ pages: 2, payloads: 1 });
+        expect(
+            await queryAll(
+                db.conn,
+                "SELECT response_hash, to_base64(response_gzip) AS body FROM ps_capture_payload",
+            ),
+        ).toEqual(originalBodies);
+        expect(warning).toHaveBeenCalledExactlyOnceWith(
+            "Archived payload found by sequential fallback after an index miss.",
+        );
+        await archivePage(db.conn, page, { ...scope, capturedAt: 3000 }, () => true);
+        expect(warning).toHaveBeenCalledTimes(1);
+    } finally {
+        warning.mockRestore();
+        await db.close();
+    }
+});
+
 it("retains crafting bases and special donors without retaining ordinary low-tier equipment", async () => {
     const accepts = await defaultCraftingCapture((await defaultEquipmentClassifier()).manifest);
     const ordinary = { ...item, frameType: 0, baseType: "Wool Gloves", typeLine: "Wool Gloves" };
