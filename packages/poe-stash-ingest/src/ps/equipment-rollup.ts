@@ -65,12 +65,14 @@ async function equipmentRange(
         lastSeenAt: string | null;
     }>(
         conn,
-        `WITH source AS (
-        SELECT * FROM ps_equipment_hour
+        `WITH coverage AS (
+        SELECT revision, league FROM ps_equipment_hour
         WHERE observed_hour BETWEEN $1 - ($3 - 1) * 3600 AND $1 AND ($2 IS NULL OR league = $2)
-    ), coverage AS (
-        SELECT revision, league FROM source GROUP BY revision, league
+        GROUP BY revision, league
         HAVING count(DISTINCT observed_hour) = $3
+    ), source AS (
+        SELECT h.* FROM ps_equipment_hour h JOIN coverage USING (revision, league)
+        WHERE observed_hour BETWEEN $1 - ($3 - 1) * 3600 AND $1
     ), recent AS (
         SELECT * FROM source
         QUALIFY row_number() OVER (
