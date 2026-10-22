@@ -5,13 +5,13 @@ import type { CraftingPreset, CraftingPresetId } from "../schemas/crafting-prese
 import type { CraftingRuleset } from "../schemas/crafting-rulesets";
 import { type CraftingEngine, seededRandom } from "./crafting-engine";
 import { projectFromItem } from "./crafting-graph-authoring";
-import { validateCraftingGraph } from "./crafting-graph-validation";
+import { CRAFTING_GRAPH_ENGINE, validateCraftingGraph } from "./crafting-graph-validation";
 import { janusRarityModifier } from "./crafting-janus";
 import { elevatedBootsPreset } from "./crafting-preset-boots";
 import { helicalRingPreset } from "./crafting-preset-helical";
 import { alterationDonor } from "./crafting-preset-preparation";
 import { nonNativeEssenceSources } from "./crafting-recombination";
-import { validateRulesetGraph } from "./crafting-rulesets";
+import { rulesetAllowsPresetPreparation, validateRulesetGraph } from "./crafting-rulesets";
 
 const recombinationAssumption =
     " Recombination assumes self-service at 0 chaos, excluding gold and dust opportunity cost.";
@@ -554,6 +554,18 @@ export function projectFromPreset(
             name: `${rare.name} (Magic)`,
             item: engine.validateItem({ ...rare.item, rarity: "magic" }),
         });
+        if (rulesetAllowsPresetPreparation(ruleset) && rare.item.mods.length === 1)
+            node.alternatives.push({
+                kind: "production",
+                id: "make-magic",
+                name: "Roll and isolate with Alterations",
+                nodeId: alterationDonor(
+                    { engine, base, buy, craft, currency },
+                    `${node.id}-make`,
+                    engine.validateItem({ ...rare.item, rarity: "normal", mods: [] }),
+                    rare.item.mods[0]!.id,
+                ),
+            });
     }
     const graph = projectFromItem(ruleset, base("Spine Bow"), preset.name);
     graph.nodes = nodes;
@@ -569,6 +581,8 @@ export function projectFromPreset(
             confidence: null,
         };
     if (presetId === "tailwind-boots") graph.maxSteps = 100_000;
-    validateRulesetGraph(ruleset, graph);
-    return validateCraftingGraph(engine.catalog, graph);
+    const validated = validateRulesetGraph(ruleset, graph);
+    return ruleset.engine === CRAFTING_GRAPH_ENGINE
+        ? validateCraftingGraph(engine.catalog, validated)
+        : validated;
 }

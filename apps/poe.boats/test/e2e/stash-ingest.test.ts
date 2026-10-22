@@ -90,6 +90,12 @@ import {
     marketCandidate,
     marketGraph,
 } from "../crafting-market-fixtures";
+import {
+    vendorInputId,
+    vendorOutputId,
+    vendorQuote,
+    vendorSnapshot,
+} from "../crafting-vendor-upgrade-fixtures";
 
 const HOUR = 1_790_899_200;
 const TOKEN = "inert-e2e-ingest-token";
@@ -2135,4 +2141,55 @@ it("ingests fractional essence unit asks into MySQL and shares source binding an
             }),
         ).quotes,
     ).toEqual({});
+
+    await mysql.insert(tStashCurrencyHourly).values({ ...vendorSnapshot, hour: HOUR });
+    const vendorLookup = {
+        graph,
+        realm: "pc",
+        ids: [vendorOutputId],
+        at: HOUR,
+        vendorUpgrade: { inputId: vendorInputId },
+    };
+    const vendorResult = craftingSourceResultSchema.parse(
+        await parity("crafting/market/sources", "find_crafting_source_prices", vendorLookup),
+    );
+    expect(vendorResult.quotes[vendorOutputId]).toMatchObject({
+        source: "vendor-upgrade",
+        amount: 18,
+        path: vendorQuote.path,
+        ingredient: { hour: HOUR, itemVolume: 3, quoteVolume: 6 },
+    });
+    const vendorBound = z.object({ graph: craftingGraphSchema }).parse(
+        await parity("crafting/market/sources/bind", "bind_crafting_source_price", {
+            graph,
+            id: vendorOutputId,
+            quote: vendorResult.quotes[vendorOutputId],
+        }),
+    ).graph;
+    expect(vendorBound.prices[vendorOutputId]).toMatchObject({ amount: 18, confidence: null });
+    expect(vendorBound.prices[vendorOutputId]).not.toHaveProperty("samples");
+    await mysql.insert(tStashCurrencyHourly).values({
+        ...vendorSnapshot,
+        hour: HOUR + 3600,
+        volumeTraded: { [vendorInputId]: 0, [chaosId]: 0 },
+    });
+    const missingVendor = craftingSourceResultSchema.parse(
+        await parity("crafting/market/sources", "find_crafting_source_prices", {
+            ...vendorLookup,
+            at: HOUR + 3600,
+        }),
+    );
+    expect(missingVendor.quotes).toEqual({});
+    expect(missingVendor.missing[vendorOutputId]).toBeTruthy();
+    expect(
+        await parity("crafting/market/snapshots", "get_crafting_price_snapshots", {
+            graph: vendorBound,
+            hours: [HOUR, HOUR + 3600],
+        }),
+    ).toMatchObject({
+        points: [
+            { graph: { prices: { [vendorOutputId]: { amount: 18 } } }, issues: [] },
+            { graph: null, issues: [expect.any(String)] },
+        ],
+    });
 });

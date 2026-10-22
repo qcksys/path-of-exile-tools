@@ -1,14 +1,16 @@
 import { expect, it } from "vite-plus/test";
+import { seededRandom } from "../app/lib/crafting-engine";
 import { calculateCraftingGraph } from "../app/lib/crafting-graph-simulation";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
 import { projectFromPreset } from "../app/lib/crafting-presets";
 import { recombinationOutcomes } from "../app/lib/crafting-recombination";
 import type { CraftingPresetId } from "../app/schemas/crafting-presets";
 import { catalog, engine } from "./crafting-fixtures";
+import { runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r8",
+    (entry) => entry.game === "poe1" && entry.revision === "r9",
 )!;
 const singleModifiers: [CraftingPresetId, string[]][] = [
     ["life-block-shield", ["block", "max-res"]],
@@ -34,7 +36,11 @@ it.each(
     const graph = projectFromPreset(engine, ruleset, preset);
     const purchases = graph.nodes.filter((node) => node.kind === "acquire");
     expect(
-        purchases.filter((node) => node.alternatives.length === 2).map((node) => node.id),
+        purchases
+            .filter((node) =>
+                node.alternatives.some((alternative) => alternative.id === "buy-magic"),
+            )
+            .map((node) => node.id),
     ).toEqual(selected.find(([id]) => id === preset)![1]);
     const queries = createCraftingItemQuery(engine);
     for (const node of purchases) {
@@ -73,8 +79,7 @@ it.each(
             const expected = recombinationOutcomes(engine, left!.item, right!.item);
             for (const a of inputs[0]!.alternatives)
                 for (const b of inputs[1]!.alternatives) {
-                    if (a.kind !== "purchase" || b.kind !== "purchase")
-                        throw new Error("Expected donors");
+                    if (a.kind !== "purchase" || b.kind !== "purchase") continue;
                     expect(recombinationOutcomes(engine, a.item, b.item)).toEqual(expected);
                 }
         }
@@ -134,17 +139,17 @@ it.each(
         if (node.alternatives[0]!.kind === "purchase") node.alternatives[0]!.price = quote;
     }
     const options = { estimateIterations: 1, workLimit: 100_000 };
-    const rare = calculateCraftingGraph(catalog, legacy, options);
     const magic = calculateCraftingGraph(catalog, graph, options);
     expect(magic.errors).toEqual({});
     expect(magic.missingPrices).toEqual([]);
     expect(magic.meanCost).toBeGreaterThan(0);
-    expect(magic.meanCost).toBe(rare.meanCost);
     expect(magic.probability).toBe(1);
-    expect(magic.samples.map((sample) => sample.item)).toEqual(
-        rare.samples.map((sample) => sample.item),
-    );
-    expect(magic.visits).toEqual(rare.visits);
+    const rareTrial = runGraphTrial(legacy, seededRandom(42));
+    const magicTrial = runGraphTrial(graph, seededRandom(42));
+    expect(magicTrial.success).toBe(true);
+    expect(magicTrial.cost).toBe(rareTrial.cost);
+    expect(magicTrial.item).toEqual(rareTrial.item);
+    expect(magicTrial.visits).toEqual(rareTrial.visits);
     for (const id of ids) expect(magic.acquisitions[id]?.selectedId).toBe("buy-magic");
 });
 

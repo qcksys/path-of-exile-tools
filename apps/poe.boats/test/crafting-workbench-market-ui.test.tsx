@@ -9,9 +9,11 @@ import { CraftingEngine } from "../app/lib/crafting-engine";
 import { validateRulesetIndex } from "../app/lib/crafting-rulesets";
 import { craftingProjectSchema } from "../app/schemas/crafting";
 import index from "../crafting-history/index.json";
+import { changeControl } from "./control-helpers";
 import { commodityQuote, convertedCommodityQuote, essenceId } from "./crafting-commodity-fixtures";
 import { exchangeQuote, transmuteId } from "./crafting-exchange-fixtures";
 import { baseId, catalog, engine, getCatalog } from "./crafting-fixtures";
+import { vendorInputId, vendorOutputId, vendorQuote } from "./crafting-vendor-upgrade-fixtures";
 import { chooseStartingItem } from "./starting-item-helper";
 
 const historyIndex = validateRulesetIndex(index);
@@ -255,6 +257,49 @@ it("synchronizes both league controls without copying or changing prices", async
     expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("123");
     expect(copied).not.toHaveBeenCalled();
     expect(screen.queryByRole("alert")).toBeNull();
+});
+
+it("copies the explicit vendor ingredient estimate without overwriting prior or subsequent manual prices", async () => {
+    vi.stubGlobal(
+        "fetch",
+        vi
+            .fn()
+            .mockImplementation((url: string) =>
+                Promise.resolve(
+                    new Response(
+                        JSON.stringify(
+                            url.includes("index.json")
+                                ? historyIndex
+                                : { quotes: { [vendorOutputId]: vendorQuote }, missing: {} },
+                        ),
+                    ),
+                ),
+            ),
+    );
+    const { copied } = mount("poe1", vendorOutputId);
+    fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
+    fireEvent.change(await screen.findByLabelText("Price lookup league"), {
+        target: { value: "Standard" },
+    });
+    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    fireEvent.click(screen.getByText("Vendor-upgrade ingredient estimates"));
+    changeControl(screen.getByLabelText(`Vendor ingredient for ${vendorQuote.path.outputName}`), {
+        target: { value: vendorInputId },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Find vendor-upgrade estimate" }));
+    await screen.findByRole("button", { name: "Use vendor-upgrade estimate" });
+    const amount = screen.getByLabelText("Manual input price") as HTMLInputElement;
+    expect(amount.value).toBe("123");
+    expect(copied).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Use vendor-upgrade estimate" }));
+    expect(copied).toHaveBeenCalledWith({ [vendorOutputId]: 18 });
+    expect(amount.value).toBe("18");
+    fireEvent.change(amount, { target: { value: "7" } });
+    fireEvent.change(screen.getByLabelText("Price lookup league"), { target: { value: "Other" } });
+    await waitFor(() =>
+        expect(screen.queryByRole("button", { name: "Use vendor-upgrade estimate" })).toBeNull(),
+    );
+    expect(amount.value).toBe("7");
 });
 
 it.each([

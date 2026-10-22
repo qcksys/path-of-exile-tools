@@ -14,6 +14,7 @@ export type {
 } from "../schemas/crafting-graph-result";
 
 import { compareAcquisition } from "./crafting-acquisition";
+import { discoverCraftingCosts } from "./crafting-cost-inputs";
 import { CraftingEngine, seededRandom } from "./crafting-engine";
 import {
     CraftingGraphTrial,
@@ -22,6 +23,7 @@ import {
 } from "./crafting-graph-trial";
 import { graphProductionOrder, validateCraftingGraph } from "./crafting-graph-validation";
 import { createCraftingItemQuery } from "./crafting-item-query";
+import { craftingNodeCostPrice } from "./crafting-node-prices";
 import { wilsonInterval } from "./crafting-simulation";
 
 interface Totals {
@@ -151,7 +153,26 @@ export class CraftingGraphSimulation {
         this.graph = validateCraftingGraph(catalog, input);
         this.engine = new CraftingEngine(catalog);
         this.queries = createCraftingItemQuery(this.engine);
-        this.order = graphProductionOrder(this.graph);
+        const nodes = new Map(this.graph.nodes.map((node) => [node.id, node]));
+        const active = new Set<string>();
+        const visit = (id: string) => {
+            if (active.has(id)) return;
+            active.add(id);
+            const node = nodes.get(id)!;
+            if (node.kind === "craft") {
+                for (const input of node.inputs) visit(input.source);
+            } else {
+                for (const alternative of node.alternatives)
+                    if (
+                        alternative.kind === "production" &&
+                        (node.choice.mode === "automatic" ||
+                            node.choice.alternativeId === alternative.id)
+                    )
+                        visit(alternative.nodeId);
+            }
+        };
+        visit(this.graph.entry);
+        this.order = graphProductionOrder(this.graph).filter((node) => active.has(node.id));
         this.random = seededRandom(this.graph.seed);
     }
 
@@ -184,6 +205,7 @@ export class CraftingGraphSimulation {
                 currency: this.graph.currency,
                 expectedCost: estimate?.expectedCost ?? null,
                 expectedActions: estimate?.expectedActions ?? null,
+                estimated: estimate !== undefined,
                 guaranteed: false,
                 confidence: null,
                 missingPrices: estimate?.missingPrices ?? [],
@@ -199,6 +221,10 @@ export class CraftingGraphSimulation {
         );
         const production =
             source?.kind === "production" ? this.estimates.get(source.nodeId) : undefined;
+        const missingPrices = selected?.missingPrices ?? [
+            ...new Set(alternatives.flatMap((alternative) => alternative.missingPrices)),
+        ];
+        if (!selected && !missingPrices.length) missingPrices.push(`acquisition:${node.id}`);
         this.estimates.set(node.id, {
             nodeId: node.id,
             trials: production?.trials ?? 0,
@@ -207,10 +233,22 @@ export class CraftingGraphSimulation {
             returnInterval: production?.returnInterval ?? (selected ? [1, 1] : [0, 1]),
             expectedCost: selected?.expectedCost ?? null,
             expectedActions: selected?.expectedActions ?? null,
-            missingPrices: selected?.missingPrices ?? [],
+            missingPrices,
             complete: production?.complete ?? selected !== undefined,
             errors: production?.errors ?? {},
         });
+    }
+
+    private potentialMissingPrices(node: GraphNode): string[] {
+        if (node.kind === "acquire") return this.estimates.get(node.id)?.missingPrices ?? [];
+        return [
+            ...discoverCraftingCosts(this.engine, [node.method])
+                .filter((cost) => !craftingNodeCostPrice(this.graph.prices, node.id, cost.id))
+                .map((cost) => cost.id),
+            ...node.inputs.flatMap(
+                (input) => this.estimates.get(input.source)?.missingPrices ?? [],
+            ),
+        ];
     }
 
     private nextStage() {
@@ -248,6 +286,8 @@ export class CraftingGraphSimulation {
         }
         if (this.stage?.phase === "estimate") {
             const totals = this.totals;
+            for (const id of this.potentialMissingPrices(this.stage.node))
+                totals.missingPrices.add(id);
             const complete = resolved(totals);
             this.estimates.set(this.stage.node.id, {
                 nodeId: this.stage.node.id,
@@ -267,6 +307,8 @@ export class CraftingGraphSimulation {
             });
         }
         if (this.stage?.phase === "final") {
+            for (const id of this.potentialMissingPrices(this.stage.node))
+                this.totals.missingPrices.add(id);
             this.finalTotals = this.totals;
             this.stopReason = "complete";
             return;

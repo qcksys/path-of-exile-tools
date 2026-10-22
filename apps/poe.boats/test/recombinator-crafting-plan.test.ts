@@ -24,7 +24,7 @@ const recombinator = recombinatorCatalogSchema.parse(
     JSON.parse(readFileSync("public/game-data/recombinator-poe1.json", "utf8")),
 );
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r8",
+    (entry) => entry.game === "poe1" && entry.revision === "r9",
 )!;
 function fixture() {
     const draft = catalogExampleDraft(recombinator);

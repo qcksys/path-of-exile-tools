@@ -5,6 +5,7 @@ import { afterEach, expect, it, vi } from "vite-plus/test";
 import { SourcePricePicker } from "~/components/crafting/source-price-picker";
 import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
+import { changeControl } from "./control-helpers";
 import {
     commodityQuote,
     convertedCommodityQuote,
@@ -13,6 +14,12 @@ import {
 } from "./crafting-commodity-fixtures";
 import { exchangeGraph } from "./crafting-exchange-fixtures";
 import { engine } from "./crafting-fixtures";
+import {
+    vendorInputId,
+    vendorMiddleId,
+    vendorOutputId,
+    vendorQuote,
+} from "./crafting-vendor-upgrade-fixtures";
 
 afterEach(() => {
     cleanup();
@@ -292,6 +299,103 @@ it("discards a pending quote when the project league changes", async () => {
     resolve(new Response(JSON.stringify({ quotes: { [id]: quote }, missing: {} })));
     await waitFor(() =>
         expect(screen.queryByRole("button", { name: "Use source estimate" })).toBeNull(),
+    );
+    expect(onChange).not.toHaveBeenCalled();
+});
+
+it("keeps direct asking prices separate from an explicitly selected vendor ingredient estimate", async () => {
+    const fetcher = vi.fn().mockImplementation((_url, init) =>
+        Promise.resolve(
+            new Response(
+                JSON.stringify(
+                    JSON.parse(init.body).vendorUpgrade
+                        ? { quotes: { [vendorOutputId]: vendorQuote }, missing: {} }
+                        : {
+                              quotes: {},
+                              missing: { [vendorOutputId]: "No current output asks" },
+                          },
+                ),
+            ),
+        ),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    const onChange = vi.fn();
+    render(
+        <SourcePricePicker
+            graph={{
+                ...exchangeGraph(),
+                prices: {
+                    [vendorOutputId]: {
+                        amount: 123,
+                        currency: "chaos",
+                        source: "manual",
+                        confidence: null,
+                    },
+                },
+            }}
+            engine={engine}
+            entries={[[vendorOutputId, vendorQuote.path.outputName]]}
+            onChange={onChange}
+        />,
+    );
+    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
+    await screen.findByText("No current output asks");
+    expect(JSON.parse(fetcher.mock.calls[0]![1].body)).not.toHaveProperty("vendorUpgrade");
+    fireEvent.click(screen.getByText("Vendor-upgrade ingredient estimates"));
+    changeControl(screen.getByLabelText(`Vendor ingredient for ${vendorQuote.path.outputName}`), {
+        target: { value: vendorInputId },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Find vendor-upgrade estimate" }));
+    await screen.findByText("18 chaos per output · vendor-upgrade ingredient estimate");
+    expect(JSON.parse(fetcher.mock.calls[1]![1].body)).toMatchObject({
+        ids: [vendorOutputId],
+        vendorUpgrade: { inputId: vendorInputId },
+    });
+    expect(screen.getByText(/9 × Weeping Essence of Rage at 2 chaos each/)).toBeTruthy();
+    expect(screen.getByText(/3 ingredient units traded/)).toBeTruthy();
+    expect(screen.getByText(/Confidence is unknown/)).toBeTruthy();
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Use vendor-upgrade estimate" }));
+    expect(onChange.mock.calls[0]![0].prices[vendorOutputId].amount).toBe(18);
+    expect(
+        decodeCraftingSourceReference(onChange.mock.calls[0]![0].prices[vendorOutputId].cohortId),
+    ).toMatchObject({
+        source: "vendor-upgrade",
+        path: vendorQuote.path,
+        ingredient: vendorQuote.ingredient,
+    });
+});
+
+it("discards a vendor quote pending when its exact ingredient changes", async () => {
+    let resolve: (response: Response) => void = () => {};
+    const fetcher = vi.fn().mockReturnValue(
+        new Promise<Response>((done) => {
+            resolve = done;
+        }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    const onChange = vi.fn();
+    render(
+        <SourcePricePicker
+            graph={exchangeGraph()}
+            engine={engine}
+            entries={[[vendorOutputId, vendorQuote.path.outputName]]}
+            onChange={onChange}
+        />,
+    );
+    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    fireEvent.click(screen.getByText("Vendor-upgrade ingredient estimates"));
+    const choice = screen.getByLabelText(`Vendor ingredient for ${vendorQuote.path.outputName}`);
+    changeControl(choice, { target: { value: vendorInputId } });
+    fireEvent.click(screen.getByRole("button", { name: "Find vendor-upgrade estimate" }));
+    changeControl(choice, { target: { value: vendorMiddleId } });
+    expect(fetcher.mock.calls[0]![1].signal.aborted).toBe(true);
+    resolve(
+        new Response(JSON.stringify({ quotes: { [vendorOutputId]: vendorQuote }, missing: {} })),
+    );
+    await waitFor(() =>
+        expect(screen.queryByRole("button", { name: "Use vendor-upgrade estimate" })).toBeNull(),
     );
     expect(onChange).not.toHaveBeenCalled();
 });

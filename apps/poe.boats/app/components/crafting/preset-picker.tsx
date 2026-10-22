@@ -47,8 +47,9 @@ export function CraftingPresetPicker({
                 <Badge variant="craft">{presets.length} editable examples</Badge>
                 <CardTitle>Common crafts</CardTitle>
                 <CardDescription>
-                    Open an editable example in a new project tab. Prepared donors are purchases;
-                    enter their prices and currency costs before comparing cost estimates.
+                    Open an editable example in a new project tab. Buy prepared donors or choose an
+                    available preparation route. Price its bases and crafting costs before comparing
+                    estimates.
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">

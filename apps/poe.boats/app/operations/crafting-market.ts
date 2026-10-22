@@ -52,7 +52,7 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Look up PoE 1 PC captured essence asking prices and poe.ninja beast/temple estimates. Essences require an exact unique catalog identity and a positive latest captured bucket within 24 completed hours; at selects historical captured hours. Optional exchange-v1 conversion prefers native asks, otherwise converts chaos/divine/exalted asks using matching-hour exchange evidence. Converted quotes retain the original ask and rate. Beast recipes price every sacrifice and require the explicit extra-rare-beast assumption. poe.ninja has no historical coverage. Sources remain distinct from exchange trades; confidence is uncalibrated.",
+            "Look up PoE 1 PC captured essence asking prices and poe.ninja beast/temple estimates. Essences require an exact unique catalog identity and a positive latest captured bucket within 24 completed hours; at selects historical captured hours. Optional exchange-v1 conversion preserves original asks and matching-hour exchange evidence. Explicit vendorUpgrade selects an exact lower-tier essence and verified forward vendor path, priced from its captured exchange quote; this is an ingredient-cost estimate, not a direct output trade. Beast recipes require the explicit extra-rare-beast assumption. poe.ninja has no historical coverage. Confidence is uncalibrated.",
         input: craftingSourceOptionsSchema.extend({ graph: CraftingGraphContract }),
         output: craftingSourceResultSchema,
         execute: async ({ graph, ...options }, context) =>
@@ -72,7 +72,7 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Return a graph with one verified essence bound to captured per-unit asking prices, or a beast/temple recipe bound to a poe.ninja estimate. Validates source scope and canonical identity or complete recipe. Explicit selection replaces a manual amount; refresh preserves the source. Captured essence history uses its observation hour, while poe.ninja uses retrieval time. Does not save account data.",
+            "Return a graph with one input explicitly bound to captured essence asks, a verified vendor-upgrade ingredient estimate, or a complete beast/temple recipe. Validates source scope, canonical identity, exact recipe path and quantities. Explicit selection replaces a manual amount; refresh preserves the source and selected vendor ingredient/path. Captured history retains actual observation hours; poe.ninja uses retrieval time. Does not save account data.",
         input: z.object({
             graph: CraftingGraphContract,
             id: z.string(),
@@ -231,7 +231,7 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Refresh bound equipment purchases, exchange costs and supported beast/temple estimates using their saved source scope and policies. Equipment follows compatible revisions with the same cohort ID, purpose and exact query. Preserves manual prices and crafting rules. Returns issues when compatibility cannot be established or a source is unavailable; cached unresolved prices must not be treated as current.",
+            "Refresh bound equipment purchases, exchange costs, captured essence asks, explicit vendor-upgrade ingredients and supported beast/temple estimates using their saved source scope and policies. Equipment follows compatible revisions with the same cohort ID, purpose and exact query. Preserves manual prices and crafting rules. Returns issues when compatibility cannot be established or a source is unavailable; cached unresolved prices must not be treated as current.",
         input: z.object({ graph: CraftingGraphContract }),
         output: craftingMarketRefreshResultSchema.extend({ graph: CraftingGraphContract }),
         execute: async ({ graph }, context) =>

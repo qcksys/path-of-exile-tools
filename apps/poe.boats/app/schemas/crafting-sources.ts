@@ -16,6 +16,41 @@ const scope = {
 };
 const assumption = z.literal("rare-beast-mountain-lynx-v1").optional();
 const conversion = z.literal("exchange-v1").optional();
+export const vendorUpgradeOptionsSchema = z.strictObject({
+    inputId: z.string().min(1).max(500),
+    conversion: z.literal("reference-currency-v1").optional(),
+});
+export const vendorUpgradePathSchema = z.strictObject({
+    inputId: z.string().min(1).max(500),
+    inputName: z.string().min(1).max(100),
+    outputId: z.string().min(1).max(500),
+    outputName: z.string().min(1).max(100),
+    quantity: z.number().int().positive().max(729),
+    steps: z
+        .array(
+            z.strictObject({
+                recipeId: z.string().min(1).max(150),
+                inputId: z.string().min(1).max(500),
+                inputName: z.string().min(1).max(100),
+                outputId: z.string().min(1).max(500),
+                outputName: z.string().min(1).max(100),
+                inputQuantity: z.literal(3),
+                outputQuantity: z.literal(1),
+            }),
+        )
+        .min(1)
+        .max(6),
+});
+export const vendorUpgradeReferenceSchema = z.strictObject({
+    ...scope,
+    source: z.literal("vendor-upgrade"),
+    path: vendorUpgradePathSchema,
+    conversion: vendorUpgradeOptionsSchema.shape.conversion,
+    ingredient: exchangeQuoteSchema,
+});
+export const vendorUpgradeQuoteSchema = vendorUpgradeReferenceSchema.extend({
+    amount: z.number().positive(),
+});
 const ninjaReference = z.strictObject({
     ...scope,
     source: z.literal("poe.ninja"),
@@ -39,6 +74,7 @@ export const commoditySourceReferenceSchema = z.strictObject({
 export const craftingSourceReferenceSchema = z.discriminatedUnion("source", [
     ninjaReference,
     commoditySourceReferenceSchema,
+    vendorUpgradeReferenceSchema,
 ]);
 const ninjaQuote = ninjaReference.extend({
     amount: z.number().positive(),
@@ -160,12 +196,14 @@ export const commoditySourceQuoteSchema = commoditySourceReferenceSchema
 export const craftingSourceQuoteSchema = z.discriminatedUnion("source", [
     ninjaQuote,
     commoditySourceQuoteSchema,
+    vendorUpgradeQuoteSchema,
 ]);
 export const craftingSourceOptionsSchema = z.strictObject({
     ids: z.array(z.string().min(1).max(500)).min(1).max(500),
     realm: z.enum(["pc", "xbox", "sony", "poe2"]),
     assumption,
     conversion,
+    vendorUpgrade: vendorUpgradeOptionsSchema.optional(),
     at: z.number().int().nonnegative().optional(),
 });
 export const craftingSourceResultSchema = z.strictObject({
@@ -177,3 +215,5 @@ export type CraftingSourceQuote = z.infer<typeof craftingSourceQuoteSchema>;
 export type CraftingSourceOptions = z.infer<typeof craftingSourceOptionsSchema>;
 export type CraftingSourceResult = z.infer<typeof craftingSourceResultSchema>;
 export type CommoditySourceQuote = z.infer<typeof commoditySourceQuoteSchema>;
+export type VendorUpgradePath = z.infer<typeof vendorUpgradePathSchema>;
+export type VendorUpgradeQuote = z.infer<typeof vendorUpgradeQuoteSchema>;

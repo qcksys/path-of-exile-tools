@@ -20,6 +20,7 @@ import {
     craftingCommodityIdentity,
     liveSourcePrices,
 } from "~/lib/crafting-sources";
+import { craftingVendorUpgrade } from "~/lib/crafting-vendor-upgrades";
 import { craftingCatalogSchema } from "~/schemas/crafting";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import { findCraftingSourcePrices } from "~/services/crafting-sources.server";
@@ -133,6 +134,20 @@ export async function refreshCraftingMarketPrices(
     const sources = new Map<string, ReturnType<typeof liveSourcePrices>>();
     for (const binding of liveSourcePrices(graph)) {
         const { reference, id } = binding;
+        if (reference.source === "vendor-upgrade") {
+            try {
+                if (
+                    JSON.stringify(craftingVendorUpgrade(engine, id, reference.path.inputId)) !==
+                    JSON.stringify(reference.path)
+                )
+                    throw new Error("The saved vendor recipe path no longer matches this catalog.");
+            } catch (error) {
+                issues.push(
+                    `${id}: ${error instanceof Error ? error.message : "Invalid vendor recipe path."}`,
+                );
+                continue;
+            }
+        }
         if (at !== undefined && reference.source === "poe.ninja") {
             issues.push(
                 `${id}: poe.ninja current listing estimates have no captured historical source; enter a manual assumption for history.`,
@@ -156,6 +171,9 @@ export async function refreshCraftingMarketPrices(
             reference.source,
             reference.source === "poe.ninja" ? reference.assumption : undefined,
             reference.source === "stash-commodity" ? reference.conversion : undefined,
+            reference.source === "vendor-upgrade"
+                ? [reference.path, reference.conversion]
+                : undefined,
         ]);
         sources.set(key, [...(sources.get(key) ?? []), binding]);
     }
@@ -170,6 +188,13 @@ export async function refreshCraftingMarketPrices(
                 assumption: reference.source === "poe.ninja" ? reference.assumption : undefined,
                 conversion:
                     reference.source === "stash-commodity" ? reference.conversion : undefined,
+                vendorUpgrade:
+                    reference.source === "vendor-upgrade"
+                        ? {
+                              inputId: reference.path.inputId,
+                              conversion: reference.conversion,
+                          }
+                        : undefined,
                 at,
             },
             db,
@@ -180,7 +205,7 @@ export async function refreshCraftingMarketPrices(
                 const updated = bindCraftingSourcePrice(next, engine, id, quote);
                 // Retrieval times change across isolates; captured observation times do not.
                 if (
-                    quote.source === "stash-commodity"
+                    quote.source !== "poe.ninja"
                         ? JSON.stringify(updated.prices[id]) !== JSON.stringify(next.prices[id])
                         : next.prices[id]?.amount !== quote.amount
                 )
