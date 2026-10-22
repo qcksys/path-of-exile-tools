@@ -3,7 +3,7 @@ import { mkdtemp, rmdir, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { compileMarketCohorts } from "@poe-tools/market";
-import { afterEach, beforeEach, expect, it } from "vite-plus/test";
+import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { archivePage } from "../../../../packages/poe-stash-ingest/src/ps/capture-archive.ts";
 import { captureEquipment } from "../../../../packages/poe-stash-ingest/src/ps/equipment.ts";
 import { reclassifyArchivedEquipment } from "../../../../packages/poe-stash-ingest/src/ps/equipment-reclassify.ts";
@@ -121,6 +121,87 @@ it("resumes persisted staging after the owning connection closes and reopens", a
     expect(await equipmentHourly(local.conn, HOUR, "Standard")).toMatchObject([
         { listingCount: 1, prices: { chaos: { median: 25 } } },
     ]);
+});
+
+it("replays a verified archived body hidden from its index without changing the live cursor", async () => {
+    await archive(HOUR + 1);
+    await setCursor(local.conn, "psapi", "live-cursor");
+    const read = local.conn.runAndReadAll.bind(local.conn);
+    const indexedRead = vi
+        .spyOn(local.conn, "runAndReadAll")
+        .mockImplementation((sql, ...args) =>
+            read(
+                sql.includes("FROM ps_capture_payload WHERE response_hash = $1")
+                    ? sql.replace("WHERE response_hash = $1", "WHERE FALSE AND response_hash = $1")
+                    : sql,
+                ...args,
+            ),
+        );
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+        expect(await project()).toMatchObject({ pages: 1, completedHours: [HOUR], pending: false });
+        expect(await equipmentHourly(local.conn, HOUR, "Standard")).toMatchObject([
+            { listingCount: 1, prices: { chaos: { median: 10 } } },
+        ]);
+        expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
+        expect(warning).toHaveBeenCalledExactlyOnceWith(
+            "Archived payload found by sequential fallback after an index miss.",
+        );
+    } finally {
+        indexedRead.mockRestore();
+        warning.mockRestore();
+    }
+});
+
+it.each([
+    "missing",
+    "wrong-hash",
+] as const)("does not advance staged progress or publish prices when the next archived body is %s", async (failure) => {
+    await archive(HOUR + 1);
+    await archive(HOUR + 2, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
+    await setCursor(local.conn, "psapi", "live-cursor");
+    expect(await project()).toMatchObject({ pages: 1, hours: 0, pending: true });
+    const progress = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify");
+    const staging = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour");
+    const pages = await queryAll<{ hash: string }>(
+        local.conn,
+        "SELECT response_hash AS hash FROM ps_capture_page ORDER BY captured_at",
+    );
+    if (failure === "missing") {
+        await local.conn.run("DELETE FROM ps_capture_payload WHERE response_hash=$1", [
+            pages[1]!.hash,
+        ]);
+    } else {
+        await local.conn.run(
+            `UPDATE ps_capture_payload SET response_gzip =
+                (SELECT response_gzip FROM ps_capture_payload WHERE response_hash=$1)
+                WHERE response_hash=$2`,
+            [pages[0]!.hash, pages[1]!.hash],
+        );
+    }
+    const classify = vi.spyOn(classifier, "classify");
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+        await expect(project()).rejects.toThrow(
+            failure === "missing"
+                ? "The archived payload is missing."
+                : "The archived payload does not match its recorded hash.",
+        );
+        expect(classify).not.toHaveBeenCalled();
+        expect(warning).not.toHaveBeenCalled();
+        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify")).toEqual(
+            progress,
+        );
+        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour")).toEqual(
+            staging,
+        );
+        expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([]);
+        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_cohort_hour")).toEqual([]);
+        expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
+    } finally {
+        classify.mockRestore();
+        warning.mockRestore();
+    }
 });
 
 it("resumes bounded archived pages, publishes a complete original hour and never changes live state", async () => {
