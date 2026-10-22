@@ -61,6 +61,11 @@ a failed stage, a heartbeat older than three minutes, or a running stage without
 ten minutes makes the worker unhealthy. Logs identify the failed stage and the watch loop retries
 it. Docker's restart policy restarts a crashed process, not an unhealthy one. The receiving app's
 `/server-status` page shows the same worker report alongside actual stored history coverage.
+If a transaction and its rollback both fail, the processing command exits with code 1 before
+running another stage or closing DuckDB. Closing that instance can checkpoint inconsistent
+state. Docker then starts a fresh process against the retained volume; this does not repair
+existing missing or damaged archive payloads. Ordinary source and delivery failures continue
+to use the watch loop's retry behavior.
 Local health updates do not wait for remote status delivery. The worker sends status reports
 serially, coalesces updates while a report is in flight, and waits for its final shutdown report
 using the existing request timeout. Slow status delivery therefore does not pause capture.

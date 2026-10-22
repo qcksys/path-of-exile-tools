@@ -5,6 +5,7 @@ import { expect, it } from "vite-plus/test";
 import {
     openDb,
     queryAll,
+    TransactionRollbackError,
     withTransaction,
 } from "../../../packages/poe-stash-ingest/src/shared/db";
 
@@ -20,6 +21,7 @@ it("preserves both the original commit failure and a failed rollback after DuckD
             await db.conn.run("INSERT INTO transaction_probe VALUES (1), (2)");
             await other.conn.run("INSERT INTO transaction_probe VALUES (1)");
         }).catch((error: unknown) => error);
+        expect(failure).toBeInstanceOf(TransactionRollbackError);
         expect(failure).toBeInstanceOf(AggregateError);
         if (!(failure instanceof AggregateError)) throw failure;
         expect(failure.errors).toHaveLength(2);
@@ -28,6 +30,7 @@ it("preserves both the original commit failure and a failed rollback after DuckD
         expect(failure.errors[1]).toBeInstanceOf(Error);
         expect(failure.errors[1].message).toMatch(/cannot rollback.*no transaction is active/i);
         expect(failure.cause).toBe(failure.errors[0]);
+        expect(failure.name).toBe("TransactionRollbackError");
         expect(await queryAll(db.conn, "SELECT id FROM transaction_probe ORDER BY id")).toEqual([
             { id: 1 },
         ]);

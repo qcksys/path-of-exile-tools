@@ -9,7 +9,7 @@ import { rollupEquipment } from "#src/ps/equipment-rollup.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
 import { rollupPs } from "#src/ps/rollup.ts";
 import { REALM } from "#src/shared/auth.ts";
-import { queryAll } from "#src/shared/db.ts";
+import { queryAll, TransactionRollbackError } from "#src/shared/db.ts";
 import { configureSource } from "#src/shared/source.ts";
 
 export async function flushRollups(
@@ -89,6 +89,22 @@ export async function runPipeline(
     const errors: unknown[] = [];
     const failedStages: IngestStatus["failedStages"] = [];
     const update = opts.onStatus ?? (async () => {});
+    async function failStage(stage: IngestStatus["failedStages"][number], error: unknown) {
+        if (!failedStages.includes(stage)) failedStages.push(stage);
+        if (error instanceof TransactionRollbackError) {
+            try {
+                await update({
+                    state: "error",
+                    failedStages: [...failedStages],
+                    completedAt: Date.now(),
+                });
+            } catch {
+                console.error("Worker status could not be updated before stopping.");
+            }
+            throw error;
+        }
+        errors.push(error);
+    }
     await update({
         state: "running",
         stage: "stash",
@@ -111,9 +127,8 @@ export async function runPipeline(
                           progressAt: Date.now(),
                       });
                   },
-              }).catch((error: unknown) => {
-                  errors.push(error);
-                  failedStages.push("stash");
+              }).catch(async (error: unknown) => {
+                  await failStage("stash", error);
                   return null;
               });
     await update({
@@ -133,9 +148,8 @@ export async function runPipeline(
                   onProgress: async (result) => {
                       await update({ currencyNextHour: result.nextHour, progressAt: Date.now() });
                   },
-              }).catch((error: unknown) => {
-                  errors.push(error);
-                  failedStages.push("currency");
+              }).catch(async (error: unknown) => {
+                  await failStage("currency", error);
                   return [];
               });
     if (REALM !== "poe2") {
@@ -152,16 +166,10 @@ export async function runPipeline(
                     );
                 await update({ progressAt: Date.now() });
             })
-            .catch((error: unknown) => {
-                errors.push(error);
-                if (!failedStages.includes("stash")) failedStages.push("stash");
-            });
+            .catch((error: unknown) => failStage("stash", error));
     }
     await update({ stage: "delivery", failedStages: [...failedStages], progressAt: Date.now() });
-    await flushCheckpoints(conn).catch((error: unknown) => {
-        errors.push(error);
-        failedStages.push("delivery");
-    });
+    await flushCheckpoints(conn).catch((error: unknown) => failStage("delivery", error));
     const delivered = await flushRollups(conn, {
         ...opts,
         onBatch: async () => {
@@ -170,9 +178,8 @@ export async function runPipeline(
         onProgress: async (hours, rows) => {
             await update({ deliveredHours: hours, deliveredRows: rows, progressAt: Date.now() });
         },
-    }).catch((error: unknown) => {
-        errors.push(error);
-        failedStages.push("delivery");
+    }).catch(async (error: unknown) => {
+        await failStage("delivery", error);
         return null;
     });
     await update({

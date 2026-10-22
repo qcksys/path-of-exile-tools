@@ -259,8 +259,9 @@ program
         const { runPipeline } = await import("#src/pipeline.ts");
         const { createPoeClient } = await import("#src/shared/auth.ts");
         const { getCursor } = await import("#src/shared/cursor.ts");
-        const { openDb } = await import("#src/shared/db.ts");
+        const { openDb, TransactionRollbackError } = await import("#src/shared/db.ts");
         const { parseLeagueFilter } = await import("#src/shared/leagues.ts");
+        const { exitAfterRollbackFailure, watchCycles } = await import("#src/shared/watch.ts");
         const db = await openDb();
         const client = createPoeClient();
         const { REALM } = await import("#src/shared/auth.ts");
@@ -277,6 +278,7 @@ program
         process.once("SIGINT", shutdown);
         try {
             const cycle = async () => {
+                let rollbackFailed = false;
                 try {
                     await status.update({ cycles: status.current.cycles + 1 });
                     const result = await runPipeline(db.conn, client, {
@@ -293,18 +295,28 @@ program
                     console.log(JSON.stringify(result));
                     return { caughtUp: result.stash?.caughtUp ?? true };
                 } catch (error) {
-                    await status.update({ state: "error", completedAt: Date.now() });
+                    rollbackFailed = error instanceof TransactionRollbackError;
+                    try {
+                        await status.update({ state: "error", completedAt: Date.now() });
+                    } catch (statusError) {
+                        if (!rollbackFailed) throw statusError;
+                    }
                     throw error;
                 } finally {
-                    if (await getCursor(db.conn, "psapi")) cursor = undefined;
+                    if (!rollbackFailed && (await getCursor(db.conn, "psapi"))) cursor = undefined;
                 }
             };
             if (opts.watch) {
-                const { watchCycles } = await import("#src/shared/watch.ts");
                 await watchCycles(cycle, {
                     signal: stop.signal,
                 });
             } else await cycle();
+        } catch (error) {
+            if (error instanceof TransactionRollbackError) {
+                // Closing this instance can checkpoint inconsistent state after a failed rollback.
+                exitAfterRollbackFailure(error);
+            }
+            throw error;
         } finally {
             process.removeListener("SIGTERM", shutdown);
             process.removeListener("SIGINT", shutdown);
