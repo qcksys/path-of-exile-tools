@@ -278,7 +278,7 @@ test("simple mode fits compact processes and click-away saves edits through scro
         "aria-pressed",
         "true",
     );
-    await expect(graph.locator("[data-simple-node]")).toHaveCount(7);
+    await expect(graph.locator("[data-simple-node]")).toHaveCount(19);
     await expect(graph.locator("[data-edge-label]")).toHaveCount(0);
     await expect(graph.locator(".react-flow__edge title").first()).toContainText("→");
     const node = graph.locator('.react-flow__node[data-id="donor-0"]');
@@ -310,7 +310,7 @@ test("simple mode fits compact processes and click-away saves edits through scro
     ).toBeVisible();
     await page.getByRole("button", { name: "Fullscreen graph", exact: true }).click();
     const fullscreen = page.getByRole("dialog", { name: "Crafting project graph", exact: true });
-    await expect(fullscreen.locator("[data-simple-node]")).toHaveCount(7);
+    await expect(fullscreen.locator("[data-simple-node]")).toHaveCount(19);
     await expect(fullscreen.getByRole("status")).not.toContainText("Generating");
     await page.screenshot({ path: testInfo.outputPath("simple-graph.png") });
     await fullscreen.getByRole("button", { name: "Simple mode", exact: true }).click();

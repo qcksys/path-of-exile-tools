@@ -165,9 +165,10 @@ describe("conditional graph steps", () => {
         });
         expect(result).toMatchObject({
             complete: true,
-            meanCost: 10,
+            meanCost: null,
+            observedCost: 10,
             meanActions: 0,
-            missingPrices: [],
+            missingPrices: ["purchase:b:buy"],
             probability: 1,
         });
         expect(result.samples[0]).toMatchObject({
