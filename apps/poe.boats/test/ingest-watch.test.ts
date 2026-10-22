@@ -58,4 +58,58 @@ describe("ingest worker lifecycle", () => {
             log.mockRestore();
         }
     });
+
+    it("logs nested failure messages without inspecting authenticated requests or options", async () => {
+        const stop = new AbortController();
+        const log = vi.spyOn(console, "error").mockImplementation(() => {});
+        const request = new Request("https://example.invalid/public-stash-tabs", {
+            headers: { authorization: "Bearer fixture-private-token" },
+        });
+        const failure = Object.assign(new Error("PoE API 503 Service Unavailable"), {
+            request,
+            options: { headers: request.headers, password: "fixture-private-password" },
+        });
+        try {
+            await watchCycles(
+                async () => {
+                    stop.abort();
+                    throw new AggregateError(
+                        [new Error("Stash capture failed", { cause: failure })],
+                        "Pipeline failed",
+                    );
+                },
+                { signal: stop.signal },
+            );
+            expect(log).toHaveBeenCalledOnce();
+            expect(log.mock.calls.flat().every((value) => typeof value === "string")).toBe(true);
+            const output = log.mock.calls.flat().join(" ");
+            expect(output).toContain("Pipeline failed");
+            expect(output).toContain("Stash capture failed");
+            expect(output).toContain("PoE API 503 Service Unavailable");
+            expect(output).not.toContain("fixture-private");
+            expect(output).not.toContain("authorization");
+        } finally {
+            log.mockRestore();
+        }
+    });
+
+    it("does not inspect unknown thrown values", async () => {
+        const stop = new AbortController();
+        const log = vi.spyOn(console, "error").mockImplementation(() => {});
+        const stringify = vi.fn(() => "fixture-private-token");
+        try {
+            await watchCycles(
+                async () => {
+                    stop.abort();
+                    throw { toString: stringify, authorization: "Bearer fixture-private-token" };
+                },
+                { signal: stop.signal },
+            );
+            expect(log.mock.calls.flat().every((value) => typeof value === "string")).toBe(true);
+            expect(log.mock.calls.flat().join(" ")).toContain("Unknown error");
+            expect(stringify).not.toHaveBeenCalled();
+        } finally {
+            log.mockRestore();
+        }
+    });
 });
