@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
+import { itemPresentationsSchema } from "../../../app/lib/item-presentation";
 import { craftingCatalogSchema } from "../../../app/schemas/crafting";
 import { choose } from "./recombinator-helpers";
 
@@ -13,6 +14,16 @@ for (const game of ["poe1", "poe2"] as const) {
         const [baseId, base] = Object.entries(catalog.bases).find(
             ([, base]) => base.item_class === "Body Armour" && base.drop_level === 1,
         )!;
+        const presentations = itemPresentationsSchema.parse(
+            JSON.parse(await readFile(`public/game-data/items-${game}.json`, "utf8")),
+        );
+        const artworkUrl = presentations[baseId].art;
+        await page.route(artworkUrl, (route) =>
+            route.fulfill({
+                contentType: "image/svg+xml",
+                path: "test/e2e/browser/fixtures/item-art.svg",
+            }),
+        );
         await page.goto(`/${game === "poe1" ? 1 : 2}/crafting/emulate`);
         const picker = page.getByRole("combobox", { name: "Item base", exact: true });
         await expect(picker).toHaveValue("");
@@ -29,7 +40,7 @@ for (const game of ["poe1", "poe2"] as const) {
         const option = page
             .getByRole("listbox")
             .getByRole("option", { name: `${base.name} · Body Armour`, exact: true });
-        await expect(option.getByRole("img", { name: base.name })).toHaveAttribute(
+        await expect(option.getByRole("img", { name: base.name, exact: true })).toHaveAttribute(
             "src",
             game === "poe1"
                 ? /^https:\/\/www.pathofexile.com\/image\/Art\//
@@ -40,13 +51,11 @@ for (const game of ["poe1", "poe2"] as const) {
         await expect(page.getByLabel("Item base details")).toContainText("Base level 1");
         const card = page.getByRole("region", { name: "Current item", exact: true });
         await expect(card).toHaveAttribute("data-rarity", "normal");
-        await expect(card.getByRole("img", { name: base.name })).toBeVisible();
+        const artwork = card.getByRole("img", { name: base.name, exact: true });
+        await expect(artwork).toBeVisible();
+        await expect(artwork).toHaveAttribute("src", artworkUrl);
         await expect
-            .poll(() =>
-                card
-                    .getByRole("img", { name: base.name })
-                    .evaluate((image: HTMLImageElement) => image.naturalWidth),
-            )
+            .poll(() => artwork.evaluate((image: HTMLImageElement) => image.naturalWidth))
             .toBeGreaterThan(0);
         await card.screenshot({ path: testInfo.outputPath("item-card.png") });
         await expect
@@ -152,13 +161,20 @@ test("currency artwork remains usable in prices, pinned methods and mobile contr
     );
 });
 
-test("broken artwork keeps item labels and selection available", async ({ page }) => {
-    await page.route("https://www.pathofexile.com/image/**", (route) => route.abort());
-    await page.goto("/1/crafting/emulate");
-    await choose(page, "Item base", "Plate Vest", "Plate Vest · Body Armour");
-    const card = page.getByRole("region", { name: "Current item", exact: true });
-    await expect(card.getByLabel("Artwork unavailable for Plate Vest")).toBeVisible();
-    await expect(card.getByRole("heading", { name: "Plate Vest" })).toBeVisible();
-    await page.getByRole("button", { name: "Apply craft", exact: true }).click();
-    await expect(card).toHaveAttribute("data-rarity", "rare");
-});
+for (const { game, base, host } of [
+    { game: 1, base: "Plate Vest", host: "www.pathofexile.com" },
+    { game: 2, base: "Rusted Cuirass", host: "cdn.poe2db.tw" },
+]) {
+    test(`poe${game} broken artwork keeps item labels and selection available`, async ({
+        page,
+    }) => {
+        await page.route(`https://${host}/image/**`, (route) => route.abort("blockedbyresponse"));
+        await page.goto(`/${game}/crafting/emulate`);
+        await choose(page, "Item base", base, `${base} · Body Armour`);
+        const card = page.getByRole("region", { name: "Current item", exact: true });
+        await expect(card.getByLabel(`Artwork unavailable for ${base}`)).toBeVisible();
+        await expect(card.getByRole("heading", { name: base })).toBeVisible();
+        await page.getByRole("button", { name: "Apply craft", exact: true }).click();
+        await expect(card).toHaveAttribute("data-rarity", "rare");
+    });
+}

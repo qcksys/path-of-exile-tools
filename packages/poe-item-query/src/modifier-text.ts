@@ -8,6 +8,7 @@ import { itemRarity } from "./normalize.ts";
 import type { ItemRecord, ModifierFact } from "./schema.ts";
 
 const identifier = z.string().min(1).max(500);
+const influence = z.enum(["shaper", "elder", "crusader", "redeemer", "hunter", "warlord"]);
 export const modifierTextModelSchema = z.strictObject({
     format: z.literal(1),
     identityFamilies: z.array(z.array(identifier).min(2).max(100)).max(1000).optional(),
@@ -25,6 +26,7 @@ export const modifierTextModelSchema = z.strictObject({
                 side: z.enum(["prefix", "suffix"]),
                 groups: z.array(identifier),
                 crafted: z.boolean(),
+                requiredInfluence: influence.optional(),
                 text: z.string().max(5000).nullable(),
                 unsupported: z.boolean().optional(),
                 scaling: modifierScalingSchema.nullable().optional(),
@@ -47,6 +49,12 @@ export const modifierTextModelSchema = z.strictObject({
                     .optional(),
                 tiers: z.record(identifier, z.number().int().nonnegative()).optional(),
                 catalystProperties: z.array(z.string()).max(100).optional(),
+                fixedInfluences: z
+                    .strictObject({
+                        values: z.array(influence).min(1).max(6),
+                        texts: z.array(z.string().min(1).max(5000)).min(1).max(32),
+                    })
+                    .optional(),
                 unsupported: z.boolean().optional(),
                 magnitude: z
                     .strictObject({
@@ -133,6 +141,7 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
                 mod.side,
                 [...mod.groups].sort(),
                 mod.crafted,
+                mod.requiredInfluence,
                 mod.text,
                 mod.unsupported,
                 mod.scaling,
@@ -279,6 +288,28 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
         const implicitLines = (item.implicitMods ?? []).flatMap(
             (row) => lines(typeof row === "string" ? row : row.description, false) ?? [],
         );
+        const fixed = base.fixedInfluences;
+        const fixedLines = fixed?.texts.flatMap((text) => lines(text, false) ?? []) ?? [];
+        if (
+            fixed &&
+            (!fixedLines.length ||
+                item.implicitMods?.some(
+                    (row) =>
+                        typeof row !== "string" && Object.values(row.flags ?? {}).some(Boolean),
+                ) ||
+                fixedLines.some(
+                    (line) =>
+                        !implicitLines.some(
+                            (actual) => JSON.stringify(actual) === JSON.stringify(line),
+                        ),
+                ))
+        )
+            return record;
+        const influences = fixed
+            ? new Set<string>(fixed.values)
+            : item.influences === undefined
+              ? undefined
+              : new Set(Object.keys(item.influences).filter((name) => item.influences![name]));
         const expected = base.magnitude?.texts.flatMap((text) => lines(text, false) ?? []) ?? [];
         if (
             base.magnitude &&
@@ -360,6 +391,8 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
             ].map((id) => ({ id, tier: undefined }));
         for (const entry of entries) {
             const mod = activeDefinitions.get(entry.id)!;
+            if (mod.requiredInfluence && influences && !influences.has(mod.requiredInfluence))
+                continue;
             // Missing translations could be an alternative to any apparent match.
             if (!mod.variants) return record;
             for (const variant of mod.variants) {

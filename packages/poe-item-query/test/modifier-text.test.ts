@@ -153,6 +153,62 @@ it("resolves influenced donor text without using influence to guess ambiguous mo
     ).toEqual([]);
 });
 
+it("uses explicit required influences while retaining missing and dual-influence ambiguity", () => {
+    const shaper = { ...modifiers[0]!, requiredInfluence: "shaper" as const };
+    const warlord = { ...shaper, id: "warlord", requiredInfluence: "warlord" as const };
+    const resolve = compileModifierTextModel(model([shaper, warlord]));
+    const input = item(["110% increased Physical Damage"], 1, 0);
+    expect(resolve(input).facts.modifiers).toEqual([]);
+    for (const influence of ["shaper", "warlord"] as const) {
+        const record = { ...input, item: { ...input.item, influences: { [influence]: true } } };
+        expect(resolve(record).facts.modifiers).toMatchObject([
+            { id: influence === "shaper" ? "physical" : "warlord" },
+        ]);
+    }
+    const ambiguous: Record<string, boolean>[] = [{}, { shaper: true, warlord: true }];
+    for (const influences of ambiguous) {
+        const record = { ...input, item: { ...input.item, influences } };
+        expect(resolve(record).facts.modifiers).toEqual([]);
+    }
+    const unrestricted = { ...modifiers[0]!, id: "off-base" };
+    const mixed = compileModifierTextModel(model([shaper, unrestricted]));
+    expect(
+        mixed({ ...input, item: { ...input.item, influences: { shaper: true } } }).facts.modifiers,
+    ).toEqual([]);
+});
+
+it("requires captured native implicits before applying a base's fixed influences", () => {
+    const text =
+        "Has Elder, Shaper and all Conqueror Influences\nImplicit Modifiers Cannot Be Changed";
+    const shaper = { ...modifiers[0]!, requiredInfluence: "shaper" as const };
+    const warlord = { ...shaper, id: "warlord", requiredInfluence: "warlord" as const };
+    const data = model([shaper, warlord]);
+    data.bases[0]!.fixedInfluences = {
+        values: ["shaper", "elder", "crusader", "redeemer", "hunter", "warlord"],
+        texts: [text],
+    };
+    const input = item(["110% increased Physical Damage"], 1, 0);
+    input.item.influences = { shaper: true };
+    const resolve = compileModifierTextModel(data);
+    expect(resolve(input)).toBe(input);
+    input.item.implicitMods = text.split("\n").map((description) => ({ description }));
+    expect(resolve(input).facts.modifiers).toEqual([]);
+    const unique = compileModifierTextModel({
+        ...data,
+        modifiers: [warlord],
+        bases: [{ ...data.bases[0]!, modifiers: [{ id: "warlord" }] }],
+    });
+    delete input.item.influences;
+    expect(unique(input).facts.modifiers).toMatchObject([{ id: "warlord" }]);
+    input.item.implicitMods[0] = {
+        description: text.split("\n")[0]!,
+        flags: { fractured: true },
+    };
+    expect(unique(input)).toBe(input);
+    input.item.implicitMods[0] = { description: "Has Shaper Influence" };
+    expect(unique(input)).toBe(input);
+});
+
 it("retains only identities shared by every complete interpretation", () => {
     const alternate = { ...modifiers[0]!, id: "alternate" };
     const result = compileModifierTextModel(model([...modifiers, alternate]))(
@@ -307,6 +363,16 @@ it("represents an indistinguishable affix as one bounded identity choice, withou
 it("rejects identity families with conflicting affix properties or repeated membership", () => {
     expect(() =>
         compileModifierTextModel({ ...model(), identityFamilies: [["cold", "temple"]] }),
+    ).toThrow("identical displayed affixes");
+    const influenced = model([
+        modifiers[4]!,
+        { ...modifiers[4]!, id: "influenced-temple", requiredInfluence: "shaper" },
+    ]);
+    expect(() =>
+        compileModifierTextModel({
+            ...influenced,
+            identityFamilies: [["temple", "influenced-temple"]],
+        }),
     ).toThrow("identical displayed affixes");
     const data = model([...modifiers, { ...modifiers[4]!, id: "legacy-temple" }]);
     expect(() =>
