@@ -30,7 +30,7 @@ export interface RateLimitRule {
 export interface RateLimitInfo {
     /** Value of `X-Rate-Limit-Policy`, if present. */
     policy?: string;
-    /** Parsed rules, one per entry in `X-Rate-Limit-Rules`. */
+    /** Parsed windows for each rule in `X-Rate-Limit-Rules`. */
     rules: RateLimitRule[];
     /** Value of `Retry-After`, in seconds, if the server sent one. */
     retryAfterSeconds?: number;
@@ -54,18 +54,22 @@ export function parseRateLimit(headers: Headers): RateLimitInfo {
             .split(",")
             .map((r) => r.trim())
             .filter(Boolean)) {
-            const limit = parseTriple(headers.get(`x-rate-limit-${rule}`));
-            const state = parseTriple(headers.get(`x-rate-limit-${rule}-state`));
-            if (!limit || !state) continue;
-            rules.push({
-                rule,
-                maxHits: limit[0],
-                periodSeconds: limit[1],
-                restrictionSeconds: limit[2],
-                currentHits: state[0],
-                currentPeriodSeconds: state[1],
-                currentRestrictionSeconds: state[2],
-            });
+            const limits = headers.get(`x-rate-limit-${rule}`)?.split(",") ?? [];
+            const states = headers.get(`x-rate-limit-${rule}-state`)?.split(",") ?? [];
+            for (const [index, value] of limits.entries()) {
+                const limit = parseTriple(value);
+                const state = parseTriple(states[index] ?? null);
+                if (!limit || !state) continue;
+                rules.push({
+                    rule,
+                    maxHits: limit[0],
+                    periodSeconds: limit[1],
+                    restrictionSeconds: limit[2],
+                    currentHits: state[0],
+                    currentPeriodSeconds: state[1],
+                    currentRestrictionSeconds: state[2],
+                });
+            }
         }
     }
 

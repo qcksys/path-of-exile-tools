@@ -21,6 +21,15 @@ export function craftingPresetCohorts(engine: CraftingEngine, ruleset: CraftingR
                 const base = engine.base(item);
                 const filters: ItemCondition[] = [
                     { kind: "base", field: "baseType", values: [base.name] },
+                    ...(record.facts.baseTypeAmbiguous
+                        ? [
+                              {
+                                  kind: "base" as const,
+                                  field: "baseId" as const,
+                                  values: [item.baseId],
+                              },
+                          ]
+                        : []),
                     { kind: "rarity", values: [record.item.rarity!] },
                     { kind: "range", field: "ilvl", value: { min: item.level, max: item.level } },
                     ...(["prefixes", "suffixes"] as const).map((field) => ({

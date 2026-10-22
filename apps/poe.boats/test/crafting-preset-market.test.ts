@@ -79,7 +79,7 @@ function rawItem(item: CraftingItem, metadata = false) {
     };
 }
 
-it("has equipment definitions for every preset purchase and refuses ambiguous canonical bases", () => {
+it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
     expect(purchases).toHaveLength(27);
     expect(cohorts).toHaveLength(26);
     for (const cohort of cohorts) expect(manifest.cohorts).toContainEqual(cohort);
@@ -125,10 +125,6 @@ it("has equipment definitions for every preset purchase and refuses ambiguous ca
                 covered: true,
                 reasons: [],
             });
-        if (preset === "tailwind-boots") {
-            expect(bind).toThrow("canonical variants");
-            continue;
-        }
         const bound = bind();
         const priced = bound.nodes.find((entry) => entry.id === node.id)!;
         expect(
@@ -152,9 +148,31 @@ it("does not treat matching Two-Toned Boots display names as proof of canonical 
     };
     expect(engine.base(other).name).toBe(engine.base(item).name);
     expect(other.implicits).not.toEqual(item.implicits);
-    expect(cohortPriceCoverage(cohort, queries.record(other), node.output).covered).toBe(true);
+    expect(cohortPriceCoverage(cohort, queries.record(other), node.output).covered).toBe(false);
+    const legacy = structuredClone(cohort);
+    for (const group of legacy.query.groups)
+        group.filters = group.filters.filter(
+            (filter) => !(filter.kind === "base" && filter.field === "baseId"),
+        );
     for (const variant of [item, other])
-        expect(craftingMarketItemIssue(engine, variant)).toContain("canonical variants");
+        expect(cohortPriceCoverage(legacy, queries.record(variant), node.output).reasons).toContain(
+            "The cohort does not distinguish the canonical variants sharing this base name.",
+        );
+    expect(craftingMarketItemIssue(engine, item)).toBeNull();
+    expect(craftingMarketItemIssue(engine, { ...item, implicits: [] })).toContain(
+        "modified implicits",
+    );
+    expect(classifier.classify(normalizeApiItem("poe1", "stash", rawItem(item))).matches).toContain(
+        cohort.id,
+    );
+    expect(
+        classifier.classify(normalizeApiItem("poe1", "stash", rawItem(other))).matches,
+    ).not.toContain(cohort.id);
+    expect(
+        classifier.classify(
+            normalizeApiItem("poe1", "stash", { ...rawItem(item), implicitMods: [] }),
+        ).unknown,
+    ).toContain(cohort.id);
 });
 
 it("can populate 24 purchase inputs with optional identity metadata and preserves the three elemental ambiguities", () => {
@@ -303,4 +321,27 @@ it("keeps explicit tier requirements and unknown additional defence lines unpric
     const result = classifier.classify(normalizeApiItem("poe1", "stash", raw));
     expect(result.matches).not.toContain(cohort.id);
     expect(result.unknown).toContain(cohort.id);
+});
+
+it.each([
+    ["es-block-shield", "flat-block", "RecoverEnergyShieldPercentOnBlockUber1"],
+    ["tailwind-boots", "onslaught-base", "OnslaughtOnKillInfluence2_"],
+    ["energy-shield-chest", "donor-1", "LocalIncreasedEvasionRating8"],
+])("classifies %s/%s when only the ambiguous affix supplies identity metadata", (preset, nodeId, knownId) => {
+    const { node, item } = purchases.find(
+        (entry) => entry.preset === preset && entry.node.id === nodeId,
+    )!;
+    const cohort = cohorts.find(
+        (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
+    )!;
+    const raw = rawItem(item, true);
+    const name = engine.mod(knownId).name;
+    raw.explicitMods = raw.explicitMods.map((row) =>
+        row.mods?.[0]?.name === name ? row : { description: row.description },
+    );
+    expect(raw.explicitMods.some((row) => row.mods?.length)).toBe(true);
+    expect(raw.explicitMods.some((row) => !row.mods?.length)).toBe(true);
+    expect(classifier.classify(normalizeApiItem("poe1", "stash", raw)).matches).toContain(
+        cohort.id,
+    );
 });

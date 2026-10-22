@@ -5,6 +5,7 @@ import {
     matchItem,
 } from "@poe-tools/item-query";
 import type { CraftingItem, RolledMod } from "../schemas/crafting";
+import { craftingBaseTypeAmbiguous } from "./crafting-base-identity";
 import type { CraftingEngine } from "./crafting-engine";
 import { modifierTiers } from "./crafting-modifier-details";
 import { mapQualityRecipe } from "./crafting-quality";
@@ -73,6 +74,7 @@ export function createCraftingItemQuery(engine: CraftingEngine) {
             },
             facts: {
                 baseId: item.baseId,
+                ...(craftingBaseTypeAmbiguous(engine, item) ? { baseTypeAmbiguous: true } : {}),
                 itemClass: base.item_class,
                 quality: item.quality,
                 qualityType: mapQualityRecipe(engine.catalog, item)?.id ?? "base",

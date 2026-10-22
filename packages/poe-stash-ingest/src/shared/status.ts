@@ -22,8 +22,37 @@ export function createStatusReporter(scope: Pick<IngestStatus, "workerId" | "rea
         deliveredRows: 0,
     };
     let pending = Promise.resolve();
+    let remote = Promise.resolve();
+    let publishing = false;
+    let queuedReport: IngestStatus | undefined;
+    function queueRemote(report: IngestStatus) {
+        queuedReport = report;
+        if (publishing) return;
+        publishing = true;
+        remote = (async () => {
+            try {
+                while (queuedReport) {
+                    const next = queuedReport;
+                    queuedReport = undefined;
+                    try {
+                        await push({ stream: "status", rows: [next] });
+                    } catch {
+                        console.error(
+                            "Worker status delivery failed; the next heartbeat will retry.",
+                        );
+                    }
+                }
+            } finally {
+                publishing = false;
+            }
+        })();
+    }
     async function publish() {
-        const report = { ...status, reportedAt: Date.now() };
+        const report = {
+            ...status,
+            failedStages: [...status.failedStages],
+            reportedAt: Date.now(),
+        };
         const file = process.env.INGEST_STATUS_FILE;
         try {
             if (file) {
@@ -37,13 +66,17 @@ export function createStatusReporter(scope: Pick<IngestStatus, "workerId" | "rea
                 );
                 await rename(`${file}.tmp`, file);
             }
-            await push({ stream: "status", rows: [report] });
+            queueRemote(report);
         } catch {
             console.error("Worker status delivery failed; the next heartbeat will retry.");
         }
     }
     function update(patch: Partial<IngestStatus> = {}) {
-        status = { ...status, ...patch };
+        status = {
+            ...status,
+            ...patch,
+            failedStages: [...(patch.failedStages ?? status.failedStages)],
+        };
         pending = pending.then(publish);
         return pending;
     }
@@ -59,6 +92,7 @@ export function createStatusReporter(scope: Pick<IngestStatus, "workerId" | "rea
         async close() {
             clearInterval(timer);
             await update({ state: "stopped", stage: null });
+            await remote;
         },
     };
 }

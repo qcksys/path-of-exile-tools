@@ -1,4 +1,6 @@
 import {
+    baseIdentitySchema,
+    compileBaseIdentities,
     compileModifierIdentities,
     compileModifierTextModel,
     type ItemRecord,
@@ -23,6 +25,7 @@ export const marketCohortManifestSchema = z
         catalogHash: z.string().regex(/^[a-f0-9]{64}$/),
         cohorts: z.array(marketCohortSchema).max(100_000),
         modifierIdentities: z.array(modifierIdentitySchema).max(20_000).optional(),
+        baseIdentities: z.array(baseIdentitySchema).max(2000).optional(),
         modifierTextModel: modifierTextModelSchema.optional(),
     })
     .superRefine((manifest, context) => {
@@ -54,6 +57,7 @@ export type MarketCohortDefinition = z.infer<typeof marketCohortDefinitionSchema
 export function compileMarketCohorts(input: MarketCohortManifest) {
     const manifest = marketCohortManifestSchema.parse(input);
     const resolve = compileModifierIdentities(manifest.modifierIdentities ?? []);
+    const resolveBase = compileBaseIdentities(manifest.baseIdentities ?? []);
     const resolveText = manifest.modifierTextModel
         ? compileModifierTextModel(manifest.modifierTextModel)
         : (record: ItemRecord) => record;
@@ -86,7 +90,7 @@ export function compileMarketCohorts(input: MarketCohortManifest) {
             const matches: string[] = [];
             const unknown: string[] = [];
             if (record.game !== manifest.game) return { matches, unknown };
-            const resolved = resolveText(resolve(record));
+            const resolved = resolveText(resolve(resolveBase(record)));
             for (const cohort of [...general, ...(byBase.get(record.item.baseType) ?? [])]) {
                 const match = matchItem(resolved, cohort.query);
                 if (match === "match") matches.push(cohort.id);

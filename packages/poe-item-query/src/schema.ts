@@ -125,6 +125,7 @@ export const modifierFactSchema = z
     );
 export const itemFactsSchema = z.strictObject({
     baseId: id.optional(),
+    baseTypeAmbiguous: z.boolean().optional(),
     itemClass: id.optional(),
     qualityType: id.optional(),
     catalystId: id.optional(),

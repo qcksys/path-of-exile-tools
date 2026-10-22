@@ -317,6 +317,7 @@ describe("market cohorts", () => {
                         cohorts: generated.cohorts,
                         modifierIdentities: generated.modifierIdentities,
                         modifierTextModel: generated.modifierTextModel,
+                        baseIdentities: generated.baseIdentities,
                     }),
                 )
                 .digest("hex"),

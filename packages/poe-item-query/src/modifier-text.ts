@@ -216,6 +216,7 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
         const base = bases.get(item.baseType);
         const prefixes = item.extended?.prefixes;
         const suffixes = item.extended?.suffixes;
+        const known = record.facts.modifiers;
         if (
             record.game !== "poe1" ||
             !["stash", "trade"].includes(record.source) ||
@@ -226,7 +227,8 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
             prefixes === undefined ||
             suffixes === undefined ||
             prefixes + suffixes > 12 ||
-            record.facts.modifiers.length ||
+            (known.length > 0 && known.length === prefixes + suffixes) ||
+            known.some((mod) => !mod.id || !definitions.has(mod.id)) ||
             item.sanctified ||
             item.mutated === true ||
             item.memoryItem === true ||
@@ -309,7 +311,15 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
         for (const row of item.explicitMods ?? []) {
             if (
                 typeof row === "string" ||
-                row.mods?.length ||
+                (row.mods?.length ?? 0) > 1 ||
+                row.mods?.some(
+                    (source) =>
+                        !known.some(
+                            (mod) =>
+                                mod.name === source.name &&
+                                `${mod.side === "prefix" ? "P" : "S"}${mod.tier}` === source.tier,
+                        ),
+                ) ||
                 Object.entries(row.flags ?? {}).some(
                     ([key, value]) => !["fractured", "crafted"].includes(key) && value !== false,
                 )
@@ -429,7 +439,13 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
         let exhausted = false;
         let unsupported = false;
         const keyOf = (fact: ModifierFact) => JSON.stringify(fact);
+        const sameIdentity = (left: ModifierFact, right: ModifierFact) =>
+            left.id === right.id &&
+            left.fractured === right.fractured &&
+            left.crafted === right.crafted;
         function familyFact(fact: ModifierFact): ModifierFact {
+            const proven = known.find((mod) => sameIdentity(mod, fact));
+            if (proven) return proven;
             const family = families.get(fact.id!);
             if (!family) return fact;
             const tier = family.every((id) => base!.tiers?.[id] === fact.tier)
@@ -471,6 +487,9 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
                 return;
             if (p === prefixes && s === suffixes) {
                 if (
+                    known.some(
+                        (mod) => !chosen.some((candidate) => sameIdentity(mod, candidate.fact)),
+                    ) ||
                     targets.some(
                         (value, index) =>
                             value < lower[index]! - 1e-8 || value > upper[index]! + 1e-8,
