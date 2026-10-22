@@ -112,6 +112,13 @@ requested cutoff. Missing definitions, truncated lookup and empty newest prices 
 issues. HTTP/MCP success and refusal tests, MySQL history tests and browser reload coverage verify
 this behavior; crafting rules and acquisition pins remain unchanged.
 
+Equipment lookup, binding and refresh also require the cohort to guarantee the configured
+starting base, exact item level, rarity, affix counts, influences and supported flags.
+Broad base or donor medians cannot price an already prepared input. Exchange history remains
+accessible when a current quote is missing or lookup fails; inspecting it does not fill prices.
+The shared engine-aware item guard also refuses graph binding and refresh for ambiguous base
+variants sharing a display name, including Two-Toned Boots; raw cohort browsing remains available.
+
 ## Adding a capability or Hono subrouter
 
 The idol planner's non-drag placement controls use the existing placement, movement and removal

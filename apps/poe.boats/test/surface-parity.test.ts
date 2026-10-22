@@ -956,7 +956,12 @@ describe("transport parity", () => {
 
     it.each(
         cohortPolicies.flatMap((policy) =>
-            ["scope", ...(policy === "exchange-v1" ? ["consent", "hour"] : [])].map((failure) => ({
+            [
+                "scope",
+                "starting-state",
+                ...(policy === undefined ? ["ambiguous-base"] : []),
+                ...(policy === "exchange-v1" ? ["consent", "hour"] : []),
+            ].map((failure) => ({
                 policy,
                 failure,
             })),
@@ -969,6 +974,21 @@ describe("transport parity", () => {
         if (failure === "scope") {
             if (policy === "display-equivalent-v1") delete candidate.assumption;
             else graph.league = "Other";
+        } else if (failure === "starting-state") {
+            candidate.definition.query.groups[0]!.filters =
+                candidate.definition.query.groups[0]!.filters.map((filter) =>
+                    filter.kind === "rarity"
+                        ? { ...filter, values: ["Normal", "Magic", "Rare"] }
+                        : filter,
+                );
+        } else if (failure === "ambiguous-base") {
+            const node = graph.nodes[0]!;
+            if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
+                throw new Error("Fixture");
+            node.alternatives[0].item = fixtureEngine.createItem(
+                "Metadata/Items/Armours/Boots/BootsAtlas1",
+                86,
+            );
         } else if (failure === "consent") delete candidate.conversion;
         else candidate.exchange!.quote.hour! -= 3600;
         const input = { graph, nodeId: "base", alternativeId: "buy", candidate };
@@ -982,12 +1002,25 @@ describe("transport parity", () => {
             { runtime },
         );
         expect(response.status).toBe(400);
+        if (failure === "starting-state")
+            expect(await response.json()).toMatchObject({
+                error: expect.stringContaining("configured rarity"),
+            });
+        if (failure === "ambiguous-base")
+            expect(await response.json()).toMatchObject({
+                error: expect.stringContaining("canonical variants"),
+            });
         const rpc = RpcSchema.parse(
             await (
                 await mcp("tools/call", { name: "bind_crafting_item_price", arguments: input })
             ).json(),
         );
-        expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
+        const result = CallToolResultSchema.parse(rpc.result);
+        expect(result.isError).toBe(true);
+        if (failure === "starting-state")
+            expect(JSON.stringify(result.content)).toContain("configured rarity");
+        if (failure === "ambiguous-base")
+            expect(JSON.stringify(result.content)).toContain("canonical variants");
     });
 
     it.each([

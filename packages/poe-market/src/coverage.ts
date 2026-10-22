@@ -1,5 +1,5 @@
 import type { ItemCondition, ItemQuery, ItemRecord, NumericRange } from "@poe-tools/item-query";
-import { matchItem, matchItemCondition } from "@poe-tools/item-query";
+import { itemRarity, matchItem, matchItemCondition } from "@poe-tools/item-query";
 import type { MarketCohort } from "./cohorts.ts";
 import type { CohortPriceReference } from "./reference.ts";
 
@@ -101,6 +101,65 @@ export function cohortPriceCoverage(
         if (representatives.length !== 1) return condition;
         return { ...condition, ids: [representatives[0]!.id!] };
     });
+    const guarantees = (required: ItemCondition) =>
+        guaranteed.some((actual) => implies(actual, required, item));
+    if (
+        !guarantees({ kind: "base", field: "baseType", values: [item.item.baseType] }) &&
+        !(
+            item.facts.baseId &&
+            guarantees({ kind: "base", field: "baseId", values: [item.facts.baseId] })
+        )
+    )
+        reasons.push("The cohort does not guarantee the configured base.");
+    const rarity = itemRarity(item.item);
+    if (!rarity || !guarantees({ kind: "rarity", values: [rarity] }))
+        reasons.push("The cohort does not guarantee the configured rarity.");
+    for (const field of ["ilvl", "prefixes", "suffixes"] as const) {
+        const value =
+            field === "ilvl" ? (item.item.ilvl ?? item.item.itemLevel) : item.facts[field];
+        if (
+            value === undefined ||
+            !guarantees({ kind: "range", field, value: { min: value, max: value } })
+        )
+            reasons.push(`The cohort does not guarantee the configured ${field}.`);
+    }
+    for (const field of [
+        "identified",
+        "corrupted",
+        "mirrored",
+        "fractured",
+        "synthesised",
+    ] as const) {
+        const match = matchItemCondition(item, { kind: "flag", field, value: true });
+        if (match === "unknown" || !guarantees({ kind: "flag", field, value: match === "match" }))
+            reasons.push(`The cohort does not guarantee the configured ${field} state.`);
+    }
+    const excluded = cohort.query.groups.flatMap((group) =>
+        group.type === "not" ? group.filters : [],
+    );
+    const noInfluences =
+        guarantees({ kind: "flag", field: "influenced", value: false }) ||
+        excluded.some(
+            (filter) => filter.kind === "flag" && filter.field === "influenced" && filter.value,
+        );
+    for (const influence of new Set([
+        "shaper",
+        "elder",
+        "crusader",
+        "redeemer",
+        "hunter",
+        "warlord",
+        ...Object.keys(item.item.influences ?? {}),
+    ])) {
+        const required = item.item.influences?.[influence] === true;
+        const covered = required
+            ? guarantees({ kind: "influence", values: [influence] })
+            : noInfluences ||
+              excluded.some(
+                  (filter) => filter.kind === "influence" && filter.values.includes(influence),
+              );
+        if (!covered) reasons.push("The cohort does not guarantee the configured influences.");
+    }
     const sockets = item.facts.socketCount ?? item.item.sockets?.length ?? 0;
     const links =
         [6, 5, 4, 3, 2].find(

@@ -562,7 +562,9 @@ for (const game of ["poe1", "poe2"] as const) {
             prices.getByRole("combobox", { name: "Exchange estimate window", exact: true }),
             "adaptive-v1",
         );
-        await expect(row).toHaveCount(0);
+        await expect(row.getByRole("button", { name: "Use exchange estimate" })).toHaveCount(0);
+        await expect(row.getByRole("button", { name: "View exchange history" })).toBeVisible();
+        await expect(row).toContainText("Look up a current estimate or inspect captured history.");
         await prices.getByRole("button", { name: "Find exchange prices", exact: true }).click();
         await expect(row).toContainText("Estimate window: 6 hours");
         await row.getByRole("button", { name: "View exchange history" }).click();

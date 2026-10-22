@@ -114,4 +114,21 @@ describe("common crafting project presets", () => {
             projectFromPreset(engine, { ...ruleset, game: "poe2" }, "physical-bow"),
         ).toThrow("unavailable");
     });
+    it("labels prepared energy-shield chest purchases with their NNN essence modifier", () => {
+        const graph = projectFromPreset(engine, ruleset, "energy-shield-chest");
+        const purchases = graph.nodes.flatMap((node) =>
+            node.kind === "acquire"
+                ? node.alternatives.flatMap((alternative) =>
+                      alternative.kind === "purchase" ? [{ node, alternative }] : [],
+                  )
+                : [],
+        );
+        expect(purchases).toHaveLength(3);
+        for (const { node, alternative } of purchases) expect(alternative.name).toBe(node.name);
+        const prepared = purchases.filter(({ alternative }) => alternative.item.mods.length === 2);
+        expect(prepared).toHaveLength(2);
+        for (const { alternative } of prepared) {
+            expect(alternative.name).toContain(" + NNN ");
+        }
+    });
 });

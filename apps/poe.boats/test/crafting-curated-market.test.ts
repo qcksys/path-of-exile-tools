@@ -57,8 +57,8 @@ it("does not silently price an exact crafting modifier from a display-equivalent
                 groups: [{ type: "and", filters: [{ kind: "mod", ids: [id] }] }],
             }),
             "display-equivalent-v1",
-        ),
-    ).toEqual({ covered: true, reasons: [] });
+        ).reasons,
+    ).not.toContain("The cohort does not price every configured explicit modifier.");
 });
 
 it.each([
@@ -72,7 +72,7 @@ it.each([
         false,
         false,
     ],
-] as const)("uses the %s modifier cohort as a complete graph acquisition price", async (name, modId, fractured, family) => {
+] as const)("keeps the %s broad modifier pool from becoming a complete prepared acquisition price", async (name, modId, fractured, family) => {
     const baseId = Object.entries(catalog.bases).find(([, base]) => base.name === name)![0];
     const item = engine.validateItem({
         ...engine.createItem(baseId, 86),
@@ -96,30 +96,32 @@ it.each([
         game: "poe1",
         groups: [{ type: "and", filters: [{ kind: "mod", ids: [modId], fractured }] }],
     });
-    const next = bindCohortPurchasePrice(graph, engine, node.id, "buy", {
-        ...marketCandidate,
-        ...(family ? { assumption: "display-equivalent-v1" as const } : {}),
-        definition: {
-            ...definition,
-            revision: classifier.manifest.revision,
-            catalogHash: classifier.manifest.catalogHash,
-        },
-        latest: {
-            ...marketCandidate.latest,
-            cohortId: definition.id,
-            revision: classifier.manifest.revision,
-        },
-    });
+    expect(() =>
+        bindCohortPurchasePrice(graph, engine, node.id, "buy", {
+            ...marketCandidate,
+            ...(family ? { assumption: "display-equivalent-v1" as const } : {}),
+            definition: {
+                ...definition,
+                revision: classifier.manifest.revision,
+                catalogHash: classifier.manifest.catalogHash,
+            },
+            latest: {
+                ...marketCandidate.latest,
+                cohortId: definition.id,
+                revision: classifier.manifest.revision,
+            },
+        }),
+    ).toThrow("does not guarantee the configured");
     const retained = await retainedRevision(
         historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === next.ruleset.revision,
+            (entry) => entry.game === "poe1" && entry.revision === graph.ruleset.revision,
         )!,
     );
-    const simulation = retained.runtime.createSimulation(retained.catalog, next, {
+    const simulation = retained.runtime.createSimulation(retained.catalog, graph, {
         estimateIterations: 3,
         workLimit: 1000,
     });
     while (!simulation.done) simulation.runBatch();
-    expect(simulation.result().meanCost).toBe(20);
-    expect(graph.nodes[0]).not.toEqual(next.nodes[0]);
+    expect(simulation.result().meanCost).toBeNull();
+    expect(node.alternatives[0].price).toBeNull();
 });

@@ -7,10 +7,10 @@ import { graphFixture } from "./crafting-graph-fixtures";
 
 export const marketCandidate = craftingMarketCandidateSchema.parse({
     definition: {
-        id: "base:plate-vest:86-100:any-links",
+        id: "base:plate-vest:86:normal",
         revision: "test-market",
         catalogHash: "a".repeat(64),
-        name: "Plate Vest, ilvl 86–100",
+        name: "Normal Plate Vest, ilvl 86",
         purpose: "base",
         query: {
             game: "poe1",
@@ -19,8 +19,11 @@ export const marketCandidate = craftingMarketCandidateSchema.parse({
                     type: "and",
                     filters: [
                         { kind: "base", field: "baseType", values: ["Plate Vest"] },
-                        { kind: "rarity", values: ["Normal", "Magic", "Rare"] },
-                        { kind: "range", field: "ilvl", value: { min: 86, max: 100 } },
+                        { kind: "rarity", values: ["Normal"] },
+                        { kind: "range", field: "ilvl", value: { min: 86, max: 86 } },
+                        { kind: "range", field: "prefixes", value: { min: 0, max: 0 } },
+                        { kind: "range", field: "suffixes", value: { min: 0, max: 0 } },
+                        { kind: "flag", field: "identified", value: true },
                         ...["corrupted", "mirrored", "fractured", "synthesised", "influenced"].map(
                             (field) => ({ kind: "flag", field, value: false }),
                         ),
@@ -34,7 +37,7 @@ export const marketCandidate = craftingMarketCandidateSchema.parse({
         league: "Standard",
         hour: 1_790_899_200,
         revision: "test-market",
-        cohortId: "base:plate-vest:86-100:any-links",
+        cohortId: "base:plate-vest:86:normal",
         listingCount: 10,
         uniqueSellers: 10,
         unknownCount: 0,
@@ -130,7 +133,12 @@ export function donorFamilyMarketFixture() {
                 filters: [
                     { kind: "base", field: "baseType", values: ["Slink Gloves"] },
                     { kind: "rarity", values: ["Rare"] },
-                    { kind: "range", field: "ilvl", value: { min: 86, max: 100 } },
+                    { kind: "range", field: "ilvl", value: { min: 86, max: 86 } },
+                    { kind: "range", field: "prefixes", value: { min: 0, max: 0 } },
+                    { kind: "flag", field: "identified", value: true },
+                    ...["corrupted", "mirrored", "fractured", "synthesised", "influenced"].map(
+                        (field) => ({ kind: "flag", field, value: false }),
+                    ),
                     {
                         kind: "mod",
                         ids: [id, "ColdResistEnhancedLevel50ModAilments"],
