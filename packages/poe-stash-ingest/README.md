@@ -69,6 +69,17 @@ session and receiver URL. New definitions are sent before their prices, and fail
 retried. Restart the worker after replacing the receiver database at the same URL so it resends
 the definitions; the cache is bounded and does not survive a restart.
 
+After the cohort manifest revision changes, the same worker also reclassifies its archived
+observations from the last 24 completed hours after exchange capture, newest hour first.
+Each cycle reclassifies up to its live page limit, capped at five archived pages.
+Each hour is staged privately and published only when all its archived pages are processed.
+Original capture times are retained; this does not make old listings current or fetch
+uncaptured history. Live listings, removals and source cursors are not replaced. Progress
+is resumable in the existing DuckDB volume, and corrected hourly summaries use the normal
+acknowledged delivery path. Logs report reclassified page and completed-hour counts.
+Each acknowledged upload batch also advances worker progress, so a long historical
+delivery is not reported as stalled while its receiver is accepting rows.
+
 To seed a recent cursor on an empty volume, stop the worker, then run a one-off command with
 the same host credentials (`varlock run` from this package directory):
 

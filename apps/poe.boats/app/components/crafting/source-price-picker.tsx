@@ -3,7 +3,7 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import type { CraftingEngine } from "~/lib/crafting-engine";
-import { bindCraftingSourcePrice } from "~/lib/crafting-sources";
+import { bindCraftingSourcePrice, craftingCommodityIdentity } from "~/lib/crafting-sources";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import { type CraftingSourceResult, craftingSourceResultSchema } from "~/schemas/crafting-sources";
 
@@ -23,7 +23,14 @@ export function SourcePricePicker({
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
     const pending = useRef<AbortController | null>(null);
-    const inputs = entries.filter(([id]) => !id.startsWith("Metadata/Items/"));
+    const inputs = entries.filter(
+        ([id]) => !id.startsWith("Metadata/Items/") || craftingCommodityIdentity(engine, id),
+    );
+    const hasCommodities = inputs.some(([id]) => craftingCommodityIdentity(engine, id));
+    const hasRecipes = inputs.some(([id]) => !id.startsWith("Metadata/Items/"));
+    const title = hasCommodities
+        ? "Essence, beast & temple asking prices"
+        : "Beast & temple prices";
     const scope = JSON.stringify([
         graph.game,
         graph.league,
@@ -84,29 +91,48 @@ export function SourcePricePicker({
     }
     return (
         <details className="mt-3 rounded border border-border p-3 text-xs">
-            <summary className="cursor-pointer font-medium">Beast & temple prices</summary>
+            <summary className="cursor-pointer font-medium">{title}</summary>
             <div className="mt-3 space-y-3">
-                <p className="text-muted-foreground">
-                    PoE 1 PC listing estimates from poe.ninja for the project league. Beast prices
-                    include all four sacrifices; temple prices buy one Locus of Corruption. Listing
-                    counts are not unique sellers, and confidence is uncalibrated. Historical
-                    process estimates need manual assumptions for these sources.
-                </p>
-                <Label className="flex items-center gap-2">
-                    <Checkbox checked={assumption} onCheckedChange={setAssumption} />
-                    Use Mountain Lynx listing prices for the extra rare beasts
-                </Label>
-                <p className="text-muted-foreground">
-                    Level-specific beasts and non-tradeable gold/dust remain manual. The date shown
-                    is retrieval time, not a guaranteed sale or source update time.
-                </p>
+                {hasCommodities && (
+                    <p className="text-muted-foreground">
+                        Captured PoE 1 PC essence asks are per item in the project league and
+                        currency. These are listing estimates, not completed exchange trades. The
+                        observed hour, price range and priced sample count are shown separately from
+                        all listings and sellers. Confidence is uncalibrated; sparse asks can vary
+                        widely.
+                    </p>
+                )}
+                {hasRecipes && (
+                    <>
+                        <p className="text-muted-foreground">
+                            PoE 1 PC listing estimates from poe.ninja for the project league. Beast
+                            prices include all four sacrifices; temple prices buy one Locus of
+                            Corruption. Listing counts are not unique sellers, and confidence is
+                            uncalibrated. Historical process estimates need manual assumptions for
+                            these sources.
+                        </p>
+                        <Label className="flex items-center gap-2">
+                            <Checkbox checked={assumption} onCheckedChange={setAssumption} />
+                            Use Mountain Lynx listing prices for the extra rare beasts
+                        </Label>
+                        <p className="text-muted-foreground">
+                            Level-specific beasts and non-tradeable gold/dust remain manual. The
+                            date shown is retrieval time, not a guaranteed sale or source update
+                            time.
+                        </p>
+                    </>
+                )}
                 <Button
                     size="sm"
                     variant="outline"
                     disabled={busy || !graph.league?.trim()}
                     onClick={() => void lookup()}
                 >
-                    {busy ? "Loading sources…" : "Find beast & temple prices"}
+                    {busy
+                        ? "Loading sources…"
+                        : hasCommodities
+                          ? "Find asking prices"
+                          : "Find beast & temple prices"}
                 </Button>
                 {error && <p role="alert">{error}</p>}
                 {result && (
@@ -135,30 +161,63 @@ export function SourcePricePicker({
                                     <p className="font-medium">{name}</p>
                                     {quote ? (
                                         <>
-                                            <p>
-                                                {quote.amount.toLocaleString(undefined, {
-                                                    maximumSignificantDigits: 6,
-                                                })}{" "}
-                                                {quote.currency} per recipe · retrieved{" "}
-                                                {new Date(quote.fetchedAt).toLocaleString()}
-                                            </p>
-                                            <ul>
-                                                {quote.components.map((component) => (
-                                                    <li key={component.detailsId}>
-                                                        {component.quantity} × {component.name}:{" "}
-                                                        {component.unitPrice} {quote.currency} each
-                                                        · {component.listingCount} listings ·{" "}
-                                                        <a
-                                                            className="underline"
-                                                            href={component.sourceUrl}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                        >
-                                                            Source
-                                                        </a>
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                            {quote.source === "stash-commodity" ? (
+                                                <>
+                                                    <p>
+                                                        {quote.amount.toLocaleString(undefined, {
+                                                            maximumSignificantDigits: 6,
+                                                        })}{" "}
+                                                        {quote.currency} per item · asking median ·
+                                                        observed{" "}
+                                                        {new Date(
+                                                            quote.hour * 1000,
+                                                        ).toLocaleString()}
+                                                    </p>
+                                                    <p>
+                                                        {quote.low}–{quote.high} {quote.currency}{" "}
+                                                        range · {quote.samples} priced samples ·{" "}
+                                                        {quote.listingCount} total listings ·{" "}
+                                                        {quote.uniqueSellers} total sellers
+                                                    </p>
+                                                    <a
+                                                        className="underline"
+                                                        href={`/1/market?${new URLSearchParams({ realm: quote.realm, league: quote.league, q: quote.baseType, item: quote.baseType, currency: quote.currency })}`}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                    >
+                                                        Captured asking-price history
+                                                    </a>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <p>
+                                                        {quote.amount.toLocaleString(undefined, {
+                                                            maximumSignificantDigits: 6,
+                                                        })}{" "}
+                                                        {quote.currency} per recipe · retrieved{" "}
+                                                        {new Date(quote.fetchedAt).toLocaleString()}
+                                                    </p>
+                                                    <ul>
+                                                        {quote.components.map((component) => (
+                                                            <li key={component.detailsId}>
+                                                                {component.quantity} ×{" "}
+                                                                {component.name}:{" "}
+                                                                {component.unitPrice}{" "}
+                                                                {quote.currency} each ·{" "}
+                                                                {component.listingCount} listings ·{" "}
+                                                                <a
+                                                                    className="underline"
+                                                                    href={component.sourceUrl}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                >
+                                                                    Source
+                                                                </a>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </>
+                                            )}
                                             <Button size="sm" onClick={() => apply([id])}>
                                                 Use source estimate
                                             </Button>

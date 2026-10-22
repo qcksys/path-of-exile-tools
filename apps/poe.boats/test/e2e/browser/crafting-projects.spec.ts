@@ -13,6 +13,7 @@ import { craftingCatalogSchema, craftingProjectSchema } from "../../../app/schem
 import { craftingGraphSchema } from "../../../app/schemas/crafting-graph";
 import { craftingSourceQuoteSchema } from "../../../app/schemas/crafting-sources";
 import { craftingWorkspaceSchema } from "../../../app/schemas/crafting-workspace";
+import { commodityQuote, essenceId, essenceName } from "../../crafting-commodity-fixtures";
 import { conditionalTransmuteGraph } from "../../crafting-conditional-fixtures";
 import {
     exchangeGraph,
@@ -682,6 +683,81 @@ test("beast prices refresh on reopening and preserve manual overrides", async ({
     await expect(status).toContainText("Market prices refreshed.");
     await price.fill("7");
     await expect(status).toHaveCount(0);
+    expect(liveSourcePrices((await stored(page)).projects[0]!.graph)).toEqual([]);
+    await page.reload();
+    await openGraphSettings(page);
+    await expect(price).toHaveValue("7");
+});
+
+test("captured essence asks preserve manual values and refresh observation time on reopening", async ({
+    page,
+}, testInfo) => {
+    const graph = exchangeGraph();
+    const craft = graph.nodes[1]!;
+    if (craft.kind !== "craft") throw new Error("Fixture");
+    craft.method = { kind: "essence", id: essenceId };
+    graph.prices[essenceId] = {
+        amount: 123,
+        currency: "chaos",
+        source: "manual",
+        confidence: null,
+    };
+    let hour = commodityQuote.hour - 3600;
+    const currentQuote = () => ({ ...commodityQuote, hour });
+    await page.route("**/api/v1/crafting/market/sources", (route) =>
+        route.fulfill({
+            json: { quotes: { [essenceId]: currentQuote() }, missing: {} },
+        }),
+    );
+    await page.route("**/api/v1/crafting/market/refresh", (route) =>
+        route.fulfill({
+            json: {
+                graph: bindCraftingSourcePrice(
+                    craftingGraphSchema.parse(route.request().postDataJSON().graph),
+                    engine,
+                    essenceId,
+                    currentQuote(),
+                ),
+                issues: [],
+            },
+        }),
+    );
+    await importGraph(page, graph);
+    await openGraphSettings(page);
+    const prices = page
+        .locator("details")
+        .filter({ has: page.locator("summary", { hasText: /^Prices & calculation$/ }) });
+    const price = prices.getByRole("spinbutton", { name: new RegExp(essenceName) });
+    await expect(price).toHaveValue("123");
+    await prices.getByText("Essence, beast & temple asking prices", { exact: true }).click();
+    await prices.getByRole("button", { name: "Find asking prices", exact: true }).click();
+    await expect(prices).toContainText("2 priced samples · 25 total listings · 24 total sellers");
+    await expect(
+        prices.getByRole("link", { name: "Captured asking-price history" }),
+    ).toHaveAttribute("href", /item=Screaming\+Essence\+of\+Rage/);
+    await expect(price).toHaveValue("123");
+    await expect(
+        prices.getByRole("button", { name: "Use source estimates for unpriced inputs" }),
+    ).toBeDisabled();
+    await prices.getByRole("button", { name: "Use source estimate", exact: true }).click();
+    await expect(price).toHaveValue("16.5");
+    await expect(prices).toContainText("Captured per-item asking estimate");
+    expect(liveSourcePrices((await stored(page)).projects[0]!.graph)[0]?.reference.source).toBe(
+        "stash-commodity",
+    );
+    const capturedQuote = prices.getByRole("region", { name: `Source price for ${essenceName}` });
+    await capturedQuote.evaluate((element) => element.scrollIntoView({ block: "center" }));
+    await capturedQuote.screenshot({
+        path: testInfo.outputPath("essence-asking-price-source.png"),
+    });
+    hour += 3600;
+    await page.reload();
+    await openGraphSettings(page);
+    await expect
+        .poll(async () => (await stored(page)).projects[0]!.graph.prices[essenceId]?.observedAt)
+        .toBe(new Date(hour * 1000).toISOString());
+    await expect(price).toHaveValue("16.5");
+    await price.fill("7");
     expect(liveSourcePrices((await stored(page)).projects[0]!.graph)).toEqual([]);
     await page.reload();
     await openGraphSettings(page);

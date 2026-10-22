@@ -20,7 +20,12 @@ interface AggregateRow {
 
 export async function rollupCx(
     conn: DuckDBConnection,
-    opts: { hour?: number; league?: string | null; dryRun?: boolean },
+    opts: {
+        hour?: number;
+        league?: string | null;
+        dryRun?: boolean;
+        onBatch?: () => Promise<void>;
+    },
 ): Promise<{ rows: number }> {
     await assertSourceRealm(conn, REALM ?? "pc");
     const hour = opts.hour ?? Math.floor(Date.now() / 3_600_000) * 3600 - 3600;
@@ -60,7 +65,7 @@ export async function rollupCx(
         return { rows: 0 };
     }
 
-    await push({ stream: "cxapi", rows }, { dryRun: opts.dryRun });
+    await push({ stream: "cxapi", rows }, { dryRun: opts.dryRun, onBatch: opts.onBatch });
 
     if (!opts.dryRun) {
         const byLeague = new Map<string, number>();

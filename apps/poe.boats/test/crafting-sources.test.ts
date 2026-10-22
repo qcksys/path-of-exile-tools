@@ -51,14 +51,16 @@ describe("supplemental crafting prices", () => {
             ids: [id, "EinharMasterCraft27", "EinharMasterCraft49"],
         });
         expect(result.missing).toEqual({});
+        const quote = result.quotes[id]!;
+        if (quote.source !== "poe.ninja") throw new Error("Expected beast source");
         expect(result.quotes[id]?.amount).toBe(607);
-        expect(result.quotes[id]?.components.map(({ quantity }) => quantity)).toEqual([1, 1, 2]);
+        expect(quote.components.map(({ quantity }) => quantity)).toEqual([1, 1, 2]);
         expect(result.quotes.EinharMasterCraft27?.amount).toBe(369);
         expect(result.quotes.EinharMasterCraft49?.amount).toBe(8);
         expect(fetcher).toHaveBeenCalledTimes(1);
         const bound = bindCraftingSourcePrice(graph, engine, id, result.quotes[id]!);
         expect(bound.prices[id]).toMatchObject({ amount: 607, source: "market", confidence: null });
-        expect(liveSourcePrices(bound)[0]?.reference.assumption).toBe(assumption);
+        expect(liveSourcePrices(bound)[0]?.reference).toMatchObject({ assumption });
         for (const wrong of [
             { league: "Other" },
             { currency: "divine" },
@@ -69,8 +71,8 @@ describe("supplemental crafting prices", () => {
             ).toThrow("does not match");
         expect(() =>
             bindCraftingSourcePrice(graph, engine, id, {
-                ...result.quotes[id]!,
-                components: result.quotes[id]!.components.slice(0, 2),
+                ...quote,
+                components: quote.components.slice(0, 2),
             }),
         ).toThrow("every component");
     });

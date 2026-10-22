@@ -98,9 +98,9 @@ export function GraphPriceInput({
             </span>
             {value?.source === "market" && decodeCraftingSourceReference(value.cohortId) && (
                 <span className="block text-muted-foreground">
-                    poe.ninja listing estimate · time shown is retrieval time · complete recipe
-                    includes the selected rare-beast assumption where applicable · historical source
-                    unavailable
+                    {decodeCraftingSourceReference(value.cohortId)?.source === "stash-commodity"
+                        ? `Captured per-item asking estimate · ${value.samples ?? "unknown"} priced samples · time shown is the observed hour · captured history available`
+                        : "poe.ninja listing estimate · time shown is retrieval time · complete recipe includes the selected rare-beast assumption where applicable · historical source unavailable"}
                 </span>
             )}
             {value?.source === "market" &&

@@ -4,6 +4,7 @@ import type { IngestStatus } from "@poe-tools/market";
 import { ingestCx } from "#src/cx/ingest.ts";
 import { rollupCx } from "#src/cx/rollup.ts";
 import { flushCheckpoints } from "#src/ps/checkpoints.ts";
+import { reclassifyArchivedEquipment } from "#src/ps/equipment-reclassify.ts";
 import { rollupEquipment } from "#src/ps/equipment-rollup.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
 import { rollupPs } from "#src/ps/rollup.ts";
@@ -18,6 +19,7 @@ export async function flushRollups(
         dryRun?: boolean;
         limit?: number;
         onProgress?: (hours: number, rows: number) => Promise<void>;
+        onBatch?: () => Promise<void>;
     } = {},
 ) {
     const pending = await queryAll<{ stream: string; league: string; hour: number }>(
@@ -61,6 +63,7 @@ export async function flushRollups(
                 hour: Number(entry.hour),
                 league: entry.league,
                 dryRun: opts.dryRun,
+                onBatch: opts.onBatch,
             })
         ).rows;
         await opts.onProgress?.(++hours, rows);
@@ -135,6 +138,25 @@ export async function runPipeline(
                   failedStages.push("currency");
                   return [];
               });
+    if (REALM !== "poe2") {
+        await update({ stage: "stash", failedStages: [...failedStages], progressAt: Date.now() });
+        await reclassifyArchivedEquipment(conn, {
+            realm: REALM ?? "pc",
+            league: opts.league ?? "all",
+            limitPages: Math.min(opts.pages, 5),
+        })
+            .then(async (result) => {
+                if (result.pages)
+                    console.log(
+                        `reclassified ${result.pages} archived equipment pages; completed hours=${result.completedHours.join(",") || "none"}; pending=${result.pending}`,
+                    );
+                await update({ progressAt: Date.now() });
+            })
+            .catch((error: unknown) => {
+                errors.push(error);
+                if (!failedStages.includes("stash")) failedStages.push("stash");
+            });
+    }
     await update({ stage: "delivery", failedStages: [...failedStages], progressAt: Date.now() });
     await flushCheckpoints(conn).catch((error: unknown) => {
         errors.push(error);
@@ -142,6 +164,9 @@ export async function runPipeline(
     });
     const delivered = await flushRollups(conn, {
         ...opts,
+        onBatch: async () => {
+            await update({ progressAt: Date.now() });
+        },
         onProgress: async (hours, rows) => {
             await update({ deliveredHours: hours, deliveredRows: rows, progressAt: Date.now() });
         },

@@ -205,7 +205,7 @@ describe("crafting graph presentation", () => {
         const donors = graph.nodes.flatMap((node) =>
             node.kind === "acquire"
                 ? node.alternatives.flatMap((option) =>
-                      option.kind === "purchase" ? [option.item] : [],
+                      option.kind === "purchase" && option.id === "buy" ? [option.item] : [],
                   )
                 : [],
         );
@@ -232,7 +232,7 @@ describe("crafting graph presentation", () => {
         const donors = graph.nodes.flatMap((node) =>
             node.kind === "acquire"
                 ? node.alternatives.flatMap((option) =>
-                      option.kind === "purchase" ? [option.item] : [],
+                      option.kind === "purchase" && option.id === "buy" ? [option.item] : [],
                   )
                 : [],
         );

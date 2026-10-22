@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, expect, it, vi } from "vite-plus/test";
 import { SourcePricePicker } from "~/components/crafting/source-price-picker";
 import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
+import { commodityQuote, essenceId, essenceName } from "./crafting-commodity-fixtures";
 import { exchangeGraph } from "./crafting-exchange-fixtures";
 import { engine } from "./crafting-fixtures";
 
@@ -84,8 +85,81 @@ it("requires the rare-beast choice and preserves manual prices until explicitly 
     expect(screen.getByText(/2 × mountain-lynx/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
     expect(saved?.prices[id]?.amount).toBe(607);
-    expect(decodeCraftingSourceReference(saved?.prices[id]?.cohortId)?.assumption).toBe(
-        "rare-beast-mountain-lynx-v1",
+    expect(decodeCraftingSourceReference(saved?.prices[id]?.cohortId)).toMatchObject({
+        assumption: "rare-beast-mountain-lynx-v1",
+    });
+});
+
+it("shows captured per-item asks and fills only unpriced inputs until explicitly selected", async () => {
+    const otherId = "Metadata/Items/Currency/CurrencyEssenceRage4";
+    const otherName = engine.costName(otherId);
+    vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    quotes: {
+                        [essenceId]: commodityQuote,
+                        [otherId]: {
+                            ...commodityQuote,
+                            id: otherId,
+                            baseType: otherName,
+                            amount: 20,
+                        },
+                    },
+                    missing: {},
+                }),
+            ),
+        ),
+    );
+    let saved: CraftingGraph | undefined;
+    function Harness() {
+        const [graph, setGraph] = useState<CraftingGraph>({
+            ...exchangeGraph(),
+            prices: {
+                [essenceId]: { amount: 123, currency: "chaos", source: "manual", confidence: null },
+            },
+        });
+        return (
+            <SourcePricePicker
+                graph={graph}
+                engine={engine}
+                entries={[
+                    [essenceId, essenceName],
+                    [otherId, otherName],
+                ]}
+                onChange={(next) => {
+                    saved = next;
+                    setGraph(next);
+                }}
+            />
+        );
+    }
+    render(<Harness />);
+    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
+    await screen.findByText("2 of 2 inputs priced.");
+    const result = within(screen.getByRole("region", { name: `Source price for ${essenceName}` }));
+    expect(result.getByText(/16.5 chaos per item/)).toBeTruthy();
+    expect(
+        result.getByText(/2 priced samples · 25 total listings · 24 total sellers/),
+    ).toBeTruthy();
+    expect(
+        result.getByRole("link", { name: "Captured asking-price history" }).getAttribute("href"),
+    ).toBe(
+        `/1/market?realm=pc&league=Standard&q=${encodeURIComponent(essenceName).replaceAll("%20", "+")}&item=${encodeURIComponent(essenceName).replaceAll("%20", "+")}&currency=chaos`,
+    );
+    expect(saved).toBeUndefined();
+    fireEvent.click(
+        screen.getByRole("button", { name: "Use source estimates for unpriced inputs" }),
+    );
+    expect(saved?.prices[essenceId]?.amount).toBe(123);
+    expect(saved?.prices[otherId]?.amount).toBe(20);
+    fireEvent.click(result.getByRole("button", { name: "Use source estimate" }));
+    expect(saved?.prices[essenceId]?.amount).toBe(16.5);
+    expect(decodeCraftingSourceReference(saved?.prices[essenceId]?.cohortId)?.source).toBe(
+        "stash-commodity",
     );
 });
 

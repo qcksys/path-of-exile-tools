@@ -36,12 +36,13 @@ const purchases = craftingPresets.flatMap((preset) => {
         node.kind === "acquire"
             ? node.alternatives.flatMap((alternative) =>
                   alternative.kind === "purchase"
-                      ? [{ preset: preset.id, graph, node, item: alternative.item }]
+                      ? [{ preset: preset.id, graph, node, alternative, item: alternative.item }]
                       : [],
               )
             : [],
     );
 });
+const originalPurchases = purchases.filter(({ alternative }) => alternative.id === "buy");
 
 function rawItem(item: CraftingItem, metadata = false) {
     const record = queries.record(item);
@@ -82,21 +83,21 @@ function rawItem(item: CraftingItem, metadata = false) {
 }
 
 it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
-    expect(purchases).toHaveLength(27);
-    expect(cohorts).toHaveLength(26);
+    expect(purchases).toHaveLength(40);
+    expect(cohorts).toHaveLength(39);
     const definitions = new Map(manifest.cohorts.map((cohort) => [cohort.id, cohort]));
     for (const cohort of cohorts) expect(definitions.get(cohort.id)).toEqual(cohort);
-    for (const { preset, graph: project, node, item } of purchases) {
+    for (const { preset, graph: project, node, alternative, item } of purchases) {
         const record = queries.record(item);
         const matching = cohorts.filter(
             (cohort) => cohortPriceCoverage(cohort, record, node.output).covered,
         );
-        expect(matching.length, `${preset}/${node.id}`).toBeGreaterThan(0);
-        expect(capture(rawItem(item)), `${preset}/${node.id} capture`).toBe(true);
+        expect(matching.length, `${preset}/${node.id}/${alternative.id}`).toBeGreaterThan(0);
+        expect(capture(rawItem(item)), `${preset}/${node.id}/${alternative.id} capture`).toBe(true);
         const graph = { ...project, league: "Standard" };
         const cohort = matching[0]!;
         const bind = () =>
-            bindCohortPurchasePrice(graph, engine, node.id, "buy", {
+            bindCohortPurchasePrice(graph, engine, node.id, alternative.id, {
                 definition: {
                     ...cohort,
                     revision: manifest.revision,
@@ -130,11 +131,9 @@ it("has exact equipment definitions for every preset purchase including canonica
             });
         const bound = bind();
         const priced = bound.nodes.find((entry) => entry.id === node.id)!;
-        expect(
-            priced.kind === "acquire" &&
-                priced.alternatives[0]?.kind === "purchase" &&
-                priced.alternatives[0].price?.amount,
-        ).toBe(20);
+        if (priced.kind !== "acquire") throw new Error("Expected acquisition");
+        const boundAlternative = priced.alternatives.find((entry) => entry.id === alternative.id)!;
+        expect(boundAlternative.kind === "purchase" && boundAlternative.price?.amount).toBe(20);
     }
 });
 
@@ -204,9 +203,10 @@ it("exports mandatory influence constraints separately from native spawn eligibi
     });
 });
 
-it("can populate 24 purchase inputs with optional identity metadata and preserves the three elemental ambiguities", () => {
+it("can populate 24 original purchase inputs with optional identity metadata and preserves the three elemental ambiguities", () => {
     const unknown: string[] = [];
-    for (const { preset, node, item } of purchases) {
+    expect(originalPurchases).toHaveLength(27);
+    for (const { preset, node, item } of originalPurchases) {
         const cohort = cohorts.find(
             (cohort) => cohortPriceCoverage(cohort, queries.record(item), node.output).covered,
         )!;
@@ -224,8 +224,8 @@ it("can populate 24 purchase inputs with optional identity metadata and preserve
     ]);
 });
 
-it("populates 19 inputs from descriptions, flags and influence while preserving eight ambiguous rolls", () => {
-    const unknown = purchases.flatMap(({ preset, node, item }) => {
+it("populates 19 original inputs from descriptions, flags and influence while preserving eight ambiguous rolls", () => {
+    const unknown = originalPurchases.flatMap(({ preset, node, item }) => {
         const cohort = cohorts.find(
             (cohort) => cohortPriceCoverage(cohort, queries.record(item), node.output).covered,
         )!;
@@ -243,6 +243,55 @@ it("populates 19 inputs from descriptions, flags and influence while preserving 
         "elemental-bow/donor-2",
         "energy-shield-chest/donor-1",
         "energy-shield-chest/donor-2",
+    ]);
+});
+
+it("captures Magic alternatives separately from Rare and retains unresolved modifier identities", () => {
+    const magic = purchases.filter(({ alternative }) => alternative.id === "buy-magic");
+    expect(magic).toHaveLength(13);
+    const unknownDescriptions: string[] = [];
+    const unknownMetadata: string[] = [];
+    for (const { preset, node, item } of magic) {
+        const cohort = cohorts.find(
+            (cohort) => cohortPriceCoverage(cohort, queries.record(item), node.output).covered,
+        )!;
+        const rare = originalPurchases.find(
+            (entry) => entry.preset === preset && entry.node.id === node.id,
+        )!;
+        const rareCohort = cohorts.find(
+            (cohort) => cohortPriceCoverage(cohort, queries.record(rare.item), node.output).covered,
+        )!;
+        expect(cohort.id).not.toBe(rareCohort.id);
+        expect(cohortPriceCoverage(cohort, queries.record(rare.item), node.output).covered).toBe(
+            false,
+        );
+        expect(cohortPriceCoverage(rareCohort, queries.record(item), node.output).covered).toBe(
+            false,
+        );
+        for (const [metadata, unknown] of [
+            [false, unknownDescriptions],
+            [true, unknownMetadata],
+        ] as const) {
+            const result = classifier.classify(
+                normalizeApiItem("poe1", "stash", rawItem(item, metadata)),
+            );
+            expect(result.matches).not.toContain(rareCohort.id);
+            if (!result.matches.includes(cohort.id)) {
+                expect(result.unknown).toContain(cohort.id);
+                unknown.push(`${preset}/${node.id}`);
+            }
+        }
+    }
+    expect(unknownDescriptions).toEqual([
+        "es-block-shield/flat",
+        "elemental-bow/donor-0",
+        "elemental-bow/donor-1",
+        "elemental-bow/donor-2",
+    ]);
+    expect(unknownMetadata).toEqual([
+        "elemental-bow/donor-0",
+        "elemental-bow/donor-1",
+        "elemental-bow/donor-2",
     ]);
 });
 

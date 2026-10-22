@@ -123,8 +123,11 @@ describe("common crafting project presets", () => {
                   )
                 : [],
         );
-        expect(purchases).toHaveLength(3);
-        for (const { node, alternative } of purchases) expect(alternative.name).toBe(node.name);
+        expect(purchases).toHaveLength(4);
+        for (const { node, alternative } of purchases)
+            expect(alternative.name).toBe(
+                alternative.id === "buy-magic" ? `${node.name} (Magic)` : node.name,
+            );
         const prepared = purchases.filter(({ alternative }) => alternative.item.mods.length === 2);
         expect(prepared).toHaveLength(2);
         for (const { alternative } of prepared) {

@@ -9,6 +9,7 @@ import { CraftingEngine } from "../app/lib/crafting-engine";
 import { validateRulesetIndex } from "../app/lib/crafting-rulesets";
 import { craftingProjectSchema } from "../app/schemas/crafting";
 import index from "../crafting-history/index.json";
+import { commodityQuote, essenceId } from "./crafting-commodity-fixtures";
 import { exchangeQuote, transmuteId } from "./crafting-exchange-fixtures";
 import { baseId, catalog, engine, getCatalog } from "./crafting-fixtures";
 import { chooseStartingItem } from "./starting-item-helper";
@@ -181,6 +182,48 @@ it("copies a full beast recipe through the same source picker", async () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
     expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("607");
+});
+
+it("copies captured essence asks only after selection and preserves subsequent manual edits", async () => {
+    vi.stubGlobal(
+        "fetch",
+        vi
+            .fn()
+            .mockImplementation((url: string) =>
+                Promise.resolve(
+                    new Response(
+                        JSON.stringify(
+                            url.includes("index.json")
+                                ? historyIndex
+                                : { quotes: { [essenceId]: commodityQuote }, missing: {} },
+                        ),
+                    ),
+                ),
+            ),
+    );
+    mount("poe1", essenceId);
+    fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
+    fireEvent.change(await screen.findByLabelText("Price lookup league"), {
+        target: { value: "Standard" },
+    });
+    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
+    await screen.findByText(/16.5 chaos per item/);
+    const amount = screen.getByLabelText("Manual input price") as HTMLInputElement;
+    expect(amount.value).toBe("123");
+    expect(
+        screen
+            .getByRole("button", { name: "Use source estimates for unpriced inputs" })
+            .hasAttribute("disabled"),
+    ).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
+    expect(amount.value).toBe("16.5");
+    fireEvent.change(amount, { target: { value: "7" } });
+    fireEvent.change(screen.getByLabelText("Price lookup league"), { target: { value: "Other" } });
+    await waitFor(() =>
+        expect(screen.queryByRole("button", { name: "Use source estimate" })).toBeNull(),
+    );
+    expect(amount.value).toBe("7");
 });
 
 it("synchronizes both league controls without copying or changing prices", async () => {

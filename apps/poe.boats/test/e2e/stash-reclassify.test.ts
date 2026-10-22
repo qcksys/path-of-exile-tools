@@ -1,0 +1,378 @@
+// biome-ignore-all lint/style/useNamingConvention: Fixtures preserve upstream and database fields.
+import { mkdtemp, rmdir, unlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { compileMarketCohorts } from "@poe-tools/market";
+import { afterEach, beforeEach, expect, it } from "vite-plus/test";
+import { archivePage } from "../../../../packages/poe-stash-ingest/src/ps/capture-archive.ts";
+import { captureEquipment } from "../../../../packages/poe-stash-ingest/src/ps/equipment.ts";
+import { reclassifyArchivedEquipment } from "../../../../packages/poe-stash-ingest/src/ps/equipment-reclassify.ts";
+import { equipmentHourly } from "../../../../packages/poe-stash-ingest/src/ps/equipment-rollup.ts";
+import { getCursor, setCursor } from "../../../../packages/poe-stash-ingest/src/shared/cursor.ts";
+import {
+    type DbHandle,
+    openDb,
+    queryAll,
+} from "../../../../packages/poe-stash-ingest/src/shared/db.ts";
+import { configureSource } from "../../../../packages/poe-stash-ingest/src/shared/source.ts";
+
+const HOUR = Math.floor(Date.now() / 3_600_000) * 3600 - 3 * 3600;
+const classifier = compileMarketCohorts({
+    format: 1,
+    game: "poe1",
+    revision: "current-classifier",
+    catalogHash: "a".repeat(64),
+    cohorts: [
+        {
+            id: "preset:plate-vest",
+            name: "Normal Plate Vest",
+            purpose: "base",
+            query: {
+                format: 1,
+                game: "poe1",
+                groups: [
+                    {
+                        type: "and",
+                        filters: [
+                            { kind: "base", field: "baseType", values: ["Plate Vest"] },
+                            { kind: "rarity", values: ["Normal"] },
+                        ],
+                    },
+                ],
+            },
+        },
+    ],
+});
+const item = {
+    id: "item-1",
+    verified: true,
+    w: 2,
+    h: 3,
+    icon: "",
+    name: "",
+    typeLine: "Plate Vest",
+    baseType: "Plate Vest",
+    identified: true,
+    ilvl: 86,
+    frameType: 0,
+    note: "~price 10 chaos",
+};
+const stash: Parameters<typeof captureEquipment>[1] = {
+    id: "stash-1",
+    public: true,
+    accountName: "seller",
+    league: "Standard",
+    stash: "Sales",
+    stashType: "PremiumStash",
+    items: [item],
+};
+let local: DbHandle;
+let directory: string | undefined;
+beforeEach(async () => {
+    local = await openDb(":memory:");
+    await configureSource(local.conn, "pc", "Standard");
+});
+afterEach(async () => {
+    await local.close();
+    if (directory) {
+        await unlink(join(directory, "capture.duckdb"));
+        await rmdir(directory);
+        directory = undefined;
+    }
+});
+
+async function archive(
+    at: number,
+    stashes = [stash],
+    revision: string | null = "older-classifier",
+    scope = "Standard",
+) {
+    const id = await archivePage(
+        local.conn,
+        { next_change_id: `page-${at}`, stashes },
+        { realm: "pc", league: scope, capturedAt: at * 1000 },
+        () => true,
+    );
+    await local.conn.run(
+        "UPDATE ps_capture_page SET processed_at = current_timestamp, equipment_revision = $2 WHERE id = $1",
+        [id, revision],
+    );
+}
+const project = (limitPages = 1, league = "Standard") =>
+    reclassifyArchivedEquipment(local.conn, {
+        realm: "pc",
+        league,
+        classifier,
+        completedBefore: HOUR + 2 * 3600,
+        limitPages,
+    });
+
+it("resumes persisted staging after the owning connection closes and reopens", async () => {
+    await local.close();
+    directory = await mkdtemp(join(tmpdir(), "poe-reclassify-"));
+    local = await openDb(join(directory, "capture.duckdb"));
+    await configureSource(local.conn, "pc", "Standard");
+    await archive(HOUR + 1);
+    await archive(HOUR + 2, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
+    expect(await project()).toMatchObject({ pages: 1, hours: 0, pending: true });
+    await local.close();
+    local = await openDb(join(directory, "capture.duckdb"));
+    expect(await project()).toMatchObject({ pages: 1, hours: 1, pending: false });
+    expect(await equipmentHourly(local.conn, HOUR, "Standard")).toMatchObject([
+        { listingCount: 1, prices: { chaos: { median: 25 } } },
+    ]);
+});
+
+it("resumes bounded archived pages, publishes a complete original hour and never changes live state", async () => {
+    await archive(HOUR + 1);
+    await archive(HOUR + 10, [{ ...stash, items: [{ ...item, note: "~price 20 chaos" }] }]);
+    await archive(HOUR + 20, [
+        { id: stash.id, public: false, stashType: "PremiumStash", items: [] },
+    ]);
+    await captureEquipment(
+        local.conn,
+        { ...stash, items: [{ ...item, note: "~price 99 chaos" }] },
+        classifier,
+        new Date((HOUR + 3601) * 1000),
+    );
+    await captureEquipment(
+        local.conn,
+        { id: stash.id, public: false, stashType: "PremiumStash", items: [] },
+        classifier,
+        new Date((HOUR + 3610) * 1000),
+    );
+    await local.conn.run("UPDATE ps_equipment_cohort_hour SET changed_at = to_timestamp($1)", [
+        HOUR,
+    ]);
+    await setCursor(local.conn, "psapi", "live-cursor");
+    const live = await queryAll(local.conn, "SELECT * FROM ps_equipment_listing");
+    const later = await equipmentHourly(local.conn, HOUR + 3600, "Standard");
+    expect(await project()).toMatchObject({ pages: 1, hours: 0, pending: true });
+    expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([]);
+    expect(await project()).toMatchObject({ pages: 1, hours: 0, pending: true });
+    expect(await project()).toMatchObject({
+        pages: 1,
+        hours: 1,
+        completedHours: [HOUR],
+        pending: false,
+    });
+    const [result] = await equipmentHourly(local.conn, HOUR, "Standard");
+    expect(result).toMatchObject({
+        hour: HOUR,
+        listingCount: 1,
+        prices: { chaos: { median: 20 } },
+    });
+    expect(Date.parse(`${result!.lastSeenAt}Z`)).toBe((HOUR + 10) * 1000);
+    expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_listing")).toEqual(live);
+    expect(await equipmentHourly(local.conn, HOUR + 3600, "Standard")).toEqual(later);
+    expect(
+        await queryAll(
+            local.conn,
+            "SELECT epoch(changed_at) > $1 AS dirty FROM ps_equipment_cohort_hour WHERE hour = $2",
+            [HOUR, HOUR + 3600],
+        ),
+    ).toEqual([{ dirty: true }]);
+    expect(await equipmentHourly(local.conn, HOUR + 2 * 3600, "Standard")).toEqual([]);
+    expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
+    expect(await project(5)).toMatchObject({ pages: 0, hours: 0, pending: false });
+    expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([result]);
+});
+
+it("publishes an empty correction for a later present nonmatch, even in a mixed-revision hour", async () => {
+    await captureEquipment(local.conn, stash, classifier, new Date((HOUR + 1) * 1000));
+    await archive(HOUR + 2);
+    await archive(
+        HOUR + 3,
+        [{ ...stash, items: [{ ...item, frameType: 2 }] }],
+        classifier.manifest.revision,
+    );
+    expect(await project(2)).toMatchObject({ pages: 2, hours: 1 });
+    expect(await equipmentHourly(local.conn, HOUR, "Standard")).toMatchObject([
+        { listingCount: 0, unknownCount: 0, prices: {}, firstSeenAt: null, lastSeenAt: null },
+    ]);
+    expect(await queryAll(local.conn, "SELECT removed_at FROM ps_equipment_listing")).toEqual([
+        { removed_at: null },
+    ]);
+});
+
+it("skips already-current and out-of-window pages and refuses unsafe bounds or another source", async () => {
+    await archive(HOUR + 1, [stash], classifier.manifest.revision);
+    await archive(HOUR - 24 * 3600, [stash]);
+    await archive(HOUR + 2 * 3600, [stash]);
+    expect(await project()).toMatchObject({ pages: 0, hours: 0, pending: false });
+    await expect(
+        reclassifyArchivedEquipment(local.conn, { realm: "xbox", league: "Standard", classifier }),
+    ).rejects.toThrow(/realm/);
+    await expect(project(1, "Hardcore")).rejects.toThrow(/league|season|scope/);
+    for (const completedBefore of [1, -3600, Math.floor(Date.now() / 3_600_000) * 3600 + 3600])
+        await expect(
+            reclassifyArchivedEquipment(local.conn, {
+                realm: "pc",
+                league: "Standard",
+                classifier,
+                completedBefore,
+            }),
+        ).rejects.toThrow(/hour|cutoff/);
+    for (const limit of [0, 11, 1.5]) await expect(project(limit)).rejects.toThrow(/limitPages/);
+});
+
+it("retains other revisions and rolls back a failed page without exposing partial prices", async () => {
+    const older = compileMarketCohorts({ ...classifier.manifest, revision: "older-classifier" });
+    await captureEquipment(local.conn, stash, older, new Date((HOUR + 1) * 1000));
+    await captureEquipment(local.conn, stash, older, new Date((HOUR + 3601) * 1000));
+    await local.conn.run("UPDATE ps_equipment_cohort_hour SET changed_at = to_timestamp($1)", [
+        HOUR,
+    ]);
+    const oldDirtyTimes = await queryAll(
+        local.conn,
+        "SELECT hour, changed_at FROM ps_equipment_cohort_hour WHERE revision = 'older-classifier' ORDER BY hour",
+    );
+    const before = await equipmentHourly(local.conn, HOUR, "Standard");
+    await archive(HOUR + 2);
+    await local.conn.run("CREATE TEMP TABLE saved_payload AS SELECT * FROM ps_capture_payload");
+    await local.conn.run("UPDATE ps_capture_payload SET response_gzip = 'invalid'::BLOB");
+    await expect(project()).rejects.toThrow();
+    expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify")).toEqual([]);
+    expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour")).toEqual([]);
+    expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual(before);
+    await local.conn.run(
+        "UPDATE ps_capture_payload SET response_gzip = saved.response_gzip FROM saved_payload saved WHERE ps_capture_payload.response_hash = saved.response_hash",
+    );
+    expect(await project()).toMatchObject({ pages: 1, hours: 1 });
+    expect(
+        (await equipmentHourly(local.conn, HOUR, "Standard")).find(
+            (row) => row.revision === older.manifest.revision,
+        ),
+    ).toEqual(before[0]);
+    expect(
+        await queryAll(
+            local.conn,
+            "SELECT hour, changed_at FROM ps_equipment_cohort_hour WHERE revision = 'older-classifier' ORDER BY hour",
+        ),
+    ).toEqual(oldDirtyTimes);
+});
+
+it("prioritizes the newest pending completed hour before older archives", async () => {
+    await archive(HOUR + 1);
+    await archive(HOUR + 3601);
+    expect(await project()).toMatchObject({
+        pages: 1,
+        completedHours: [HOUR + 3600],
+        pending: true,
+    });
+    expect(await project()).toMatchObject({ pages: 1, completedHours: [HOUR], pending: false });
+});
+
+it("reclaims abandoned old-revision staging while preserving published history and completed progress", async () => {
+    const older = compileMarketCohorts({ ...classifier.manifest, revision: "older-classifier" });
+    await captureEquipment(local.conn, stash, older, new Date((HOUR + 3601) * 1000));
+    await local.conn.run(
+        "INSERT INTO ps_equipment_reclassify VALUES ($1, 'Standard', $2, -1, '', TRUE)",
+        [older.manifest.revision, HOUR + 3600],
+    );
+    await archive(HOUR + 1, [stash], "original-classifier");
+    await archive(HOUR + 2, [stash], "original-classifier");
+    expect(
+        await reclassifyArchivedEquipment(local.conn, {
+            realm: "pc",
+            league: "Standard",
+            classifier: older,
+            completedBefore: HOUR + 2 * 3600,
+        }),
+    ).toMatchObject({ pages: 1, hours: 0, pending: true });
+    expect(
+        await queryAll(
+            local.conn,
+            "SELECT * FROM ps_equipment_reclassify_hour WHERE revision = 'older-classifier'",
+        ),
+    ).toHaveLength(1);
+    const history = await queryAll(local.conn, "SELECT * FROM ps_equipment_hour");
+    const live = await queryAll(local.conn, "SELECT * FROM ps_equipment_listing");
+    const archived = await queryAll(
+        local.conn,
+        "SELECT * FROM ps_capture_page ORDER BY captured_at, id",
+    );
+    expect(await project()).toMatchObject({ pages: 1, hours: 0, pending: true });
+    expect(
+        await queryAll(
+            local.conn,
+            "SELECT * FROM ps_equipment_reclassify_hour WHERE revision = 'older-classifier'",
+        ),
+    ).toEqual([]);
+    expect(
+        await queryAll(
+            local.conn,
+            "SELECT completed, hour::DOUBLE AS hour FROM ps_equipment_reclassify WHERE revision = 'older-classifier'",
+        ),
+    ).toEqual([{ completed: true, hour: HOUR + 3600 }]);
+    expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_hour")).toEqual(history);
+    expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_listing")).toEqual(live);
+    expect(
+        await queryAll(local.conn, "SELECT * FROM ps_capture_page ORDER BY captured_at, id"),
+    ).toEqual(archived);
+});
+
+it("retains unknown matches as diagnostics without turning their asking amount into a price", async () => {
+    const uncertain = compileMarketCohorts({
+        ...classifier.manifest,
+        cohorts: [
+            {
+                ...classifier.manifest.cohorts[0]!,
+                query: {
+                    format: 1,
+                    game: "poe1",
+                    groups: [
+                        {
+                            type: "and",
+                            filters: [
+                                { kind: "base", field: "baseType", values: ["Plate Vest"] },
+                                { kind: "mod", ids: ["UnprovenModifier"], count: { min: 1 } },
+                            ],
+                        },
+                    ],
+                },
+            },
+        ],
+    });
+    await archive(HOUR + 1, [
+        { ...stash, items: [{ ...item, frameType: 2, explicitMods: ["+5 to maximum Life"] }] },
+    ]);
+    expect(
+        await reclassifyArchivedEquipment(local.conn, {
+            realm: "pc",
+            league: "Standard",
+            classifier: uncertain,
+            completedBefore: HOUR + 2 * 3600,
+        }),
+    ).toMatchObject({ hours: 1 });
+    expect(await equipmentHourly(local.conn, HOUR, "Standard")).toMatchObject([
+        { listingCount: 0, unknownCount: 1, prices: {} },
+    ]);
+});
+
+it("keeps actual stash leagues separate when the archive scope is all", async () => {
+    await local.conn.run("DELETE FROM pipeline_config WHERE key = 'source'");
+    await configureSource(local.conn, "pc", null);
+    await archive(
+        HOUR + 1,
+        [
+            stash,
+            {
+                ...stash,
+                id: "other-stash",
+                league: "Hardcore",
+                accountName: "other",
+                items: [{ ...item, id: "other-item", note: "~price 100 chaos" }],
+            },
+        ],
+        null,
+        "all",
+    );
+    expect(await project(1, "all")).toMatchObject({ pages: 1, hours: 1 });
+    expect(await equipmentHourly(local.conn, HOUR, "Standard")).toMatchObject([
+        { listingCount: 1, prices: { chaos: { median: 10 } } },
+    ]);
+    expect(await equipmentHourly(local.conn, HOUR, "Hardcore")).toMatchObject([
+        { listingCount: 1, prices: { chaos: { median: 100 } } },
+    ]);
+});
