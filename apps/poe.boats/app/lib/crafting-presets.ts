@@ -102,8 +102,8 @@ export function listCraftingPresets(game: "poe1" | "poe2") {
 }
 
 const magicDonors: Partial<Record<CraftingPresetId, readonly string[]>> = {
-    "life-block-shield": ["block", "max-res"],
-    "es-block-shield": ["flat"],
+    "life-block-shield": ["block", "max-res", "recovery"],
+    "es-block-shield": ["flat", "flat-block"],
     "physical-bow": ["donor-0", "donor-1", "donor-2"],
     "elemental-bow": ["donor-0", "donor-1", "donor-2"],
     "rarity-helmet": ["donor-0-1", "donor-1-0", "donor-1-1"],

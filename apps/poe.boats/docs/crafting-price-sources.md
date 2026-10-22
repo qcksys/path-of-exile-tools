@@ -58,18 +58,19 @@ omit preparation costs or change the available modifier pool. Such cohorts
 remain market evidence for a manual assumption, not a complete purchase price.
 The same validation applies to binding and refreshing existing prices.
 
-The cohort generator derives 39 purchase-specific definitions from all 40 purchase
+The cohort generator derives 41 purchase-specific definitions from all 42 purchase
 alternatives in the ten configured presets. These preserve canonical base identity,
 level, rarity, influences and explicit modifier counts/identities. Capture retains
-their bases, including influenced donors. Thirteen Magic single-modifier alternatives
-are available for equivalent immediate recombination donors; the presets retain
+their bases, including influenced donors. Fifteen Magic alternatives are available
+for equivalent immediate recombination donors, including the flat-ES/recovery
+prefix/suffix pair; the presets retain
 their pinned Rare defaults. Users may explicitly choose a Magic alternative or
 automatic acquisition, which considers only alternatives with known prices and
 refuses an entirely unpriced set.
 
-Fixtures with optional modifier identity metadata can populate 34 of the 40
-alternatives (24 original, 10 Magic); fixtures using documented descriptions,
-flags and required-influence constraints populate 28 (19 original, 9 Magic) at
+Fixtures with optional modifier identity metadata can populate 36 of the 42
+alternatives (24 original, 12 Magic); fixtures using documented descriptions,
+flags and required-influence constraints populate 30 (19 original, 11 Magic) at
 their configured rolls. Overlapping displayed modifier identities remain unknown.
 Some different rolls can resolve uniquely, so these counts measure the fixtures,
 not guaranteed live coverage. A definition does not
