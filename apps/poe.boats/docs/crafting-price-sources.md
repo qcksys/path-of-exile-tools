@@ -94,6 +94,20 @@ ID, source kind, realm, league, currency and observed hour. Refresh and historic
 process snapshots query stored buckets at their own cutoffs; no current-only quote
 is substituted for history. The history link opens the raw asking distributions.
 
+Essence lookup can explicitly enable `exchange-v1` conversion, with the UI option
+unchecked by default. Native asks in the project currency take precedence;
+otherwise the same newest bucket may supply chaos, divine or exalted asks. The
+existing exchange resolver must supply a positive rate from that exact hour,
+realm and league, optionally through its verified two-leg reference-currency
+path. Older listing hours and older exchange rates are never substituted. A
+present but invalid native distribution remains unknown. Quotes and saved
+bindings preserve the original currency, median, range and full exchange quote;
+displayed converted ranges are scaled asking ranges, not exchange trade ranges.
+History opens the original listing currency, and combined confidence is unknown.
+The explicit conversion policy survives binding even when native asks currently
+win, so subsequent refresh and historical snapshots use the same policy. Old
+bindings remain direct unless the user explicitly selects a new quote.
+
 Beast and temple sources are PoE 1 PC current listing estimates. They support
 chaos, divine and exalted via the corresponding upstream values. Counts are
 listings, not unique sellers or completed sales. The saved timestamp is retrieval

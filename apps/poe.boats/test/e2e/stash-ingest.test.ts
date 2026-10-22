@@ -75,7 +75,7 @@ import {
     queryAll,
 } from "../../../../packages/poe-stash-ingest/src/shared/db.ts";
 import { push } from "../../../../packages/poe-stash-ingest/src/shared/remote/push.ts";
-import { essenceId, essenceName } from "../crafting-commodity-fixtures";
+import { commodityExchangeSnapshot, essenceId, essenceName } from "../crafting-commodity-fixtures";
 import {
     chaosId,
     exchangeGraph,
@@ -2060,4 +2060,79 @@ it("ingests fractional essence unit asks into MySQL and shares source binding an
             { hour: HOUR + 3600, listingCount: 2, prices: {} },
         ],
     });
+    const convertedHour = HOUR + 7200;
+    await mysql.insert(tStashUniqueHourly).values({
+        realm: "pc",
+        league: "Standard",
+        hour: convertedHour,
+        itemKey: essenceName,
+        baseType: essenceName,
+        name: "",
+        frameType: 5,
+        identified: true,
+        listingCount: 33,
+        uniqueSellers: 30,
+        prices: { divine: { count: 1, min: 2, median: 2, max: 2 } },
+        firstSeenAt: new Date(convertedHour * 1000).toISOString(),
+        lastSeenAt: new Date(convertedHour * 1000).toISOString(),
+    });
+    await mysql
+        .insert(tStashCurrencyHourly)
+        .values({ ...commodityExchangeSnapshot, hour: convertedHour });
+    const current = { ...lookup, at: convertedHour };
+    expect(
+        craftingSourceResultSchema.parse(
+            await parity("crafting/market/sources", "find_crafting_source_prices", current),
+        ).quotes,
+    ).toEqual({});
+    const converted = craftingSourceResultSchema.parse(
+        await parity("crafting/market/sources", "find_crafting_source_prices", {
+            ...current,
+            conversion: "exchange-v1",
+        }),
+    );
+    expect(converted.quotes[essenceId]).toMatchObject({
+        amount: 600,
+        samples: 1,
+        listingCount: 33,
+        uniqueSellers: 30,
+        conversion: "exchange-v1",
+        exchange: { currency: "divine", amount: 2, quote: { hour: convertedHour, amount: 300 } },
+    });
+    const convertedBound = z.object({ graph: craftingGraphSchema }).parse(
+        await parity("crafting/market/sources/bind", "bind_crafting_source_price", {
+            graph,
+            id: essenceId,
+            quote: converted.quotes[essenceId],
+        }),
+    ).graph;
+    expect(decodeCraftingSourceReference(convertedBound.prices[essenceId]?.cohortId)).toMatchObject(
+        {
+            conversion: "exchange-v1",
+            exchange: { currency: "divine", amount: 2, quote: { hour: convertedHour } },
+        },
+    );
+    expect(
+        await parity("crafting/market/snapshots", "get_crafting_price_snapshots", {
+            graph: convertedBound,
+            hours: [HOUR, convertedHour],
+        }),
+    ).toMatchObject({
+        points: [
+            { graph: { prices: { [essenceId]: { amount: 3.5 } } }, issues: [] },
+            { graph: { prices: { [essenceId]: { amount: 600 } } }, issues: [] },
+        ],
+    });
+    await mysql.delete(tStashCurrencyHourly);
+    await mysql
+        .insert(tStashCurrencyHourly)
+        .values({ ...commodityExchangeSnapshot, hour: convertedHour - 3600 });
+    expect(
+        craftingSourceResultSchema.parse(
+            await parity("crafting/market/sources", "find_crafting_source_prices", {
+                ...current,
+                conversion: "exchange-v1",
+            }),
+        ).quotes,
+    ).toEqual({});
 });

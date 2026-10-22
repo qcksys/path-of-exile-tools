@@ -145,6 +145,10 @@ Source lookup and binding also accept 106 verified PoE 1 PC essence identities t
 observation hour, range and priced sample count separately from total listings and sellers. Selection
 is explicit, manual amounts survive bulk fill and refresh, and historical snapshots use the requested
 cutoff. An unavailable exchange quote remains unavailable; essence asks are a separate price source.
+Optional `exchange-v1` converts only the newest captured bucket using matching-hour rates. Shared
+lookup, binding, refresh and snapshots preserve the original asking range and exchange evidence;
+the UI requires explicit selection and labels the conversion. Native quotes take precedence.
+Query, MySQL, HTTP/MCP and browser regressions cover conversion and refusal of older rates.
 
 ## Adding a capability or Hono subrouter
 

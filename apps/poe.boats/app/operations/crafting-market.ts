@@ -52,7 +52,7 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Look up PoE 1 PC captured essence asking prices and poe.ninja beast/temple estimates. Essences require an exact unique catalog identity and a positive latest captured bucket within 24 completed hours; at selects historical captured hours. Beast recipes price every sacrifice and require the explicit extra-rare-beast assumption. poe.ninja has no historical coverage. Sources remain distinct from exchange trades; confidence is uncalibrated.",
+            "Look up PoE 1 PC captured essence asking prices and poe.ninja beast/temple estimates. Essences require an exact unique catalog identity and a positive latest captured bucket within 24 completed hours; at selects historical captured hours. Optional exchange-v1 conversion prefers native asks, otherwise converts chaos/divine/exalted asks using matching-hour exchange evidence. Converted quotes retain the original ask and rate. Beast recipes price every sacrifice and require the explicit extra-rare-beast assumption. poe.ninja has no historical coverage. Sources remain distinct from exchange trades; confidence is uncalibrated.",
         input: craftingSourceOptionsSchema.extend({ graph: CraftingGraphContract }),
         output: craftingSourceResultSchema,
         execute: async ({ graph, ...options }, context) =>
