@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { discoverCraftingCosts } from "../app/lib/crafting-cost-inputs";
 import { seededRandom } from "../app/lib/crafting-engine";
 import { calculateCraftingGraph } from "../app/lib/crafting-graph-simulation";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
@@ -18,19 +19,20 @@ const ruleset = historyIndex.revisions.find(
 
 describe("common crafting project presets", () => {
     for (const preset of craftingPresets) {
+        const iterations =
+            preset.id === "tailwind-boots" ? 1 : preset.id === "strength-helical-ring" ? 2 : 8;
+        const workLimit = preset.id === "tailwind-boots" ? 250_000 : 100_000;
+        const timeout = ["strength-helical-ring", "tailwind-boots"].includes(preset.id)
+            ? 30_000
+            : 10_000;
         it(
             `${preset.name} produces its specified item through the real engine`,
             () => {
                 const graph = projectFromPreset(engine, ruleset, preset.id);
-                graph.iterations =
-                    preset.id === "tailwind-boots"
-                        ? 1
-                        : preset.id === "strength-helical-ring"
-                          ? 2
-                          : 8;
+                graph.iterations = iterations;
                 const result = calculateCraftingGraph(catalog, graph, {
                     estimateIterations: 1,
-                    workLimit: preset.id === "tailwind-boots" ? 250_000 : 100_000,
+                    workLimit,
                 });
                 expect(result.errors).toEqual({});
                 expect(result.truncated).toBe(0);
@@ -77,36 +79,34 @@ describe("common crafting project presets", () => {
                         }
                     }
                 }
-                const quote = {
-                    amount: 1,
-                    currency: "chaos",
-                    source: "manual",
-                    confidence: null,
-                } as const;
+            },
+            timeout,
+        );
+        it(
+            `${preset.name} calculates its cost through the real engine`,
+            () => {
+                const graph = projectFromPreset(engine, ruleset, preset.id);
+                graph.iterations = iterations;
                 for (const node of graph.nodes) {
                     if (node.kind === "acquire") {
                         for (const alternative of node.alternatives)
-                            if (alternative.kind === "purchase")
-                                alternative.price = { ...quote, amount: 10 };
+                            if (alternative.kind === "purchase") alternative.price = quote(10);
                     }
                 }
-                graph.prices = {
-                    ...graph.prices,
-                    ...Object.fromEntries(
-                        result.missingPrices
-                            .filter((id) => !id.startsWith("purchase:"))
-                            .map((id) => [id, quote]),
-                    ),
-                };
+                for (const cost of discoverCraftingCosts(
+                    engine,
+                    graph.nodes.flatMap((node) => (node.kind === "craft" ? [node.method] : [])),
+                ))
+                    graph.prices[cost.id] ??= quote(1);
                 const priced = calculateCraftingGraph(catalog, graph, {
                     estimateIterations: 1,
-                    workLimit: preset.id === "tailwind-boots" ? 250_000 : 100_000,
+                    workLimit,
                 });
                 expect(priced.missingPrices).toEqual([]);
                 expect(priced.meanCost).toBeGreaterThan(10);
                 expect(priced.errors).toEqual({});
             },
-            ["strength-helical-ring", "tailwind-boots"].includes(preset.id) ? 30_000 : 10_000,
+            timeout,
         );
     }
     it("creates independent drafts and keeps PoE 1 mechanics out of PoE 2", () => {

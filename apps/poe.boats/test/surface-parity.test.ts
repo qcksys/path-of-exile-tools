@@ -1295,54 +1295,54 @@ describe("transport parity", () => {
     });
 
     it.each([
-        "poe1",
-        "poe2",
-    ] as const)("applies %s scoped prices only in engine 8 through HTTP and MCP", async (game) => {
-        for (const revision of ["r7", "r8"]) {
-            const ruleset = historyIndex.revisions.find(
-                (entry) => entry.game === game && entry.revision === revision,
-            )!;
-            const loaded = await retainedRevision(ruleset);
-            const graph = retainedTransmuteGraph(ruleset, loaded.catalog);
-            for (const scoped of [false, true]) {
-                if (scoped)
-                    graph.prices[craftingNodeCostKey("transmute", Object.keys(graph.prices)[0]!)] =
-                        quote(5);
-                const input = { graph, options: { estimateIterations: 1 } };
-                const response = await api.request(
-                    "https://poe.boats/api/v1/crafting/graph/calculate",
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(input),
-                    },
-                    { runtime },
-                );
-                const rpc = RpcSchema.parse(
-                    await (
-                        await mcp("tools/call", {
-                            name: "calculate_crafting_graph",
-                            arguments: input,
-                        })
-                    ).json(),
-                );
-                const result = CallToolResultSchema.parse(rpc.result);
-                const body = await response.json();
-                if (scoped && revision === "r7") {
-                    expect(response.status).toBe(400);
-                    expect(body).toMatchObject({
-                        error: expect.stringContaining("scoped crafting prices"),
-                    });
-                    expect(result.isError).toBe(true);
-                    expect(JSON.stringify(result.content)).toContain("scoped crafting prices");
-                } else {
-                    expect(response.status).toBe(200);
-                    expect(body).toMatchObject({
-                        result: { complete: true, meanCost: scoped ? 15 : 11 },
-                    });
-                    expect(result.isError).not.toBe(true);
-                    expect(result.structuredContent).toEqual(body);
-                }
+        ["poe1", "r7"],
+        ["poe1", "r8"],
+        ["poe2", "r7"],
+        ["poe2", "r8"],
+    ] as const)("applies %s %s scoped prices only in engine 8 through HTTP and MCP", async (game, revision) => {
+        const ruleset = historyIndex.revisions.find(
+            (entry) => entry.game === game && entry.revision === revision,
+        )!;
+        const loaded = await retainedRevision(ruleset);
+        const graph = retainedTransmuteGraph(ruleset, loaded.catalog);
+        for (const scoped of [false, true]) {
+            if (scoped)
+                graph.prices[craftingNodeCostKey("transmute", Object.keys(graph.prices)[0]!)] =
+                    quote(5);
+            const input = { graph, options: { estimateIterations: 1 } };
+            const response = await api.request(
+                "https://poe.boats/api/v1/crafting/graph/calculate",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
+                },
+                { runtime },
+            );
+            const rpc = RpcSchema.parse(
+                await (
+                    await mcp("tools/call", {
+                        name: "calculate_crafting_graph",
+                        arguments: input,
+                    })
+                ).json(),
+            );
+            const result = CallToolResultSchema.parse(rpc.result);
+            const body = await response.json();
+            if (scoped && revision === "r7") {
+                expect(response.status).toBe(400);
+                expect(body).toMatchObject({
+                    error: expect.stringContaining("scoped crafting prices"),
+                });
+                expect(result.isError).toBe(true);
+                expect(JSON.stringify(result.content)).toContain("scoped crafting prices");
+            } else {
+                expect(response.status).toBe(200);
+                expect(body).toMatchObject({
+                    result: { complete: true, meanCost: scoped ? 15 : 11 },
+                });
+                expect(result.isError).not.toBe(true);
+                expect(result.structuredContent).toEqual(body);
             }
         }
     });

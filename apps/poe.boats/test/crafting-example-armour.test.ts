@@ -142,6 +142,7 @@ function armourGraph() {
         outcomes: [{ id: "target", name: "T1 flat ES six-link", query: output }],
         prices: {
             ...prices,
+            "Metadata/Items/Currency/CurrencyCorrupt": quote(0.1),
             [beast.id]: quote(250),
             [transmute.id]: quote(0.2),
             [alteration.id]: quote(0.1),
@@ -162,11 +163,13 @@ describe("Necrotic Armour complete process", () => {
         const benchCost =
             10 + [...sockets.cost, ...links.cost].reduce((sum, cost) => sum + cost.amount * 0.1, 0);
         expect(links.cost[0]!.amount).toBe(1500);
-        expect(calculate()).toMatchObject({
+        const benchResult = calculate();
+        expect(benchResult).toMatchObject({
             complete: true,
             meanCost: benchCost,
             acquisitions: { linked: { selectedId: "bench" } },
         });
+        expect(benchResult.spending["Metadata/Items/Currency/CurrencyCorrupt"]).toBeUndefined();
         graph.prices[beast.id] = quote(1);
         const beastCost = 10 + sockets.cost.reduce((sum, cost) => sum + cost.amount * 0.1, 0) + 1;
         expect(calculate()).toMatchObject({
