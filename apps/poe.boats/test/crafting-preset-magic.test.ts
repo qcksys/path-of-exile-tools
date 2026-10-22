@@ -10,7 +10,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 const ruleset = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r8",
 )!;
-const selected: [CraftingPresetId, string[]][] = [
+const singleModifiers: [CraftingPresetId, string[]][] = [
     ["life-block-shield", ["block", "max-res"]],
     ["es-block-shield", ["flat"]],
     ["physical-bow", ["donor-0", "donor-1", "donor-2"]],
@@ -18,14 +18,24 @@ const selected: [CraftingPresetId, string[]][] = [
     ["rarity-helmet", ["donor-0-1", "donor-1-0", "donor-1-1"]],
     ["energy-shield-chest", ["donor-0"]],
 ];
+const recoveryDonors = [
+    ["life-block-shield", "recovery"],
+    ["es-block-shield", "flat-block"],
+] as const;
+const selected = singleModifiers.map(([preset, ids]): [CraftingPresetId, string[]] => [
+    preset,
+    [...ids, ...recoveryDonors.filter(([id]) => id === preset).map(([, node]) => node)],
+]);
 const quote = { amount: 10, currency: "chaos", source: "manual", confidence: null } as const;
 
-it.each(selected)("%s offers Magic donors with identical immediate outcomes", (preset, ids) => {
+it.each(
+    singleModifiers,
+)("%s offers Magic donors with identical immediate outcomes", (preset, ids) => {
     const graph = projectFromPreset(engine, ruleset, preset);
     const purchases = graph.nodes.filter((node) => node.kind === "acquire");
     expect(
         purchases.filter((node) => node.alternatives.length === 2).map((node) => node.id),
-    ).toEqual(ids);
+    ).toEqual(selected.find(([id]) => id === preset)![1]);
     const queries = createCraftingItemQuery(engine);
     for (const node of purchases) {
         const rare = node.alternatives[0]!;
@@ -68,6 +78,35 @@ it.each(selected)("%s offers Magic donors with identical immediate outcomes", (p
                     expect(recombinationOutcomes(engine, a.item, b.item)).toEqual(expected);
                 }
         }
+    }
+});
+
+it.each(recoveryDonors)("%s/%s preserves every recovery donor outcome as Magic", (preset, id) => {
+    const graph = projectFromPreset(engine, ruleset, preset);
+    const purchase = (nodeId: string, alternativeId = "buy") => {
+        const node = graph.nodes.find((entry) => entry.id === nodeId)!;
+        if (node.kind !== "acquire") throw new Error("Expected purchase node");
+        const alternative = node.alternatives.find((entry) => entry.id === alternativeId);
+        if (alternative?.kind !== "purchase") throw new Error("Expected purchase alternative");
+        return alternative.item;
+    };
+    const rare = purchase(id);
+    const magic = purchase(id, "buy-magic");
+    expect(engine.validateItem(magic)).toEqual({ ...rare, rarity: "magic" });
+    const pool = engine.pool({ ...magic, mods: [] }).map((entry) => entry.id);
+    for (const mod of magic.mods) expect(pool).toContain(mod.id);
+    if (preset === "life-block-shield") {
+        const intermediate = recombinationOutcomes(engine, purchase("block"), purchase("max-res"));
+        expect(intermediate).toHaveLength(6);
+        for (const { value } of intermediate)
+            expect(recombinationOutcomes(engine, value, magic)).toEqual(
+                recombinationOutcomes(engine, value, rare),
+            );
+    } else {
+        expect(engine.counts(magic)).toEqual({ prefixes: 1, suffixes: 1 });
+        expect(recombinationOutcomes(engine, magic, purchase("block"))).toEqual(
+            recombinationOutcomes(engine, rare, purchase("block")),
+        );
     }
 });
 

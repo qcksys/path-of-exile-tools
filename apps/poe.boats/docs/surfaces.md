@@ -134,11 +134,12 @@ Modifier inference also applies the client's explicit required-influence rules t
 flags. Missing or dual-influence evidence retains ambiguity; fixed all-influence bases require their
 native implicit text. Native spawn weights do not exclude legitimate non-native donors. Proven
 modifier metadata constrains inference without preventing other affixes from being identified.
-Thirteen isolated ordinary donors also offer a separate Magic purchase where the complete immediate
-recombination outcomes match the existing Rare purchase. Each rarity has an exact cohort; a Magic
+Fifteen ordinary donor alternatives, including the flat-ES/recovery prefix/suffix pair, offer a
+separate Magic purchase where the complete immediate recombination outcomes match the existing
+Rare purchase. Each rarity has an exact cohort; a Magic
 quote never prices a Rare item. New presets retain the original pinned purchase for previews, while
 users can select the Magic alternative or compare actually priced alternatives automatically. The
-ten presets contain 40 purchase alternatives across 27 acquisitions and 39 distinct exact cohorts.
+ten presets contain 42 purchase alternatives across 27 acquisitions and 41 distinct exact cohorts.
 
 Source lookup and binding also accept 106 verified PoE 1 PC essence identities through a distinct
 `stash-commodity` source. This uses already captured unit asking prices and preserves the completed

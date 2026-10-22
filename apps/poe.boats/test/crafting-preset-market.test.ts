@@ -83,8 +83,8 @@ function rawItem(item: CraftingItem, metadata = false) {
 }
 
 it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
-    expect(purchases).toHaveLength(40);
-    expect(cohorts).toHaveLength(39);
+    expect(purchases).toHaveLength(42);
+    expect(cohorts).toHaveLength(41);
     const definitions = new Map(manifest.cohorts.map((cohort) => [cohort.id, cohort]));
     for (const cohort of cohorts) expect(definitions.get(cohort.id)).toEqual(cohort);
     for (const { preset, graph: project, node, alternative, item } of purchases) {
@@ -248,7 +248,7 @@ it("populates 19 original inputs from descriptions, flags and influence while pr
 
 it("captures Magic alternatives separately from Rare and retains unresolved modifier identities", () => {
     const magic = purchases.filter(({ alternative }) => alternative.id === "buy-magic");
-    expect(magic).toHaveLength(13);
+    expect(magic).toHaveLength(15);
     const unknownDescriptions: string[] = [];
     const unknownMetadata: string[] = [];
     for (const { preset, node, item } of magic) {
