@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { seededRandom } from "../app/lib/crafting-engine";
 import { calculateCraftingGraph } from "../app/lib/crafting-graph-simulation";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
 import {
@@ -6,7 +7,9 @@ import {
     listCraftingPresets,
     projectFromPreset,
 } from "../app/lib/crafting-presets";
+import { craftingGraphSchema } from "../app/schemas/crafting-graph";
 import { catalog, engine } from "./crafting-fixtures";
+import { graphFixture, quote, runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
@@ -87,11 +90,14 @@ describe("common crafting project presets", () => {
                                 alternative.price = { ...quote, amount: 10 };
                     }
                 }
-                graph.prices = Object.fromEntries(
-                    result.missingPrices
-                        .filter((id) => !id.startsWith("purchase:"))
-                        .map((id) => [id, quote]),
-                );
+                graph.prices = {
+                    ...graph.prices,
+                    ...Object.fromEntries(
+                        result.missingPrices
+                            .filter((id) => !id.startsWith("purchase:"))
+                            .map((id) => [id, quote]),
+                    ),
+                };
                 const priced = calculateCraftingGraph(catalog, graph, {
                     estimateIterations: 1,
                     workLimit: preset.id === "tailwind-boots" ? 250_000 : 100_000,
@@ -133,5 +139,57 @@ describe("common crafting project presets", () => {
         for (const { alternative } of prepared) {
             expect(alternative.name).toContain(" + NNN ");
         }
+    });
+    it("defaults only the eight recombination presets to explicit zero-cost self-service", () => {
+        const affected = [
+            "life-block-shield",
+            "es-block-shield",
+            "physical-bow",
+            "elemental-bow",
+            "suppression-chest",
+            "global-defence-chest",
+            "rarity-helmet",
+            "energy-shield-chest",
+        ];
+        for (const preset of craftingPresets) {
+            const graph = projectFromPreset(engine, ruleset, preset.id);
+            if (affected.includes(preset.id)) {
+                expect(graph.prices).toEqual({ "service:recombine": quote(0) });
+                expect(preset.description).toContain(
+                    "Recombination assumes self-service at 0 chaos, excluding gold and dust opportunity cost.",
+                );
+            } else {
+                expect(graph.prices).toEqual({});
+                expect(preset.description).not.toContain("self-service");
+            }
+        }
+    });
+    it("charges a saved nonzero recombination override on every attempt", () => {
+        const graph = projectFromPreset(engine, ruleset, "physical-bow");
+        for (const node of graph.nodes)
+            if (node.kind === "acquire")
+                for (const alternative of node.alternatives)
+                    if (alternative.kind === "purchase") alternative.price = quote(10);
+        const selfService = runGraphTrial(graph, seededRandom(1));
+        expect(selfService.missingPrices).toEqual([]);
+        expect(selfService.cost).toBe(selfService.purchases * 10);
+        graph.prices["service:recombine"] = quote(7);
+        const saved = craftingGraphSchema.parse(JSON.parse(JSON.stringify(graph)));
+        const paid = runGraphTrial(saved, seededRandom(1));
+        expect(paid.missingPrices).toEqual([]);
+        expect(paid.spending["service:recombine"]).toBeGreaterThan(1);
+        expect(paid.spending).toEqual(selfService.spending);
+        expect(paid.cost).toBe(selfService.cost! + paid.spending["service:recombine"]! * 7);
+        expect(saved.prices["service:recombine"]).toEqual(quote(7));
+        projectFromPreset(engine, ruleset, "physical-bow");
+        expect(graph.prices["service:recombine"]).toEqual(quote(7));
+    });
+    it("keeps a custom graph's missing recombination price unknown", () => {
+        const graph = graphFixture();
+        delete graph.prices["service:recombine"];
+        const result = runGraphTrial(graph, seededRandom(1));
+        expect(result.missingPrices).toEqual(["service:recombine"]);
+        expect(result.cost).toBeNull();
+        expect(graph.prices).toEqual({});
     });
 });

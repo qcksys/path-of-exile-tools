@@ -13,20 +13,25 @@ import { alterationDonor } from "./crafting-preset-preparation";
 import { nonNativeEssenceSources } from "./crafting-recombination";
 import { validateRulesetGraph } from "./crafting-rulesets";
 
+const recombinationAssumption =
+    " Recombination assumes self-service at 0 chaos, excluding gold and dust opportunity cost.";
+
 export const craftingPresets: readonly CraftingPreset[] = [
     {
         id: "life-block-shield",
         game: "poe1",
         name: "Life on block shield",
         description:
-            "Recombine life recovery on block onto a Shaper Heat-attuned Tower Shield with T1 block chance and +2% all maximum resistances. Rebuild consumed donors and recover usable misses.",
+            "Recombine life recovery on block onto a Shaper Heat-attuned Tower Shield with T1 block chance and +2% all maximum resistances. Rebuild consumed donors and recover usable misses." +
+            recombinationAssumption,
     },
     {
         id: "es-block-shield",
         game: "poe1",
         name: "Energy shield on block shield",
         description:
-            "Build overlapping flat ES / percent ES and flat ES / block prefix pairs with non-native natural evasion essence donors. Recombine 2p + 2p, retaining Shaper ES recovery on block; recover partial donors.",
+            "Build overlapping flat ES / percent ES and flat ES / block prefix pairs with non-native natural evasion essence donors. Recombine 2p + 2p, retaining Shaper ES recovery on block; recover partial donors." +
+            recombinationAssumption,
     },
     {
         id: "tailwind-boots",
@@ -40,42 +45,48 @@ export const craftingPresets: readonly CraftingPreset[] = [
         game: "poe1",
         name: "Physical bow",
         description:
-            "Build physical / hybrid and physical / flat prefix pairs separately (1p + 1p), then recombine 2p + 2p for all three. Recover pairs and single-prefix misses into their preparation steps.",
+            "Build physical / hybrid and physical / flat prefix pairs separately (1p + 1p), then recombine 2p + 2p for all three. Recover pairs and single-prefix misses into their preparation steps." +
+            recombinationAssumption,
     },
     {
         id: "elemental-bow",
         game: "poe1",
         name: "Elemental bow",
         description:
-            "Build fire / cold and fire / lightning prefix pairs separately (1p + 1p), then recombine 2p + 2p. Recover pairs and single-prefix misses into their preparation steps.",
+            "Build fire / cold and fire / lightning prefix pairs separately (1p + 1p), then recombine 2p + 2p. Recover pairs and single-prefix misses into their preparation steps." +
+            recombinationAssumption,
     },
     {
         id: "suppression-chest",
         game: "poe1",
         name: "Suppression chest",
         description:
-            "Roll and isolate T1 suppression on Zodiac Leather, craft a non-native Strength essence donor, then recombine onto Necrotic Armour. Misses return to donor preparation.",
+            "Roll and isolate T1 suppression on Zodiac Leather, craft a non-native Strength essence donor, then recombine onto Necrotic Armour. Misses return to donor preparation." +
+            recombinationAssumption,
     },
     {
         id: "global-defence-chest",
         game: "poe1",
         name: "Global defence chest",
         description:
-            "Acquire the drop-only global defences Grasping Mail modifier, roll and isolate T1 flat energy shield on Necrotic Armour, then recombine. Recover surviving modifiers and rebuild missing donors.",
+            "Acquire the drop-only global defences Grasping Mail modifier, roll and isolate T1 flat energy shield on Necrotic Armour, then recombine. Recover surviving modifiers and rebuild missing donors." +
+            recombinationAssumption,
     },
     {
         id: "rarity-helmet",
         game: "poe1",
         name: "Rarity helmet",
         description:
-            "Transfer a purchased Janus unveiled rarity suffix alongside normal T1 rarity, life and chaos resistance. Build two pairs, then recombine; recover surviving pairs and single modifiers into preparation.",
+            "Transfer a purchased Janus unveiled rarity suffix alongside normal T1 rarity, life and chaos resistance. Build two pairs, then recombine; recover surviving pairs and single modifiers into preparation." +
+            recombinationAssumption,
     },
     {
         id: "energy-shield-chest",
         game: "poe1",
         name: "Triple energy shield chest",
         description:
-            "Build flat / percent ES and flat / hybrid ES pairs, then recombine 2p + 2p. NNN evasion/armour essence prefixes improve prefix-count selection without surviving on Vaal Regalia. Recover partial donors.",
+            "Build flat / percent ES and flat / hybrid ES pairs, then recombine 2p + 2p. NNN evasion/armour essence prefixes improve prefix-count selection without surviving on Vaal Regalia. Recover partial donors." +
+            recombinationAssumption,
     },
     {
         id: "strength-helical-ring",
@@ -550,6 +561,13 @@ export function projectFromPreset(
     graph.outcomes[0]!.query = target;
     graph.outcomes[0]!.name = preset.name;
     graph.iterations = 100;
+    if (nodes.some((node) => node.kind === "craft" && node.method.kind === "recombine"))
+        graph.prices["service:recombine"] = {
+            amount: 0,
+            currency: graph.currency,
+            source: "manual",
+            confidence: null,
+        };
     if (presetId === "tailwind-boots") graph.maxSteps = 100_000;
     validateRulesetGraph(ruleset, graph);
     return validateCraftingGraph(engine.catalog, graph);
