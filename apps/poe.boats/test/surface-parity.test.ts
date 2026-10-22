@@ -141,6 +141,37 @@ async function mcp(method: string, params?: unknown, authenticated = false) {
     );
 }
 
+const cohortPolicies = [undefined, "adaptive-v1", "display-equivalent-v1", "exchange-v1"] as const;
+
+function cohortPricingFixture(policy: (typeof cohortPolicies)[number]) {
+    const window = policy === "adaptive-v1" ? policy : undefined;
+    const family = policy === "display-equivalent-v1" ? donorFamilyMarketFixture() : undefined;
+    const candidate = structuredClone(
+        family?.candidate ?? (window ? adaptiveMarketCandidate() : marketCandidate),
+    );
+    if (family) candidate.assumption = "display-equivalent-v1";
+    if (policy === "exchange-v1") {
+        const divine = exchangeCurrencyId("divine")!;
+        const chaos = exchangeCurrencyId("chaos")!;
+        candidate.latest.prices = { divine: candidate.latest.prices.chaos! };
+        candidate.conversion = policy;
+        candidate.exchange = {
+            currency: "divine",
+            quote: quoteExchangeSnapshot(
+                {
+                    ...exchangeSnapshot,
+                    hour: candidate.latest.hour,
+                    marketId: `${divine}|${chaos}`,
+                    volumeTraded: { [divine]: 10, [chaos]: 1000 },
+                },
+                divine,
+                chaos,
+            )!,
+        };
+    }
+    return { graph: family?.graph ?? marketGraph(), candidate, window };
+}
+
 describe("transport parity", () => {
     beforeEach(() => vi.restoreAllMocks());
 
@@ -827,38 +858,17 @@ describe("transport parity", () => {
         }
     });
 
-    it.each([
-        undefined,
-        "adaptive-v1",
-        "display-equivalent-v1",
-        "exchange-v1",
-    ] as const)("shares %s cohort lookup, history, binding and refresh through HTTP and MCP", async (policy) => {
-        const window = policy === "adaptive-v1" ? policy : undefined;
-        const family = policy === "display-equivalent-v1" ? donorFamilyMarketFixture() : undefined;
-        const candidate = structuredClone(
-            family?.candidate ?? (window ? adaptiveMarketCandidate() : marketCandidate),
-        );
-        if (family) candidate.assumption = "display-equivalent-v1";
-        if (policy === "exchange-v1") {
-            const divine = exchangeCurrencyId("divine")!;
-            const chaos = exchangeCurrencyId("chaos")!;
-            candidate.latest.prices = { divine: candidate.latest.prices.chaos! };
-            candidate.conversion = policy;
-            candidate.exchange = {
-                currency: "divine",
-                quote: quoteExchangeSnapshot(
-                    {
-                        ...exchangeSnapshot,
-                        hour: candidate.latest.hour,
-                        marketId: `${divine}|${chaos}`,
-                        volumeTraded: { [divine]: 10, [chaos]: 1000 },
-                    },
-                    divine,
-                    chaos,
-                )!,
-            };
-        }
-        const graph = family?.graph ?? marketGraph();
+    it.each(
+        cohortPolicies.flatMap((policy) =>
+            [
+                "find_crafting_item_prices",
+                "get_crafting_item_price_history",
+                "bind_crafting_item_price",
+                "refresh_crafting_item_prices",
+            ].map((operation) => ({ policy, operation })),
+        ),
+    )("shares $policy cohort $operation through HTTP and MCP", async ({ policy, operation }) => {
+        const { graph, candidate, window } = cohortPricingFixture(policy);
         const node = graph.nodes[0]!;
         if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
             throw new Error("Fixture");
@@ -918,70 +928,66 @@ describe("transport parity", () => {
                 { graph: bound, issues: [] },
             ],
         ] as const;
-        for (const [name, path, input, expected] of cases) {
-            const response = await api.request(
-                `https://poe.boats/api/v1/crafting${path}`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(input),
-                },
-                { runtime },
-            );
-            expect(response.status, name).toBe(200);
-            expect(await response.json()).toEqual(expected);
-            const rpc = RpcSchema.parse(
-                await (await mcp("tools/call", { name, arguments: input })).json(),
-            );
-            expect(CallToolResultSchema.parse(rpc.result).structuredContent, name).toEqual(
-                expected,
-            );
-        }
-        expect(findPrices.mock.calls.map(([, input]) => input.conversion)).toEqual(
-            Array(4).fill(candidate.conversion),
-        );
-        const invalidInputs = [
+        const [name, path, input, expected] = cases.find(([name]) => name === operation)!;
+        const response = await api.request(
+            `https://poe.boats/api/v1/crafting${path}`,
             {
-                graph: family ? graph : { ...graph, league: "Other" },
-                nodeId: "base",
-                alternativeId: "buy",
-                candidate: { ...candidate, assumption: undefined },
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
             },
-        ];
-        if (policy === "exchange-v1") {
-            for (const failure of ["consent", "hour"]) {
-                const invalid = structuredClone(candidate);
-                if (failure === "consent") delete invalid.conversion;
-                else invalid.exchange!.quote.hour! -= 3600;
-                invalidInputs.push({
-                    graph,
-                    nodeId: "base",
-                    alternativeId: "buy",
-                    candidate: { ...invalid, assumption: undefined },
-                });
-            }
-        }
-        for (const invalid of invalidInputs) {
-            const response = await api.request(
-                "https://poe.boats/api/v1/crafting/market/bind",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(invalid),
-                },
-                { runtime },
-            );
-            expect(response.status).toBe(400);
-            const rpc = RpcSchema.parse(
-                await (
-                    await mcp("tools/call", {
-                        name: "bind_crafting_item_price",
-                        arguments: invalid,
-                    })
-                ).json(),
-            );
-            expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
-        }
+            { runtime },
+        );
+        expect(response.status, name).toBe(200);
+        expect(await response.json()).toEqual(expected);
+        const rpc = RpcSchema.parse(
+            await (await mcp("tools/call", { name, arguments: input })).json(),
+        );
+        const result = CallToolResultSchema.parse(rpc.result);
+        expect(result.isError).not.toBe(true);
+        expect(result.structuredContent, name).toEqual(expected);
+        expect(findPrices.mock.calls.map(([, input]) => input.conversion)).toEqual(
+            operation === "find_crafting_item_prices" ||
+                operation === "refresh_crafting_item_prices"
+                ? [candidate.conversion, candidate.conversion]
+                : [],
+        );
+    });
+
+    it.each(
+        cohortPolicies.flatMap((policy) =>
+            ["scope", ...(policy === "exchange-v1" ? ["consent", "hour"] : [])].map((failure) => ({
+                policy,
+                failure,
+            })),
+        ),
+    )("refuses $policy cohort binding with invalid $failure through HTTP and MCP", async ({
+        policy,
+        failure,
+    }) => {
+        const { graph, candidate } = cohortPricingFixture(policy);
+        if (failure === "scope") {
+            if (policy === "display-equivalent-v1") delete candidate.assumption;
+            else graph.league = "Other";
+        } else if (failure === "consent") delete candidate.conversion;
+        else candidate.exchange!.quote.hour! -= 3600;
+        const input = { graph, nodeId: "base", alternativeId: "buy", candidate };
+        const response = await api.request(
+            "https://poe.boats/api/v1/crafting/market/bind",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
+            },
+            { runtime },
+        );
+        expect(response.status).toBe(400);
+        const rpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", { name: "bind_crafting_item_price", arguments: input })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
     });
 
     it.each([
