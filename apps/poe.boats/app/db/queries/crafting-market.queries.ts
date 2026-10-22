@@ -63,15 +63,23 @@ export async function findCraftingMarketPrices(
         lte(hourly.hour, range.latestHour),
         cohortId === undefined ? undefined : eq(hourly.cohortId, cohortId),
     );
+    const bases = or(
+        isNull(cohort.baseTypes),
+        sql`JSON_CONTAINS(${cohort.baseTypes}, ${JSON.stringify(input.item.item.baseType)})`,
+    );
+    const latestHour = db
+        .select({ hour: max(hourly.hour) })
+        .from(hourly)
+        .where(and(scope, eq(hourly.revision, cohort.revision), eq(hourly.cohortId, cohort.id)));
+    // Resolve each matching definition's hour without grouping unrelated cohort histories.
     const latest = db
         .select({
-            revision: hourly.revision,
-            cohortId: hourly.cohortId,
-            hour: max(hourly.hour).as("latest_hour"),
+            revision: cohort.revision,
+            cohortId: cohort.id,
+            hour: sql<number>`(${latestHour})`.as("latest_hour"),
         })
-        .from(hourly)
-        .where(scope)
-        .groupBy(hourly.revision, hourly.cohortId)
+        .from(cohort)
+        .where(and(bases, cohortId === undefined ? undefined : eq(cohort.id, cohortId)))
         .as("latest");
     const rows = await db
         .select({
@@ -91,15 +99,7 @@ export async function findCraftingMarketPrices(
             cohort,
             and(eq(cohort.revision, hourly.revision), eq(cohort.id, hourly.cohortId)),
         )
-        .where(
-            and(
-                scope,
-                or(
-                    isNull(cohort.baseTypes),
-                    sql`JSON_CONTAINS(${cohort.baseTypes}, ${JSON.stringify(input.item.item.baseType)})`,
-                ),
-            ),
-        )
+        .where(and(scope, bases))
         .orderBy(desc(hourly.hour), cohort.id, cohort.revision)
         .limit(2001);
     const candidates = rows
