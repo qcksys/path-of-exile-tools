@@ -4,7 +4,7 @@ import { itemQuerySchema } from "@poe-tools/item-query";
 import { CraftingEngine } from "../app/lib/crafting-engine";
 import { loadCraftingRevision } from "../app/lib/crafting-ruleset-loader";
 import { rulesetReference, validateRulesetIndex } from "../app/lib/crafting-rulesets";
-import { craftingRuntimes } from "../app/lib/crafting-runtimes.generated";
+import { craftingRuntimeLoaders } from "../app/lib/crafting-runtimes.generated";
 import { craftingCatalogSchema } from "../app/schemas/crafting";
 import { craftingGraphSchema } from "../app/schemas/crafting-graph";
 import type { CraftingRuleset } from "../app/schemas/crafting-rulesets";
@@ -16,7 +16,7 @@ export const retainedRevision = (ruleset: CraftingRuleset) =>
     loadCraftingRevision(
         ruleset,
         async (path) => new Uint8Array(await readFile(`public${path}`)),
-        async (entry) => craftingRuntimes[entry.engine]!,
+        async (entry) => craftingRuntimeLoaders[entry.engine]!(),
     );
 
 export function retainedTransmuteGraph(ruleset: CraftingRuleset, catalog: unknown) {

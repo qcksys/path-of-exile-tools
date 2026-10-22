@@ -13,7 +13,7 @@ import {
     validateRulesetIndex,
     verifyCraftingArtifact,
 } from "../app/lib/crafting-rulesets";
-import { craftingRuntimes } from "../app/lib/crafting-runtimes.generated";
+import { craftingRuntimeLoaders } from "../app/lib/crafting-runtimes.generated";
 import { craftingGraphResultSchema } from "../app/schemas/crafting-graph-result";
 import type { CraftingRuleset } from "../app/schemas/crafting-rulesets";
 import {
@@ -197,6 +197,11 @@ describe("retained crafting rulesets", () => {
         expect(graph).toEqual(originalGraph);
         const output = join(directory, "public");
         await materializeCraftingHistory(archive, output, join(directory, "registry.ts"));
+        const registry = await readFile(join(directory, "registry.ts"), "utf8");
+        expect(registry).not.toMatch(/^import \* as runtime/m);
+        expect(registry).toContain(
+            `${JSON.stringify(current.engine)}: () => import("../../crafting-history/engines/${current.implementation.sha256}.mjs")`,
+        );
         expect(
             (await readFile(join(output, "catalogs", `${current.catalog.sha256}.json`))).equals(
                 catalogBytes,
@@ -276,7 +281,10 @@ describe("retained crafting rulesets", () => {
             loadCraftingRevision(
                 current,
                 async () => bytes,
-                async () => ({ ...craftingRuntimes[current.engine]!, revision: "wrong" }),
+                async () => ({
+                    ...(await craftingRuntimeLoaders[current.engine]!()),
+                    revision: "wrong",
+                }),
             ),
         ).rejects.toThrow("implementation");
         const { archive, directory } = await archiveFixture();

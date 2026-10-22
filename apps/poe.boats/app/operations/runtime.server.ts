@@ -5,7 +5,7 @@ import { authServer } from "~/lib/auth.server";
 import { loadCraftingCatalog } from "~/lib/crafting-catalog";
 import { loadCraftingRevision } from "~/lib/crafting-ruleset-loader";
 import { CRAFTING_RULESET_INDEX_URL, validateRulesetIndex } from "~/lib/crafting-rulesets";
-import { craftingRuntimeHashes, craftingRuntimes } from "~/lib/crafting-runtimes.generated";
+import { craftingRuntimeHashes, craftingRuntimeLoaders } from "~/lib/crafting-runtimes.generated";
 import { recombinatorCatalogSchema } from "~/schemas/recombinator-catalog";
 import { OperationError } from "./errors";
 import type { OperationContext } from "./operation";
@@ -68,13 +68,13 @@ export async function operationContext(
                         return new Uint8Array(await response.arrayBuffer());
                     },
                     async (entry) => {
-                        const runtime = craftingRuntimes[entry.engine];
+                        const loadRuntime = craftingRuntimeLoaders[entry.engine];
                         if (
-                            !runtime ||
+                            !loadRuntime ||
                             craftingRuntimeHashes[entry.engine] !== entry.implementation.sha256
                         )
                             throw new Error("Retained crafting implementation unavailable.");
-                        return runtime;
+                        return loadRuntime();
                     },
                 );
             } catch (error) {
