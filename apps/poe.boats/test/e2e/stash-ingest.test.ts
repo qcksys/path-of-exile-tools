@@ -5,7 +5,11 @@ import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { CallToolResultSchema } from "@modelcontextprotocol/sdk/types.js";
 import { itemQuerySchema, normalizeApiItem } from "@poe-tools/item-query";
-import { selectCohortPrice } from "@poe-tools/market";
+import {
+    compileMarketCohorts,
+    encodeCohortPriceReference,
+    selectCohortPrice,
+} from "@poe-tools/market";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
@@ -56,6 +60,7 @@ import {
     recordCheckpoint,
     validateSample,
 } from "../../../../packages/poe-stash-ingest/src/ps/checkpoints.ts";
+import { defaultEquipmentClassifier } from "../../../../packages/poe-stash-ingest/src/ps/equipment.ts";
 import { rollupEquipment } from "../../../../packages/poe-stash-ingest/src/ps/equipment-rollup.ts";
 import { ingestPs } from "../../../../packages/poe-stash-ingest/src/ps/ingest.ts";
 import { rollupPs } from "../../../../packages/poe-stash-ingest/src/ps/rollup.ts";
@@ -667,6 +672,7 @@ it("persists deduplicated equipment windows while retaining hourly history and h
         name: "",
         baseType: "Necrotic Armour",
         typeLine: "Necrotic Armour",
+        ilvl: 86,
         frameType: 0,
         sockets: [],
         explicitMods: [],
@@ -706,9 +712,12 @@ it("persists deduplicated equipment windows while retaining hourly history and h
         window: "adaptive-v1" as const,
         at: HOUR + 5 * 3600,
     };
-    const candidate = (await findCraftingMarketPrices(database, input)).candidates.find(
-        (row) => row.covered,
-    )!;
+    const result = await findCraftingMarketPrices(database, input);
+    const broad = result.candidates.find((row) => row.definition.id.startsWith("base:"))!;
+    expect(broad.covered).toBe(false);
+    expect(broad.reasons).toContain("The cohort does not guarantee the configured rarity.");
+    const candidate = result.candidates.find((row) => row.covered)!;
+    expect(candidate).toBeDefined();
     expect(candidate.window).toBe("adaptive-v1");
     expect(candidate.latest.prices.chaos).toMatchObject({
         count: 2,
@@ -768,7 +777,7 @@ it("persists deduplicated equipment windows while retaining hourly history and h
     ).toEqual([]);
 });
 
-it("replays equipment prices from early and middle league through capture, retry and permanent storage", async () => {
+it("replays broad equipment prices through capture, retry and history without pricing prepared purchases", async () => {
     vi.spyOn(Date, "now").mockReturnValue((HOUR + 30 * 24 * 3600) * 1000);
     const client = createClient({ baseUrl, userAgent: "cohort-e2e", token: TOKEN });
     const equipment = {
@@ -874,8 +883,10 @@ it("replays equipment prices from early and middle league through capture, retry
             await findCraftingMarketPrices(database, { ...lookupInput, currency: "divine" })
         ).candidates.every((candidate) => !candidate.covered),
     ).toBe(true);
-    expect(latestPrices.candidates.filter((candidate) => candidate.covered)).toHaveLength(1);
-    const chosen = latestPrices.candidates.find((candidate) => candidate.covered)!;
+    expect(latestPrices.candidates.every((candidate) => !candidate.covered)).toBe(true);
+    expect(earlyPrices.candidates.every((candidate) => !candidate.covered)).toBe(true);
+    const chosen = latestPrices.candidates[0]!;
+    expect(chosen.reasons).toContain("The cohort does not guarantee the configured rarity.");
     const baseId = Object.entries(catalog.bases).find(
         ([, base]) => base.name === "Necrotic Armour",
     )![0];
@@ -906,34 +917,43 @@ it("replays equipment prices from early and middle league through capture, retry
             },
         ],
     });
-    for (const [prices, expected] of [
-        [earlyPrices, 22],
-        [latestPrices, 7],
-    ] as const) {
+    for (const prices of [earlyPrices, latestPrices]) {
         const candidate = prices.candidates.find(
             (entry) => entry.definition.id === chosen.definition.id,
         )!;
-        const priced = bindCohortPurchasePrice(process, engine, "base", "buy", candidate);
-        expect(calculateCraftingGraph(catalog, priced, { estimateIterations: 3 }).meanCost).toBe(
-            expected,
+        expect(() => bindCohortPurchasePrice(process, engine, "base", "buy", candidate)).toThrow(
+            "The cohort does not guarantee the configured rarity.",
         );
     }
-    const liveProcess = bindCohortPurchasePrice(process, engine, "base", "buy", chosen);
-    const snapshots = await craftingMarketSnapshots(database, liveProcess, engine, [
+    expect(calculateCraftingGraph(catalog, process, { estimateIterations: 3 }).meanCost).toBeNull();
+    const legacy = structuredClone(process);
+    const legacyAcquisition = legacy.nodes[0]!;
+    if (
+        legacyAcquisition.kind !== "acquire" ||
+        legacyAcquisition.alternatives[0]?.kind !== "purchase"
+    )
+        throw new Error("Fixture");
+    legacyAcquisition.alternatives[0].price = {
+        ...quote(5),
+        source: "market",
+        cohortId: encodeCohortPriceReference({
+            realm: "pc",
+            league: "Standard",
+            revision: chosen.definition.revision,
+            cohortId: chosen.definition.id,
+        }),
+    };
+    const refreshed = await refreshCraftingMarketPrices(database, legacy, engine, lookupInput.at);
+    expect(refreshed.graph).toEqual(legacy);
+    expect(refreshed.issues).toHaveLength(1);
+    expect(refreshed.issues[0]).toContain("does not guarantee the configured rarity");
+    const snapshots = await craftingMarketSnapshots(database, legacy, engine, [
         HOUR - 3600,
         HOUR,
         HOUR + 21 * 24 * 3600,
     ]);
-    expect(
-        snapshots.points.map((point) =>
-            point.graph
-                ? calculateCraftingGraph(catalog, point.graph, { estimateIterations: 3 }).meanCost
-                : null,
-        ),
-    ).toEqual([null, 22, 7]);
-    expect(calculateCraftingGraph(catalog, liveProcess, { estimateIterations: 3 }).meanCost).toBe(
-        7,
-    );
+    expect(snapshots.points.map((point) => point.graph)).toEqual([null, null, null]);
+    expect(snapshots.points.every((point) => point.issues.length === 1)).toBe(true);
     const historyInput = {
         realm: "pc" as const,
         league: "Standard",
@@ -1033,6 +1053,47 @@ it("prices fractured and isolated donor acquisitions from source observations st
     ];
     const client = createClient({ baseUrl, userAgent: "curated-e2e", token: TOKEN });
     const database = mysql as unknown as TDatabase;
+    const defaults = await defaultEquipmentClassifier();
+    const classifier = compileMarketCohorts({
+        ...defaults.manifest,
+        revision: "exact-donor-e2e",
+        cohorts: [
+            ...defaults.manifest.cohorts,
+            ...fixtures.map((fixture, index) => ({
+                id: `exact-donor:${index}`,
+                name: `Exact prepared ${fixture.base}`,
+                purpose: fixture.fractured ? ("fracture" as const) : ("isolated-modifier" as const),
+                query: itemQuerySchema.parse({
+                    game: "poe1",
+                    groups: [
+                        {
+                            type: "and",
+                            filters: [
+                                { kind: "base", field: "baseType", values: [fixture.base] },
+                                { kind: "rarity", values: ["Rare"] },
+                                { kind: "range", field: "ilvl", value: { min: 86, max: 86 } },
+                                ...["prefix", "suffix"].map((side) => {
+                                    const count =
+                                        engine.mod(fixture.modId).generation_type === side ? 1 : 0;
+                                    return {
+                                        kind: "range",
+                                        field: `${side}es`,
+                                        value: { min: count, max: count },
+                                    };
+                                }),
+                                { kind: "flag", field: "identified", value: true },
+                                { kind: "flag", field: "fractured", value: fixture.fractured },
+                                ...["corrupted", "mirrored", "synthesised", "influenced"].map(
+                                    (field) => ({ kind: "flag", field, value: false }),
+                                ),
+                                { kind: "mod", ids: [fixture.modId], fractured: fixture.fractured },
+                            ],
+                        },
+                    ],
+                }),
+            })),
+        ],
+    });
     for (const [offset, price] of [
         [0, 100],
         [21 * 24 * 3600, 40],
@@ -1080,6 +1141,7 @@ it("prices fractured and isolated donor acquisitions from source observations st
         });
         await ingestPs(local.conn, client, {
             pages: 1,
+            equipment: classifier,
             observedAt: new Date((HOUR + offset) * 1000),
         });
         await rollupEquipment(local.conn, { hour: HOUR + offset, league: "Standard" });
@@ -1129,6 +1191,12 @@ it("prices fractured and isolated donor acquisitions from source observations st
                         (fixture.fractured ? "fracture" : "isolated-modifier"),
             );
             expect(candidate).toBeDefined();
+            expect(candidate!.definition.id).toMatch(/^exact-donor:/);
+            expect(
+                result.candidates
+                    .filter((entry) => !entry.definition.id.startsWith("exact-donor:"))
+                    .every((entry) => !entry.covered),
+            ).toBe(true);
             expect(candidate!.latest).toMatchObject({
                 hour: HOUR + offset,
                 listingCount: 1,
@@ -1139,6 +1207,17 @@ it("prices fractured and isolated donor acquisitions from source observations st
             expect(
                 calculateCraftingGraph(catalog, priced, { estimateIterations: 3 }).meanCost,
             ).toBe(price);
+            const refreshed = await refreshCraftingMarketPrices(
+                database,
+                priced,
+                engine,
+                HOUR + 21 * 24 * 3600,
+            );
+            expect(refreshed.issues).toEqual([]);
+            expect(
+                calculateCraftingGraph(catalog, refreshed.graph, { estimateIterations: 3 })
+                    .meanCost,
+            ).toBe(40);
         }
         expect(acquisition.alternatives[0].price).toBeNull();
     }

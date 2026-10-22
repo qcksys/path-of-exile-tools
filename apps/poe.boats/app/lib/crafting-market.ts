@@ -61,6 +61,18 @@ export function latestCompatibleCohort(
 }
 
 export function craftingMarketItemIssue(engine: CraftingEngine, item: CraftingItem) {
+    const base = engine.base(item);
+    if (
+        Object.entries(engine.catalog.bases).some(
+            ([id, candidate]) =>
+                !id.includes("Royale") &&
+                candidate.corrupted === base.corrupted &&
+                candidate.rarities.includes(item.rarity) &&
+                candidate.name === base.name &&
+                JSON.stringify(candidate) !== JSON.stringify(base),
+        )
+    )
+        return `Equipment cohorts cannot distinguish the canonical variants sharing the name ${base.name}. Their implicits or crafting properties differ. Enter a manual price.`;
     const baseline: Record<string, unknown> = engine.createItem(item.baseId, item.level);
     const coveredFields = new Set([
         "baseId",
@@ -79,7 +91,7 @@ export function craftingMarketItemIssue(engine: CraftingEngine, item: CraftingIt
                 JSON.stringify(value) !== JSON.stringify(baseline[field]),
         )
         .map(([field]) => field);
-    const nativeImplicits = engine.base(item).implicits;
+    const nativeImplicits = base.implicits;
     if (item.implicits.some((modifier) => !nativeImplicits.includes(modifier.id)))
         extra.push("modified implicits");
     return extra.length

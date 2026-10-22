@@ -41,14 +41,37 @@ estimates use only the one-hour listing pool, even with `adaptive-v1` selected.
 The saved reference retains the source currency and full exchange quote;
 combined confidence is unknown. History continues to show raw listing medians.
 
-The cohort generator derives 26 exact definitions from all 27 purchases in the
-ten configured presets. These preserve the configured base, level, rarity,
+Automatic purchase pricing must guarantee the configured starting base, exact
+item level, rarity, affix counts, influences and supported item flags, as well
+as its explicit modifiers and output requirements. Matching a configured item
+to a broader cohort is insufficient: mixed-rarity or level-band medians can
+omit preparation costs or change the available modifier pool. Such cohorts
+remain market evidence for a manual assumption, not a complete purchase price.
+The same validation applies to binding and refreshing existing prices.
+
+The cohort generator derives 26 purchase-specific definitions from all 27 purchases in the
+ten configured presets. These preserve the configured base name, level, rarity,
 influences and explicit modifier counts/identities. Capture retains their bases,
-including influenced donors. Raw-listing tests can populate 24 purchases; the
-three elemental bow donors remain unknown when visually identical modifier
-identities cannot be distinguished. A definition does not imply available stock
-or a captured price. Regenerate and restart the equipment worker after updating
-the manifest so new definitions and observations reach the database.
+including influenced donors. Fixtures with optional modifier identity metadata
+can populate 24 purchases; fixtures using the documented description-and-flags
+shape populate 16 at their configured rolls. Overlapping displayed modifier
+identities remain unknown. Some different rolls can resolve uniquely, so these
+counts measure the fixtures, not guaranteed live coverage. A definition does not
+imply available stock or a captured price. Regenerate and restart the equipment
+worker after changing cohort queries so new definitions and observations reach
+the database. Display-name-only changes can continue using compatible retained
+query revisions.
+
+Two-Toned Boots has multiple canonical base variants with the same display name
+and different native implicits and defences. Captured base-name cohorts cannot
+prove which variant was priced. The shared item guard refuses automatic graph
+binding and refresh for such ambiguous bases; raw cohort results remain browsing
+evidence rather than a complete acquisition price.
+
+Exchange history remains available for canonical items without a current quote,
+including after a failed lookup. Zero traded volume is shown as zero volume and
+an unknown price. Viewing an older positive observation never fills a current
+price or replaces a manual amount.
 
 Beast and temple sources are PoE 1 PC current listing estimates. They support
 chaos, divine and exalted via the corresponding upstream values. Counts are

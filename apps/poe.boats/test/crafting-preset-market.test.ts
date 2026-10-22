@@ -8,7 +8,7 @@ import {
 import { expect, it } from "vite-plus/test";
 import { compileCraftingCapture } from "../../../packages/poe-stash-ingest/src/ps/crafting-capture";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
-import { bindCohortPurchasePrice } from "../app/lib/crafting-market";
+import { bindCohortPurchasePrice, craftingMarketItemIssue } from "../app/lib/crafting-market";
 import { craftingPresets, projectFromPreset } from "../app/lib/crafting-presets";
 import { rolledModText } from "../app/lib/crafting-text";
 import type { CraftingItem } from "../app/schemas/crafting";
@@ -79,7 +79,7 @@ function rawItem(item: CraftingItem, metadata = false) {
     };
 }
 
-it("has committed exact equipment cohorts and capture eligibility for every preset purchase", () => {
+it("has equipment definitions for every preset purchase and refuses ambiguous canonical bases", () => {
     expect(purchases).toHaveLength(27);
     expect(cohorts).toHaveLength(26);
     for (const cohort of cohorts) expect(manifest.cohorts).toContainEqual(cohort);
@@ -92,38 +92,44 @@ it("has committed exact equipment cohorts and capture eligibility for every pres
         expect(capture(rawItem(item)), `${preset}/${node.id} capture`).toBe(true);
         const graph = { ...projectFromPreset(engine, ruleset, preset), league: "Standard" };
         const cohort = matching[0]!;
-        const bound = bindCohortPurchasePrice(graph, engine, node.id, "buy", {
-            definition: {
-                ...cohort,
-                revision: manifest.revision,
-                catalogHash: manifest.catalogHash,
-            },
-            latest: {
-                realm: "pc",
-                league: "Standard",
-                hour: 1_790_899_200,
-                revision: manifest.revision,
-                cohortId: cohort.id,
-                listingCount: 10,
-                uniqueSellers: 10,
-                unknownCount: 0,
-                prices: {
-                    chaos: {
-                        min: 10,
-                        median: 20,
-                        max: 30,
-                        count: 10,
-                        sellers: 10,
-                        confidence: 0.5,
-                    },
+        const bind = () =>
+            bindCohortPurchasePrice(graph, engine, node.id, "buy", {
+                definition: {
+                    ...cohort,
+                    revision: manifest.revision,
+                    catalogHash: manifest.catalogHash,
                 },
-                confidenceMethod: "asking-sellers-coverage-v1",
-                firstSeenAt: null,
-                lastSeenAt: null,
-            },
-            covered: true,
-            reasons: [],
-        });
+                latest: {
+                    realm: "pc",
+                    league: "Standard",
+                    hour: 1_790_899_200,
+                    revision: manifest.revision,
+                    cohortId: cohort.id,
+                    listingCount: 10,
+                    uniqueSellers: 10,
+                    unknownCount: 0,
+                    prices: {
+                        chaos: {
+                            min: 10,
+                            median: 20,
+                            max: 30,
+                            count: 10,
+                            sellers: 10,
+                            confidence: 0.5,
+                        },
+                    },
+                    confidenceMethod: "asking-sellers-coverage-v1",
+                    firstSeenAt: null,
+                    lastSeenAt: null,
+                },
+                covered: true,
+                reasons: [],
+            });
+        if (preset === "tailwind-boots") {
+            expect(bind).toThrow("canonical variants");
+            continue;
+        }
+        const bound = bind();
         const priced = bound.nodes.find((entry) => entry.id === node.id)!;
         expect(
             priced.kind === "acquire" &&
@@ -133,7 +139,25 @@ it("has committed exact equipment cohorts and capture eligibility for every pres
     }
 });
 
-it("can populate 24 purchase inputs from raw listings and preserves the three elemental ambiguities", () => {
+it("does not treat matching Two-Toned Boots display names as proof of canonical base identity", () => {
+    const { item, node } = purchases.find(
+        ({ preset, node }) => preset === "tailwind-boots" && node.id === "tailwind-base",
+    )!;
+    const cohort = cohorts.find(
+        (cohort) => cohortPriceCoverage(cohort, queries.record(item), node.output).covered,
+    )!;
+    const other = {
+        ...engine.createItem("Metadata/Items/Armours/Boots/BootsAtlas2", item.level),
+        influences: item.influences,
+    };
+    expect(engine.base(other).name).toBe(engine.base(item).name);
+    expect(other.implicits).not.toEqual(item.implicits);
+    expect(cohortPriceCoverage(cohort, queries.record(other), node.output).covered).toBe(true);
+    for (const variant of [item, other])
+        expect(craftingMarketItemIssue(engine, variant)).toContain("canonical variants");
+});
+
+it("can populate 24 purchase inputs with optional identity metadata and preserves the three elemental ambiguities", () => {
     const unknown: string[] = [];
     for (const { preset, node, item } of purchases) {
         const cohort = cohorts.find(
@@ -150,6 +174,31 @@ it("can populate 24 purchase inputs from raw listings and preserves the three el
         "elemental-bow/donor-0",
         "elemental-bow/donor-1",
         "elemental-bow/donor-2",
+    ]);
+});
+
+it("preserves eleven ambiguous configured rolls when listings supply description and flags only", () => {
+    const unknown = purchases.flatMap(({ preset, node, item }) => {
+        const cohort = cohorts.find(
+            (cohort) => cohortPriceCoverage(cohort, queries.record(item), node.output).covered,
+        )!;
+        const result = classifier.classify(normalizeApiItem("poe1", "stash", rawItem(item)));
+        if (result.matches.includes(cohort.id)) return [];
+        expect(result.unknown).toContain(cohort.id);
+        return [`${preset}/${node.id}`];
+    });
+    expect(unknown).toEqual([
+        "life-block-shield/recovery",
+        "es-block-shield/flat",
+        "es-block-shield/percent",
+        "es-block-shield/flat-block",
+        "es-block-shield/block",
+        "tailwind-boots/onslaught-base",
+        "elemental-bow/donor-0",
+        "elemental-bow/donor-1",
+        "elemental-bow/donor-2",
+        "energy-shield-chest/donor-1",
+        "energy-shield-chest/donor-2",
     ]);
 });
 

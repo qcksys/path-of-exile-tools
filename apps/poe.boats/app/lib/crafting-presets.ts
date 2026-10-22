@@ -488,6 +488,7 @@ export function projectFromPreset(
                     "essence",
                 );
                 node.name += ` + NNN ${engine.mod(source.modId).name}`;
+                node.alternatives[0].name = node.name;
             }
         }
         const first = combine(

@@ -24,6 +24,100 @@ import {
 } from "./crafting-market-fixtures";
 
 describe("crafting market price bindings", () => {
+    it("preserves an older broad-cohort quote but reports its unsafe starting state on refresh", async () => {
+        const db = createDbConnection("mysql://test:test@localhost/poe_test");
+        const graph = bindCohortPurchasePrice(
+            marketGraph(),
+            engine,
+            "base",
+            "buy",
+            marketCandidate,
+        );
+        const candidate = structuredClone(marketCandidate);
+        candidate.definition.query.groups[0]!.filters =
+            candidate.definition.query.groups[0]!.filters.map((filter) =>
+                filter.kind === "rarity"
+                    ? { ...filter, values: ["Normal", "Magic", "Rare"] }
+                    : filter,
+            );
+        const node = graph.nodes[0]!;
+        if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
+            throw new Error("Fixture");
+        Object.assign(
+            candidate,
+            cohortPriceCoverage(
+                candidate.definition,
+                createCraftingItemQuery(engine).record(node.alternatives[0].item),
+                node.output,
+            ),
+        );
+        const lookup = vi
+            .spyOn(marketQueries, "findCraftingMarketPrices")
+            .mockResolvedValue({ candidates: [candidate], truncated: false, message: null });
+        try {
+            const result = await refreshCraftingMarketPrices(db, graph, engine);
+            expect(result.graph).toEqual(graph);
+            expect(result.issues).toEqual([expect.stringContaining("configured rarity")]);
+        } finally {
+            lookup.mockRestore();
+        }
+    });
+
+    it("refuses to refresh a saved purchase whose display name has different canonical bases", async () => {
+        const db = createDbConnection("mysql://test:test@localhost/poe_test");
+        const graph = bindCohortPurchasePrice(
+            marketGraph(),
+            engine,
+            "base",
+            "buy",
+            marketCandidate,
+        );
+        const node = graph.nodes[0]!;
+        if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
+            throw new Error("Fixture");
+        node.alternatives[0].item = engine.createItem(
+            "Metadata/Items/Armours/Boots/BootsAtlas1",
+            86,
+        );
+        const lookup = vi.spyOn(marketQueries, "findCraftingMarketPrices");
+        try {
+            const result = await refreshCraftingMarketPrices(db, graph, engine);
+            expect(result.graph).toEqual(graph);
+            expect(result.issues).toEqual([expect.stringContaining("canonical variants")]);
+            expect(lookup).not.toHaveBeenCalled();
+        } finally {
+            lookup.mockRestore();
+        }
+    });
+
+    it("does not turn a mixed-rarity lower-level base pool into a complete automatic total", async () => {
+        const graph = marketGraph();
+        const broad = structuredClone(marketCandidate);
+        broad.definition.query.groups[0]!.filters = broad.definition.query.groups[0]!.filters.map(
+            (filter) =>
+                filter.kind === "rarity"
+                    ? { ...filter, values: ["Normal", "Magic", "Rare"] }
+                    : filter.kind === "range" && filter.field === "ilvl"
+                      ? { ...filter, value: { min: 85, max: 100 } }
+                      : filter,
+        );
+        expect(() => bindCohortPurchasePrice(graph, engine, "base", "buy", broad)).toThrow(
+            "does not guarantee the configured rarity",
+        );
+        const retained = await retainedRevision(
+            historyIndex.revisions.find(
+                (entry) => entry.game === "poe1" && entry.revision === graph.ruleset.revision,
+            )!,
+        );
+        const simulation = retained.runtime.createSimulation(retained.catalog, graph, {
+            estimateIterations: 3,
+            workLimit: 1000,
+        });
+        while (!simulation.done) simulation.runBatch();
+        expect(simulation.result().meanCost).toBeNull();
+        expect(livePurchasePrices(graph)).toEqual([]);
+    });
+
     it("uses a retained definition to recover older observations after a live revision change", async () => {
         const db = createDbConnection("mysql://test:test@localhost/poe_test");
         const { graph, candidate: original } = donorFamilyMarketFixture();

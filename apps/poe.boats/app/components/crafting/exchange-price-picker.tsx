@@ -1,6 +1,7 @@
 import {
     adaptiveExchangePolicy,
     type ExchangeQuote,
+    exchangeCurrencyId,
     quoteExchangeSnapshot,
 } from "@poe-tools/market";
 import { useEffect, useRef, useState } from "react";
@@ -40,6 +41,7 @@ export function ExchangePricePicker({
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
     const pending = useRef<AbortController | null>(null);
+    const quoteId = exchangeCurrencyId(graph.currency);
     const ids = JSON.stringify(entries.map(([id]) => id).toSorted());
     // biome-ignore lint/correctness/useExhaustiveDependencies: Changed market scope or input IDs invalidate pending and displayed results.
     useEffect(() => {
@@ -84,7 +86,9 @@ export function ExchangePricePicker({
             if (!controller.signal.aborted) setBusy(false);
         }
     }
-    async function showHistory(quote: ExchangeQuote) {
+    async function showHistory(
+        quote: Pick<ExchangeQuote, "realm" | "league" | "itemId" | "quoteId">,
+    ) {
         pending.current?.abort();
         const controller = new AbortController();
         pending.current = controller;
@@ -112,7 +116,7 @@ export function ExchangePricePicker({
                         return {
                             hour: row.hour,
                             amount: price?.amount ?? null,
-                            volume: price?.itemVolume ?? null,
+                            volume: row.volumeTraded?.[quote.itemId] ?? null,
                         };
                     }),
                 );
@@ -238,113 +242,128 @@ export function ExchangePricePicker({
                         </Button>
                     </div>
                 )}
-                {result &&
-                    entries.map(([id, name]) => {
-                        const quote = result.quotes[id];
-                        return (
-                            <section
-                                key={id}
-                                aria-label={`Exchange price for ${name}`}
-                                className="space-y-2 rounded bg-muted/30 p-3"
-                            >
-                                <p className="font-medium">
-                                    <ItemName id={id} name={name} game={graph.game} />
-                                </p>
-                                {quote ? (
-                                    <>
+                {entries.map(([id, name]) => {
+                    const quote = result?.quotes[id];
+                    return (
+                        <section
+                            key={id}
+                            aria-label={`Exchange price for ${name}`}
+                            className="space-y-2 rounded bg-muted/30 p-3"
+                        >
+                            <p className="font-medium">
+                                <ItemName id={id} name={name} game={graph.game} />
+                            </p>
+                            {quote ? (
+                                <>
+                                    <p>
+                                        {quote.amount.toLocaleString(undefined, {
+                                            maximumSignificantDigits: 6,
+                                        })}{" "}
+                                        {graph.currency} per unit ·{" "}
+                                        {quote.estimator === "currency-unit-v1"
+                                            ? "accounting currency"
+                                            : quote.estimator === "cross-rate-v1"
+                                              ? "converted traded-volume estimate"
+                                              : "traded-volume estimate"}
+                                    </p>
+                                    {quote.hour !== null && (
                                         <p>
-                                            {quote.amount.toLocaleString(undefined, {
-                                                maximumSignificantDigits: 6,
-                                            })}{" "}
-                                            {graph.currency} per unit ·{" "}
-                                            {quote.estimator === "currency-unit-v1"
-                                                ? "accounting currency"
-                                                : quote.estimator === "cross-rate-v1"
-                                                  ? "converted traded-volume estimate"
-                                                  : "traded-volume estimate"}
+                                            Observed {new Date(quote.hour * 1000).toLocaleString()}{" "}
+                                            ·{" "}
+                                            {quote.itemVolume === null
+                                                ? "no direct traded volume"
+                                                : `${quote.itemVolume.toLocaleString()} units traded`}{" "}
+                                            ·{" "}
+                                            {quote.low === null
+                                                ? "range unavailable"
+                                                : `${quote.low.toPrecision(4)}–${quote.high!.toPrecision(4)} ${graph.currency} observed range`}{" "}
+                                            · confidence uncalibrated
                                         </p>
-                                        {quote.hour !== null && (
-                                            <p>
-                                                Observed{" "}
-                                                {new Date(quote.hour * 1000).toLocaleString()} ·{" "}
-                                                {quote.itemVolume === null
-                                                    ? "no direct traded volume"
-                                                    : `${quote.itemVolume.toLocaleString()} units traded`}{" "}
-                                                ·{" "}
-                                                {quote.low === null
-                                                    ? "range unavailable"
-                                                    : `${quote.low.toPrecision(4)}–${quote.high!.toPrecision(4)} ${graph.currency} observed range`}{" "}
-                                                · confidence uncalibrated
-                                            </p>
-                                        )}
-                                        {quote.legs && (
-                                            <p>
-                                                Conversion: {quote.legs[0].amount.toPrecision(5)} ×{" "}
-                                                {quote.legs[1].amount.toPrecision(5)} via{" "}
-                                                {quote.legs[0].quoteId.split("/").at(-1)}. Both legs
-                                                observed in the same window.
-                                            </p>
-                                        )}
-                                        {quote.windowStart !== undefined && quote.hour !== null && (
-                                            <p>
-                                                Estimate window:{" "}
-                                                {(quote.hour - quote.windowStart) / 3600 + 1} hours
-                                                ·{" "}
-                                                {new Date(
-                                                    quote.windowStart * 1000,
-                                                ).toLocaleString()}{" "}
-                                                to{" "}
-                                                {new Date(
-                                                    (quote.hour + 3600) * 1000,
-                                                ).toLocaleString()}
-                                                .
-                                                {copyOnly
-                                                    ? ""
-                                                    : " Refresh keeps the adaptive policy."}
-                                            </p>
-                                        )}
-                                        <div className="flex flex-wrap gap-2">
+                                    )}
+                                    {quote.legs && (
+                                        <p>
+                                            Conversion: {quote.legs[0].amount.toPrecision(5)} ×{" "}
+                                            {quote.legs[1].amount.toPrecision(5)} via{" "}
+                                            {quote.legs[0].quoteId.split("/").at(-1)}. Both legs
+                                            observed in the same window.
+                                        </p>
+                                    )}
+                                    {quote.windowStart !== undefined && quote.hour !== null && (
+                                        <p>
+                                            Estimate window:{" "}
+                                            {(quote.hour - quote.windowStart) / 3600 + 1} hours ·{" "}
+                                            {new Date(quote.windowStart * 1000).toLocaleString()} to{" "}
+                                            {new Date((quote.hour + 3600) * 1000).toLocaleString()}.
+                                            {copyOnly ? "" : " Refresh keeps the adaptive policy."}
+                                        </p>
+                                    )}
+                                    <div className="flex flex-wrap gap-2">
+                                        <Button
+                                            size="sm"
+                                            onClick={() => {
+                                                try {
+                                                    onChange(bindExchangePrice(graph, id, quote));
+                                                } catch (error) {
+                                                    setError(
+                                                        error instanceof Error
+                                                            ? error.message
+                                                            : "Cannot use this quote.",
+                                                    );
+                                                }
+                                            }}
+                                        >
+                                            Use exchange estimate
+                                        </Button>
+                                        {quote.hour !== null &&
+                                            quote.estimator !== "cross-rate-v1" && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => void showHistory(quote)}
+                                                >
+                                                    View exchange history
+                                                </Button>
+                                            )}
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <p>
+                                        {result
+                                            ? (result.missing[id] ??
+                                              "No current exchange price. Enter a manual amount.")
+                                            : "Look up a current estimate or inspect captured history."}
+                                    </p>
+                                    {id.startsWith("Metadata/Items/") &&
+                                        quoteId &&
+                                        graph.league && (
                                             <Button
                                                 size="sm"
-                                                onClick={() => {
-                                                    try {
-                                                        onChange(
-                                                            bindExchangePrice(graph, id, quote),
-                                                        );
-                                                    } catch (error) {
-                                                        setError(
-                                                            error instanceof Error
-                                                                ? error.message
-                                                                : "Cannot use this quote.",
-                                                        );
-                                                    }
-                                                }}
+                                                variant="outline"
+                                                onClick={() =>
+                                                    void showHistory({
+                                                        realm,
+                                                        league: graph.league!,
+                                                        itemId: id,
+                                                        quoteId,
+                                                    })
+                                                }
                                             >
-                                                Use exchange estimate
+                                                View exchange history
                                             </Button>
-                                            {quote.hour !== null &&
-                                                quote.estimator !== "cross-rate-v1" && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => void showHistory(quote)}
-                                                    >
-                                                        View exchange history
-                                                    </Button>
-                                                )}
-                                        </div>
-                                    </>
-                                ) : (
-                                    <p>
-                                        {result.missing[id] ??
-                                            "No captured exchange price. Enter a manual amount."}
-                                    </p>
-                                )}
-                            </section>
-                        );
-                    })}
+                                        )}
+                                </>
+                            )}
+                        </section>
+                    );
+                })}
                 {history && (
                     <section aria-label="Exchange price history" className="max-h-64 overflow-auto">
+                        <p>
+                            Historical observations do not fill current prices. Zero traded volume
+                            has no price.
+                        </p>
+                        {history.length === 0 && <p>No captured history for this pair.</p>}
                         <table className="w-full text-left">
                             <thead>
                                 <tr>
