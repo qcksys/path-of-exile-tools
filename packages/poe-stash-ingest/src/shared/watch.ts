@@ -1,5 +1,7 @@
+import { writeSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { setTimeout } from "node:timers/promises";
+import { TransactionRollbackError } from "#src/shared/db.ts";
 
 function failureMessage(error: unknown, depth = 0): string {
     if (!(error instanceof Error)) return "Unknown error";
@@ -14,6 +16,18 @@ function failureMessage(error: unknown, depth = 0): string {
     return [error.message, ...nested.map((cause) => failureMessage(cause, depth + 1))].join("; ");
 }
 
+export function exitAfterRollbackFailure(error: TransactionRollbackError): never {
+    try {
+        writeSync(
+            2,
+            `Database rollback failed; exiting without checkpointing. ${failureMessage(error)}\n`,
+        );
+    } catch {
+        // A closed stderr must not permit further use or checkpointing of this instance.
+    }
+    process.exit(1);
+}
+
 export async function watchCycles(
     cycle: () => Promise<void | { caughtUp: boolean }>,
     options: { signal: AbortSignal; intervalMs?: number; statusFile?: string },
@@ -26,6 +40,20 @@ export async function watchCycles(
             if (result?.caughtUp === false) intervalMs = 1200;
             ok = true;
         } catch (error) {
+            if (error instanceof TransactionRollbackError) {
+                console.error(
+                    "Database rollback failed; stopping before further processing.",
+                    failureMessage(error),
+                );
+                if (options.statusFile)
+                    await writeFile(
+                        options.statusFile,
+                        JSON.stringify({ ok: false, completedAt: Date.now() }),
+                    ).catch(() => {
+                        console.error("Worker health file could not be updated.");
+                    });
+                throw error;
+            }
             // Error objects can retain authenticated requests and transport options.
             console.error(
                 "Processing failed; saved cursors and pending deliveries will be retried.",

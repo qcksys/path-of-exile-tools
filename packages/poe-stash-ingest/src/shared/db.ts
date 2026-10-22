@@ -198,6 +198,15 @@ export async function queryAll<T = Record<string, unknown>>(
     return reader.getRowObjectsJson() as T[];
 }
 
+export class TransactionRollbackError extends AggregateError {
+    constructor(originalError: unknown, rollbackError: unknown) {
+        super([originalError, rollbackError], "Transaction failed and rollback also failed", {
+            cause: originalError,
+        });
+        this.name = "TransactionRollbackError";
+    }
+}
+
 export async function withTransaction<T>(
     conn: DuckDBConnection,
     action: () => Promise<T>,
@@ -211,13 +220,7 @@ export async function withTransaction<T>(
         try {
             await conn.run("ROLLBACK");
         } catch (rollbackError) {
-            throw new AggregateError(
-                [error, rollbackError],
-                "Transaction failed and rollback also failed",
-                {
-                    cause: error,
-                },
-            );
+            throw new TransactionRollbackError(error, rollbackError);
         }
         throw error;
     }
