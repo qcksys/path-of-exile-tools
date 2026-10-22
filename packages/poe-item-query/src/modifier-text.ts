@@ -233,7 +233,6 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
             item.corrupted ||
             item.duplicated ||
             item.synthesised ||
-            Object.values(item.influences ?? {}).some(Boolean) ||
             [item.enchantMods, item.scourgeMods, item.crucibleMods].some(
                 (mods) => Array.isArray(mods) && mods.length > 0,
             ) ||

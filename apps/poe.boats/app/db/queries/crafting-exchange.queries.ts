@@ -1,12 +1,12 @@
 import {
-    convertExchangeQuote,
     exchangeCurrencyId,
     exchangeSnapshotSchema,
     exchangeUnitQuote,
-    quoteExchangeSnapshot,
+    marketObservationRange,
+    quoteExchangeConversion,
     quoteExchangeWindow,
 } from "@poe-tools/market";
-import { and, desc, eq, gte, inArray, lt, lte, max, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt, lte } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
 import { tStashCurrencyHourly as hourly } from "~/db/schema/stash.currency-hourly";
 import type {
@@ -30,8 +30,11 @@ function pairIds(item: string, quote: string) {
 export async function findCraftingExchangePrices(
     db: TDatabase,
     input: CraftingExchangeInput,
+    options?: { exactHour: true },
 ): Promise<CraftingExchangeResult> {
-    const result = await findDirectExchangePrices(db, input);
+    const range = marketObservationRange(input.at);
+    if (options?.exactHour) range.earliestHour = range.latestHour;
+    const result = await findDirectExchangePrices(db, input, range);
     if (!input.conversion || !exchangeCurrencyId(input.currency)) return result;
     for (const currency of ["chaos", "divine", "exalted"]) {
         const bridge = exchangeCurrencyId(currency)!;
@@ -40,12 +43,26 @@ export async function findCraftingExchangePrices(
             (id) => id.startsWith("Metadata/Items/") && id !== bridge,
         );
         if (!itemIds.length) break;
-        const first = await findDirectExchangePrices(db, { ...input, currency, itemIds });
-        const second = await findDirectExchangePrices(db, { ...input, itemIds: [bridge] });
-        const conversion = second.quotes[bridge];
-        if (!conversion) continue;
-        for (const [id, leg] of Object.entries(first.quotes)) {
-            const quote = convertExchangeQuote(leg, conversion);
+        const quoteId = exchangeCurrencyId(input.currency)!;
+        const snapshots = await findExchangeSnapshots(
+            db,
+            input,
+            [...itemIds.flatMap((id) => pairIds(id, bridge)), ...pairIds(bridge, quoteId)],
+            range,
+        );
+        for (const id of itemIds) {
+            const quote = quoteExchangeConversion(
+                snapshots,
+                {
+                    realm: input.realm,
+                    league: input.league,
+                    itemId: id,
+                    quoteId,
+                    window: input.window,
+                },
+                bridge,
+                range.latestHour,
+            );
             if (quote) {
                 result.quotes[id] = quote;
                 delete result.missing[id];
@@ -56,12 +73,13 @@ export async function findCraftingExchangePrices(
     for (const id of Object.keys(result.missing))
         if (id.startsWith("Metadata/Items/"))
             result.missing[id] =
-                "No positive direct pair or matching-hour conversion through chaos, divine or exalted is available.";
+                "No positive direct pair or matching-hour conversion through chaos, divine or exalted is available in the latest 24 completed hours at this cutoff.";
     return result;
 }
 async function findDirectExchangePrices(
     db: TDatabase,
     input: CraftingExchangeInput,
+    range: ReturnType<typeof marketObservationRange>,
 ): Promise<CraftingExchangeResult> {
     const result: CraftingExchangeResult = { quotes: {}, missing: {} };
     const quoteId = exchangeCurrencyId(input.currency);
@@ -85,71 +103,48 @@ async function findDirectExchangePrices(
         else {
             pairs.push(...pairIds(itemId, quoteId));
             result.missing[itemId] =
-                "No positive traded volume is available for this direct currency pair.";
+                "No captured exchange observation is available in the latest 24 completed hours at this cutoff.";
         }
     }
     if (!pairs.length || !quoteId) return result;
-    const scope = and(
-        eq(hourly.realm, input.realm),
-        eq(hourly.league, input.league),
-        inArray(hourly.marketId, pairs),
-        lte(hourly.hour, input.at ?? Math.floor(Date.now() / 1000)),
-    );
-    const latest = db
-        .select({ marketId: hourly.marketId, hour: max(hourly.hour).as("latest_hour") })
-        .from(hourly)
-        .where(scope)
-        .groupBy(hourly.marketId)
-        .as("latest");
-    const rows = await db
-        .select(columns)
-        .from(hourly)
-        .innerJoin(
-            latest,
-            and(
-                eq(hourly.marketId, latest.marketId),
-                input.window === "adaptive-v1"
-                    ? gte(hourly.hour, sql`${latest.hour} - ${23 * 3600}`)
-                    : eq(hourly.hour, latest.hour),
-            ),
-        )
-        .where(scope)
-        .orderBy(desc(hourly.hour));
-    if (input.window === "adaptive-v1") {
-        const snapshots = rows.map((row) => exchangeSnapshotSchema.parse(row));
-        for (const itemId of ids) {
-            if (result.quotes[itemId]) continue;
-            const quote = quoteExchangeWindow(
-                snapshots,
-                {
-                    realm: input.realm,
-                    league: input.league,
-                    itemId,
-                    quoteId,
-                    window: input.window,
-                },
-                input.at ?? Math.floor(Date.now() / 1000),
-            );
-            if (quote) {
-                result.quotes[itemId] = quote;
-                delete result.missing[itemId];
-            }
-        }
-        return result;
-    }
-    const seen = new Set<string>();
-    for (const row of rows) {
-        const snapshot = exchangeSnapshotSchema.parse(row);
-        const itemId = snapshot.marketId.split("|").find((id) => id !== quoteId);
-        if (!itemId || !ids.includes(itemId) || seen.has(itemId)) continue;
-        seen.add(itemId);
-        const quote = quoteExchangeSnapshot(snapshot, itemId, quoteId);
+    const snapshots = await findExchangeSnapshots(db, input, pairs, range);
+    for (const itemId of ids) {
+        if (result.quotes[itemId] || !itemId.startsWith("Metadata/Items/")) continue;
+        const quote = quoteExchangeWindow(
+            snapshots,
+            { realm: input.realm, league: input.league, itemId, quoteId, window: input.window },
+            range.latestHour,
+        );
         if (quote) {
             result.quotes[itemId] = quote;
             delete result.missing[itemId];
-        }
+        } else if (snapshots.some((row) => pairIds(itemId, quoteId).includes(row.marketId)))
+            result.missing[itemId] =
+                "No positive traded volume is available in the latest captured exchange hour, or its observations conflict for this pair.";
     }
     return result;
+}
+
+async function findExchangeSnapshots(
+    db: TDatabase,
+    input: CraftingExchangeInput,
+    pairs: string[],
+    range: ReturnType<typeof marketObservationRange>,
+) {
+    const rows = await db
+        .select(columns)
+        .from(hourly)
+        .where(
+            and(
+                eq(hourly.realm, input.realm),
+                eq(hourly.league, input.league),
+                inArray(hourly.marketId, pairs),
+                gte(hourly.hour, range.earliestHour),
+                lte(hourly.hour, range.latestHour),
+            ),
+        )
+        .orderBy(desc(hourly.hour));
+    return rows.map((row) => exchangeSnapshotSchema.parse(row));
 }
 export async function craftingExchangeHistory(db: TDatabase, input: CraftingExchangeHistoryInput) {
     const rows = await db

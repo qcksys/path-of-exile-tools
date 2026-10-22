@@ -5,6 +5,39 @@ DuckDB database for one realm/league scope. The app uses MySQL for permanent his
 The local setup below runs MySQL and ingestion in Docker and the actual built Cloudflare
 app on the host. It does not write to the remote dev database.
 
+## Scheduled exchange collection
+
+The deployed app's existing 15-minute cron collects the latest six completed UTC exchange
+hours for PoE 1 PC and PoE 2, across every league present in the public
+[GGG hourly feed](https://www.pathofexile.com/developer/docs/reference#currencyexchange).
+It writes the original ratios, volumes and source hours directly to the app's MySQL history.
+No OAuth credentials, local machine or separate ingestion worker are needed for this collector.
+Console realms still require the separately configured ingestion worker.
+
+Each run repeats the six-hour range, latest first. Idempotent upserts repair partial writes
+and temporary failures without advancing a cursor past unfinished data. A failed hour does
+not prevent the remaining hours or the other game from being captured. Scarab and exchange
+jobs run independently; a failed job makes the cron invocation fail after the other job finishes.
+Check Cloudflare cron events and the structured `Currency exchange capture` logs for errors.
+Responses have a 20-second timeout and a 16 MiB size limit; invalid responses are not stored.
+
+Run this collector on Workers Paid. Each invocation makes 12 feed requests and writes markets
+in batches of 200; the 50,000-market limit per response bounds exchange database requests at
+3,000 per run. This fits the Paid plan's default 10,000-subrequest limit, while the Free plan's
+50 subrequests and 10 ms CPU allowance are insufficient. The 15-minute schedule has a
+30-second CPU budget and a 15-minute wall-clock limit; monitor cron events for resource-limit
+failures as market volume grows. See [Cloudflare's limits](https://developers.cloudflare.com/workers/platform/limits/).
+
+This is a bounded recovery policy: an outage longer than six hours can leave older gaps.
+Use the worker's explicit exchange backfill below when longer history is needed. Empty feed
+hours remain empty; absent markets are not invented as zero-volume observations. Stored
+equipment and exchange quotes must come from the latest 24 completed hours at the requested
+cutoff. Historical cutoffs remain inclusive and cannot select the current incomplete hour.
+
+Equipment asking prices and their source archive still require a persistent public-stash
+worker. Deploying the scheduled exchange collector does not create equipment observations
+or restore equipment history. Apply the existing database migrations before deployment.
+
 ## Local prerequisites
 
 - Docker with Compose 2.24 or newer, Node 24.12 or newer, and the repository's Vite+ / pnpm setup.

@@ -4,6 +4,7 @@ import {
     ListToolsResultSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { itemQuerySchema, normalizeApiItem } from "@poe-tools/item-query";
+import { exchangeCurrencyId, quoteExchangeSnapshot } from "@poe-tools/market";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { z } from "zod";
 import { api } from "~/api/router.server";
@@ -19,7 +20,8 @@ import { bindExchangePrice } from "~/lib/crafting-exchange";
 import { calculateCraftingGraph } from "~/lib/crafting-graph-simulation";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import { exportCraftingItemText } from "~/lib/crafting-item-text";
-import { bindCohortPurchasePrice } from "~/lib/crafting-market";
+import { bindCohortPurchasePrice, livePurchasePrices } from "~/lib/crafting-market";
+import { craftingNodeCostKey } from "~/lib/crafting-node-prices";
 import { FossilOptimizer, fossilOptimizationSchema } from "~/lib/crafting-optimizer";
 import { craftingPresets, listCraftingPresets, projectFromPreset } from "~/lib/crafting-presets";
 import { rulesetReference } from "~/lib/crafting-rulesets";
@@ -169,7 +171,7 @@ describe("transport parity", () => {
 
     it.each(craftingPresets)("creates $name identically over HTTP and MCP", async (preset) => {
         const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === "r7",
+            (entry) => entry.game === "poe1" && entry.revision === "r8",
         )!;
         const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId: preset.id };
         const expected = projectFromPreset(fixtureEngine, ruleset, preset.id);
@@ -829,12 +831,33 @@ describe("transport parity", () => {
         undefined,
         "adaptive-v1",
         "display-equivalent-v1",
+        "exchange-v1",
     ] as const)("shares %s cohort lookup, history, binding and refresh through HTTP and MCP", async (policy) => {
         const window = policy === "adaptive-v1" ? policy : undefined;
         const family = policy === "display-equivalent-v1" ? donorFamilyMarketFixture() : undefined;
-        const candidate =
-            family?.candidate ?? (window ? adaptiveMarketCandidate() : marketCandidate);
+        const candidate = structuredClone(
+            family?.candidate ?? (window ? adaptiveMarketCandidate() : marketCandidate),
+        );
         if (family) candidate.assumption = "display-equivalent-v1";
+        if (policy === "exchange-v1") {
+            const divine = exchangeCurrencyId("divine")!;
+            const chaos = exchangeCurrencyId("chaos")!;
+            candidate.latest.prices = { divine: candidate.latest.prices.chaos! };
+            candidate.conversion = policy;
+            candidate.exchange = {
+                currency: "divine",
+                quote: quoteExchangeSnapshot(
+                    {
+                        ...exchangeSnapshot,
+                        hour: candidate.latest.hour,
+                        marketId: `${divine}|${chaos}`,
+                        volumeTraded: { [divine]: 10, [chaos]: 1000 },
+                    },
+                    divine,
+                    chaos,
+                )!,
+            };
+        }
         const graph = family?.graph ?? marketGraph();
         const node = graph.nodes[0]!;
         if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
@@ -842,9 +865,19 @@ describe("transport parity", () => {
         const item = node.alternatives[0].item;
         const lookup = { candidates: [candidate], truncated: false, message: null };
         const history = { history: [candidate.latest], nextBefore: null };
-        vi.spyOn(craftingMarketQueries, "findCraftingMarketPrices").mockResolvedValue(lookup);
+        const findPrices = vi
+            .spyOn(craftingMarketQueries, "findCraftingMarketPrices")
+            .mockResolvedValue(lookup);
         vi.spyOn(craftingMarketQueries, "craftingMarketHistory").mockResolvedValue(history);
         const bound = bindCohortPurchasePrice(graph, fixtureEngine, "base", "buy", candidate);
+        if (policy === "exchange-v1") {
+            const binding = livePurchasePrices(bound)[0]!;
+            expect(binding.alternative.price).toMatchObject({ amount: 2000, confidence: null });
+            expect(binding.reference).toMatchObject({
+                conversion: policy,
+                exchange: candidate.exchange,
+            });
+        }
         const cases = [
             [
                 "find_crafting_item_prices",
@@ -857,6 +890,7 @@ describe("transport parity", () => {
                     currency: "chaos",
                     window,
                     assumption: candidate.assumption,
+                    conversion: candidate.conversion,
                 },
                 lookup,
             ],
@@ -903,28 +937,104 @@ describe("transport parity", () => {
                 expected,
             );
         }
-        const invalid = {
-            graph: family ? graph : { ...graph, league: "Other" },
-            nodeId: "base",
-            alternativeId: "buy",
-            candidate: { ...candidate, assumption: undefined },
-        };
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/market/bind",
+        expect(findPrices.mock.calls.map(([, input]) => input.conversion)).toEqual(
+            Array(4).fill(candidate.conversion),
+        );
+        const invalidInputs = [
             {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(invalid),
+                graph: family ? graph : { ...graph, league: "Other" },
+                nodeId: "base",
+                alternativeId: "buy",
+                candidate: { ...candidate, assumption: undefined },
             },
-            { runtime },
-        );
-        expect(response.status).toBe(400);
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", { name: "bind_crafting_item_price", arguments: invalid })
-            ).json(),
-        );
-        expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
+        ];
+        if (policy === "exchange-v1") {
+            for (const failure of ["consent", "hour"]) {
+                const invalid = structuredClone(candidate);
+                if (failure === "consent") delete invalid.conversion;
+                else invalid.exchange!.quote.hour! -= 3600;
+                invalidInputs.push({
+                    graph,
+                    nodeId: "base",
+                    alternativeId: "buy",
+                    candidate: { ...invalid, assumption: undefined },
+                });
+            }
+        }
+        for (const invalid of invalidInputs) {
+            const response = await api.request(
+                "https://poe.boats/api/v1/crafting/market/bind",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(invalid),
+                },
+                { runtime },
+            );
+            expect(response.status).toBe(400);
+            const rpc = RpcSchema.parse(
+                await (
+                    await mcp("tools/call", {
+                        name: "bind_crafting_item_price",
+                        arguments: invalid,
+                    })
+                ).json(),
+            );
+            expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
+        }
+    });
+
+    it.each([
+        "poe1",
+        "poe2",
+    ] as const)("applies %s scoped prices only in engine 8 through HTTP and MCP", async (game) => {
+        for (const revision of ["r7", "r8"]) {
+            const ruleset = historyIndex.revisions.find(
+                (entry) => entry.game === game && entry.revision === revision,
+            )!;
+            const loaded = await retainedRevision(ruleset);
+            const graph = retainedTransmuteGraph(ruleset, loaded.catalog);
+            for (const scoped of [false, true]) {
+                if (scoped)
+                    graph.prices[craftingNodeCostKey("transmute", Object.keys(graph.prices)[0]!)] =
+                        quote(5);
+                const input = { graph, options: { estimateIterations: 1 } };
+                const response = await api.request(
+                    "https://poe.boats/api/v1/crafting/graph/calculate",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(input),
+                    },
+                    { runtime },
+                );
+                const rpc = RpcSchema.parse(
+                    await (
+                        await mcp("tools/call", {
+                            name: "calculate_crafting_graph",
+                            arguments: input,
+                        })
+                    ).json(),
+                );
+                const result = CallToolResultSchema.parse(rpc.result);
+                const body = await response.json();
+                if (scoped && revision === "r7") {
+                    expect(response.status).toBe(400);
+                    expect(body).toMatchObject({
+                        error: expect.stringContaining("scoped crafting prices"),
+                    });
+                    expect(result.isError).toBe(true);
+                    expect(JSON.stringify(result.content)).toContain("scoped crafting prices");
+                } else {
+                    expect(response.status).toBe(200);
+                    expect(body).toMatchObject({
+                        result: { complete: true, meanCost: scoped ? 15 : 11 },
+                    });
+                    expect(result.isError).not.toBe(true);
+                    expect(result.structuredContent).toEqual(body);
+                }
+            }
+        }
     });
 
     it("shares revision-following refresh and incompatible-definition refusals through HTTP and MCP", async () => {

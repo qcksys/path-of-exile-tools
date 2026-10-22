@@ -6,6 +6,7 @@ import {
     fossilMethodSchema,
 } from "../schemas/crafting";
 import { type CraftingEngine, seededRandom } from "./crafting-engine";
+import { resonatorAvailability } from "./crafting-fossils";
 import { wilsonInterval } from "./crafting-simulation";
 
 export const fossilOptimizerSchema = z.object({
@@ -129,6 +130,7 @@ export class FossilOptimizer {
             const resonator = engine.catalog.crafting.currencies.find(
                 (currency) =>
                     currency.action === action &&
+                    resonatorAvailability(currency.id) !== "legacy" &&
                     currency.id.endsWith(String(ids.length)) &&
                     (!this.options.allflame || allflameCurrencies.has(currency.id)),
             );

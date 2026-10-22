@@ -23,6 +23,7 @@ import {
     type CraftingRandom,
 } from "./crafting-engine";
 import { createCraftingItemQuery } from "./crafting-item-query";
+import { craftingNodeCostPrice } from "./crafting-node-prices";
 import { orderCraftingBranches, routeCraftingItem } from "./crafting-query-routing";
 import { validateSimpleCraftInput } from "./crafting-smart";
 
@@ -275,7 +276,8 @@ export class CraftingGraphTrial {
                 : this.engine.apply(inputs[0]!.item, method, this.random);
         } catch (error) {
             if (error instanceof BenchCraftConflict)
-                for (const cost of error.cost) this.spend(cost);
+                for (const cost of error.cost)
+                    this.spend(cost, craftingNodeCostPrice(this.graph.prices, node.id, cost.id));
             throw error;
         }
         this.recordOdds(node, inputs);
@@ -287,7 +289,7 @@ export class CraftingGraphTrial {
         for (const cost of result.cost) {
             // The actual donor was acquired upstream, so the workbench's snapshot price is redundant.
             if (inputs.some((input) => cost.id === `donor:${input.id}`)) continue;
-            this.spend(cost);
+            this.spend(cost, craftingNodeCostPrice(this.graph.prices, node.id, cost.id));
         }
         this.state.actions++;
         if (result.item.allflameCopies) {

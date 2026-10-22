@@ -1,5 +1,5 @@
 import type { ItemQuery } from "@poe-tools/item-query";
-import { decodeCohortPriceReference, selectCohortPrice } from "@poe-tools/market";
+import { decodeCohortPriceReference } from "@poe-tools/market";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -8,7 +8,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
-import { craftingMarketItemIssue } from "~/lib/crafting-market";
+import { craftingMarketItemIssue, selectCraftingMarketPrice } from "~/lib/crafting-market";
 import type { CraftingItem } from "~/schemas/crafting";
 import type { CraftingPrice } from "~/schemas/crafting-economy";
 import {
@@ -41,11 +41,13 @@ export function MarketPricePicker({
     const reference = decodeCohortPriceReference(price?.cohortId);
     const [realm, setRealm] = useState(reference?.realm ?? "pc");
     const [window, setWindow] = useState<"hourly" | "adaptive-v1">(reference?.window ?? "hourly");
+    const [convert, setConvert] = useState(reference?.conversion === "exchange-v1");
     const [result, setResult] = useState<CraftingMarketResult>();
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
     const [history, setHistory] = useState<{
         name: string;
+        currency: string;
         rows: Array<{ hour: number; amount?: number; samples: number }>;
     }>();
     const pending = useRef<AbortController | null>(null);
@@ -68,7 +70,7 @@ export function MarketPricePicker({
         setError("");
         setBusy(false);
         return () => pending.current?.abort();
-    }, [record, requirements, league, currency, realm, window, assumption]);
+    }, [record, requirements, league, currency, realm, window, assumption, convert]);
     async function lookup() {
         pending.current?.abort();
         const controller = new AbortController();
@@ -87,6 +89,7 @@ export function MarketPricePicker({
                     currency,
                     window: window === "hourly" ? undefined : window,
                     assumption,
+                    conversion: convert ? "exchange-v1" : undefined,
                 }),
                 signal: controller.signal,
             });
@@ -122,13 +125,15 @@ export function MarketPricePicker({
             });
             if (!response.ok) throw new Error("Price history is unavailable.");
             const next = craftingMarketHistoryResultSchema.parse(await response.json());
+            const listingCurrency = candidate.exchange?.currency ?? currency;
             if (!controller.signal.aborted)
                 setHistory({
                     name: candidate.definition.name,
+                    currency: listingCurrency,
                     rows: next.history.map((row) => ({
                         hour: row.hour,
-                        amount: row.prices[currency]?.median,
-                        samples: row.prices[currency]?.count ?? 0,
+                        amount: row.prices[listingCurrency]?.median,
+                        samples: row.prices[listingCurrency]?.count ?? 0,
                     })),
                 });
         } catch (error) {
@@ -198,6 +203,17 @@ export function MarketPricePicker({
                     </p>
                 )}
                 <Label className="flex items-start gap-2">
+                    <Checkbox checked={convert} onCheckedChange={setConvert} />
+                    Convert other listing currencies using the exchange
+                </Label>
+                {convert && (
+                    <p className="text-muted-foreground">
+                        Prefer prices in {currency}; otherwise convert a chaos, divine or exalted
+                        listing median using an exchange observation from the same hour. Converted
+                        estimates use one hour, even when the adaptive window is selected.
+                    </p>
+                )}
+                <Label className="flex items-start gap-2">
                     <Checkbox
                         checked={assumption !== undefined}
                         onCheckedChange={(checked) =>
@@ -227,7 +243,7 @@ export function MarketPricePicker({
                     </p>
                 )}
                 {result?.candidates.map((candidate) => {
-                    const quote = selectCohortPrice(candidate.latest, currency, candidate.window);
+                    const quote = selectCraftingMarketPrice(candidate, currency);
                     return (
                         <div
                             key={`${candidate.definition.revision}:${candidate.definition.id}`}
@@ -247,6 +263,17 @@ export function MarketPricePicker({
                                 {quote?.unknownCount ?? candidate.latest.unknownCount} unknown
                                 matches
                             </p>
+                            {candidate.exchange && (
+                                <p className="text-muted-foreground">
+                                    Converted from{" "}
+                                    {candidate.latest.prices[candidate.exchange.currency]?.median}{" "}
+                                    {candidate.exchange.currency} at{" "}
+                                    {candidate.exchange.quote.amount} {currency} per{" "}
+                                    {candidate.exchange.currency}. Confidence above describes the
+                                    listing sample; combined conversion confidence is unknown. Price
+                                    history shows the original listing currency.
+                                </p>
+                            )}
                             {quote && candidate.window && (
                                 <p className="text-muted-foreground">
                                     {quote.hours}-hour estimate from{" "}
@@ -289,7 +316,7 @@ export function MarketPricePicker({
                             <thead>
                                 <tr>
                                     <th>Observed hour</th>
-                                    <th>Median ({currency})</th>
+                                    <th>Median ({history.currency})</th>
                                     <th>Listings</th>
                                 </tr>
                             </thead>

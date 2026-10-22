@@ -67,6 +67,35 @@ it("enumerates unique combinations up to the chosen socket count", () => {
 });
 
 it.each([
+    "normal",
+    "rare",
+] as const)("uses exact stackable resonator IDs for new %s candidates", (rarity) => {
+    const item = { ...engine.createItem(baseId), rarity };
+    const fossils = engine
+        .availableFossils(item)
+        .slice(0, 2)
+        .map((entry) => entry.id);
+    const optimizer = new FossilOptimizer(
+        engine,
+        item,
+        engine.validateTarget({ groups: [] }),
+        {},
+        1,
+        {
+            fossils,
+            maxSockets: 2,
+            trials: 100,
+            logic: "additive",
+        },
+    );
+    expect(optimizer.methods.length).toBe(3);
+    for (const method of optimizer.methods)
+        expect(method.resonator).toBe(
+            `Metadata/Items/Delve/DelveStackableSocketableCurrency${rarity === "normal" ? "Upgrade" : "Reroll"}${method.ids.length}`,
+        );
+});
+
+it.each([
     false,
     true,
 ])("preserves seeded candidates and rankings across partitions (Allflame: %s)", (allflame) => {

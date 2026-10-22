@@ -74,15 +74,33 @@ export function rulesetAllowsMethod(ruleset: CraftingRuleset, method: CraftingMe
 }
 
 export function rulesetAllowsConditionalSteps(ruleset: Pick<CraftingRuleset, "engine">) {
-    return ["crafting-graph-5", "crafting-graph-6", "crafting-graph-7"].includes(ruleset.engine);
+    return [
+        "crafting-graph-5",
+        "crafting-graph-6",
+        "crafting-graph-7",
+        "crafting-graph-8",
+    ].includes(ruleset.engine);
+}
+
+export function rulesetAllowsSimpleCraft(ruleset: Pick<CraftingRuleset, "engine">) {
+    return ["crafting-graph-7", "crafting-graph-8"].includes(ruleset.engine);
+}
+
+export function rulesetAllowsScopedCraftPrices(ruleset: Pick<CraftingRuleset, "engine">) {
+    return ruleset.engine === "crafting-graph-8";
 }
 
 export function validateRulesetGraph(ruleset: CraftingRuleset, input: unknown) {
     const graph = craftingGraphSchema.parse(input);
     resolveRuleset({ format: 1, revisions: [ruleset], latest: [] }, graph.game, graph.ruleset);
+    if (
+        !rulesetAllowsScopedCraftPrices(ruleset) &&
+        Object.keys(graph.prices).some((id) => id.startsWith("node:"))
+    )
+        throw new Error("Per-step prices require a revision with scoped crafting prices.");
     for (const node of graph.nodes) {
         if (node.kind !== "craft") continue;
-        if (node.smart && ruleset.engine !== "crafting-graph-7")
+        if (node.smart && !rulesetAllowsSimpleCraft(ruleset))
             throw new Error(`${node.name} requires a revision with simple crafting outcomes.`);
         if (!rulesetAllowsMethod(ruleset, node.method))
             throw new Error(`${node.name} uses a method unavailable in ${ruleset.label}.`);

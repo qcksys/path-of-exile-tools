@@ -22,6 +22,7 @@ const craft = (
     resonator: catalog.crafting.currencies.find(
         (entry) =>
             entry.action === (normal ? "delve_currency_upgrade" : "delve_currency_reroll") &&
+            entry.id.includes("DelveStackableSocketableCurrency") &&
             entry.id.endsWith(String(names.length + 1)),
     )!.id,
     logic: "additive",
@@ -216,6 +217,7 @@ describe("Glyphic Fossil", () => {
         }
         expect(optimizer.result()).toMatchObject({ completed: 3, failed: 0, errors: [] });
         expect(optimizer.result().byAttempts[0]?.method.ids).toEqual(method.ids);
+        expect(optimizer.result().byAttempts[0]?.cost).toBe(6);
         expect(craftingProjectSchema.parse(JSON.parse(JSON.stringify(project)))).toEqual(project);
     });
 });

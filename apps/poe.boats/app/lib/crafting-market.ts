@@ -2,6 +2,7 @@ import {
     cohortPriceCoverage,
     decodeCohortPriceReference,
     encodeCohortPriceReference,
+    exchangeCurrencyId,
     isDisplayEquivalentCohort,
     type MarketCohortDefinition,
     selectCohortPrice,
@@ -11,6 +12,31 @@ import type { CraftingGraph } from "~/schemas/crafting-graph";
 import type { CraftingMarketCandidate } from "~/schemas/crafting-market";
 import type { CraftingEngine } from "./crafting-engine";
 import { createCraftingItemQuery } from "./crafting-item-query";
+
+export function selectCraftingMarketPrice(candidate: CraftingMarketCandidate, currency: string) {
+    const native = selectCohortPrice(candidate.latest, currency, candidate.window);
+    if (native) return native;
+    const { latest, exchange } = candidate;
+    if (candidate.conversion !== "exchange-v1" || !exchange) return null;
+    const { quote } = exchange;
+    if (
+        quote.realm !== latest.realm ||
+        quote.league !== latest.league ||
+        quote.hour !== latest.hour ||
+        quote.window !== undefined ||
+        (quote.windowStart !== undefined && quote.windowStart !== latest.hour) ||
+        quote.itemId !== exchangeCurrencyId(exchange.currency) ||
+        quote.quoteId !== exchangeCurrencyId(currency)
+    )
+        return null;
+    const source = selectCohortPrice(latest, exchange.currency);
+    if (!source) return null;
+    const min = source.min * quote.amount;
+    const median = source.median * quote.amount;
+    const max = source.max * quote.amount;
+    if (![min, median, max].every((amount) => Number.isFinite(amount) && amount > 0)) return null;
+    return { ...source, min, median, max };
+}
 
 export function latestCompatibleCohort(
     candidates: CraftingMarketCandidate[],
@@ -130,13 +156,13 @@ export function bindCohortPurchasePrice(
         candidate.assumption,
     );
     if (!coverage.covered) throw new Error(coverage.reasons.join(" "));
-    const price = selectCohortPrice(latest, graph.currency, candidate.window);
+    const price = selectCraftingMarketPrice(candidate, graph.currency);
     if (!price) throw new Error(`No asking price in ${graph.currency} is available.`);
     const nextPrice = {
         amount: price.median,
         currency: graph.currency,
         source: "market" as const,
-        confidence: price.confidence,
+        confidence: latest.prices[graph.currency] ? price.confidence : null,
         samples: price.count,
         observedAt: new Date(latest.hour * 1000).toISOString(),
         cohortId: encodeCohortPriceReference({
@@ -146,6 +172,8 @@ export function bindCohortPurchasePrice(
             cohortId: latest.cohortId,
             window: candidate.window,
             assumption: candidate.assumption,
+            conversion: candidate.conversion,
+            exchange: latest.prices[graph.currency] ? undefined : candidate.exchange,
         }),
     };
     const prices = { ...graph.prices };

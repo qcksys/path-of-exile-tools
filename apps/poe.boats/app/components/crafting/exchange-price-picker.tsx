@@ -22,10 +22,12 @@ export function ExchangePricePicker({
     graph,
     entries,
     onChange,
+    copyOnly = false,
 }: {
     graph: CraftingGraph;
     entries: [string, string][];
     onChange: (graph: CraftingGraph) => void;
+    copyOnly?: boolean;
 }) {
     const [realm, setRealm] = useState<"pc" | "xbox" | "sony" | "poe2">(
         graph.game === "poe2" ? "poe2" : "pc",
@@ -127,8 +129,11 @@ export function ExchangePricePicker({
             <div className="mt-3 space-y-3">
                 <p className="text-muted-foreground">
                     Estimates use captured traded volumes for each direct pair. These are historical
-                    trades, not current buy offers. Selecting a price enables refresh; editing its
-                    amount restores a manual override. Gold and trading time are excluded.
+                    trades, not current buy offers.{" "}
+                    {copyOnly
+                        ? "Selecting a price copies its amount; look it up again to update it."
+                        : "Selecting a price enables refresh; editing its amount restores a manual override."}{" "}
+                    Gold and trading time are excluded.
                 </p>
                 <Label className="flex items-center gap-2">
                     <Checkbox checked={conversion} onCheckedChange={setConversion} />
@@ -292,7 +297,10 @@ export function ExchangePricePicker({
                                                 {new Date(
                                                     (quote.hour + 3600) * 1000,
                                                 ).toLocaleString()}
-                                                . Refresh keeps the adaptive policy.
+                                                .
+                                                {copyOnly
+                                                    ? ""
+                                                    : " Refresh keeps the adaptive policy."}
                                             </p>
                                         )}
                                         <div className="flex flex-wrap gap-2">

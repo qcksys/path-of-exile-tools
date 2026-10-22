@@ -1,0 +1,256 @@
+{
+    "revision": "9894e3dd0c6bbfa149ff3aa7f0c4efff522af2f6",
+    "scope": "Public development pricing API, chaos accounting with reference-currency-v1 enabled, compared with one completed GGG exchange hour. Single-hour absence does not prove permanent unavailability. Quote eligibility does not prove freshness.",
+    "games": [
+        {
+            "game": "poe1",
+            "league": "Allflame",
+            "checkedAt": "2026-10-22T05:30:05.006Z",
+            "sampleHour": "2026-10-22T04:00:00.000Z",
+            "feedNext": 1792645200,
+            "marketCount": 746,
+            "canonicalCosts": 254,
+            "tradedInSample": 158,
+            "directChaosInSample": 154,
+            "sampleAbsentCount": 96,
+            "storedQuoted": 196,
+            "storedMissing": 58,
+            "errors": [],
+            "storedOldest": "2026-10-08T02:00:00.000Z",
+            "storedNewest": "2026-10-09T10:00:00.000Z",
+            "storedMissingButTradedCount": 10,
+            "storedMissingButTradedExamples": [
+                {
+                    "id": "Metadata/Items/Currency/CurrencyWeaponQuality",
+                    "name": "Blacksmith's Whetstone"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyJewelleryQualityAttack",
+                    "name": "Abrasive Catalyst"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyEssenceContempt5",
+                    "name": "Screaming Essence of Contempt"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyEssenceContempt6",
+                    "name": "Shrieking Essence of Contempt"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyEssenceAnger3",
+                    "name": "Wailing Essence of Anger"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyEssenceRage3",
+                    "name": "Screaming Essence of Rage"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyEssenceAnguish4",
+                    "name": "Deafening Essence of Anguish"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyEssenceDread3",
+                    "name": "Deafening Essence of Dread"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyDelveCraftingCold",
+                    "name": "Frigid Fossil"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyDelveCraftingEnchant",
+                    "name": "Deft Fossil"
+                }
+            ],
+            "storedMissingByKind": {
+                "currency": 8,
+                "bench": 0,
+                "allflame": 0,
+                "essence": 34,
+                "harvest": 0,
+                "anoint": 0,
+                "fossils": 16
+            },
+            "resonators": [
+                {
+                    "id": "Metadata/Items/Delve/DelveSocketableCurrencyReroll1",
+                    "tradedInSample": false,
+                    "storedQuoted": false
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveSocketableCurrencyUpgrade1",
+                    "tradedInSample": false,
+                    "storedQuoted": false
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveSocketableCurrencyUpgrade2",
+                    "tradedInSample": false,
+                    "storedQuoted": false
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveSocketableCurrencyUpgrade3",
+                    "tradedInSample": false,
+                    "storedQuoted": false
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveSocketableCurrencyUpgrade4",
+                    "tradedInSample": false,
+                    "storedQuoted": false
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveSocketableCurrencyReroll2",
+                    "tradedInSample": false,
+                    "storedQuoted": false
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveSocketableCurrencyReroll3",
+                    "tradedInSample": false,
+                    "storedQuoted": false
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveSocketableCurrencyReroll4",
+                    "tradedInSample": false,
+                    "storedQuoted": false
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveStackableSocketableCurrencyUpgrade1",
+                    "tradedInSample": false,
+                    "storedQuoted": false
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveStackableSocketableCurrencyUpgrade2",
+                    "tradedInSample": false,
+                    "storedQuoted": false
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveStackableSocketableCurrencyUpgrade3",
+                    "tradedInSample": false,
+                    "storedQuoted": false
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveStackableSocketableCurrencyUpgrade4",
+                    "tradedInSample": false,
+                    "storedQuoted": false
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveStackableSocketableCurrencyReroll1",
+                    "tradedInSample": true,
+                    "storedQuoted": true
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveStackableSocketableCurrencyReroll2",
+                    "tradedInSample": true,
+                    "storedQuoted": true
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveStackableSocketableCurrencyReroll3",
+                    "tradedInSample": true,
+                    "storedQuoted": true
+                },
+                {
+                    "id": "Metadata/Items/Delve/DelveStackableSocketableCurrencyReroll4",
+                    "tradedInSample": true,
+                    "storedQuoted": true
+                }
+            ]
+        },
+        {
+            "game": "poe2",
+            "league": "Forbidden Rites",
+            "checkedAt": "2026-10-22T05:30:05.943Z",
+            "sampleHour": "2026-10-22T04:00:00.000Z",
+            "feedNext": 1792645200,
+            "marketCount": 1400,
+            "canonicalCosts": 530,
+            "tradedInSample": 336,
+            "directChaosInSample": 251,
+            "sampleAbsentCount": 194,
+            "storedQuoted": 1,
+            "storedMissing": 529,
+            "errors": [],
+            "storedOldest": null,
+            "storedNewest": null,
+            "storedMissingButTradedCount": 335,
+            "storedMissingButTradedExamples": [
+                {
+                    "id": "Metadata/Items/Currency/CurrencyArmourQuality",
+                    "name": "Armourer's Scrap"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyMagicQuality",
+                    "name": "Arcanist's Etcher"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyIdentification",
+                    "name": "Scroll of Wisdom"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyRerollRare2",
+                    "name": "Greater Chaos Orb"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyRerollRare3",
+                    "name": "Perfect Chaos Orb"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyUpgradeToMagic",
+                    "name": "Orb of Transmutation"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyUpgradeToMagic2",
+                    "name": "Greater Orb of Transmutation"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyUpgradeToMagic3",
+                    "name": "Perfect Orb of Transmutation"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyUpgradeToRare",
+                    "name": "Orb of Alchemy"
+                },
+                {
+                    "id": "Metadata/Items/Currency/CurrencyWeaponQuality",
+                    "name": "Blacksmith's Whetstone"
+                }
+            ],
+            "storedMissingByKind": {
+                "currency": 98,
+                "anoint": 13,
+                "essence": 94,
+                "augment": 303,
+                "upgrade_augment": 1,
+                "omen": 33
+            },
+            "resonators": []
+        }
+    ],
+    "equipment": [
+        {
+            "base": "Necrotic Armour",
+            "checkedAt": "2026-10-22T05:31:03.296Z",
+            "realm": "pc",
+            "league": "Allflame",
+            "currency": "chaos",
+            "status": 200,
+            "cohort": "base:necrotic-armour:86-100:any-links",
+            "covered": true,
+            "hour": 1791540000,
+            "median": 10,
+            "sellers": 27
+        },
+        {
+            "base": "Helical Ring",
+            "checkedAt": "2026-10-22T05:33:34.320Z",
+            "realm": "pc",
+            "league": "Allflame",
+            "currency": "chaos",
+            "status": 200,
+            "cohort": "base:helical-ring:85-100:any-links",
+            "covered": false,
+            "hour": 1791540000,
+            "reason": "No asking price in chaos is available for this cohort.",
+            "availableCurrency": "divine",
+            "divineMedian": 28,
+            "sellers": 18
+        }
+    ]
+}

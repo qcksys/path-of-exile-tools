@@ -6,11 +6,17 @@ import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { graphCalculationKey, useGraphPreview } from "~/hooks/use-graph-preview";
+import { discoverCraftingCosts } from "~/lib/crafting-cost-inputs";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import { liveExchangePrices } from "~/lib/crafting-exchange";
 import { projectFromItem } from "~/lib/crafting-graph-authoring";
 import { livePurchasePrices } from "~/lib/crafting-market";
-import { availableCorrection } from "~/lib/crafting-rulesets";
+import { craftingNodeCostKey } from "~/lib/crafting-node-prices";
+import {
+    availableCorrection,
+    rulesetAllowsScopedCraftPrices,
+    rulesetAllowsSimpleCraft,
+} from "~/lib/crafting-rulesets";
 import { liveSourcePrices } from "~/lib/crafting-sources";
 import { craftingItemOptions } from "~/lib/item-presentation";
 import type { CraftingCatalog } from "~/schemas/crafting";
@@ -176,15 +182,40 @@ export function GraphProjectEditor({
     const select = useCallback((id: string) => setSelected(id), []);
     const costs = useMemo(() => {
         if (!engine) return [];
-        const entries = graph.nodes.flatMap((node) => {
-            try {
-                return node.kind === "craft" ? engine.costs(node.method) : [];
-            } catch {
-                return [];
-            }
-        });
-        return [...new Map(entries.map((entry) => [entry.id, entry.name])).entries()];
-    }, [engine, graph.nodes]);
+        const observed = [result, preview.result]
+            .flatMap((entry) => [
+                ...(entry?.missingPrices ?? []),
+                ...Object.keys(entry?.spending ?? {}),
+            ])
+            .filter(
+                (id) =>
+                    !id.startsWith("purchase:") &&
+                    !id.startsWith("sale:") &&
+                    !id.startsWith("node:"),
+            );
+        return discoverCraftingCosts(
+            engine,
+            graph.nodes.map((node) => (node.kind === "craft" ? node.method : undefined)),
+            observed,
+        ).map(({ id, name }): [string, string] => [id, name]);
+    }, [engine, graph.nodes, result, preview.result]);
+    const nodeCosts = useMemo(() => {
+        if (!engine || !rulesetAllowsScopedCraftPrices(graph.ruleset)) return [];
+        return graph.nodes.flatMap((node) =>
+            node.kind === "craft"
+                ? discoverCraftingCosts(engine, [node.method])
+                      .filter(
+                          (cost) =>
+                              cost.id.startsWith("generated:") || cost.id === "service:recombine",
+                      )
+                      .map((cost) => ({
+                          id: craftingNodeCostKey(node.id, cost.id),
+                          costId: cost.id,
+                          label: `${node.name} · ${cost.name}`,
+                      }))
+                : [],
+        );
+    }, [engine, graph.nodes, graph.ruleset]);
     function run() {
         worker.current?.terminate();
         const next = new Worker("/game-data/history/worker.mjs", { type: "module" });
@@ -234,7 +265,7 @@ export function GraphProjectEditor({
                     inputs: [{ id: "item", name: "Item 1", source: graph.entry }],
                     method: { kind: "currency", id: method.id },
                     branches: [],
-                    ...(ruleset.engine === "crafting-graph-7"
+                    ...(rulesetAllowsSimpleCraft(graph.ruleset)
                         ? { smart: { kind: "once" as const }, ordering: "manual" as const }
                         : { ordering: "automatic" as const }),
                     fallback: { kind: "return" },
@@ -622,6 +653,37 @@ export function GraphProjectEditor({
                                     />
                                 ))}
                             </div>
+                            {nodeCosts.length > 0 && (
+                                <section
+                                    className="mt-4 space-y-3"
+                                    aria-label="Prices for individual steps"
+                                >
+                                    <p className="text-sm font-medium">
+                                        Prices for individual steps
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Enter a manual assumption for each step. Blank fields use
+                                        the shared prices above.
+                                    </p>
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                        {nodeCosts.map(({ id, costId, label }) => (
+                                            <GraphPriceInput
+                                                key={id}
+                                                label={label}
+                                                currency={graph.currency}
+                                                value={graph.prices[id] ?? null}
+                                                fallback={graph.prices[costId] ?? null}
+                                                onChange={(price) => {
+                                                    const prices = { ...graph.prices };
+                                                    if (price) prices[id] = price;
+                                                    else delete prices[id];
+                                                    update({ ...graph, prices });
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
                             <ExchangePricePicker graph={graph} entries={costs} onChange={update} />
                             <SourcePricePicker
                                 graph={graph}

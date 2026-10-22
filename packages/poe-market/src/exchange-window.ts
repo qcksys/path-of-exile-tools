@@ -1,4 +1,5 @@
 import {
+    convertExchangeQuote,
     type ExchangePriceReference,
     type ExchangeQuote,
     type ExchangeSnapshot,
@@ -46,6 +47,7 @@ export function quoteExchangeWindow(
     }
     const latest = observation(latestHour)?.quote;
     if (!latest) return null;
+    if (reference.window !== "adaptive-v1") return latest;
     let result: ExchangeQuote = {
         ...latest,
         window: "adaptive-v1",
@@ -81,4 +83,47 @@ export function quoteExchangeWindow(
         };
     }
     return result;
+}
+
+export function quoteExchangeConversion(
+    snapshots: ExchangeSnapshot[],
+    reference: ExchangePriceReference,
+    bridge: string,
+    at: number,
+): ExchangeQuote | null {
+    const firstReference = { ...reference, quoteId: bridge };
+    const secondReference = { ...reference, itemId: bridge };
+    const firstLatest = quoteExchangeWindow(snapshots, firstReference, at);
+    const secondLatest = quoteExchangeWindow(snapshots, secondReference, at);
+    if (!firstLatest || !secondLatest) return null;
+    const matchingHours = (from: string, to: string) =>
+        new Set(
+            snapshots
+                .filter((row) => {
+                    const pair = row.marketId.split("|");
+                    return (
+                        row.realm === reference.realm &&
+                        row.league === reference.league &&
+                        row.hour <= at &&
+                        pair.length === 2 &&
+                        pair.includes(from) &&
+                        pair.includes(to)
+                    );
+                })
+                .map((row) => row.hour),
+        );
+    const firstHours = matchingHours(reference.itemId, bridge);
+    const secondHours = matchingHours(bridge, reference.quoteId);
+    const hour = Math.max(...[...firstHours].filter((value) => secondHours.has(value)));
+    if (!Number.isFinite(hour)) return null;
+    let first = quoteExchangeWindow(snapshots, firstReference, hour);
+    let second = quoteExchangeWindow(snapshots, secondReference, hour);
+    if (!first || !second) return null;
+    if (first.windowStart !== second.windowStart) {
+        const start = Math.max(first.windowStart ?? hour, second.windowStart ?? hour);
+        const common = snapshots.filter((row) => row.hour >= start);
+        first = quoteExchangeWindow(common, firstReference, hour);
+        second = quoteExchangeWindow(common, secondReference, hour);
+    }
+    return first && second ? convertExchangeQuote(first, second) : null;
 }

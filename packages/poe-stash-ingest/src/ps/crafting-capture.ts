@@ -43,7 +43,7 @@ function modifierLine(text: string) {
 export function compileCraftingCapture(manifest: MarketCohortManifest, policy: CapturePolicy) {
     const goodBases = new Set(
         manifest.cohorts
-            .filter((cohort) => cohort.purpose === "base")
+            .filter((cohort) => cohort.purpose === "base" || cohort.id.startsWith("preset:"))
             .flatMap((cohort) =>
                 cohort.query.groups.flatMap((group) =>
                     group.filters.flatMap((filter) =>

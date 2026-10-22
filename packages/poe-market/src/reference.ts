@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { exchangeQuoteSchema } from "./exchange.ts";
 
 export const cohortPriceReferenceSchema = z.strictObject({
     realm: z.enum(["pc", "xbox", "sony"]),
@@ -7,6 +8,13 @@ export const cohortPriceReferenceSchema = z.strictObject({
     cohortId: z.string().min(1).max(128),
     window: z.literal("adaptive-v1").optional(),
     assumption: z.literal("display-equivalent-v1").optional(),
+    conversion: z.literal("exchange-v1").optional(),
+    exchange: z
+        .strictObject({
+            currency: z.enum(["chaos", "divine", "exalted"]),
+            quote: exchangeQuoteSchema,
+        })
+        .optional(),
 });
 export type CohortPriceReference = z.infer<typeof cohortPriceReferenceSchema>;
 const prefix = "cohort:v1:";
