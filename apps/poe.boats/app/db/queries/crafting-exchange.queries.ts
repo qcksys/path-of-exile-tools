@@ -42,7 +42,7 @@ export async function findCraftingExchangePrices(
         const itemIds = Object.keys(result.missing).filter(
             (id) => id.startsWith("Metadata/Items/") && id !== bridge,
         );
-        if (!itemIds.length) break;
+        if (!itemIds.length) continue;
         const quoteId = exchangeCurrencyId(input.currency)!;
         const snapshots = await findExchangeSnapshots(
             db,

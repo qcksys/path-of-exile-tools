@@ -1,4 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
+import { exchangeCurrencyId } from "@poe-tools/market";
 import { drizzle } from "drizzle-orm/mysql-proxy";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { DB_TABLE_PREFIX } from "~/const";
@@ -16,7 +17,15 @@ import {
 } from "~/operations/crafting-market.server";
 import { commoditySourceQuoteSchema } from "~/schemas/crafting-sources";
 import { findCraftingSourcePrices } from "~/services/crafting-sources.server";
-import { commodityQuote, essenceId, essenceName } from "./crafting-commodity-fixtures";
+import {
+    chaosId,
+    commodityExchangeSnapshot,
+    commodityQuote,
+    convertedCommodityQuote,
+    divineId,
+    essenceId,
+    essenceName,
+} from "./crafting-commodity-fixtures";
 import { exchangeGraph } from "./crafting-exchange-fixtures";
 import { catalog, engine } from "./crafting-fixtures";
 
@@ -59,6 +68,20 @@ function capture(changes: Partial<typeof row> = {}) {
             ),
         );
 }
+function captureExchange(changes: Partial<typeof commodityExchangeSnapshot> = {}) {
+    const entry = { ...commodityExchangeSnapshot, ...changes };
+    sqlite
+        .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_currency_hourly VALUES (?,?,?,?,?,?,?)`)
+        .run(
+            entry.realm,
+            entry.league,
+            entry.hour,
+            entry.marketId,
+            JSON.stringify(entry.volumeTraded),
+            null,
+            null,
+        );
+}
 beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime((hour + 5400) * 1000);
@@ -67,6 +90,8 @@ beforeEach(() => {
         realm TEXT, league TEXT, hour INTEGER, itemKey TEXT, baseType TEXT, name TEXT,
         frameType INTEGER, identified INTEGER, corrupted INTEGER, foilVariation INTEGER,
         signatureKind TEXT, signatureValue TEXT, listingCount INTEGER, uniqueSellers INTEGER, prices TEXT)`);
+    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_currency_hourly (
+        realm TEXT, league TEXT, hour INTEGER, marketId TEXT, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT)`);
     db = drizzle(async (sql, params) => {
         const statement = sqlite.prepare(sql);
         statement.setReturnArrays(true);
@@ -237,4 +262,125 @@ it("refuses mismatched bindings and malformed ranges while preserving unrelated 
     };
     capture();
     expect((await refreshCraftingMarketPrices(db, manual, engine)).graph).toBe(manual);
+});
+
+const divineAsks = { divine: { count: 1, min: 2, median: 2, max: 2 } };
+const convertedOptions = {
+    ids: [essenceId],
+    realm: "pc" as const,
+    conversion: "exchange-v1" as const,
+};
+it("requires conversion opt-in, keeps native policy, and refreshes using the new bucket's matching-hour rate", async () => {
+    capture({ prices: divineAsks });
+    capture({ hour: hour - 3600 });
+    captureExchange();
+    expect(
+        (await findCraftingSourcePrices(graph, engine, { ids: [essenceId], realm: "pc" }, db))
+            .quotes,
+    ).toEqual({});
+    const result = await findCraftingSourcePrices(graph, engine, convertedOptions, db);
+    expect(result.quotes[essenceId]).toEqual(convertedCommodityQuote);
+    const older = (
+        await findCraftingSourcePrices(graph, engine, { ...convertedOptions, at: hour - 3600 }, db)
+    ).quotes[essenceId]!;
+    expect(older).toMatchObject({ amount: 16.5, conversion: "exchange-v1" });
+    expect(older).not.toHaveProperty("exchange");
+    const bound = bindCraftingSourcePrice(graph, engine, essenceId, older);
+    const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
+    expect(refreshed.issues).toEqual([]);
+    expect(refreshed.graph.prices[essenceId]?.amount).toBe(600);
+    expect(
+        decodeCraftingSourceReference(refreshed.graph.prices[essenceId]?.cohortId),
+    ).toMatchObject({
+        conversion: "exchange-v1",
+        exchange: convertedCommodityQuote.exchange,
+    });
+    const history = await craftingMarketSnapshots(db, refreshed.graph, engine, [hour - 3600, hour]);
+    expect(history.points.map((point) => point.graph?.prices[essenceId]?.amount)).toEqual([
+        16.5, 600,
+    ]);
+    sqlite.exec(`DELETE FROM ${DB_TABLE_PREFIX}stash_currency_hourly`);
+    const missing = await refreshCraftingMarketPrices(db, refreshed.graph, engine);
+    expect(missing.graph).toBe(refreshed.graph);
+    expect(missing.issues).toHaveLength(1);
+    expect(
+        (await craftingMarketSnapshots(db, refreshed.graph, engine, [hour])).points[0]?.graph,
+    ).toBeNull();
+});
+
+it.each([
+    { hour: hour - 3600 },
+    { hour: hour + 3600 },
+    { league: "Other" },
+    { realm: "poe2" },
+    { volumeTraded: { [divineId]: 0, [chaosId]: 0 } },
+])("refuses mismatched or zero exchange evidence %j", async (changes) => {
+    capture({ prices: divineAsks });
+    captureExchange(changes as Partial<typeof commodityExchangeSnapshot>);
+    expect((await findCraftingSourcePrices(graph, engine, convertedOptions, db)).quotes).toEqual(
+        {},
+    );
+});
+
+it("supports a verified two-leg rate and refuses mismatched leg hours", async () => {
+    capture({ prices: divineAsks });
+    const exaltedId = exchangeCurrencyId("exalted")!;
+    captureExchange({
+        marketId: `${divineId}|${exaltedId}`,
+        volumeTraded: { [divineId]: 1, [exaltedId]: 100 },
+    });
+    captureExchange({
+        marketId: `${exaltedId}|${chaosId}`,
+        volumeTraded: { [exaltedId]: 1, [chaosId]: 3 },
+    });
+    const quote = (await findCraftingSourcePrices(graph, engine, convertedOptions, db)).quotes[
+        essenceId
+    ]!;
+    expect(quote).toMatchObject({
+        amount: 600,
+        exchange: { quote: { estimator: "cross-rate-v1", legs: expect.any(Array) } },
+    });
+    if (quote.source !== "stash-commodity" || !quote.exchange?.quote.legs)
+        throw new Error("Expected conversion legs");
+    const wrong = structuredClone(quote);
+    wrong.exchange!.quote.legs![1].hour = hour - 3600;
+    expect(() => bindCraftingSourcePrice(graph, engine, essenceId, wrong)).toThrow("matching-hour");
+});
+
+it("rejects forged conversion scope, policy, direction and arithmetic", () => {
+    const exchange = convertedCommodityQuote.exchange!;
+    for (const quote of [
+        { ...convertedCommodityQuote, conversion: undefined },
+        { ...convertedCommodityQuote, amount: 601, high: 601 },
+        ...[
+            { realm: "poe2" as const },
+            { league: "Other" },
+            { hour: hour - 3600 },
+            { itemId: chaosId },
+            { quoteId: divineId },
+            { amount: 301 },
+            { window: "adaptive-v1" as const },
+            { windowStart: hour - 3600 },
+        ].map((change) => ({
+            ...convertedCommodityQuote,
+            exchange: { ...exchange, quote: { ...exchange.quote, ...change } },
+        })),
+    ])
+        expect(() => bindCraftingSourcePrice(graph, engine, essenceId, quote)).toThrow(
+            "matching-hour",
+        );
+});
+
+it("does not convert a malformed requested-currency bucket or fall back beyond the newest bucket", async () => {
+    captureExchange();
+    capture({ hour: hour - 3600, prices: divineAsks });
+    capture({ prices: { ...divineAsks, chaos: { count: 0, min: 0, median: 0, max: 0 } } });
+    expect((await findCraftingSourcePrices(graph, engine, convertedOptions, db)).quotes).toEqual(
+        {},
+    );
+    sqlite.prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_unique_hourly WHERE hour=?`).run(hour);
+    capture({ prices: {} });
+    expect((await findCraftingSourcePrices(graph, engine, convertedOptions, db)).quotes).toEqual(
+        {},
+    );
 });

@@ -59,6 +59,7 @@ export function GraphPriceInput({
     game?: "poe1" | "poe2";
     fallback?: CraftingPrice | null;
 }) {
+    const sourceReference = decodeCraftingSourceReference(value?.cohortId);
     return (
         <Label className="block space-y-1 text-xs">
             <span className="flex items-center gap-2">
@@ -96,10 +97,10 @@ export function GraphPriceInput({
                             : "Shared price unknown"
                         : "Unpriced; excluded from a complete cost estimate"}
             </span>
-            {value?.source === "market" && decodeCraftingSourceReference(value.cohortId) && (
+            {value?.source === "market" && sourceReference && (
                 <span className="block text-muted-foreground">
-                    {decodeCraftingSourceReference(value.cohortId)?.source === "stash-commodity"
-                        ? `Captured per-item asking estimate · ${value.samples ?? "unknown"} priced samples · time shown is the observed hour · captured history available`
+                    {sourceReference.source === "stash-commodity"
+                        ? `Captured per-item asking estimate${sourceReference.exchange ? ` · converted from ${sourceReference.exchange.amount.toLocaleString(undefined, { maximumSignificantDigits: 6 })} ${sourceReference.exchange.currency} using matching-hour exchange · combined confidence unknown` : ""} · ${value.samples ?? "unknown"} priced samples · time shown is the observed hour · captured history available`
                         : "poe.ninja listing estimate · time shown is retrieval time · complete recipe includes the selected rare-beast assumption where applicable · historical source unavailable"}
                 </span>
             )}

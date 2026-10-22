@@ -5,7 +5,12 @@ import { afterEach, expect, it, vi } from "vite-plus/test";
 import { SourcePricePicker } from "~/components/crafting/source-price-picker";
 import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
-import { commodityQuote, essenceId, essenceName } from "./crafting-commodity-fixtures";
+import {
+    commodityQuote,
+    convertedCommodityQuote,
+    essenceId,
+    essenceName,
+} from "./crafting-commodity-fixtures";
 import { exchangeGraph } from "./crafting-exchange-fixtures";
 import { engine } from "./crafting-fixtures";
 
@@ -137,7 +142,7 @@ it("shows captured per-item asks and fills only unpriced inputs until explicitly
     }
     render(<Harness />);
     fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
-    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.queryByRole("checkbox", { name: /Mountain Lynx/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
     await screen.findByText("2 of 2 inputs priced.");
     const result = within(screen.getByRole("region", { name: `Source price for ${essenceName}` }));
@@ -161,6 +166,98 @@ it("shows captured per-item asks and fills only unpriced inputs until explicitly
     expect(decodeCraftingSourceReference(saved?.prices[essenceId]?.cohortId)?.source).toBe(
         "stash-commodity",
     );
+});
+
+it("makes conversion explicit, shows the original ask and keeps manual prices until selection", async () => {
+    const fetcher = vi
+        .fn()
+        .mockImplementation((_url, init) =>
+            Promise.resolve(
+                new Response(
+                    JSON.stringify(
+                        JSON.parse(init.body).conversion
+                            ? { quotes: { [essenceId]: convertedCommodityQuote }, missing: {} }
+                            : { quotes: {}, missing: { [essenceId]: "No chaos asks" } },
+                    ),
+                ),
+            ),
+        );
+    vi.stubGlobal("fetch", fetcher);
+    const graph = {
+        ...exchangeGraph(),
+        prices: {
+            [essenceId]: {
+                amount: 123,
+                currency: "chaos",
+                source: "manual" as const,
+                confidence: null,
+            },
+        },
+    };
+    const onChange = vi.fn();
+    render(
+        <SourcePricePicker
+            graph={graph}
+            engine={engine}
+            entries={[[essenceId, essenceName]]}
+            onChange={onChange}
+        />,
+    );
+    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    const choice = screen.getByRole("checkbox", {
+        name: "Convert essence asks using matching-hour exchange rates",
+    });
+    expect(choice.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
+    await screen.findByText("No chaos asks");
+    fireEvent.click(choice);
+    expect(screen.queryByText("No chaos asks")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
+    await screen.findByText(/600 chaos per item · converted asking median/);
+    expect(screen.getByText(/Original ask: 2 divine per item/).textContent).toContain(
+        "Matching-hour exchange: 1 divine = 300 chaos",
+    );
+    expect(
+        screen.getByRole("link", { name: "Captured asking-price history" }).getAttribute("href"),
+    ).toContain("currency=divine");
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
+    expect(onChange.mock.calls[0]![0].prices[essenceId].amount).toBe(600);
+    expect(
+        decodeCraftingSourceReference(onChange.mock.calls[0]![0].prices[essenceId].cohortId),
+    ).toMatchObject({ conversion: "exchange-v1", exchange: convertedCommodityQuote.exchange });
+});
+
+it("cancels a pending essence lookup when conversion policy changes", async () => {
+    let resolve: (response: Response) => void = () => {};
+    const fetcher = vi.fn().mockReturnValue(
+        new Promise<Response>((done) => {
+            resolve = done;
+        }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    const onChange = vi.fn();
+    render(
+        <SourcePricePicker
+            graph={exchangeGraph()}
+            engine={engine}
+            entries={[[essenceId, essenceName]]}
+            onChange={onChange}
+        />,
+    );
+    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
+    fireEvent.click(
+        screen.getByRole("checkbox", {
+            name: "Convert essence asks using matching-hour exchange rates",
+        }),
+    );
+    expect(fetcher.mock.calls[0]![1].signal.aborted).toBe(true);
+    resolve(new Response(JSON.stringify({ quotes: { [essenceId]: commodityQuote }, missing: {} })));
+    await waitFor(() =>
+        expect(screen.queryByRole("button", { name: "Use source estimate" })).toBeNull(),
+    );
+    expect(onChange).not.toHaveBeenCalled();
 });
 
 it("discards a pending quote when the project league changes", async () => {

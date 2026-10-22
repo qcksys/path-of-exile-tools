@@ -155,6 +155,7 @@ export async function refreshCraftingMarketPrices(
         const key = JSON.stringify([
             reference.source,
             reference.source === "poe.ninja" ? reference.assumption : undefined,
+            reference.source === "stash-commodity" ? reference.conversion : undefined,
         ]);
         sources.set(key, [...(sources.get(key) ?? []), binding]);
     }
@@ -167,6 +168,8 @@ export async function refreshCraftingMarketPrices(
                 realm: "pc",
                 ids: bindings.map(({ id }) => id),
                 assumption: reference.source === "poe.ninja" ? reference.assumption : undefined,
+                conversion:
+                    reference.source === "stash-commodity" ? reference.conversion : undefined,
                 at,
             },
             db,

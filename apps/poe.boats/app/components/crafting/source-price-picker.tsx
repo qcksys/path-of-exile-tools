@@ -19,6 +19,7 @@ export function SourcePricePicker({
     onChange: (graph: CraftingGraph) => void;
 }) {
     const [assumption, setAssumption] = useState(false);
+    const [convert, setConvert] = useState(false);
     const [result, setResult] = useState<CraftingSourceResult>();
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
@@ -38,6 +39,7 @@ export function SourcePricePicker({
         graph.ruleset,
         inputs.map(([id]) => id),
         assumption,
+        convert,
     ]);
     useEffect(() => {
         pending.current?.abort();
@@ -63,6 +65,7 @@ export function SourcePricePicker({
                     ids: inputs.map(([id]) => id),
                     realm: "pc",
                     assumption: assumption ? "rare-beast-mountain-lynx-v1" : undefined,
+                    conversion: convert ? "exchange-v1" : undefined,
                 }),
             });
             if (!response.ok)
@@ -101,6 +104,12 @@ export function SourcePricePicker({
                         all listings and sellers. Confidence is uncalibrated; sparse asks can vary
                         widely.
                     </p>
+                )}
+                {hasCommodities && (
+                    <Label className="flex items-center gap-2">
+                        <Checkbox checked={convert} onCheckedChange={setConvert} />
+                        Convert essence asks using matching-hour exchange rates
+                    </Label>
                 )}
                 {hasRecipes && (
                     <>
@@ -167,21 +176,65 @@ export function SourcePricePicker({
                                                         {quote.amount.toLocaleString(undefined, {
                                                             maximumSignificantDigits: 6,
                                                         })}{" "}
-                                                        {quote.currency} per item · asking median ·
-                                                        observed{" "}
+                                                        {quote.currency} per item ·{" "}
+                                                        {quote.exchange
+                                                            ? "converted asking median"
+                                                            : "asking median"}{" "}
+                                                        · observed{" "}
                                                         {new Date(
                                                             quote.hour * 1000,
                                                         ).toLocaleString()}
                                                     </p>
                                                     <p>
-                                                        {quote.low}–{quote.high} {quote.currency}{" "}
-                                                        range · {quote.samples} priced samples ·{" "}
+                                                        {quote.low.toLocaleString(undefined, {
+                                                            maximumSignificantDigits: 6,
+                                                        })}
+                                                        –
+                                                        {quote.high.toLocaleString(undefined, {
+                                                            maximumSignificantDigits: 6,
+                                                        })}{" "}
+                                                        {quote.currency}{" "}
+                                                        {quote.exchange
+                                                            ? "converted range"
+                                                            : "range"}{" "}
+                                                        · {quote.samples} priced samples ·{" "}
                                                         {quote.listingCount} total listings ·{" "}
                                                         {quote.uniqueSellers} total sellers
                                                     </p>
+                                                    {quote.exchange && (
+                                                        <p>
+                                                            Original ask:{" "}
+                                                            {quote.exchange.amount.toLocaleString(
+                                                                undefined,
+                                                                { maximumSignificantDigits: 6 },
+                                                            )}{" "}
+                                                            {quote.exchange.currency} per item{" "}
+                                                            (range{" "}
+                                                            {quote.exchange.low.toLocaleString(
+                                                                undefined,
+                                                                { maximumSignificantDigits: 6 },
+                                                            )}
+                                                            –
+                                                            {quote.exchange.high.toLocaleString(
+                                                                undefined,
+                                                                { maximumSignificantDigits: 6 },
+                                                            )}
+                                                            ). Matching-hour exchange: 1{" "}
+                                                            {quote.exchange.currency} ={" "}
+                                                            {quote.exchange.quote.amount.toLocaleString(
+                                                                undefined,
+                                                                { maximumSignificantDigits: 6 },
+                                                            )}{" "}
+                                                            {quote.currency}
+                                                            {quote.exchange.quote.legs
+                                                                ? " via a two-leg reference-currency conversion"
+                                                                : ""}
+                                                            . Combined confidence is unknown.
+                                                        </p>
+                                                    )}
                                                     <a
                                                         className="underline"
-                                                        href={`/1/market?${new URLSearchParams({ realm: quote.realm, league: quote.league, q: quote.baseType, item: quote.baseType, currency: quote.currency })}`}
+                                                        href={`/1/market?${new URLSearchParams({ realm: quote.realm, league: quote.league, q: quote.baseType, item: quote.baseType, currency: quote.exchange?.currency ?? quote.currency })}`}
                                                         target="_blank"
                                                         rel="noreferrer"
                                                     >

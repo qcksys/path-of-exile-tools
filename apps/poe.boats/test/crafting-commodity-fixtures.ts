@@ -1,3 +1,4 @@
+import { exchangeCurrencyId, quoteExchangeSnapshot } from "@poe-tools/market";
 import { commoditySourceQuoteSchema } from "~/schemas/crafting-sources";
 
 export const essenceId = "Metadata/Items/Currency/CurrencyEssenceRage3";
@@ -17,4 +18,34 @@ export const commodityQuote = commoditySourceQuoteSchema.parse({
     samples: 2,
     listingCount: 25,
     uniqueSellers: 24,
+});
+
+export const divineId = exchangeCurrencyId("divine")!;
+export const chaosId = exchangeCurrencyId("chaos")!;
+export const commodityExchangeSnapshot = {
+    realm: "pc" as const,
+    league: "Standard",
+    hour: commodityQuote.hour,
+    marketId: `${divineId}|${chaosId}`,
+    volumeTraded: { [divineId]: 100, [chaosId]: 30000 },
+    lowestRatio: null,
+    highestRatio: null,
+};
+export const convertedCommodityQuote = commoditySourceQuoteSchema.parse({
+    ...commodityQuote,
+    conversion: "exchange-v1",
+    amount: 600,
+    low: 600,
+    high: 600,
+    samples: 1,
+    exchange: {
+        currency: "divine",
+        amount: 2,
+        low: 2,
+        high: 2,
+        quote: {
+            ...quoteExchangeSnapshot(commodityExchangeSnapshot, divineId, chaosId)!,
+            conversion: "reference-currency-v1",
+        },
+    },
 });

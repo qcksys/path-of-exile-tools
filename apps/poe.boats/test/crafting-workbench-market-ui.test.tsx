@@ -9,7 +9,7 @@ import { CraftingEngine } from "../app/lib/crafting-engine";
 import { validateRulesetIndex } from "../app/lib/crafting-rulesets";
 import { craftingProjectSchema } from "../app/schemas/crafting";
 import index from "../crafting-history/index.json";
-import { commodityQuote, essenceId } from "./crafting-commodity-fixtures";
+import { commodityQuote, convertedCommodityQuote, essenceId } from "./crafting-commodity-fixtures";
 import { exchangeQuote, transmuteId } from "./crafting-exchange-fixtures";
 import { baseId, catalog, engine, getCatalog } from "./crafting-fixtures";
 import { chooseStartingItem } from "./starting-item-helper";
@@ -184,7 +184,10 @@ it("copies a full beast recipe through the same source picker", async () => {
     expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("607");
 });
 
-it("copies captured essence asks only after selection and preserves subsequent manual edits", async () => {
+it.each([
+    commodityQuote,
+    convertedCommodityQuote,
+])("copies captured essence asks at $amount only after selection and preserves subsequent manual edits", async (quote) => {
     vi.stubGlobal(
         "fetch",
         vi
@@ -195,7 +198,7 @@ it("copies captured essence asks only after selection and preserves subsequent m
                         JSON.stringify(
                             url.includes("index.json")
                                 ? historyIndex
-                                : { quotes: { [essenceId]: commodityQuote }, missing: {} },
+                                : { quotes: { [essenceId]: quote }, missing: {} },
                         ),
                     ),
                 ),
@@ -207,8 +210,14 @@ it("copies captured essence asks only after selection and preserves subsequent m
         target: { value: "Standard" },
     });
     fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    if (quote.conversion)
+        fireEvent.click(
+            screen.getByRole("checkbox", {
+                name: "Convert essence asks using matching-hour exchange rates",
+            }),
+        );
     fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
-    await screen.findByText(/16.5 chaos per item/);
+    await screen.findByText(new RegExp(`${quote.amount} chaos per item`));
     const amount = screen.getByLabelText("Manual input price") as HTMLInputElement;
     expect(amount.value).toBe("123");
     expect(
@@ -217,7 +226,7 @@ it("copies captured essence asks only after selection and preserves subsequent m
             .hasAttribute("disabled"),
     ).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
-    expect(amount.value).toBe("16.5");
+    expect(amount.value).toBe(String(quote.amount));
     fireEvent.change(amount, { target: { value: "7" } });
     fireEvent.change(screen.getByLabelText("Price lookup league"), { target: { value: "Other" } });
     await waitFor(() =>

@@ -46,7 +46,7 @@ import { craftingSourceQuoteSchema } from "~/schemas/crafting-sources";
 import type { CraftingItemEdit } from "~/schemas/crafting-workbench";
 import { STORAGE_VERSION, type StorageData } from "~/schemas/storage";
 import * as craftingSources from "~/services/crafting-sources.server";
-import { commodityQuote, essenceId } from "./crafting-commodity-fixtures";
+import { commodityQuote, convertedCommodityQuote, essenceId } from "./crafting-commodity-fixtures";
 import { conditionalTransmuteGraph } from "./crafting-conditional-fixtures";
 import {
     exchangeGraph,
@@ -772,6 +772,8 @@ describe("transport parity", () => {
         "refresh",
         "wrong identity",
         "invalid counts",
+        "conversion",
+        "invalid conversion",
     ] as const)("shares captured commodity %s through HTTP and MCP", async (scenario) => {
         const graph = exchangeGraph();
         const prices = { quotes: { [essenceId]: commodityQuote }, missing: {} };
@@ -808,6 +810,29 @@ describe("transport parity", () => {
                 "bind_crafting_source_price",
                 "/market/sources/bind",
                 { graph, id: essenceId, quote: { ...commodityQuote, samples: 26 } },
+                null,
+            ],
+            conversion: [
+                "bind_crafting_source_price",
+                "/market/sources/bind",
+                { graph, id: essenceId, quote: convertedCommodityQuote },
+                {
+                    graph: bindCraftingSourcePrice(
+                        graph,
+                        fixtureEngine,
+                        essenceId,
+                        convertedCommodityQuote,
+                    ),
+                },
+            ],
+            "invalid conversion": [
+                "bind_crafting_source_price",
+                "/market/sources/bind",
+                {
+                    graph,
+                    id: essenceId,
+                    quote: { ...convertedCommodityQuote, conversion: undefined },
+                },
                 null,
             ],
         } as const;

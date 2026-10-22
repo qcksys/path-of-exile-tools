@@ -151,7 +151,13 @@ export async function findCraftingSourcePrices(
         }
     }
     if (commodities.length && db) {
-        const captured = await findCraftingCommodityPrices(db, graph, commodities, options.at);
+        const captured = await findCraftingCommodityPrices(
+            db,
+            graph,
+            commodities,
+            options.at,
+            options.conversion,
+        );
         Object.assign(result.quotes, captured.quotes);
         Object.assign(result.missing, captured.missing);
     }

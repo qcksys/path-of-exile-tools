@@ -1,3 +1,10 @@
+import {
+    convertExchangeQuote,
+    type ExchangeQuote,
+    exchangeCurrencyId,
+    exchangeQuoteSchema,
+    quoteExchangeSnapshot,
+} from "@poe-tools/market";
 import { z } from "zod";
 
 const scope = {
@@ -8,6 +15,7 @@ const scope = {
     id: z.string().min(1).max(500),
 };
 const assumption = z.literal("rare-beast-mountain-lynx-v1").optional();
+const conversion = z.literal("exchange-v1").optional();
 const ninjaReference = z.strictObject({
     ...scope,
     source: z.literal("poe.ninja"),
@@ -17,6 +25,16 @@ export const commoditySourceReferenceSchema = z.strictObject({
     ...scope,
     source: z.literal("stash-commodity"),
     baseType: z.string().min(1).max(100),
+    conversion,
+    exchange: z
+        .strictObject({
+            currency: scope.currency,
+            amount: z.number().positive(),
+            low: z.number().positive(),
+            high: z.number().positive(),
+            quote: exchangeQuoteSchema,
+        })
+        .optional(),
 });
 export const craftingSourceReferenceSchema = z.discriminatedUnion("source", [
     ninjaReference,
@@ -56,7 +74,89 @@ export const commoditySourceQuoteSchema = commoditySourceReferenceSchema
             quote.samples <= quote.listingCount &&
             quote.uniqueSellers <= quote.listingCount,
         "Commodity price range or sample counts are inconsistent.",
-    );
+    )
+    .refine((value) => {
+        const exchange = value.exchange;
+        if (!exchange) return true;
+        const rate = exchange.quote;
+        if (
+            rate.estimator === "cross-rate-v1"
+                ? !rate.legs ||
+                  rate.marketId !== null ||
+                  rate.itemVolume !== null ||
+                  rate.quoteVolume !== null ||
+                  rate.low !== null ||
+                  rate.high !== null
+                : rate.legs !== undefined
+        )
+            return false;
+        if (
+            value.conversion !== "exchange-v1" ||
+            exchange.currency === value.currency ||
+            exchange.low > exchange.amount ||
+            exchange.amount > exchange.high ||
+            rate.realm !== value.realm ||
+            rate.league !== value.league ||
+            rate.hour !== value.hour ||
+            rate.window !== undefined ||
+            (rate.windowStart !== undefined && rate.windowStart !== value.hour) ||
+            rate.itemId !== exchangeCurrencyId(exchange.currency) ||
+            rate.quoteId !== exchangeCurrencyId(value.currency)
+        )
+            return false;
+        const direct = (quote: ExchangeQuote) =>
+            quote.estimator === "traded-volume-ratio-v1" &&
+            quote.hour === value.hour &&
+            quote.realm === value.realm &&
+            quote.league === value.league &&
+            quote.window === undefined &&
+            (quote.windowStart === undefined || quote.windowStart === value.hour) &&
+            quote.marketId !== null
+                ? quoteExchangeSnapshot(
+                      {
+                          realm: quote.realm,
+                          league: quote.league,
+                          hour: value.hour,
+                          marketId: quote.marketId,
+                          volumeTraded: {
+                              [quote.itemId]: quote.itemVolume ?? 0,
+                              [quote.quoteId]: quote.quoteVolume ?? 0,
+                          },
+                          lowestRatio: null,
+                          highestRatio: null,
+                      },
+                      quote.itemId,
+                      quote.quoteId,
+                  )
+                : null;
+        let verified = direct(rate);
+        if (rate.estimator === "cross-rate-v1" && rate.legs) {
+            const first = direct(rate.legs[0]);
+            const second = direct(rate.legs[1]);
+            if (
+                first &&
+                second &&
+                first.amount === rate.legs[0].amount &&
+                second.amount === rate.legs[1].amount
+            )
+                verified = convertExchangeQuote(first, second);
+        }
+        if (
+            !verified ||
+            verified.itemId !== rate.itemId ||
+            verified.quoteId !== rate.quoteId ||
+            verified.amount !== rate.amount
+        )
+            return false;
+        return [
+            [value.amount, exchange.amount],
+            [value.low, exchange.low],
+            [value.high, exchange.high],
+        ].every(
+            ([converted, original]) =>
+                Math.abs(converted! - original! * rate.amount) <= Math.max(1, converted!) * 1e-10,
+        );
+    }, "Commodity conversion must preserve the original asking range and a valid matching-hour exchange quote.");
 export const craftingSourceQuoteSchema = z.discriminatedUnion("source", [
     ninjaQuote,
     commoditySourceQuoteSchema,
@@ -65,6 +165,7 @@ export const craftingSourceOptionsSchema = z.strictObject({
     ids: z.array(z.string().min(1).max(500)).min(1).max(500),
     realm: z.enum(["pc", "xbox", "sony", "poe2"]),
     assumption,
+    conversion,
     at: z.number().int().nonnegative().optional(),
 });
 export const craftingSourceResultSchema = z.strictObject({

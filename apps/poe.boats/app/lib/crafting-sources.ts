@@ -145,6 +145,8 @@ export function bindCraftingSourcePrice(
             league: parsed.league,
             currency: parsed.currency,
             ...identity,
+            conversion: parsed.conversion,
+            exchange: parsed.exchange,
         });
         return {
             ...graph,
