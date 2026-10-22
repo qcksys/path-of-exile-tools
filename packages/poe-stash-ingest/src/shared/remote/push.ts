@@ -10,7 +10,10 @@ export function requireRemoteEnv(): { url: string; token: string } {
     return { url, token };
 }
 
-export async function push(payload: IngestPayload, opts?: { dryRun?: boolean }): Promise<void> {
+export async function push(
+    payload: IngestPayload,
+    opts?: { dryRun?: boolean; onBatch?: () => Promise<void> },
+): Promise<void> {
     if (opts?.dryRun) {
         console.log(`[dry-run] would push ${payload.rows.length} ${payload.stream} rows to remote`);
         return;
@@ -48,5 +51,6 @@ export async function push(payload: IngestPayload, opts?: { dryRun?: boolean }):
         console.log(
             `pushed ${batch.stream} batch ${i + 1}/${batches.length} (${batch.rows.length} rows)`,
         );
+        await opts?.onBatch?.();
     }
 }

@@ -46,15 +46,20 @@ export async function archivePage(
                 Buffer.byteLength(json),
             ]);
         }
-        await conn.run("INSERT INTO ps_capture_page VALUES ($1, $2, $3, $4, $5, $6, $7, NULL)", [
-            id,
-            scope.realm,
-            scope.league,
-            scope.cursor ?? null,
-            page.next_change_id,
-            scope.capturedAt,
-            hash,
-        ]);
+        await conn.run(
+            `INSERT INTO ps_capture_page
+            (id, realm, league, cursor, next_cursor, captured_at, response_hash, processed_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, NULL)`,
+            [
+                id,
+                scope.realm,
+                scope.league,
+                scope.cursor ?? null,
+                page.next_change_id,
+                scope.capturedAt,
+                hash,
+            ],
+        );
         await conn.run(
             "DELETE FROM ps_capture_stash WHERE stash_id IN (SELECT json_extract_string(value, '$') FROM json_each($1::JSON))",
             [JSON.stringify(stashes.map((stash) => stash.id))],

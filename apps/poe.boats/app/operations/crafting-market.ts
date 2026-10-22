@@ -52,11 +52,16 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Look up PoE 1 PC beast recipes and Locus of Corruption using poe.ninja listing estimates. Prices every required beast; extra rare beasts require an explicit Mountain Lynx assumption. Level-sensitive recipes, non-tradeable services and unavailable components remain unknown. These are current aggregate asking prices, without historical coverage or calibrated confidence.",
+            "Look up PoE 1 PC captured essence asking prices and poe.ninja beast/temple estimates. Essences require an exact unique catalog identity and a positive latest captured bucket within 24 completed hours; at selects historical captured hours. Beast recipes price every sacrifice and require the explicit extra-rare-beast assumption. poe.ninja has no historical coverage. Sources remain distinct from exchange trades; confidence is uncalibrated.",
         input: craftingSourceOptionsSchema.extend({ graph: CraftingGraphContract }),
         output: craftingSourceResultSchema,
         execute: async ({ graph, ...options }, context) =>
-            findCraftingSourcePrices(graph, await craftingMarketEngine(graph, context), options),
+            findCraftingSourcePrices(
+                graph,
+                await craftingMarketEngine(graph, context),
+                options,
+                context.db,
+            ),
     }),
     defineOperation({
         family: "crafting",
@@ -67,7 +72,7 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Return a graph with one beast recipe or temple cost bound to a supplied poe.ninja estimate. Validates scope and the complete catalog recipe. Explicit selection replaces a manual amount; refresh preserves the source and rare-beast assumption. Does not save account data.",
+            "Return a graph with one verified essence bound to captured per-unit asking prices, or a beast/temple recipe bound to a poe.ninja estimate. Validates source scope and canonical identity or complete recipe. Explicit selection replaces a manual amount; refresh preserves the source. Captured essence history uses its observation hour, while poe.ninja uses retrieval time. Does not save account data.",
         input: z.object({
             graph: CraftingGraphContract,
             id: z.string(),

@@ -16,6 +16,7 @@ import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection } from "mysql2/promise";
 import { RouterContextProvider } from "react-router";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from "vite-plus/test";
+import { z } from "zod";
 import { api } from "~/api/router.server";
 import { dbContext, envContext } from "~/context";
 import type { TDatabase } from "~/db/client";
@@ -39,6 +40,7 @@ import { bindExchangePrice } from "~/lib/crafting-exchange";
 import { calculateCraftingGraph } from "~/lib/crafting-graph-simulation";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import { bindCohortPurchasePrice, livePurchasePrices } from "~/lib/crafting-market";
+import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
 import { handleMcpRequest } from "~/mcp/server.server";
 import {
     craftingMarketSnapshots,
@@ -48,6 +50,7 @@ import type { OperationContext } from "~/operations/operation";
 import { getServerStatus } from "~/operations/server-status.server";
 import { action, loader } from "~/routes/api.stash-ingest";
 import { craftingGraphSchema } from "~/schemas/crafting-graph";
+import { craftingSourceResultSchema } from "~/schemas/crafting-sources";
 import { marketFiltersSchema } from "~/schemas/market";
 import { createClient } from "../../../../packages/poe-api-client/dist/index.mjs";
 import { ingestCx } from "../../../../packages/poe-stash-ingest/src/cx/ingest.ts";
@@ -72,6 +75,7 @@ import {
     queryAll,
 } from "../../../../packages/poe-stash-ingest/src/shared/db.ts";
 import { push } from "../../../../packages/poe-stash-ingest/src/shared/remote/push.ts";
+import { essenceId, essenceName } from "../crafting-commodity-fixtures";
 import {
     chaosId,
     exchangeGraph,
@@ -80,6 +84,7 @@ import {
 } from "../crafting-exchange-fixtures";
 import { catalog, currency, engine } from "../crafting-fixtures";
 import { quote } from "../crafting-graph-fixtures";
+import { historyIndex, retainedRevision } from "../crafting-history-fixtures";
 import {
     donorFamilyMarketFixture,
     marketCandidate,
@@ -1863,4 +1868,196 @@ it("captures and prices the correct Two-Toned Boots variant while excluding othe
     );
     expect(refreshed.issues).toEqual([]);
     expect(refreshed.graph).toEqual(bound);
+});
+
+it("ingests fractional essence unit asks into MySQL and shares source binding and history without reusing a newer zero price", async () => {
+    const client = createClient({ baseUrl, userAgent: "commodity-e2e", token: TOKEN });
+    const essenceStashes = ["~price 5/2 chaos", "~b/o 9/2 c"].map((note, index) => ({
+        ...stash,
+        id: `essence-stash-${index}`,
+        accountName: `essence-seller-${index}`,
+        items: [
+            {
+                ...item,
+                id: `essence-${index}`,
+                icon: "https://web.poecdn.com/image/Art/2DItems/Currency/Essence/Rage3.png",
+                name: "",
+                typeLine: essenceName,
+                baseType: essenceName,
+                frameType: 5,
+                rarity: "Currency",
+                stackSize: 20,
+                maxStackSize: 30,
+                note,
+            },
+        ],
+    }));
+    async function ingestHour(hour: number, zero = false) {
+        upstreamResponses.push({
+            body: {
+                next_change_id: `essence-${hour}`,
+                stashes: essenceStashes.map((entry) => ({
+                    ...entry,
+                    items: entry.items.map((listing) => ({
+                        ...listing,
+                        note: zero ? "~price 0 chaos" : listing.note,
+                    })),
+                })),
+            },
+        });
+        await ingestPs(local.conn, client, { pages: 1 });
+        // Commodity capture uses the database clock; move only this page's rows to the fixture hour.
+        await local.conn.run(
+            `UPDATE ps_listing_hour SET observed_hour = $1,
+                first_seen_at = to_timestamp($2), last_seen_at = to_timestamp($2)
+            WHERE observed_hour <> $3`,
+            [hour, hour + 60, HOUR],
+        );
+        await rollupPs(local.conn, { hour, league: "Standard" });
+    }
+    await ingestHour(HOUR);
+    expect(await mysql.select().from(tStashUniqueHourly)).toMatchObject([
+        {
+            realm: "pc",
+            league: "Standard",
+            hour: HOUR,
+            itemKey: essenceName,
+            baseType: essenceName,
+            frameType: 5,
+            listingCount: 2,
+            uniqueSellers: 2,
+            prices: { chaos: { count: 2, min: 2.5, median: 3.5, max: 4.5 } },
+        },
+    ]);
+    const unused = async (): Promise<never> => {
+        throw new Error("Unexpected unrelated catalog lookup");
+    };
+    const runtime = async (): Promise<OperationContext> => ({
+        db: mysql as unknown as TDatabase,
+        caller: null,
+        origin: "https://poe.boats",
+        loadCatalog: unused,
+        loadWorkbenchCatalog: unused,
+        loadCraftingRulesets: async () => historyIndex,
+        loadCraftingRevision: retainedRevision,
+    });
+    async function parity(
+        path: string,
+        name: string,
+        input: Record<string, unknown>,
+        method: "POST" | "GET" = "POST",
+    ): Promise<unknown> {
+        const query = new URLSearchParams(
+            Object.entries(input).map(([key, value]) => [key, String(value)]),
+        );
+        const response = await api.request(
+            `https://poe.boats/api/v1/${path}${method === "GET" ? `?${query}` : ""}`,
+            {
+                method,
+                headers: { "Content-Type": "application/json" },
+                ...(method === "POST" ? { body: JSON.stringify(input) } : {}),
+            },
+            { runtime },
+        );
+        expect(response.status).toBe(200);
+        const http: unknown = await response.json();
+        const rpc = await handleMcpRequest(
+            new Request("https://poe.boats/mcp", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    accept: "application/json, text/event-stream",
+                },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method: "tools/call",
+                    params: { name, arguments: input },
+                }),
+            }),
+            runtime,
+        );
+        const envelope = z.object({ result: CallToolResultSchema }).parse(await rpc.json());
+        expect(envelope.result.isError).not.toBe(true);
+        expect(envelope.result.structuredContent).toEqual(http);
+        return http;
+    }
+    const graph = exchangeGraph();
+    const craft = graph.nodes.find((node) => node.kind === "craft")!;
+    craft.name = "Apply Screaming Essence of Rage";
+    craft.method = { kind: "essence", id: essenceId };
+    const lookup = { graph, realm: "pc", ids: [essenceId], at: HOUR };
+    const result = craftingSourceResultSchema.parse(
+        await parity("crafting/market/sources", "find_crafting_source_prices", lookup),
+    );
+    expect(result.missing).toEqual({});
+    expect(result.quotes[essenceId]).toMatchObject({
+        source: "stash-commodity",
+        hour: HOUR,
+        amount: 3.5,
+        low: 2.5,
+        high: 4.5,
+        samples: 2,
+    });
+    const { graph: bound } = z.object({ graph: craftingGraphSchema }).parse(
+        await parity("crafting/market/sources/bind", "bind_crafting_source_price", {
+            graph,
+            id: essenceId,
+            quote: result.quotes[essenceId],
+        }),
+    );
+    expect(bound.prices[essenceId]).toMatchObject({
+        amount: 3.5,
+        source: "market",
+        samples: 2,
+        confidence: null,
+        observedAt: new Date(HOUR * 1000).toISOString(),
+    });
+    expect(decodeCraftingSourceReference(bound.prices[essenceId]!.cohortId)).toEqual({
+        source: "stash-commodity",
+        game: "poe1",
+        realm: "pc",
+        league: "Standard",
+        currency: "chaos",
+        id: essenceId,
+        baseType: essenceName,
+    });
+    await ingestHour(HOUR + 3600, true);
+    const missing = craftingSourceResultSchema.parse(
+        await parity("crafting/market/sources", "find_crafting_source_prices", {
+            ...lookup,
+            at: HOUR + 3600,
+        }),
+    );
+    expect(missing.quotes).toEqual({});
+    expect(missing.missing[essenceId]).toContain("No positive");
+    expect(
+        await parity("crafting/market/snapshots", "get_crafting_price_snapshots", {
+            graph: bound,
+            hours: [HOUR, HOUR + 3600],
+        }),
+    ).toMatchObject({
+        points: [
+            { at: HOUR, graph: { prices: { [essenceId]: { amount: 3.5 } } }, issues: [] },
+            { at: HOUR + 3600, graph: null, issues: [expect.stringContaining("No positive")] },
+        ],
+    });
+    expect(
+        await parity(
+            "market",
+            "get_season_market",
+            {
+                realm: "pc",
+                league: "Standard",
+                item: essenceName,
+                currency: "chaos",
+            },
+            "GET",
+        ),
+    ).toMatchObject({
+        history: [
+            { hour: HOUR, prices: { chaos: { count: 2, min: 2.5, median: 3.5, max: 4.5 } } },
+            { hour: HOUR + 3600, listingCount: 2, prices: {} },
+        ],
+    });
 });

@@ -304,8 +304,8 @@ export async function ingestPs(
             await setCursor(conn, STREAM, page.next_change_id);
             if (captureId)
                 await conn.run(
-                    "UPDATE ps_capture_page SET processed_at = current_timestamp WHERE id = $1",
-                    [captureId],
+                    "UPDATE ps_capture_page SET processed_at = current_timestamp, equipment_revision = $2 WHERE id = $1",
+                    [captureId, equipment.manifest.revision],
                 );
         });
 

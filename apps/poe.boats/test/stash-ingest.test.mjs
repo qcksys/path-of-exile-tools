@@ -281,14 +281,39 @@ describe("currency ingestion and delivery", () => {
         await expect(rollupCx(db.conn, { hour: hour - 3600 })).resolves.toMatchObject({ rows: 1 });
     });
     it("splits remote pushes into batches of at most 500 rows", async () => {
+        const progress = vi.fn(async () => {});
         network.mockImplementation(async (_url, init) =>
             Response.json({ written: JSON.parse(init.body).rows.length }),
         );
         const row = { iconAsset: "icon", name: "name", baseType: "base", seenCount: 1 };
-        await push({ stream: "basemap", rows: Array.from({ length: 1001 }, () => row) });
+        await push(
+            { stream: "basemap", rows: Array.from({ length: 1001 }, () => row) },
+            { onBatch: progress },
+        );
         expect(
             network.mock.calls.map(([, init]) => JSON.parse(String(init?.body)).rows.length),
         ).toEqual([500, 500, 1]);
+        expect(progress).toHaveBeenCalledTimes(3);
+    });
+    it("reports only acknowledged batches when a later upload is incomplete", async () => {
+        const progress = vi.fn(async () => {});
+        const row = { iconAsset: "icon", name: "name", baseType: "base", seenCount: 1 };
+        network.mockResolvedValueOnce(Response.json({ written: 500 }));
+        network.mockResolvedValueOnce(Response.json({ written: 0 }));
+        await expect(
+            push(
+                { stream: "basemap", rows: Array.from({ length: 501 }, () => row) },
+                { onBatch: progress },
+            ),
+        ).rejects.toThrow("did not acknowledge the full batch");
+        expect(progress).toHaveBeenCalledTimes(1);
+    });
+    it("does not report remote progress for a dry run", async () => {
+        const progress = vi.fn(async () => {});
+        const row = { iconAsset: "icon", name: "name", baseType: "base", seenCount: 1 };
+        await push({ stream: "basemap", rows: [row] }, { dryRun: true, onBatch: progress });
+        expect(network).not.toHaveBeenCalled();
+        expect(progress).not.toHaveBeenCalled();
     });
     it("retries a transient 503 from the upstream API", async () => {
         network.mockResolvedValueOnce(new Response("unavailable", { status: 503 }));

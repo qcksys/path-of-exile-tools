@@ -2,8 +2,11 @@
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import {
+    type CraftingSourceOptions,
     type CraftingSourceQuote,
     type CraftingSourceReference,
+    commoditySourceQuoteSchema,
+    commoditySourceReferenceSchema,
     craftingSourceReferenceSchema,
 } from "~/schemas/crafting-sources";
 
@@ -38,7 +41,7 @@ const beasts: Record<string, string> = {
 export function craftingSourceRecipe(
     engine: CraftingEngine,
     id: string,
-    assumption?: CraftingSourceReference["assumption"],
+    assumption?: CraftingSourceOptions["assumption"],
 ) {
     if (engine.catalog.game !== "poe1")
         throw new Error("Beast and temple price sources support PoE 1 PC only.");
@@ -81,13 +84,27 @@ export function craftingSourceRecipe(
     return { category: "Beast" as const, components };
 }
 
-const prefix = "poeninja:v1:";
+export function craftingCommodityIdentity(engine: CraftingEngine, id: string) {
+    if (engine.catalog.game !== "poe1") return null;
+    const essence = engine.catalog.crafting.essences.find((entry) => entry.id === id);
+    if (!essence) return null;
+    const currencies = engine.catalog.crafting.currencies.filter(
+        (entry) => entry.name === essence.name,
+    );
+    return currencies.length === 1 && currencies[0]!.id === id
+        ? { id, baseType: essence.name }
+        : null;
+}
+
+const prefixes = { "poe.ninja": "poeninja:v1:", "stash-commodity": "stash-commodity:v1:" };
 export function decodeCraftingSourceReference(value?: string): CraftingSourceReference | null {
-    if (!value?.startsWith(prefix)) return null;
+    const prefix = Object.values(prefixes).find((prefix) => value?.startsWith(prefix));
+    if (!prefix) return null;
     try {
-        return craftingSourceReferenceSchema.parse(
-            JSON.parse(decodeURIComponent(value.slice(prefix.length))),
+        const reference = craftingSourceReferenceSchema.parse(
+            JSON.parse(decodeURIComponent(value!.slice(prefix.length))),
         );
+        return prefixes[reference.source] === prefix ? reference : null;
     } catch {
         return null;
     }
@@ -114,6 +131,37 @@ export function bindCraftingSourcePrice(
         throw new Error(
             "The source quote does not match this input, game, league or accounting currency.",
         );
+    if (quote.source === "stash-commodity") {
+        const parsed = commoditySourceQuoteSchema.parse(quote);
+        if (parsed.hour > Math.floor(Date.now() / 3_600_000) * 3600 - 3600)
+            throw new Error("A captured asking-price quote must describe a completed hour.");
+        const identity = craftingCommodityIdentity(engine, id);
+        if (!identity || identity.baseType !== parsed.baseType)
+            throw new Error("The commodity quote does not identify this catalog essence.");
+        const reference = commoditySourceReferenceSchema.parse({
+            source: parsed.source,
+            game: parsed.game,
+            realm: parsed.realm,
+            league: parsed.league,
+            currency: parsed.currency,
+            ...identity,
+        });
+        return {
+            ...graph,
+            prices: {
+                ...graph.prices,
+                [id]: {
+                    amount: parsed.amount,
+                    currency: parsed.currency,
+                    source: "market",
+                    confidence: null,
+                    samples: parsed.samples,
+                    observedAt: new Date(parsed.hour * 1000).toISOString(),
+                    cohortId: `${prefixes[reference.source]}${encodeURIComponent(JSON.stringify(reference))}`,
+                },
+            },
+        };
+    }
     const recipe = craftingSourceRecipe(engine, id, quote.assumption);
     const components = quote.components.map(({ detailsId, quantity }) => ({ detailsId, quantity }));
     const amount = quote.components.reduce(
@@ -144,7 +192,7 @@ export function bindCraftingSourcePrice(
                 source: "market",
                 confidence: null,
                 observedAt: quote.fetchedAt,
-                cohortId: `${prefix}${encodeURIComponent(JSON.stringify(reference))}`,
+                cohortId: `${prefixes[reference.source]}${encodeURIComponent(JSON.stringify(reference))}`,
             },
         },
     };

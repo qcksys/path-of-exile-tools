@@ -90,6 +90,15 @@ export function listCraftingPresets(game: "poe1" | "poe2") {
     return craftingPresets.filter((preset) => preset.game === game);
 }
 
+const magicDonors: Partial<Record<CraftingPresetId, readonly string[]>> = {
+    "life-block-shield": ["block", "max-res"],
+    "es-block-shield": ["flat"],
+    "physical-bow": ["donor-0", "donor-1", "donor-2"],
+    "elemental-bow": ["donor-0", "donor-1", "donor-2"],
+    "rarity-helmet": ["donor-0-1", "donor-1-0", "donor-1-1"],
+    "energy-shield-chest": ["donor-0"],
+};
+
 export function projectFromPreset(
     engine: CraftingEngine,
     ruleset: CraftingRuleset,
@@ -523,6 +532,17 @@ export function projectFromPreset(
                 },
             });
         entry = finish.id;
+    }
+    for (const node of nodes) {
+        if (node.kind !== "acquire" || !magicDonors[presetId]?.includes(node.id)) continue;
+        const rare = node.alternatives[0]!;
+        if (rare.kind !== "purchase") throw new Error("Preset donor must be a purchase.");
+        node.alternatives.push({
+            ...rare,
+            id: "buy-magic",
+            name: `${rare.name} (Magic)`,
+            item: engine.validateItem({ ...rare.item, rarity: "magic" }),
+        });
     }
     const graph = projectFromItem(ruleset, base("Spine Bow"), preset.name);
     graph.nodes = nodes;

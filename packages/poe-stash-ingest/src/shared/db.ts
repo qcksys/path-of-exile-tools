@@ -98,7 +98,17 @@ CREATE TABLE IF NOT EXISTS ps_capture_page (
     response_hash VARCHAR NOT NULL, processed_at TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS ps_capture_page_time ON ps_capture_page(captured_at);
+ALTER TABLE ps_capture_page ADD COLUMN IF NOT EXISTS equipment_revision VARCHAR;
 CREATE TABLE IF NOT EXISTS ps_capture_stash (stash_id VARCHAR PRIMARY KEY);
+CREATE TABLE IF NOT EXISTS ps_equipment_reclassify (
+    revision VARCHAR NOT NULL, league VARCHAR NOT NULL, hour BIGINT NOT NULL,
+    after_time BIGINT NOT NULL, after_id VARCHAR NOT NULL, completed BOOLEAN NOT NULL,
+    PRIMARY KEY (revision, league, hour)
+);
+CREATE TABLE IF NOT EXISTS ps_equipment_reclassify_hour AS
+    SELECT * FROM ps_equipment_hour WHERE FALSE;
+CREATE UNIQUE INDEX IF NOT EXISTS ps_equipment_reclassify_hour_pk
+    ON ps_equipment_reclassify_hour(account_name, item_id, revision, observed_hour);
 CREATE TABLE IF NOT EXISTS ps_equipment_cohort (
     revision VARCHAR NOT NULL, cohort_id VARCHAR NOT NULL, definition JSON NOT NULL,
     PRIMARY KEY (revision, cohort_id)

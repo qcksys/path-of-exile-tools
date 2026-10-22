@@ -15,7 +15,11 @@ import {
     livePurchasePrices,
 } from "~/lib/crafting-market";
 import { resolveRuleset } from "~/lib/crafting-rulesets";
-import { bindCraftingSourcePrice, liveSourcePrices } from "~/lib/crafting-sources";
+import {
+    bindCraftingSourcePrice,
+    craftingCommodityIdentity,
+    liveSourcePrices,
+} from "~/lib/crafting-sources";
 import { craftingCatalogSchema } from "~/schemas/crafting";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import { findCraftingSourcePrices } from "~/services/crafting-sources.server";
@@ -129,7 +133,7 @@ export async function refreshCraftingMarketPrices(
     const sources = new Map<string, ReturnType<typeof liveSourcePrices>>();
     for (const binding of liveSourcePrices(graph)) {
         const { reference, id } = binding;
-        if (at !== undefined) {
+        if (at !== undefined && reference.source === "poe.ninja") {
             issues.push(
                 `${id}: poe.ninja current listing estimates have no captured historical source; enter a manual assumption for history.`,
             );
@@ -139,28 +143,45 @@ export async function refreshCraftingMarketPrices(
             reference.game !== graph.game ||
             reference.league !== graph.league ||
             reference.currency !== graph.currency ||
-            reference.id !== id
+            reference.id !== id ||
+            (reference.source === "stash-commodity" &&
+                craftingCommodityIdentity(engine, id)?.baseType !== reference.baseType)
         ) {
             issues.push(
                 `${id}: the saved source price does not match this input, game, league or currency.`,
             );
             continue;
         }
-        const key = reference.assumption ?? "none";
+        const key = JSON.stringify([
+            reference.source,
+            reference.source === "poe.ninja" ? reference.assumption : undefined,
+        ]);
         sources.set(key, [...(sources.get(key) ?? []), binding]);
     }
     for (const bindings of sources.values()) {
-        const result = await findCraftingSourcePrices(graph, engine, {
-            realm: "pc",
-            ids: bindings.map(({ id }) => id),
-            assumption: bindings[0]!.reference.assumption,
-        });
+        const reference = bindings[0]!.reference;
+        const result = await findCraftingSourcePrices(
+            graph,
+            engine,
+            {
+                realm: "pc",
+                ids: bindings.map(({ id }) => id),
+                assumption: reference.source === "poe.ninja" ? reference.assumption : undefined,
+                at,
+            },
+            db,
+        );
         for (const { id } of bindings) {
             const quote = result.quotes[id];
             if (quote) {
-                // Keep unchanged quotes stable across Worker isolates to avoid refresh/edit loops.
-                if (next.prices[id]?.amount !== quote.amount)
-                    next = bindCraftingSourcePrice(next, engine, id, quote);
+                const updated = bindCraftingSourcePrice(next, engine, id, quote);
+                // Retrieval times change across isolates; captured observation times do not.
+                if (
+                    quote.source === "stash-commodity"
+                        ? JSON.stringify(updated.prices[id]) !== JSON.stringify(next.prices[id])
+                        : next.prices[id]?.amount !== quote.amount
+                )
+                    next = updated;
             } else
                 issues.push(`${id}: ${result.missing[id] ?? "The source price is unavailable."}`);
         }

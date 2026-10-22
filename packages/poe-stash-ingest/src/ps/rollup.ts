@@ -159,7 +159,12 @@ function unixHour(d: Date = new Date()): number {
 
 export async function rollupPs(
     conn: DuckDBConnection,
-    opts: { hour?: number; league?: string | null; dryRun?: boolean },
+    opts: {
+        hour?: number;
+        league?: string | null;
+        dryRun?: boolean;
+        onBatch?: () => Promise<void>;
+    },
 ): Promise<{ hours: number[]; rows: number }> {
     await assertSourceRealm(conn, REALM ?? "pc");
     const hour = opts.hour ?? unixHour() - 3600;
@@ -203,7 +208,7 @@ export async function rollupPs(
         return { hours: [hour], rows: 0 };
     }
 
-    await push({ stream: "psapi", rows }, { dryRun: opts.dryRun });
+    await push({ stream: "psapi", rows }, { dryRun: opts.dryRun, onBatch: opts.onBatch });
 
     if (!opts.dryRun) {
         const byLeague = new Map<string, number>();

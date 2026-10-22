@@ -1,6 +1,8 @@
 import { z } from "zod";
+import type { TDatabase } from "~/db/client";
+import { findCraftingCommodityPrices } from "~/db/queries/crafting-commodities.queries";
 import type { CraftingEngine } from "~/lib/crafting-engine";
-import { craftingSourceRecipe } from "~/lib/crafting-sources";
+import { craftingCommodityIdentity, craftingSourceRecipe } from "~/lib/crafting-sources";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import {
     type CraftingSourceOptions,
@@ -80,15 +82,27 @@ export async function findCraftingSourcePrices(
     graph: CraftingGraph,
     engine: CraftingEngine,
     options: CraftingSourceOptions,
+    db?: TDatabase,
 ): Promise<CraftingSourceResult> {
     const result: CraftingSourceResult = { quotes: {}, missing: {} };
     const feeds = new Map<string, Feed | Error>();
+    const commodities: Array<{ id: string; baseType: string }> = [];
     for (const id of new Set(options.ids)) {
         try {
             if (options.realm !== "pc" || graph.game !== "poe1")
                 throw new Error("Beast and temple price sources support PoE 1 PC only.");
             if (!graph.league) throw new Error("Choose a league before looking up prices.");
             const currency = z.enum(["chaos", "divine", "exalted"]).parse(graph.currency);
+            const commodity = craftingCommodityIdentity(engine, id);
+            if (commodity) {
+                if (!db) throw new Error("Captured commodity prices are unavailable.");
+                commodities.push(commodity);
+                continue;
+            }
+            if (options.at !== undefined)
+                throw new Error(
+                    "poe.ninja current listing estimates have no captured historical source; enter a manual assumption for history.",
+                );
             const recipe = craftingSourceRecipe(engine, id, options.assumption);
             let feed = feeds.get(recipe.category);
             if (!feed) {
@@ -135,6 +149,11 @@ export async function findCraftingSourcePrices(
             result.missing[id] =
                 error instanceof Error ? error.message : "Price source unavailable.";
         }
+    }
+    if (commodities.length && db) {
+        const captured = await findCraftingCommodityPrices(db, graph, commodities, options.at);
+        Object.assign(result.quotes, captured.quotes);
+        Object.assign(result.missing, captured.missing);
     }
     return result;
 }

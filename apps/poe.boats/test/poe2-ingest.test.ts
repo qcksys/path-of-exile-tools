@@ -2,12 +2,18 @@
 import { expect, it, vi } from "vite-plus/test";
 import { createClient } from "../../../packages/poe-api-client/src/client";
 import { runPipeline } from "../../../packages/poe-stash-ingest/src/pipeline";
+import { reclassifyArchivedEquipment } from "../../../packages/poe-stash-ingest/src/ps/equipment-reclassify";
 import { ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest";
 import { openDb, queryAll } from "../../../packages/poe-stash-ingest/src/shared/db";
 import { push } from "../../../packages/poe-stash-ingest/src/shared/remote/push";
 
 vi.mock("../../../packages/poe-stash-ingest/src/shared/auth.ts", () => ({ REALM: "poe2" }));
 vi.mock("../../../packages/poe-stash-ingest/src/shared/remote/push.ts", () => ({ push: vi.fn() }));
+vi.mock("../../../packages/poe-stash-ingest/src/ps/equipment-reclassify.ts", () => ({
+    reclassifyArchivedEquipment: vi.fn(() => {
+        throw new Error("Must not reclassify PoE 2 equipment");
+    }),
+}));
 
 it("processes PoE 2 exchange history without calling the unavailable equipment stream", async () => {
     const db = await openDb(":memory:");
@@ -40,6 +46,7 @@ it("processes PoE 2 exchange history without calling the unavailable equipment s
         expect(result.stash).toBeNull();
         expect(result.currency).toHaveLength(1);
         expect(stash).not.toHaveBeenCalled();
+        expect(reclassifyArchivedEquipment).not.toHaveBeenCalled();
         expect(exchange).toHaveBeenCalledWith({ realm: "poe2", id: expect.any(Number) });
         expect(push).toHaveBeenCalledWith(
             {
@@ -52,7 +59,7 @@ it("processes PoE 2 exchange history without calling the unavailable equipment s
                     }),
                 ],
             },
-            { dryRun: undefined },
+            { dryRun: undefined, onBatch: expect.any(Function) },
         );
         expect(
             await queryAll(db.conn, "SELECT count(*)::INTEGER AS n FROM ps_equipment_listing"),

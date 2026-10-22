@@ -12,6 +12,12 @@ it neither publishes market data nor changes cursors or samples. The worker arch
 crafting-input records from its configured league locally before price classification, independently
 of the price projections. It retains full selected item details and tracked-stash removals, not the whole feed.
 Its `capture-status` CLI reports archive counts and sizes; the archive is not exposed through public APIs.
+The owning worker can reclassify the last 24 completed capture hours after a cohort manifest revision
+changes. It processes up to five archived pages per cycle after exchange capture, newest hour first,
+and publishes each
+completed hour atomically with its original observation times. This does not replace active
+listings or cursors, expose raw archive records, or create uncaptured history. Existing market
+history and pricing operations consume the corrected revision through the normal delivery path.
 
 `app/operations/registry.server.ts` assembles the feature operation catalogs. HTTP routes, OpenAPI, MCP tool registration, and `/integrations` all read that catalog. A registration points at the function the normal UI uses; it is not an alternative implementation. Pure calculations can run locally in the browser, including the recombinator's Web Worker, without an HTTP round trip.
 
@@ -128,6 +134,17 @@ Modifier inference also applies the client's explicit required-influence rules t
 flags. Missing or dual-influence evidence retains ambiguity; fixed all-influence bases require their
 native implicit text. Native spawn weights do not exclude legitimate non-native donors. Proven
 modifier metadata constrains inference without preventing other affixes from being identified.
+Thirteen isolated ordinary donors also offer a separate Magic purchase where the complete immediate
+recombination outcomes match the existing Rare purchase. Each rarity has an exact cohort; a Magic
+quote never prices a Rare item. New presets retain the original pinned purchase for previews, while
+users can select the Magic alternative or compare actually priced alternatives automatically. The
+ten presets contain 40 purchase alternatives across 27 acquisitions and 39 distinct exact cohorts.
+
+Source lookup and binding also accept 106 verified PoE 1 PC essence identities through a distinct
+`stash-commodity` source. This uses already captured unit asking prices and preserves the completed
+observation hour, range and priced sample count separately from total listings and sellers. Selection
+is explicit, manual amounts survive bulk fill and refresh, and historical snapshots use the requested
+cutoff. An unavailable exchange quote remains unavailable; essence asks are a separate price source.
 
 ## Adding a capability or Hono subrouter
 

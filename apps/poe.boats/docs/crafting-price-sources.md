@@ -23,12 +23,13 @@ captured history survive restarts. DuckDB 1.4.5 contains the upstream fix for th
 | Cost | Source | Coverage and limits |
 | --- | --- | --- |
 | Currency, essences, oils, fossils, resonators, lifeforce and other canonical exchange items | [GGG hourly currency exchange](https://www.pathofexile.com/developer/docs/reference#currencyexchange) | Direct traded-volume ratios in the selected game, realm and league. Optional `reference-currency-v1` tries a two-leg conversion through chaos, divine, then exalted when a direct quote is absent. Both legs must have positive volume and the same hour and adaptive window. The result exposes both legs and does not invent direct traded volume or a traded range. Old bindings retain direct-pair behavior. |
+| Verified PoE 1 essences | Captured public stash commodity buckets | Explicit alternative asking-price source for the 106 essence identities with a unique matching currency ID/name in the retained catalog. Requires exact base type, empty name, currency frame, ordinary item flags and no variant signature. Prices are per item in the selected league and currency, with observed hour, range, priced sample count, total listings and total sellers. Never silently replaces an exchange quote. |
 | Base items and supported prepared donors | Captured public stash cohorts | Asking-price distributions, seller counts and coverage checks. Requires actual matching observations; unsupported modifiers, exact preparation and PoE 2 equipment remain manual. |
 | Beast recipes | [poe.ninja Beast overview](https://poe.ninja/docs/api) | Derives the full component list from the project's retained catalog. Maps verified component IDs to exact feed identities, and requires every component to have a positive quote with listings. Includes all four sacrifices. The user must choose `rare-beast-mountain-lynx-v1` to use Mountain Lynx as the price assumption for extra rare beasts. Level-sensitive recipes remain manual because this feed does not distinguish beast levels. |
 | Locus of Corruption | [poe.ninja IncursionTemple overview](https://poe.ninja/docs/api) | Exact `locus-of-corruption-tier-3-temple` entry only, for one usable room; combined temple variants are not substituted. |
 | Recombination service, gold, dust, time, arbitrary rares and unsupported prepared inputs | User-entered assumption | No reliable automatic chaos price. These inputs remain unknown until the user supplies an amount. They are never treated as free. |
 
-Equipment and exchange lookups use the latest 24 completed hourly buckets at
+Equipment, exchange and captured essence lookups use the latest 24 completed hourly buckets at
 the requested cutoff. Historical cutoffs remain inclusive, but cannot select
 an incomplete future hour. Older observations remain available in history and
 are not returned as current prices. Failed refreshes preserve saved assumptions
@@ -49,29 +50,49 @@ omit preparation costs or change the available modifier pool. Such cohorts
 remain market evidence for a manual assumption, not a complete purchase price.
 The same validation applies to binding and refreshing existing prices.
 
-The cohort generator derives 26 purchase-specific definitions from all 27 purchases in the
-ten configured presets. These preserve the configured base name, level, rarity,
-influences and explicit modifier counts/identities. Capture retains their bases,
-including influenced donors. Fixtures with optional modifier identity metadata
-can populate 24 purchases; fixtures using the documented description-and-flags
-shape populate 16 at their configured rolls. Overlapping displayed modifier
-identities remain unknown. Some different rolls can resolve uniquely, so these
-counts measure the fixtures, not guaranteed live coverage. A definition does not
+The cohort generator derives 39 purchase-specific definitions from all 40 purchase
+alternatives in the ten configured presets. These preserve canonical base identity,
+level, rarity, influences and explicit modifier counts/identities. Capture retains
+their bases, including influenced donors. Thirteen Magic single-modifier alternatives
+are available for equivalent immediate recombination donors; the presets retain
+their pinned Rare defaults. Users may explicitly choose a Magic alternative or
+automatic acquisition, which considers only alternatives with known prices and
+refuses an entirely unpriced set.
+
+Fixtures with optional modifier identity metadata can populate 34 of the 40
+alternatives (24 original, 10 Magic); fixtures using documented descriptions,
+flags and required-influence constraints populate 28 (19 original, 9 Magic) at
+their configured rolls. Overlapping displayed modifier identities remain unknown.
+Some different rolls can resolve uniquely, so these counts measure the fixtures,
+not guaranteed live coverage. A definition does not
 imply available stock or a captured price. Regenerate and restart the equipment
 worker after changing cohort queries so new definitions and observations reach
 the database. Display-name-only changes can continue using compatible retained
 query revisions.
 
 Two-Toned Boots has multiple canonical base variants with the same display name
-and different native implicits and defences. Captured base-name cohorts cannot
-prove which variant was priced. The shared item guard refuses automatic graph
-binding and refresh for such ambiguous bases; raw cohort results remain browsing
-evidence rather than a complete acquisition price.
+and different native implicits and defences. Native implicit evidence establishes
+the canonical base only when it uniquely identifies a catalog variant. Generated
+boot queries require that canonical `baseId`; genuine ambiguity remains unknown.
+Legacy name-only cohorts remain browsing evidence rather than complete acquisition
+prices.
 
 Exchange history remains available for canonical items without a current quote,
 including after a failed lookup. Zero traded volume is shown as zero volume and
 an unknown price. Viewing an older positive observation never fills a current
 price or replaces a manual amount.
+
+Captured essence asks are an explicit source choice, separate from completed
+exchange trades. Bulk listing ratios such as `~price 10/5 chaos` are normalized
+to 2 chaos per item at capture; stack size does not multiply or divide that amount
+again. The latest compatible bucket must contain a positive requested-currency
+distribution; a newer empty or invalid distribution does not fall back to an older
+positive bucket. Sample counts include priced listings in that currency, while
+listing and seller counts include the whole exact-identity bucket. Sparse asks
+can vary widely and confidence remains uncalibrated. Binding records the canonical
+ID, source kind, realm, league, currency and observed hour. Refresh and historical
+process snapshots query stored buckets at their own cutoffs; no current-only quote
+is substituted for history. The history link opens the raw asking distributions.
 
 Beast and temple sources are PoE 1 PC current listing estimates. They support
 chaos, divine and exalted via the corresponding upstream values. Counts are
@@ -82,9 +103,9 @@ bounds response size and does not substitute expired data after a failed fetch.
 
 The UI, HTTP and MCP operations use the same lookup and binding functions.
 Selecting a quote explicitly replaces a manual value; the bulk action only fills
-unpriced inputs. Refresh retains source scope and the rare-beast assumption.
-Historical process snapshots return an explicit gap for these current-only
-sources; they never reuse today's quote for an earlier date.
+unpriced inputs. Refresh retains source scope and any rare-beast assumption.
+Historical process snapshots return an explicit gap for current-only beast and
+temple sources; they never reuse today's quote for an earlier date.
 
 The standalone workbench uses those same lookups and explicitly copies selected
 estimates into its chaos-price fields. These are fixed amounts, with no automatic

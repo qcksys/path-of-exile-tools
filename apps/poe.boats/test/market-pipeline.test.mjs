@@ -197,6 +197,46 @@ it("parses fractional bulk prices, aliases, and explicit unpriced overrides", ()
     expect(extractListingPrice({ ...item, note: "~skip" }, "~price 10 divine")).toBeNull();
 });
 
+it("captures and rolls up essence asking prices per item regardless of stack size", async () => {
+    const essenceName = "Screaming Essence of Rage";
+    await ingest(
+        [20, 1].map((stackSize, index) => ({
+            ...stash,
+            id: `essence-stash-${index}`,
+            accountName: `essence-seller-${index}`,
+            items: [
+                {
+                    ...item,
+                    id: `essence-${index}`,
+                    name: "",
+                    baseType: essenceName,
+                    typeLine: essenceName,
+                    frameType: 5,
+                    stackSize,
+                    note: index === 0 ? "~price 10/5 chaos" : "~price 4 chaos",
+                },
+            ],
+        })),
+    );
+    expect(
+        await queryAll(db.conn, "SELECT price_amount FROM ps_listing ORDER BY price_amount"),
+    ).toEqual([{ price_amount: 2 }, { price_amount: 4 }]);
+    const network = vi.fn().mockResolvedValue(Response.json({ written: 1 }));
+    vi.stubGlobal("fetch", network);
+    await rollupPs(db.conn, { hour: Math.floor(Date.now() / 3600000) * 3600 });
+    expect(JSON.parse(network.mock.calls[0][1].body).rows).toEqual([
+        expect.objectContaining({
+            itemKey: essenceName,
+            baseType: essenceName,
+            name: "",
+            frameType: 5,
+            listingCount: 2,
+            uniqueSellers: 2,
+            prices: { chaos: { count: 2, min: 2, max: 4, median: 3 } },
+        }),
+    ]);
+});
+
 it("does not infer sales from removals encountered during initial catch-up", async () => {
     await ingest([stash]);
     await ingest([{ ...stash, items: [] }]);

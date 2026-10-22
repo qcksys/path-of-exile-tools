@@ -176,7 +176,12 @@ async function equipmentRange(
 
 export async function rollupEquipment(
     conn: DuckDBConnection,
-    opts: { hour?: number; league?: string | null; dryRun?: boolean },
+    opts: {
+        hour?: number;
+        league?: string | null;
+        dryRun?: boolean;
+        onBatch?: () => Promise<void>;
+    },
 ) {
     await assertSourceRealm(conn, REALM ?? "pc");
     const hour = opts.hour ?? Math.floor(Date.now() / 3_600_000) * 3600 - 3600;
@@ -199,7 +204,10 @@ export async function rollupEquipment(
             JSON.stringify([definition.revision, definition.id]);
         const pending = parsed.filter((definition) => !delivered.ids.has(key(definition)));
         if (pending.length) {
-            await push({ stream: "equipment-definitions", rows: pending }, { dryRun: opts.dryRun });
+            await push(
+                { stream: "equipment-definitions", rows: pending },
+                { dryRun: opts.dryRun, onBatch: opts.onBatch },
+            );
             if (!opts.dryRun) {
                 if (delivered.ids.size + pending.length > MAX_CACHED_DEFINITIONS)
                     delivered.ids.clear();
@@ -208,7 +216,7 @@ export async function rollupEquipment(
                 deliveredDefinitions.set(conn, delivered);
             }
         }
-        await push({ stream: "equipment", rows }, { dryRun: opts.dryRun });
+        await push({ stream: "equipment", rows }, { dryRun: opts.dryRun, onBatch: opts.onBatch });
         if (!opts.dryRun)
             for (const league of new Set(rows.map((row) => row.league))) {
                 await conn.run(
