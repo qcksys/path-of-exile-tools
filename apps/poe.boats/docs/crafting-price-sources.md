@@ -27,7 +27,15 @@ captured history survive restarts. DuckDB 1.4.5 contains the upstream fix for th
 | Base items and supported prepared donors | Captured public stash cohorts | Asking-price distributions, seller counts and coverage checks. Requires actual matching observations; unsupported modifiers, exact preparation and PoE 2 equipment remain manual. |
 | Beast recipes | [poe.ninja Beast overview](https://poe.ninja/docs/api) | Derives the full component list from the project's retained catalog. Maps verified component IDs to exact feed identities, and requires every component to have a positive quote with listings. Includes all four sacrifices. The user must choose `rare-beast-mountain-lynx-v1` to use Mountain Lynx as the price assumption for extra rare beasts. Level-sensitive recipes remain manual because this feed does not distinguish beast levels. |
 | Locus of Corruption | [poe.ninja IncursionTemple overview](https://poe.ninja/docs/api) | Exact `locus-of-corruption-tier-3-temple` entry only, for one usable room; combined temple variants are not substituted. |
-| Recombination service, gold, dust, time, arbitrary rares and unsupported prepared inputs | User-entered assumption | No reliable automatic chaos price. These inputs remain unknown until the user supplies an amount. They are never treated as free. |
+| Recombination service, gold, dust, time, arbitrary rares and unsupported prepared inputs | User-entered assumption | No reliable automatic chaos price. Missing assumptions remain unknown. New recombination presets explicitly use the requested 0-chaos self-service assumption, excluding gold and dust opportunity cost. |
+
+The eight presets containing recombination start with a shared `service:recombine`
+price of 0 chaos, recorded as `source: manual` with unknown confidence. Their
+descriptions state the self-service assumption. The engine charges one service
+unit per attempt, including retries; users can replace the shared amount or set
+a price for an individual step. Gold and dust are not separately quantified price
+inputs. This default applies only when creating those presets. Saved graphs,
+existing manual amounts and custom graphs with missing prices are unchanged.
 
 Equipment, exchange and captured essence lookups use the latest 24 completed hourly buckets at
 the requested cutoff. Historical cutoffs remain inclusive, but cannot select
