@@ -158,7 +158,10 @@ Modifier text model version 2 can derive one omitted affix count when every supp
 interpretation of the complete displayed modifier text agrees. It preserves supplied
 counts and the raw source item, shares the existing search budget across possible counts,
 and keeps ambiguous, unsupported or incomplete evidence unknown. Version 1 retains its
-original behavior; the new model produces a separate capture revision.
+original behavior; the new model produces a separate capture revision. Version 3 also
+intersects complete identified Magic item names with modifier descriptions and supplied counts.
+Canonical blank names and same-name ambiguities remain possible; incomplete, decorated or
+special item names do not constrain inference. Existing model formats retain their behavior.
 Fifteen ordinary donor alternatives, including the flat-ES/recovery prefix/suffix pair, offer a
 separate Magic purchase where the complete immediate recombination outcomes match the existing
 Rare purchase. Each rarity has an exact cohort; a Magic
@@ -169,9 +172,15 @@ donors: acquire the exact Normal base, Transmute, roll Alterations and Annul an 
 Losing the target returns to paid rolling on the same item. Real-engine tests cover every route's
 recovery charges, source-cost discovery and full-recipe output equivalence. Prices remain unknown
 until supplied, and the original Rare purchases stay pinned. Saved graphs and older revisions
-retain their recipes. The ten current presets contain 57 purchase alternatives across 42
-acquisitions and 48 distinct exact cohorts; fifteen production alternatives include the
-Hunter-base preparation described above. Capture fixtures cover every new base without modifier metadata;
+retain their recipes. The [ES shield preset](crafting-preset-es-shield.md) also prepares its two
+NNN donors with Weeping Doubt, paid Annulment isolation and Exalted attempts. Losing the NNN
+prefix requires paid Scouring and another Essence on the same base. Three concrete Magic
+Shaper shield purchases can be Scoured into the four existing Normal shield acquisitions;
+shared source definitions still buy a separate item for each consumer. These preparation
+choices remain optional, with the original purchases pinned.
+The ten current presets contain 60 purchase alternatives across 45 acquisitions and 51
+distinct exact cohorts; 22 production alternatives include Hunter, Redeemer, NNN and Scouring
+preparation. Capture fixtures cover every new base without modifier metadata;
 definitions do not imply observed inventory or available quotes.
 
 Source lookup and binding also accept 106 verified PoE 1 PC essence identities through a distinct

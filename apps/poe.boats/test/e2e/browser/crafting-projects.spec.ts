@@ -148,26 +148,31 @@ test("ES chest graph separates the 2p + 2p attempt from success after retries", 
     await page.screenshot({ path: "test-results/es-chest-attempt-odds.png", fullPage: true });
 });
 
-for (const [name, nodeId, alternativeId, label] of [
-    ["Hunter base", "tailwind-base", "make-hunter", "Add Hunter influence to an unrolled base"],
-    [
-        "Redeemer donor",
-        "onslaught-base",
-        "make-onslaught",
-        "Roll and isolate Onslaught, then Regal Elusive",
-    ],
+for (const [name, presetId, nodeId, alternativeId] of [
+    ["Hunter base", "tailwind-boots", "tailwind-base", "make-hunter"],
+    ["Redeemer donor", "tailwind-boots", "onslaught-base", "make-onslaught"],
+    ["NNN percent ES donor", "es-block-shield", "percent", "make-nnn"],
+    ["NNN block donor", "es-block-shield", "block", "make-nnn"],
+    ["Titanium base Scouring", "es-block-shield", "flat-make-base", "make-scour"],
+    ["Heat base for block", "life-block-shield", "block-make-base", "make-scour"],
+    ["Heat base for maximum resistance", "life-block-shield", "max-res-make-base", "make-scour"],
+    ["Pinnacle base Scouring", "life-block-shield", "recovery-make-base", "make-scour"],
 ] as const) {
     test(`${name} preparation is explicitly selected and survives reload`, async ({ page }) => {
         const ruleset = historyIndex.revisions.find(
             (entry) => entry.game === "poe1" && entry.revision === "r9",
         )!;
         const catalog = craftingCatalogSchema.parse((await retainedRevision(ruleset)).catalog);
-        const graph = projectFromPreset(new CraftingEngine(catalog), ruleset, "tailwind-boots");
+        const graph = projectFromPreset(new CraftingEngine(catalog), ruleset, presetId);
         const receiver = graph.nodes.find((node) => node.id === nodeId)!;
-        if (receiver.kind !== "acquire") throw new Error("Expected boots acquisition");
+        if (receiver.kind !== "acquire") throw new Error("Expected acquisition");
+        const label = receiver.alternatives.find((choice) => choice.id === alternativeId)!.name;
         await importGraph(page, graph);
         await selectValue(page.getByRole("combobox", { name: "Focus graph step" }), receiver.id);
-        await page.getByRole("button", { name: `Edit ${receiver.name}`, exact: true }).click();
+        await page
+            .locator(`.react-flow__node[data-id="${receiver.id}"]`)
+            .getByRole("button", { name: `Edit ${receiver.name}`, exact: true })
+            .click();
         const editor = page.getByRole("region", { name: "Selected step editor" });
         const choice = editor.getByRole("combobox", { name: "Acquisition choice", exact: true });
         await expect(choice).toContainText(`Pin: ${receiver.alternatives[0]!.name}`);

@@ -671,6 +671,177 @@ export function projectFromPreset(
                 ),
             });
     }
+    if (presetId === "es-block-shield" && rulesetAllowsPresetPreparation(ruleset)) {
+        const nnn = "LocalIncreasedEvasionRating4";
+        const hasNNN = presetQuery(presetMod(nnn));
+        const isolated = presetQuery(
+            presetMod(nnn),
+            presetRange("prefixes", 1, 1),
+            presetRange("suffixes", 0, 0),
+            { kind: "rarity", values: ["Rare"] },
+        );
+        for (const id of ["percent", "block"]) {
+            const donor = nodes.find((node) => node.id === id);
+            const purchase = donor?.kind === "acquire" ? donor.alternatives[0] : undefined;
+            if (donor?.kind !== "acquire" || purchase?.kind !== "purchase")
+                throw new Error("NNN shield donor must have a purchase.");
+            const wanted = purchase.item.mods.find((mod) => mod.id !== nnn)!.id;
+            const ready = presetQuery(
+                presetMod(nnn),
+                presetMod(wanted),
+                presetRange("prefixes", 2, 2),
+                presetRange("suffixes", 0, 0),
+                { kind: "rarity", values: ["Rare"] },
+            );
+            const essence = craft(
+                `${id}-make-essence`,
+                "Apply Weeping Essence of Doubt",
+                ["flat-make-base"],
+                { kind: "essence", id: "Metadata/Items/Currency/CurrencyEssenceDoubt1" },
+            );
+            const isolate = craft(
+                `${id}-make-isolate`,
+                "Annul until only the NNN evasion prefix remains",
+                [essence.id],
+                currency("remove_random_mod"),
+            );
+            isolate.applyWhen = {
+                ...hasNNN,
+                groups: [...hasNNN.groups, ...presetNot(isolated).groups],
+            };
+            isolate.branches = [
+                {
+                    id: "isolated",
+                    name: "Only the NNN prefix remains",
+                    query: isolated,
+                    destination: { kind: "return" },
+                },
+                {
+                    id: "continue",
+                    name: "NNN survives: annul another modifier",
+                    query: hasNNN,
+                    destination: presetRecover(isolate.id),
+                },
+            ];
+            const exalt = craft(
+                `${id}-make-exalt`,
+                `Exalt for ${engine.mod(wanted).name} at item level 86`,
+                [isolate.id],
+                currency("add_mod_to_rare"),
+            );
+            exalt.applyWhen = isolated;
+            const annul = craft(
+                `${id}-make-annul`,
+                "Miss: annul the unwanted added modifier",
+                [exalt.id],
+                currency("remove_random_mod"),
+            );
+            annul.applyWhen = {
+                ...hasNNN,
+                groups: [...hasNNN.groups, ...presetNot(ready).groups],
+            };
+            annul.branches = [
+                {
+                    id: "ready",
+                    name: "Required prefix and NNN donor ready",
+                    query: ready,
+                    destination: { kind: "return" },
+                },
+                {
+                    id: "retry-exalt",
+                    name: "Only NNN remains: Exalt again",
+                    query: isolated,
+                    destination: presetRecover(exalt.id),
+                },
+            ];
+            const reset = craft(
+                `${id}-make-reset`,
+                "NNN lost: Scour before another Essence",
+                [annul.id],
+                currency("convert_to_normal"),
+            );
+            reset.applyWhen = presetNot(hasNNN);
+            reset.branches = [
+                {
+                    id: "ready",
+                    name: "Required prefix and NNN donor ready",
+                    query: ready,
+                    destination: { kind: "return" },
+                },
+            ];
+            reset.fallback = presetRecover(essence.id);
+            donor.alternatives.push({
+                kind: "production",
+                id: "make-nnn",
+                name: "Isolate NNN evasion, then Exalt the required prefix",
+                nodeId: reset.id,
+            });
+        }
+    }
+    if (
+        (presetId === "life-block-shield" || presetId === "es-block-shield") &&
+        rulesetAllowsPresetPreparation(ruleset)
+    ) {
+        const sources =
+            presetId === "life-block-shield"
+                ? [
+                      {
+                          id: "heat",
+                          targets: ["block-make-base", "max-res-make-base"],
+                          mod: "Strength7",
+                          name: "Buy Magic Shaper Heat-attuned Tower Shield with Strength",
+                      },
+                      {
+                          id: "pinnacle",
+                          targets: ["recovery-make-base"],
+                          mod: "DisplaySocketedGemsGetReducedReservationUber2",
+                          name: "Buy Magic Shaper Pinnacle Tower Shield with reservation efficiency",
+                      },
+                  ]
+                : [
+                      {
+                          id: "titanium",
+                          targets: ["flat-make-base"],
+                          mod: "LocalIncreasedBlockPercentage7",
+                          name: "Buy Magic Shaper Titanium Spirit Shield with T1 block",
+                      },
+                  ];
+        for (const source of sources) {
+            const targets = source.targets.map((id) => {
+                const node = nodes.find((node) => node.id === id);
+                if (node?.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
+                    throw new Error("Shield preparation must have a Normal base purchase.");
+                return { node, item: node.alternatives[0].item };
+            });
+            const first = targets[0]!;
+            const input = buy(
+                `shield-make-${source.id}-base`,
+                source.name,
+                engine.addStartingMod(
+                    { ...first.item, rarity: "magic" },
+                    source.mod,
+                    random,
+                    engine.catalog.crafting.modRules[source.mod]?.influence != null
+                        ? "influence"
+                        : "natural",
+                ),
+            );
+            const scour = craft(
+                `shield-make-${source.id}-scour`,
+                `Scour the Magic Shaper ${engine.base(first.item).name}`,
+                [input],
+                currency("convert_to_normal"),
+                first.node.output,
+            );
+            for (const { node } of targets)
+                node.alternatives.push({
+                    kind: "production",
+                    id: "make-scour",
+                    name: "Scour a Magic Shaper base",
+                    nodeId: scour.id,
+                });
+        }
+    }
     const graph = projectFromItem(ruleset, base("Spine Bow"), preset.name);
     graph.nodes = nodes;
     graph.entry = entry;
