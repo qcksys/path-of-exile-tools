@@ -107,9 +107,27 @@ export async function findCraftingMarketPrices(
             .where(
                 and(scope, eq(hourly.revision, cohort.revision), eq(hourly.cohortId, cohort.id)),
             );
-        const ranked: Array<{ candidate: CraftingMarketCandidate; order: number }> = [];
+        let ranked: CraftingMarketCandidate[] = [];
+        const identity = (value: { id: string; revision: string }) =>
+            JSON.stringify([value.revision, value.id]);
+        async function orderIdentities(candidates: CraftingMarketCandidate[], limit: number) {
+            return read(
+                db
+                    .select({ id: cohort.id, revision: cohort.revision })
+                    .from(cohort)
+                    .where(
+                        sql`(${cohort.revision}, ${cohort.id}) in (${sql.join(
+                            candidates.map(
+                                ({ definition }) => sql`(${definition.revision}, ${definition.id})`,
+                            ),
+                            sql`, `,
+                        )})`,
+                    )
+                    .orderBy(cohort.id, cohort.revision)
+                    .limit(limit),
+            );
+        }
         let cursor: { id: string; revision: string } | undefined;
-        let order = 0;
         while (true) {
             const definitions = await read(
                 db
@@ -121,16 +139,16 @@ export async function findCraftingMarketPrices(
                             cohortId === undefined ? undefined : eq(cohort.id, cohortId),
                             cursor
                                 ? or(
-                                      gt(cohort.id, cursor.id),
+                                      gt(cohort.revision, cursor.revision),
                                       and(
-                                          eq(cohort.id, cursor.id),
-                                          gt(cohort.revision, cursor.revision),
+                                          eq(cohort.revision, cursor.revision),
+                                          gt(cohort.id, cursor.id),
                                       ),
                                   )
                                 : undefined,
                         ),
                     )
-                    .orderBy(cohort.id, cohort.revision)
+                    .orderBy(cohort.revision, cohort.id)
                     .limit(500),
             );
             const parseStarted = performance.now();
@@ -150,7 +168,6 @@ export async function findCraftingMarketPrices(
                         definition,
                         covered: coverage.covered,
                         reasons: coverage.reasons,
-                        order: order++,
                         ...(input.window ? { window: input.window } : {}),
                         ...(assumption ? { assumption } : {}),
                         ...(input.conversion ? { conversion: input.conversion } : {}),
@@ -211,23 +228,53 @@ export async function findCraftingMarketPrices(
                 );
                 for (const row of rows) {
                     const latest = cohortHourlySchema.parse(row.summary);
-                    const { order, ...candidate } = byPair.get(
+                    const candidate = byPair.get(
                         JSON.stringify([row.definitionRevision, row.definitionId]),
                     )!;
-                    ranked.push({ candidate: { ...candidate, latest }, order });
+                    ranked.push({ ...candidate, latest });
                 }
-                // The scan ordinal preserves the database's id/revision collation for equal-hour rows across batches.
-                ranked.sort(
-                    (a, b) =>
-                        b.candidate.latest.hour - a.candidate.latest.hour || a.order - b.order,
-                );
-                ranked.splice(2001);
+                ranked.sort((a, b) => b.latest.hour - a.latest.hour);
                 parseMs += performance.now() - summaryStarted;
+                if (ranked.length > 2001) {
+                    const boundaryStarted = performance.now();
+                    const boundary = ranked[2000]!.latest.hour;
+                    const newer = ranked.filter((candidate) => candidate.latest.hour > boundary);
+                    const tied = ranked.filter((candidate) => candidate.latest.hour === boundary);
+                    const remaining = 2001 - newer.length;
+                    parseMs += performance.now() - boundaryStarted;
+                    // The database resolves only the boundary tie; PK scan order cannot decide the global result cap.
+                    const selectedIdentities =
+                        tied.length > remaining
+                            ? await orderIdentities(tied, remaining)
+                            : undefined;
+                    const mergeStarted = performance.now();
+                    if (selectedIdentities) {
+                        const selected = new Set(selectedIdentities.map(identity));
+                        ranked = [
+                            ...newer,
+                            ...tied.filter((candidate) =>
+                                selected.has(identity(candidate.definition)),
+                            ),
+                        ];
+                    } else ranked = [...newer, ...tied];
+                    parseMs += performance.now() - mergeStarted;
+                }
             }
             if (definitions.length < 500) break;
             cursor = definitions.at(-1)!;
         }
-        const candidates = ranked.slice(0, 2000).map(({ candidate }) => candidate);
+        if (ranked.length > 1) {
+            const ordered = await orderIdentities(ranked, ranked.length);
+            const sortStarted = performance.now();
+            const order = new Map(ordered.map((value, index) => [identity(value), index]));
+            ranked.sort(
+                (a, b) =>
+                    b.latest.hour - a.latest.hour ||
+                    order.get(identity(a.definition))! - order.get(identity(b.definition))!,
+            );
+            parseMs += performance.now() - sortStarted;
+        }
+        const candidates = ranked.slice(0, 2000);
         fxStarted = performance.now();
         const exchangeByHour = new Map<
             number,

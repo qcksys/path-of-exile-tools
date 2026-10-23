@@ -346,3 +346,56 @@ it("does not spend the observation cap on incompatible definitions or definition
         covered: true,
     });
 });
+
+it("retains late primary-key pages at the global tie boundary using database collation", async () => {
+    const league = "Primary scan ordering";
+    for (let start = 0; start < 2602; start += 400) {
+        const definitions = Array.from({ length: Math.min(400, 2602 - start) }, (_, offset) =>
+            definition(`Z:tie:${String(start + offset).padStart(4, "0")}`, "aa-first"),
+        );
+        await db.insert(cohort).values(definitions);
+        await db.insert(hourly).values(
+            definitions.map(({ id, revision }) => ({
+                ...observation(id, revision, hour - 3600),
+                league,
+            })),
+        );
+    }
+    await db
+        .insert(cohort)
+        .values([definition("a:late", "zz-last"), definition("Z:newest-correction", "zz-last")]);
+    await db.insert(hourly).values([
+        { ...observation("a:late", "zz-last", hour - 3600), league },
+        { ...observation("Z:newest-correction", "zz-last", hour - 3600), league },
+        { ...observation("Z:newest-correction", "zz-last", hour, {}), league },
+    ]);
+    statements.length = 0;
+    const result = await findCraftingMarketPrices(db as unknown as TDatabase, { ...input, league });
+    const production = statements.slice();
+    const identityReads = production.filter((query) => query.sql.includes(") in ("));
+    expect(Math.max(...identityReads.map((query) => query.params.length))).toBeGreaterThan(4001);
+    expect(identityReads.every((query) => query.params.length <= 5003)).toBe(true);
+    expect(result.truncated).toBe(true);
+    expect(result.candidates).toHaveLength(2000);
+    expect(result.candidates[0]).toMatchObject({
+        definition: { id: "Z:newest-correction", revision: "zz-last" },
+        latest: { hour, prices: {} },
+        covered: false,
+    });
+    expect(result.candidates[1]?.definition.id).toBe("a:late");
+    expect(result.candidates.map(({ definition, latest }) => ({ definition, latest }))).toEqual(
+        (await baseline({ ...input, league })).slice(0, 2000),
+    );
+    const definitionReads = production.filter(
+        (entry) => entry.sql.includes("catalogHash") && !entry.sql.includes("stash_cohort_hourly"),
+    );
+    expect(definitionReads.length).toBeGreaterThan(4);
+    for (const query of [definitionReads[0]!, definitionReads[1]!]) {
+        const [plan] = await connection.query<RowDataPacket[]>(
+            `EXPLAIN ANALYZE ${query.sql}`,
+            query.params,
+        );
+        expect(plan[0]?.EXPLAIN).not.toContain("Sort:");
+        expect(plan[0]?.EXPLAIN).toContain("using PRIMARY");
+    }
+});

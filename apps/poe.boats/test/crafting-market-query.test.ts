@@ -1,4 +1,4 @@
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { exchangeCurrencyId } from "@poe-tools/market";
 import { drizzle } from "drizzle-orm/mysql-proxy";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
@@ -24,11 +24,13 @@ const input: CraftingMarketInput = {
 let sqlite: DatabaseSync;
 let db: TDatabase;
 let elapsed: number;
+let reads: Array<{ sql: string; params: SQLInputValue[] }>;
 let beforeRead: (() => Promise<void>) | undefined;
 beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(now * 1000);
     elapsed = 0;
+    reads = [];
     beforeRead = undefined;
     vi.spyOn(performance, "now").mockImplementation(() => elapsed);
     sqlite = new DatabaseSync(":memory:");
@@ -55,6 +57,7 @@ beforeEach(() => {
             JSON.stringify(["Plate Vest"]),
         );
     db = drizzle(async (sql, params) => {
+        reads.push({ sql, params });
         if (beforeRead) await beforeRead();
         elapsed += 25;
         const statement = sqlite.prepare(sql);
@@ -126,6 +129,23 @@ function exchange(hour: number, realm = "pc", league = "Standard") {
 }
 
 describe("equipment market lookup", () => {
+    it("pages definitions in primary-key order without sorting the full definition table", async () => {
+        sqlite.exec(
+            `CREATE UNIQUE INDEX definition_primary ON ${DB_TABLE_PREFIX}stash_cohort(revision,id)`,
+        );
+        capture(completed);
+        const result = await findCraftingMarketPrices(db, input);
+        expect(result.candidates).toHaveLength(1);
+        const definitionReads = reads.filter(
+            (read) => read.sql.includes("catalogHash") && !read.sql.includes("stash_cohort_hourly"),
+        );
+        expect(definitionReads).toHaveLength(1);
+        for (const read of definitionReads) {
+            const plan = sqlite.prepare(`EXPLAIN QUERY PLAN ${read.sql}`).all(...read.params);
+            expect(JSON.stringify(plan)).not.toContain("TEMP B-TREE");
+            expect(JSON.stringify(plan)).toContain("definition_primary");
+        }
+    });
     it("finds a relevant observation after more than 2000 incompatible same-base definitions", async () => {
         capture(completed - 3600, "chaos", 30);
         capture(completed);
