@@ -5,7 +5,7 @@ import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysq
 import { and, desc, eq, getTableColumns, gte, isNull, lte, max, or, sql } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
-import { type Connection, createConnection } from "mysql2/promise";
+import { type Connection, createConnection, type RowDataPacket } from "mysql2/promise";
 import { afterAll, beforeAll, expect, it } from "vite-plus/test";
 import type { TDatabase } from "~/db/client";
 import { findCraftingMarketPrices } from "~/db/queries/crafting-market.queries";
@@ -45,7 +45,10 @@ function observation(
 }
 
 beforeAll(async () => {
-    container = await new MySqlContainer("mysql:8.4").withDatabase("crafting_query_test").start();
+    container = await new MySqlContainer("mysql:8.4")
+        .withDatabase("crafting_query_test")
+        .withResourcesQuota({ memory: 1, cpu: 2 })
+        .start();
     connection = await createConnection(container.getConnectionUri());
     db = drizzle({
         client: connection,
@@ -259,7 +262,7 @@ it("preserves exact cohort filtering, all revisions, historical cutoffs and late
     }
 });
 
-it("keeps ordering and the 2001-row truncation boundary after excluding unrelated bases", async () => {
+it("keeps ordering and the 2001-row boundary without quadratic history reads", async () => {
     for (let start = 0; start < 2002; start += 400) {
         const definitions = Array.from({ length: Math.min(400, 2002 - start) }, (_, offset) =>
             definition(`limit:${String(start + offset).padStart(4, "0")}`),
@@ -268,7 +271,16 @@ it("keeps ordering and the 2001-row truncation boundary after excluding unrelate
         await db.insert(hourly).values(definitions.map(({ id }) => observation(id)));
     }
     statements.length = 0;
+    const [readsBefore] = await connection.query<RowDataPacket[]>(
+        "SHOW SESSION STATUS LIKE 'Handler_read_next'",
+    );
     const result = await findCraftingMarketPrices(db as unknown as TDatabase, input);
+    const [readsAfter] = await connection.query<RowDataPacket[]>(
+        "SHOW SESSION STATUS LIKE 'Handler_read_next'",
+    );
+    const historyReads = Number(readsAfter[0]?.Value) - Number(readsBefore[0]?.Value);
+    // Allow several linear passes, but not a whole history scan for each matching definition.
+    expect(historyReads).toBeLessThan((2002 + distractors * 24 + 10) * 20);
     expect(result.truncated).toBe(true);
     expect(result.candidates).toHaveLength(2000);
     expect(result.candidates[0]?.definition.id).toBe("limit:0000");
