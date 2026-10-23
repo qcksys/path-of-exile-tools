@@ -25,7 +25,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r9",
+    (entry) => entry.game === "poe1" && entry.revision === "r10",
 )!;
 const cohorts = craftingPresetCohorts(engine, ruleset);
 const manifest = marketCohortManifestSchema.parse(
@@ -51,11 +51,34 @@ const purchases = craftingPresets.flatMap((preset) => {
 });
 const startingBases = purchases.filter(({ node }) => node.id.endsWith("-make-base"));
 const originalPurchases = purchases.filter(
-    ({ node, alternative }) => alternative.id === "buy" && !node.id.includes("-make-"),
+    ({ preset, node, alternative }) =>
+        !preset.startsWith("sushi-") && alternative.id === "buy" && !node.id.includes("-make-"),
 );
 
 function rawItem(item: CraftingItem, metadata = false) {
     const record = queries.record(item);
+    const descriptions = (fractured: boolean) =>
+        item.mods
+            .filter((mod) => mod.fractured === fractured)
+            .flatMap((rolled) => {
+                const mod = engine.mod(rolled.id);
+                return rolledModText(catalog, rolled, item)!
+                    .split("\n")
+                    .map((description) => ({
+                        description,
+                        ...(metadata
+                            ? {
+                                  mods: [
+                                      {
+                                          name: mod.name,
+                                          tier: `${mod.generation_type === "prefix" ? "P" : "S"}1`,
+                                          level: mod.required_level,
+                                      },
+                                  ],
+                              }
+                            : {}),
+                    }));
+            });
     return {
         ...record.item,
         sockets: record.item.sockets?.map(({ group }) => ({ group })),
@@ -66,31 +89,35 @@ function rawItem(item: CraftingItem, metadata = false) {
         w: 2,
         h: 2,
         icon: "https://example.invalid/item",
-        explicitMods: item.mods.flatMap((rolled) => {
-            const mod = engine.mod(rolled.id);
-            return rolledModText(catalog, rolled, item)!
-                .split("\n")
-                .map((description) => ({
-                    description,
-                    ...(metadata
-                        ? {
-                              mods: [
-                                  {
-                                      name: mod.name,
-                                      tier: `${mod.generation_type === "prefix" ? "P" : "S"}1`,
-                                      level: mod.required_level,
-                                  },
-                              ],
-                          }
-                        : {}),
-                }));
-        }),
+        explicitMods: descriptions(false),
+        fracturedMods: descriptions(true).map((mod) => mod.description),
         implicitMods: item.implicits.flatMap((mod) =>
             rolledModText(catalog, mod, item)!.split("\n"),
         ),
         extended: engine.counts(item),
     };
 }
+
+it("separates the mercenary starting fracture and keeps unparsed fractured listings unpriced", () => {
+    const { item, node } = purchases.find((entry) => entry.preset === "sushi-mercenary-chest")!;
+    const cohort = cohorts.find(
+        (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
+    )!;
+    const raw = rawItem(item, true);
+    expect(capture(raw)).toBe(true);
+    expect(classifier.classify(normalizeApiItem("poe1", "stash", raw)).unknown).toContain(
+        cohort.id,
+    );
+    const unfractured = {
+        ...raw,
+        fractured: false,
+        explicitMods: raw.fracturedMods,
+        fracturedMods: [],
+    };
+    expect(
+        classifier.classify(normalizeApiItem("poe1", "stash", unfractured)).matches,
+    ).not.toContain(cohort.id);
+});
 
 it("scopes every configured explicit modifier to its canonical catalog side", () => {
     for (const cohort of cohorts)
@@ -193,8 +220,8 @@ it("keeps unsided saved identities separate from regenerated sided definitions",
 });
 
 it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
-    expect(purchases).toHaveLength(65);
-    expect(cohorts).toHaveLength(56);
+    expect(purchases).toHaveLength(71);
+    expect(cohorts).toHaveLength(62);
     const definitions = new Map(manifest.cohorts.map((cohort) => [cohort.id, cohort]));
     for (const cohort of cohorts) expect(definitions.get(cohort.id)).toEqual(cohort);
     for (const { preset, graph: project, node, alternative, item } of purchases) {

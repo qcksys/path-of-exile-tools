@@ -14,6 +14,9 @@ import { quote } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
+    (entry) => entry.game === "poe1" && entry.revision === "r10",
+)!;
+const previousRuleset = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r9",
 )!;
 const sourceId = "defences-make-source";
@@ -56,8 +59,12 @@ function purchase(graph: CraftingGraph, id: string, alternativeId = "buy") {
     return { node, alternative };
 }
 
-function preparation(source: (typeof sources)[number], missing?: "base" | "annul") {
-    const graph = projectFromPreset(engine, ruleset, "global-defence-chest");
+function preparation(
+    source: (typeof sources)[number],
+    missing?: "base" | "annul",
+    revision = ruleset,
+) {
+    const graph = projectFromPreset(engine, revision, "global-defence-chest");
     purchase(graph, "defences").node.choice = { mode: "pinned", alternativeId: "make-isolate" };
     const selected = purchase(graph, sourceId, source.id);
     selected.node.choice = { mode: "pinned", alternativeId: source.id };
@@ -186,10 +193,15 @@ it.each(
 });
 
 it.each(
-    sources,
-)("retained r9 isolates $id and transfers it to the original level 86 target", async (source) => {
-    const retained = await retainedRevision(ruleset);
-    const graph = preparation(source);
+    sources.flatMap((source) =>
+        [previousRuleset, ruleset].map((revision) => ({ source, revision })),
+    ),
+)("retained $revision.revision isolates $source.id and transfers it to the original level 86 target", async ({
+    source,
+    revision,
+}) => {
+    const retained = await retainedRevision(revision);
+    const graph = preparation(source, undefined, revision);
     graph.seed = 42;
     graph.iterations = 16;
     graph.maxSteps = 100000;

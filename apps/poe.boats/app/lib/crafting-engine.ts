@@ -63,6 +63,7 @@ import {
     supportsSacredOrb,
     validateBaseDefences,
 } from "./crafting-defences";
+import { isDelveMinionModifier } from "./crafting-delve";
 import { eldritchFamilyKey, eldritchTier } from "./crafting-eldritch";
 import { availableEnchantments, flaskEnchantmentPool } from "./crafting-enchantments";
 import { gildedImplicitId } from "./crafting-fossils";
@@ -1872,6 +1873,11 @@ export class CraftingEngine {
                     origin.kind === "recombine" &&
                     (isBreachModifier(this.catalog, item, entry.id) ||
                         isIncursionModifier(this.catalog, item, entry.id) ||
+                        isDelveMinionModifier(
+                            this.catalog,
+                            { ...item, level: origin.level },
+                            entry.id,
+                        ) ||
                         isJanusRarityModifier(
                             this.catalog,
                             { ...item, level: origin.level },
@@ -1919,6 +1925,11 @@ export class CraftingEngine {
                 !ducat &&
                 !isBreachModifier(this.catalog, item, sourceId) &&
                 !isIncursionModifier(this.catalog, item, sourceId) &&
+                !isDelveMinionModifier(
+                    this.catalog,
+                    { ...item, level: origin?.level ?? item.level },
+                    sourceId,
+                ) &&
                 !isJanusRarityModifier(
                     this.catalog,
                     { ...item, level: origin?.level ?? item.level },
