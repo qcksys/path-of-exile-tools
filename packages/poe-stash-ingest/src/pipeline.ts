@@ -12,6 +12,12 @@ import { REALM } from "#src/shared/auth.ts";
 import { queryAll, TransactionRollbackError } from "#src/shared/db.ts";
 import { configureSource } from "#src/shared/source.ts";
 
+function operationFailure(operation: string, error: unknown) {
+    return error instanceof TransactionRollbackError
+        ? error
+        : new Error(`${operation} failed`, { cause: error });
+}
+
 export async function flushRollups(
     conn: DuckDBConnection,
     opts: {
@@ -48,7 +54,9 @@ export async function flushRollups(
         WHERE hour < epoch(date_trunc('hour', current_timestamp)) AND ($1 IS NULL OR league = $1)
         ORDER BY hour, stream, league LIMIT $2`,
         [opts.league ?? null, opts.limit ?? 168],
-    );
+    ).catch((error: unknown) => {
+        throw operationFailure("Pending rollup discovery", error);
+    });
     let rows = 0;
     let hours = 0;
     for (const entry of pending) {
@@ -64,6 +72,11 @@ export async function flushRollups(
                 league: entry.league,
                 dryRun: opts.dryRun,
                 onBatch: opts.onBatch,
+            }).catch((error: unknown) => {
+                throw operationFailure(
+                    `${entry.stream} rollup for hour ${Number(entry.hour)}`,
+                    error,
+                );
             })
         ).rows;
         await opts.onProgress?.(++hours, rows);
@@ -89,7 +102,11 @@ export async function runPipeline(
     const errors: unknown[] = [];
     const failedStages: IngestStatus["failedStages"] = [];
     const update = opts.onStatus ?? (async () => {});
-    async function failStage(stage: IngestStatus["failedStages"][number], error: unknown) {
+    async function failStage(
+        stage: IngestStatus["failedStages"][number],
+        operation: string,
+        error: unknown,
+    ) {
         if (!failedStages.includes(stage)) failedStages.push(stage);
         if (error instanceof TransactionRollbackError) {
             try {
@@ -103,7 +120,7 @@ export async function runPipeline(
             }
             throw error;
         }
-        errors.push(error);
+        errors.push(operationFailure(operation, error));
     }
     await update({
         state: "running",
@@ -128,7 +145,7 @@ export async function runPipeline(
                       });
                   },
               }).catch(async (error: unknown) => {
-                  await failStage("stash", error);
+                  await failStage("stash", "Live stash capture", error);
                   return null;
               });
     await update({
@@ -149,7 +166,7 @@ export async function runPipeline(
                       await update({ currencyNextHour: result.nextHour, progressAt: Date.now() });
                   },
               }).catch(async (error: unknown) => {
-                  await failStage("currency", error);
+                  await failStage("currency", "Currency capture", error);
                   return [];
               });
     if (REALM !== "poe2") {
@@ -166,10 +183,12 @@ export async function runPipeline(
                     );
                 await update({ progressAt: Date.now() });
             })
-            .catch((error: unknown) => failStage("stash", error));
+            .catch((error: unknown) => failStage("stash", "Archived equipment replay", error));
     }
     await update({ stage: "delivery", failedStages: [...failedStages], progressAt: Date.now() });
-    await flushCheckpoints(conn).catch((error: unknown) => failStage("delivery", error));
+    await flushCheckpoints(conn).catch((error: unknown) =>
+        failStage("delivery", "Checkpoint delivery", error),
+    );
     const delivered = await flushRollups(conn, {
         ...opts,
         onBatch: async () => {
@@ -179,7 +198,7 @@ export async function runPipeline(
             await update({ deliveredHours: hours, deliveredRows: rows, progressAt: Date.now() });
         },
     }).catch(async (error: unknown) => {
-        await failStage("delivery", error);
+        await failStage("delivery", "Rollup delivery", error);
         return null;
     });
     await update({
