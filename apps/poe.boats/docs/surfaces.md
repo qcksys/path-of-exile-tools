@@ -18,6 +18,9 @@ and publishes each
 completed hour atomically with its original observation times. This does not replace active
 listings or cursors, expose raw archive records, or create uncaptured history. Existing market
 history and pricing operations consume the corrected revision through the normal delivery path.
+The PoE 1 pipeline checkpoints committed writes before replay so capture indexes do not
+exhaust the memory needed for publication. Failed checkpoints defer replay while pending
+delivery remains eligible; a failed rollback stops the process before checkpointing.
 
 `app/operations/registry.server.ts` assembles the feature operation catalogs. HTTP routes, OpenAPI, MCP tool registration, and `/integrations` all read that catalog. A registration points at the function the normal UI uses; it is not an alternative implementation. Pure calculations can run locally in the browser, including the recombinator's Web Worker, without an HTTP round trip.
 

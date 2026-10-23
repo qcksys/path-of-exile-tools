@@ -171,19 +171,29 @@ export async function runPipeline(
               });
     if (REALM !== "poe2") {
         await update({ stage: "stash", failedStages: [...failedStages], progressAt: Date.now() });
-        await reclassifyArchivedEquipment(conn, {
-            realm: REALM ?? "pc",
-            league: opts.league ?? "all",
-            limitPages: Math.min(opts.pages, 5),
-        })
-            .then(async (result) => {
-                if (result.pages)
-                    console.log(
-                        `reclassified ${result.pages} archived equipment pages; completed hours=${result.completedHours.join(",") || "none"}; pending=${result.pending}`,
-                    );
-                await update({ progressAt: Date.now() });
+        // Release capture indexes before replay publication loads its own indexes.
+        const checkpointed = await conn.run("CHECKPOINT").then(
+            () => true,
+            async (error: unknown) => {
+                await failStage("stash", "Capture database checkpoint", error);
+                return false;
+            },
+        );
+        if (checkpointed) {
+            await reclassifyArchivedEquipment(conn, {
+                realm: REALM ?? "pc",
+                league: opts.league ?? "all",
+                limitPages: Math.min(opts.pages, 5),
             })
-            .catch((error: unknown) => failStage("stash", "Archived equipment replay", error));
+                .then(async (result) => {
+                    if (result.pages)
+                        console.log(
+                            `reclassified ${result.pages} archived equipment pages; completed hours=${result.completedHours.join(",") || "none"}; pending=${result.pending}`,
+                        );
+                    await update({ progressAt: Date.now() });
+                })
+                .catch((error: unknown) => failStage("stash", "Archived equipment replay", error));
+        }
     }
     await update({ stage: "delivery", failedStages: [...failedStages], progressAt: Date.now() });
     await flushCheckpoints(conn).catch((error: unknown) =>

@@ -208,9 +208,9 @@ export function MarketPricePicker({
                 </Label>
                 {convert && (
                     <p className="text-muted-foreground">
-                        Prefer prices in {currency}; otherwise convert a chaos, divine or exalted
-                        listing median using an exchange observation from the same hour. Converted
-                        estimates use one hour, even when the adaptive window is selected.
+                        Prefer prices in {currency}; otherwise convert a supported listing currency
+                        using an exchange observation from the same hour. Converted estimates use
+                        one hour, even when the adaptive window is selected.
                     </p>
                 )}
                 <Label className="flex items-start gap-2">

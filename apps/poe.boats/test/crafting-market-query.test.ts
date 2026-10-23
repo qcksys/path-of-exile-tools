@@ -112,17 +112,20 @@ function capture(hour: number, currency = "chaos", median = 20) {
             row.lastSeenAt,
         );
 }
-function exchange(hour: number, realm = "pc", league = "Standard") {
-    const divine = exchangeCurrencyId("divine")!;
+function exchange(hour: number, realm = "pc", league = "Standard", currency = "divine") {
+    const itemId =
+        currency === "chrome"
+            ? "Metadata/Items/Currency/CurrencyRerollSocketColours"
+            : exchangeCurrencyId(currency)!;
     const chaos = exchangeCurrencyId("chaos")!;
     sqlite
         .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_currency_hourly VALUES (?, ?, ?, ?, ?, ?, ?)`)
         .run(
             realm,
             league,
-            `${divine}|${chaos}`,
+            `${itemId}|${chaos}`,
             hour,
-            JSON.stringify({ [divine]: 10, [chaos]: 1000 }),
+            JSON.stringify({ [itemId]: 10, [chaos]: 1000 }),
             null,
             null,
         );
@@ -261,9 +264,9 @@ describe("equipment market lookup", () => {
         const header = timing.toString();
         expect(header).toContain("equipment_db;dur=50.0");
         expect(header).toContain("equipment_parse;dur=0.0");
-        expect(header).toContain("equipment_fx;dur=50.0");
-        expect(header).toContain("equipment_total;dur=100.0");
-        expect(header).toContain('equipment_counts;desc="queries=4 rows=2 exchange_rows=2"');
+        expect(header).toContain("equipment_fx;dur=25.0");
+        expect(header).toContain("equipment_total;dur=75.0");
+        expect(header).toContain('equipment_counts;desc="queries=3 rows=2 exchange_rows=1"');
     });
 
     it("records a failed database wait and keeps the original rejection", async () => {
@@ -366,14 +369,102 @@ describe("equipment market lookup", () => {
         expect(result.candidates[0]?.covered).toBe(true);
         expect(selectCraftingMarketPrice(result.candidates[0]!, "chaos")?.median).toBe(2000);
     });
-    it("does not convert using another hour, realm or league", async () => {
+    it("converts retained chrome buckets without changing their source currency", async () => {
+        capture(completed, "chrome", 6);
+        exchange(completed, "pc", "Standard", "chrome");
+        expect((await findCraftingMarketPrices(db, input)).candidates[0]?.covered).toBe(false);
+        const result = await findCraftingMarketPrices(db, { ...input, conversion: "exchange-v1" });
+        expect(result.candidates[0]).toMatchObject({
+            covered: true,
+            latest: { hour: completed, prices: { chrome: { median: 6 } } },
+            exchange: {
+                currency: "chrome",
+                quote: {
+                    itemId: "Metadata/Items/Currency/CurrencyRerollSocketColours",
+                    hour: completed,
+                },
+            },
+        });
+        expect(selectCraftingMarketPrice(result.candidates[0]!, "chaos")?.median).toBe(600);
+    });
+    it("shares rates for every supported asking currency observed in the same hour", async () => {
         capture(completed, "divine");
-        exchange(completed - 3600);
-        exchange(completed, "sony");
-        exchange(completed, "pc", "Other");
+        exchange(completed);
+        exchange(completed, "pc", "Standard", "chrome");
+        const other = "z:chrome";
+        sqlite
+            .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_cohort
+            SELECT ?, revision, catalogHash, name, purpose, query, baseTypes
+            FROM ${DB_TABLE_PREFIX}stash_cohort`)
+            .run(other);
+        sqlite
+            .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_cohort_hourly
+            SELECT realm, league, hour, revision, ?, listingCount, uniqueSellers, unknownCount,
+                ?, confidenceMethod, firstSeenAt, lastSeenAt FROM ${DB_TABLE_PREFIX}stash_cohort_hourly`)
+            .run(other, JSON.stringify({ chrome: marketCandidate.latest.prices.chaos }));
+        const result = await findCraftingMarketPrices(db, { ...input, conversion: "exchange-v1" });
+        expect(result.candidates.map((candidate) => candidate.exchange?.currency)).toEqual([
+            "divine",
+            "chrome",
+        ]);
+        expect(
+            result.candidates.map(
+                (candidate) => selectCraftingMarketPrice(candidate, "chaos")?.median,
+            ),
+        ).toEqual([2000, 2000]);
+    });
+    it("does not convert unknown tokens or replace a newest unpriced correction", async () => {
+        capture(completed - 3600, "chrome");
+        capture(completed, "unsupported-token");
+        exchange(completed, "pc", "Standard", "chrome");
+        const result = await findCraftingMarketPrices(db, { ...input, conversion: "exchange-v1" });
+        expect(result.candidates[0]).toMatchObject({ covered: false, latest: { hour: completed } });
+        expect(result.candidates[0]?.exchange).toBeUndefined();
+        sqlite
+            .prepare(
+                `UPDATE ${DB_TABLE_PREFIX}stash_cohort_hourly SET prices = '{}' WHERE hour = ?`,
+            )
+            .run(completed);
+        const correction = await findCraftingMarketPrices(db, {
+            ...input,
+            conversion: "exchange-v1",
+        });
+        expect(correction.candidates[0]).toMatchObject({
+            covered: false,
+            latest: { hour: completed, prices: {} },
+        });
+        expect(correction.candidates[0]?.exchange).toBeUndefined();
+    });
+    it.each([
+        "divine",
+        "chrome",
+    ])("does not convert %s using another hour, realm or league", async (currency) => {
+        capture(completed, currency);
+        exchange(completed - 3600, "pc", "Standard", currency);
+        exchange(completed, "sony", "Standard", currency);
+        exchange(completed, "pc", "Other", currency);
         const result = await findCraftingMarketPrices(db, { ...input, conversion: "exchange-v1" });
         expect(result.candidates[0]?.covered).toBe(false);
         expect(result.candidates[0]?.exchange).toBeUndefined();
         expect(result.candidates[0]?.reasons.join(" ")).toContain("matching-hour");
+    });
+    it("does not replace a current zero-volume chrome pair with the older positive rate", async () => {
+        capture(completed, "chrome");
+        exchange(completed - 3600, "pc", "Standard", "chrome");
+        exchange(completed, "pc", "Standard", "chrome");
+        sqlite
+            .prepare(
+                `UPDATE ${DB_TABLE_PREFIX}stash_currency_hourly SET volumeTraded = ? WHERE hour = ?`,
+            )
+            .run(
+                JSON.stringify({
+                    [exchangeCurrencyId("chrome")!]: 0,
+                    [exchangeCurrencyId("chaos")!]: 0,
+                }),
+                completed,
+            );
+        const result = await findCraftingMarketPrices(db, { ...input, conversion: "exchange-v1" });
+        expect(result.candidates[0]?.covered).toBe(false);
+        expect(result.candidates[0]?.exchange).toBeUndefined();
     });
 });
