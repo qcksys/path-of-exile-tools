@@ -1,14 +1,20 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { normalizeApiItem } from "@poe-tools/item-query";
 import {
     cohortPriceCoverage,
     compileMarketCohorts,
+    decodeCohortPriceReference,
     marketCohortManifestSchema,
 } from "@poe-tools/market";
 import { expect, it } from "vite-plus/test";
 import { compileCraftingCapture } from "../../../packages/poe-stash-ingest/src/ps/crafting-capture";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
-import { bindCohortPurchasePrice, craftingMarketItemIssue } from "../app/lib/crafting-market";
+import {
+    bindCohortPurchasePrice,
+    craftingMarketItemIssue,
+    latestCompatibleCohort,
+} from "../app/lib/crafting-market";
 import { craftingPresets, projectFromPreset } from "../app/lib/crafting-presets";
 import { rolledModText } from "../app/lib/crafting-text";
 import type { CraftingItem } from "../app/schemas/crafting";
@@ -16,6 +22,7 @@ import { craftingPresetCohorts } from "../scripts/crafting-preset-cohorts";
 import { marketModifierTextModel } from "../scripts/market-modifier-text";
 import { catalog, engine } from "./crafting-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
+import { marketCandidate } from "./crafting-market-fixtures";
 
 const ruleset = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r9",
@@ -84,6 +91,106 @@ function rawItem(item: CraftingItem, metadata = false) {
         extended: engine.counts(item),
     };
 }
+
+it("scopes every configured explicit modifier to its canonical catalog side", () => {
+    for (const cohort of cohorts)
+        for (const group of cohort.query.groups)
+            for (const filter of group.filters) {
+                if (filter.kind !== "mod") continue;
+                expect(filter.ids).toHaveLength(1);
+                const mod = engine.mod(filter.ids![0]!);
+                expect(["prefix", "suffix"]).toContain(mod.generation_type);
+                expect(filter.side).toBe(mod.generation_type);
+            }
+    for (const { item, node } of purchases) {
+        const cohort = cohorts.find(
+            (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
+        )!;
+        const requiredIds = cohort.query.groups.flatMap((group) =>
+            group.filters.flatMap((filter) => (filter.kind === "mod" ? (filter.ids ?? []) : [])),
+        );
+        expect(requiredIds.sort()).toEqual(item.mods.map((mod) => mod.id).sort());
+    }
+});
+
+it("rejects a proven different suffix on the Heat source despite unresolved native implicit text", () => {
+    const { item, node } = purchases.find((entry) => entry.node.id === "shield-make-heat-base")!;
+    const cohort = cohorts.find(
+        (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
+    )!;
+    const scoped = compileMarketCohorts({ ...manifest, cohorts: [cohort] });
+    const other = normalizeApiItem("poe1", "stash", {
+        ...rawItem(item),
+        typeLine: "Heat-attuned Tower Shield of the Span",
+        explicitMods: [{ description: "+17% to all Elemental Resistances" }],
+        implicitMods: [{ description: "Scorch Enemies when you Block their Damage" }],
+        extended: { suffixes: 1 },
+    });
+    expect(scoped.classify(other)).toEqual({ matches: [], unknown: [] });
+    const positive = normalizeApiItem("poe1", "stash", {
+        ...rawItem(item),
+        typeLine: `${engine.base(item).name} ${engine.mod(item.mods[0]!.id).name}`,
+        extended: { suffixes: 1 },
+    });
+    expect(scoped.classify(positive).matches).toEqual([cohort.id]);
+    const unsided = structuredClone(cohort);
+    for (const group of unsided.query.groups)
+        for (const filter of group.filters) if (filter.kind === "mod") delete filter.side;
+    expect(
+        compileMarketCohorts({ ...manifest, cohorts: [unsided] }).classify(other).unknown,
+    ).toEqual([unsided.id]);
+});
+
+it("keeps unsided saved identities separate from regenerated sided definitions", () => {
+    const {
+        graph: original,
+        node,
+        alternative,
+        item,
+    } = purchases.find((entry) => entry.node.id === "shield-make-heat-base")!;
+    const cohort = cohorts.find(
+        (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
+    )!;
+    const oldQuery = structuredClone(cohort.query);
+    for (const group of oldQuery.groups)
+        for (const filter of group.filters) if (filter.kind === "mod") delete filter.side;
+    const oldId = `preset:${createHash("sha256").update(JSON.stringify(oldQuery)).digest("hex")}`;
+    expect(oldId).not.toBe(cohort.id);
+    const previous = {
+        ...marketCandidate,
+        definition: { ...marketCandidate.definition, ...cohort, id: oldId, query: oldQuery },
+        latest: { ...marketCandidate.latest, cohortId: oldId },
+    };
+    const next = {
+        ...marketCandidate,
+        definition: { ...marketCandidate.definition, ...cohort, revision: "new-sided" },
+        latest: {
+            ...marketCandidate.latest,
+            cohortId: cohort.id,
+            revision: "new-sided",
+            hour: marketCandidate.latest.hour + 3600,
+        },
+    };
+    const graph = bindCohortPurchasePrice(
+        { ...original, league: marketCandidate.latest.league },
+        engine,
+        node.id,
+        alternative.id,
+        previous,
+    );
+    const saved = structuredClone(graph);
+    expect(latestCompatibleCohort([next], previous.definition)).toBeUndefined();
+    expect(latestCompatibleCohort([next, previous], previous.definition)).toBe(previous);
+    expect(latestCompatibleCohort([next], next.definition)).toBe(next);
+    const bound = graph.nodes.find((entry) => entry.id === node.id)!;
+    if (bound.kind !== "acquire" || bound.alternatives[0]?.kind !== "purchase")
+        throw new Error("Expected saved purchase");
+    expect(decodeCohortPriceReference(bound.alternatives[0].price?.cohortId)).toMatchObject({
+        cohortId: oldId,
+        revision: previous.definition.revision,
+    });
+    expect(graph).toEqual(saved);
+});
 
 it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
     expect(purchases).toHaveLength(60);

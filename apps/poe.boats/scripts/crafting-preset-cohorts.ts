@@ -44,13 +44,17 @@ export function craftingPresetCohorts(engine: CraftingEngine, ruleset: CraftingR
                     ...influences
                         .filter((name) => record.item.influences?.[name])
                         .map((name) => ({ kind: "influence" as const, values: [name] })),
-                    ...item.mods.map((mod) => ({
-                        kind: "mod" as const,
-                        ids: [mod.id],
-                        fractured: mod.fractured,
-                        crafted: mod.crafted,
-                        count: { min: 1 },
-                    })),
+                    ...item.mods.map((mod): ItemCondition => {
+                        const side = engine.mod(mod.id).generation_type;
+                        return {
+                            kind: "mod" as const,
+                            ids: [mod.id],
+                            ...(side === "prefix" || side === "suffix" ? { side } : {}),
+                            fractured: mod.fractured,
+                            crafted: mod.crafted,
+                            count: { min: 1 },
+                        };
+                    }),
                 ];
                 const absent = influences.filter((name) => !record.item.influences?.[name]);
                 const query = itemQuerySchema.parse({
