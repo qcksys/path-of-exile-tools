@@ -16,21 +16,22 @@ async function findPayload<T>(
     columns: string,
     hash: string,
 ): Promise<T | undefined> {
-    let [row] = await queryAll<T>(
+    let [row] = await queryAll<T & { matchedHash: string }>(
         conn,
-        `SELECT ${columns} FROM ${table} WHERE response_hash = $1`,
+        `SELECT ${columns}, response_hash AS matchedHash FROM ${table} WHERE response_hash = $1`,
         [hash],
     );
-    if (!row) {
-        // The expression bypasses an ART index that may omit an intact row.
-        [row] = await queryAll<T>(
+    if (row?.matchedHash !== hash) {
+        // The expression bypasses ART misses and hits that return a different key.
+        [row] = await queryAll<T & { matchedHash: string }>(
             conn,
-            `SELECT ${columns} FROM ${table} WHERE (response_hash || '') = $1`,
+            `SELECT ${columns}, response_hash AS matchedHash FROM ${table} WHERE (response_hash || '') = $1`,
             [hash],
         );
-        if (row) console.warn("Archived payload found by sequential fallback after an index miss.");
+        if (row?.matchedHash === hash)
+            console.warn("Archived payload found by sequential fallback.");
     }
-    return row;
+    return row?.matchedHash === hash ? row : undefined;
 }
 
 export async function hasArchivedPayload(conn: DuckDBConnection, hash: string): Promise<boolean> {
