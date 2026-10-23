@@ -318,6 +318,39 @@ export function projectFromPreset(
         }
     } else if (presetId === "tailwind-boots") {
         ({ entry, target } = elevatedBootsPreset({ engine, base, buy, craft, currency }));
+        if (rulesetAllowsPresetPreparation(ruleset)) {
+            const receiver = nodes.find((node) => node.id === "tailwind-base");
+            const purchase = receiver?.kind === "acquire" ? receiver.alternatives[0] : undefined;
+            if (receiver?.kind !== "acquire" || purchase?.kind !== "purchase")
+                throw new Error("Hunter receiver must have a base purchase.");
+            let source = buy(
+                "tailwind-base-make-base",
+                "Buy uninfluenced Normal Two-Toned Boots",
+                engine.validateItem({ ...purchase.item, influences: [] }),
+            );
+            for (const [id, name, method] of [
+                ["transmute", "Transmute the uninfluenced base", currency("transmute_to_magic")],
+                ["regal", "Regal the magic base", currency("upgrade_magic_to_rare")],
+                [
+                    "hunter",
+                    "Add Hunter influence with a Hunter's Exalted Orb",
+                    { kind: "currency", id: "Metadata/Items/AtlasExiles/AddModToRareHunter" },
+                ],
+                [
+                    "scour",
+                    "Scour modifiers, keeping Hunter influence",
+                    currency("convert_to_normal"),
+                ],
+            ] satisfies [string, string, CraftingMethod][]) {
+                source = craft(`tailwind-base-make-${id}`, name, [source], method).id;
+            }
+            receiver.alternatives.push({
+                kind: "production",
+                id: "make-hunter",
+                name: "Add Hunter influence to an unrolled base",
+                nodeId: source,
+            });
+        }
     } else if (presetId === "rarity-helmet") {
         const janus = janusRarityModifier;
         const rarity = "ItemFoundRarityIncreasePrefix3";

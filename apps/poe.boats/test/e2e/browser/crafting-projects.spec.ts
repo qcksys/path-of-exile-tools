@@ -148,6 +148,40 @@ test("ES chest graph separates the 2p + 2p attempt from success after retries", 
     await page.screenshot({ path: "test-results/es-chest-attempt-odds.png", fullPage: true });
 });
 
+test("Hunter base preparation is explicitly selected and survives reload", async ({ page }) => {
+    const ruleset = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r9",
+    )!;
+    const catalog = craftingCatalogSchema.parse((await retainedRevision(ruleset)).catalog);
+    const graph = projectFromPreset(new CraftingEngine(catalog), ruleset, "tailwind-boots");
+    const receiver = graph.nodes.find((node) => node.id === "tailwind-base")!;
+    if (receiver.kind !== "acquire") throw new Error("Expected Hunter base acquisition");
+    await importGraph(page, graph);
+    await selectValue(page.getByRole("combobox", { name: "Focus graph step" }), receiver.id);
+    await page.getByRole("button", { name: `Edit ${receiver.name}`, exact: true }).click();
+    const editor = page.getByRole("region", { name: "Selected step editor" });
+    const choice = editor.getByRole("combobox", { name: "Acquisition choice", exact: true });
+    await expect(choice).toContainText(`Pin: ${receiver.alternatives[0]!.name}`);
+    const original = (await stored(page)).projects[0]!.graph;
+    expect(original.nodes.find((node) => node.id === receiver.id)).toMatchObject({
+        choice: { mode: "pinned", alternativeId: "buy" },
+    });
+    await selectValue(choice, "make-hunter");
+    await expect(choice).toContainText("Pin: Add Hunter influence to an unrolled base");
+    const expected = {
+        ...original,
+        nodes: original.nodes.map((node) =>
+            node.id === receiver.id
+                ? { ...node, choice: { mode: "pinned", alternativeId: "make-hunter" } }
+                : node,
+        ),
+    };
+    await expect.poll(async () => (await stored(page)).projects[0]!.graph).toEqual(expected);
+    await page.reload();
+    await expect(choice).toContainText("Pin: Add Hunter influence to an unrolled base");
+    expect((await stored(page)).projects[0]!.graph).toEqual(expected);
+});
+
 for (const game of ["poe1", "poe2"] as const) {
     test(`${game} sampled items open new local projects with their original historical revision`, async ({
         page,

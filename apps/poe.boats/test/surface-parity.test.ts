@@ -265,16 +265,18 @@ describe("transport parity", () => {
     });
 
     it.each([
-        "r8",
-        "r9",
-    ])("preserves %s preset preparation support over HTTP and MCP", async (revision) => {
+        ["r8", "physical-bow", 0],
+        ["r9", "physical-bow", 3],
+        ["r8", "tailwind-boots", 0],
+        ["r9", "tailwind-boots", 1],
+    ] as const)("preserves %s %s preparation support over HTTP and MCP", async (revision, presetId, count) => {
         const ruleset = historyIndex.revisions.find(
             (entry) => entry.game === "poe1" && entry.revision === revision,
         )!;
         const input = {
             game: "poe1",
             ruleset: rulesetReference(ruleset),
-            presetId: "physical-bow" as const,
+            presetId,
         };
         const expected = projectFromPreset(fixtureEngine, ruleset, input.presetId);
         const production = expected.nodes.flatMap((node) =>
@@ -282,7 +284,7 @@ describe("transport parity", () => {
                 ? node.alternatives.filter((alternative) => alternative.kind === "production")
                 : [],
         );
-        expect(production).toHaveLength(revision === "r9" ? 3 : 0);
+        expect(production).toHaveLength(count);
         for (const node of expected.nodes)
             if (node.kind === "acquire")
                 expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
