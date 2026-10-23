@@ -1,8 +1,9 @@
 // biome-ignore-all lint/style/useNamingConvention: Preserve upstream and SQL field names.
 import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
-import { gunzipSync } from "node:zlib";
+import { gzipSync } from "node:zlib";
 import type { PublicStashPage } from "../../../../packages/poe-api-client/src/types.ts";
+import { readArchivedPage } from "../../../../packages/poe-stash-ingest/src/ps/archive-payload.ts";
 import { archivePage } from "../../../../packages/poe-stash-ingest/src/ps/capture-archive.ts";
 import { responseHash } from "../../../../packages/poe-stash-ingest/src/ps/checkpoints.ts";
 import {
@@ -47,10 +48,21 @@ function page(index: number): PublicStashPage {
 }
 
 const db = await openDb(path);
+await db.conn.run(`CREATE TEMP VIEW test_archive_payloads AS
+    SELECT response_hash FROM ps_capture_payload
+    UNION ALL SELECT response_hash FROM ps_capture_payload_meta`);
 if (mode === "fail") {
     const other = await openDb(path);
     await db.conn.run("SET checkpoint_threshold='1GB'");
     for (let index = 0; index < 4; index++) {
+        if (index < 2) {
+            const json = JSON.stringify(page(index));
+            await db.conn.run("INSERT INTO ps_capture_payload VALUES ($1, from_base64($2), $3)", [
+                responseHash(page(index)),
+                gzipSync(json).toString("base64"),
+                Buffer.byteLength(json),
+            ]);
+        }
         await archivePage(db.conn, page(index), scope, () => true);
     }
     await db.conn.run("CHECKPOINT");
@@ -102,18 +114,16 @@ if (mode === "fail") {
 } else {
     assert(mode === "recover" || mode === "verify");
     const verify = async (count: number) => {
-        const rows = await queryAll<{ hash: string; body: string; hashLength: number }>(
+        const rows = await queryAll<{ hash: string; hashLength: number }>(
             db.conn,
-            "SELECT response_hash AS hash, length(response_hash)::INTEGER AS hashLength, to_base64(response_gzip) AS body FROM ps_capture_payload",
+            "SELECT response_hash AS hash, length(response_hash)::INTEGER AS hashLength FROM test_archive_payloads",
         );
         assert.equal(rows.length, count);
         const expected = new Set(
             Array.from({ length: count }, (_, index) => responseHash(page(index))),
         );
         for (const row of rows) {
-            const body: PublicStashPage = JSON.parse(
-                gunzipSync(Buffer.from(row.body, "base64")).toString(),
-            );
+            const body = await readArchivedPage(db.conn, row.hash);
             const contentHash = responseHash(body);
             if (!expected.has(row.hash) || contentHash !== row.hash) {
                 const diagnostic: Record<string, unknown> = {
@@ -127,12 +137,12 @@ if (mode === "fail") {
                     isFailedWrite: body.next_change_id === "cursor-99",
                     indexedContentHash: await queryAll(
                         db.conn,
-                        "SELECT response_hash AS hash FROM ps_capture_payload WHERE response_hash=$1",
+                        "SELECT response_hash AS hash FROM test_archive_payloads WHERE response_hash=$1",
                         [contentHash],
                     ),
                     missing: await queryAll(
                         db.conn,
-                        "SELECT count(*)::INTEGER AS count FROM ps_capture_page p LEFT JOIN ps_capture_payload b USING(response_hash) WHERE b.response_hash IS NULL",
+                        "SELECT count(*)::INTEGER AS count FROM ps_capture_page p LEFT JOIN test_archive_payloads b USING(response_hash) WHERE b.response_hash IS NULL",
                     ),
                 };
                 await writeFile(`${resultPath}.failure.json`, JSON.stringify(diagnostic));
@@ -143,7 +153,7 @@ if (mode === "fail") {
             assert.deepEqual(
                 await queryAll(
                     db.conn,
-                    "SELECT response_hash AS hash FROM ps_capture_payload WHERE response_hash=$1",
+                    "SELECT response_hash AS hash FROM test_archive_payloads WHERE response_hash=$1",
                     [row.hash],
                 ),
                 [{ hash: row.hash }],
@@ -153,7 +163,7 @@ if (mode === "fail") {
             await queryAll(
                 db.conn,
                 `SELECT count(*)::INTEGER AS missing FROM ps_capture_page p
-                LEFT JOIN ps_capture_payload b USING(response_hash) WHERE b.response_hash IS NULL`,
+                LEFT JOIN test_archive_payloads b USING(response_hash) WHERE b.response_hash IS NULL`,
             ),
             [{ missing: 0 }],
         );

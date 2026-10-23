@@ -2,8 +2,10 @@
 import { mkdtemp, rmdir, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { gzipSync } from "node:zlib";
 import { compileMarketCohorts } from "@poe-tools/market";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
+import { readArchivedPage } from "../../../../packages/poe-stash-ingest/src/ps/archive-payload.ts";
 import { archivePage } from "../../../../packages/poe-stash-ingest/src/ps/capture-archive.ts";
 import { captureEquipment } from "../../../../packages/poe-stash-ingest/src/ps/equipment.ts";
 import { reclassifyArchivedEquipment } from "../../../../packages/poe-stash-ingest/src/ps/equipment-reclassify.ts";
@@ -107,6 +109,23 @@ const project = (limitPages = 1, league = "Standard") =>
         limitPages,
     });
 
+async function legacyBodies() {
+    const rows = await queryAll<{ hash: string }>(
+        local.conn,
+        "SELECT response_hash AS hash FROM ps_capture_payload_meta",
+    );
+    for (const { hash } of rows) {
+        const json = JSON.stringify(await readArchivedPage(local.conn, hash));
+        await local.conn.run("INSERT INTO ps_capture_payload VALUES ($1, from_base64($2), $3)", [
+            hash,
+            gzipSync(json).toString("base64"),
+            Buffer.byteLength(json),
+        ]);
+    }
+    await local.conn.run("DELETE FROM ps_capture_payload_chunk");
+    await local.conn.run("DELETE FROM ps_capture_payload_meta");
+}
+
 it("resumes persisted staging after the owning connection closes and reopens", async () => {
     await local.close();
     directory = await mkdtemp(join(tmpdir(), "poe-reclassify-"));
@@ -125,6 +144,7 @@ it("resumes persisted staging after the owning connection closes and reopens", a
 
 it("replays a verified archived body hidden from its index without changing the live cursor", async () => {
     await archive(HOUR + 1);
+    await legacyBodies();
     await setCursor(local.conn, "psapi", "live-cursor");
     const read = local.conn.runAndReadAll.bind(local.conn);
     const indexedRead = vi
@@ -159,6 +179,7 @@ it.each([
 ] as const)("does not advance staged progress or publish prices when the next archived body is %s", async (failure) => {
     await archive(HOUR + 1);
     await archive(HOUR + 2, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
+    await legacyBodies();
     await setCursor(local.conn, "psapi", "live-cursor");
     expect(await project()).toMatchObject({ pages: 1, hours: 0, pending: true });
     const progress = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify");
@@ -201,6 +222,71 @@ it.each([
     } finally {
         classify.mockRestore();
         warning.mockRestore();
+    }
+});
+
+it.each([
+    "missing",
+    "out-of-order",
+    "wrong-size",
+    "wrong-hash",
+] as const)("rejects %s chunk data without advancing replay or publishing a staged hour", async (failure) => {
+    await archive(HOUR + 1);
+    await archive(HOUR + 2, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
+    await setCursor(local.conn, "psapi", "live-cursor");
+    expect(await project()).toMatchObject({ pages: 1, hours: 0, pending: true });
+    const progress = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify");
+    const staging = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour");
+    const pages = await queryAll<{ hash: string }>(
+        local.conn,
+        "SELECT response_hash AS hash FROM ps_capture_page ORDER BY captured_at",
+    );
+    const hash = pages[1]!.hash;
+    if (failure === "missing")
+        await local.conn.run("DELETE FROM ps_capture_payload_chunk WHERE response_hash=$1", [hash]);
+    if (failure === "out-of-order")
+        await local.conn.run(
+            "UPDATE ps_capture_payload_chunk SET chunk_index=1 WHERE response_hash=$1",
+            [hash],
+        );
+    if (failure === "wrong-size")
+        await local.conn.run(
+            "UPDATE ps_capture_payload_chunk SET response_gzip=response_gzip || 'x'::BLOB WHERE response_hash=$1",
+            [hash],
+        );
+    if (failure === "wrong-hash") {
+        await local.conn.run(
+            `UPDATE ps_capture_payload_chunk SET response_gzip =
+            (SELECT response_gzip FROM ps_capture_payload_chunk WHERE response_hash=$1)
+            WHERE response_hash=$2`,
+            [pages[0]!.hash, hash],
+        );
+        await local.conn.run(
+            `UPDATE ps_capture_payload_meta SET compressed_bytes =
+            (SELECT compressed_bytes FROM ps_capture_payload_meta WHERE response_hash=$1)
+            WHERE response_hash=$2`,
+            [pages[0]!.hash, hash],
+        );
+    }
+    const classify = vi.spyOn(classifier, "classify");
+    try {
+        await expect(project()).rejects.toThrow(
+            failure === "wrong-hash"
+                ? "The archived payload does not match its recorded hash."
+                : "The archived payload chunks are incomplete or invalid.",
+        );
+        expect(classify).not.toHaveBeenCalled();
+        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify")).toEqual(
+            progress,
+        );
+        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour")).toEqual(
+            staging,
+        );
+        expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([]);
+        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_cohort_hour")).toEqual([]);
+        expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
+    } finally {
+        classify.mockRestore();
     }
 });
 
@@ -262,6 +348,7 @@ it("resumes bounded archived pages, publishes a complete original hour and never
 it("publishes an empty correction for a later present nonmatch, even in a mixed-revision hour", async () => {
     await captureEquipment(local.conn, stash, classifier, new Date((HOUR + 1) * 1000));
     await archive(HOUR + 2);
+    await legacyBodies();
     await archive(
         HOUR + 3,
         [{ ...stash, items: [{ ...item, frameType: 2 }] }],
@@ -310,6 +397,7 @@ it("retains other revisions and rolls back a failed page without exposing partia
     );
     const before = await equipmentHourly(local.conn, HOUR, "Standard");
     await archive(HOUR + 2);
+    await legacyBodies();
     await local.conn.run("CREATE TEMP TABLE saved_payload AS SELECT * FROM ps_capture_payload");
     await local.conn.run("UPDATE ps_capture_payload SET response_gzip = 'invalid'::BLOB");
     await expect(project()).rejects.toThrow();

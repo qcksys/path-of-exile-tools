@@ -1,12 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { promisify } from "node:util";
-import { gzip } from "node:zlib";
-import { blobValue, type DuckDBConnection } from "@duckdb/node-api";
+import type { DuckDBConnection } from "@duckdb/node-api";
 import type { Item, PublicStashPage } from "@poe-tools/api-client";
+import { hasArchivedPayload, writeArchivedPayload } from "#src/ps/archive-payload.ts";
 import { responseHash } from "#src/ps/checkpoints.ts";
 import { queryAll, withTransaction } from "#src/shared/db.ts";
-
-const compress = promisify(gzip);
 
 export async function archivePage(
     conn: DuckDBConnection,
@@ -33,29 +30,8 @@ export async function archivePage(
     const id = randomUUID();
     // Commit before classification: a processing failure must not discard the only captured copy.
     await withTransaction(conn, async () => {
-        let [existing] = await queryAll(
-            conn,
-            "SELECT response_hash FROM ps_capture_payload WHERE response_hash = $1",
-            [hash],
-        );
-        if (!existing) {
-            // The expression bypasses an ART index that may omit an intact row.
-            [existing] = await queryAll(
-                conn,
-                "SELECT response_hash FROM ps_capture_payload WHERE (response_hash || '') = $1",
-                [hash],
-            );
-            if (existing)
-                console.warn("Archived payload found by sequential fallback after an index miss.");
-        }
-        if (!existing) {
-            const json = JSON.stringify(filtered);
-            await conn.run("INSERT INTO ps_capture_payload VALUES ($1, $2, $3)", [
-                hash,
-                blobValue(await compress(json)),
-                Buffer.byteLength(json),
-            ]);
-        }
+        if (!(await hasArchivedPayload(conn, hash)))
+            await writeArchivedPayload(conn, hash, JSON.stringify(filtered));
         await conn.run(
             `INSERT INTO ps_capture_page
             (id, realm, league, cursor, next_cursor, captured_at, response_hash, processed_at)
@@ -97,8 +73,11 @@ export async function captureArchiveStatus(conn: DuckDBConnection) {
     const [payloads] = await queryAll(
         conn,
         `SELECT count(*)::DOUBLE AS payloads,
-        coalesce(sum(octet_length(response_gzip)), 0)::DOUBLE AS compressedBytes,
-        coalesce(sum(response_bytes), 0)::DOUBLE AS originalBytes FROM ps_capture_payload`,
+        coalesce(sum(compressed_bytes), 0)::DOUBLE AS compressedBytes,
+        coalesce(sum(response_bytes), 0)::DOUBLE AS originalBytes FROM (
+            SELECT octet_length(response_gzip) AS compressed_bytes, response_bytes FROM ps_capture_payload
+            UNION ALL SELECT compressed_bytes, response_bytes FROM ps_capture_payload_meta
+        )`,
     );
     return { ...pages, ...payloads };
 }
