@@ -56,7 +56,9 @@ async function savedPages(conn: Parameters<typeof readArchivedPage>[0]) {
         conn,
         "SELECT response_hash AS hash FROM ps_capture_payload UNION ALL SELECT response_hash AS hash FROM ps_capture_payload_meta",
     );
-    return Promise.all(rows.map(({ hash }) => readArchivedPage(conn, hash)));
+    const pages = [];
+    for (const { hash } of rows) pages.push(await readArchivedPage(conn, hash));
+    return pages;
 }
 
 it("archives only crafting candidates in the selected league, retaining unpriced items and later versions", async () => {
