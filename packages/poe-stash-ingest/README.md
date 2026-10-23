@@ -79,6 +79,10 @@ observations from the last 24 completed hours after exchange capture, newest hou
 This lets replayable newer hours proceed before missing older payloads. Missing bodies
 still fail explicitly without advancing their replay progress or marking the hour complete.
 Each cycle reclassifies up to its live page limit, capped at five archived pages.
+Live stash capture also checkpoints between committed pages before fetching the next
+page, releasing accumulated indexes without splitting a page transaction. A failure
+preserves the last committed cursor and leaves the next page unfetched for retry.
+Single-page and caught-up captures do not add a final page checkpoint.
 Before replay, the PoE 1 pipeline checkpoints committed capture and exchange writes
 to release loaded DuckDB indexes before publication loads its own indexes. This
 also runs after ordinary capture failures because earlier pages may have committed.
