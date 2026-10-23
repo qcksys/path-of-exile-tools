@@ -372,6 +372,44 @@ it("does not price ambiguous elemental modifier identities from names, tiers or 
     }
 });
 
+it("classifies an omitted zero suffix count only when the complete catalog interpretation proves it", () => {
+    expect(manifest.modifierTextModel?.format).toBe(2);
+    for (const [preset, nodeId, expected] of [
+        ["physical-bow", "donor-2", true],
+        ["physical-bow", "donor-1", false],
+        ["elemental-bow", "donor-0", false],
+    ] as const) {
+        const { node, item } = purchases.find(
+            (entry) =>
+                entry.preset === preset &&
+                entry.node.id === nodeId &&
+                entry.alternative.id === "buy-magic",
+        )!;
+        const cohort = cohorts.find(
+            (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
+        )!;
+        const raw = { ...rawItem(item), extended: { prefixes: 1 } };
+        const record = normalizeApiItem("poe1", "stash", raw);
+        expect(capture(raw)).toBe(true);
+        const classified = classifier.classify(record);
+        expect(classified.matches.includes(cohort.id), `${preset}/${nodeId}`).toBe(expected);
+        expect(classified.unknown.includes(cohort.id), `${preset}/${nodeId}`).toBe(!expected);
+        expect(record.facts.suffixes).toBeUndefined();
+        expect(record.item.extended).toEqual({ prefixes: 1 });
+        for (const invalid of [
+            { ...raw, extended: {} },
+            { ...raw, extended: { prefixes: 1, suffixes: 1 } },
+            {
+                ...raw,
+                explicitMods: [...raw.explicitMods, { description: "Unsupported extra stat" }],
+            },
+        ])
+            expect(
+                classifier.classify(normalizeApiItem("poe1", "stash", invalid)).matches,
+            ).not.toContain(cohort.id);
+    }
+});
+
 it("rejects a named high-tier donor when its actual stat roll is outside the canonical range", () => {
     const { node, item } = purchases.find(
         (entry) => entry.preset === "physical-bow" && entry.node.id === "donor-0",

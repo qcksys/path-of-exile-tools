@@ -134,6 +134,11 @@ Modifier inference also applies the client's explicit required-influence rules t
 flags. Missing or dual-influence evidence retains ambiguity; fixed all-influence bases require their
 native implicit text. Native spawn weights do not exclude legitimate non-native donors. Proven
 modifier metadata constrains inference without preventing other affixes from being identified.
+Modifier text model version 2 can derive one omitted affix count when every supported
+interpretation of the complete displayed modifier text agrees. It preserves supplied
+counts and the raw source item, shares the existing search budget across possible counts,
+and keeps ambiguous, unsupported or incomplete evidence unknown. Version 1 retains its
+original behavior; the new model produces a separate capture revision.
 Fifteen ordinary donor alternatives, including the flat-ES/recovery prefix/suffix pair, offer a
 separate Magic purchase where the complete immediate recombination outcomes match the existing
 Rare purchase. Each rarity has an exact cohort; a Magic
