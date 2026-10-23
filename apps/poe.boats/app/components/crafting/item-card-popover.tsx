@@ -27,6 +27,11 @@ export function ItemCardPopover({
     const restoringFocus = useRef(false);
     const display = useContext(CraftingDisplay);
     const preview = open ? (typeof item === "function" ? item() : item) : null;
+    function restoreTriggerFocus() {
+        restoringFocus.current = true;
+        trigger.current?.focus({ preventScroll: true });
+        restoringFocus.current = false;
+    }
     return (
         <Popover
             open={open}
@@ -69,9 +74,7 @@ export function ItemCardPopover({
                         popup.current?.contains(document.activeElement) ||
                         document.activeElement === document.body
                     ) {
-                        restoringFocus.current = true;
-                        trigger.current?.focus({ preventScroll: true });
-                        restoringFocus.current = false;
+                        restoreTriggerFocus();
                     }
                     return false;
                 }}
@@ -94,6 +97,8 @@ export function ItemCardPopover({
                         onClick={() => {
                             setPinned(false);
                             setOpen(false);
+                            // Hover-opened popovers do not run the library's finalFocus handler.
+                            restoreTriggerFocus();
                         }}
                     >
                         <XIcon />

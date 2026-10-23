@@ -75,3 +75,26 @@ it("keeps focus on another control when an unpinned preview is dismissed", async
     await waitFor(() => expect(screen.queryByRole("region", { name: "Unpinned item" })).toBeNull());
     expect(document.activeElement).toBe(other);
 });
+
+it("restores the trigger after explicitly closing a hover-opened pinned preview", async () => {
+    render(
+        <ItemCardPopover engine={engine} item={engine.createItem(baseId, 86)} label="Hover shield">
+            Preview item
+        </ItemCardPopover>,
+    );
+    const trigger = screen.getByRole("button", { name: "Preview Hover shield" });
+    fireEvent.mouseEnter(trigger);
+    fireEvent.mouseMove(trigger);
+    const pin = await screen.findByRole("button", { name: "Pin item card" });
+    act(() => pin.focus());
+    fireEvent.click(pin);
+    expect(
+        screen.getByRole("button", { name: "Unpin item card" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+    const close = screen.getByRole("button", { name: "Close item card" });
+    act(() => close.focus());
+    fireEvent.click(close);
+    await waitFor(() => expect(screen.queryByRole("region", { name: "Hover shield" })).toBeNull());
+    expect(document.activeElement).toBe(trigger);
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+});
