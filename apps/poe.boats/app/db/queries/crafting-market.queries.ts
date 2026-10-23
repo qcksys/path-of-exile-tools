@@ -75,9 +75,10 @@ export async function findCraftingMarketPrices(
             isNull(cohort.baseTypes),
             sql`JSON_CONTAINS(${cohort.baseTypes}, ${JSON.stringify(input.item.item.baseType)})`,
         );
+        // Avoid repeating a broad history range scan for each matching definition.
         const latestHour = db
             .select({ hour: max(hourly.hour) })
-            .from(hourly)
+            .from(hourly, { forceIndex: "PRIMARY" })
             .where(
                 and(scope, eq(hourly.revision, cohort.revision), eq(hourly.cohortId, cohort.id)),
             );
