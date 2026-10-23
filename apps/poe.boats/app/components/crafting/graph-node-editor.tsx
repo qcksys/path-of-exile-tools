@@ -103,7 +103,7 @@ export function GraphPriceInput({
                         ? `Captured per-item asking estimate${sourceReference.exchange ? ` · converted from ${sourceReference.exchange.amount.toLocaleString(undefined, { maximumSignificantDigits: 6 })} ${sourceReference.exchange.currency} using matching-hour exchange · combined confidence unknown` : ""} · ${value.samples ?? "unknown"} priced samples · time shown is the observed hour · captured history available`
                         : sourceReference.source === "vendor-upgrade"
                           ? `Vendor-upgrade ingredient estimate · ${sourceReference.path.quantity} × ${sourceReference.path.inputName} · ${sourceReference.ingredient.itemVolume ?? "unknown"} ingredient units traded · confidence unknown · time shown is the ingredient observation hour · fixed recipe path supports captured history`
-                          : "poe.ninja listing estimate · time shown is retrieval time · complete recipe includes the selected rare-beast assumption where applicable · historical source unavailable"}
+                          : `poe.ninja listing estimate · time shown is retrieval time · ${sourceReference.assumption ? "retired species-specific beast estimate; rebind using the generic Yellow Beast pool" : sourceReference.yellowBeasts ? "complete recipe includes the generic Yellow Beast listing-count-weighted mean" : "exact temple room estimate"} · historical source unavailable`}
                 </span>
             )}
             {value?.source === "market" &&

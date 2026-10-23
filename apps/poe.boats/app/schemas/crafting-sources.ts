@@ -15,6 +15,7 @@ const scope = {
     id: z.string().min(1).max(500),
 };
 const assumption = z.literal("rare-beast-mountain-lynx-v1").optional();
+const yellowBeasts = z.literal("listing-count-weighted-mean-v1").optional();
 const conversion = z.literal("exchange-v1").optional();
 export const vendorUpgradeOptionsSchema = z.strictObject({
     inputId: z.string().min(1).max(500),
@@ -58,6 +59,7 @@ const ninjaReference = z.strictObject({
     ...scope,
     source: z.literal("poe.ninja"),
     assumption,
+    yellowBeasts,
 });
 export const commoditySourceReferenceSchema = z.strictObject({
     ...scope,
@@ -91,6 +93,22 @@ const ninjaQuote = ninjaReference.extend({
                 unitPrice: z.number().positive(),
                 listingCount: z.number().int().positive(),
                 sourceUrl: z.url().startsWith("https://poe.ninja/poe1/api/economy/"),
+                pool: z
+                    .strictObject({
+                        estimator: z.literal("listing-count-weighted-mean-v1"),
+                        species: z
+                            .array(
+                                z.strictObject({
+                                    detailsId: z.string().min(1).max(150),
+                                    name: z.string().min(1).max(200),
+                                    unitPrice: z.number().positive(),
+                                    listingCount: z.number().int().positive(),
+                                }),
+                            )
+                            .min(1)
+                            .max(300),
+                    })
+                    .optional(),
             }),
         )
         .min(1)

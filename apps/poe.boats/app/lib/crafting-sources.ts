@@ -2,6 +2,7 @@
 import { exchangeCurrencyId } from "@poe-tools/market";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { craftingVendorUpgrade, validVendorIngredientQuote } from "~/lib/crafting-vendor-upgrades";
+import { yellowBeastId, yellowBeastPolicy, yellowBeastPool } from "~/lib/crafting-yellow-beasts";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import {
     type CraftingSourceOptions,
@@ -69,9 +70,9 @@ export function craftingSourceRecipe(
         throw new Error(
             "This recipe needs a beast level that poe.ninja does not distinguish. Enter a price for beasts matching the selected level.",
         );
-    if (!assumption)
+    if (assumption)
         throw new Error(
-            "Choose the Mountain Lynx estimate for the remaining rare beasts before pricing the whole recipe.",
+            "This saved species-specific beast estimate is retired. Look up the generic Yellow Beast pool and rebind the recipe.",
         );
     const components = recipe.components.map((entry) => {
         const detailsId = beasts[entry.id];
@@ -84,7 +85,7 @@ export function craftingSourceRecipe(
     if (!components.length || components.length > 4)
         throw new Error("Unsupported beast recipe component count.");
     if (components.length < 4)
-        components.push({ detailsId: "mountain-lynx", quantity: 4 - components.length });
+        components.push({ detailsId: yellowBeastId, quantity: 4 - components.length });
     return { category: "Beast" as const, components };
 }
 
@@ -239,6 +240,29 @@ export function bindCraftingSourcePrice(
         };
     }
     const recipe = craftingSourceRecipe(engine, id, quote.assumption);
+    if (quote.yellowBeasts !== (recipe.category === "Beast" ? yellowBeastPolicy : undefined))
+        throw new Error("The beast quote must identify the generic Yellow Beast pricing policy.");
+    for (const component of quote.components) {
+        if (component.detailsId === yellowBeastId) {
+            if (
+                component.name !== "Yellow Beast" ||
+                component.pool?.estimator !== yellowBeastPolicy
+            )
+                throw new Error("The Yellow Beast component needs its generic pool provenance.");
+            const pooled = yellowBeastPool(component.pool.species);
+            if (
+                pooled.listingCount !== component.listingCount ||
+                Math.abs(pooled.unitPrice - component.unitPrice) > 1e-8
+            )
+                throw new Error(
+                    "The Yellow Beast price must equal its listing-count-weighted species estimates.",
+                );
+        } else if (component.pool) {
+            throw new Error(
+                "Only the generic Yellow Beast component can contain pooled estimates.",
+            );
+        }
+    }
     const components = quote.components.map(({ detailsId, quantity }) => ({ detailsId, quantity }));
     const amount = quote.components.reduce(
         (sum, entry) => sum + entry.quantity * entry.unitPrice,
@@ -257,6 +281,7 @@ export function bindCraftingSourcePrice(
         currency: quote.currency,
         id,
         assumption: quote.assumption,
+        yellowBeasts: quote.yellowBeasts,
     });
     return {
         ...graph,

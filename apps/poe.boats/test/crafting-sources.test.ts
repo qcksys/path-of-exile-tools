@@ -15,7 +15,7 @@ import { engine } from "./crafting-fixtures";
 
 const id = "EinharMasterCraftMorrigan7";
 const assumption = "rare-beast-mountain-lynx-v1" as const;
-const options = { ids: [id], realm: "pc" as const, assumption };
+const options = { ids: [id], realm: "pc" as const };
 const lines = [
     ["black-morrigan", 600],
     ["craicic-sand-spitter", 1],
@@ -26,7 +26,7 @@ const lines = [
     ["locus-of-corruption-tier-3-temple", 1000],
 ].map(([detailsId, amount]) => ({
     detailsId,
-    name: detailsId,
+    name: detailsId === "mountain-lynx" ? "Mountain Lynx" : detailsId,
     chaosValue: amount,
     divineValue: Number(amount) / 360,
     exaltedValue: Number(amount) / 2,
@@ -60,7 +60,9 @@ describe("supplemental crafting prices", () => {
         expect(fetcher).toHaveBeenCalledTimes(1);
         const bound = bindCraftingSourcePrice(graph, engine, id, result.quotes[id]!);
         expect(bound.prices[id]).toMatchObject({ amount: 607, source: "market", confidence: null });
-        expect(liveSourcePrices(bound)[0]?.reference).toMatchObject({ assumption });
+        expect(liveSourcePrices(bound)[0]?.reference).toMatchObject({
+            yellowBeasts: "listing-count-weighted-mean-v1",
+        });
         for (const wrong of [
             { league: "Other" },
             { currency: "divine" },
@@ -76,17 +78,17 @@ describe("supplemental crafting prices", () => {
             }),
         ).toThrow("every component");
     });
-    it("refuses missing assumptions, level-sensitive beasts, other platforms and non-tradeable services without fetching", async () => {
+    it("refuses retired species assumptions, level-sensitive beasts, other platforms and non-tradeable services without fetching", async () => {
         const fetcher = vi.fn();
         vi.stubGlobal("fetch", fetcher);
         const graph = exchangeGraph();
         const result = await findCraftingSourcePrices(graph, engine, {
             ...options,
-            assumption: undefined,
+            assumption,
             ids: [id, "EinharMasterCraft30", "service:recombine"],
         });
         expect(result.quotes).toEqual({});
-        expect(result.missing[id]).toContain("Mountain Lynx");
+        expect(result.missing[id]).toContain("rebind");
         expect(result.missing.EinharMasterCraft30).toContain("level");
         expect(result.missing["service:recombine"]).toContain("non-tradeable");
         expect(
