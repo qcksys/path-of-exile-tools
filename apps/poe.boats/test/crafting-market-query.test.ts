@@ -24,10 +24,12 @@ const input: CraftingMarketInput = {
 let sqlite: DatabaseSync;
 let db: TDatabase;
 let elapsed: number;
+let beforeRead: (() => Promise<void>) | undefined;
 beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(now * 1000);
     elapsed = 0;
+    beforeRead = undefined;
     vi.spyOn(performance, "now").mockImplementation(() => elapsed);
     sqlite = new DatabaseSync(":memory:");
     sqlite.function("JSON_CONTAINS", (values, value) =>
@@ -53,6 +55,7 @@ beforeEach(() => {
             JSON.stringify(["Plate Vest"]),
         );
     db = drizzle(async (sql, params) => {
+        if (beforeRead) await beforeRead();
         elapsed += 25;
         const statement = sqlite.prepare(sql);
         statement.setReturnArrays(true);
@@ -159,6 +162,35 @@ describe("equipment market lookup", () => {
         await expect(findCraftingMarketPrices(db, input, undefined, timing)).rejects.toThrow();
         expect(timing.toString()).toContain("equipment_db;dur=25.0");
         expect(timing.toString()).toContain("equipment_total;dur=25.0");
+        expect(timing.toString()).toContain(
+            'equipment_counts;desc="queries=1 rows=0 exchange_rows=0"',
+        );
+    });
+
+    it("publishes one coherent completed lookup when MCP batch calls overlap", async () => {
+        let releaseFirst = () => {};
+        let firstWaiting = () => {};
+        const blocked = new Promise<void>((resolve) => {
+            releaseFirst = resolve;
+        });
+        const waiting = new Promise<void>((resolve) => {
+            firstWaiting = resolve;
+        });
+        beforeRead = async () => {
+            beforeRead = undefined;
+            firstWaiting();
+            await blocked;
+        };
+        const timing = new ServerTiming();
+        const first = findCraftingMarketPrices(db, input, undefined, timing);
+        await waiting;
+        elapsed = 100;
+        await findCraftingMarketPrices(db, input, undefined, timing);
+        expect(timing.toString()).toContain("equipment_db;dur=25.0");
+        releaseFirst();
+        await first;
+        expect(timing.toString()).toContain("equipment_db;dur=150.0");
+        expect(timing.toString()).toContain("equipment_total;dur=150.0");
         expect(timing.toString()).toContain(
             'equipment_counts;desc="queries=1 rows=0 exchange_rows=0"',
         );

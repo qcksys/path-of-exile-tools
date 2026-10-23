@@ -132,6 +132,8 @@ coverage checks, `equipment_fx` measures exchange conversion and price selection
 cohort rows and returned exchange rows as numeric counts. Failed database awaits are counted;
 the header contains no SQL, parameters, item details or credentials. These measurements do not
 change lookup results, coverage requirements or pricing policies.
+For an MCP batch containing multiple equipment lookups, these metrics describe the last
+completed lookup; overlapping calls keep independent clocks and counts.
 
 Equipment lookup, binding and refresh also require the cohort to guarantee the configured
 starting base, exact item level, rarity, affix counts, influences and supported flags.

@@ -57,11 +57,11 @@ export async function findCraftingMarketPrices(
             truncated: false,
             message: "PoE 2 equipment uses manual prices and trade searches.",
         };
-    timing?.start("equipment_total");
+    const started = performance.now();
+    const phases: number[] = [];
     let queries = 0;
     let rowCount = 0;
     let exchangeRows = 0;
-    let stage = "equipment_db";
     try {
         const range = marketObservationRange(input.at);
         const scope = and(
@@ -112,13 +112,11 @@ export async function findCraftingMarketPrices(
             .where(and(scope, bases))
             .orderBy(desc(hourly.hour), cohort.id, cohort.revision)
             .limit(2001);
-        timing?.start(stage);
+        phases[0] = performance.now();
         queries++;
         const rows = await query;
         rowCount = rows.length;
-        timing?.stop(stage);
-        stage = "equipment_parse";
-        timing?.start(stage);
+        phases[1] = performance.now();
         const candidates = rows
             .slice(0, 2000)
             .map((row) => {
@@ -150,9 +148,7 @@ export async function findCraftingMarketPrices(
                         "The configured item does not definitely match this cohort.",
                     ),
             );
-        timing?.stop(stage);
-        stage = "equipment_fx";
-        timing?.start(stage);
+        phases[2] = performance.now();
         const exchangeByHour = new Map<
             number,
             Awaited<ReturnType<typeof findCraftingExchangePrices>>
@@ -210,8 +206,12 @@ export async function findCraftingMarketPrices(
                 : "No captured cohort covers this item in the latest 24 completed hours at this cutoff. Enter a manual price or check trade.",
         };
     } finally {
-        timing?.stop(stage);
-        timing?.stop("equipment_total");
+        const ended = performance.now();
+        for (const [index, name] of ["equipment_db", "equipment_parse", "equipment_fx"].entries()) {
+            const start = phases[index];
+            timing?.add(name, start === undefined ? 0 : (phases[index + 1] ?? ended) - start);
+        }
+        timing?.add("equipment_total", ended - started);
         timing?.add(
             "equipment_counts",
             0,
