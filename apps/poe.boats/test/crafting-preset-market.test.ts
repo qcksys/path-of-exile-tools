@@ -193,8 +193,8 @@ it("keeps unsided saved identities separate from regenerated sided definitions",
 });
 
 it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
-    expect(purchases).toHaveLength(62);
-    expect(cohorts).toHaveLength(53);
+    expect(purchases).toHaveLength(65);
+    expect(cohorts).toHaveLength(56);
     const definitions = new Map(manifest.cohorts.map((cohort) => [cohort.id, cohort]));
     for (const cohort of cohorts) expect(definitions.get(cohort.id)).toEqual(cohort);
     for (const { preset, graph: project, node, alternative, item } of purchases) {
