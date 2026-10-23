@@ -68,9 +68,17 @@ every action in the videos.
   Allflame annuls to select surviving required modifiers. Rarity misses preserve
   the elevated suffixes where possible. It stops before the optional final armour slam.
 - **Mercenary chest** buys the transferred, fractured Breach modifier on Conquest
-  Lamellar. It models the four-fossil Allflame roll and Eldritch prefix loop,
+  Lamellar. After the four-fossil Allflame roll, it pays for a Lesser Eldritch
+  Ichor and then a Greater Eldritch Ember. Replacing both implicit tiers makes
+  the Exarch dominant even when the starting item had a stronger Eater implicit;
+  the following Eldritch crafts therefore change prefixes and preserve the
+  finished suffixes. Both currencies are charged once per purchased item, while
+  prefix retries reuse that state. It then models the Eldritch prefix loop,
   accepting T2+ flat and percent armour/evasion before crafted life. Quality,
   defence tailoring and perfect divines are omitted from this affix example.
+  Existing saved graphs retain their original steps. This normalization changes
+  new preset graphs, not the exact purchase or market compatibility rules; it
+  does not itself bind enchanted or otherwise differently prepared listings.
 - **Spectre boots** buy the transferred Delve prefix, unveiled movement speed,
   ordinary Spectre levels and sacrificial Elder stun avoidance. Elevation,
   crafted life and the T2+ elemental-resistance Foulborn slam are simulated.
