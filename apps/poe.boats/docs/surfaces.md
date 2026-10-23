@@ -59,7 +59,10 @@ buy uninfluenced Normal Two-Toned Boots, then Transmute, Regal, use a Hunter's
 Exalted Orb and Scour. The shared preset builder retains the original purchase
 choice and target; all four actions are charged by the existing graph runtime.
 The source has its own exact canonical-base, level, rarity and influence cohort.
-Earlier preset revisions retain their existing routes.
+The Redeemer Onslaught/Elusive donor can use the same source acquisition: prepare a Redeemer
+base, roll and isolate Onslaught, then Regal for Elusive. Misses pay for Scouring and rolling
+again on the same influenced base. Both purchase options remain pinned until explicitly changed;
+earlier preset revisions retain their existing routes. Sharing the ordinary source adds no cohort.
 
 | UI capability | HTTP family under `/api/v1` | MCP / shared implementation |
 | --- | --- | --- |

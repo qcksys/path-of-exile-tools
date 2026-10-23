@@ -9,7 +9,14 @@ import { CRAFTING_GRAPH_ENGINE, validateCraftingGraph } from "./crafting-graph-v
 import { janusRarityModifier } from "./crafting-janus";
 import { elevatedBootsPreset } from "./crafting-preset-boots";
 import { helicalRingPreset } from "./crafting-preset-helical";
-import { alterationDonor } from "./crafting-preset-preparation";
+import {
+    alterationDonor,
+    presetMod,
+    presetNot,
+    presetQuery,
+    presetRange,
+    presetRecover,
+} from "./crafting-preset-preparation";
 import { nonNativeEssenceSources } from "./crafting-recombination";
 import { rulesetAllowsPresetPreparation, validateRulesetGraph } from "./crafting-rulesets";
 
@@ -323,11 +330,12 @@ export function projectFromPreset(
             const purchase = receiver?.kind === "acquire" ? receiver.alternatives[0] : undefined;
             if (receiver?.kind !== "acquire" || purchase?.kind !== "purchase")
                 throw new Error("Hunter receiver must have a base purchase.");
-            let source = buy(
+            const uninfluencedBase = buy(
                 "tailwind-base-make-base",
                 "Buy uninfluenced Normal Two-Toned Boots",
                 engine.validateItem({ ...purchase.item, influences: [] }),
             );
+            let source = uninfluencedBase;
             for (const [id, name, method] of [
                 ["transmute", "Transmute the uninfluenced base", currency("transmute_to_magic")],
                 ["regal", "Regal the magic base", currency("upgrade_magic_to_rare")],
@@ -349,6 +357,69 @@ export function projectFromPreset(
                 id: "make-hunter",
                 name: "Add Hunter influence to an unrolled base",
                 nodeId: source,
+            });
+            const donor = nodes.find((node) => node.id === "onslaught-base");
+            const donorPurchase = donor?.kind === "acquire" ? donor.alternatives[0] : undefined;
+            if (donor?.kind !== "acquire" || donorPurchase?.kind !== "purchase")
+                throw new Error("Redeemer donor must have a purchase.");
+            source = uninfluencedBase;
+            for (const [id, name, method] of [
+                ["transmute", "Transmute the uninfluenced base", currency("transmute_to_magic")],
+                ["regal", "Regal the magic base", currency("upgrade_magic_to_rare")],
+                [
+                    "redeemer",
+                    "Add Redeemer influence with a Redeemer's Exalted Orb",
+                    { kind: "currency", id: "Metadata/Items/AtlasExiles/AddModToRareRedeemer" },
+                ],
+                [
+                    "scour",
+                    "Scour modifiers, keeping Redeemer influence",
+                    currency("convert_to_normal"),
+                ],
+            ] satisfies [string, string, CraftingMethod][]) {
+                source = craft(`onslaught-base-make-${id}`, name, [source], method).id;
+            }
+            const onslaught = "OnslaughtOnKillInfluence2_";
+            const isolated = alterationDonor(
+                { engine, base, buy: () => source, craft, currency },
+                "onslaught-base-make-isolate",
+                engine.validateItem({ ...donorPurchase.item, rarity: "normal", mods: [] }),
+                onslaught,
+            );
+            const regal = craft(
+                "onslaught-base-make-regal-elusive",
+                "Regal the isolated Onslaught donor for Elusive",
+                [isolated],
+                currency("upgrade_magic_to_rare"),
+            );
+            const ready = presetQuery(
+                presetMod(onslaught),
+                presetMod("ElusiveOnCriticalStrikeInfluence1"),
+                presetRange("prefixes", 1, 1),
+                presetRange("suffixes", 1, 1),
+                { kind: "rarity", values: ["Rare"] },
+            );
+            const reset = craft(
+                "onslaught-base-make-reset",
+                "Miss: Scour and reuse the Redeemer base",
+                [regal.id],
+                currency("convert_to_normal"),
+            );
+            reset.applyWhen = presetNot(ready);
+            reset.branches = [
+                {
+                    id: "ready",
+                    name: "Onslaught and Elusive donor ready",
+                    query: ready,
+                    destination: { kind: "return" },
+                },
+            ];
+            reset.fallback = presetRecover("onslaught-base-make-isolate-transmute");
+            donor.alternatives.push({
+                kind: "production",
+                id: "make-onslaught",
+                name: "Roll and isolate Onslaught, then Regal Elusive",
+                nodeId: reset.id,
             });
         }
     } else if (presetId === "rarity-helmet") {

@@ -5,7 +5,7 @@ import { calculateCraftingGraph } from "../app/lib/crafting-graph-simulation";
 import { CraftingGraphTrial } from "../app/lib/crafting-graph-trial";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
 import { craftingPresets, projectFromPreset } from "../app/lib/crafting-presets";
-import type { CraftingGraph } from "../app/schemas/crafting-graph";
+import type { CraftingGraph, GraphCraftNode } from "../app/schemas/crafting-graph";
 import type { CraftingPresetId } from "../app/schemas/crafting-presets";
 import { catalog, engine } from "./crafting-fixtures";
 import { quote, runGraphTrial } from "./crafting-graph-fixtures";
@@ -116,8 +116,17 @@ it("adds optional Hunter base preparation without changing the original boots re
         nodeId: "tailwind-base-make-scour",
     });
     const withoutPreparation = graph.nodes
-        .filter((entry) => !entry.id.startsWith("tailwind-base-make-"))
-        .map((entry) => (entry.id === node.id ? { ...node, alternatives: [alternative] } : entry));
+        .filter((entry) => !entry.id.includes("-make-"))
+        .map((entry) =>
+            entry.kind === "acquire"
+                ? {
+                      ...entry,
+                      alternatives: entry.alternatives.filter(
+                          (choice) => choice.kind === "purchase",
+                      ),
+                  }
+                : entry,
+        );
     expect(withoutPreparation).toEqual(original.nodes);
     expect(graph.outcomes).toEqual(original.outcomes);
     expect(graph.entry).toBe(original.entry);
@@ -137,13 +146,13 @@ it("adds optional Hunter base preparation without changing the original boots re
     }
 });
 
-it("keeps the pinned Hunter purchase preview unchanged", () => {
+it("keeps the pinned boots purchase previews unchanged", () => {
     const graph = projectFromPreset(engine, ruleset, "tailwind-boots");
     const original = structuredClone(graph);
-    original.nodes = original.nodes.filter((node) => !node.id.startsWith("tailwind-base-make-"));
-    purchase(original, "tailwind-base").node.alternatives = [
-        purchase(original, "tailwind-base").alternative,
-    ];
+    original.nodes = original.nodes.filter((node) => !node.id.includes("-make-"));
+    for (const node of original.nodes)
+        if (node.kind === "acquire")
+            node.alternatives = node.alternatives.filter((choice) => choice.kind === "purchase");
     const options = { estimateIterations: 1, workLimit: 1000 };
     const current = calculateCraftingGraph(catalog, graph, options);
     const previous = calculateCraftingGraph(catalog, original, options);
@@ -158,6 +167,138 @@ it("keeps the pinned Hunter purchase preview unchanged", () => {
         estimated: false,
         expectedCost: null,
     });
+    const donorGraph = { ...graph, entry: "onslaught-base" };
+    const donorOriginal = { ...original, entry: "onslaught-base" };
+    const donorPreview = calculateCraftingGraph(catalog, donorGraph, options);
+    const previousDonorPreview = calculateCraftingGraph(catalog, donorOriginal, options);
+    expect(donorPreview.work).toBe(previousDonorPreview.work);
+    expect(donorPreview.samples).toEqual(previousDonorPreview.samples);
+    expect(donorPreview.acquisitions["onslaught-base"]?.alternatives[1]).toMatchObject({
+        estimated: false,
+        expectedCost: null,
+    });
+});
+
+const redeemerCurrencies = [
+    "Metadata/Items/Currency/CurrencyUpgradeToMagic",
+    "Metadata/Items/Currency/CurrencyUpgradeMagicToRare",
+    "Metadata/Items/AtlasExiles/AddModToRareRedeemer",
+    "Metadata/Items/Currency/CurrencyConvertToNormal",
+    "Metadata/Items/Currency/CurrencyRerollMagic",
+    "Metadata/Items/Currency/CurrencyRemoveMod",
+] as const;
+
+it("adds optional Redeemer preparation using the existing ordinary boots acquisition", () => {
+    const graph = projectFromPreset(engine, ruleset, "tailwind-boots");
+    const { node } = purchase(graph, "onslaught-base");
+    expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+    expect(node.alternatives[1]).toEqual({
+        kind: "production",
+        id: "make-onslaught",
+        name: "Roll and isolate Onslaught, then Regal Elusive",
+        nodeId: "onslaught-base-make-reset",
+    });
+    expect(graph.nodes.filter((entry) => entry.kind === "acquire")).toHaveLength(3);
+    expect(graph.nodes.find((entry) => entry.id === "onslaught-base-make-transmute")).toMatchObject(
+        {
+            inputs: [{ source: "tailwind-base-make-base" }],
+        },
+    );
+    const crafts = graph.nodes.filter(
+        (entry): entry is GraphCraftNode =>
+            entry.kind === "craft" && entry.id.startsWith("onslaught-base-make-"),
+    );
+    expect(crafts).toHaveLength(9);
+    expect(crafts.every((entry) => entry.method.kind === "currency")).toBe(true);
+    expect(
+        discoverCraftingCosts(
+            engine,
+            crafts.map((entry) => entry.method),
+        )
+            .map((entry) => entry.id)
+            .sort(),
+    ).toEqual([...redeemerCurrencies].sort());
+    const reset = crafts.find((entry) => entry.id === "onslaught-base-make-reset")!;
+    expect(reset.fallback).toEqual({
+        kind: "recover",
+        nodeId: "onslaught-base-make-isolate-transmute",
+        inputId: "input-0",
+    });
+});
+
+function redeemerRecoveryTrial(missing?: string) {
+    const graph = projectFromPreset(engine, ruleset, "tailwind-boots");
+    const { node, alternative } = purchase(graph, "onslaught-base");
+    node.choice = { mode: "pinned", alternativeId: "make-onslaught" };
+    const base = purchase(graph, "tailwind-base-make-base").alternative;
+    base.price = missing?.startsWith("purchase:") ? null : quote(17);
+    redeemerCurrencies.forEach((id, index) => {
+        if (id !== missing) graph.prices[id] = quote([2, 3, 5, 7, 11, 13][index]!);
+    });
+    const onslaught = "OnslaughtOnKillInfluence2_";
+    const life = "IncreasedLife8";
+    const sequence: (string | number)[] = [
+        1,
+        life,
+        "ChaosResist6",
+        onslaught,
+        2,
+        onslaught,
+        life,
+        onslaught,
+        2,
+        onslaught,
+        life,
+        life,
+        life,
+        1,
+        onslaught,
+        "ElusiveOnCriticalStrikeInfluence1",
+    ];
+    const trial = new CraftingGraphTrial(engine, graph, scriptedRandom(sequence), {
+        entry: node.id,
+        classify: false,
+        trace: true,
+    });
+    while (!trial.done) trial.advance();
+    const result = trial.result();
+    expect(result.error).toBeNull();
+    expect(sequence).toEqual([]);
+    expect(result.status).toBe("returned");
+    const identity = (item: typeof alternative.item) => ({
+        ...item,
+        mods: item.mods
+            .map(({ values: _values, ...mod }) => mod)
+            .sort((a, b) => a.id.localeCompare(b.id)),
+    });
+    expect(identity(result.item!)).toEqual(identity(alternative.item));
+    expect(engine.validateItem(result.item!)).toEqual(result.item);
+    return result;
+}
+
+it("pays for failed Onslaught isolation and Elusive regals while reusing one Redeemer base", () => {
+    const result = redeemerRecoveryTrial();
+    expect(result.purchases).toBe(1);
+    expect(result.actions).toBe(12);
+    expect(result.cost).toBe(88);
+    expect(result.missingPrices).toEqual([]);
+    expect(result.spending).toEqual({
+        "purchase:tailwind-base-make-base:buy": 1,
+        ...Object.fromEntries(
+            redeemerCurrencies.map((id, index) => [id, [3, 3, 1, 2, 1, 2][index]]),
+        ),
+    });
+    expect(result.visits["onslaught-base-make-isolate"]!.recovered).toBe(1);
+    expect(result.visits["onslaught-base-make-reset"]!.recovered).toBe(1);
+});
+
+it.each([
+    "purchase:tailwind-base-make-base:buy",
+    ...redeemerCurrencies,
+])("keeps Redeemer preparation unpriced when %s is missing", (missing) => {
+    const result = redeemerRecoveryTrial(missing);
+    expect(result.cost).toBeNull();
+    expect(result.missingPrices).toEqual([missing]);
 });
 
 function pricedHunterPreparation() {
