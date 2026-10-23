@@ -19,6 +19,9 @@ marking their hour complete. It publishes each completed hour atomically with it
 observation times. This does not replace active
 listings or cursors, expose raw archive records, or create uncaptured history. Existing market
 history and pricing operations consume the corrected revision through the normal delivery path.
+Live stash capture checkpoints between committed pages before requesting the next page,
+releasing accumulated indexes while retaining atomic page writes and cursor advancement.
+A failed page checkpoint stops capture before the next request; the saved cursor remains retryable.
 The PoE 1 pipeline checkpoints committed writes before replay so capture indexes do not
 exhaust the memory needed for publication. Failed checkpoints defer replay while pending
 delivery remains eligible; a failed rollback stops the process before checkpointing.

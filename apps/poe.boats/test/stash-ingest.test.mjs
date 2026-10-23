@@ -234,6 +234,114 @@ describe("public stash lifecycle", () => {
         await expect(ingestPs(db.conn, client, { pages: 1 })).rejects.toThrow();
         expect(await queryAll(db.conn, "SELECT item_id FROM ps_listing")).toEqual([]);
     });
+    it("checkpoints committed pages before fetching another page, without checkpointing the last", async () => {
+        const checkpoints = [];
+        const run = db.conn.run.bind(db.conn);
+        const spy = vi.spyOn(db.conn, "run").mockImplementation(async (sql, ...args) => {
+            if (sql === "CHECKPOINT") {
+                checkpoints.push({
+                    requests: network.mock.calls.length,
+                    cursor: await getCursor(db.conn, "psapi"),
+                    price: (await queryAll(db.conn, "SELECT price_amount FROM ps_listing"))[0]
+                        ?.price_amount,
+                });
+            }
+            return run(sql, ...args);
+        });
+        try {
+            for (const amount of [10, 20, 30])
+                page(
+                    [{ ...stash, items: [{ ...item, note: `~price ${amount} divine` }] }],
+                    `cursor-${amount}`,
+                );
+            expect(await ingestPs(db.conn, client, { pages: 3 })).toMatchObject({
+                pages: 3,
+                inserted: 1,
+                updated: 2,
+                finalCursor: "cursor-30",
+            });
+            expect(checkpoints).toEqual([
+                { requests: 1, cursor: "cursor-10", price: 10 },
+                { requests: 2, cursor: "cursor-20", price: 20 },
+            ]);
+            expect(await queryAll(db.conn, "SELECT price_amount FROM ps_listing")).toEqual([
+                { price_amount: 30 },
+            ]);
+        } finally {
+            spy.mockRestore();
+        }
+    });
+    it("retains the committed cursor when a page checkpoint fails and retries the unfetched page", async () => {
+        const failure = new Error("Checkpoint failed");
+        const run = db.conn.run.bind(db.conn);
+        const spy = vi.spyOn(db.conn, "run").mockImplementation(async (sql, ...args) => {
+            if (sql === "CHECKPOINT") throw failure;
+            return run(sql, ...args);
+        });
+        try {
+            page();
+            page([{ ...stash, items: [{ ...item, note: "~price 20 divine" }] }], "cursor-2");
+            await expect(ingestPs(db.conn, client, { pages: 2 })).rejects.toBe(failure);
+            expect(network).toHaveBeenCalledOnce();
+            expect(await getCursor(db.conn, "psapi")).toBe("cursor-1");
+            expect(await queryAll(db.conn, "SELECT price_amount FROM ps_listing")).toEqual([
+                { price_amount: 10 },
+            ]);
+            spy.mockRestore();
+            expect(await ingestPs(db.conn, client, { pages: 1 })).toMatchObject({
+                pages: 1,
+                updated: 1,
+                finalCursor: "cursor-2",
+            });
+            expect(network).toHaveBeenCalledTimes(2);
+            const retry = new Request(network.mock.calls[1][0]);
+            expect(new URL(retry.url).searchParams.get("id")).toBe("cursor-1");
+            expect(await queryAll(db.conn, "SELECT price_amount FROM ps_listing")).toEqual([
+                { price_amount: 20 },
+            ]);
+        } finally {
+            spy.mockRestore();
+        }
+    });
+    it("does not checkpoint after a caught-up page", async () => {
+        const spy = vi.spyOn(db.conn, "run");
+        try {
+            page();
+            expect(await ingestPs(db.conn, client, { pages: 3, cursor: "cursor-1" })).toMatchObject(
+                { pages: 1, caughtUp: true },
+            );
+            expect(network).toHaveBeenCalledOnce();
+            expect(spy.mock.calls.filter(([sql]) => sql === "CHECKPOINT")).toEqual([]);
+        } finally {
+            spy.mockRestore();
+        }
+    });
+    it("preserves the checkpointed first page when the next page rolls back", async () => {
+        const spy = vi.spyOn(db.conn, "run");
+        try {
+            page();
+            page(
+                [
+                    { ...stash, items: [{ ...item, note: "~price 20 divine" }] },
+                    {
+                        ...stash,
+                        id: "invalid-stash",
+                        items: [{ ...item, id: "invalid", baseType: null }],
+                    },
+                ],
+                "cursor-2",
+            );
+            await expect(ingestPs(db.conn, client, { pages: 3 })).rejects.toThrow();
+            expect(network).toHaveBeenCalledTimes(2);
+            expect(spy.mock.calls.filter(([sql]) => sql === "CHECKPOINT")).toHaveLength(1);
+            expect(await getCursor(db.conn, "psapi")).toBe("cursor-1");
+            expect(await queryAll(db.conn, "SELECT item_id, price_amount FROM ps_listing")).toEqual(
+                [{ item_id: "item-1", price_amount: 10 }],
+            );
+        } finally {
+            spy.mockRestore();
+        }
+    });
 });
 
 describe("currency ingestion and delivery", () => {

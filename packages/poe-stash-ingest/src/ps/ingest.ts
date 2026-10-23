@@ -250,7 +250,11 @@ export async function ingestPs(
     let cursor: string | undefined = opts.cursor ?? (await getCursor(conn, STREAM));
 
     for (let i = 0; i < opts.pages; i++) {
-        if (i > 0) await sleep(PAGE_DELAY_MS);
+        if (i > 0) {
+            // Release the committed page's indexes before loading another page.
+            await conn.run("CHECKPOINT");
+            await sleep(PAGE_DELAY_MS);
+        }
         const requestCursor = cursor;
         const page = await client.public.stashTabs(
             requestCursor ? { realm: REALM, id: requestCursor } : { realm: REALM },
