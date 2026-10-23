@@ -14,7 +14,7 @@ import { graphFixture, quote, runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r9",
+    (entry) => entry.game === "poe1" && entry.revision === "r10",
 )!;
 
 describe("common crafting project presets", () => {
@@ -22,7 +22,9 @@ describe("common crafting project presets", () => {
         const iterations =
             preset.id === "tailwind-boots" ? 1 : preset.id === "strength-helical-ring" ? 2 : 8;
         const workLimit = preset.id === "tailwind-boots" ? 250_000 : 100_000;
-        const timeout = ["strength-helical-ring", "tailwind-boots"].includes(preset.id)
+        const timeout = ["strength-helical-ring", "tailwind-boots", "sushi-rf-helmet"].includes(
+            preset.id,
+        )
             ? 30_000
             : 10_000;
         it(
@@ -140,7 +142,7 @@ describe("common crafting project presets", () => {
             expect(alternative.name).toContain(" + NNN ");
         }
     });
-    it("defaults only the eight recombination presets to explicit zero-cost self-service", () => {
+    it("defaults only the nine recombination presets to explicit zero-cost self-service", () => {
         const affected = [
             "life-block-shield",
             "es-block-shield",
@@ -150,6 +152,7 @@ describe("common crafting project presets", () => {
             "global-defence-chest",
             "rarity-helmet",
             "energy-shield-chest",
+            "sushi-luminary-shield",
         ];
         for (const preset of craftingPresets) {
             const graph = projectFromPreset(engine, ruleset, preset.id);

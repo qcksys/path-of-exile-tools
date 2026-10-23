@@ -26,6 +26,11 @@ const presetBases: Record<CraftingPresetId, string> = {
     "rarity-helmet": "Hubris Circlet",
     "energy-shield-chest": "Vaal Regalia",
     "strength-helical-ring": "Helical Ring",
+    "sushi-rf-totem-shield": "Heat-attuned Tower Shield",
+    "sushi-rf-helmet": "Royal Burgonet",
+    "sushi-mercenary-chest": "Conquest Lamellar",
+    "sushi-spectre-boots": "Leviathan Greaves",
+    "sushi-luminary-shield": "Heat-attuned Tower Shield",
 };
 
 export function CraftingPresetPicker({

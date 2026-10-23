@@ -39,7 +39,11 @@ export function craftingPresetCohorts(engine: CraftingEngine, ruleset: CraftingR
                     })),
                     { kind: "flag", field: "identified", value: true },
                     ...(["corrupted", "mirrored", "fractured", "synthesised"] as const).map(
-                        (field) => ({ kind: "flag" as const, field, value: false }),
+                        (field) => ({
+                            kind: "flag" as const,
+                            field,
+                            value: record.item[field] === true,
+                        }),
                     ),
                     ...influences
                         .filter((name) => record.item.influences?.[name])

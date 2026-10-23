@@ -17,6 +17,7 @@ import {
     presetRange,
     presetRecover,
 } from "./crafting-preset-preparation";
+import { spicySushiPreset, spicySushiPresets } from "./crafting-preset-spicysushi";
 import { nonNativeEssenceSources } from "./crafting-recombination";
 import { rulesetAllowsPresetPreparation, validateRulesetGraph } from "./crafting-rulesets";
 
@@ -102,6 +103,7 @@ export const craftingPresets: readonly CraftingPreset[] = [
         description:
             "70+ memory strands, low-consumption Strength essence, isolated Strength imprint, T1 all Attributes, accuracy/light radius regal, protected T3+ chaos reforge, Unravelling and a Hunter life-on-hit slam. Misses annul or restore the appropriate imprint.",
     },
+    ...spicySushiPresets,
 ];
 
 export function listCraftingPresets(game: "poe1" | "poe2") {
@@ -239,7 +241,9 @@ export function projectFromPreset(
     };
     let entry: string;
     let target: ItemQuery;
-    if (presetId === "life-block-shield" || presetId === "es-block-shield") {
+    if (spicySushiPresets.some((entry) => entry.id === presetId)) {
+        ({ entry, target } = spicySushiPreset({ engine, base, buy, craft, currency }, presetId));
+    } else if (presetId === "life-block-shield" || presetId === "es-block-shield") {
         const life = presetId === "life-block-shield";
         const item = base(life ? "Heat-attuned Tower Shield" : "Titanium Spirit Shield");
         const mod = life
