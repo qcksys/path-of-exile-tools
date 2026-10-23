@@ -177,7 +177,10 @@ it("retries failed delivery and does not resend unchanged completed hours", asyn
         .mockResolvedValueOnce(new Response("failed", { status: 503 }))
         .mockImplementation(() => Promise.resolve(Response.json({ written: 1 })));
     vi.stubGlobal("fetch", network);
-    await expect(flushRollups(db.conn)).rejects.toThrow("503");
+    await expect(flushRollups(db.conn)).rejects.toMatchObject({
+        message: expect.stringMatching(/^psapi rollup for hour \d+ failed$/),
+        cause: expect.objectContaining({ message: expect.stringContaining("503") }),
+    });
     expect(await queryAll(db.conn, "SELECT * FROM rollup_state")).toHaveLength(0);
     expect(await flushRollups(db.conn)).toEqual({ hours: 1, rows: 1 });
     expect(await flushRollups(db.conn)).toEqual({ hours: 0, rows: 0 });
