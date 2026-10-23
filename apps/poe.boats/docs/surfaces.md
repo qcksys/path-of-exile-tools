@@ -13,8 +13,8 @@ crafting-input records from its configured league locally before price classific
 of the price projections. It retains full selected item details and tracked-stash removals, not the whole feed.
 Its `capture-status` CLI reports archive counts and sizes; the archive is not exposed through public APIs.
 The owning worker can reclassify the last 24 completed capture hours after a cohort manifest revision
-changes. It processes up to five archived pages per cycle after exchange capture, newest hour first,
-and publishes each
+changes. It processes up to five archived pages per cycle after exchange capture, finishing
+an already-started hour before selecting the oldest eligible hour to reduce expiry loss. It publishes each
 completed hour atomically with its original observation times. This does not replace active
 listings or cursors, expose raw archive records, or create uncaptured history. Existing market
 history and pricing operations consume the corrected revision through the normal delivery path.
