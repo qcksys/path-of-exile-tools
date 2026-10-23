@@ -86,8 +86,8 @@ function rawItem(item: CraftingItem, metadata = false) {
 }
 
 it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
-    expect(purchases).toHaveLength(56);
-    expect(cohorts).toHaveLength(47);
+    expect(purchases).toHaveLength(57);
+    expect(cohorts).toHaveLength(48);
     const definitions = new Map(manifest.cohorts.map((cohort) => [cohort.id, cohort]));
     for (const cohort of cohorts) expect(definitions.get(cohort.id)).toEqual(cohort);
     for (const { preset, graph: project, node, alternative, item } of purchases) {
@@ -227,8 +227,8 @@ it("can populate 24 original purchase inputs with optional identity metadata and
     ]);
 });
 
-it("captures all fourteen exact Normal preparation bases without modifier metadata", () => {
-    expect(startingBases).toHaveLength(14);
+it("captures every exact Normal preparation base without modifier metadata", () => {
+    expect(startingBases).toHaveLength(15);
     const matched = new Set<string>();
     for (const { node, item } of startingBases) {
         expect(item.rarity).toBe("normal");
@@ -241,7 +241,48 @@ it("captures all fourteen exact Normal preparation bases without modifier metada
         ).toContain(cohort.id);
         matched.add(cohort.id);
     }
-    expect(matched.size).toBe(6);
+    expect(matched.size).toBe(7);
+});
+
+it("prices the uninfluenced Hunter preparation base under the ordinary purchase requirements", () => {
+    const { node, item } = startingBases.find(
+        (entry) => entry.node.id === "tailwind-base-make-base",
+    )!;
+    const cohort = cohorts.find(
+        (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
+    )!;
+    expect(item.influences).toEqual([]);
+    for (const value of [8, 10, 12]) {
+        const listed = {
+            ...item,
+            sockets: 2,
+            implicits: item.implicits.map((mod) => ({ ...mod, values: [value] })),
+        };
+        expect(craftingMarketItemIssue(engine, listed)).toBeNull();
+        const raw = rawItem(listed);
+        expect(capture(raw)).toBe(true);
+        expect(classifier.classify(normalizeApiItem("poe1", "stash", raw)).matches).toContain(
+            cohort.id,
+        );
+        for (const invalid of [
+            { ...raw, ilvl: 85 },
+            { ...raw, rarity: "Magic" },
+            { ...raw, influences: { hunter: true } },
+            { ...raw, corrupted: true },
+            rawItem(engine.createItem("Metadata/Items/Armours/Boots/BootsAtlas2", 86)),
+        ])
+            expect(
+                classifier.classify(normalizeApiItem("poe1", "stash", invalid)).matches,
+            ).not.toContain(cohort.id);
+    }
+    expect(
+        cohortPriceCoverage(cohort, queries.record(item), {
+            ...node.output,
+            groups: [
+                { type: "and", filters: [{ kind: "range", field: "sockets", value: { min: 4 } }] },
+            ],
+        }).covered,
+    ).toBe(false);
 });
 
 it("populates 19 original inputs from descriptions, flags and influence while preserving eight ambiguous rolls", () => {

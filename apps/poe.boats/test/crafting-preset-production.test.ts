@@ -9,7 +9,7 @@ import type { CraftingGraph } from "../app/schemas/crafting-graph";
 import type { CraftingPresetId } from "../app/schemas/crafting-presets";
 import { catalog, engine } from "./crafting-fixtures";
 import { quote, runGraphTrial } from "./crafting-graph-fixtures";
-import { historyIndex } from "./crafting-history-fixtures";
+import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r9",
@@ -92,6 +92,177 @@ it("does not spend preview work on unselected preparation routes", () => {
             estimated: false,
             expectedCost: null,
         });
+});
+
+const hunterPreparation = [
+    ["transmute", "Metadata/Items/Currency/CurrencyUpgradeToMagic"],
+    ["regal", "Metadata/Items/Currency/CurrencyUpgradeMagicToRare"],
+    ["hunter", "Metadata/Items/AtlasExiles/AddModToRareHunter"],
+    ["scour", "Metadata/Items/Currency/CurrencyConvertToNormal"],
+] as const;
+
+it("adds optional Hunter base preparation without changing the original boots recipe", () => {
+    const graph = projectFromPreset(engine, ruleset, "tailwind-boots");
+    const retained = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r8",
+    )!;
+    const original = projectFromPreset(engine, retained, "tailwind-boots");
+    const { node, alternative } = purchase(graph, "tailwind-base");
+    expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+    expect(node.alternatives[1]).toEqual({
+        kind: "production",
+        id: "make-hunter",
+        name: "Add Hunter influence to an unrolled base",
+        nodeId: "tailwind-base-make-scour",
+    });
+    const withoutPreparation = graph.nodes
+        .filter((entry) => !entry.id.startsWith("tailwind-base-make-"))
+        .map((entry) => (entry.id === node.id ? { ...node, alternatives: [alternative] } : entry));
+    expect(withoutPreparation).toEqual(original.nodes);
+    expect(graph.outcomes).toEqual(original.outcomes);
+    expect(graph.entry).toBe(original.entry);
+    const { alternative: base } = purchase(graph, "tailwind-base-make-base");
+    expect(base.item).toEqual({ ...alternative.item, influences: [] });
+    expect(base.price).toBeNull();
+    let source = "tailwind-base-make-base";
+    for (const [suffix, id] of hunterPreparation) {
+        const step = graph.nodes.find((entry) => entry.id === `tailwind-base-make-${suffix}`)!;
+        expect(step).toMatchObject({
+            kind: "craft",
+            inputs: [{ source }],
+            method: { kind: "currency", id },
+        });
+        expect(graph.prices[id]).toBeUndefined();
+        source = step.id;
+    }
+});
+
+it("keeps the pinned Hunter purchase preview unchanged", () => {
+    const graph = projectFromPreset(engine, ruleset, "tailwind-boots");
+    const original = structuredClone(graph);
+    original.nodes = original.nodes.filter((node) => !node.id.startsWith("tailwind-base-make-"));
+    purchase(original, "tailwind-base").node.alternatives = [
+        purchase(original, "tailwind-base").alternative,
+    ];
+    const options = { estimateIterations: 1, workLimit: 1000 };
+    const current = calculateCraftingGraph(catalog, graph, options);
+    const previous = calculateCraftingGraph(catalog, original, options);
+    expect(current.errors).toEqual({});
+    expect(current.work).toBe(previous.work);
+    expect(current.samples).toEqual(previous.samples);
+    expect(current.missingPrices).toEqual(previous.missingPrices);
+    expect(current.estimates.map((entry) => entry.nodeId)).toEqual(
+        previous.estimates.map((entry) => entry.nodeId),
+    );
+    expect(current.acquisitions["tailwind-base"]?.alternatives[1]).toMatchObject({
+        estimated: false,
+        expectedCost: null,
+    });
+});
+
+function pricedHunterPreparation() {
+    const graph = projectFromPreset(engine, ruleset, "tailwind-boots");
+    purchase(graph, "tailwind-base").node.choice = { mode: "pinned", alternativeId: "make-hunter" };
+    purchase(graph, "tailwind-base-make-base").alternative.price = quote(11);
+    hunterPreparation.forEach(([, id], index) => {
+        graph.prices[id] = quote([2, 3, 5, 7][index]!);
+    });
+    return graph;
+}
+
+it("pays all four currencies and returns the full original Hunter Normal item", () => {
+    const graph = pricedHunterPreparation();
+    const target = purchase(graph, "tailwind-base").alternative.item;
+    for (let seed = 0; seed < 16; seed++) {
+        const trial = new CraftingGraphTrial(engine, graph, seededRandom(seed), {
+            entry: "tailwind-base",
+            classify: false,
+            trace: true,
+        });
+        while (!trial.done) trial.advance();
+        expect(trial.result()).toMatchObject({
+            status: "returned",
+            error: null,
+            actions: 4,
+            purchases: 1,
+            cost: 28,
+            missingPrices: [],
+            spending: {
+                "purchase:tailwind-base-make-base:buy": 1,
+                ...Object.fromEntries(hunterPreparation.map(([, id]) => [id, 1])),
+            },
+        });
+        expect(trial.result().item).toEqual(target);
+    }
+});
+
+it.each([
+    "purchase:tailwind-base-make-base:buy",
+    ...hunterPreparation.map(([, id]) => id),
+])("keeps Hunter preparation unpriced when %s is missing", (missing) => {
+    const graph = pricedHunterPreparation();
+    if (missing.startsWith("purchase:"))
+        purchase(graph, "tailwind-base-make-base").alternative.price = null;
+    else delete graph.prices[missing];
+    const trial = new CraftingGraphTrial(engine, graph, seededRandom(42), {
+        entry: "tailwind-base",
+        classify: false,
+    });
+    while (!trial.done) trial.advance();
+    expect(trial.result()).toMatchObject({
+        status: "returned",
+        error: null,
+        cost: null,
+        missingPrices: [missing],
+    });
+    expect(trial.result().item).toEqual(purchase(graph, "tailwind-base").alternative.item);
+});
+
+it("retained r9 pays for a new base and four crafts on each Hunter acquisition", async () => {
+    const graph = pricedHunterPreparation();
+    const any = purchase(graph, "tailwind-base").node.output;
+    graph.nodes.push({
+        kind: "craft",
+        id: "consume-twice",
+        name: "Consume two independently prepared Hunter bases",
+        output: any,
+        inputs: [
+            { id: "first", name: "First", source: "tailwind-base" },
+            { id: "second", name: "Second", source: "tailwind-base" },
+        ],
+        method: { kind: "recombine", id: "recombine" },
+        branches: [],
+        ordering: "automatic",
+        fallback: { kind: "return" },
+    });
+    graph.entry = "consume-twice";
+    graph.outcomes = [{ ...graph.outcomes[0]!, id: "ready", name: "Ready", query: any }];
+    graph.iterations = 1;
+    graph.prices["service:recombine"] = quote(3);
+    const retained = await retainedRevision(ruleset);
+    const simulation = retained.runtime.createSimulation(retained.catalog, graph, {
+        estimateIterations: 1,
+        workLimit: 1000,
+    });
+    while (!simulation.done) simulation.runBatch(100);
+    const result = simulation.result();
+    expect(result).toMatchObject({
+        complete: true,
+        trials: 1,
+        meanCost: 59,
+        missingPrices: [],
+        errors: {},
+    });
+    expect(result.samples[0]).toMatchObject({
+        purchases: 2,
+        actions: 9,
+        cost: 59,
+        spending: {
+            "purchase:tailwind-base-make-base:buy": 2,
+            ...Object.fromEntries(hunterPreparation.map(([, id]) => [id, 2])),
+            "service:recombine": 1,
+        },
+    });
 });
 
 it.each(

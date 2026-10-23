@@ -54,6 +54,13 @@ tests resolve every local reference and bound document size, while the productio
 checks Scalar rendering at normal speed and fourfold CPU slowdown. The terminal target-depth
 schema remains impossible (`not: {}`), matching its existing runtime `z.never()` validation.
 
+The r9 Tailwind preset also offers an explicit Hunter-base preparation alternative:
+buy uninfluenced Normal Two-Toned Boots, then Transmute, Regal, use a Hunter's
+Exalted Orb and Scour. The shared preset builder retains the original purchase
+choice and target; all four actions are charged by the existing graph runtime.
+The source has its own exact canonical-base, level, rarity and influence cohort.
+Earlier preset revisions retain their existing routes.
+
 | UI capability | HTTP family under `/api/v1` | MCP / shared implementation |
 | --- | --- | --- |
 | Server status, worker health, progress and stored league history | `server/status` | `get_server_status`; shared `getServerStatus`. Authenticated ingestion heartbeats report stages and committed progress without credentials, raw cursors or account data. Missing heartbeats and stalled stages are distinct from failures; stored coverage counts actual distinct hours. |
@@ -149,9 +156,9 @@ donors: acquire the exact Normal base, Transmute, roll Alterations and Annul an 
 Losing the target returns to paid rolling on the same item. Real-engine tests cover every route's
 recovery charges, source-cost discovery and full-recipe output equivalence. Prices remain unknown
 until supplied, and the original Rare purchases stay pinned. Saved graphs and older revisions
-retain their recipes. The ten current presets contain 56 purchase alternatives across 41
-acquisitions and 47 distinct exact cohorts; fourteen production alternatives refer to the
-explicit preparation steps. Capture fixtures cover every new base without modifier metadata;
+retain their recipes. The ten current presets contain 57 purchase alternatives across 42
+acquisitions and 48 distinct exact cohorts; fifteen production alternatives include the
+Hunter-base preparation described above. Capture fixtures cover every new base without modifier metadata;
 definitions do not imply observed inventory or available quotes.
 
 Source lookup and binding also accept 106 verified PoE 1 PC essence identities through a distinct
