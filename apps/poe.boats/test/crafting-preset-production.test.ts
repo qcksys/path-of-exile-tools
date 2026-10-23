@@ -601,9 +601,7 @@ it("keeps pinned shield purchase previews unchanged with NNN preparation availab
         ).toMatchObject({ estimated: false, expectedCost: null });
 });
 
-it.each(
-    donors,
-)("%s offers explicit preparation for exactly the isolated natural donors", (preset, ids) => {
+it.each(donors)("%s offers explicit preparation for its isolated natural donors", (preset, ids) => {
     const graph = projectFromPreset(engine, ruleset, preset);
     const acquisitions = graph.nodes.filter((node) => node.kind === "acquire");
     expect(
@@ -612,7 +610,7 @@ it.each(
                 node.alternatives.some((alternative) => alternative.id === "make-magic"),
             )
             .map((node) => node.id),
-    ).toEqual(ids);
+    ).toEqual(preset === "es-block-shield" ? [...ids, "flat-block"] : ids);
     for (const id of ids) {
         const node = acquisitions.find((node) => node.id === id)!;
         expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });

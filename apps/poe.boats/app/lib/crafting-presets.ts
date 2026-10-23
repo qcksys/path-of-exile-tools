@@ -840,6 +840,50 @@ export function projectFromPreset(
             });
         }
     }
+    if (presetId === "es-block-shield" && rulesetAllowsPresetPreparation(ruleset)) {
+        const donor = nodes.find((node) => node.id === "flat-block");
+        const magic =
+            donor?.kind === "acquire"
+                ? donor.alternatives.find((alternative) => alternative.id === "buy-magic")
+                : undefined;
+        if (donor?.kind !== "acquire" || magic?.kind !== "purchase")
+            throw new Error("Flat ES recovery donor must have a Magic purchase.");
+        const ready = presetQuery(
+            ...magic.item.mods.map((mod) => presetMod(mod.id)),
+            presetRange("prefixes", 1, 1),
+            presetRange("suffixes", 1, 1),
+            { kind: "rarity", values: ["Magic"] },
+        );
+        const transmute = craft(
+            "flat-block-make-transmute",
+            "Transmute the unrolled Shaper base",
+            ["flat-make-base"],
+            currency("transmute_to_magic"),
+        );
+        const roll = craft(
+            "flat-block-make-alteration",
+            "Alterations until flat ES and ES recovery on block",
+            [transmute.id],
+            currency("reroll_magic"),
+            ready,
+        );
+        roll.applyWhen = presetNot(ready);
+        roll.branches = [
+            {
+                id: "ready",
+                name: "Exact Magic flat ES and recovery donor ready",
+                query: ready,
+                destination: { kind: "return" },
+            },
+        ];
+        roll.fallback = presetRecover(roll.id);
+        donor.alternatives.push({
+            kind: "production",
+            id: "make-magic",
+            name: "Roll the Magic flat ES and recovery pair with Alterations",
+            nodeId: roll.id,
+        });
+    }
     if (
         (presetId === "life-block-shield" || presetId === "es-block-shield") &&
         rulesetAllowsPresetPreparation(ruleset)

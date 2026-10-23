@@ -271,7 +271,7 @@ describe("transport parity", () => {
         ["r8", "tailwind-boots", 0],
         ["r9", "tailwind-boots", 2],
         ["r8", "es-block-shield", 0],
-        ["r9", "es-block-shield", 4],
+        ["r9", "es-block-shield", 5],
         ["r8", "energy-shield-chest", 0],
         ["r9", "energy-shield-chest", 3],
         ["r8", "life-block-shield", 0],
