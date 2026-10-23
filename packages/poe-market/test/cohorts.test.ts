@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { compileModifierTextModel, normalizeApiItem } from "@poe-tools/item-query";
-import { describe, expect, it } from "vite-plus/test";
+import { beforeAll, describe, expect, it } from "vite-plus/test";
 import {
     askingPriceConfidence,
     compileMarketCohorts,
+    type MarketCohortManifest,
     marketCohortManifestSchema,
     modifierLevelBands,
 } from "../src/index.ts";
@@ -75,11 +76,24 @@ const manifest = marketCohortManifestSchema.parse({
 });
 
 describe("market cohorts", () => {
-    it("resolves supported facts from the captured catalyst context without forcing ambiguous fractures", () => {
-        const generated = marketCohortManifestSchema.parse(
+    let generated: MarketCohortManifest;
+    let classifier: ReturnType<typeof compileMarketCohorts>;
+    let legacy: ReturnType<typeof compileMarketCohorts>;
+    let resolve: ReturnType<typeof compileModifierTextModel>;
+
+    beforeAll(() => {
+        generated = marketCohortManifestSchema.parse(
             JSON.parse(readFileSync(new URL("../data/cohorts-poe1.json", import.meta.url), "utf8")),
         );
-        const resolve = compileModifierTextModel(generated.modifierTextModel!);
+        classifier = compileMarketCohorts(generated);
+        legacy = compileMarketCohorts({
+            ...generated,
+            modifierTextModel: { ...generated.modifierTextModel!, format: 1 },
+        });
+        resolve = compileModifierTextModel(generated.modifierTextModel!);
+    });
+
+    it("resolves supported facts from the captured catalyst context without forcing ambiguous fractures", () => {
         const source = JSON.parse(
             readFileSync(
                 new URL(
@@ -122,10 +136,6 @@ describe("market cohorts", () => {
         ["Helical Ring", 79],
         ["Manifold Ring", 56],
     ] as const)("classifies a scaled T1 fracture on %s only with verified native implicit text", (baseType, resistance) => {
-        const generated = marketCohortManifestSchema.parse(
-            JSON.parse(readFileSync(new URL("../data/cohorts-poe1.json", import.meta.url), "utf8")),
-        );
-        const classifier = compileMarketCohorts(generated);
         const base = generated.modifierTextModel!.bases.find((base) => base.baseType === baseType)!;
         const source = {
             baseType,
@@ -155,10 +165,6 @@ describe("market cohorts", () => {
     });
 
     it("prices an unscaled jewellery fracture but not the same displayed value with catalyst quality", () => {
-        const generated = marketCohortManifestSchema.parse(
-            JSON.parse(readFileSync(new URL("../data/cohorts-poe1.json", import.meta.url), "utf8")),
-        );
-        const classifier = compileMarketCohorts(generated);
         const item = {
             baseType: "Two-Stone Ring",
             rarity: "Rare",
@@ -202,10 +208,6 @@ describe("market cohorts", () => {
             true,
         ],
     ] as const)("preserves description-only donor certainty on %s", (baseType, id, descriptions, resolved) => {
-        const generated = marketCohortManifestSchema.parse(
-            JSON.parse(readFileSync(new URL("../data/cohorts-poe1.json", import.meta.url), "utf8")),
-        );
-        const classifier = compileMarketCohorts(generated);
         const record = normalizeApiItem("poe1", "stash", {
             baseType,
             rarity: "Rare",
@@ -261,10 +263,6 @@ describe("market cohorts", () => {
             extended: { prefixes: 0 },
         });
         expect(classifier.classify(incomplete)).toEqual(classifier.classify(record));
-        const legacy = compileMarketCohorts({
-            ...generated,
-            modifierTextModel: { ...generated.modifierTextModel!, format: 1 },
-        });
         expect(
             legacy.classify(incomplete).matches.map((key) => legacy.definition(key)!.purpose),
         ).not.toContain("isolated-modifier");
@@ -276,9 +274,6 @@ describe("market cohorts", () => {
     });
 
     it("resolves captured stash fractures from descriptions and counts without trade metadata", () => {
-        const generated = marketCohortManifestSchema.parse(
-            JSON.parse(readFileSync(new URL("../data/cohorts-poe1.json", import.meta.url), "utf8")),
-        );
         const fixture = JSON.parse(
             readFileSync(
                 new URL(
@@ -288,8 +283,6 @@ describe("market cohorts", () => {
                 "utf8",
             ),
         );
-        const resolve = compileModifierTextModel(generated.modifierTextModel!);
-        const classifier = compileMarketCohorts(generated);
         const records = fixture.items.map((item: unknown) =>
             normalizeApiItem("poe1", "stash", item),
         );
@@ -317,9 +310,6 @@ describe("market cohorts", () => {
     });
 
     it("captures the generated 84/86 Necrotic Armour markets without mixing in damaged or fractured bases", () => {
-        const generated = marketCohortManifestSchema.parse(
-            JSON.parse(readFileSync(new URL("../data/cohorts-poe1.json", import.meta.url), "utf8")),
-        );
         expect(
             createHash("sha256")
                 .update(
@@ -333,7 +323,6 @@ describe("market cohorts", () => {
                 )
                 .digest("hex"),
         ).toBe(generated.revision);
-        const classifier = compileMarketCohorts(generated);
         const item = {
             baseType: "Necrotic Armour",
             frameType: 2,
