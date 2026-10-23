@@ -10,7 +10,7 @@ import type { ItemRecord, ModifierFact } from "./schema.ts";
 const identifier = z.string().min(1).max(500);
 const influence = z.enum(["shaper", "elder", "crusader", "redeemer", "hunter", "warlord"]);
 export const modifierTextModelSchema = z.strictObject({
-    format: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    format: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
     identityFamilies: z.array(z.array(identifier).min(2).max(100)).max(1000).optional(),
     unsupportedImplicitTexts: z.array(z.string().max(5000)).max(1000).optional(),
     translations: modifierTranslationsSchema.optional(),
@@ -259,7 +259,11 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
                 (mods) => Array.isArray(mods) && mods.length > 0,
             ) ||
             item.craftedMods?.length ||
-            item.fracturedMods?.length
+            (item.fracturedMods?.length &&
+                (model.format < 4 ||
+                    item.explicitMods?.some(
+                        (row) => typeof row !== "string" && row.flags?.fractured === true,
+                    )))
         )
             return record;
         let catalyst: { name: string; quality: number } | undefined;
@@ -350,7 +354,15 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
         const dimensions = new Map<string, number>();
         const observedLines = new Set<string>();
         const flags = new Map<string, { fractured: boolean; crafted: boolean }>();
-        for (const row of item.explicitMods ?? []) {
+        const explicit = [...(item.explicitMods ?? [])];
+        if (model.format >= 4)
+            explicit.push(
+                ...(item.fracturedMods ?? []).map((description) => ({
+                    description,
+                    flags: { fractured: true },
+                })),
+            );
+        for (const row of explicit) {
             if (
                 typeof row === "string" ||
                 (row.mods?.length ?? 0) > 1 ||
@@ -393,7 +405,7 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
         if (!targets.length || targets.length > 64) return record;
         let magicNames: { prefix: string; suffix: string } | undefined;
         if (
-            model.format === 3 &&
+            model.format >= 3 &&
             itemRarity(item) === "Magic" &&
             item.name === "" &&
             !item.fractured &&
