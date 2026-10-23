@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { equipmentHourly } from "../../../packages/poe-stash-ingest/src/ps/equipment-rollup";
 import { type DbHandle, openDb } from "../../../packages/poe-stash-ingest/src/shared/db";
@@ -5,11 +8,14 @@ import { type DbHandle, openDb } from "../../../packages/poe-stash-ingest/src/sh
 vi.mock("../../../packages/poe-stash-ingest/src/shared/auth.ts", () => ({ REALM: undefined }));
 const HOUR = 1_792_681_200;
 let db: DbHandle;
+let directory: string | undefined;
 beforeEach(async () => {
     db = await openDb(":memory:");
 });
 afterEach(async () => {
     await db.close();
+    if (directory) await rm(directory, { recursive: true, force: true });
+    directory = undefined;
 });
 
 async function mark(revision: string, league = "Standard", cohort = "base", hour = HOUR) {
@@ -185,4 +191,70 @@ it("rolls up a large incomplete history within bounded memory alongside a comple
         });
         expect(row.prices.chaos?.windows).toBeUndefined();
     }
+});
+
+it("expands varied cohort arrays within bounded memory for complete observation windows", async () => {
+    const itemCount = 3000;
+    await db.close();
+    directory = await mkdtemp(join(tmpdir(), "equipment-rollup-"));
+    const path = join(directory, "market.duckdb");
+    db = await openDb(path);
+    await db.conn.run(
+        `INSERT INTO ps_equipment_hour
+        SELECT 'seller-' || (i % 50), 'item-' || (i + h * $2), 'stash', 'Standard', 'complete',
+            '["base"]'::JSON,
+            to_json(list_transform(range(20), j -> 'unknown-' || ((i + h * $2 + j) % ($2 * 6)) || repeat('x', 64))),
+            10 + (i % 3), 'chaos', to_timestamp($1 - h * 3600 + 60), $1 - h * 3600
+        FROM range($2) items(i), range(6) hours(h)`,
+        [HOUR, itemCount],
+    );
+    await mark("complete");
+    await mark("complete", "Standard", `unknown-0${"x".repeat(64)}`);
+    const expected = await equipmentHourly(db.conn, HOUR, "Standard");
+    await db.close();
+    db = await openDb(path);
+    await db.conn.run("SET memory_limit = '128MB'");
+    expect(await equipmentHourly(db.conn, HOUR, "Standard")).toEqual(expected);
+    expect(expected).toMatchObject([
+        {
+            listingCount: itemCount,
+            uniqueSellers: 50,
+            prices: {
+                chaos: {
+                    count: itemCount,
+                    median: 11,
+                    windows: { 6: { count: itemCount * 6, sellers: 50, median: 11 } },
+                },
+            },
+        },
+        { listingCount: 0, unknownCount: 1, prices: {} },
+    ]);
+});
+
+it("preserves escaped cohort IDs and repeated entries in matched and unknown arrays", async () => {
+    const cohort = 'cohort-\\"雪';
+    for (let offset = 0; offset < 24; offset++) {
+        await observe({ offset, matches: [cohort, cohort], unknown: [cohort, cohort], price: 12 });
+        await observe({ offset, id: "unpriced", matches: [cohort], price: null, currency: null });
+        await observe({ offset, id: "empty", matches: [], unknown: [] });
+    }
+    await mark("complete", "Standard", cohort);
+    const [row] = await equipmentHourly(db.conn, HOUR, "Standard");
+    expect(row).toMatchObject({
+        cohortId: cohort,
+        listingCount: 3,
+        uniqueSellers: 1,
+        unknownCount: 2,
+        prices: {
+            chaos: {
+                count: 2,
+                sellers: 1,
+                median: 12,
+                windows: {
+                    6: { count: 2, median: 12, listingCount: 3, unknownCount: 2 },
+                    24: { count: 2, median: 12, listingCount: 3, unknownCount: 2 },
+                },
+            },
+        },
+    });
 });

@@ -53,11 +53,16 @@ const modifiers: ModifierTextModel["modifiers"] = [
     },
 ];
 const model = (mods = modifiers): ModifierTextModel => ({
-    format: 1,
+    format: 2,
     modifiers: mods,
     bases: [{ baseType: "Axe", modifiers: mods.map((mod) => ({ id: mod.id, tier: 1 })) }],
 });
-function item(descriptions: string[], prefixes: number, suffixes: number, fractured = false) {
+function item(
+    descriptions: string[],
+    prefixes: number | undefined,
+    suffixes: number | undefined,
+    fractured = false,
+) {
     return normalizeApiItem("poe1", "stash", {
         baseType: "Axe",
         rarity: "Rare",
@@ -66,6 +71,131 @@ function item(descriptions: string[], prefixes: number, suffixes: number, fractu
         extended: { prefixes, suffixes },
     });
 }
+
+const isolatedPhysical = itemQuerySchema.parse({
+    game: "poe1",
+    groups: [
+        {
+            type: "and",
+            filters: [
+                { kind: "mod", ids: ["physical"], count: { min: 1 } },
+                { kind: "range", field: "prefixes", value: { min: 1, max: 1 } },
+                { kind: "range", field: "suffixes", value: { min: 0, max: 0 } },
+            ],
+        },
+    ],
+});
+
+it.each([
+    {
+        descriptions: ["110% increased Physical Damage"],
+        prefixes: 1,
+        suffixes: undefined,
+        id: "physical",
+        expected: [1, 0],
+    },
+    {
+        descriptions: ["+47% to Cold Resistance"],
+        prefixes: undefined,
+        suffixes: 1,
+        id: "cold",
+        expected: [0, 1],
+    },
+])("infers only the uniquely determined missing count for $id", ({
+    descriptions,
+    prefixes,
+    suffixes,
+    id,
+    expected,
+}) => {
+    const input = item(descriptions, prefixes, suffixes);
+    const source = structuredClone(input);
+    const resolved = compileModifierTextModel(model())(input);
+    expect([resolved.facts.prefixes, resolved.facts.suffixes]).toEqual(expected);
+    expect(resolved.facts.modifiers).toMatchObject([{ id }]);
+    expect(resolved.facts.modifiersComplete).toBe(false);
+    expect(resolved.item).toBe(input.item);
+    expect(input).toEqual(source);
+    if (id === "physical") {
+        expect(matchItem(input, isolatedPhysical)).toBe("unknown");
+        expect(matchItem(resolved, isolatedPhysical)).toBe("match");
+    }
+});
+
+it("preserves legacy missing counts, both missing counts, and supplied counts", () => {
+    const missing = item(["110% increased Physical Damage"], 1, undefined);
+    expect(compileModifierTextModel({ ...model(), format: 1 })(missing)).toBe(missing);
+    const absent = item(["110% increased Physical Damage"], undefined, undefined);
+    expect(compileModifierTextModel(model())(absent)).toBe(absent);
+    const known = item(["110% increased Physical Damage"], 1, 0);
+    expect(compileModifierTextModel(model())(known)).toEqual(
+        compileModifierTextModel({ ...model(), format: 1 })(known),
+    );
+    const contradictory = item(["110% increased Physical Damage"], 1, 1);
+    expect(compileModifierTextModel(model())(contradictory)).toBe(contradictory);
+});
+
+it("retains universally proven identities without guessing an ambiguous count", () => {
+    const possibleSuffix = {
+        ...modifiers[2]!,
+        text: "(0-10)% increased Physical Damage",
+    };
+    const input = item(["110% increased Physical Damage"], 1, undefined);
+    const resolved = compileModifierTextModel(model([modifiers[0]!, possibleSuffix]))(input);
+    expect(resolved.facts.modifiers).toMatchObject([{ id: "physical" }]);
+    expect(resolved.facts.suffixes).toBeUndefined();
+    expect(matchItem(resolved, isolatedPhysical)).toBe("unknown");
+    expect(resolved.item.extended?.suffixes).toBeUndefined();
+});
+
+it("does not turn a unique count into a unique modifier identity", () => {
+    const input = item(["110% increased Physical Damage"], 1, undefined);
+    const resolved = compileModifierTextModel(
+        model([modifiers[0]!, { ...modifiers[0]!, id: "indistinguishable" }]),
+    )(input);
+    expect(resolved.facts.suffixes).toBe(0);
+    expect(resolved.facts.modifiers).toEqual([]);
+    expect(matchItem(resolved, isolatedPhysical)).toBe("unknown");
+});
+
+it("shares the visit budget across counts and withholds incomplete or unsupported interpretations", () => {
+    const input = item(["110% increased Physical Damage"], 1, undefined);
+    expect(compileModifierTextModel(model([modifiers[0]!]), 12)(input)).toBe(input);
+    expect(
+        compileModifierTextModel(
+            model([modifiers[0]!]),
+            12,
+        )(item(["110% increased Physical Damage"], 1, 0)).facts.modifiers,
+    ).toMatchObject([{ id: "physical" }]);
+    for (const extra of [
+        { ...modifiers[2]!, text: null },
+        { ...modifiers[2]!, text: "(0-10)% increased Physical Damage", unsupported: true },
+    ])
+        expect(compileModifierTextModel(model([modifiers[0]!, extra]))(input)).toBe(input);
+    const impossible = item(["999% increased Physical Damage"], 1, undefined);
+    expect(compileModifierTextModel(model())(impossible)).toBe(impossible);
+});
+
+it.each([4, 11, 12])("does not impose ordinary rarity limits on %i inferred prefixes", (count) => {
+    const prefixes = Array.from({ length: count }, (_, index) => ({
+        ...modifiers[0]!,
+        id: `prefix-${index}`,
+        groups: [`group-${index}`],
+        text: `+(1-2) to stat ${String.fromCharCode(65 + index)}`,
+    }));
+    const input = item(
+        [...prefixes.map((mod) => mod.text.replace("(1-2)", "2")), "+47% to Cold Resistance"],
+        undefined,
+        1,
+    );
+    const resolved = compileModifierTextModel(model([...prefixes, modifiers[3]!]))(input);
+    if (count === 12) expect(resolved).toBe(input);
+    else {
+        expect(resolved.facts.prefixes).toBe(count);
+        expect(resolved.facts.suffixes).toBe(1);
+        expect(resolved.facts.modifiers).toHaveLength(count + 1);
+    }
+});
 
 it("combines proven optional metadata with description-only affixes without replacing source tiers", () => {
     const physical = modifiers[0]!;

@@ -94,8 +94,8 @@ async function equipmentRange(
         FROM recent h, json_each(h.matches) c
         UNION ALL
         SELECT revision, league, account_name, price_amount, price_currency, last_seen_at,
-            json_extract_string(c.value, '$'), FALSE
-        FROM recent h, json_each(h.unknown_matches) c
+            unnest(unknown_matches::VARCHAR[]), FALSE
+        FROM recent
     ), counts AS (
         SELECT revision, league, cohort_id,
             count(*) FILTER (WHERE matched) AS listing_count,

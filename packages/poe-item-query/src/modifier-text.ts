@@ -10,7 +10,7 @@ import type { ItemRecord, ModifierFact } from "./schema.ts";
 const identifier = z.string().min(1).max(500);
 const influence = z.enum(["shaper", "elder", "crusader", "redeemer", "hunter", "warlord"]);
 export const modifierTextModelSchema = z.strictObject({
-    format: z.literal(1),
+    format: z.union([z.literal(1), z.literal(2)]),
     identityFamilies: z.array(z.array(identifier).min(2).max(100)).max(1000).optional(),
     unsupportedImplicitTexts: z.array(z.string().max(5000)).max(1000).optional(),
     translations: modifierTranslationsSchema.optional(),
@@ -233,10 +233,13 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
             !["Magic", "Rare"].includes(itemRarity(item) ?? "") ||
             !base ||
             base.unsupported ||
-            prefixes === undefined ||
-            suffixes === undefined ||
-            prefixes + suffixes > 12 ||
-            (known.length > 0 && known.length === prefixes + suffixes) ||
+            (prefixes === undefined && suffixes === undefined) ||
+            (model.format === 1 && (prefixes === undefined || suffixes === undefined)) ||
+            (prefixes ?? 0) + (suffixes ?? 0) > 12 ||
+            (prefixes !== undefined &&
+                suffixes !== undefined &&
+                known.length > 0 &&
+                known.length === prefixes + suffixes) ||
             known.some((mod) => !mod.id || !definitions.has(mod.id)) ||
             item.sanctified ||
             item.mutated === true ||
@@ -471,6 +474,9 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
         let visits = 0;
         let exhausted = false;
         let unsupported = false;
+        let expectedPrefixes = prefixes ?? 0;
+        let expectedSuffixes = suffixes ?? 0;
+        const totals = new Set<number>();
         const keyOf = (fact: ModifierFact) => JSON.stringify(fact);
         const sameIdentity = (left: ModifierFact, right: ModifierFact) =>
             left.id === right.id &&
@@ -500,8 +506,8 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
                 return;
             }
             const remaining = bounds[start]!;
-            const pLeft = prefixes! - p;
-            const sLeft = suffixes! - s;
+            const pLeft = expectedPrefixes - p;
+            const sLeft = expectedSuffixes - s;
             if (
                 targets.some(
                     (value, index) =>
@@ -518,7 +524,7 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
                 )
             )
                 return;
-            if (p === prefixes && s === suffixes) {
+            if (p === expectedPrefixes && s === expectedSuffixes) {
                 if (
                     known.some(
                         (mod) => !chosen.some((candidate) => sameIdentity(mod, candidate.fact)),
@@ -533,6 +539,7 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
                     unsupported = true;
                     return;
                 }
+                totals.add(p + s);
                 const facts = new Map(
                     chosen.map((candidate) => {
                         const fact = familyFact(candidate.fact);
@@ -548,7 +555,9 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
             for (let index = start; index < candidates.length; index++) {
                 const candidate = candidates[index]!;
                 if (
-                    (candidate.side === "prefix" ? p === prefixes : s === suffixes) ||
+                    (candidate.side === "prefix"
+                        ? p === expectedPrefixes
+                        : s === expectedSuffixes) ||
                     ids.has(candidate.fact.id!) ||
                     candidate.groups.some((group) => groups.has(group))
                 )
@@ -575,11 +584,31 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
                 if (exhausted || unsupported) return;
             }
         }
-        search(0, 0, 0);
-        if (exhausted || unsupported || !common?.size) return record;
+        const knownCount = (prefixes ?? 0) + (suffixes ?? 0);
+        const missingCount = prefixes === undefined || suffixes === undefined;
+        const maximumMissing = missingCount ? 12 - knownCount : 0;
+        for (let count = 0; count <= maximumMissing; count++) {
+            expectedPrefixes = prefixes ?? count;
+            expectedSuffixes = suffixes ?? count;
+            search(0, 0, 0);
+            if (exhausted || unsupported) return record;
+        }
+        const inferredCount =
+            missingCount && totals.size === 1 ? [...totals][0]! - knownCount : undefined;
+        if (!common || (!common.size && inferredCount === undefined)) return record;
         return {
             ...record,
-            facts: { ...record.facts, modifiers: [...common.values()], modifiersComplete: false },
+            facts: {
+                ...record.facts,
+                ...(prefixes === undefined && inferredCount !== undefined
+                    ? { prefixes: record.facts.prefixes ?? inferredCount }
+                    : {}),
+                ...(suffixes === undefined && inferredCount !== undefined
+                    ? { suffixes: record.facts.suffixes ?? inferredCount }
+                    : {}),
+                modifiers: [...common.values()],
+                modifiersComplete: false,
+            },
         };
     };
 }

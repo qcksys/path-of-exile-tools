@@ -256,10 +256,21 @@ describe("market cohorts", () => {
                     ),
             ).toBe(true);
         }
-        const incomplete = { ...record, item: { ...record.item, extended: { prefixes: 0 } } };
+        const incomplete = normalizeApiItem("poe1", "stash", {
+            ...record.item,
+            extended: { prefixes: 0 },
+        });
+        expect(classifier.classify(incomplete)).toEqual(classifier.classify(record));
+        const legacy = compileMarketCohorts({
+            ...generated,
+            modifierTextModel: { ...generated.modifierTextModel!, format: 1 },
+        });
+        expect(
+            legacy.classify(incomplete).matches.map((key) => legacy.definition(key)!.purpose),
+        ).not.toContain("isolated-modifier");
         expect(
             classifier
-                .classify(incomplete)
+                .classify(normalizeApiItem("poe1", "stash", { ...record.item, extended: {} }))
                 .matches.map((key) => classifier.definition(key)!.purpose),
         ).not.toContain("isolated-modifier");
     });
