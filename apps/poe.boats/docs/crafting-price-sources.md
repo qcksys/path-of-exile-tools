@@ -43,6 +43,14 @@ an incomplete future hour. Older observations remain available in history and
 are not returned as current prices. Failed refreshes preserve saved assumptions
 and report an issue; the browser blocks calculation until it is resolved.
 
+Equipment lookup matches cohort definitions to the configured item before applying
+the 2,000-candidate response limit. Definitions are scanned in bounded pages using
+database ordering; only matching definition/revision pairs receive hourly lookups.
+Unrelated cohorts sharing a base name cannot hide an eligible quote. Item-matching
+cohorts that do not cover every requirement remain visible with their reasons.
+More than 2,000 relevant observations still produces an explicit truncated result;
+refresh refuses to establish a latest price from an incomplete result.
+
 Equipment lookup can opt into `exchange-v1`: prefer the requested listing
 currency, otherwise convert a chaos, divine or exalted hourly median with an
 exchange observation from exactly the same hour, realm and league. Converted

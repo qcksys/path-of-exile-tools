@@ -6,7 +6,20 @@ import {
     marketCohortDefinitionSchema,
     marketObservationRange,
 } from "@poe-tools/market";
-import { and, desc, eq, getTableColumns, gte, isNull, lt, lte, max, or, sql } from "drizzle-orm";
+import {
+    and,
+    desc,
+    eq,
+    getTableColumns,
+    gt,
+    gte,
+    isNull,
+    lt,
+    lte,
+    max,
+    or,
+    sql,
+} from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
 import { tStashCohort as cohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly as hourly } from "~/db/schema/stash.cohort-hourly";
@@ -58,10 +71,23 @@ export async function findCraftingMarketPrices(
             message: "PoE 2 equipment uses manual prices and trade searches.",
         };
     const started = performance.now();
-    const phases: number[] = [];
+    let databaseMs = 0;
+    let parseMs = 0;
+    let fxStarted: number | undefined;
     let queries = 0;
     let rowCount = 0;
     let exchangeRows = 0;
+    async function read<T>(query: PromiseLike<T[]>) {
+        const start = performance.now();
+        queries++;
+        try {
+            const rows = await query;
+            rowCount += rows.length;
+            return rows;
+        } finally {
+            databaseMs += performance.now() - start;
+        }
+    }
     try {
         const range = marketObservationRange(input.at);
         const scope = and(
@@ -81,74 +107,128 @@ export async function findCraftingMarketPrices(
             .where(
                 and(scope, eq(hourly.revision, cohort.revision), eq(hourly.cohortId, cohort.id)),
             );
-        // Resolve each matching definition's hour without grouping unrelated cohort histories.
-        const latest = db
-            .select({
-                revision: cohort.revision,
-                cohortId: cohort.id,
-                hour: sql<number>`(${latestHour})`.as("latest_hour"),
-            })
-            .from(cohort)
-            .where(and(bases, cohortId === undefined ? undefined : eq(cohort.id, cohortId)))
-            .as("latest");
-        const query = db
-            .select({
-                definition: definitionColumns,
-                latest: summaryColumns,
-            })
-            .from(hourly)
-            .innerJoin(
-                latest,
-                and(
-                    eq(hourly.revision, latest.revision),
-                    eq(hourly.cohortId, latest.cohortId),
-                    eq(hourly.hour, latest.hour),
-                ),
-            )
-            .innerJoin(
-                cohort,
-                and(eq(cohort.revision, hourly.revision), eq(cohort.id, hourly.cohortId)),
-            )
-            .where(and(scope, bases))
-            .orderBy(desc(hourly.hour), cohort.id, cohort.revision)
-            .limit(2001);
-        phases[0] = performance.now();
-        queries++;
-        const rows = await query;
-        rowCount = rows.length;
-        phases[1] = performance.now();
-        const candidates = rows
-            .slice(0, 2000)
-            .map((row) => {
-                const definition = marketCohortDefinitionSchema.parse(row.definition);
-                const latest = cohortHourlySchema.parse(row.latest);
-                const assumption = isDisplayEquivalentCohort(definition)
-                    ? input.assumption
-                    : undefined;
-                const coverage = cohortPriceCoverage(
-                    definition,
-                    input.item,
-                    input.requirements,
-                    assumption,
-                );
-                return {
-                    definition,
-                    latest,
-                    covered: coverage.covered,
-                    reasons: coverage.reasons,
-                    ...(input.window ? { window: input.window } : {}),
-                    ...(assumption ? { assumption } : {}),
-                    ...(input.conversion ? { conversion: input.conversion } : {}),
-                };
-            })
-            .filter(
-                (candidate) =>
-                    candidate.covered ||
-                    !candidate.reasons.includes(
-                        "The configured item does not definitely match this cohort.",
-                    ),
+        const ranked: Array<{ candidate: CraftingMarketCandidate; order: number }> = [];
+        let cursor: { id: string; revision: string } | undefined;
+        let order = 0;
+        while (true) {
+            const definitions = await read(
+                db
+                    .select(definitionColumns)
+                    .from(cohort)
+                    .where(
+                        and(
+                            bases,
+                            cohortId === undefined ? undefined : eq(cohort.id, cohortId),
+                            cursor
+                                ? or(
+                                      gt(cohort.id, cursor.id),
+                                      and(
+                                          eq(cohort.id, cursor.id),
+                                          gt(cohort.revision, cursor.revision),
+                                      ),
+                                  )
+                                : undefined,
+                        ),
+                    )
+                    .orderBy(cohort.id, cohort.revision)
+                    .limit(500),
             );
-        phases[2] = performance.now();
+            const parseStarted = performance.now();
+            const matching = definitions
+                .map((row) => {
+                    const definition = marketCohortDefinitionSchema.parse(row);
+                    const assumption = isDisplayEquivalentCohort(definition)
+                        ? input.assumption
+                        : undefined;
+                    const coverage = cohortPriceCoverage(
+                        definition,
+                        input.item,
+                        input.requirements,
+                        assumption,
+                    );
+                    return {
+                        definition,
+                        covered: coverage.covered,
+                        reasons: coverage.reasons,
+                        order: order++,
+                        ...(input.window ? { window: input.window } : {}),
+                        ...(assumption ? { assumption } : {}),
+                        ...(input.conversion ? { conversion: input.conversion } : {}),
+                    };
+                })
+                .filter(
+                    (candidate) =>
+                        candidate.covered ||
+                        !candidate.reasons.includes(
+                            "The configured item does not definitely match this cohort.",
+                        ),
+                );
+            parseMs += performance.now() - parseStarted;
+            if (matching.length) {
+                // Match definitions before reading their latest buckets; unrelated histories must not consume the result limit.
+                const latest = db
+                    .select({
+                        revision: cohort.revision,
+                        cohortId: cohort.id,
+                        hour: sql<number>`(${latestHour})`.as("latest_hour"),
+                    })
+                    .from(cohort)
+                    .where(
+                        or(
+                            ...matching.map(({ definition }) =>
+                                and(
+                                    eq(cohort.id, definition.id),
+                                    eq(cohort.revision, definition.revision),
+                                ),
+                            ),
+                        ),
+                    )
+                    .as("latest");
+                const rows = await read(
+                    db
+                        .select({
+                            definitionId: latest.cohortId,
+                            definitionRevision: latest.revision,
+                            summary: summaryColumns,
+                        })
+                        .from(hourly)
+                        .innerJoin(
+                            latest,
+                            and(
+                                eq(hourly.revision, latest.revision),
+                                eq(hourly.cohortId, latest.cohortId),
+                                eq(hourly.hour, latest.hour),
+                            ),
+                        )
+                        .where(scope),
+                );
+                const summaryStarted = performance.now();
+                const byPair = new Map(
+                    matching.map((candidate) => [
+                        JSON.stringify([candidate.definition.revision, candidate.definition.id]),
+                        candidate,
+                    ]),
+                );
+                for (const row of rows) {
+                    const latest = cohortHourlySchema.parse(row.summary);
+                    const { order, ...candidate } = byPair.get(
+                        JSON.stringify([row.definitionRevision, row.definitionId]),
+                    )!;
+                    ranked.push({ candidate: { ...candidate, latest }, order });
+                }
+                // The scan ordinal preserves the database's id/revision collation for equal-hour rows across batches.
+                ranked.sort(
+                    (a, b) =>
+                        b.candidate.latest.hour - a.candidate.latest.hour || a.order - b.order,
+                );
+                ranked.splice(2001);
+                parseMs += performance.now() - summaryStarted;
+            }
+            if (definitions.length < 500) break;
+            cursor = definitions.at(-1)!;
+        }
+        const candidates = ranked.slice(0, 2000).map(({ candidate }) => candidate);
+        fxStarted = performance.now();
         const exchangeByHour = new Map<
             number,
             Awaited<ReturnType<typeof findCraftingExchangePrices>>
@@ -200,17 +280,16 @@ export async function findCraftingMarketPrices(
         }
         return {
             candidates: priced,
-            truncated: rows.length > 2000,
+            truncated: ranked.length > 2000,
             message: candidates.length
                 ? null
                 : "No captured cohort covers this item in the latest 24 completed hours at this cutoff. Enter a manual price or check trade.",
         };
     } finally {
         const ended = performance.now();
-        for (const [index, name] of ["equipment_db", "equipment_parse", "equipment_fx"].entries()) {
-            const start = phases[index];
-            timing?.add(name, start === undefined ? 0 : (phases[index + 1] ?? ended) - start);
-        }
+        timing?.add("equipment_db", databaseMs);
+        timing?.add("equipment_parse", parseMs);
+        timing?.add("equipment_fx", fxStarted === undefined ? 0 : ended - fxStarted);
         timing?.add("equipment_total", ended - started);
         timing?.add(
             "equipment_counts",

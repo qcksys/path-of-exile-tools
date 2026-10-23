@@ -159,8 +159,7 @@ function baseline(request = input, cohortId?: string) {
         )
         .where(and(scope, bases))
         .orderBy(desc(hourly.hour), cohort.id, cohort.revision)
-        .limit(2001)
-        .toSQL();
+        .limit(2001);
 }
 
 async function measure(query: { sql: string; params: unknown[] }) {
@@ -191,11 +190,14 @@ it("preserves latest rows while reducing unrelated cohort work before aggregatio
         ["unbounded", "current", hour, true],
         ["selected", "old", hour - 3600, true],
     ]);
-    const current = statements[0]!;
-    const old = await measure(baseline());
-    const production = await measure(current);
-    expect(production.rows).toEqual(old.rows);
+    const current = statements.slice();
+    expect(actual.candidates.map(({ definition, latest }) => ({ definition, latest }))).toEqual(
+        await baseline(),
+    );
     if (benchmark) {
+        const old = await measure(baseline().toSQL());
+        const production = [];
+        for (const query of current) production.push(await measure(query));
         const path = fileURLToPath(
             new URL(
                 "../../../../.artifacts/crafting-market-query-final-benchmark.json",
@@ -211,7 +213,11 @@ it("preserves latest rows while reducing unrelated cohort work before aggregatio
             ),
         );
         console.log(
-            JSON.stringify({ path, old: old.milliseconds, production: production.milliseconds }),
+            JSON.stringify({
+                path,
+                old: old.milliseconds,
+                production: production.map((query) => query.milliseconds),
+            }),
         );
     }
 }, 60_000);
@@ -230,11 +236,9 @@ it("preserves exact cohort filtering, all revisions, historical cutoffs and late
             "selected",
         );
         expect(result.truncated).toBe(false);
-        const current = statements[0]!;
-        const legacy = baseline(request, "selected");
-        const [expectedRows] = await connection.query(legacy.sql, legacy.params);
-        const [actualRows] = await connection.query(current.sql, current.params);
-        expect(actualRows).toEqual(expectedRows);
+        expect(result.candidates.map(({ definition, latest }) => ({ definition, latest }))).toEqual(
+            await baseline(request, "selected"),
+        );
         expect(result.candidates.map((entry) => entry.definition.id)).toEqual([
             "selected",
             "selected",
@@ -268,8 +272,12 @@ it("keeps ordering and the 2001-row boundary without quadratic history reads", a
             definition(`limit:${String(start + offset).padStart(4, "0")}`),
         );
         await db.insert(cohort).values(definitions);
-        await db.insert(hourly).values(definitions.map(({ id }) => observation(id)));
+        await db
+            .insert(hourly)
+            .values(definitions.map(({ id }) => observation(id, "current", hour - 3600)));
     }
+    await db.insert(cohort).values(definition("zz:newest"));
+    await db.insert(hourly).values(observation("zz:newest"));
     statements.length = 0;
     const [readsBefore] = await connection.query<RowDataPacket[]>(
         "SHOW SESSION STATUS LIKE 'Handler_read_next'",
@@ -283,11 +291,58 @@ it("keeps ordering and the 2001-row boundary without quadratic history reads", a
     expect(historyReads).toBeLessThan((2002 + distractors * 24 + 10) * 20);
     expect(result.truncated).toBe(true);
     expect(result.candidates).toHaveLength(2000);
-    expect(result.candidates[0]?.definition.id).toBe("limit:0000");
-    expect(result.candidates.at(-1)?.definition.id).toBe("limit:1999");
-    const current = statements[0]!;
-    const legacy = baseline();
-    const [expectedRows] = await connection.query(legacy.sql, legacy.params);
-    const [actualRows] = await connection.query(current.sql, current.params);
-    expect(actualRows).toEqual(expectedRows);
+    expect(result.candidates.slice(0, 4).map((entry) => entry.definition.id)).toEqual([
+        "multi",
+        "selected",
+        "unbounded",
+        "zz:newest",
+    ]);
+    expect(result.candidates.at(-1)?.definition.id).toBe("limit:1995");
+    expect(result.candidates.map(({ definition, latest }) => ({ definition, latest }))).toEqual(
+        (await baseline()).slice(0, 2000),
+    );
+});
+
+it("does not spend the observation cap on incompatible definitions or definitions without observations", async () => {
+    const league = "Definition cap fixture";
+    const incompatible = structuredClone(marketCandidate.definition.query);
+    const rarity = incompatible.groups[0]!.filters.find((filter) => filter.kind === "rarity");
+    if (rarity?.kind !== "rarity") throw new Error("Missing fixture rarity");
+    rarity.values = ["Rare"];
+    for (let start = 0; start < 2001; start += 400) {
+        const definitions = Array.from({ length: Math.min(400, 2001 - start) }, (_, offset) => ({
+            ...definition(`a:incompatible:${String(start + offset).padStart(4, "0")}`),
+            query: incompatible,
+        }));
+        await db.insert(cohort).values(definitions);
+        await db
+            .insert(hourly)
+            .values(definitions.map(({ id }) => ({ ...observation(id), league })));
+    }
+    await db
+        .insert(cohort)
+        .values([
+            definition("zz:eligible", "old"),
+            definition("zz:eligible", "current"),
+            { ...definition("zz:eligible", "incompatible"), query: incompatible },
+        ]);
+    await db.insert(hourly).values([
+        { ...observation("zz:eligible", "old", hour - 3600), league },
+        { ...observation("zz:eligible", "current", hour - 3600), league },
+        { ...observation("zz:eligible", "current", hour, {}), league },
+        { ...observation("zz:eligible", "incompatible"), league },
+    ]);
+    const result = await findCraftingMarketPrices(db as unknown as TDatabase, { ...input, league });
+    expect(result.truncated).toBe(false);
+    expect(result.candidates).toHaveLength(2);
+    expect(result.candidates[0]).toMatchObject({
+        definition: { id: "zz:eligible", revision: "current" },
+        latest: { hour, prices: {} },
+        covered: false,
+    });
+    expect(result.candidates[1]).toMatchObject({
+        definition: { id: "zz:eligible", revision: "old" },
+        latest: { hour: hour - 3600 },
+        covered: true,
+    });
 });
