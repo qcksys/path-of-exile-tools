@@ -504,6 +504,100 @@ it("keeps fracture flags separate and requires all lines of a Temple modifier", 
     expect(resolve(input)).toBe(input);
 });
 
+it.each([1, 2, 3] as const)("format %s leaves separate fractured text unresolved", (format) => {
+    const input = normalizeApiItem("poe1", "stash", {
+        ...item([], 0, 1).item,
+        fracturedMods: ["+47% to Cold Resistance"],
+    });
+    expect(compileModifierTextModel({ ...model(), format })(input)).toBe(input);
+});
+
+it("format 4 resolves separate fractured text without modifying source data or ordinary flags", () => {
+    const input = normalizeApiItem("poe1", "stash", {
+        ...item(["110% increased Physical Damage"], 1, 1).item,
+        fracturedMods: ["+47% to Cold Resistance"],
+    });
+    const original = structuredClone(input);
+    const resolved = compileModifierTextModel({ ...model(), format: 4 })(input);
+    expect(resolved.facts.modifiers).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({ id: "physical", fractured: false, crafted: false }),
+            expect.objectContaining({ id: "cold", fractured: true, crafted: false }),
+        ]),
+    );
+    expect(resolved.facts.modifiers).toHaveLength(2);
+    expect(resolved.item).toBe(input.item);
+    expect(input).toEqual(original);
+    expect(resolved.facts.modifiersComplete).toBe(false);
+});
+
+it("format 4 counts a multi-line separate fracture once and can prove one omitted count", () => {
+    const input = normalizeApiItem("poe1", "stash", {
+        ...item([], undefined, 1).item,
+        fracturedMods: [
+            "+47% to Cold Resistance",
+            "40% increased Damage with Hits against Chilled Enemies",
+        ],
+    });
+    const resolved = compileModifierTextModel({ ...model(), format: 4 })(input);
+    expect(resolved.facts).toMatchObject({
+        prefixes: 0,
+        suffixes: 1,
+        modifiers: [{ id: "temple", fractured: true, crafted: false }],
+    });
+    expect(input.item.extended).toEqual({ suffixes: 1 });
+    expect(input.facts.prefixes).toBeUndefined();
+});
+
+it.each([
+    { extended: {} },
+    { extended: { prefixes: 0, suffixes: 0 } },
+    { extended: { prefixes: 0, suffixes: 13 } },
+    { identified: false },
+    { explicitMods: ["110% increased Physical Damage"] },
+    {
+        explicitMods: [{ description: "+47% to Cold Resistance", flags: { fractured: true } }],
+        extended: { prefixes: 0, suffixes: 2 },
+    },
+    { fracturedMods: ["40% increased Damage with Hits against Chilled Enemies"] },
+])("format 4 preserves refusal for incomplete or mixed fracture evidence: %j", (changes) => {
+    const input = normalizeApiItem("poe1", "stash", {
+        ...item([], 0, 1).item,
+        fracturedMods: ["+47% to Cold Resistance"],
+        ...changes,
+    });
+    expect(compileModifierTextModel({ ...model(), format: 4 })(input)).toBe(input);
+});
+
+it("format 4 preserves ambiguity, unsupported candidates and the shared search budget", () => {
+    const input = normalizeApiItem("poe1", "stash", {
+        ...item([], 0, 1).item,
+        fracturedMods: ["+47% to Cold Resistance"],
+    });
+    for (const extra of [
+        { ...modifiers[3]!, id: "alternate" },
+        { ...modifiers[3]!, id: "unsupported", text: null },
+    ])
+        expect(
+            compileModifierTextModel({ ...model([...modifiers, extra]), format: 4 })(input),
+        ).toBe(input);
+    expect(compileModifierTextModel({ ...model(), format: 4 }, 1)(input)).toBe(input);
+});
+
+it("format 4 retains format 3 Magic-name disambiguation", () => {
+    const input = normalizeApiItem("poe1", "stash", {
+        ...item(["+47% to Cold Resistance"], 0, 1).item,
+        rarity: "Magic",
+        name: "",
+        typeLine: "Axe of the Ice",
+    });
+    const previous = compileModifierTextModel({ ...model(namedModifiers), format: 3 })(input);
+    expect(previous.facts.modifiers).toMatchObject([{ id: "cold" }]);
+    expect(compileModifierTextModel({ ...model(namedModifiers), format: 4 })(input)).toEqual(
+        previous,
+    );
+});
+
 it("does not combine mutually exclusive affixes or count rows as affixes", () => {
     const input = item(["220% increased Physical Damage"], 2, 0);
     expect(

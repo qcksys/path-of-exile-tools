@@ -84,6 +84,9 @@ every action in the videos.
 The new Delve and Pantheon mechanics require retained rules revision r10. Allflame
 copies, sulphur and intangibility use that engine's existing rules. Source prices
 remain unknown until entered or explicitly bound to compatible market evidence.
-The fractured chest has a distinct cohort definition, but raw fractured modifier
-text is not yet classified by the market parser; its price remains manual until
-that parser supports the listing. Ambiguous modifier identities also stay unpriced.
+The fractured chest has a distinct cohort definition. Market text-model format 4
+can classify separate fractured modifier text when the affix counts and complete
+catalog interpretation establish its identity. Earlier model formats retain their
+previous behavior. The solver does not infer identities from mixed fracture
+representations. Unresolved ambiguity remains unpriced; a compatible published
+observation is still required to bind a price.

@@ -231,7 +231,7 @@ export function marketModifierTextModel(
         };
     });
     return modifierTextModelSchema.parse({
-        format: 3,
+        format: 4,
         identityFamilies: displayEquivalentFamilies(engine),
         modifiers,
         bases,

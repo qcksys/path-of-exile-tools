@@ -98,16 +98,37 @@ function rawItem(item: CraftingItem, metadata = false) {
     };
 }
 
-it("separates the mercenary starting fracture and keeps unparsed fractured listings unpriced", () => {
+it("classifies the mercenary starting fracture from separate raw text without pricing unfractured or mixed listings", () => {
     const { item, node } = purchases.find((entry) => entry.preset === "sushi-mercenary-chest")!;
     const cohort = cohorts.find(
         (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
     )!;
     const raw = rawItem(item, true);
     expect(capture(raw)).toBe(true);
-    expect(classifier.classify(normalizeApiItem("poe1", "stash", raw)).unknown).toContain(
-        cohort.id,
-    );
+    const record = normalizeApiItem("poe1", "stash", raw);
+    const classified = classifier.classify(record);
+    expect(classified.matches).toContain(cohort.id);
+    expect(classified.unknown).not.toContain(cohort.id);
+    expect(record.item.fracturedMods).toEqual(raw.fracturedMods);
+    expect(record.facts.modifiers).toEqual([]);
+    const inline = normalizeApiItem("poe1", "stash", {
+        ...raw,
+        fracturedMods: [],
+        explicitMods: raw.fracturedMods.map((description) => ({
+            description,
+            flags: { fractured: true },
+        })),
+    });
+    expect(classifier.classify(inline).matches).toContain(cohort.id);
+    for (const format of [1, 2, 3] as const) {
+        const legacy = compileMarketCohorts({
+            ...manifest,
+            cohorts: [cohort],
+            modifierTextModel: { ...manifest.modifierTextModel!, format },
+        });
+        expect(legacy.classify(record)).toEqual({ matches: [], unknown: [cohort.id] });
+        expect(legacy.classify(inline)).toEqual({ matches: [cohort.id], unknown: [] });
+    }
     const unfractured = {
         ...raw,
         fractured: false,
@@ -117,6 +138,24 @@ it("separates the mercenary starting fracture and keeps unparsed fractured listi
     expect(
         classifier.classify(normalizeApiItem("poe1", "stash", unfractured)).matches,
     ).not.toContain(cohort.id);
+    for (const invalid of [
+        { ...raw, ilvl: 85 },
+        { ...raw, corrupted: true },
+        { ...raw, influences: { shaper: true } },
+        { ...raw, extended: {} },
+        { ...raw, extended: { prefixes: 0, suffixes: 0 } },
+        { ...raw, fracturedMods: ["Unknown fractured modifier"] },
+        {
+            ...raw,
+            explicitMods: raw.fracturedMods.map((description) => ({
+                description,
+                flags: { fractured: true },
+            })),
+        },
+    ])
+        expect(
+            classifier.classify(normalizeApiItem("poe1", "stash", invalid)).matches,
+        ).not.toContain(cohort.id);
 });
 
 it("scopes every configured explicit modifier to its canonical catalog side", () => {
@@ -668,7 +707,7 @@ it("does not price ambiguous elemental modifier identities from names, tiers or 
 });
 
 it("classifies an omitted zero suffix count only when the complete catalog interpretation proves it", () => {
-    expect(manifest.modifierTextModel?.format).toBe(3);
+    expect(manifest.modifierTextModel?.format).toBe(4);
     for (const [preset, nodeId, expected] of [
         ["physical-bow", "donor-2", true],
         ["physical-bow", "donor-1", false],
