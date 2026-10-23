@@ -5,6 +5,7 @@ import type { AppSession } from "~/lib/session.server";
 import type { CraftingCatalog } from "~/schemas/crafting";
 import type { CraftingRuleset, CraftingRulesetIndex } from "~/schemas/crafting-rulesets";
 import type { RecombinatorCatalog } from "~/schemas/recombinator-catalog";
+import type { ServerTiming } from "~/services/server-timing.server";
 import { OperationError } from "./errors";
 
 export interface OperationContext {
@@ -15,6 +16,7 @@ export interface OperationContext {
     loadCraftingRevision: (ruleset: CraftingRuleset) => Promise<LoadedCraftingRevision>;
     origin: string;
     caller: AppSession["user"] | null;
+    timing?: ServerTiming;
 }
 
 export interface Operation {

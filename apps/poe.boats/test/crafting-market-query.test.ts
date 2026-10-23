@@ -8,6 +8,7 @@ import { findCraftingMarketPrices } from "~/db/queries/crafting-market.queries";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import { selectCraftingMarketPrice } from "~/lib/crafting-market";
 import type { CraftingMarketInput } from "~/schemas/crafting-market";
+import { ServerTiming } from "~/services/server-timing.server";
 import { baseId, engine } from "./crafting-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
 
@@ -22,9 +23,12 @@ const input: CraftingMarketInput = {
 };
 let sqlite: DatabaseSync;
 let db: TDatabase;
+let elapsed: number;
 beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(now * 1000);
+    elapsed = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => elapsed);
     sqlite = new DatabaseSync(":memory:");
     sqlite.function("JSON_CONTAINS", (values, value) =>
         Number(JSON.parse(String(values)).includes(JSON.parse(String(value)))),
@@ -49,6 +53,7 @@ beforeEach(() => {
             JSON.stringify(["Plate Vest"]),
         );
     db = drizzle(async (sql, params) => {
+        elapsed += 25;
         const statement = sqlite.prepare(sql);
         statement.setReturnArrays(true);
         return {
@@ -67,6 +72,7 @@ beforeEach(() => {
 });
 afterEach(() => {
     sqlite.close();
+    vi.restoreAllMocks();
     vi.useRealTimers();
 });
 
@@ -117,6 +123,47 @@ function exchange(hour: number, realm = "pc", league = "Standard") {
 }
 
 describe("equipment market lookup", () => {
+    it("times an empty lookup without changing its response or exposing request values", async () => {
+        const timing = new ServerTiming();
+        const result = await findCraftingMarketPrices(db, input, undefined, timing);
+        expect(result).toEqual(await findCraftingMarketPrices(db, input));
+        const header = timing.toString();
+        expect(header).toContain("equipment_db;dur=25.0");
+        expect(header).toContain("equipment_parse;dur=0.0");
+        expect(header).toContain("equipment_fx;dur=0.0");
+        expect(header).toContain("equipment_total;dur=25.0");
+        expect(header).toContain('equipment_counts;desc="queries=1 rows=0 exchange_rows=0"');
+        expect(header).not.toMatch(/Standard|Plate Vest|SELECT|test-market|Metadata/);
+        expect(new ServerTiming().toString()).toBe("");
+    });
+
+    it("counts every conversion read while separating cohort wait from exchange work", async () => {
+        capture(completed, "divine");
+        exchange(completed);
+        const timing = new ServerTiming();
+        const converted = { ...input, conversion: "exchange-v1" as const };
+        const result = await findCraftingMarketPrices(db, converted, undefined, timing);
+        expect(result).toEqual(await findCraftingMarketPrices(db, converted));
+        expect(result.candidates[0]?.covered).toBe(true);
+        const header = timing.toString();
+        expect(header).toContain("equipment_db;dur=25.0");
+        expect(header).toContain("equipment_parse;dur=0.0");
+        expect(header).toContain("equipment_fx;dur=50.0");
+        expect(header).toContain("equipment_total;dur=75.0");
+        expect(header).toContain('equipment_counts;desc="queries=3 rows=1 exchange_rows=2"');
+    });
+
+    it("records a failed database wait and keeps the original rejection", async () => {
+        sqlite.exec(`DROP TABLE ${DB_TABLE_PREFIX}stash_cohort_hourly`);
+        const timing = new ServerTiming();
+        await expect(findCraftingMarketPrices(db, input, undefined, timing)).rejects.toThrow();
+        expect(timing.toString()).toContain("equipment_db;dur=25.0");
+        expect(timing.toString()).toContain("equipment_total;dur=25.0");
+        expect(timing.toString()).toContain(
+            'equipment_counts;desc="queries=1 rows=0 exchange_rows=0"',
+        );
+    });
+
     it("requires canonical base evidence for shared-name variants while keeping legacy pools browsable", async () => {
         capture(completed);
         const configured = engine.createItem("Metadata/Items/Armours/Boots/BootsAtlas1", 86);

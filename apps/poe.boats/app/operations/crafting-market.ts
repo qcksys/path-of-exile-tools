@@ -253,7 +253,8 @@ export const craftingMarketOperations = [
             "Find captured equipment cohorts and latest asking prices for an API-shaped item and shared output requirements. Optional adaptive-v1 widens below ten priced sellers to deduplicated 6/24-hour medians when every source hour is present and hourly medians vary at most 10%. Optional display-equivalent-v1 treats the configured item as a representative for donor-family prices, without asserting identical modifier eligibility. Hourly history stays unchanged; confidence and policy thresholds are uncalibrated. Reports unsupported requirements and unknown matches. PoE 2 equipment stays manual.",
         input: craftingMarketInputSchema,
         output: craftingMarketResultSchema,
-        execute: (input, context) => findCraftingMarketPrices(context.db, input),
+        execute: (input, context) =>
+            findCraftingMarketPrices(context.db, input, undefined, context.timing),
     }),
     defineOperation({
         family: "crafting",

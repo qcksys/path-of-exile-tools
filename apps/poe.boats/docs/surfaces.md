@@ -125,6 +125,14 @@ requested cutoff. Missing definitions, truncated lookup and empty newest prices 
 issues. HTTP/MCP success and refusal tests, MySQL history tests and browser reload coverage verify
 this behavior; crafting rules and acquisition pins remain unchanged.
 
+Equipment lookup exposes per-lookup `Server-Timing` diagnostics through both HTTP and MCP:
+`equipment_db` measures the cohort database await, `equipment_parse` measures validation and
+coverage checks, `equipment_fx` measures exchange conversion and price selection, and
+`equipment_total` covers the whole lookup. `equipment_counts` reports database awaits, returned
+cohort rows and returned exchange rows as numeric counts. Failed database awaits are counted;
+the header contains no SQL, parameters, item details or credentials. These measurements do not
+change lookup results, coverage requirements or pricing policies.
+
 Equipment lookup, binding and refresh also require the cohort to guarantee the configured
 starting base, exact item level, rarity, affix counts, influences and supported flags.
 Broad base or donor medians cannot price an already prepared input. Exchange history remains

@@ -1,5 +1,5 @@
 import type { RouterContext } from "react-router";
-import { dbContext, envContext } from "~/context";
+import { dbContext, envContext, serverTimingContext } from "~/context";
 import { selectUserRole } from "~/db/queries/auth.queries";
 import { authServer } from "~/lib/auth.server";
 import { loadCraftingCatalog } from "~/lib/crafting-catalog";
@@ -39,6 +39,7 @@ export async function operationContext(
     return {
         db,
         caller,
+        timing: context.get(serverTimingContext),
         origin: new URL(request.url).origin,
         loadWorkbenchCatalog: async (game) => {
             try {

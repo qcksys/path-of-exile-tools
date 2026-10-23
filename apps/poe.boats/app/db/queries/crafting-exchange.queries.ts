@@ -31,10 +31,11 @@ export async function findCraftingExchangePrices(
     db: TDatabase,
     input: CraftingExchangeInput,
     options?: { exactHour: true },
+    onQuery?: (rowCount: number) => void,
 ): Promise<CraftingExchangeResult> {
     const range = marketObservationRange(input.at);
     if (options?.exactHour) range.earliestHour = range.latestHour;
-    const result = await findDirectExchangePrices(db, input, range);
+    const result = await findDirectExchangePrices(db, input, range, onQuery);
     if (!input.conversion || !exchangeCurrencyId(input.currency)) return result;
     for (const currency of ["chaos", "divine", "exalted"]) {
         const bridge = exchangeCurrencyId(currency)!;
@@ -49,6 +50,7 @@ export async function findCraftingExchangePrices(
             input,
             [...itemIds.flatMap((id) => pairIds(id, bridge)), ...pairIds(bridge, quoteId)],
             range,
+            onQuery,
         );
         for (const id of itemIds) {
             const quote = quoteExchangeConversion(
@@ -80,6 +82,7 @@ async function findDirectExchangePrices(
     db: TDatabase,
     input: CraftingExchangeInput,
     range: ReturnType<typeof marketObservationRange>,
+    onQuery?: (rowCount: number) => void,
 ): Promise<CraftingExchangeResult> {
     const result: CraftingExchangeResult = { quotes: {}, missing: {} };
     const quoteId = exchangeCurrencyId(input.currency);
@@ -107,7 +110,7 @@ async function findDirectExchangePrices(
         }
     }
     if (!pairs.length || !quoteId) return result;
-    const snapshots = await findExchangeSnapshots(db, input, pairs, range);
+    const snapshots = await findExchangeSnapshots(db, input, pairs, range, onQuery);
     for (const itemId of ids) {
         if (result.quotes[itemId] || !itemId.startsWith("Metadata/Items/")) continue;
         const quote = quoteExchangeWindow(
@@ -130,8 +133,9 @@ async function findExchangeSnapshots(
     input: CraftingExchangeInput,
     pairs: string[],
     range: ReturnType<typeof marketObservationRange>,
+    onQuery?: (rowCount: number) => void,
 ) {
-    const rows = await db
+    const query = db
         .select(columns)
         .from(hourly)
         .where(
@@ -144,7 +148,14 @@ async function findExchangeSnapshots(
             ),
         )
         .orderBy(desc(hourly.hour));
-    return rows.map((row) => exchangeSnapshotSchema.parse(row));
+    let rowCount = 0;
+    try {
+        const rows = await query;
+        rowCount = rows.length;
+        return rows.map((row) => exchangeSnapshotSchema.parse(row));
+    } finally {
+        onQuery?.(rowCount);
+    }
 }
 export async function craftingExchangeHistory(db: TDatabase, input: CraftingExchangeHistoryInput) {
     const rows = await db

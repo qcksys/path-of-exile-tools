@@ -46,6 +46,7 @@ import { craftingSourceQuoteSchema } from "~/schemas/crafting-sources";
 import type { CraftingItemEdit } from "~/schemas/crafting-workbench";
 import { STORAGE_VERSION, type StorageData } from "~/schemas/storage";
 import * as craftingSources from "~/services/crafting-sources.server";
+import { ServerTiming } from "~/services/server-timing.server";
 import { commodityQuote, convertedCommodityQuote, essenceId } from "./crafting-commodity-fixtures";
 import { conditionalTransmuteGraph } from "./crafting-conditional-fixtures";
 import {
@@ -1187,6 +1188,59 @@ describe("transport parity", () => {
             );
             expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
         }
+    });
+
+    it("passes separate request timing collectors through HTTP and MCP without changing results", async () => {
+        const input = {
+            item: createCraftingItemQuery(fixtureEngine).record(firstItem),
+            requirements: { format: 1, game: "poe1", groups: [] },
+            realm: "pc",
+            league: "Standard",
+            currency: "chaos",
+        };
+        const expected = { candidates: [], truncated: false, message: null };
+        const lookup = vi
+            .spyOn(craftingMarketQueries, "findCraftingMarketPrices")
+            .mockImplementation(async (_db, _input, _cohortId, timing) => {
+                await Promise.resolve();
+                timing?.add("equipment_db", 25);
+                return expected;
+            });
+        const httpTiming = new ServerTiming();
+        const response = await api.request(
+            "https://poe.boats/api/v1/crafting/market/cohorts",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
+            },
+            { runtime: async () => ({ ...context, timing: httpTiming }) },
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual(expected);
+        const mcpTiming = new ServerTiming();
+        const rpcResponse = await handleMcpRequest(
+            new Request("https://poe.boats/mcp", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    accept: "application/json, text/event-stream",
+                },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method: "tools/call",
+                    params: { name: "find_crafting_item_prices", arguments: input },
+                }),
+            }),
+            async () => ({ ...context, timing: mcpTiming }),
+        );
+        const result = CallToolResultSchema.parse(RpcSchema.parse(await rpcResponse.json()).result);
+        expect(result.isError).not.toBe(true);
+        expect(result.structuredContent).toEqual(expected);
+        expect(lookup.mock.calls.map((call) => call[3])).toEqual([httpTiming, mcpTiming]);
+        expect(httpTiming.toString()).toBe("equipment_db;dur=25.0");
+        expect(mcpTiming.toString()).toBe(httpTiming.toString());
     });
 
     it.each(
