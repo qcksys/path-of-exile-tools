@@ -10,7 +10,7 @@ import { runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r9",
+    (entry) => entry.game === "poe1" && entry.revision === "r10",
 )!;
 const singleModifiers: [CraftingPresetId, string[]][] = [
     ["life-block-shield", ["block", "max-res"]],

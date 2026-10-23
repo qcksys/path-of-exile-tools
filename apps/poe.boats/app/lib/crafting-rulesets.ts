@@ -80,19 +80,25 @@ export function rulesetAllowsConditionalSteps(ruleset: Pick<CraftingRuleset, "en
         "crafting-graph-7",
         "crafting-graph-8",
         "crafting-graph-9",
+        "crafting-graph-10",
     ].includes(ruleset.engine);
 }
 
 export function rulesetAllowsSimpleCraft(ruleset: Pick<CraftingRuleset, "engine">) {
-    return ["crafting-graph-7", "crafting-graph-8", "crafting-graph-9"].includes(ruleset.engine);
+    return [
+        "crafting-graph-7",
+        "crafting-graph-8",
+        "crafting-graph-9",
+        "crafting-graph-10",
+    ].includes(ruleset.engine);
 }
 
 export function rulesetAllowsScopedCraftPrices(ruleset: Pick<CraftingRuleset, "engine">) {
-    return ["crafting-graph-8", "crafting-graph-9"].includes(ruleset.engine);
+    return ["crafting-graph-8", "crafting-graph-9", "crafting-graph-10"].includes(ruleset.engine);
 }
 
 export function rulesetAllowsPresetPreparation(ruleset: Pick<CraftingRuleset, "engine">) {
-    return ruleset.engine === "crafting-graph-9";
+    return ["crafting-graph-9", "crafting-graph-10"].includes(ruleset.engine);
 }
 
 export function validateRulesetGraph(ruleset: CraftingRuleset, input: unknown) {

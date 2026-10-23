@@ -1,5 +1,6 @@
 import type { CraftingItem, RolledMod } from "../schemas/crafting";
 import type { RecombinatorItem } from "../schemas/recombinator";
+import { isDelveMinionModifier } from "./crafting-delve";
 import type { CraftingEngine } from "./crafting-engine";
 import { isBreachModifier } from "./crafting-grasping";
 import { isIncursionModifier } from "./crafting-incursion";
@@ -118,6 +119,15 @@ export function recombinationOutcomes(
                     isRecombinationEssenceModifier(engine, item, rolled.id) ||
                     isBreachModifier(engine.catalog, item, rolled.id) ||
                     isIncursionModifier(engine.catalog, item, rolled.id) ||
+                    (mod.domain === "ducat_crafted" &&
+                        mod.spawn_weights.some(
+                            (rule) => rule.tag === "deepwater_pantheon_aspect" && rule.weight > 0,
+                        )) ||
+                    isDelveMinionModifier(
+                        engine.catalog,
+                        { ...item, level: rolled.origin?.level ?? item.level },
+                        rolled.id,
+                    ) ||
                     isJanusRarityModifier(
                         engine.catalog,
                         { ...item, level: rolled.origin?.level ?? item.level },
@@ -127,7 +137,7 @@ export function recombinationOutcomes(
                 )
             )
                 throw new Error(
-                    "This recombination model supports natural and extracted essence modifiers, Breach modifiers, the three Incursion glove suffixes, Janus helmet rarity and unveiled bench crafts.",
+                    "This recombination model supports natural and extracted essence modifiers, Breach modifiers, the three Incursion glove suffixes, Delve minion boots, Janus helmet rarity and unveiled bench crafts.",
                 );
         }
     }
@@ -171,6 +181,11 @@ export function recombinationOutcomes(
                         mod.is_essence_only ||
                         isBreachModifier(engine.catalog, item, rolled.id) ||
                         isIncursionModifier(engine.catalog, item, rolled.id) ||
+                        isDelveMinionModifier(
+                            engine.catalog,
+                            { ...item, level: rolled.origin?.level ?? item.level },
+                            rolled.id,
+                        ) ||
                         isJanusRarityModifier(
                             engine.catalog,
                             { ...item, level: rolled.origin?.level ?? item.level },
