@@ -2,10 +2,11 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { RouterContextProvider } from "react-router";
 import { beforeEach, expect, it, vi } from "vite-plus/test";
-import { dbContext, envContext } from "~/context";
+import { dbContext, envContext, serverTimingContext } from "~/context";
 import { createDbConnection } from "~/db/client";
 import { operationContext } from "~/operations/runtime.server";
 import { craftingRulesetIndexSchema } from "~/schemas/crafting-rulesets";
+import { ServerTiming } from "~/services/server-timing.server";
 
 const runtimeMocks = vi.hoisted(() => ({
     selected: vi.fn(),
@@ -45,9 +46,10 @@ beforeEach(() => {
     runtimeMocks.other.mockRejectedValue(new Error("Unselected runtime must remain unloaded."));
 });
 
-async function runtimeContext() {
+async function runtimeContext(timing = new ServerTiming()) {
     const context = new RouterContextProvider();
     context.set(dbContext, createDbConnection("mysql://test:test@unused.invalid"));
+    context.set(serverTimingContext, timing);
     context.set(envContext, {
         ASSETS: {
             fetch: vi.fn(async () => new Response(catalogBytes)),
@@ -72,6 +74,16 @@ async function runtimeContext() {
         context,
     );
 }
+
+it("passes the request's timing collector without sharing measurements between requests", async () => {
+    const timing = new ServerTiming();
+    const first = await runtimeContext(timing);
+    const second = await runtimeContext();
+    expect(first.timing).toBe(timing);
+    first.timing!.add("equipment_db", 25);
+    expect(timing.toString()).toBe("equipment_db;dur=25.0");
+    expect(second.timing!.toString()).toBe("");
+});
 
 it("creates an ordinary operation context without loading retained engines", async () => {
     const context = await runtimeContext();

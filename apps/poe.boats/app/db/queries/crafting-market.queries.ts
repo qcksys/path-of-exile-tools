@@ -17,6 +17,7 @@ import type {
     CraftingMarketInput,
     CraftingMarketResult,
 } from "~/schemas/crafting-market";
+import type { ServerTiming } from "~/services/server-timing.server";
 import { findCraftingExchangePrices } from "./crafting-exchange.queries";
 
 const hourColumns = getTableColumns(hourly);
@@ -48,6 +49,7 @@ export async function findCraftingMarketPrices(
     db: TDatabase,
     input: CraftingMarketInput,
     cohortId?: string,
+    timing?: ServerTiming,
 ): Promise<CraftingMarketResult> {
     if (input.item.game === "poe2")
         return {
@@ -55,134 +57,167 @@ export async function findCraftingMarketPrices(
             truncated: false,
             message: "PoE 2 equipment uses manual prices and trade searches.",
         };
-    const range = marketObservationRange(input.at);
-    const scope = and(
-        eq(hourly.realm, input.realm),
-        eq(hourly.league, input.league),
-        gte(hourly.hour, range.earliestHour),
-        lte(hourly.hour, range.latestHour),
-        cohortId === undefined ? undefined : eq(hourly.cohortId, cohortId),
-    );
-    const bases = or(
-        isNull(cohort.baseTypes),
-        sql`JSON_CONTAINS(${cohort.baseTypes}, ${JSON.stringify(input.item.item.baseType)})`,
-    );
-    const latestHour = db
-        .select({ hour: max(hourly.hour) })
-        .from(hourly)
-        .where(and(scope, eq(hourly.revision, cohort.revision), eq(hourly.cohortId, cohort.id)));
-    // Resolve each matching definition's hour without grouping unrelated cohort histories.
-    const latest = db
-        .select({
-            revision: cohort.revision,
-            cohortId: cohort.id,
-            hour: sql<number>`(${latestHour})`.as("latest_hour"),
-        })
-        .from(cohort)
-        .where(and(bases, cohortId === undefined ? undefined : eq(cohort.id, cohortId)))
-        .as("latest");
-    const rows = await db
-        .select({
-            definition: definitionColumns,
-            latest: summaryColumns,
-        })
-        .from(hourly)
-        .innerJoin(
-            latest,
-            and(
-                eq(hourly.revision, latest.revision),
-                eq(hourly.cohortId, latest.cohortId),
-                eq(hourly.hour, latest.hour),
-            ),
-        )
-        .innerJoin(
-            cohort,
-            and(eq(cohort.revision, hourly.revision), eq(cohort.id, hourly.cohortId)),
-        )
-        .where(and(scope, bases))
-        .orderBy(desc(hourly.hour), cohort.id, cohort.revision)
-        .limit(2001);
-    const candidates = rows
-        .slice(0, 2000)
-        .map((row) => {
-            const definition = marketCohortDefinitionSchema.parse(row.definition);
-            const latest = cohortHourlySchema.parse(row.latest);
-            const assumption = isDisplayEquivalentCohort(definition) ? input.assumption : undefined;
-            const coverage = cohortPriceCoverage(
-                definition,
-                input.item,
-                input.requirements,
-                assumption,
-            );
-            return {
-                definition,
-                latest,
-                covered: coverage.covered,
-                reasons: coverage.reasons,
-                ...(input.window ? { window: input.window } : {}),
-                ...(assumption ? { assumption } : {}),
-                ...(input.conversion ? { conversion: input.conversion } : {}),
-            };
-        })
-        .filter(
-            (candidate) =>
-                candidate.covered ||
-                !candidate.reasons.includes(
-                    "The configured item does not definitely match this cohort.",
-                ),
+    timing?.start("equipment_total");
+    let queries = 0;
+    let rowCount = 0;
+    let exchangeRows = 0;
+    let stage = "equipment_db";
+    try {
+        const range = marketObservationRange(input.at);
+        const scope = and(
+            eq(hourly.realm, input.realm),
+            eq(hourly.league, input.league),
+            gte(hourly.hour, range.earliestHour),
+            lte(hourly.hour, range.latestHour),
+            cohortId === undefined ? undefined : eq(hourly.cohortId, cohortId),
         );
-    const exchangeByHour = new Map<
-        number,
-        Awaited<ReturnType<typeof findCraftingExchangePrices>>
-    >();
-    const priced: CraftingMarketCandidate[] = [];
-    for (const candidate of candidates) {
-        const next: CraftingMarketCandidate = candidate;
-        if (next.covered && !next.latest.prices[input.currency] && input.conversion) {
-            let exchange = exchangeByHour.get(next.latest.hour);
-            if (!exchange) {
-                exchange = await findCraftingExchangePrices(
-                    db,
-                    {
-                        game: "poe1",
-                        realm: input.realm,
-                        league: input.league,
-                        currency: input.currency,
-                        itemIds: ["chaos", "divine", "exalted"].map(
-                            (currency) => exchangeCurrencyId(currency)!,
-                        ),
-                        conversion: "reference-currency-v1",
-                        at: next.latest.hour,
-                    },
-                    { exactHour: true },
-                );
-                exchangeByHour.set(next.latest.hour, exchange);
-            }
-            for (const currency of ["chaos", "divine", "exalted"] as const) {
-                const quote = exchange.quotes[exchangeCurrencyId(currency)!];
-                if (!next.latest.prices[currency] || !quote) continue;
-                next.exchange = { currency, quote };
-                if (selectCraftingMarketPrice(next, input.currency)) break;
-                delete next.exchange;
-            }
-        }
-        if (!selectCraftingMarketPrice(next, input.currency)) {
-            next.covered = false;
-            next.reasons.push(
-                input.conversion
-                    ? `No asking price in ${input.currency} or matching-hour exchange conversion is available for this cohort.`
-                    : `No asking price in ${input.currency} is available for this cohort.`,
+        const bases = or(
+            isNull(cohort.baseTypes),
+            sql`JSON_CONTAINS(${cohort.baseTypes}, ${JSON.stringify(input.item.item.baseType)})`,
+        );
+        const latestHour = db
+            .select({ hour: max(hourly.hour) })
+            .from(hourly)
+            .where(
+                and(scope, eq(hourly.revision, cohort.revision), eq(hourly.cohortId, cohort.id)),
             );
+        // Resolve each matching definition's hour without grouping unrelated cohort histories.
+        const latest = db
+            .select({
+                revision: cohort.revision,
+                cohortId: cohort.id,
+                hour: sql<number>`(${latestHour})`.as("latest_hour"),
+            })
+            .from(cohort)
+            .where(and(bases, cohortId === undefined ? undefined : eq(cohort.id, cohortId)))
+            .as("latest");
+        const query = db
+            .select({
+                definition: definitionColumns,
+                latest: summaryColumns,
+            })
+            .from(hourly)
+            .innerJoin(
+                latest,
+                and(
+                    eq(hourly.revision, latest.revision),
+                    eq(hourly.cohortId, latest.cohortId),
+                    eq(hourly.hour, latest.hour),
+                ),
+            )
+            .innerJoin(
+                cohort,
+                and(eq(cohort.revision, hourly.revision), eq(cohort.id, hourly.cohortId)),
+            )
+            .where(and(scope, bases))
+            .orderBy(desc(hourly.hour), cohort.id, cohort.revision)
+            .limit(2001);
+        timing?.start(stage);
+        queries++;
+        const rows = await query;
+        rowCount = rows.length;
+        timing?.stop(stage);
+        stage = "equipment_parse";
+        timing?.start(stage);
+        const candidates = rows
+            .slice(0, 2000)
+            .map((row) => {
+                const definition = marketCohortDefinitionSchema.parse(row.definition);
+                const latest = cohortHourlySchema.parse(row.latest);
+                const assumption = isDisplayEquivalentCohort(definition)
+                    ? input.assumption
+                    : undefined;
+                const coverage = cohortPriceCoverage(
+                    definition,
+                    input.item,
+                    input.requirements,
+                    assumption,
+                );
+                return {
+                    definition,
+                    latest,
+                    covered: coverage.covered,
+                    reasons: coverage.reasons,
+                    ...(input.window ? { window: input.window } : {}),
+                    ...(assumption ? { assumption } : {}),
+                    ...(input.conversion ? { conversion: input.conversion } : {}),
+                };
+            })
+            .filter(
+                (candidate) =>
+                    candidate.covered ||
+                    !candidate.reasons.includes(
+                        "The configured item does not definitely match this cohort.",
+                    ),
+            );
+        timing?.stop(stage);
+        stage = "equipment_fx";
+        timing?.start(stage);
+        const exchangeByHour = new Map<
+            number,
+            Awaited<ReturnType<typeof findCraftingExchangePrices>>
+        >();
+        const priced: CraftingMarketCandidate[] = [];
+        for (const candidate of candidates) {
+            const next: CraftingMarketCandidate = candidate;
+            if (next.covered && !next.latest.prices[input.currency] && input.conversion) {
+                let exchange = exchangeByHour.get(next.latest.hour);
+                if (!exchange) {
+                    exchange = await findCraftingExchangePrices(
+                        db,
+                        {
+                            game: "poe1",
+                            realm: input.realm,
+                            league: input.league,
+                            currency: input.currency,
+                            itemIds: ["chaos", "divine", "exalted"].map(
+                                (currency) => exchangeCurrencyId(currency)!,
+                            ),
+                            conversion: "reference-currency-v1",
+                            at: next.latest.hour,
+                        },
+                        { exactHour: true },
+                        (count) => {
+                            queries++;
+                            exchangeRows += count;
+                        },
+                    );
+                    exchangeByHour.set(next.latest.hour, exchange);
+                }
+                for (const currency of ["chaos", "divine", "exalted"] as const) {
+                    const quote = exchange.quotes[exchangeCurrencyId(currency)!];
+                    if (!next.latest.prices[currency] || !quote) continue;
+                    next.exchange = { currency, quote };
+                    if (selectCraftingMarketPrice(next, input.currency)) break;
+                    delete next.exchange;
+                }
+            }
+            if (!selectCraftingMarketPrice(next, input.currency)) {
+                next.covered = false;
+                next.reasons.push(
+                    input.conversion
+                        ? `No asking price in ${input.currency} or matching-hour exchange conversion is available for this cohort.`
+                        : `No asking price in ${input.currency} is available for this cohort.`,
+                );
+            }
+            priced.push(next);
         }
-        priced.push(next);
+        return {
+            candidates: priced,
+            truncated: rows.length > 2000,
+            message: candidates.length
+                ? null
+                : "No captured cohort covers this item in the latest 24 completed hours at this cutoff. Enter a manual price or check trade.",
+        };
+    } finally {
+        timing?.stop(stage);
+        timing?.stop("equipment_total");
+        timing?.add(
+            "equipment_counts",
+            0,
+            `queries=${queries} rows=${rowCount} exchange_rows=${exchangeRows}`,
+        );
     }
-    return {
-        candidates: priced,
-        truncated: rows.length > 2000,
-        message: candidates.length
-            ? null
-            : "No captured cohort covers this item in the latest 24 completed hours at this cutoff. Enter a manual price or check trade.",
-    };
 }
 
 export async function craftingMarketHistory(db: TDatabase, input: CraftingMarketHistoryInput) {
