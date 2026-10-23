@@ -10,7 +10,7 @@ import type { ItemRecord, ModifierFact } from "./schema.ts";
 const identifier = z.string().min(1).max(500);
 const influence = z.enum(["shaper", "elder", "crusader", "redeemer", "hunter", "warlord"]);
 export const modifierTextModelSchema = z.strictObject({
-    format: z.union([z.literal(1), z.literal(2)]),
+    format: z.union([z.literal(1), z.literal(2), z.literal(3)]),
     identityFamilies: z.array(z.array(identifier).min(2).max(100)).max(1000).optional(),
     unsupportedImplicitTexts: z.array(z.string().max(5000)).max(1000).optional(),
     translations: modifierTranslationsSchema.optional(),
@@ -128,6 +128,14 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
         ]),
     );
     if (definitions.size !== model.modifiers.length) throw new Error("Duplicate modifier text ID.");
+    const affixNames = {
+        prefix: new Set(
+            model.modifiers.filter((mod) => mod.side === "prefix").map((mod) => mod.name),
+        ),
+        suffix: new Set(
+            model.modifiers.filter((mod) => mod.side === "suffix").map((mod) => mod.name),
+        ),
+    };
     const families = new Map<string, string[]>();
     for (const input of model.identityFamilies ?? []) {
         const family = [...input].sort();
@@ -383,6 +391,31 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
             }
         }
         if (!targets.length || targets.length > 64) return record;
+        let magicNames: { prefix: string; suffix: string } | undefined;
+        if (
+            model.format === 3 &&
+            itemRarity(item) === "Magic" &&
+            item.name === "" &&
+            !item.fractured &&
+            !item.split &&
+            (prefixes ?? 0) <= 1 &&
+            (suffixes ?? 0) <= 1 &&
+            [...flags.values()].every((flag) => !flag.crafted && !flag.fractured) &&
+            !item.typeLine?.startsWith("Superior ")
+        ) {
+            const parts = item.typeLine?.split(base.baseType);
+            if (parts?.length === 2) {
+                const prefix = parts[0]!.trim();
+                const suffix = parts[1]!.trim();
+                if (
+                    (prefix || suffix) &&
+                    (!prefix || affixNames.prefix.has(prefix)) &&
+                    (!suffix || affixNames.suffix.has(suffix)) &&
+                    [prefix, base.baseType, suffix].filter(Boolean).join(" ") === item.typeLine
+                )
+                    magicNames = { prefix, suffix };
+            }
+        }
         const candidates: Candidate[] = [];
         const entries =
             base.modifiers ??
@@ -396,6 +429,8 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
             const mod = activeDefinitions.get(entry.id)!;
             if (mod.requiredInfluence && influences && !influences.has(mod.requiredInfluence))
                 continue;
+            // Empty affix names cannot rule out an otherwise compatible modifier.
+            if (magicNames && mod.name && mod.name !== magicNames[mod.side]) continue;
             // Missing translations could be an alternative to any apparent match.
             if (!mod.variants) return record;
             for (const variant of mod.variants) {
@@ -526,6 +561,15 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
                 return;
             if (p === expectedPrefixes && s === expectedSuffixes) {
                 if (
+                    (magicNames &&
+                        (["prefix", "suffix"] as const).some(
+                            (side) =>
+                                chosen
+                                    .filter((candidate) => candidate.side === side)
+                                    .map((candidate) => candidate.fact.name)
+                                    .filter(Boolean)
+                                    .join(" ") !== magicNames[side],
+                        )) ||
                     known.some(
                         (mod) => !chosen.some((candidate) => sameIdentity(mod, candidate.fact)),
                     ) ||

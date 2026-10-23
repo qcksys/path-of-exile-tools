@@ -44,7 +44,7 @@ const purchases = craftingPresets.flatMap((preset) => {
 });
 const startingBases = purchases.filter(({ node }) => node.id.endsWith("-make-base"));
 const originalPurchases = purchases.filter(
-    ({ node, alternative }) => alternative.id === "buy" && !node.id.endsWith("-make-base"),
+    ({ node, alternative }) => alternative.id === "buy" && !node.id.includes("-make-"),
 );
 
 function rawItem(item: CraftingItem, metadata = false) {
@@ -86,8 +86,8 @@ function rawItem(item: CraftingItem, metadata = false) {
 }
 
 it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
-    expect(purchases).toHaveLength(57);
-    expect(cohorts).toHaveLength(48);
+    expect(purchases).toHaveLength(60);
+    expect(cohorts).toHaveLength(51);
     const definitions = new Map(manifest.cohorts.map((cohort) => [cohort.id, cohort]));
     for (const cohort of cohorts) expect(definitions.get(cohort.id)).toEqual(cohort);
     for (const { preset, graph: project, node, alternative, item } of purchases) {
@@ -285,6 +285,126 @@ it("prices the uninfluenced Hunter preparation base under the ordinary purchase 
     ).toBe(false);
 });
 
+it.each([
+    {
+        preset: "life-block-shield",
+        nodeId: "shield-make-heat-base",
+        typeLine: "Heat-attuned Tower Shield of the Leviathan",
+        description: "+38 to Strength",
+        implicit: "Scorch Enemies when you Block their Damage",
+        extended: { suffixes: 1 },
+        missing: "prefixes",
+        needsName: true,
+    },
+    {
+        preset: "life-block-shield",
+        nodeId: "shield-make-pinnacle-base",
+        typeLine: "Pinnacle Tower Shield of Shaping",
+        description: "Socketed Gems have 30% increased Reservation Efficiency",
+        implicit: "+29 to maximum Life",
+        extended: { suffixes: 1 },
+        missing: "prefixes",
+        needsName: true,
+    },
+    {
+        preset: "es-block-shield",
+        nodeId: "shield-make-titanium-base",
+        typeLine: "Unyielding Titanium Spirit Shield",
+        description: "78% increased Chance to Block",
+        implicit: undefined,
+        extended: { prefixes: 1 },
+        missing: "suffixes",
+        needsName: false,
+    },
+] as const)("captures and explicitly prices the actual Magic source for $nodeId", (sample) => {
+    const {
+        graph: project,
+        node,
+        alternative,
+        item,
+    } = purchases.find(
+        (entry) => entry.preset === sample.preset && entry.node.id === sample.nodeId,
+    )!;
+    const cohort = cohorts.find(
+        (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
+    )!;
+    expect(cohort).toBeDefined();
+    expect(alternative.price).toBeNull();
+    expect(craftingMarketItemIssue(engine, item)).toBeNull();
+    const raw = {
+        ...rawItem(item),
+        typeLine: sample.typeLine,
+        explicitMods: [{ description: sample.description }],
+        implicitMods: sample.implicit ? [{ description: sample.implicit }] : [],
+        extended: sample.extended,
+        sockets: [{ group: 0 }, { group: 1 }],
+    };
+    const record = normalizeApiItem("poe1", "stash", raw);
+    expect(record.facts[sample.missing]).toBeUndefined();
+    expect(capture(raw)).toBe(true);
+    const classified = classifier.classify(record);
+    expect(classified.matches).toContain(cohort.id);
+    expect(classified.unknown).not.toContain(cohort.id);
+    expect(record.item.typeLine).toBe(sample.typeLine);
+    expect(record.item.extended).toEqual(sample.extended);
+    expect(record.facts[sample.missing]).toBeUndefined();
+    expect(
+        classifier
+            .classify(normalizeApiItem("poe1", "stash", { ...raw, typeLine: raw.baseType }))
+            .matches.includes(cohort.id),
+    ).toBe(!sample.needsName);
+    for (const invalid of [
+        { ...raw, extended: { prefixes: 1, suffixes: 1 } },
+        { ...raw, explicitMods: [] },
+        { ...raw, influences: {} },
+        { ...raw, corrupted: true },
+    ])
+        expect(
+            classifier.classify(normalizeApiItem("poe1", "stash", invalid)).matches,
+        ).not.toContain(cohort.id);
+
+    const graph = { ...project, league: "Standard" };
+    const bound = bindCohortPurchasePrice(graph, engine, node.id, alternative.id, {
+        definition: { ...cohort, revision: manifest.revision, catalogHash: manifest.catalogHash },
+        latest: {
+            realm: "pc",
+            league: "Standard",
+            hour: 1_790_899_200,
+            revision: manifest.revision,
+            cohortId: cohort.id,
+            listingCount: 1,
+            uniqueSellers: 1,
+            unknownCount: 0,
+            prices: {
+                chaos: { min: 17, median: 17, max: 17, count: 1, sellers: 1, confidence: 0 },
+            },
+            confidenceMethod: "asking-sellers-coverage-v1",
+            firstSeenAt: null,
+            lastSeenAt: null,
+        },
+        covered: true,
+        reasons: [],
+    });
+    const priced = bound.nodes.find((entry) => entry.id === node.id)!;
+    if (priced.kind !== "acquire") throw new Error("Expected acquisition");
+    const purchase = priced.alternatives.find((entry) => entry.id === alternative.id)!;
+    if (purchase.kind !== "purchase") throw new Error("Expected purchase");
+    expect(purchase.price).toMatchObject({
+        amount: 17,
+        currency: graph.currency,
+        source: "market",
+        samples: 1,
+        confidence: 0,
+    });
+    expect(purchase.item).toEqual(item);
+    expect(priced.choice).toEqual(node.choice);
+    expect(bound.nodes.filter((entry) => entry.id !== node.id)).toEqual(
+        graph.nodes.filter((entry) => entry.id !== node.id),
+    );
+    expect(bound.prices).toEqual(graph.prices);
+    expect(alternative.price).toBeNull();
+});
+
 it("populates 19 original inputs from descriptions, flags and influence while preserving eight ambiguous rolls", () => {
     const unknown = originalPurchases.flatMap(({ preset, node, item }) => {
         const cohort = cohorts.find(
@@ -414,7 +534,7 @@ it("does not price ambiguous elemental modifier identities from names, tiers or 
 });
 
 it("classifies an omitted zero suffix count only when the complete catalog interpretation proves it", () => {
-    expect(manifest.modifierTextModel?.format).toBe(2);
+    expect(manifest.modifierTextModel?.format).toBe(3);
     for (const [preset, nodeId, expected] of [
         ["physical-bow", "donor-2", true],
         ["physical-bow", "donor-1", false],

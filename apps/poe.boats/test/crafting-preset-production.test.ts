@@ -406,6 +406,201 @@ it("retained r9 pays for a new base and four crafts on each Hunter acquisition",
     });
 });
 
+const nnnShieldCosts = [
+    "Metadata/Items/Currency/CurrencyEssenceDoubt1",
+    "Metadata/Items/Currency/CurrencyRemoveMod",
+    "Metadata/Items/Currency/CurrencyConvertToNormal",
+    "Metadata/Items/Currency/CurrencyAddModToRare",
+] as const;
+
+it.each([
+    "percent",
+    "block",
+])("adds optional %s NNN preparation without changing the shield recipe", (id) => {
+    const graph = projectFromPreset(engine, ruleset, "es-block-shield");
+    const { node, alternative } = purchase(graph, id);
+    expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+    expect(node.alternatives[1]).toEqual({
+        kind: "production",
+        id: "make-nnn",
+        name: "Isolate NNN evasion, then Exalt the required prefix",
+        nodeId: `${id}-make-reset`,
+    });
+    const steps = graph.nodes.filter(
+        (node): node is GraphCraftNode =>
+            node.kind === "craft" && node.id.startsWith(`${id}-make-`),
+    );
+    expect(steps).toHaveLength(5);
+    expect(steps[0]).toMatchObject({
+        inputs: [{ source: "flat-make-base" }],
+        method: { kind: "essence", id: nnnShieldCosts[0] },
+    });
+    expect(
+        discoverCraftingCosts(
+            engine,
+            steps.map((step) => step.method),
+        )
+            .map((cost) => cost.id)
+            .sort(),
+    ).toEqual([...nnnShieldCosts].sort());
+    expect(graph.nodes.filter((node) => node.kind === "acquire")).toHaveLength(6);
+    const nnn = alternative.item.mods.find((mod) => mod.essence)!;
+    const wanted = alternative.item.mods.find((mod) => !mod.essence)!.id;
+    const isolated = { ...alternative.item, mods: [nnn] };
+    expect(engine.pool(isolated, { level: 60 }).some((mod) => mod.id === wanted)).toBe(false);
+    expect(engine.pool(isolated).some((mod) => mod.id === wanted && mod.weight > 0)).toBe(true);
+    expect(graph.prices[nnnShieldCosts[0]]).toBeUndefined();
+    expect(graph.prices[nnnShieldCosts[3]]).toBeUndefined();
+    const retained = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r8",
+    )!;
+    const original = projectFromPreset(engine, retained, "es-block-shield");
+    const withoutPreparation = graph.nodes
+        .filter((node) => !node.id.includes("-make"))
+        .map((node) =>
+            node.kind === "acquire"
+                ? {
+                      ...node,
+                      alternatives: node.alternatives.filter((entry) => entry.kind === "purchase"),
+                  }
+                : node,
+        );
+    expect(withoutPreparation).toEqual(original.nodes);
+    for (const key of ["entry", "outcomes", "iterations", "maxSteps", "prices"] as const)
+        expect(graph[key]).toEqual(original[key]);
+});
+
+function nnnShieldRecoveryTrial(id: string, missing?: string, scourBase = false) {
+    const graph = projectFromPreset(engine, ruleset, "es-block-shield");
+    const { node, alternative } = purchase(graph, id);
+    node.choice = { mode: "pinned", alternativeId: "make-nnn" };
+    purchase(graph, "flat-make-base").alternative.price = missing?.startsWith("purchase:")
+        ? null
+        : quote(11);
+    if (scourBase) {
+        purchase(graph, "flat-make-base").node.choice = {
+            mode: "pinned",
+            alternativeId: "make-scour",
+        };
+        purchase(graph, "shield-make-titanium-base").alternative.price = quote(11);
+    }
+    nnnShieldCosts.forEach((cost, index) => {
+        if (cost !== missing) graph.prices[cost] = quote([2, 3, 5, 7][index]!);
+    });
+    const nnn = "LocalIncreasedEvasionRating4";
+    const wanted = alternative.item.mods.find((mod) => mod.id !== nnn)!.id;
+    const sequence: (string | number)[] = [
+        4,
+        "IncreasedLife1",
+        "ColdResist1",
+        "FireResist1",
+        nnn,
+        4,
+        "IncreasedLife1",
+        "ColdResist1",
+        "FireResist1",
+        "IncreasedLife1",
+        "ColdResist1",
+        "FireResist1",
+        "ColdResist1",
+        "ColdResist1",
+        "FireResist1",
+        nnn,
+        4,
+        "IncreasedLife1",
+        "ColdResist1",
+        "FireResist1",
+        "IncreasedLife1",
+        "ColdResist1",
+        "FireResist1",
+        wanted,
+    ];
+    const trial = new CraftingGraphTrial(engine, graph, scriptedRandom(sequence), {
+        entry: id,
+        classify: false,
+        trace: true,
+    });
+    while (!trial.done) trial.advance();
+    const result = trial.result();
+    expect(result.error).toBeNull();
+    expect(result.status).toBe("returned");
+    expect(sequence).toEqual([]);
+    const identity = (item: typeof alternative.item) => ({
+        ...item,
+        mods: item.mods
+            .map(({ values: _values, ...mod }) => mod)
+            .sort((a, b) => a.id.localeCompare(b.id)),
+    });
+    expect(identity(result.item!)).toEqual(identity(alternative.item));
+    expect(result.item!.mods.find((mod) => mod.id === nnn)?.essence).toBe(true);
+    expect(engine.validateItem(result.item!)).toEqual(result.item);
+    expect(createCraftingItemQuery(engine).matches(result.item!, node.output)).toBe("match");
+    return result;
+}
+
+it.each([
+    "percent",
+    "block",
+])("pays %s NNN isolation and Exalt retries without repurchasing the base", (id) => {
+    const result = nnnShieldRecoveryTrial(id);
+    expect(result.purchases).toBe(1);
+    expect(result.actions).toBe(17);
+    expect(result.cost).toBe(75);
+    expect(result.missingPrices).toEqual([]);
+    expect(result.spending).toEqual({
+        "purchase:flat-make-base:buy": 1,
+        ...Object.fromEntries(nnnShieldCosts.map((cost, index) => [cost, [3, 9, 2, 3][index]])),
+    });
+    expect(result.visits[`${id}-make-isolate`]!.recovered).toBe(4);
+    expect(result.visits[`${id}-make-annul`]!.recovered).toBe(1);
+    expect(result.visits[`${id}-make-reset`]!.recovered).toBe(2);
+});
+
+it.each(
+    ["percent", "block"].flatMap((id) =>
+        ["purchase:flat-make-base:buy", ...nnnShieldCosts].map((missing) => ({ id, missing })),
+    ),
+)("keeps $id NNN preparation unpriced when $missing is missing", ({ id, missing }) => {
+    const result = nnnShieldRecoveryTrial(id, missing);
+    expect(result.cost).toBeNull();
+    expect(result.missingPrices).toEqual([missing]);
+});
+
+it.each([
+    "percent",
+    "block",
+])("%s NNN preparation composes with paid Scouring of the Magic source", (id) => {
+    const result = nnnShieldRecoveryTrial(id, undefined, true);
+    expect(result.purchases).toBe(1);
+    expect(result.actions).toBe(18);
+    expect(result.cost).toBe(80);
+    expect(result.missingPrices).toEqual([]);
+    expect(result.spending).toEqual({
+        "purchase:shield-make-titanium-base:buy": 1,
+        ...Object.fromEntries(nnnShieldCosts.map((cost, index) => [cost, [3, 9, 3, 3][index]])),
+    });
+});
+
+it("keeps pinned shield purchase previews unchanged with NNN preparation available", () => {
+    const graph = projectFromPreset(engine, ruleset, "es-block-shield");
+    const original = structuredClone(graph);
+    original.nodes = original.nodes.filter((node) => !/^(percent|block)-make-/.test(node.id));
+    for (const node of original.nodes)
+        if (node.kind === "acquire")
+            node.alternatives = node.alternatives.filter((entry) => entry.id !== "make-nnn");
+    const options = { estimateIterations: 1, workLimit: 1000 };
+    const current = calculateCraftingGraph(catalog, graph, options);
+    const previous = calculateCraftingGraph(catalog, original, options);
+    expect(current.errors).toEqual({});
+    expect(current.work).toBe(previous.work);
+    expect(current.samples).toEqual(previous.samples);
+    expect(current.missingPrices).toEqual(previous.missingPrices);
+    for (const id of ["percent", "block"])
+        expect(
+            current.acquisitions[id]?.alternatives.find((entry) => entry.id === "make-nnn"),
+        ).toMatchObject({ estimated: false, expectedCost: null });
+});
+
 it.each(
     donors,
 )("%s offers explicit preparation for exactly the isolated natural donors", (preset, ids) => {
@@ -414,7 +609,7 @@ it.each(
     expect(
         acquisitions
             .filter((node) =>
-                node.alternatives.some((alternative) => alternative.kind === "production"),
+                node.alternatives.some((alternative) => alternative.id === "make-magic"),
             )
             .map((node) => node.id),
     ).toEqual(ids);

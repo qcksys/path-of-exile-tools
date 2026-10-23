@@ -86,6 +86,133 @@ const isolatedPhysical = itemQuerySchema.parse({
     ],
 });
 
+const namedModifiers: ModifierTextModel["modifiers"] = [
+    { ...modifiers[3]!, name: "of the Ice" },
+    { ...modifiers[3]!, id: "cold-alias", name: "of Frost" },
+    {
+        id: "invisible",
+        name: "Anomalous",
+        side: "prefix",
+        groups: ["invisible"],
+        crafted: false,
+        text: "",
+        unsupported: true,
+    },
+];
+function namedMagic(typeLine = "Axe of the Ice") {
+    return normalizeApiItem("poe1", "stash", {
+        baseType: "Axe",
+        name: "",
+        typeLine,
+        rarity: "Magic",
+        identified: true,
+        explicitMods: [{ description: "+47% to Cold Resistance" }],
+        extended: { suffixes: 1 },
+    });
+}
+
+it("intersects complete Magic names with descriptions without forcing affix counts", () => {
+    const input = namedMagic();
+    const source = structuredClone(input);
+    const resolved = compileModifierTextModel({ ...model(namedModifiers), format: 3 })(input);
+    expect(resolved.facts).toMatchObject({ prefixes: 0, suffixes: 1, modifiersComplete: false });
+    expect(resolved.facts.modifiers).toMatchObject([{ id: "cold" }]);
+    expect(resolved.item).toBe(input.item);
+    expect(input).toEqual(source);
+    for (const format of [1, 2] as const)
+        expect(compileModifierTextModel({ ...model(namedModifiers), format })(input)).toEqual(
+            input,
+        );
+});
+
+it.each([
+    { typeLine: "Axe of the Ice", counts: { prefixes: 1, suffixes: 1 } },
+    { typeLine: "Axe of the Ice", counts: { prefixes: 1, suffixes: 0 } },
+    { typeLine: "Anomalous Axe of the Ice", counts: { prefixes: 0, suffixes: 1 } },
+])("refuses conflicting Magic name, count and description evidence: $typeLine $counts", ({
+    typeLine,
+    counts,
+}) => {
+    const input = namedMagic(typeLine);
+    input.item.extended = counts;
+    expect(compileModifierTextModel({ ...model(namedModifiers), format: 3 })(input)).toEqual(input);
+});
+
+it("requires every displayed affix name to be explained by a complete text solution", () => {
+    const input = namedMagic("Axe of Frost");
+    const mods = namedModifiers.map((mod) =>
+        mod.id === "cold-alias" ? { ...mod, text: "+(20-30)% to Cold Resistance" } : mod,
+    );
+    expect(compileModifierTextModel({ ...model(mods), format: 3 })(input)).toEqual(input);
+    const bothMissing = namedMagic();
+    bothMissing.item.extended = {};
+    expect(compileModifierTextModel({ ...model(namedModifiers), format: 3 })(bothMissing)).toEqual(
+        bothMissing,
+    );
+});
+
+it("retains invisible blank-name alternatives and unsupported matching names", () => {
+    for (const name of ["", "Anomalous"]) {
+        const input = namedMagic(name ? "Anomalous Axe of the Ice" : "Axe of the Ice");
+        const mods = namedModifiers.map((mod) => (mod.id === "invisible" ? { ...mod, name } : mod));
+        expect(compileModifierTextModel({ ...model(mods), format: 3 })(input)).toEqual(input);
+    }
+});
+
+it("keeps same-name identities ambiguous and blank-name counts uncertain", () => {
+    const input = namedMagic();
+    const aliases = namedModifiers
+        .filter((mod) => mod.side === "suffix")
+        .map((mod) => ({ ...mod, name: "of the Ice" }));
+    const resolved = compileModifierTextModel({ ...model(aliases), format: 3 })(input);
+    expect(resolved.facts.prefixes).toBe(0);
+    expect(resolved.facts.modifiers).toEqual([]);
+    const blank = namedModifiers.map((mod) =>
+        mod.id === "invisible" ? { ...mod, name: "", unsupported: false } : mod,
+    );
+    const uncertain = compileModifierTextModel({ ...model(blank), format: 3 })(input);
+    expect(uncertain.facts.prefixes).toBeUndefined();
+    expect(uncertain.facts.modifiers).toMatchObject([{ id: "cold" }]);
+});
+
+it.each([
+    "Axe",
+    "Axe of Unknown",
+    "Superior Axe of the Ice",
+    "Fractured Axe of the Ice",
+    "Axe of the Ice (augmented)",
+    " Axe of the Ice",
+    "Axe  of the Ice",
+    "Axe Axe of the Ice",
+])("does not constrain an incomplete, decorated or ambiguous typeLine: %s", (typeLine) => {
+    const input = namedMagic(typeLine);
+    expect(compileModifierTextModel({ ...model(namedModifiers), format: 3 })(input)).toEqual(input);
+});
+
+it("does not apply Magic names to crafted, fractured, special or non-Magic records", () => {
+    const changes = [
+        { name: "Nonempty Name" },
+        { name: undefined },
+        { rarity: "Rare" as const },
+        { fractured: true },
+        { split: true },
+        { synthesised: true },
+        { memoryItem: true },
+        { craftedMods: ["+47% to Cold Resistance"] },
+        { fracturedMods: ["+47% to Cold Resistance"] },
+        { explicitMods: [{ description: "+47% to Cold Resistance", flags: { crafted: true } }] },
+        { explicitMods: [{ description: "+47% to Cold Resistance", flags: { fractured: true } }] },
+        { explicitMods: [{ description: "+47% to Cold Resistance", flags: { unknown: true } }] },
+    ];
+    for (const change of changes) {
+        const input = namedMagic();
+        Object.assign(input.item, change);
+        expect(compileModifierTextModel({ ...model(namedModifiers), format: 3 })(input)).toEqual(
+            compileModifierTextModel(model(namedModifiers))(input),
+        );
+    }
+});
+
 it.each([
     {
         descriptions: ["110% increased Physical Damage"],
