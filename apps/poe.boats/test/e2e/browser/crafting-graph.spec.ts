@@ -3,6 +3,32 @@ import { craftingWorkspaceStorageKey } from "../../../app/lib/crafting-workspace
 import { selectValue } from "./control-helpers";
 import { choose, select } from "./recombinator-helpers";
 
+test("closing a hover-opened pinned item preview restores focus without reopening it", async ({
+    page,
+}) => {
+    await page.goto("/1/crafting/projects");
+    await select(page, "Crafting preset", "Physical bow");
+    await page.getByRole("button", { name: "Create from preset", exact: true }).click();
+    const graph = page.getByRole("region", { name: "Crafting project graph", exact: true });
+    const preview = graph.getByRole("button", { name: "Preview Buy Merciless donor", exact: true });
+    await preview.hover();
+    const card = page.getByRole("region", { name: "Buy Merciless donor", exact: true });
+    await expect(card).toBeVisible();
+    await page.getByRole("button", { name: "Pin item card", exact: true }).click();
+    await expect(
+        page.getByRole("button", { name: "Unpin item card", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Close item card", exact: true }).click();
+    await expect(card).toHaveCount(0);
+    await expect(preview).toBeFocused();
+    await expect(preview).toHaveAttribute("aria-expanded", "false");
+    await preview.press("Tab");
+    await preview.focus();
+    await expect(card).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(card).toHaveCount(0);
+});
+
 test("graph shows outcome detail, retry paths, pinnable items and measured layouts", async ({
     page,
 }, testInfo) => {
