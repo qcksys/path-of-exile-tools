@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { type ItemCondition, modifierIdentitySchema } from "@poe-tools/item-query";
+import type { ItemCondition } from "@poe-tools/item-query";
 import {
     type MarketCohort,
     marketCohortManifestSchema,
@@ -14,7 +14,7 @@ import { craftingCatalogSchema } from "../app/schemas/crafting";
 import { craftingPresetCohorts } from "./crafting-preset-cohorts";
 import { writeCapturePolicy } from "./generate-capture-policy";
 import { marketBaseIdentities } from "./market-base-identities";
-import { marketModifierTextModel } from "./market-modifier-text";
+import { marketModifierIdentities, marketModifierTextModel } from "./market-modifier-text";
 
 const bytes = await readFile("public/game-data/crafting-poe1.json");
 const catalogHash = createHash("sha256").update(bytes).digest("hex");
@@ -281,19 +281,6 @@ for (const [itemClass, id] of donorMods) {
     }
 }
 cohorts.push(...presetCohorts);
-const modifierIdentities = Object.entries(catalog.mods).flatMap(([id, mod]) =>
-    mod.name && (mod.generation_type === "prefix" || mod.generation_type === "suffix")
-        ? [
-              modifierIdentitySchema.parse({
-                  id,
-                  name: mod.name,
-                  side: mod.generation_type,
-                  level: mod.required_level,
-                  text: mod.text ?? null,
-              }),
-          ]
-        : [],
-);
 const modifierTextModel = marketModifierTextModel(
     engine,
     new Set(
@@ -306,6 +293,7 @@ const modifierTextModel = marketModifierTextModel(
         ),
     ),
 );
+const modifierIdentities = marketModifierIdentities(engine, modifierTextModel);
 for (const cohort of [...cohorts]) {
     if (!["isolated-modifier", "transfer-donor"].includes(cohort.purpose)) continue;
     for (const family of modifierTextModel.identityFamilies ?? []) {

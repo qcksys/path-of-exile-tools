@@ -71,7 +71,10 @@ it.each(
         expect(target.node.alternatives[1]).toEqual({
             kind: "production",
             id: "make-scour",
-            name: "Scour a Magic Shaper base",
+            name:
+                source.id === "titanium"
+                    ? "Scour a Shaper Titanium base"
+                    : "Scour a Magic Shaper base",
             nodeId: `shield-make-${source.id}-scour`,
         });
     }

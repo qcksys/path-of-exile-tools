@@ -58,7 +58,7 @@ omit preparation costs or change the available modifier pool. Such cohorts
 remain market evidence for a manual assumption, not a complete purchase price.
 The same validation applies to binding and refreshing existing prices.
 
-The cohort generator derives 47 purchase-specific definitions from all 56 purchase
+The cohort generator derives 53 purchase-specific definitions from all 62 purchase
 alternatives in the ten configured presets. These preserve canonical base identity,
 level, rarity, influences and explicit modifier counts/identities. Capture retains
 their bases, including influenced donors. Fifteen Magic alternatives are available
@@ -73,17 +73,17 @@ natural Magic donors. Each acquires its exact Normal base, uses Transmutation an
 Alterations to roll the target, and uses Annulment to remove an opposite affix.
 Losing the target returns to Alterations on the same item. Base purchases and
 every currency attempt are charged separately; their prices start unknown.
-The fourteen new base acquisitions share six exact definitions. The paired ES
-recovery donor, NNN donors, Janus, Grasping Mail and boots receive no new rolling
-route. Older revisions and saved graphs retain their existing recipes.
+The fourteen base acquisitions share six exact definitions. Additional explicit
+preparations cover the paired ES recovery donor, supported NNN donors and influenced
+boots. Five concrete shield sources offer paid Scouring into the existing Normal
+base acquisitions. Janus and the drop-only Grasping Mail modifier still require
+their exact prepared purchases. Older revisions and saved graphs retain their existing recipes.
 
-Fixtures with optional modifier identity metadata can populate 50 of the 56
-alternatives (24 original, 12 Magic, 14 preparation bases); fixtures using documented
-descriptions, flags and required-influence constraints populate 44 (19 original,
-11 Magic, 14 preparation bases) at
-their configured rolls. Overlapping displayed modifier identities remain unknown.
-Some different rolls can resolve uniquely, so these counts measure the fixtures,
-not guaranteed live coverage. A definition does not
+Capture fixtures exercise both optional modifier identity metadata and documented
+descriptions, flags and required-influence constraints. Metadata identities share
+the text model's equipment domains, so unrelated item domains cannot create false
+name collisions. Overlapping displayed equipment identities and unsupported text
+remain unknown. Fixture coverage does not guarantee live coverage. A definition does not
 imply available stock or a captured price. Regenerate and restart the equipment
 worker after changing cohort queries so new definitions and observations reach
 the database. Display-name-only changes can continue using compatible retained

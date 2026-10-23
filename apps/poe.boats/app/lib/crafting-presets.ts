@@ -932,9 +932,43 @@ export function projectFromPreset(
                         : "natural",
                 ),
             );
+            if (source.id === "titanium") {
+                const acquisition = nodes.find((node) => node.id === input);
+                if (
+                    acquisition?.kind !== "acquire" ||
+                    acquisition.alternatives[0]?.kind !== "purchase"
+                )
+                    throw new Error("Titanium preparation must have a Magic base purchase.");
+                acquisition.alternatives.push(
+                    {
+                        kind: "purchase",
+                        id: "buy-rare-block",
+                        name: "Buy Rare Shaper Titanium Spirit Shield with only T1 block",
+                        item: { ...acquisition.alternatives[0].item, rarity: "rare" },
+                        price: null,
+                    },
+                    {
+                        kind: "purchase",
+                        id: "buy-magic-life-recovery",
+                        name: "Buy Magic Shaper Titanium Spirit Shield with ES/Mana and life recovery",
+                        item: engine.addStartingMod(
+                            engine.addStartingMod(
+                                { ...first.item, rarity: "magic" },
+                                "LocalBaseEnergyShieldAndMana3",
+                                random,
+                                "natural",
+                            ),
+                            "RecoverLifePercentOnBlockUber1_",
+                            random,
+                            "influence",
+                        ),
+                        price: null,
+                    },
+                );
+            }
             const scour = craft(
                 `shield-make-${source.id}-scour`,
-                `Scour the Magic Shaper ${engine.base(first.item).name}`,
+                `Scour the ${source.id === "titanium" ? "" : "Magic "}Shaper ${engine.base(first.item).name}`,
                 [input],
                 currency("convert_to_normal"),
                 first.node.output,
@@ -943,7 +977,10 @@ export function projectFromPreset(
                 node.alternatives.push({
                     kind: "production",
                     id: "make-scour",
-                    name: "Scour a Magic Shaper base",
+                    name:
+                        source.id === "titanium"
+                            ? "Scour a Shaper Titanium base"
+                            : "Scour a Magic Shaper base",
                     nodeId: scour.id,
                 });
         }
