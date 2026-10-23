@@ -34,8 +34,11 @@ export const vendorUpgradePathSchema = z.strictObject({
                 inputName: z.string().min(1).max(100),
                 outputId: z.string().min(1).max(500),
                 outputName: z.string().min(1).max(100),
-                inputQuantity: z.literal(3),
+                inputQuantity: z.number().int().positive().max(729),
                 outputQuantity: z.literal(1),
+                method: z.literal("purchase").optional(),
+                instructions: z.string().min(1).max(500).optional(),
+                sourceUrl: z.url().startsWith("https://").max(1000).optional(),
             }),
         )
         .min(1)

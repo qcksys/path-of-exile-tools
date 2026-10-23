@@ -41,6 +41,9 @@ import {
 } from "../../crafting-market-fixtures";
 import { nnnGraph, rage } from "../../crafting-nnn-fixtures";
 import {
+    vendorCurrencyInputId,
+    vendorCurrencyOutputId,
+    vendorCurrencyQuote,
     vendorHour,
     vendorInputId,
     vendorOutputId,
@@ -803,6 +806,111 @@ for (const converted of [false, true]) {
         await expect(price).toHaveValue("7");
     });
 }
+
+test("currency-only graph exposes an explicit NPC purchase and preserves its instructions through refresh", async ({
+    page,
+}) => {
+    const graph = exchangeGraph();
+    const transmute = graph.nodes.find((node) => node.kind === "craft")!;
+    graph.nodes.push({
+        ...transmute,
+        id: "augment",
+        name: "Augment magic base",
+        method: { kind: "currency", id: vendorCurrencyOutputId },
+        inputs: [{ id: "item", name: "Magic base", source: transmute.id }],
+    });
+    graph.entry = "augment";
+    graph.prices[vendorCurrencyOutputId] = {
+        amount: 123,
+        currency: "chaos",
+        source: "manual",
+        confidence: null,
+    };
+    let hour = vendorHour;
+    const currentQuote = () => ({
+        ...vendorCurrencyQuote,
+        ingredient: { ...vendorCurrencyQuote.ingredient, hour },
+    });
+    await page.route("**/api/v1/crafting/market/exchange", (route) =>
+        route.fulfill({
+            json: {
+                quotes: {},
+                missing: { [vendorCurrencyOutputId]: "No positive direct Augmentation quote" },
+            },
+        }),
+    );
+    await page.route("**/api/v1/crafting/market/sources", (route) => {
+        const request = route.request().postDataJSON();
+        expect(request.ids).toEqual([vendorCurrencyOutputId]);
+        expect(request.vendorUpgrade).toEqual({ inputId: vendorCurrencyInputId });
+        return route.fulfill({
+            json: { quotes: { [vendorCurrencyOutputId]: currentQuote() }, missing: {} },
+        });
+    });
+    await page.route("**/api/v1/crafting/market/refresh", (route) => {
+        const current = craftingGraphSchema.parse(route.request().postDataJSON().graph);
+        expect(liveSourcePrices(current)[0]?.reference).toMatchObject({
+            source: "vendor-upgrade",
+            path: vendorCurrencyQuote.path,
+        });
+        return route.fulfill({
+            json: {
+                graph: bindCraftingSourcePrice(
+                    current,
+                    engine,
+                    vendorCurrencyOutputId,
+                    currentQuote(),
+                ),
+                issues: [],
+            },
+        });
+    });
+    await importGraph(page, graph);
+    await openGraphSettings(page);
+    const prices = page
+        .locator("details")
+        .filter({ has: page.locator("summary", { hasText: /^Prices & calculation$/ }) });
+    const price = prices.getByLabel(/^Orb of Augmentation \(chaos\)/);
+    await expect(price).toHaveValue("123");
+    await prices.getByText("Currency & essence exchange prices", { exact: true }).click();
+    await prices.getByRole("button", { name: "Find exchange prices", exact: true }).click();
+    await expect(
+        prices.getByRole("region", { name: "Exchange price for Orb of Augmentation" }),
+    ).toContainText("No positive direct Augmentation quote");
+    await prices.getByText("Vendor ingredient estimates", { exact: true }).click();
+    await prices.getByText("Vendor-upgrade ingredient estimates", { exact: true }).click();
+    const vendor = prices.getByRole("region", {
+        name: "Vendor-upgrade price for Orb of Augmentation",
+    });
+    const instructions = vendorCurrencyQuote.path.steps[0]!.instructions!;
+    await expect(vendor.getByText(instructions, { exact: true })).toBeVisible();
+    await expect(vendor.getByRole("checkbox")).not.toBeChecked();
+    await vendor.getByRole("button", { name: "Find vendor-upgrade estimate", exact: true }).click();
+    await expect(vendor).toContainText("4 × Orb of Transmutation");
+    await expect(vendor).toContainText("3150 ingredient units traded");
+    await expect(vendor.getByText(instructions, { exact: true })).toHaveCount(2);
+    await expect(vendor.getByRole("link", { name: "Recipe", exact: true })).toHaveAttribute(
+        "href",
+        vendorCurrencyQuote.path.steps[0]!.sourceUrl!,
+    );
+    await expect(price).toHaveValue("123");
+    await vendor.getByRole("button", { name: "Use vendor-upgrade estimate", exact: true }).click();
+    await expect(price).toHaveValue(String(vendorCurrencyQuote.amount));
+    expect(liveSourcePrices((await stored(page)).projects[0]!.graph)[0]?.reference).toMatchObject({
+        source: "vendor-upgrade",
+        path: vendorCurrencyQuote.path,
+    });
+    hour += 3600;
+    await page.reload();
+    await openGraphSettings(page);
+    await expect
+        .poll(
+            async () =>
+                (await stored(page)).projects[0]!.graph.prices[vendorCurrencyOutputId]?.observedAt,
+        )
+        .toBe(new Date(hour * 1000).toISOString());
+    await expect(price).toHaveValue(String(vendorCurrencyQuote.amount));
+});
 
 test("explicit vendor upgrade preserves manual prices and refreshes the fixed ingredient path on reopening", async ({
     page,

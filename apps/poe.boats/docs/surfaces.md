@@ -164,6 +164,14 @@ lookup, binding, refresh and snapshots preserve the original asking range and ex
 the UI requires explicit selection and labels the conversion. Native quotes take precedence.
 Query, MySQL, HTTP/MCP and browser regressions cover conversion and refusal of older rates.
 
+The same source lookup, binding and refresh operations support explicitly selected vendor
+ingredient estimates: verified forward essence upgrades and one-step NPC currency purchases.
+Currency purchases retain their exact quantities and Purchase Items instructions, including
+four Transmutations for one Augmentation at Nessa. They require a positive captured ingredient
+quote and never replace an unavailable direct quote automatically. The graph and workbench
+pickers expose the recipe, observed hour and traded volumes before explicit application.
+Saved ingredient choices survive refresh; forged paths, quantities and provenance are refused.
+
 ## Adding a capability or Hono subrouter
 
 The idol planner's non-drag placement controls use the existing placement, movement and removal

@@ -197,3 +197,12 @@ keeps the saved amount with an explicit issue, while an unavailable historical
 point remains unknown. Direct essence asking prices remain separately selectable.
 Manual amounts change only on explicit selection; the standalone workbench copies
 the chosen estimate as a fixed numeric amount using its existing semantics.
+
+The same explicit ingredient estimate also supports one-step PoE 1 NPC currency
+purchases from the curated vendor catalog. For example, [Nessa sells one Orb of
+Augmentation for four Orbs of Transmutation](https://poedb.tw/us/Orb_of_Transmutation).
+The picker and saved reference retain the Purchase Items instructions and recipe
+source; selling those ingredients has a different result. Currency purchase paths
+never chain multiple recipes or include sell-window downgrade recipes. A missing
+or zero-volume direct Augmentation quote remains unavailable until the user
+explicitly selects the separate estimate from a positive Transmutation quote.
