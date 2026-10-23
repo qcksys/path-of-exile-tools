@@ -587,15 +587,114 @@ it("retains other revisions and rolls back a failed page without exposing partia
     ).toEqual(oldDirtyTimes);
 });
 
-it("prioritizes the newest pending completed hour before older archives", async () => {
+it("prioritizes the oldest eligible completed hour before newer archives", async () => {
     await archive(HOUR + 1);
     await archive(HOUR + 3601);
+    expect(await project()).toMatchObject({
+        pages: 1,
+        completedHours: [HOUR],
+        pending: true,
+    });
+    expect(await project()).toMatchObject({
+        pages: 1,
+        completedHours: [HOUR + 3600],
+        pending: false,
+    });
+});
+
+it("finishes an already-started newer hour before selecting an older eligible hour", async () => {
+    await archive(HOUR + 3601);
+    await archive(HOUR + 3602, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
+    expect(await project()).toMatchObject({ pages: 1, completedHours: [], pending: true });
+    expect(await equipmentHourly(local.conn, HOUR + 3600, "Standard")).toEqual([]);
+
+    await archive(HOUR + 1);
     expect(await project()).toMatchObject({
         pages: 1,
         completedHours: [HOUR + 3600],
         pending: true,
     });
+    expect(await equipmentHourly(local.conn, HOUR + 3600, "Standard")).toMatchObject([
+        { listingCount: 1, prices: { chaos: { median: 25 } } },
+    ]);
+    expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([]);
     expect(await project()).toMatchObject({ pages: 1, completedHours: [HOUR], pending: false });
+});
+
+it("publishes the oldest eligible hour before a later cutoff moves the expiry boundary", async () => {
+    const cutoff = HOUR + 2 * 3600;
+    const oldestHour = cutoff - 24 * 3600;
+    await archive(oldestHour - 1);
+    await archive(oldestHour + 1);
+    await archive(oldestHour + 2, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
+    await archive(HOUR + 1);
+
+    expect(await project(2)).toMatchObject({
+        pages: 2,
+        completedHours: [oldestHour],
+        pending: true,
+    });
+    const published = await equipmentHourly(local.conn, oldestHour, "Standard");
+    expect(published).toMatchObject([
+        { hour: oldestHour, listingCount: 1, prices: { chaos: { median: 25 } } },
+    ]);
+    expect(Date.parse(`${published[0]!.lastSeenAt}Z`)).toBe((oldestHour + 2) * 1000);
+    expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([]);
+
+    expect(
+        await reclassifyArchivedEquipment(local.conn, {
+            realm: "pc",
+            league: "Standard",
+            classifier,
+            completedBefore: cutoff + 3600,
+            limitPages: 2,
+        }),
+    ).toMatchObject({ pages: 1, completedHours: [HOUR], pending: false });
+    expect(await equipmentHourly(local.conn, oldestHour, "Standard")).toEqual(published);
+    expect(await equipmentHourly(local.conn, oldestHour - 3600, "Standard")).toEqual([]);
+});
+
+it("expires an unfinished hour before resuming newer eligible work", async () => {
+    const cutoff = HOUR + 2 * 3600;
+    const oldestHour = cutoff - 24 * 3600;
+    await archive(oldestHour + 1);
+    await archive(oldestHour + 2);
+    await archive(HOUR + 1);
+    expect(await project()).toMatchObject({ pages: 1, completedHours: [], pending: true });
+    expect(
+        await queryAll(
+            local.conn,
+            "SELECT hour::DOUBLE AS hour, completed FROM ps_equipment_reclassify",
+        ),
+    ).toEqual([{ hour: oldestHour, completed: false }]);
+    expect(
+        await queryAll(
+            local.conn,
+            "SELECT observed_hour::DOUBLE AS hour FROM ps_equipment_reclassify_hour",
+        ),
+    ).toEqual([{ hour: oldestHour }]);
+    expect(await equipmentHourly(local.conn, oldestHour, "Standard")).toEqual([]);
+
+    expect(
+        await reclassifyArchivedEquipment(local.conn, {
+            realm: "pc",
+            league: "Standard",
+            classifier,
+            completedBefore: cutoff + 3600,
+            limitPages: 1,
+        }),
+    ).toMatchObject({ pages: 1, completedHours: [HOUR], pending: false });
+    expect(
+        await queryAll(
+            local.conn,
+            "SELECT hour::DOUBLE AS hour, completed FROM ps_equipment_reclassify",
+        ),
+    ).toEqual([{ hour: HOUR, completed: true }]);
+    expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour")).toEqual([]);
+    expect(await equipmentHourly(local.conn, oldestHour, "Standard")).toEqual([]);
+    expect(await equipmentHourly(local.conn, HOUR, "Standard")).toMatchObject([
+        { hour: HOUR, listingCount: 1, prices: { chaos: { median: 10 } } },
+    ]);
 });
 
 it("reclaims abandoned old-revision staging while preserving published history and completed progress", async () => {
