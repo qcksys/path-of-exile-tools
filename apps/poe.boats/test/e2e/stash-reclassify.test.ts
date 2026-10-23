@@ -587,71 +587,62 @@ it("retains other revisions and rolls back a failed page without exposing partia
     ).toEqual(oldDirtyTimes);
 });
 
-it("prioritizes the oldest eligible completed hour before newer archives", async () => {
+it("prioritizes the newest pending completed hour before older archives", async () => {
     await archive(HOUR + 1);
     await archive(HOUR + 3601);
     expect(await project()).toMatchObject({
         pages: 1,
-        completedHours: [HOUR],
+        completedHours: [HOUR + 3600],
         pending: true,
     });
     expect(await project()).toMatchObject({
         pages: 1,
-        completedHours: [HOUR + 3600],
+        completedHours: [HOUR],
         pending: false,
     });
 });
 
-it("finishes an already-started newer hour before selecting an older eligible hour", async () => {
-    await archive(HOUR + 3601);
-    await archive(HOUR + 3602, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
-    expect(await project()).toMatchObject({ pages: 1, completedHours: [], pending: true });
-    expect(await equipmentHourly(local.conn, HOUR + 3600, "Standard")).toEqual([]);
-
+it("publishes a newer hour before refusing a missing body in an unfinished older hour", async () => {
     await archive(HOUR + 1);
+    await archive(HOUR + 2);
+    await setCursor(local.conn, "psapi", "live-cursor");
+    expect(await project()).toMatchObject({ pages: 1, completedHours: [], pending: true });
+    const [missing] = await queryAll<{ hash: string }>(
+        local.conn,
+        "SELECT response_hash AS hash FROM ps_capture_page WHERE captured_at = $1",
+        [(HOUR + 2) * 1000],
+    );
+    await local.conn.run("DELETE FROM ps_capture_payload_chunk WHERE response_hash = $1", [
+        missing!.hash,
+    ]);
+    await local.conn.run("DELETE FROM ps_capture_payload_meta WHERE response_hash = $1", [
+        missing!.hash,
+    ]);
+
+    await archive(HOUR + 3601, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
     expect(await project()).toMatchObject({
         pages: 1,
         completedHours: [HOUR + 3600],
         pending: true,
     });
-    expect(await equipmentHourly(local.conn, HOUR + 3600, "Standard")).toMatchObject([
-        { listingCount: 1, prices: { chaos: { median: 25 } } },
-    ]);
+    const published = await equipmentHourly(local.conn, HOUR + 3600, "Standard");
+    expect(published).toMatchObject([{ listingCount: 1, prices: { chaos: { median: 25 } } }]);
     expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([]);
-    expect(await project()).toMatchObject({ pages: 1, completedHours: [HOUR], pending: false });
-});
-
-it("publishes the oldest eligible hour before a later cutoff moves the expiry boundary", async () => {
-    const cutoff = HOUR + 2 * 3600;
-    const oldestHour = cutoff - 24 * 3600;
-    await archive(oldestHour - 1);
-    await archive(oldestHour + 1);
-    await archive(oldestHour + 2, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
-    await archive(HOUR + 1);
-
-    expect(await project(2)).toMatchObject({
-        pages: 2,
-        completedHours: [oldestHour],
-        pending: true,
-    });
-    const published = await equipmentHourly(local.conn, oldestHour, "Standard");
-    expect(published).toMatchObject([
-        { hour: oldestHour, listingCount: 1, prices: { chaos: { median: 25 } } },
-    ]);
-    expect(Date.parse(`${published[0]!.lastSeenAt}Z`)).toBe((oldestHour + 2) * 1000);
-    expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([]);
-
+    const progress = await queryAll(
+        local.conn,
+        "SELECT * FROM ps_equipment_reclassify ORDER BY hour",
+    );
+    const staging = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour");
+    await expect(project()).rejects.toThrow("The archived payload is missing.");
     expect(
-        await reclassifyArchivedEquipment(local.conn, {
-            realm: "pc",
-            league: "Standard",
-            classifier,
-            completedBefore: cutoff + 3600,
-            limitPages: 2,
-        }),
-    ).toMatchObject({ pages: 1, completedHours: [HOUR], pending: false });
-    expect(await equipmentHourly(local.conn, oldestHour, "Standard")).toEqual(published);
-    expect(await equipmentHourly(local.conn, oldestHour - 3600, "Standard")).toEqual([]);
+        await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify ORDER BY hour"),
+    ).toEqual(progress);
+    expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour")).toEqual(
+        staging,
+    );
+    expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([]);
+    expect(await equipmentHourly(local.conn, HOUR + 3600, "Standard")).toEqual(published);
+    expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
 });
 
 it("expires an unfinished hour before resuming newer eligible work", async () => {
@@ -659,7 +650,6 @@ it("expires an unfinished hour before resuming newer eligible work", async () =>
     const oldestHour = cutoff - 24 * 3600;
     await archive(oldestHour + 1);
     await archive(oldestHour + 2);
-    await archive(HOUR + 1);
     expect(await project()).toMatchObject({ pages: 1, completedHours: [], pending: true });
     expect(
         await queryAll(
@@ -675,6 +665,7 @@ it("expires an unfinished hour before resuming newer eligible work", async () =>
     ).toEqual([{ hour: oldestHour }]);
     expect(await equipmentHourly(local.conn, oldestHour, "Standard")).toEqual([]);
 
+    await archive(HOUR + 1);
     expect(
         await reclassifyArchivedEquipment(local.conn, {
             realm: "pc",

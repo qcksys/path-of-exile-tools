@@ -63,8 +63,7 @@ export async function reclassifyArchivedEquipment(
                 GROUP BY hour HAVING bool_or(equipment_revision IS DISTINCT FROM $5)
             ) SELECT h.hour FROM hours h LEFT JOIN ps_equipment_reclassify s
                 ON s.revision = $5 AND s.league = $2 AND s.hour = h.hour
-            WHERE NOT coalesce(s.completed, FALSE)
-            ORDER BY s.hour IS NULL, h.hour ASC LIMIT 1`,
+            WHERE NOT coalesce(s.completed, FALSE) ORDER BY h.hour DESC LIMIT 1`,
             [
                 opts.realm,
                 opts.league,
