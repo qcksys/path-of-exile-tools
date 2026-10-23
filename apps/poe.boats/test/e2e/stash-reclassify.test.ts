@@ -165,7 +165,7 @@ it("replays a verified archived body hidden from its index without changing the 
         ]);
         expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
         expect(warning).toHaveBeenCalledExactlyOnceWith(
-            "Archived payload found by sequential fallback after an index miss.",
+            "Archived payload found by sequential fallback.",
         );
     } finally {
         indexedRead.mockRestore();
@@ -175,6 +175,7 @@ it("replays a verified archived body hidden from its index without changing the 
 
 it.each([
     "missing",
+    "wrong-key-index",
     "wrong-hash",
 ] as const)("does not advance staged progress or publish prices when the next archived body is %s", async (failure) => {
     await archive(HOUR + 1);
@@ -188,7 +189,7 @@ it.each([
         local.conn,
         "SELECT response_hash AS hash FROM ps_capture_page ORDER BY captured_at",
     );
-    if (failure === "missing") {
+    if (failure !== "wrong-hash") {
         await local.conn.run("DELETE FROM ps_capture_payload WHERE response_hash=$1", [
             pages[1]!.hash,
         ]);
@@ -202,9 +203,18 @@ it.each([
     }
     const classify = vi.spyOn(classifier, "classify");
     const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const read = local.conn.runAndReadAll.bind(local.conn);
+    const indexedRead = vi
+        .spyOn(local.conn, "runAndReadAll")
+        .mockImplementation((sql, ...args) =>
+            failure === "wrong-key-index" &&
+            sql.includes("FROM ps_capture_payload WHERE response_hash = $1")
+                ? read(sql, [pages[0]!.hash])
+                : read(sql, ...args),
+        );
     try {
         await expect(project()).rejects.toThrow(
-            failure === "missing"
+            failure !== "wrong-hash"
                 ? "The archived payload is missing."
                 : "The archived payload does not match its recorded hash.",
         );
@@ -220,6 +230,7 @@ it.each([
         expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_cohort_hour")).toEqual([]);
         expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
     } finally {
+        indexedRead.mockRestore();
         classify.mockRestore();
         warning.mockRestore();
     }

@@ -194,7 +194,7 @@ it("deduplicates an intact payload hidden from the indexed lookup without loggin
             ),
         ).toEqual(originalBodies);
         expect(warning).toHaveBeenCalledExactlyOnceWith(
-            "Archived payload found by sequential fallback after an index miss.",
+            "Archived payload found by sequential fallback.",
         );
         await archivePage(db.conn, page, { ...scope, capturedAt: 3000 }, () => true);
         expect(warning).toHaveBeenCalledTimes(1);
