@@ -77,6 +77,11 @@ the definitions; the cache is bounded and does not survive a restart.
 After the cohort manifest revision changes, the same worker also reclassifies its archived
 observations from the last 24 completed hours after exchange capture, newest hour first.
 Each cycle reclassifies up to its live page limit, capped at five archived pages.
+Before replay, the PoE 1 pipeline checkpoints committed capture and exchange writes
+to release loaded DuckDB indexes before publication loads its own indexes. This
+also runs after ordinary capture failures because earlier pages may have committed.
+A checkpoint failure skips replay for that cycle while pending deliveries still run;
+a failed transaction rollback stops before checkpointing. PoE 2 skips this boundary.
 Each hour is staged privately and published only when all its archived pages are processed.
 Original capture times are retained; this does not make old listings current or fetch
 uncaptured history. Live listings, removals and source cursors are not replaced. Progress

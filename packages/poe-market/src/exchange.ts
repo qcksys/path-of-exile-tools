@@ -77,13 +77,34 @@ export function convertExchangeQuote(
     });
 }
 
-const accountingCurrencies: Record<string, string> = {
+const listingCurrencies = {
     chaos: "Metadata/Items/Currency/CurrencyRerollRare",
     divine: "Metadata/Items/Currency/CurrencyModValues",
     exalted: "Metadata/Items/Currency/CurrencyAddModToRare",
-};
+    mirror: "Metadata/Items/Currency/CurrencyDuplicate",
+    blessed: "Metadata/Items/Currency/CurrencyRerollImplicit",
+    chrome: "Metadata/Items/Currency/CurrencyRerollSocketColours",
+    gcp: "Metadata/Items/Currency/CurrencyGemQuality",
+    jewellers: "Metadata/Items/Currency/CurrencyRerollSocketNumbers",
+    scour: "Metadata/Items/Currency/CurrencyConvertToNormal",
+    regret: "Metadata/Items/Currency/CurrencyPassiveRefund",
+    fusing: "Metadata/Items/Currency/CurrencyRerollSocketLinks",
+    chance: "Metadata/Items/Currency/CurrencyUpgradeRandomly",
+    alt: "Metadata/Items/Currency/CurrencyRerollMagic",
+    alch: "Metadata/Items/Currency/CurrencyUpgradeToRare",
+    regal: "Metadata/Items/Currency/CurrencyUpgradeMagicToRare",
+    vaal: "Metadata/Items/Currency/CurrencyCorrupt",
+} as const;
+export const exchangeListingCurrencySchema = z.enum(
+    Object.keys(listingCurrencies) as (keyof typeof listingCurrencies)[],
+);
 export function exchangeCurrencyId(currency: string) {
-    return accountingCurrencies[currency] ?? (itemId.safeParse(currency).success ? currency : null);
+    const listing = exchangeListingCurrencySchema.safeParse(currency);
+    return listing.success
+        ? listingCurrencies[listing.data]
+        : itemId.safeParse(currency).success
+          ? currency
+          : null;
 }
 export function exchangeRealmMatchesGame(
     realm: ExchangePriceReference["realm"],

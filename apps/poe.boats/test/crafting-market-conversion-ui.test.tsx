@@ -10,24 +10,27 @@ afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
 });
-it("requires conversion consent, shows its sources, keeps history in the original currency and invalidates results", async () => {
+it.each([
+    "divine",
+    "chrome",
+])("requires conversion consent for %s, shows its sources, keeps history in the original currency and invalidates results", async (currency) => {
     const candidate = {
         ...marketCandidate,
         latest: {
             ...marketCandidate.latest,
-            prices: { divine: marketCandidate.latest.prices.chaos },
+            prices: { [currency]: marketCandidate.latest.prices.chaos },
         },
         conversion: "exchange-v1",
         exchange: {
-            currency: "divine",
+            currency,
             quote: {
                 realm: "pc",
                 league: "Standard",
-                itemId: exchangeCurrencyId("divine"),
+                itemId: exchangeCurrencyId(currency),
                 quoteId: exchangeCurrencyId("chaos"),
                 amount: 100,
                 hour: marketCandidate.latest.hour,
-                marketId: `${exchangeCurrencyId("divine")}|${exchangeCurrencyId("chaos")}`,
+                marketId: `${exchangeCurrencyId(currency)}|${exchangeCurrencyId("chaos")}`,
                 low: null,
                 high: null,
                 itemVolume: 10,
@@ -73,12 +76,14 @@ it("requires conversion consent, shows its sources, keeps history in the origina
     const bind = await screen.findByRole("button", { name: "Use live median" });
     expect(JSON.parse(fetcher.mock.calls[0]![1].body).conversion).toBe("exchange-v1");
     expect(screen.getByText(/2000 chaos median/)).toBeTruthy();
-    expect(screen.getByText(/Converted from 20 divine at 100 chaos per divine/)).toBeTruthy();
+    expect(
+        screen.getByText(new RegExp(`Converted from 20 ${currency} at 100 chaos per ${currency}`)),
+    ).toBeTruthy();
     expect(select).not.toHaveBeenCalled();
     fireEvent.click(bind);
     expect(select).toHaveBeenCalledWith(candidate);
     fireEvent.click(screen.getByRole("button", { name: "View price history" }));
-    expect(await screen.findByRole("columnheader", { name: "Median (divine)" })).toBeTruthy();
+    expect(await screen.findByRole("columnheader", { name: `Median (${currency})` })).toBeTruthy();
     fireEvent.click(consent);
     await waitFor(() =>
         expect(screen.queryByRole("button", { name: "Use live median" })).toBeNull(),

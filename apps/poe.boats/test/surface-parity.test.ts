@@ -164,6 +164,7 @@ const cohortPolicies = [
     "adaptive-v1",
     "display-equivalent-v1",
     "exchange-v1",
+    "chrome",
     "canonical-base",
 ] as const;
 
@@ -174,21 +175,22 @@ function cohortPricingFixture(policy: (typeof cohortPolicies)[number]) {
         family?.candidate ?? (window ? adaptiveMarketCandidate() : marketCandidate),
     );
     if (family) candidate.assumption = "display-equivalent-v1";
-    if (policy === "exchange-v1") {
-        const divine = exchangeCurrencyId("divine")!;
+    if (policy === "exchange-v1" || policy === "chrome") {
+        const currency = policy === "chrome" ? "chrome" : "divine";
+        const itemId = exchangeCurrencyId(currency)!;
         const chaos = exchangeCurrencyId("chaos")!;
-        candidate.latest.prices = { divine: candidate.latest.prices.chaos! };
-        candidate.conversion = policy;
+        candidate.latest.prices = { [currency]: candidate.latest.prices.chaos! };
+        candidate.conversion = "exchange-v1";
         candidate.exchange = {
-            currency: "divine",
+            currency,
             quote: quoteExchangeSnapshot(
                 {
                     ...exchangeSnapshot,
                     hour: candidate.latest.hour,
-                    marketId: `${divine}|${chaos}`,
-                    volumeTraded: { [divine]: 10, [chaos]: 1000 },
+                    marketId: `${itemId}|${chaos}`,
+                    volumeTraded: { [itemId]: 10, [chaos]: 1000 },
                 },
-                divine,
+                itemId,
                 chaos,
             )!,
         };
@@ -1295,11 +1297,11 @@ describe("transport parity", () => {
             .mockResolvedValue(lookup);
         vi.spyOn(craftingMarketQueries, "craftingMarketHistory").mockResolvedValue(history);
         const bound = bindCohortPurchasePrice(graph, fixtureEngine, "base", "buy", candidate);
-        if (policy === "exchange-v1") {
+        if (policy === "exchange-v1" || policy === "chrome") {
             const binding = livePurchasePrices(bound)[0]!;
             expect(binding.alternative.price).toMatchObject({ amount: 2000, confidence: null });
             expect(binding.reference).toMatchObject({
-                conversion: policy,
+                conversion: "exchange-v1",
                 exchange: candidate.exchange,
             });
         }
@@ -1375,7 +1377,9 @@ describe("transport parity", () => {
                 "scope",
                 "starting-state",
                 ...(policy === undefined ? ["ambiguous-base"] : []),
-                ...(policy === "exchange-v1" ? ["consent", "hour"] : []),
+                ...(policy === "exchange-v1" || policy === "chrome"
+                    ? ["consent", "hour", "currency"]
+                    : []),
             ].map((failure) => ({
                 policy,
                 failure,
@@ -1405,6 +1409,8 @@ describe("transport parity", () => {
                 86,
             );
         } else if (failure === "consent") delete candidate.conversion;
+        else if (failure === "currency")
+            Object.assign(candidate.exchange!, { currency: "unsupported-token" });
         else candidate.exchange!.quote.hour! -= 3600;
         const input = { graph, nodeId: "base", alternativeId: "buy", candidate };
         const response = await api.request(

@@ -2,6 +2,7 @@ import {
     cohortHourlySchema,
     cohortPriceCoverage,
     exchangeCurrencyId,
+    exchangeListingCurrencySchema,
     isDisplayEquivalentCohort,
     marketCohortDefinitionSchema,
     marketObservationRange,
@@ -276,6 +277,16 @@ export async function findCraftingMarketPrices(
         }
         const candidates = ranked.slice(0, 2000);
         fxStarted = performance.now();
+        const currencyIdsByHour = new Map<number, Set<string>>();
+        if (input.conversion) {
+            for (const candidate of candidates) {
+                if (!candidate.covered || candidate.latest.prices[input.currency]) continue;
+                const ids = currencyIdsByHour.get(candidate.latest.hour) ?? new Set<string>();
+                for (const currency of exchangeListingCurrencySchema.options)
+                    if (candidate.latest.prices[currency]) ids.add(exchangeCurrencyId(currency)!);
+                if (ids.size) currencyIdsByHour.set(candidate.latest.hour, ids);
+            }
+        }
         const exchangeByHour = new Map<
             number,
             Awaited<ReturnType<typeof findCraftingExchangePrices>>
@@ -283,7 +294,8 @@ export async function findCraftingMarketPrices(
         const priced: CraftingMarketCandidate[] = [];
         for (const candidate of candidates) {
             const next: CraftingMarketCandidate = candidate;
-            if (next.covered && !next.latest.prices[input.currency] && input.conversion) {
+            const currencyIds = currencyIdsByHour.get(next.latest.hour);
+            if (next.covered && !next.latest.prices[input.currency] && currencyIds) {
                 let exchange = exchangeByHour.get(next.latest.hour);
                 if (!exchange) {
                     exchange = await findCraftingExchangePrices(
@@ -293,9 +305,7 @@ export async function findCraftingMarketPrices(
                             realm: input.realm,
                             league: input.league,
                             currency: input.currency,
-                            itemIds: ["chaos", "divine", "exalted"].map(
-                                (currency) => exchangeCurrencyId(currency)!,
-                            ),
+                            itemIds: [...currencyIds],
                             conversion: "reference-currency-v1",
                             at: next.latest.hour,
                         },
@@ -307,7 +317,7 @@ export async function findCraftingMarketPrices(
                     );
                     exchangeByHour.set(next.latest.hour, exchange);
                 }
-                for (const currency of ["chaos", "divine", "exalted"] as const) {
+                for (const currency of exchangeListingCurrencySchema.options) {
                     const quote = exchange.quotes[exchangeCurrencyId(currency)!];
                     if (!next.latest.prices[currency] || !quote) continue;
                     next.exchange = { currency, quote };
