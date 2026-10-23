@@ -57,7 +57,7 @@ beforeEach(() => {
     db = drizzle(async (sql, params) => {
         if (beforeRead) await beforeRead();
         elapsed += 25;
-        const statement = sqlite.prepare(sql.replace(" FORCE INDEX (`PRIMARY`)", ""));
+        const statement = sqlite.prepare(sql);
         statement.setReturnArrays(true);
         return {
             rows: statement
