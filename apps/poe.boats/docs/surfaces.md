@@ -71,6 +71,13 @@ base, roll and isolate Onslaught, then Regal for Elusive. Misses pay for Scourin
 again on the same influenced base. Both purchase options remain pinned until explicitly changed;
 earlier preset revisions retain their existing routes. Sharing the ordinary source adds no cohort.
 
+The r9 global-defence chest also offers paid Annulment isolation from three exact
+Grasping Mail source states at item levels 84 and 85. Each has its own purchase
+cohort and price; the original isolated-donor purchase remains selected by default.
+Surviving global defences can be annulled again, while losing it discards the item
+and buys another source. The existing recombination preserves the original target
+and reaches item level 86. Earlier revisions and saved drafts remain unchanged.
+
 | UI capability | HTTP family under `/api/v1` | MCP / shared implementation |
 | --- | --- | --- |
 | Server status, worker health, progress and stored league history | `server/status` | `get_server_status`; shared `getServerStatus`. Authenticated ingestion heartbeats report stages and committed progress without credentials, raw cursors or account data. Missing heartbeats and stalled stages are distinct from failures; stored coverage counts actual distinct hours. |

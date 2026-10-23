@@ -76,7 +76,7 @@ export const craftingPresets: readonly CraftingPreset[] = [
         game: "poe1",
         name: "Global defence chest",
         description:
-            "Acquire the drop-only global defences Grasping Mail modifier, roll and isolate T1 flat energy shield on Necrotic Armour, then recombine. Recover surviving modifiers and rebuild missing donors." +
+            "Buy or isolate the global defences Grasping Mail modifier with Annulments, roll and isolate T1 flat energy shield on Necrotic Armour, then recombine. Recover surviving modifiers and rebuild missing donors." +
             recombinationAssumption,
     },
     {
@@ -568,6 +568,89 @@ export function projectFromPreset(
             target,
             [query(["BreachBodyAllDefences1"]), query([es], item.baseId)],
         ).id;
+        if (rulesetAllowsPresetPreparation(ruleset)) {
+            const wanted = "BreachBodyAllDefences1";
+            const sourceId = "defences-make-source";
+            const sources = [
+                {
+                    id: "buy",
+                    name: "Buy level 84 global defences with hybrid defences, fire resistance and recharge",
+                    level: 84,
+                    mods: [
+                        wanted,
+                        "FireResist7",
+                        "FasterStartEnergyShieldRecharge4",
+                        "LocalIncreasedArmourEvasionEnergyShieldStunRecovery3",
+                    ],
+                },
+                {
+                    id: "buy-two-prefixes",
+                    name: "Buy level 85 global defences with uncapped fire resistance armour",
+                    level: 85,
+                    mods: ["BreachBodyArmourIncreasedByUncappedFireResistance1____", wanted],
+                },
+                {
+                    id: "buy-life",
+                    name: "Buy level 85 global defences with life, cold resistance and reflected damage",
+                    level: 85,
+                    mods: [wanted, "AttackerTakesDamage3", "ColdResist3", "IncreasedLife11"],
+                },
+            ];
+            nodes.push({
+                kind: "acquire",
+                id: sourceId,
+                name: "Acquire a Grasping Mail donor for Annulments",
+                output: any,
+                choice: { mode: "pinned", alternativeId: "buy" },
+                alternatives: sources.map((source) => ({
+                    kind: "purchase",
+                    id: source.id,
+                    name: source.name,
+                    item: source.mods.reduce(
+                        (input, mod) => engine.addStartingMod(input, mod, random),
+                        engine.createItem(base("Grasping Mail").baseId, source.level),
+                    ),
+                    price: null,
+                })),
+            });
+            const ready = presetQuery(
+                presetMod(wanted),
+                presetRange("prefixes", 1, 1),
+                presetRange("suffixes", 0, 0),
+            );
+            const isolate = craft(
+                "defences-make-isolate",
+                "Annul other modifiers; rebuy if global defences is lost",
+                [sourceId],
+                currency("remove_random_mod"),
+                ready,
+            );
+            isolate.applyWhen = presetNot(ready);
+            isolate.branches = [
+                {
+                    id: "ready",
+                    name: "Global defences isolated",
+                    query: ready,
+                    destination: { kind: "return" },
+                },
+                {
+                    id: "continue",
+                    name: "Global defences survives: Annul again",
+                    query: presetQuery(presetMod(wanted)),
+                    destination: presetRecover(isolate.id),
+                },
+            ];
+            isolate.fallback = { kind: "discard" };
+            const donor = nodes.find((node) => node.id === "defences");
+            if (donor?.kind !== "acquire")
+                throw new Error("Global defences must have a donor acquisition.");
+            donor.alternatives.push({
+                kind: "production",
+                id: "make-isolate",
+                name: "Isolate global defences from a Grasping Mail with Annulments",
+                nodeId: isolate.id,
+            });
+        }
     } else {
         const item = base(presetId === "energy-shield-chest" ? "Vaal Regalia" : "Spine Bow");
         const names =
