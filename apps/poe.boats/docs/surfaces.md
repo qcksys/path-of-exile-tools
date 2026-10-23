@@ -161,6 +161,10 @@ Modifier inference also applies the client's explicit required-influence rules t
 flags. Missing or dual-influence evidence retains ambiguity; fixed all-influence bases require their
 native implicit text. Native spawn weights do not exclude legitimate non-native donors. Proven
 modifier metadata constrains inference without preventing other affixes from being identified.
+Metadata identities use the same retained equipment domains as the modifier text model.
+Watchstone-only and other non-equipment modifiers cannot introduce false name collisions into
+equipment matching. Unsupported or null-text candidates within the retained equipment domains
+still preserve ambiguity, including legitimate non-native modifiers.
 Modifier text model version 2 can derive one omitted affix count when every supported
 interpretation of the complete displayed modifier text agrees. It preserves supplied
 counts and the raw source item, shares the existing search budget across possible counts,
@@ -183,7 +187,7 @@ retain their recipes. The [ES shield preset](crafting-preset-es-shield.md) also 
 NNN donors with Weeping Doubt, paid Annulment isolation and Exalted attempts. Losing the NNN
 prefix requires paid Scouring and another Essence on the same base. Its flat-ES/recovery
 donor can use Transmutation and Alteration to roll the exact existing Magic purchase shape.
-Three concrete Magic
+Five concrete Magic or Rare
 Shaper shield purchases can be Scoured into the four existing Normal shield acquisitions;
 shared source definitions still buy a separate item for each consumer. These preparation
 choices remain optional, with the original purchases pinned.
@@ -191,7 +195,7 @@ The [ES chest preset](crafting-preset-es-chest.md) prepares its two NNN donors f
 the existing Normal Vaal Regalia acquisition with Screaming Doubt and paid Annulment
 isolation. Losing either required prefix returns the same item to the Essence step;
 all retries are charged and missing input prices keep the total unknown.
-The ten current presets contain 60 purchase alternatives across 45 acquisitions and 51
+The ten current presets contain 62 purchase alternatives across 45 acquisitions and 53
 distinct exact cohorts; 25 production alternatives include Hunter, Redeemer, NNN and Scouring
 preparation. Capture fixtures cover every new base without modifier metadata;
 definitions do not imply observed inventory or available quotes.

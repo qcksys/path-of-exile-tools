@@ -1,4 +1,8 @@
-import { type ModifierTextModel, modifierTextModelSchema } from "@poe-tools/item-query";
+import {
+    type ModifierTextModel,
+    modifierIdentitySchema,
+    modifierTextModelSchema,
+} from "@poe-tools/item-query";
 import type { CraftingEngine } from "../app/lib/crafting-engine";
 import { incursionGloveModifiers } from "../app/lib/crafting-incursion";
 import { modifierTiers } from "../app/lib/crafting-modifier-details";
@@ -6,6 +10,23 @@ import { catalystEffect } from "../app/lib/crafting-quality";
 import { modifierEffectStats, rolledModText } from "../app/lib/crafting-text";
 
 const influenceNames = ["shaper", "elder", "crusader", "redeemer", "hunter", "warlord"] as const;
+
+export function marketModifierIdentities(engine: CraftingEngine, model: ModifierTextModel) {
+    const equipmentModifiers = new Set(model.modifiers.map((mod) => mod.id));
+    return Object.entries(engine.catalog.mods).flatMap(([id, mod]) =>
+        mod.name && equipmentModifiers.has(id)
+            ? [
+                  modifierIdentitySchema.parse({
+                      id,
+                      name: mod.name,
+                      side: mod.generation_type,
+                      level: mod.required_level,
+                      text: mod.text ?? null,
+                  }),
+              ]
+            : [],
+    );
+}
 
 function displayEquivalentFamilies(engine: CraftingEngine) {
     const signature = (id: string) => {
