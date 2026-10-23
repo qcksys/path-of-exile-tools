@@ -40,6 +40,13 @@ The build also creates `/game-data/history/worker.mjs`, the current worker boots
 project's retained implementation. This bootstrap and the index use revalidation rather than immutable
 caching; the executable rules remain pinned to the hashed engine module.
 
+Revision r10 supports the prepared Delve +2 socketed minion-gem prefix on level 60+
+boots and Pantheon aspect fillers in recombination. The prefix remains drop-only;
+ordinary currency cannot roll it. Delve transfers use the existing exclusive-modifier
+model, and Pantheon aspects have no native spawn weight on the destination equipment.
+These additions support the [reviewed SpicySushiPoE samples](../docs/crafting-presets-spicysushi.md).
+Retained r9 continues to reject those inputs; PoE 2 mechanics are unchanged.
+
 To publish a new era or correction, from this app directory:
 
 1. Extract/materialize the reviewed game package using the game-data pipeline and run

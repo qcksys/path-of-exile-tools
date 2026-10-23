@@ -9,7 +9,7 @@ import { quote } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r9",
+    (entry) => entry.game === "poe1" && entry.revision === "r10",
 )!;
 const scour = "Metadata/Items/Currency/CurrencyConvertToNormal";
 const sources = [

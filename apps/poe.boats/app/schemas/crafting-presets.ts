@@ -12,6 +12,11 @@ export const craftingPresetIdSchema = z.enum([
     "rarity-helmet",
     "energy-shield-chest",
     "strength-helical-ring",
+    "sushi-rf-totem-shield",
+    "sushi-rf-helmet",
+    "sushi-mercenary-chest",
+    "sushi-spectre-boots",
+    "sushi-luminary-shield",
 ]);
 export const craftingPresetSchema = z.object({
     id: craftingPresetIdSchema,

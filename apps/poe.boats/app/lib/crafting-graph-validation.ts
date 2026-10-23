@@ -5,7 +5,7 @@ import { CraftingEngine } from "./crafting-engine";
 import { createCraftingItemQuery } from "./crafting-item-query";
 import { simpleCraftRouting } from "./crafting-smart";
 
-export const CRAFTING_GRAPH_ENGINE = "crafting-graph-9";
+export const CRAFTING_GRAPH_ENGINE = "crafting-graph-10";
 
 export function graphInputCount(catalog: CraftingCatalog, method: CraftingMethod) {
     return method.kind === "recombine" ||

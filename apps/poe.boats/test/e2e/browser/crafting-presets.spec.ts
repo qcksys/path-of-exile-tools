@@ -18,7 +18,14 @@ for (const preset of craftingPresets) {
         page,
         request,
     }) => {
-        if (["strength-helical-ring", "tailwind-boots"].includes(preset.id))
+        if (
+            [
+                "strength-helical-ring",
+                "tailwind-boots",
+                "sushi-rf-helmet",
+                "sushi-mercenary-chest",
+            ].includes(preset.id)
+        )
             test.setTimeout(90_000);
         await page.addInitScript(() => {
             window.presetGraphResults = [];
@@ -54,7 +61,13 @@ for (const preset of craftingPresets) {
         await page.getByRole("button", { name: "Create from preset", exact: true }).click();
         await expect(page.getByRole("tab", { name: preset.name, exact: true })).toBeVisible();
         const trials =
-            preset.id === "tailwind-boots" ? 1 : preset.id === "strength-helical-ring" ? 2 : 8;
+            preset.id === "tailwind-boots"
+                ? 1
+                : ["strength-helical-ring", "sushi-rf-helmet", "sushi-mercenary-chest"].includes(
+                        preset.id,
+                    )
+                  ? 2
+                  : 8;
         await page.getByRole("button", { name: "Prices & calculation", exact: true }).click();
         await page
             .getByRole("spinbutton", { name: "Sampled trials", exact: true })
@@ -72,7 +85,12 @@ for (const preset of craftingPresets) {
         await page.getByRole("button", { name: "Calculate process", exact: true }).click();
         await expect
             .poll(() => page.evaluate(() => window.presetGraphResults.length), {
-                timeout: ["strength-helical-ring", "tailwind-boots"].includes(preset.id)
+                timeout: [
+                    "strength-helical-ring",
+                    "tailwind-boots",
+                    "sushi-rf-helmet",
+                    "sushi-mercenary-chest",
+                ].includes(preset.id)
                     ? 60_000
                     : 5000,
             })

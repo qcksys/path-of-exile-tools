@@ -143,7 +143,8 @@ describe("per-step crafting prices", () => {
         expect(rulesetAllowsScopedCraftPrices(prior)).toBe(false);
         expect(rulesetAllowsScopedCraftPrices(current)).toBe(true);
         expect(rulesetAllowsScopedCraftPrices({ engine: "crafting-graph-9" })).toBe(true);
-        expect(rulesetAllowsScopedCraftPrices({ engine: "crafting-graph-10" })).toBe(false);
+        expect(rulesetAllowsScopedCraftPrices({ engine: "crafting-graph-10" })).toBe(true);
+        expect(rulesetAllowsScopedCraftPrices({ engine: "crafting-graph-future" })).toBe(false);
         for (const ruleset of [prior, current]) {
             expect(rulesetAllowsSimpleCraft(ruleset)).toBe(true);
             expect(rulesetAllowsConditionalSteps(ruleset)).toBe(true);
