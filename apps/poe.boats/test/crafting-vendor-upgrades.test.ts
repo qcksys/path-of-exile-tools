@@ -60,12 +60,16 @@ beforeEach(() => {
     sqlite.exec(
         `CREATE TABLE ${DB_TABLE_PREFIX}stash_currency_hourly (realm TEXT, league TEXT, hour INTEGER, marketId TEXT, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT)`,
     );
+    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_unique_hourly (
+        realm TEXT, league TEXT, hour INTEGER, itemKey TEXT, baseType TEXT, name TEXT,
+        frameType INTEGER, identified INTEGER, corrupted INTEGER, foilVariation INTEGER,
+        signatureKind TEXT, signatureValue TEXT, listingCount INTEGER, uniqueSellers INTEGER, prices TEXT)`);
     db = drizzle(async (sql, params) => {
         const statement = sqlite.prepare(sql);
         statement.setReturnArrays(true);
         return {
             rows: statement
-                .all(...params)
+                .all(...params.map((value) => (typeof value === "boolean" ? Number(value) : value)))
                 .map((row) =>
                     Object.values(row).map((value) =>
                         typeof value === "string" && value.startsWith("{")

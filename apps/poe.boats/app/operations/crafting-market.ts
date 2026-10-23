@@ -52,7 +52,7 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Look up PoE 1 PC captured essence asking prices and poe.ninja beast/temple estimates. Essences require an exact unique catalog identity and a positive latest captured bucket within 24 completed hours; at selects historical captured hours. Optional exchange-v1 conversion preserves original asks and matching-hour exchange evidence. Explicit vendorUpgrade selects an exact lower-tier essence upgrade or one-step NPC currency purchase, priced from its captured ingredient exchange quote. This ingredient-cost estimate retains the recipe and purchase instructions; it is not a direct output trade. Beast recipes require the explicit extra-rare-beast assumption. poe.ninja has no historical coverage. Confidence is uncalibrated.",
+            "Look up PoE 1 PC captured currency asking prices and poe.ninja beast/temple estimates. Supported fixed-effect currency actions and catalog essences require an exact unique catalog identity and a positive latest captured bucket within 24 completed hours; currencies with stored item, monster or experience payloads are excluded. at selects historical captured hours. Optional exchange-v1 conversion preserves original asks and matching-hour exchange evidence. Explicit vendorUpgrade selects an exact lower-tier essence upgrade or one-step NPC currency purchase, priced from its captured ingredient exchange quote. This ingredient-cost estimate retains the recipe and purchase instructions; it is not a direct output trade. Beast recipes require the explicit extra-rare-beast assumption. poe.ninja has no historical coverage. Confidence is uncalibrated.",
         input: craftingSourceOptionsSchema.extend({ graph: CraftingGraphContract }),
         output: craftingSourceResultSchema,
         execute: async ({ graph, ...options }, context) =>
@@ -72,7 +72,7 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Return a graph with one input explicitly bound to captured essence asks, a verified vendor-upgrade ingredient estimate, or a complete beast/temple recipe. Validates source scope, canonical identity, exact recipe path and quantities. Explicit selection replaces a manual amount; refresh preserves the source and selected vendor ingredient/path. Captured history retains actual observation hours; poe.ninja uses retrieval time. Does not save account data.",
+            "Return a graph with one input explicitly bound to captured currency asks, a verified vendor-upgrade ingredient estimate, or a complete beast/temple recipe. Validates source scope, canonical identity, exact recipe path and quantities. Explicit selection replaces a manual amount; refresh preserves the source and selected vendor ingredient/path. Captured history retains actual observation hours; poe.ninja uses retrieval time. Does not save account data.",
         input: z.object({
             graph: CraftingGraphContract,
             id: z.string(),
@@ -231,7 +231,7 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Refresh bound equipment purchases, exchange costs, captured essence asks, explicit vendor-upgrade ingredients and supported beast/temple estimates using their saved source scope and policies. Equipment follows compatible revisions with the same cohort ID, purpose and exact query. Preserves manual prices and crafting rules. Returns issues when compatibility cannot be established or a source is unavailable; cached unresolved prices must not be treated as current.",
+            "Refresh bound equipment purchases, exchange costs, captured currency asks, explicit vendor-upgrade ingredients and supported beast/temple estimates using their saved source scope and policies. Equipment follows compatible revisions with the same cohort ID, purpose and exact query. Preserves manual prices and crafting rules. Returns issues when compatibility cannot be established or a source is unavailable; cached unresolved prices must not be treated as current.",
         input: z.object({ graph: CraftingGraphContract }),
         output: craftingMarketRefreshResultSchema.extend({ graph: CraftingGraphContract }),
         execute: async ({ graph }, context) =>

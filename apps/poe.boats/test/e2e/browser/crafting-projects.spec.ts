@@ -807,9 +807,9 @@ for (const converted of [false, true]) {
             .filter({ has: page.locator("summary", { hasText: /^Prices & calculation$/ }) });
         const price = prices.getByRole("spinbutton", { name: new RegExp(essenceName) });
         await expect(price).toHaveValue("123");
-        await prices.getByText("Essence, beast & temple asking prices", { exact: true }).click();
+        await prices.getByText("Currency asking prices", { exact: true }).click();
         const conversionChoice = prices.getByRole("checkbox", {
-            name: "Convert essence asks using matching-hour exchange rates",
+            name: "Convert currency asks using matching-hour exchange rates",
         });
         await expect(conversionChoice).not.toBeChecked();
         if (converted) await conversionChoice.check();
@@ -929,7 +929,7 @@ test("currency-only graph exposes an explicit NPC purchase and preserves its ins
     await expect(
         prices.getByRole("region", { name: "Exchange price for Orb of Augmentation" }),
     ).toContainText("No positive direct Augmentation quote");
-    await prices.getByText("Vendor ingredient estimates", { exact: true }).click();
+    await prices.getByText("Currency asking prices", { exact: true }).click();
     await prices.getByText("Vendor-upgrade ingredient estimates", { exact: true }).click();
     const vendor = prices.getByRole("region", {
         name: "Vendor-upgrade price for Orb of Augmentation",
@@ -1013,7 +1013,7 @@ test("explicit vendor upgrade preserves manual prices and refreshes the fixed in
         .filter({ has: page.locator("summary", { hasText: /^Prices & calculation$/ }) });
     const price = prices.getByRole("spinbutton", { name: new RegExp(vendorQuote.path.outputName) });
     await expect(price).toHaveValue("123");
-    await prices.getByText("Essence, beast & temple asking prices", { exact: true }).click();
+    await prices.getByText("Currency asking prices", { exact: true }).click();
     await prices.getByRole("button", { name: "Find asking prices", exact: true }).click();
     await expect(prices).toContainText("No current output asks");
     await prices.getByText("Vendor-upgrade ingredient estimates", { exact: true }).click();

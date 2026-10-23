@@ -113,8 +113,8 @@ export async function findCraftingCommodityPrices(
             result.quotes[id] = parsed.data;
         else
             result.missing[id] = conversion
-                ? "No positive asking price or matching-hour exchange conversion for this exact essence in the latest captured bucket within 24 completed hours. Enter a manual price or inspect market history."
-                : "No positive asking-price observation for this exact essence in the latest captured bucket within 24 completed hours. Enter a manual price or inspect market history.";
+                ? "No positive asking price or matching-hour exchange conversion for this exact currency in the latest captured bucket within 24 completed hours. Enter a manual price or inspect market history."
+                : "No positive asking-price observation for this exact currency in the latest captured bucket within 24 completed hours. Enter a manual price or inspect market history.";
     }
     return result;
 }

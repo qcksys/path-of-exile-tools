@@ -76,7 +76,13 @@ import {
     queryAll,
 } from "../../../../packages/poe-stash-ingest/src/shared/db.ts";
 import { push } from "../../../../packages/poe-stash-ingest/src/shared/remote/push.ts";
-import { commodityExchangeSnapshot, essenceId, essenceName } from "../crafting-commodity-fixtures";
+import {
+    commodityExchangeSnapshot,
+    essenceId,
+    essenceName,
+    unravellingId,
+    unravellingName,
+} from "../crafting-commodity-fixtures";
 import {
     chaosId,
     exchangeGraph,
@@ -1988,7 +1994,14 @@ it("prices an explicit NPC Augmentation purchase from fresh Transmutation and re
     });
 });
 
-it("ingests fractional essence unit asks into MySQL and shares source binding and history without reusing a newer zero price", async () => {
+it.each([
+    { id: essenceId, name: essenceName, kind: "essence" as const },
+    { id: unravellingId, name: unravellingName, kind: "currency" as const },
+])("ingests fractional $name unit asks into MySQL and shares source binding and history without reusing a newer zero price", async ({
+    id: essenceId,
+    name: essenceName,
+    kind,
+}) => {
     const client = createClient({ baseUrl, userAgent: "commodity-e2e", token: TOKEN });
     const essenceStashes = ["~price 5/2 chaos", "~b/o 9/2 c"].map((note, index) => ({
         ...stash,
@@ -2102,8 +2115,8 @@ it("ingests fractional essence unit asks into MySQL and shares source binding an
     }
     const graph = exchangeGraph();
     const craft = graph.nodes.find((node) => node.kind === "craft")!;
-    craft.name = "Apply Screaming Essence of Rage";
-    craft.method = { kind: "essence", id: essenceId };
+    craft.name = `Apply ${essenceName}`;
+    craft.method = { kind, id: essenceId };
     const lookup = { graph, realm: "pc", ids: [essenceId], at: HOUR };
     const result = craftingSourceResultSchema.parse(
         await parity("crafting/market/sources", "find_crafting_source_prices", lookup),
