@@ -269,7 +269,7 @@ describe("transport parity", () => {
         ["r8", "physical-bow", 0],
         ["r9", "physical-bow", 3],
         ["r8", "tailwind-boots", 0],
-        ["r9", "tailwind-boots", 1],
+        ["r9", "tailwind-boots", 2],
     ] as const)("preserves %s %s preparation support over HTTP and MCP", async (revision, presetId, count) => {
         const ruleset = historyIndex.revisions.find(
             (entry) => entry.game === "poe1" && entry.revision === revision,
