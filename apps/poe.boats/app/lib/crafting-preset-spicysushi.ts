@@ -382,11 +382,17 @@ export function spicySushiPreset(builder: PresetBuilder, id: CraftingPresetId) {
         );
         const suffixes = [critical, "DelveAbyssJewelSocket1", "OnslaughtWhenHitNewEssence1"];
         keep(roll, query(...suffixes.map((id) => mod(id))), roll.id);
+        const eater = step(
+            "eater",
+            "Replace Eater implicit with Lesser Ichor",
+            roll.id,
+            currency("add_great_tangle_implicit_1"),
+        );
         const implicit = step(
             "exarch",
-            "Add Exarch dominance for Eldritch prefix crafting",
-            roll.id,
-            currency("add_cleansing_fire_implicit_1"),
+            "Greater Ember: establish Exarch dominance for prefix crafting",
+            eater.id,
+            currency("add_cleansing_fire_implicit_2"),
         );
         const defences = [
             mod("LocalBaseArmourAndEvasionRating7", "LocalBaseArmourAndEvasionRating8"),
