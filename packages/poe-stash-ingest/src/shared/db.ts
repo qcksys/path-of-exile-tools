@@ -92,6 +92,14 @@ CREATE TABLE IF NOT EXISTS ps_daily_sample (day VARCHAR PRIMARY KEY, checkpoint_
 CREATE TABLE IF NOT EXISTS ps_capture_payload (
     response_hash VARCHAR PRIMARY KEY, response_gzip BLOB NOT NULL, response_bytes BIGINT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS ps_capture_payload_meta (
+    response_hash VARCHAR PRIMARY KEY, response_bytes BIGINT NOT NULL,
+    compressed_bytes BIGINT NOT NULL, chunk_count INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ps_capture_payload_chunk (
+    response_hash VARCHAR NOT NULL, chunk_index INTEGER NOT NULL, response_gzip BLOB NOT NULL,
+    PRIMARY KEY (response_hash, chunk_index)
+);
 CREATE TABLE IF NOT EXISTS ps_capture_page (
     id VARCHAR PRIMARY KEY, realm VARCHAR NOT NULL, league VARCHAR NOT NULL,
     cursor VARCHAR, next_cursor VARCHAR NOT NULL, captured_at BIGINT NOT NULL,

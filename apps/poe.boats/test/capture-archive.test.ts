@@ -2,13 +2,15 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { gunzipSync } from "node:zlib";
+import { gzipSync } from "node:zlib";
 import { expect, it, vi } from "vite-plus/test";
 import { createClient } from "../../../packages/poe-api-client/src/client";
+import { readArchivedPage } from "../../../packages/poe-stash-ingest/src/ps/archive-payload";
 import {
     archivePage,
     captureArchiveStatus,
 } from "../../../packages/poe-stash-ingest/src/ps/capture-archive";
+import { responseHash } from "../../../packages/poe-stash-ingest/src/ps/checkpoints";
 import { defaultCraftingCapture } from "../../../packages/poe-stash-ingest/src/ps/crafting-capture";
 import { defaultEquipmentClassifier } from "../../../packages/poe-stash-ingest/src/ps/equipment";
 import { ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest";
@@ -49,6 +51,14 @@ const page = {
     futureEnvelopeField: "preserved",
 };
 
+async function savedPages(conn: Parameters<typeof readArchivedPage>[0]) {
+    const rows = await queryAll<{ hash: string }>(
+        conn,
+        "SELECT response_hash AS hash FROM ps_capture_payload UNION ALL SELECT response_hash AS hash FROM ps_capture_payload_meta",
+    );
+    return Promise.all(rows.map(({ hash }) => readArchivedPage(conn, hash)));
+}
+
 it("archives only crafting candidates in the selected league, retaining unpriced items and later versions", async () => {
     const db = await openDb(":memory:");
     const client = createClient({ userAgent: "archive-test", token: "inert" });
@@ -66,13 +76,7 @@ it("archives only crafting candidates in the selected league, retaining unpriced
         };
         upstream.mockResolvedValue(changed);
         await ingestPs(db.conn, client, { pages: 1, league: "Standard" });
-        const rows = await queryAll<{ body: string }>(
-            db.conn,
-            "SELECT to_base64(response_gzip) AS body FROM ps_capture_payload",
-        );
-        const saved = rows.map(({ body }) =>
-            JSON.parse(gunzipSync(Buffer.from(body, "base64")).toString()),
-        );
+        const saved = await savedPages(db.conn);
         expect(saved).toEqual(
             expect.arrayContaining([
                 JSON.parse(
@@ -136,11 +140,7 @@ it("persists observations across reopening and deduplicates payloads without los
             firstCapturedAt: 1000,
             lastCapturedAt: 2000,
         });
-        const [row] = await queryAll<{ body: string }>(
-            second.conn,
-            "SELECT to_base64(response_gzip) AS body FROM ps_capture_payload",
-        );
-        expect(JSON.parse(gunzipSync(Buffer.from(row!.body, "base64")).toString())).toEqual(
+        expect((await savedPages(second.conn))[0]).toEqual(
             JSON.parse(JSON.stringify({ next_change_id: page.next_change_id, stashes: [stash] })),
         );
     } finally {
@@ -155,6 +155,13 @@ it("deduplicates an intact payload hidden from the indexed lookup without loggin
     const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
     const read = db.conn.runAndReadAll.bind(db.conn);
     try {
+        const filtered = { next_change_id: page.next_change_id, stashes: [stash] };
+        const json = JSON.stringify(filtered);
+        await db.conn.run("INSERT INTO ps_capture_payload VALUES ($1, from_base64($2), $3)", [
+            responseHash(filtered),
+            gzipSync(json).toString("base64"),
+            Buffer.byteLength(json),
+        ]);
         await archivePage(db.conn, page, scope, () => true);
         expect(warning).not.toHaveBeenCalled();
         const originalBodies = await queryAll(
@@ -268,13 +275,7 @@ it("preserves relevant empty/private stash changes and skips unrelated pages", a
             ),
         ).toBeNull();
         expect(await captureArchiveStatus(db.conn)).toMatchObject({ pages: 4, payloads: 3 });
-        const rows = await queryAll<{ body: string }>(
-            db.conn,
-            "SELECT to_base64(response_gzip) AS body FROM ps_capture_payload",
-        );
-        const saved = rows.map(({ body }) =>
-            JSON.parse(gunzipSync(Buffer.from(body, "base64")).toString()),
-        );
+        const saved = await savedPages(db.conn);
         expect(saved).toEqual(expect.arrayContaining([empty, privatePage]));
     } finally {
         await db.close();

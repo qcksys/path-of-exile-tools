@@ -1,9 +1,7 @@
-import { gunzipSync } from "node:zlib";
 import type { DuckDBConnection } from "@duckdb/node-api";
-import type { PublicStashPage } from "@poe-tools/api-client";
 import { normalizeApiItem } from "@poe-tools/item-query";
+import { readArchivedPage } from "#src/ps/archive-payload.ts";
 import { defaultEquipmentClassifier, type EquipmentClassifier } from "#src/ps/equipment.ts";
-import { fingerprintHash } from "#src/ps/replay-fingerprint.ts";
 import { queryAll, withTransaction } from "#src/shared/db.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
 import { assertSourceRealm } from "#src/shared/source.ts";
@@ -125,31 +123,7 @@ export async function reclassifyArchivedEquipment(
                 ],
             );
             if (!page) throw new Error("The archived hour changed during reclassification.");
-            let [source] = await queryAll<{ body: string }>(
-                conn,
-                "SELECT to_base64(response_gzip) AS body FROM ps_capture_payload WHERE response_hash = $1",
-                [page.responseHash],
-            );
-            if (!source) {
-                // The expression bypasses an ART index that may omit an intact row.
-                [source] = await queryAll<{ body: string }>(
-                    conn,
-                    "SELECT to_base64(response_gzip) AS body FROM ps_capture_payload WHERE (response_hash || '') = $1",
-                    [page.responseHash],
-                );
-                if (source)
-                    console.warn(
-                        "Archived payload found by sequential fallback after an index miss.",
-                    );
-            }
-            if (!source) throw new Error("The archived payload is missing.");
-            const payload = JSON.parse(
-                gunzipSync(Buffer.from(source.body, "base64"), {
-                    maxOutputLength: 64 * 1024 * 1024,
-                }).toString("utf8"),
-            ) as PublicStashPage;
-            if (fingerprintHash(payload) !== page.responseHash)
-                throw new Error("The archived payload does not match its recorded hash.");
+            const payload = await readArchivedPage(conn, page.responseHash);
             const rows = [];
             for (const stash of payload.stashes) {
                 // Withdrawals retain earlier asking observations, as live capture does.

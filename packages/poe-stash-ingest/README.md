@@ -202,8 +202,12 @@ requires regenerating/reviewing this policy; it cannot guarantee capture of futu
 Stash records contain only selected items. Empty/private changes for previously captured stashes
 preserve removals; unrelated stashes/pages produce no archive payload.
 
-`ps_capture_payload` stores the filtered response as a gzip BLOB, deduplicated by its full
-content checksum. `ps_capture_page` retains each observation's scope, requested/next cursor and
+New filtered responses are stored as gzip data in 16 KiB parts in `ps_capture_payload_chunk`,
+with sizes and part counts in `ps_capture_payload_meta`. Bounded parts avoid growing checkpoint
+memory requirements from vectors of large BLOB values. Existing `ps_capture_payload` bodies remain
+readable and are not rewritten; this does not restore missing bodies. Replay checks part order,
+lengths and the full content checksum before classification. Both formats deduplicate by that checksum.
+`ps_capture_page` retains each observation's scope, requested/next cursor and
 capture time. Different contents at the same cursor remain separate payloads. The archive commits
 before price processing, so a classification failure cannot discard the selected source items. Archiving
 failure stops processing before advancing the cursor. Successful processing marks the observation
