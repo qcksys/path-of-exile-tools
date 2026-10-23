@@ -272,6 +272,8 @@ describe("transport parity", () => {
         ["r9", "tailwind-boots", 2],
         ["r8", "es-block-shield", 0],
         ["r9", "es-block-shield", 4],
+        ["r8", "energy-shield-chest", 0],
+        ["r9", "energy-shield-chest", 3],
         ["r8", "life-block-shield", 0],
         ["r9", "life-block-shield", 6],
     ] as const)("preserves %s %s preparation support over HTTP and MCP", async (revision, presetId, count) => {

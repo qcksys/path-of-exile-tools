@@ -178,8 +178,12 @@ prefix requires paid Scouring and another Essence on the same base. Three concre
 Shaper shield purchases can be Scoured into the four existing Normal shield acquisitions;
 shared source definitions still buy a separate item for each consumer. These preparation
 choices remain optional, with the original purchases pinned.
+The [ES chest preset](crafting-preset-es-chest.md) prepares its two NNN donors from
+the existing Normal Vaal Regalia acquisition with Screaming Doubt and paid Annulment
+isolation. Losing either required prefix returns the same item to the Essence step;
+all retries are charged and missing input prices keep the total unknown.
 The ten current presets contain 60 purchase alternatives across 45 acquisitions and 51
-distinct exact cohorts; 22 production alternatives include Hunter, Redeemer, NNN and Scouring
+distinct exact cohorts; 24 production alternatives include Hunter, Redeemer, NNN and Scouring
 preparation. Capture fixtures cover every new base without modifier metadata;
 definitions do not imply observed inventory or available quotes.
 

@@ -671,6 +671,68 @@ export function projectFromPreset(
                 ),
             });
     }
+    if (presetId === "energy-shield-chest" && rulesetAllowsPresetPreparation(ruleset)) {
+        const nnn = "LocalIncreasedEvasionRating8";
+        for (const id of ["donor-1", "donor-2"]) {
+            const donor = nodes.find((node) => node.id === id);
+            const purchase = donor?.kind === "acquire" ? donor.alternatives[0] : undefined;
+            if (donor?.kind !== "acquire" || purchase?.kind !== "purchase")
+                throw new Error("NNN ES chest donor must have a purchase.");
+            const wanted = purchase.item.mods.find((mod) => mod.id !== nnn)!.id;
+            const pair = presetQuery(presetMod(nnn), presetMod(wanted));
+            const ready = presetQuery(
+                presetMod(nnn),
+                presetMod(wanted),
+                presetRange("prefixes", 2, 2),
+                presetRange("suffixes", 0, 0),
+                { kind: "rarity", values: ["Rare"] },
+            );
+            const essence = craft(
+                `${id}-make-essence`,
+                `Screaming Doubt until ${engine.mod(wanted).name}`,
+                ["donor-0-make-base"],
+                { kind: "essence", id: "Metadata/Items/Currency/CurrencyEssenceDoubt3" },
+            );
+            essence.branches = [
+                {
+                    id: "pair",
+                    name: "NNN evasion and required ES prefix rolled",
+                    query: pair,
+                    destination: { kind: "return" },
+                },
+            ];
+            essence.fallback = presetRecover(essence.id);
+            const isolate = craft(
+                `${id}-make-isolate`,
+                "Annul extras while keeping both required prefixes",
+                [essence.id],
+                currency("remove_random_mod"),
+                ready,
+            );
+            isolate.applyWhen = presetNot(ready);
+            isolate.branches = [
+                {
+                    id: "ready",
+                    name: "Required ES prefix and NNN donor ready",
+                    query: ready,
+                    destination: { kind: "return" },
+                },
+                {
+                    id: "continue",
+                    name: "Both required prefixes survive: annul another modifier",
+                    query: pair,
+                    destination: presetRecover(isolate.id),
+                },
+            ];
+            isolate.fallback = presetRecover(essence.id);
+            donor.alternatives.push({
+                kind: "production",
+                id: "make-nnn",
+                name: "Roll the ES prefix with Screaming Doubt, then isolate",
+                nodeId: isolate.id,
+            });
+        }
+    }
     if (presetId === "es-block-shield" && rulesetAllowsPresetPreparation(ruleset)) {
         const nnn = "LocalIncreasedEvasionRating4";
         const hasNNN = presetQuery(presetMod(nnn));

@@ -153,6 +153,8 @@ for (const [name, presetId, nodeId, alternativeId] of [
     ["Redeemer donor", "tailwind-boots", "onslaught-base", "make-onslaught"],
     ["NNN percent ES donor", "es-block-shield", "percent", "make-nnn"],
     ["NNN block donor", "es-block-shield", "block", "make-nnn"],
+    ["ES chest percent donor", "energy-shield-chest", "donor-1", "make-nnn"],
+    ["ES chest hybrid donor", "energy-shield-chest", "donor-2", "make-nnn"],
     ["Titanium base Scouring", "es-block-shield", "flat-make-base", "make-scour"],
     ["Heat base for block", "life-block-shield", "block-make-base", "make-scour"],
     ["Heat base for maximum resistance", "life-block-shield", "max-res-make-base", "make-scour"],
