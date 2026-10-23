@@ -135,8 +135,14 @@ Missing, ambiguous or contradictory evidence remains unknown. Unsided and implic
 their existing completeness rules. The added side produces a new cohort identity; saved unsided
 bindings stay on their original definitions until explicitly replaced.
 
+Definitions are matched to the item before the candidate limit is applied. Bounded
+definition pages retain database ordering, and hourly reads use exact revision/ID pairs.
+Unrelated same-base cohorts cannot consume the 2,000 relevant-candidate allowance;
+item-matching but uncovered cohorts retain their coverage reasons. A genuinely truncated
+result still prevents refresh from silently choosing an older or incomplete price.
+
 Equipment lookup exposes per-lookup `Server-Timing` diagnostics through both HTTP and MCP:
-`equipment_db` measures the cohort database await, `equipment_parse` measures validation and
+`equipment_db` measures the total cohort database awaits, `equipment_parse` measures validation and
 coverage checks, `equipment_fx` measures exchange conversion and price selection, and
 `equipment_total` covers the whole lookup. `equipment_counts` reports database awaits, returned
 cohort rows and returned exchange rows as numeric counts. Failed database awaits are counted;
