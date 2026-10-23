@@ -10,6 +10,7 @@ test("closing a hover-opened pinned item preview restores focus without reopenin
     await select(page, "Crafting preset", "Physical bow");
     await page.getByRole("button", { name: "Create from preset", exact: true }).click();
     const graph = page.getByRole("region", { name: "Crafting project graph", exact: true });
+    await expect(graph.getByRole("status")).toContainText("Initial sample: 8 trials");
     const preview = graph.getByRole("button", { name: "Preview Buy Merciless donor", exact: true });
     await preview.hover();
     const card = page.getByRole("region", { name: "Buy Merciless donor", exact: true });
@@ -20,6 +21,7 @@ test("closing a hover-opened pinned item preview restores focus without reopenin
     ).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "Close item card", exact: true }).click();
     await expect(card).toHaveCount(0);
+    await expect(page.locator('[data-slot="popover-content"]')).toHaveCount(0);
     await expect(preview).toBeFocused();
     await expect(preview).toHaveAttribute("aria-expanded", "false");
     await preview.press("Tab");
@@ -62,6 +64,7 @@ test("graph shows outcome detail, retry paths, pinnable items and measured layou
     await page.screenshot({ path: testInfo.outputPath("pinned-item.png"), fullPage: true });
     await page.getByRole("button", { name: "Close item card", exact: true }).click();
     await expect(card).toHaveCount(0);
+    await expect(page.locator('[data-slot="popover-content"]')).toHaveCount(0);
     await expect(preview).toBeFocused();
     await preview.press("Tab");
     await preview.focus();
