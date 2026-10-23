@@ -25,9 +25,12 @@ import {
     divineId,
     essenceId,
     essenceName,
+    unravellingId,
+    unravellingName,
+    unravellingQuote,
 } from "./crafting-commodity-fixtures";
 import { exchangeGraph } from "./crafting-exchange-fixtures";
-import { catalog, engine } from "./crafting-fixtures";
+import { catalog, engine, getCatalog } from "./crafting-fixtures";
 
 const hour = commodityQuote.hour;
 let sqlite: DatabaseSync;
@@ -159,6 +162,123 @@ it("returns an exact captured unit asking quote and preserves the source separat
         decodeCraftingSourceReference(
             bound.prices[essenceId]!.cohortId!.replace("stash-commodity:v1:", "poeninja:v1:"),
         ),
+    ).toBeNull();
+});
+
+it("supports uniquely named modeled currencies and refuses stateful, unknown, duplicate and PoE 2 identities", () => {
+    expect(craftingCommodityIdentity(engine, unravellingId)).toEqual({
+        id: unravellingId,
+        baseType: unravellingName,
+    });
+    expect(craftingCommodityIdentity(engine, "Metadata/Items/Currency/Unknown")).toBeNull();
+    expect(
+        craftingCommodityIdentity(new CraftingEngine(getCatalog("poe2")), unravellingId),
+    ).toBeNull();
+    for (const suffix of [
+        "CurrencyImprint",
+        "CurrencyItemisedSextantModifier",
+        "CurrencyItemisedNecropolisCorpse",
+        "CurrencyItemisedCapturedMonster",
+        "CurrencyAddGemExperience",
+        "CurrencyAddCrucibleExperience",
+        "CurrencyIncubationFaridunLowStackable",
+        "CurrencyIncubationFaridunHighStackable",
+        "CurrencyIncubationFaridunMapStackable",
+    ]) {
+        const id = `Metadata/Items/Currency/${suffix}`;
+        expect(catalog.crafting.currencies.find((entry) => entry.id === id)).toBeDefined();
+        expect(craftingCommodityIdentity(engine, id)).toBeNull();
+        expect(() =>
+            bindCraftingSourcePrice(graph, engine, id, {
+                ...unravellingQuote,
+                id,
+                baseType: catalog.crafting.currencies.find((entry) => entry.id === id)!.name,
+            }),
+        ).toThrow("catalog currency");
+    }
+    const currency = catalog.crafting.currencies.find((entry) => entry.id === unravellingId)!;
+    for (const action of ["", "unknown-action"]) {
+        const unsupported = structuredClone(catalog);
+        unsupported.crafting.currencies.find((entry) => entry.id === unravellingId)!.action =
+            action;
+        expect(
+            craftingCommodityIdentity(new CraftingEngine(unsupported), unravellingId),
+        ).toBeNull();
+    }
+    for (const extra of [
+        { ...currency, id: "duplicate" },
+        { ...currency, name: "Other name" },
+        currency,
+    ]) {
+        const duplicate = structuredClone(catalog);
+        duplicate.crafting.currencies.push(extra);
+        expect(craftingCommodityIdentity(new CraftingEngine(duplicate), unravellingId)).toBeNull();
+    }
+});
+
+it("selects and refreshes exact Unravelling asks without exchange fallback or manual replacement", async () => {
+    const currencyRow = {
+        itemKey: unravellingName,
+        baseType: unravellingName,
+        listingCount: 12,
+        uniqueSellers: 11,
+        prices: {
+            chaos: { count: 1, min: 200, median: 200, max: 200 },
+            divine: { count: 1, min: 1, median: 1, max: 1 },
+        },
+    };
+    capture({ ...currencyRow, hour: hour - 3600 });
+    capture(currencyRow);
+    const options = { ids: [unravellingId], realm: "pc" as const };
+    const result = await findCraftingSourcePrices(graph, engine, options, db);
+    expect(result).toEqual({ quotes: { [unravellingId]: unravellingQuote }, missing: {} });
+    const manual = {
+        ...graph,
+        prices: {
+            [unravellingId]: {
+                amount: 123,
+                currency: "chaos",
+                source: "manual" as const,
+                confidence: null,
+            },
+        },
+    };
+    expect((await refreshCraftingMarketPrices(db, manual, engine)).graph).toBe(manual);
+    const bound = bindCraftingSourcePrice(manual, engine, unravellingId, {
+        ...unravellingQuote,
+        hour: hour - 3600,
+    });
+    expect(decodeCraftingSourceReference(bound.prices[unravellingId]?.cohortId)).toMatchObject({
+        source: "stash-commodity",
+        id: unravellingId,
+        baseType: unravellingName,
+    });
+    const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
+    expect(refreshed.issues).toEqual([]);
+    expect(refreshed.graph.prices[unravellingId]).toMatchObject({
+        amount: 200,
+        samples: 1,
+        observedAt: new Date(hour * 1000).toISOString(),
+    });
+    const snapshots = await craftingMarketSnapshots(db, refreshed.graph, engine, [
+        hour - 3600,
+        hour,
+    ]);
+    expect(snapshots.points.map((point) => point.graph?.prices[unravellingId]?.amount)).toEqual([
+        200, 200,
+    ]);
+    expect(
+        (await findCraftingSourcePrices(graph, engine, { ...options, realm: "poe2" }, db)).quotes,
+    ).toEqual({});
+    sqlite.prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_unique_hourly WHERE hour=?`).run(hour);
+    capture({ ...currencyRow, prices: {} });
+    captureExchange();
+    expect((await findCraftingSourcePrices(graph, engine, options, db)).quotes).toEqual({});
+    const missing = await refreshCraftingMarketPrices(db, refreshed.graph, engine);
+    expect(missing.graph).toBe(refreshed.graph);
+    expect(missing.issues).toHaveLength(1);
+    expect(
+        (await craftingMarketSnapshots(db, refreshed.graph, engine, [hour])).points[0]?.graph,
     ).toBeNull();
 });
 

@@ -20,6 +20,20 @@ export const commodityQuote = commoditySourceQuoteSchema.parse({
     uniqueSellers: 24,
 });
 
+export const unravellingId = "Metadata/Items/Currency/CurrencyRemoveZanaInfluence";
+export const unravellingName = "Orb of Unravelling";
+export const unravellingQuote = commoditySourceQuoteSchema.parse({
+    ...commodityQuote,
+    id: unravellingId,
+    baseType: unravellingName,
+    amount: 200,
+    low: 200,
+    high: 200,
+    samples: 1,
+    listingCount: 12,
+    uniqueSellers: 11,
+});
+
 export const divineId = exchangeCurrencyId("divine")!;
 export const chaosId = exchangeCurrencyId("chaos")!;
 export const commodityExchangeSnapshot = {

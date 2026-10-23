@@ -47,7 +47,13 @@ import type { CraftingItemEdit } from "~/schemas/crafting-workbench";
 import { STORAGE_VERSION, type StorageData } from "~/schemas/storage";
 import * as craftingSources from "~/services/crafting-sources.server";
 import { ServerTiming } from "~/services/server-timing.server";
-import { commodityQuote, convertedCommodityQuote, essenceId } from "./crafting-commodity-fixtures";
+import {
+    commodityQuote,
+    convertedCommodityQuote,
+    unravellingId,
+    unravellingName,
+    unravellingQuote,
+} from "./crafting-commodity-fixtures";
 import { conditionalTransmuteGraph } from "./crafting-conditional-fixtures";
 import {
     exchangeGraph,
@@ -830,97 +836,113 @@ describe("transport parity", () => {
         lookup.mockRestore();
     });
 
-    it.each([
-        "lookup",
-        "binding",
-        "refresh",
-        "wrong identity",
-        "invalid counts",
-        "conversion",
-        "invalid conversion",
-    ] as const)("shares captured commodity %s through HTTP and MCP", async (scenario) => {
-        const graph = exchangeGraph();
-        const prices = { quotes: { [essenceId]: commodityQuote }, missing: {} };
-        const lookup = vi
-            .spyOn(craftingSources, "findCraftingSourcePrices")
-            .mockResolvedValue(prices);
-        const bound = bindCraftingSourcePrice(graph, fixtureEngine, essenceId, commodityQuote);
-        const cases = {
-            lookup: [
-                "find_crafting_source_prices",
-                "/market/sources",
-                { graph, ids: [essenceId], realm: "pc", at: commodityQuote.hour },
-                prices,
-            ],
-            binding: [
-                "bind_crafting_source_price",
-                "/market/sources/bind",
-                { graph, id: essenceId, quote: commodityQuote },
-                { graph: bound },
-            ],
-            refresh: [
-                "refresh_crafting_item_prices",
-                "/market/refresh",
-                { graph: bound },
-                { graph: bound, issues: [] },
-            ],
-            "wrong identity": [
-                "bind_crafting_source_price",
-                "/market/sources/bind",
-                { graph, id: essenceId, quote: { ...commodityQuote, baseType: "Other Essence" } },
-                null,
-            ],
-            "invalid counts": [
-                "bind_crafting_source_price",
-                "/market/sources/bind",
-                { graph, id: essenceId, quote: { ...commodityQuote, samples: 26 } },
-                null,
-            ],
-            conversion: [
-                "bind_crafting_source_price",
-                "/market/sources/bind",
-                { graph, id: essenceId, quote: convertedCommodityQuote },
-                {
-                    graph: bindCraftingSourcePrice(
+    describe.each([
+        { commodity: commodityQuote, converted: convertedCommodityQuote },
+        {
+            commodity: unravellingQuote,
+            converted: { ...convertedCommodityQuote, id: unravellingId, baseType: unravellingName },
+        },
+    ])("captured $commodity.baseType", ({
+        commodity: commodityQuote,
+        converted: convertedCommodityQuote,
+    }) => {
+        const essenceId = commodityQuote.id;
+        it.each([
+            "lookup",
+            "binding",
+            "refresh",
+            "wrong identity",
+            "invalid counts",
+            "conversion",
+            "invalid conversion",
+        ] as const)("shares captured commodity %s through HTTP and MCP", async (scenario) => {
+            const graph = exchangeGraph();
+            const prices = { quotes: { [essenceId]: commodityQuote }, missing: {} };
+            const lookup = vi
+                .spyOn(craftingSources, "findCraftingSourcePrices")
+                .mockResolvedValue(prices);
+            const bound = bindCraftingSourcePrice(graph, fixtureEngine, essenceId, commodityQuote);
+            const cases = {
+                lookup: [
+                    "find_crafting_source_prices",
+                    "/market/sources",
+                    { graph, ids: [essenceId], realm: "pc", at: commodityQuote.hour },
+                    prices,
+                ],
+                binding: [
+                    "bind_crafting_source_price",
+                    "/market/sources/bind",
+                    { graph, id: essenceId, quote: commodityQuote },
+                    { graph: bound },
+                ],
+                refresh: [
+                    "refresh_crafting_item_prices",
+                    "/market/refresh",
+                    { graph: bound },
+                    { graph: bound, issues: [] },
+                ],
+                "wrong identity": [
+                    "bind_crafting_source_price",
+                    "/market/sources/bind",
+                    {
                         graph,
-                        fixtureEngine,
-                        essenceId,
-                        convertedCommodityQuote,
-                    ),
-                },
-            ],
-            "invalid conversion": [
-                "bind_crafting_source_price",
-                "/market/sources/bind",
+                        id: essenceId,
+                        quote: { ...commodityQuote, baseType: "Other Essence" },
+                    },
+                    null,
+                ],
+                "invalid counts": [
+                    "bind_crafting_source_price",
+                    "/market/sources/bind",
+                    { graph, id: essenceId, quote: { ...commodityQuote, samples: 26 } },
+                    null,
+                ],
+                conversion: [
+                    "bind_crafting_source_price",
+                    "/market/sources/bind",
+                    { graph, id: essenceId, quote: convertedCommodityQuote },
+                    {
+                        graph: bindCraftingSourcePrice(
+                            graph,
+                            fixtureEngine,
+                            essenceId,
+                            convertedCommodityQuote,
+                        ),
+                    },
+                ],
+                "invalid conversion": [
+                    "bind_crafting_source_price",
+                    "/market/sources/bind",
+                    {
+                        graph,
+                        id: essenceId,
+                        quote: { ...convertedCommodityQuote, conversion: undefined },
+                    },
+                    null,
+                ],
+            } as const;
+            const [name, path, input, expected] = cases[scenario];
+            const response = await api.request(
+                `https://poe.boats/api/v1/crafting${path}`,
                 {
-                    graph,
-                    id: essenceId,
-                    quote: { ...convertedCommodityQuote, conversion: undefined },
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
                 },
-                null,
-            ],
-        } as const;
-        const [name, path, input, expected] = cases[scenario];
-        const response = await api.request(
-            `https://poe.boats/api/v1/crafting${path}`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime },
-        );
-        expect(response.status).toBe(expected === null ? 400 : 200);
-        const rpc = RpcSchema.parse(
-            await (await mcp("tools/call", { name, arguments: input })).json(),
-        );
-        const result = CallToolResultSchema.parse(rpc.result);
-        if (expected === null) expect(result.isError).toBe(true);
-        else {
-            expect(await response.json()).toEqual(expected);
-            expect(result.structuredContent).toEqual(expected);
-        }
-        lookup.mockRestore();
+                { runtime },
+            );
+            expect(response.status).toBe(expected === null ? 400 : 200);
+            const rpc = RpcSchema.parse(
+                await (await mcp("tools/call", { name, arguments: input })).json(),
+            );
+            const result = CallToolResultSchema.parse(rpc.result);
+            if (expected === null) expect(result.isError).toBe(true);
+            else {
+                expect(await response.json()).toEqual(expected);
+                expect(result.structuredContent).toEqual(expected);
+            }
+            lookup.mockRestore();
+        });
     });
 
     describe.each([

@@ -88,16 +88,37 @@ export function craftingSourceRecipe(
     return { category: "Beast" as const, components };
 }
 
+// Empty commodity signatures do not identify stored item, monster or experience payloads.
+const commodityCurrencyActions = new Set([
+    "identify",
+    "transmute_to_magic",
+    "reroll_magic",
+    "add_mod_to_magic",
+    "transmute_to_rare",
+    "upgrade_magic_to_rare",
+    "reroll",
+    "add_mod_to_rare",
+    "remove_random_mod",
+    "convert_to_normal",
+    "reroll_mod_values",
+    "add_influence_mod_to_rare",
+    "upgrade_influence_mod",
+    "transfer_item_influence",
+    "replace_rare_mod_veiled",
+    "consume_zana_influence_upgrade_mods",
+    "apply_zana_influence",
+]);
+
 export function craftingCommodityIdentity(engine: CraftingEngine, id: string) {
     if (engine.catalog.game !== "poe1") return null;
-    const essence = engine.catalog.crafting.essences.find((entry) => entry.id === id);
-    if (!essence) return null;
+    const currency = engine.catalog.crafting.currencies.find((entry) => entry.id === id);
+    if (!currency) return null;
+    const essence = engine.catalog.crafting.essences.some((entry) => entry.id === id);
+    if (!essence && !commodityCurrencyActions.has(currency.action)) return null;
     const currencies = engine.catalog.crafting.currencies.filter(
-        (entry) => entry.name === essence.name,
+        (entry) => entry.id === id || entry.name === currency.name,
     );
-    return currencies.length === 1 && currencies[0]!.id === id
-        ? { id, baseType: essence.name }
-        : null;
+    return currencies.length === 1 ? { id, baseType: currency.name } : null;
 }
 
 const prefixes = {
@@ -190,7 +211,7 @@ export function bindCraftingSourcePrice(
             throw new Error("A captured asking-price quote must describe a completed hour.");
         const identity = craftingCommodityIdentity(engine, id);
         if (!identity || identity.baseType !== parsed.baseType)
-            throw new Error("The commodity quote does not identify this catalog essence.");
+            throw new Error("The commodity quote does not identify this catalog currency.");
         const reference = commoditySourceReferenceSchema.parse({
             source: parsed.source,
             game: parsed.game,

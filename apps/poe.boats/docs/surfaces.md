@@ -196,11 +196,12 @@ distinct exact cohorts; 25 production alternatives include Hunter, Redeemer, NNN
 preparation. Capture fixtures cover every new base without modifier metadata;
 definitions do not imply observed inventory or available quotes.
 
-Source lookup and binding also accept 106 verified PoE 1 PC essence identities through a distinct
-`stash-commodity` source. This uses already captured unit asking prices and preserves the completed
+Source lookup and binding also accept uniquely identified supported PoE 1 PC crafting currencies
+and essences through a distinct `stash-commodity` source. Stored imprints and unsupported stateful
+currencies are excluded. This uses already captured unit asking prices and preserves the completed
 observation hour, range and priced sample count separately from total listings and sellers. Selection
 is explicit, manual amounts survive bulk fill and refresh, and historical snapshots use the requested
-cutoff. An unavailable exchange quote remains unavailable; essence asks are a separate price source.
+cutoff. An unavailable exchange quote remains unavailable; captured currency asks are a separate price source.
 Optional `exchange-v1` converts only the newest captured bucket using matching-hour rates. Shared
 lookup, binding, refresh and snapshots preserve the original asking range and exchange evidence;
 the UI requires explicit selection and labels the conversion. Native quotes take precedence.

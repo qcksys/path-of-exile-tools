@@ -37,7 +37,9 @@ export function SourcePricePicker({
     const title = !inputs.length
         ? "Vendor ingredient estimates"
         : hasCommodities
-          ? "Essence, beast & temple asking prices"
+          ? hasRecipes
+              ? "Currency, beast & temple asking prices"
+              : "Currency asking prices"
           : vendorInputs.length > 0
             ? "Vendor, beast & temple prices"
             : "Beast & temple prices";
@@ -107,7 +109,7 @@ export function SourcePricePicker({
             <div className="mt-3 space-y-3">
                 {hasCommodities && (
                     <p className="text-muted-foreground">
-                        Captured PoE 1 PC essence asks are per item in the project league and
+                        Captured PoE 1 PC currency asks are per item in the project league and
                         currency. These are listing estimates, not completed exchange trades. The
                         observed hour, price range and priced sample count are shown separately from
                         all listings and sellers. Confidence is uncalibrated; sparse asks can vary
@@ -117,7 +119,7 @@ export function SourcePricePicker({
                 {hasCommodities && (
                     <Label className="flex items-center gap-2">
                         <Checkbox checked={convert} onCheckedChange={setConvert} />
-                        Convert essence asks using matching-hour exchange rates
+                        Convert currency asks using matching-hour exchange rates
                     </Label>
                 )}
                 {hasRecipes && (

@@ -23,7 +23,7 @@ captured history survive restarts. DuckDB 1.4.5 contains the upstream fix for th
 | Cost | Source | Coverage and limits |
 | --- | --- | --- |
 | Currency, essences, oils, fossils, resonators, lifeforce and other canonical exchange items | [GGG hourly currency exchange](https://www.pathofexile.com/developer/docs/reference#currencyexchange) | Direct traded-volume ratios in the selected game, realm and league. Optional `reference-currency-v1` tries a two-leg conversion through chaos, divine, then exalted when a direct quote is absent. Both legs must have positive volume and the same hour and adaptive window. The result exposes both legs and does not invent direct traded volume or a traded range. Old bindings retain direct-pair behavior. |
-| Verified PoE 1 essences | Captured public stash commodity buckets | Explicit alternative asking-price source for the 106 essence identities with a unique matching currency ID/name in the retained catalog. Requires exact base type, empty name, currency frame, ordinary item flags and no variant signature. Prices are per item in the selected league and currency, with observed hour, range, priced sample count, total listings and total sellers. Never silently replaces an exchange quote. |
+| Supported PoE 1 crafting currencies and essences | Captured public stash commodity buckets | Explicit alternative asking-price source for supported currencies with a unique matching ID/name in the retained catalog. Stored imprints and unsupported stateful currencies are excluded. Requires exact base type, empty name, currency frame, ordinary item flags and no variant signature. Prices are per item in the selected league and currency, with observed hour, range, priced sample count, total listings and total sellers. Never silently replaces an exchange quote. |
 | Base items and supported prepared donors | Captured public stash cohorts | Asking-price distributions, seller counts and coverage checks. Requires actual matching observations; unsupported modifiers, exact preparation and PoE 2 equipment remain manual. |
 | Beast recipes | [poe.ninja Beast overview](https://poe.ninja/docs/api) | Derives the full component list from the project's retained catalog. Maps verified component IDs to exact feed identities, and requires every component to have a positive quote with listings. Includes all four sacrifices. The user must choose `rare-beast-mountain-lynx-v1` to use Mountain Lynx as the price assumption for extra rare beasts. Level-sensitive recipes remain manual because this feed does not distinguish beast levels. |
 | Locus of Corruption | [poe.ninja IncursionTemple overview](https://poe.ninja/docs/api) | Exact `locus-of-corruption-tier-3-temple` entry only, for one usable room; combined temple variants are not substituted. |
@@ -37,7 +37,7 @@ a price for an individual step. Gold and dust are not separately quantified pric
 inputs. This default applies only when creating those presets. Saved graphs,
 existing manual amounts and custom graphs with missing prices are unchanged.
 
-Equipment, exchange and captured essence lookups use the latest 24 completed hourly buckets at
+Equipment, exchange and captured currency lookups use the latest 24 completed hourly buckets at
 the requested cutoff. Historical cutoffs remain inclusive, but cannot select
 an incomplete future hour. Older observations remain available in history and
 are not returned as current prices. Failed refreshes preserve saved assumptions
@@ -101,7 +101,7 @@ including after a failed lookup. Zero traded volume is shown as zero volume and
 an unknown price. Viewing an older positive observation never fills a current
 price or replaces a manual amount.
 
-Captured essence asks are an explicit source choice, separate from completed
+Captured currency asks are an explicit source choice, separate from completed
 exchange trades. Bulk listing ratios such as `~price 10/5 chaos` are normalized
 to 2 chaos per item at capture; stack size does not multiply or divide that amount
 again. The latest compatible bucket must contain a positive requested-currency
@@ -113,7 +113,7 @@ ID, source kind, realm, league, currency and observed hour. Refresh and historic
 process snapshots query stored buckets at their own cutoffs; no current-only quote
 is substituted for history. The history link opens the raw asking distributions.
 
-Essence lookup can explicitly enable `exchange-v1` conversion, with the UI option
+Captured currency lookup can explicitly enable `exchange-v1` conversion, with the UI option
 unchecked by default. Native asks in the project currency take precedence;
 otherwise the same newest bucket may supply chaos, divine or exalted asks. The
 existing exchange resolver must supply a positive rate from that exact hour,

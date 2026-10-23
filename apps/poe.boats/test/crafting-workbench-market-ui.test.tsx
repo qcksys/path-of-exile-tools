@@ -211,11 +211,11 @@ it.each([
     fireEvent.change(await screen.findByLabelText("Price lookup league"), {
         target: { value: "Standard" },
     });
-    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    fireEvent.click(screen.getByText("Currency asking prices"));
     if (quote.conversion)
         fireEvent.click(
             screen.getByRole("checkbox", {
-                name: "Convert essence asks using matching-hour exchange rates",
+                name: "Convert currency asks using matching-hour exchange rates",
             }),
         );
     fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
@@ -281,7 +281,7 @@ it("copies the explicit vendor ingredient estimate without overwriting prior or 
     fireEvent.change(await screen.findByLabelText("Price lookup league"), {
         target: { value: "Standard" },
     });
-    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    fireEvent.click(screen.getByText("Currency asking prices"));
     fireEvent.click(screen.getByText("Vendor-upgrade ingredient estimates"));
     changeControl(screen.getByLabelText(`Vendor ingredient for ${vendorQuote.path.outputName}`), {
         target: { value: vendorInputId },

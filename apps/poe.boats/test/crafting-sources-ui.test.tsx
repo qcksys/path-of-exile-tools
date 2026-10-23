@@ -11,6 +11,9 @@ import {
     convertedCommodityQuote,
     essenceId,
     essenceName,
+    unravellingId,
+    unravellingName,
+    unravellingQuote,
 } from "./crafting-commodity-fixtures";
 import { exchangeGraph } from "./crafting-exchange-fixtures";
 import { engine } from "./crafting-fixtures";
@@ -29,6 +32,65 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 const id = "EinharMasterCraftMorrigan7";
+
+it("offers captured currency asks without a beast assumption and only replaces a manual amount explicitly", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+        new Response(
+            JSON.stringify({
+                quotes: { [unravellingId]: unravellingQuote },
+                missing: {},
+            }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    const onChange = vi.fn();
+    render(
+        <SourcePricePicker
+            graph={{
+                ...exchangeGraph(),
+                prices: {
+                    [unravellingId]: {
+                        amount: 123,
+                        currency: "chaos",
+                        source: "manual",
+                        confidence: null,
+                    },
+                },
+            }}
+            engine={engine}
+            entries={[[unravellingId, unravellingName]]}
+            onChange={onChange}
+        />,
+    );
+    fireEvent.click(screen.getByText("Currency asking prices"));
+    expect(screen.queryByRole("checkbox", { name: /Mountain Lynx/ })).toBeNull();
+    expect(screen.getByText(/not completed exchange trades/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
+    await screen.findByText(/200 chaos per item/);
+    expect(JSON.parse(fetcher.mock.calls[0]![1].body)).toMatchObject({
+        ids: [unravellingId],
+        realm: "pc",
+    });
+    expect(JSON.parse(fetcher.mock.calls[0]![1].body)).not.toHaveProperty("assumption");
+    expect(
+        screen.getByText(/1 priced samples · 12 total listings · 11 total sellers/),
+    ).toBeTruthy();
+    expect(
+        screen
+            .getByRole("button", { name: "Use source estimates for unpriced inputs" })
+            .hasAttribute("disabled"),
+    ).toBe(true);
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
+    expect(onChange.mock.calls[0]![0].prices[unravellingId].amount).toBe(200);
+    expect(
+        decodeCraftingSourceReference(onChange.mock.calls[0]![0].prices[unravellingId].cohortId),
+    ).toMatchObject({
+        source: "stash-commodity",
+        id: unravellingId,
+        baseType: unravellingName,
+    });
+});
 const quote = {
     source: "poe.ninja",
     game: "poe1",
@@ -151,7 +213,7 @@ it("shows captured per-item asks and fills only unpriced inputs until explicitly
         );
     }
     render(<Harness />);
-    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    fireEvent.click(screen.getByText("Currency asking prices"));
     expect(screen.queryByRole("checkbox", { name: /Mountain Lynx/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
     await screen.findByText("2 of 2 inputs priced.");
@@ -213,9 +275,9 @@ it("makes conversion explicit, shows the original ask and keeps manual prices un
             onChange={onChange}
         />,
     );
-    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    fireEvent.click(screen.getByText("Currency asking prices"));
     const choice = screen.getByRole("checkbox", {
-        name: "Convert essence asks using matching-hour exchange rates",
+        name: "Convert currency asks using matching-hour exchange rates",
     });
     expect(choice.getAttribute("aria-checked")).toBe("false");
     fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
@@ -255,11 +317,11 @@ it("cancels a pending essence lookup when conversion policy changes", async () =
             onChange={onChange}
         />,
     );
-    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    fireEvent.click(screen.getByText("Currency asking prices"));
     fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
     fireEvent.click(
         screen.getByRole("checkbox", {
-            name: "Convert essence asks using matching-hour exchange rates",
+            name: "Convert currency asks using matching-hour exchange rates",
         }),
     );
     expect(fetcher.mock.calls[0]![1].signal.aborted).toBe(true);
@@ -341,7 +403,7 @@ it("keeps direct asking prices separate from an explicitly selected vendor ingre
             onChange={onChange}
         />,
     );
-    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    fireEvent.click(screen.getByText("Currency asking prices"));
     fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
     await screen.findByText("No current output asks");
     expect(JSON.parse(fetcher.mock.calls[0]![1].body)).not.toHaveProperty("vendorUpgrade");
@@ -409,12 +471,12 @@ it.each([
     );
     fireEvent.click(
         screen.getByText(
-            includeService ? "Vendor, beast & temple prices" : "Vendor ingredient estimates",
+            includeService ? "Currency, beast & temple asking prices" : "Currency asking prices",
         ),
     );
     if (!includeService)
         expect(screen.queryByRole("button", { name: "Find beast & temple prices" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Find asking prices" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Find asking prices" })).toBeTruthy();
     fireEvent.click(screen.getByText("Vendor-upgrade ingredient estimates"));
     expect(screen.getByText(/Purchase Items at Nessa/)).toBeTruthy();
     expect(fetcher).not.toHaveBeenCalled();
@@ -455,7 +517,7 @@ it("discards a vendor quote pending when its exact ingredient changes", async ()
             onChange={onChange}
         />,
     );
-    fireEvent.click(screen.getByText("Essence, beast & temple asking prices"));
+    fireEvent.click(screen.getByText("Currency asking prices"));
     fireEvent.click(screen.getByText("Vendor-upgrade ingredient estimates"));
     const choice = screen.getByLabelText(`Vendor ingredient for ${vendorQuote.path.outputName}`);
     changeControl(choice, { target: { value: vendorInputId } });
