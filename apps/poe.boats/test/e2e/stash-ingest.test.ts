@@ -2,7 +2,6 @@
 import { once } from "node:events";
 import { createServer, type Server } from "node:http";
 import { fileURLToPath } from "node:url";
-import { gunzipSync } from "node:zlib";
 import { CallToolResultSchema } from "@modelcontextprotocol/sdk/types.js";
 import { itemQuerySchema, normalizeApiItem } from "@poe-tools/item-query";
 import {
@@ -56,6 +55,7 @@ import { createClient } from "../../../../packages/poe-api-client/dist/index.mjs
 import { ingestCx } from "../../../../packages/poe-stash-ingest/src/cx/ingest.ts";
 import { rollupCx } from "../../../../packages/poe-stash-ingest/src/cx/rollup.ts";
 import { flushRollups } from "../../../../packages/poe-stash-ingest/src/pipeline.ts";
+import { readArchivedPage } from "../../../../packages/poe-stash-ingest/src/ps/archive-payload.ts";
 import {
     fetchCheckpoints,
     flushCheckpoints,
@@ -1726,15 +1726,13 @@ it("rolls back a failed page and replays it without duplicate observations", asy
     expect(await queryAll(local.conn, "SELECT * FROM ps_listing_hour")).toEqual([]);
     expect(await queryAll(local.conn, "SELECT * FROM icon_basemap")).toEqual([]);
     expect(await queryAll(local.conn, "SELECT * FROM ps_checkpoint")).toEqual([]);
-    const [captured] = await queryAll<{ body: string; processed: boolean }>(
+    const [captured] = await queryAll<{ hash: string; processed: boolean }>(
         local.conn,
-        "SELECT to_base64(p.response_gzip) AS body, c.processed_at IS NOT NULL AS processed FROM ps_capture_page c JOIN ps_capture_payload p USING (response_hash)",
+        "SELECT response_hash AS hash, processed_at IS NOT NULL AS processed FROM ps_capture_page",
     );
     expect(captured?.processed).toBe(false);
-    expect(
-        JSON.parse(gunzipSync(Buffer.from(captured!.body, "base64")).toString()).stashes[1].items[0]
-            .baseType,
-    ).toBeNull();
+    const archived = await readArchivedPage(local.conn, captured!.hash);
+    expect(archived.stashes[1]!.items[0]!.baseType).toBeNull();
     upstreamResponses.push({ body: { next_change_id: "page-2", stashes: [stash] } });
     await ingestPs(local.conn, client, { pages: 1 });
     await rollupPs(local.conn, { hour: Math.floor(Date.now() / 3_600_000) * 3600 });
