@@ -75,6 +75,7 @@ import {
     marketGraph,
 } from "./crafting-market-fixtures";
 import { nnnGraph } from "./crafting-nnn-fixtures";
+import { yellowBeastComponent } from "./crafting-source-fixtures";
 import {
     vendorCurrencyInputId,
     vendorCurrencyOutputId,
@@ -754,22 +755,23 @@ describe("transport parity", () => {
             league: graph.league,
             currency: "chaos",
             id,
-            assumption: "rare-beast-mountain-lynx-v1",
+            yellowBeasts: "listing-count-weighted-mean-v1",
             fetchedAt: "2026-10-08T04:00:00.000Z",
             amount: 607,
             components: [
                 ["craicic-sand-spitter", 1, 1],
                 ["black-morrigan", 1, 600],
-                ["mountain-lynx", 2, 3],
-            ].map(([detailsId, quantity, unitPrice]) => ({
-                detailsId,
-                name: detailsId,
-                quantity,
-                unitPrice,
-                listingCount: 100,
-                sourceUrl:
-                    "https://poe.ninja/poe1/api/economy/stash/current/item/overview?league=Standard&type=Beast",
-            })),
+            ]
+                .map(([detailsId, quantity, unitPrice]) => ({
+                    detailsId,
+                    name: detailsId,
+                    quantity,
+                    unitPrice,
+                    listingCount: 100,
+                    sourceUrl:
+                        "https://poe.ninja/poe1/api/economy/stash/current/item/overview?league=Standard&type=Beast",
+                }))
+                .concat([yellowBeastComponent]),
         });
         if (sourceQuote.source !== "poe.ninja") throw new Error("Expected beast source");
         const prices = { quotes: { [id]: sourceQuote }, missing: {} };
@@ -781,7 +783,7 @@ describe("transport parity", () => {
             lookup: [
                 "find_crafting_source_prices",
                 "/market/sources",
-                { graph, ids: [id], realm: "pc", assumption: sourceQuote.assumption },
+                { graph, ids: [id], realm: "pc" },
                 prices,
             ],
             binding: [

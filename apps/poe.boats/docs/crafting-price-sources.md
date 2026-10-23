@@ -25,7 +25,7 @@ captured history survive restarts. DuckDB 1.4.5 contains the upstream fix for th
 | Currency, essences, oils, fossils, resonators, lifeforce and other canonical exchange items | [GGG hourly currency exchange](https://www.pathofexile.com/developer/docs/reference#currencyexchange) | Direct traded-volume ratios in the selected game, realm and league. Optional `reference-currency-v1` tries a two-leg conversion through chaos, divine, then exalted when a direct quote is absent. Both legs must have positive volume and the same hour and adaptive window. The result exposes both legs and does not invent direct traded volume or a traded range. Old bindings retain direct-pair behavior. |
 | Supported PoE 1 crafting currencies and essences | Captured public stash commodity buckets | Explicit alternative asking-price source for supported currencies with a unique matching ID/name in the retained catalog. Stored imprints and unsupported stateful currencies are excluded. Requires exact base type, empty name, currency frame, ordinary item flags and no variant signature. Prices are per item in the selected league and currency, with observed hour, range, priced sample count, total listings and total sellers. Never silently replaces an exchange quote. |
 | Base items and supported prepared donors | Captured public stash cohorts | Asking-price distributions, seller counts and coverage checks. Requires actual matching observations; unsupported modifiers, exact preparation and PoE 2 equipment remain manual. |
-| Beast recipes | [poe.ninja Beast overview](https://poe.ninja/docs/api) | Derives the full component list from the project's retained catalog. Maps verified component IDs to exact feed identities, and requires every component to have a positive quote with listings. Includes all four sacrifices. The user must choose `rare-beast-mountain-lynx-v1` to use Mountain Lynx as the price assumption for extra rare beasts. Level-sensitive recipes remain manual because this feed does not distinguish beast levels. |
+| Beast recipes | [poe.ninja Beast overview](https://poe.ninja/docs/api) | Derives all four sacrifices from the project's retained catalog. Named recipe beasts use exact feed identities. Remaining rare sacrifices use one generic Yellow Beast pool: the listing-count-weighted mean of positive eligible species estimates. Every component needs a positive quote. Level-sensitive recipes remain manual because this feed does not distinguish beast levels. |
 | Locus of Corruption | [poe.ninja IncursionTemple overview](https://poe.ninja/docs/api) | Exact `locus-of-corruption-tier-3-temple` entry only, for one usable room; combined temple variants are not substituted. |
 | Recombination service, gold, dust, time, arbitrary rares and unsupported prepared inputs | User-entered assumption | No reliable automatic chaos price. Missing assumptions remain unknown. New recombination presets explicitly use the requested 0-chaos self-service assumption, excluding gold and dust opportunity cost. |
 
@@ -142,9 +142,28 @@ time; confidence is uncalibrated. The backend caches according to response
 `Cache-Control`/`Age`, revalidates with `ETag`, uses a descriptive User-Agent,
 bounds response size and does not substitute expired data after a failed fetch.
 
+The Yellow Beast pool uses a finite derived allowlist from game build `3.29.3.3`:
+169 active ordinary capturable species names, cross-checked against the
+`AnyCreature`/`Rare` recipe requirement. Named recipe components, legendary,
+unique and disabled-only identities are excluded. Unknown names and ambiguous
+duplicate feed identities are rejected. This is a reviewed inference from the
+game tables, not an official interpretation of their unnamed boolean columns.
+The generated data records the schema and table hashes; regeneration with
+`scripts/generate-yellow-beasts.ts` requires those exact reviewed inputs.
+
+`listing-count-weighted-mean-v1` weights each eligible species estimate by its
+upstream listing count. It is not a median of individual asks or a count of unique
+sellers. The returned generic component retains the contributing estimates for
+arithmetic validation; there are no individual yellow-beast price controls or
+stored species price series. An empty positive pool leaves the whole recipe
+unpriced. New beast quotes use this pool without a species assumption checkbox.
+Saved `rare-beast-mountain-lynx-v1` references remain readable, but lookup/binding
+refuse them with an instruction to select a new generic quote; refresh does not
+silently change their meaning.
+
 The UI, HTTP and MCP operations use the same lookup and binding functions.
 Selecting a quote explicitly replaces a manual value; the bulk action only fills
-unpriced inputs. Refresh retains source scope and any rare-beast assumption.
+unpriced inputs. Refresh retains source scope and the generic beast pricing policy.
 Historical process snapshots return an explicit gap for current-only beast and
 temple sources; they never reuse today's quote for an earlier date.
 
@@ -165,7 +184,7 @@ Recipe identity references:
 - [Extracted Bestiary component identities](https://www.poewiki.net/wiki/Module:Bestiary/components).
 - [Black Mórrigan recipe components](https://www.poewiki.net/wiki/The_Black_M%C3%B3rrigan).
 - [Four-sacrifice beastcrafting](https://www.poewiki.net/wiki/Beastcrafting).
-- [Mountain Lynx in the Bestiary](https://www.poewiki.net/wiki/Bestiary).
+- [Pinned generic-beast classification](../app/lib/crafting-yellow-beasts.generated.json).
 
 The 3.29 imprint beast is named Craicic Croaker in the current feed. A missing or
 renamed source identity fails closed; no fuzzy name match or cheapest unrelated

@@ -20,7 +20,6 @@ export function SourcePricePicker({
     entries: [string, string][];
     onChange: (graph: CraftingGraph) => void;
 }) {
-    const [assumption, setAssumption] = useState(false);
     const [convert, setConvert] = useState(false);
     const [result, setResult] = useState<CraftingSourceResult>();
     const [busy, setBusy] = useState(false);
@@ -49,7 +48,6 @@ export function SourcePricePicker({
         graph.currency,
         graph.ruleset,
         inputs.map(([id]) => id),
-        assumption,
         convert,
     ]);
     useEffect(() => {
@@ -75,7 +73,6 @@ export function SourcePricePicker({
                     graph,
                     ids: inputs.map(([id]) => id),
                     realm: "pc",
-                    assumption: assumption ? "rare-beast-mountain-lynx-v1" : undefined,
                     conversion: convert ? "exchange-v1" : undefined,
                 }),
             });
@@ -131,10 +128,11 @@ export function SourcePricePicker({
                             uncalibrated. Historical process estimates need manual assumptions for
                             these sources.
                         </p>
-                        <Label className="flex items-center gap-2">
-                            <Checkbox checked={assumption} onCheckedChange={setAssumption} />
-                            Use Mountain Lynx listing prices for the extra rare beasts
-                        </Label>
+                        <p className="text-muted-foreground">
+                            Extra rare sacrifices use one generic Yellow Beast pool, priced as a
+                            listing-count-weighted mean of eligible species estimates. Named recipe
+                            beasts are priced separately.
+                        </p>
                         <p className="text-muted-foreground">
                             Level-specific beasts and non-tradeable gold/dust remain manual. The
                             date shown is retrieval time, not a guaranteed sale or source update
@@ -273,6 +271,8 @@ export function SourcePricePicker({
                                                                 {component.unitPrice}{" "}
                                                                 {quote.currency} each ·{" "}
                                                                 {component.listingCount} listings ·{" "}
+                                                                {component.pool &&
+                                                                    `${component.pool.species.length} species estimates · listing-count-weighted mean · `}
                                                                 <a
                                                                     className="underline"
                                                                     href={component.sourceUrl}

@@ -40,6 +40,7 @@ import {
     marketGraph,
 } from "../../crafting-market-fixtures";
 import { nnnGraph, rage } from "../../crafting-nnn-fixtures";
+import { yellowBeastComponent } from "../../crafting-source-fixtures";
 import {
     vendorCurrencyInputId,
     vendorCurrencyOutputId,
@@ -696,22 +697,23 @@ test("beast prices refresh on reopening and preserve manual overrides", async ({
             league: graph.league,
             currency: "chaos",
             id,
-            assumption: "rare-beast-mountain-lynx-v1",
+            yellowBeasts: "listing-count-weighted-mean-v1",
             amount,
             fetchedAt: "2026-10-08T04:00:00.000Z",
             components: [
                 { detailsId: "craicic-sand-spitter", quantity: 1, unitPrice: 1 },
                 { detailsId: "black-morrigan", quantity: 1, unitPrice: amount - 7 },
-                { detailsId: "mountain-lynx", quantity: 2, unitPrice: 3 },
-            ].map((component) => ({
-                ...component,
-                name: component.detailsId,
-                listingCount: 100,
-                sourceUrl: "https://poe.ninja/poe1/api/economy/stash/current/item/overview",
-            })),
+            ]
+                .map((component) => ({
+                    ...component,
+                    name: component.detailsId,
+                    listingCount: 100,
+                    sourceUrl: "https://poe.ninja/poe1/api/economy/stash/current/item/overview",
+                }))
+                .concat([yellowBeastComponent]),
         });
     await page.route("**/api/v1/crafting/market/sources", (route) => {
-        expect(route.request().postDataJSON().assumption).toBe("rare-beast-mountain-lynx-v1");
+        expect(route.request().postDataJSON().assumption).toBeUndefined();
         return route.fulfill({ json: { quotes: { [id]: currentQuote() }, missing: {} } });
     });
     await page.route("**/api/v1/crafting/market/refresh", (route) =>
@@ -733,9 +735,9 @@ test("beast prices refresh on reopening and preserve manual overrides", async ({
         .locator("details")
         .filter({ has: page.locator("summary", { hasText: /^Prices & calculation$/ }) });
     await prices.getByText("Beast & temple prices", { exact: true }).click();
-    await prices.getByRole("checkbox", { name: /Mountain Lynx/ }).check();
+    await expect(prices.getByRole("checkbox", { name: /Mountain Lynx/ })).toHaveCount(0);
     await prices.getByRole("button", { name: "Find beast & temple prices", exact: true }).click();
-    await expect(prices).toContainText("2 × mountain-lynx");
+    await expect(prices).toContainText("2 × Yellow Beast");
     await prices.getByRole("button", { name: "Use source estimate", exact: true }).click();
     const price = prices.getByRole("spinbutton", { name: /^Beastcraft · Modify an Item/ });
     await expect(price).toHaveValue("607");

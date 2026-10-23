@@ -5,6 +5,12 @@ import { findCraftingExchangePrices } from "~/db/queries/crafting-exchange.queri
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { craftingCommodityIdentity, craftingSourceRecipe } from "~/lib/crafting-sources";
 import { craftingVendorUpgrade } from "~/lib/crafting-vendor-upgrades";
+import {
+    isYellowBeastIdentity,
+    yellowBeastId,
+    yellowBeastPolicy,
+    yellowBeastPool,
+} from "~/lib/crafting-yellow-beasts";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import {
     type CraftingSourceOptions,
@@ -149,6 +155,39 @@ export async function findCraftingSourcePrices(
             }
             if (feed instanceof Error) throw feed;
             const components = recipe.components.map((component) => {
+                if (component.detailsId === yellowBeastId) {
+                    const eligible = feed.lines.filter((line) =>
+                        isYellowBeastIdentity(line.detailsId, line.name),
+                    );
+                    if (new Set(eligible.map((line) => line.detailsId)).size !== eligible.length)
+                        throw new Error(
+                            "Ambiguous Yellow Beast species in the feed; the whole recipe remains unpriced.",
+                        );
+                    const species = eligible.flatMap((line) => {
+                        const unitPrice = line[`${currency}Value`];
+                        return unitPrice && line.listingCount
+                            ? [
+                                  {
+                                      detailsId: line.detailsId,
+                                      name: line.name,
+                                      unitPrice,
+                                      listingCount: line.listingCount,
+                                  },
+                              ]
+                            : [];
+                    });
+                    if (!species.length)
+                        throw new Error(
+                            `No positive ${currency} Yellow Beast pool; the whole recipe remains unpriced.`,
+                        );
+                    return {
+                        ...component,
+                        name: "Yellow Beast",
+                        ...yellowBeastPool(species),
+                        sourceUrl: feed.sourceUrl,
+                        pool: { estimator: yellowBeastPolicy, species },
+                    };
+                }
                 const matches = feed.lines.filter((line) => line.detailsId === component.detailsId);
                 const line = matches.length === 1 ? matches[0] : undefined;
                 const unitPrice = line?.[`${currency}Value`];
@@ -171,7 +210,7 @@ export async function findCraftingSourcePrices(
                 league: graph.league,
                 currency,
                 id,
-                assumption: recipe.category === "Beast" ? options.assumption : undefined,
+                yellowBeasts: recipe.category === "Beast" ? yellowBeastPolicy : undefined,
                 amount: components.reduce(
                     (sum, entry) => sum + entry.quantity * entry.unitPrice,
                     0,

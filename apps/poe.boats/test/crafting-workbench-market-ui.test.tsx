@@ -13,6 +13,7 @@ import { changeControl } from "./control-helpers";
 import { commodityQuote, convertedCommodityQuote, essenceId } from "./crafting-commodity-fixtures";
 import { exchangeQuote, transmuteId } from "./crafting-exchange-fixtures";
 import { baseId, catalog, engine, getCatalog } from "./crafting-fixtures";
+import { yellowBeastComponent } from "./crafting-source-fixtures";
 import { vendorInputId, vendorOutputId, vendorQuote } from "./crafting-vendor-upgrade-fixtures";
 import { chooseStartingItem } from "./starting-item-helper";
 
@@ -135,19 +136,20 @@ it("copies a full beast recipe through the same source picker", async () => {
         league: "Standard",
         currency: "chaos",
         id,
-        assumption: "rare-beast-mountain-lynx-v1",
+        yellowBeasts: "listing-count-weighted-mean-v1",
         amount: 607,
         fetchedAt: "2026-10-08T04:00:00.000Z",
         components: [
             { detailsId: "craicic-sand-spitter", quantity: 1, unitPrice: 1 },
             { detailsId: "black-morrigan", quantity: 1, unitPrice: 600 },
-            { detailsId: "mountain-lynx", quantity: 2, unitPrice: 3 },
-        ].map((component) => ({
-            ...component,
-            name: component.detailsId,
-            listingCount: 100,
-            sourceUrl: "https://poe.ninja/poe1/api/economy/stash/current/item/overview",
-        })),
+        ]
+            .map((component) => ({
+                ...component,
+                name: component.detailsId,
+                listingCount: 100,
+                sourceUrl: "https://poe.ninja/poe1/api/economy/stash/current/item/overview",
+            }))
+            .concat([yellowBeastComponent]),
     };
     const fetcher = vi
         .fn()
@@ -169,17 +171,16 @@ it("copies a full beast recipe through the same source picker", async () => {
         target: { value: "Standard" },
     });
     fireEvent.click(screen.getByText("Beast & temple prices"));
-    fireEvent.click(screen.getByRole("checkbox", { name: /Mountain Lynx/ }));
+    expect(screen.queryByRole("checkbox", { name: /Mountain Lynx/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Find beast & temple prices" }));
     await screen.findByRole("button", { name: "Use source estimate" });
     expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("123");
-    expect(screen.getByText(/2 × mountain-lynx/)).toBeTruthy();
+    expect(screen.getByText(/2 × Yellow Beast/)).toBeTruthy();
     const request = JSON.parse(
         fetcher.mock.calls.find(([url]) => url === "/api/v1/crafting/market/sources")![1].body,
     );
     expect(request).toMatchObject({
         graph: { game: "poe1", league: "Standard", currency: "chaos" },
-        assumption: "rare-beast-mountain-lynx-v1",
         ids: [id],
     });
     fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
