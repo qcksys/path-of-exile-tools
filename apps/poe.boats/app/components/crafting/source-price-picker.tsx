@@ -4,6 +4,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { bindCraftingSourcePrice, craftingCommodityIdentity } from "~/lib/crafting-sources";
+import { craftingVendorUpgradePaths } from "~/lib/crafting-vendor-upgrades";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import { type CraftingSourceResult, craftingSourceResultSchema } from "~/schemas/crafting-sources";
 import { VendorUpgradePricePicker, VendorUpgradeQuoteDetails } from "./vendor-upgrade-price-picker";
@@ -30,9 +31,16 @@ export function SourcePricePicker({
     );
     const hasCommodities = inputs.some(([id]) => craftingCommodityIdentity(engine, id));
     const hasRecipes = inputs.some(([id]) => !id.startsWith("Metadata/Items/"));
-    const title = hasCommodities
-        ? "Essence, beast & temple asking prices"
-        : "Beast & temple prices";
+    const vendorInputs = entries.filter(
+        ([id]) => craftingVendorUpgradePaths(engine, id).length > 0,
+    );
+    const title = !inputs.length
+        ? "Vendor ingredient estimates"
+        : hasCommodities
+          ? "Essence, beast & temple asking prices"
+          : vendorInputs.length > 0
+            ? "Vendor, beast & temple prices"
+            : "Beast & temple prices";
     const scope = JSON.stringify([
         graph.game,
         graph.league,
@@ -49,7 +57,7 @@ export function SourcePricePicker({
         setBusy(false);
         return () => pending.current?.abort();
     }, [scope]);
-    if (graph.game !== "poe1" || !inputs.length) return null;
+    if (graph.game !== "poe1" || (!inputs.length && !vendorInputs.length)) return null;
     async function lookup() {
         pending.current?.abort();
         const controller = new AbortController();
@@ -132,18 +140,20 @@ export function SourcePricePicker({
                         </p>
                     </>
                 )}
-                <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy || !graph.league?.trim()}
-                    onClick={() => void lookup()}
-                >
-                    {busy
-                        ? "Loading sources…"
-                        : hasCommodities
-                          ? "Find asking prices"
-                          : "Find beast & temple prices"}
-                </Button>
+                {inputs.length > 0 && (
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy || !graph.league?.trim()}
+                        onClick={() => void lookup()}
+                    >
+                        {busy
+                            ? "Loading sources…"
+                            : hasCommodities
+                              ? "Find asking prices"
+                              : "Find beast & temple prices"}
+                    </Button>
+                )}
                 {error && <p role="alert">{error}</p>}
                 {result && (
                     <>
@@ -286,23 +296,21 @@ export function SourcePricePicker({
                         })}
                     </>
                 )}
-                {hasCommodities && (
+                {vendorInputs.length > 0 && (
                     <details className="space-y-3">
                         <summary className="cursor-pointer font-medium">
                             Vendor-upgrade ingredient estimates
                         </summary>
-                        {inputs
-                            .filter(([id]) => craftingCommodityIdentity(engine, id))
-                            .map(([id, name]) => (
-                                <VendorUpgradePricePicker
-                                    key={id}
-                                    graph={graph}
-                                    engine={engine}
-                                    id={id}
-                                    name={name}
-                                    onChange={onChange}
-                                />
-                            ))}
+                        {vendorInputs.map(([id, name]) => (
+                            <VendorUpgradePricePicker
+                                key={id}
+                                graph={graph}
+                                engine={engine}
+                                id={id}
+                                name={name}
+                                onChange={onChange}
+                            />
+                        ))}
                     </details>
                 )}
             </div>

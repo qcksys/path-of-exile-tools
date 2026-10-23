@@ -11,11 +11,15 @@ import {
     craftingMarketSnapshots,
     refreshCraftingMarketPrices,
 } from "~/operations/crafting-market.server";
-import { craftingSourceQuoteSchema } from "~/schemas/crafting-sources";
+import { craftingSourceQuoteSchema, vendorUpgradePathSchema } from "~/schemas/crafting-sources";
 import { findCraftingSourcePrices } from "~/services/crafting-sources.server";
 import { exchangeGraph } from "./crafting-exchange-fixtures";
 import { catalog, engine } from "./crafting-fixtures";
 import {
+    vendorCurrencyInputId,
+    vendorCurrencyOutputId,
+    vendorCurrencyQuote,
+    vendorCurrencySnapshot,
     vendorHour,
     vendorInputId,
     vendorMiddleId,
@@ -307,4 +311,237 @@ it("returns explicit refusal for unsupported requests without using a different 
         expect(result.quotes).toEqual({});
         expect(result.missing[vendorOutputId]).toBeTruthy();
     }
+});
+
+it("exposes only the exact one-hop NPC purchase, excluding sell, reverse and multi-hop currency paths", () => {
+    expect(craftingVendorUpgradePaths(engine, vendorCurrencyOutputId)).toEqual([
+        vendorCurrencyQuote.path,
+    ]);
+    const alteration = "Metadata/Items/Currency/CurrencyRerollMagic";
+    expect(craftingVendorUpgradePaths(engine, alteration).map((path) => path.inputId)).toEqual([
+        vendorCurrencyOutputId,
+    ]);
+    expect(
+        craftingVendorUpgradePaths(engine, "Metadata/Items/Currency/CurrencyIdentification"),
+    ).toEqual([]);
+    for (const [output, input] of [
+        [vendorCurrencyInputId, vendorCurrencyOutputId],
+        [alteration, vendorCurrencyInputId],
+        [vendorCurrencyOutputId, "missing"],
+    ])
+        expect(() => craftingVendorUpgrade(engine, output!, input!)).toThrow("verified forward");
+    expect(
+        craftingVendorUpgradePaths(
+            new CraftingEngine({ ...catalog, game: "poe2" }),
+            vendorCurrencyOutputId,
+        ),
+    ).toEqual([]);
+    expect(
+        vendorQuote.path.steps.every(
+            (step) =>
+                step.inputQuantity === 3 && !step.method && !step.instructions && !step.sourceUrl,
+        ),
+    ).toBe(true);
+    expect(vendorUpgradePathSchema.parse(vendorQuote.path)).toEqual(vendorQuote.path);
+});
+
+it("refuses missing or ambiguous canonical currency names and IDs", () => {
+    const input = catalog.crafting.currencies.find((entry) => entry.id === vendorCurrencyInputId)!;
+    const output = catalog.crafting.currencies.find(
+        (entry) => entry.id === vendorCurrencyOutputId,
+    )!;
+    for (const currencies of [
+        catalog.crafting.currencies.filter((entry) => entry.id !== input.id),
+        [...catalog.crafting.currencies, { ...input, id: `${input.id}Other` }],
+        [...catalog.crafting.currencies, { ...output, id: `${output.id}Other` }],
+        [...catalog.crafting.currencies, { ...input, name: "Other currency" }],
+        catalog.crafting.currencies.map((entry) =>
+            entry.id === input.id ? { ...entry, id: "transmute" } : entry,
+        ),
+    ]) {
+        const ambiguous = new CraftingEngine({
+            ...catalog,
+            crafting: { ...catalog.crafting, currencies },
+        });
+        expect(craftingVendorUpgradePaths(ambiguous, vendorCurrencyOutputId)).toEqual([]);
+    }
+});
+
+it("quotes four fresh Transmutations only on explicit selection and preserves manual amounts until binding", async () => {
+    capture(vendorCurrencySnapshot);
+    const graph = {
+        ...exchangeGraph(),
+        prices: {
+            [vendorCurrencyOutputId]: {
+                amount: 7,
+                currency: "chaos",
+                source: "manual" as const,
+                confidence: null,
+            },
+        },
+    };
+    const ordinary = await findCraftingSourcePrices(
+        graph,
+        engine,
+        { realm: "pc", ids: [vendorCurrencyOutputId] },
+        db,
+    );
+    expect(ordinary.quotes).toEqual({});
+    expect(ordinary.missing[vendorCurrencyOutputId]).toBeTruthy();
+    const result = await findCraftingSourcePrices(
+        graph,
+        engine,
+        {
+            realm: "pc",
+            ids: [vendorCurrencyOutputId],
+            vendorUpgrade: { inputId: vendorCurrencyInputId },
+        },
+        db,
+    );
+    expect(result).toEqual({
+        quotes: { [vendorCurrencyOutputId]: vendorCurrencyQuote },
+        missing: {},
+    });
+    expect(graph.prices[vendorCurrencyOutputId]?.amount).toBe(7);
+    const bound = bindCraftingSourcePrice(
+        graph,
+        engine,
+        vendorCurrencyOutputId,
+        vendorCurrencyQuote,
+    );
+    expect(bound.prices[vendorCurrencyOutputId]).toMatchObject({
+        amount: 4 * (7 / 3150),
+        confidence: null,
+        observedAt: new Date(vendorHour * 1000).toISOString(),
+    });
+    expect(bound.prices[vendorCurrencyOutputId]).not.toHaveProperty("samples");
+    expect(
+        decodeCraftingSourceReference(bound.prices[vendorCurrencyOutputId]?.cohortId),
+    ).toMatchObject({
+        path: vendorCurrencyQuote.path,
+        ingredient: { itemId: vendorCurrencyInputId, itemVolume: 3150, quoteVolume: 7 },
+    });
+});
+
+it("refuses forged NPC quantities, methods and provenance, and other-game binding", () => {
+    const graph = exchangeGraph();
+    const step = vendorCurrencyQuote.path.steps[0]!;
+    for (const changes of [
+        { inputQuantity: 3 },
+        { inputQuantity: 729 },
+        { recipeId: "1:sell:transmute:wisdom" },
+        { method: undefined },
+        { instructions: "Use the sell window." },
+        { sourceUrl: "https://example.com/forged" },
+        { inputName: "Orb of Alteration" },
+    ]) {
+        const bad = {
+            ...vendorCurrencyQuote,
+            path: { ...vendorCurrencyQuote.path, steps: [{ ...step, ...changes }] },
+        };
+        expect(() => bindCraftingSourcePrice(graph, engine, vendorCurrencyOutputId, bad)).toThrow(
+            "exact verified recipe",
+        );
+    }
+    for (const inputQuantity of [0, -1, 1.5, 730])
+        expect(
+            vendorUpgradePathSchema.safeParse({
+                ...vendorCurrencyQuote.path,
+                steps: [{ ...step, inputQuantity }],
+            }).success,
+        ).toBe(false);
+    expect(() =>
+        bindCraftingSourcePrice(graph, engine, vendorCurrencyOutputId, {
+            ...vendorCurrencyQuote,
+            amount: 4,
+        }),
+    ).toThrow("quantity times");
+    expect(() =>
+        bindCraftingSourcePrice(
+            { ...graph, game: "poe2" },
+            engine,
+            vendorCurrencyOutputId,
+            vendorCurrencyQuote,
+        ),
+    ).toThrow("does not match");
+});
+
+it("refreshes the selected NPC ingredient and historical path even when a direct output quote appears", async () => {
+    capture(vendorCurrencySnapshot);
+    const bound = bindCraftingSourcePrice(
+        exchangeGraph(),
+        engine,
+        vendorCurrencyOutputId,
+        vendorCurrencyQuote,
+    );
+    capture({
+        ...vendorCurrencySnapshot,
+        hour: vendorHour + 3600,
+        volumeTraded: {
+            [vendorCurrencyInputId]: 100,
+            "Metadata/Items/Currency/CurrencyRerollRare": 1,
+        },
+    });
+    capture({
+        hour: vendorHour + 3600,
+        marketId: `${vendorCurrencyOutputId}|Metadata/Items/Currency/CurrencyRerollRare`,
+        volumeTraded: {
+            [vendorCurrencyOutputId]: 1000,
+            "Metadata/Items/Currency/CurrencyRerollRare": 1,
+        },
+    });
+    const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
+    expect(refreshed.issues).toEqual([]);
+    expect(refreshed.graph.prices[vendorCurrencyOutputId]?.amount).toBe(0.04);
+    expect(
+        decodeCraftingSourceReference(refreshed.graph.prices[vendorCurrencyOutputId]?.cohortId),
+    ).toMatchObject({
+        path: vendorCurrencyQuote.path,
+        ingredient: {
+            itemId: vendorCurrencyInputId,
+            hour: vendorHour + 3600,
+            itemVolume: 100,
+            quoteVolume: 1,
+        },
+    });
+    const history = await craftingMarketSnapshots(db, refreshed.graph, engine, [
+        vendorHour,
+        vendorHour + 3600,
+    ]);
+    expect(
+        history.points.map((point) => point.graph?.prices[vendorCurrencyOutputId]?.amount),
+    ).toEqual([4 * (7 / 3150), 0.04]);
+});
+
+it("keeps an NPC estimate unresolved after newer zero-volume ingredients without falling back to the output market", async () => {
+    capture(vendorCurrencySnapshot);
+    capture({
+        ...vendorCurrencySnapshot,
+        hour: vendorHour + 3600,
+        volumeTraded: {
+            [vendorCurrencyInputId]: 0,
+            "Metadata/Items/Currency/CurrencyRerollRare": 0,
+        },
+    });
+    capture({
+        hour: vendorHour + 3600,
+        marketId: `${vendorCurrencyOutputId}|Metadata/Items/Currency/CurrencyRerollRare`,
+        volumeTraded: {
+            [vendorCurrencyOutputId]: 100,
+            "Metadata/Items/Currency/CurrencyRerollRare": 1,
+        },
+    });
+    const bound = bindCraftingSourcePrice(
+        exchangeGraph(),
+        engine,
+        vendorCurrencyOutputId,
+        vendorCurrencyQuote,
+    );
+    const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
+    expect(refreshed.issues).toHaveLength(1);
+    expect(refreshed.graph.prices[vendorCurrencyOutputId]).toEqual(
+        bound.prices[vendorCurrencyOutputId],
+    );
+    const history = await craftingMarketSnapshots(db, bound, engine, [vendorHour + 3600]);
+    expect(history.points[0]?.graph).toBeNull();
 });

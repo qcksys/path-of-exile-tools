@@ -31,3 +31,50 @@ export const vendorQuote = vendorUpgradeQuoteSchema.parse({
         "Metadata/Items/Currency/CurrencyRerollRare",
     ),
 });
+
+export const vendorCurrencyInputId = "Metadata/Items/Currency/CurrencyUpgradeToMagic";
+export const vendorCurrencyOutputId = "Metadata/Items/Currency/CurrencyAddModToMagic";
+export const vendorCurrencySnapshot = {
+    ...vendorSnapshot,
+    marketId: `${vendorCurrencyInputId}|Metadata/Items/Currency/CurrencyRerollRare`,
+    volumeTraded: {
+        [vendorCurrencyInputId]: 3150,
+        "Metadata/Items/Currency/CurrencyRerollRare": 7,
+    },
+};
+export const vendorCurrencyQuote = vendorUpgradeQuoteSchema.parse({
+    source: "vendor-upgrade",
+    game: "poe1",
+    realm: "pc",
+    league: "Standard",
+    currency: "chaos",
+    id: vendorCurrencyOutputId,
+    path: {
+        inputId: vendorCurrencyInputId,
+        inputName: "Orb of Transmutation",
+        outputId: vendorCurrencyOutputId,
+        outputName: "Orb of Augmentation",
+        quantity: 4,
+        steps: [
+            {
+                recipeId: "1:purchase:transmute:aug",
+                inputId: vendorCurrencyInputId,
+                inputName: "Orb of Transmutation",
+                outputId: vendorCurrencyOutputId,
+                outputName: "Orb of Augmentation",
+                inputQuantity: 4,
+                outputQuantity: 1,
+                method: "purchase",
+                instructions:
+                    "Purchase Items at Nessa, Act 1 or a later vendor. Do not use the sell window.",
+                sourceUrl: "https://www.poewiki.net/wiki/Vendor#Prices",
+            },
+        ],
+    },
+    amount: 4 * (7 / 3150),
+    ingredient: quoteExchangeSnapshot(
+        vendorCurrencySnapshot,
+        vendorCurrencyInputId,
+        "Metadata/Items/Currency/CurrencyRerollRare",
+    ),
+});

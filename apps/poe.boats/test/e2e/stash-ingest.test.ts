@@ -39,7 +39,7 @@ import { bindExchangePrice } from "~/lib/crafting-exchange";
 import { calculateCraftingGraph } from "~/lib/crafting-graph-simulation";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import { bindCohortPurchasePrice, livePurchasePrices } from "~/lib/crafting-market";
-import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
+import { bindCraftingSourcePrice, decodeCraftingSourceReference } from "~/lib/crafting-sources";
 import { handleMcpRequest } from "~/mcp/server.server";
 import {
     craftingMarketSnapshots,
@@ -51,6 +51,7 @@ import { action, loader } from "~/routes/api.stash-ingest";
 import { craftingGraphSchema } from "~/schemas/crafting-graph";
 import { craftingSourceResultSchema } from "~/schemas/crafting-sources";
 import { marketFiltersSchema } from "~/schemas/market";
+import { findCraftingSourcePrices } from "~/services/crafting-sources.server";
 import { createClient } from "../../../../packages/poe-api-client/dist/index.mjs";
 import { ingestCx } from "../../../../packages/poe-stash-ingest/src/cx/ingest.ts";
 import { rollupCx } from "../../../../packages/poe-stash-ingest/src/cx/rollup.ts";
@@ -91,6 +92,10 @@ import {
     marketGraph,
 } from "../crafting-market-fixtures";
 import {
+    vendorCurrencyInputId,
+    vendorCurrencyOutputId,
+    vendorCurrencyQuote,
+    vendorCurrencySnapshot,
     vendorInputId,
     vendorOutputId,
     vendorQuote,
@@ -1872,6 +1877,115 @@ it("captures and prices the correct Two-Toned Boots variant while excluding othe
     );
     expect(refreshed.issues).toEqual([]);
     expect(refreshed.graph).toEqual(bound);
+});
+
+it("prices an explicit NPC Augmentation purchase from fresh Transmutation and refuses stale ingredient fallback", async () => {
+    const database = mysql as unknown as TDatabase;
+    const graph = exchangeGraph();
+    await mysql.insert(tStashCurrencyHourly).values([
+        { ...vendorCurrencySnapshot, hour: HOUR },
+        {
+            ...vendorCurrencySnapshot,
+            hour: HOUR,
+            marketId: `${vendorCurrencyOutputId}|${chaosId}`,
+            volumeTraded: { [vendorCurrencyOutputId]: 0, [chaosId]: 0 },
+        },
+    ]);
+    const direct = await findCraftingExchangePrices(database, {
+        game: "poe1",
+        realm: "pc",
+        league: "Standard",
+        currency: graph.currency,
+        itemIds: [vendorCurrencyOutputId],
+        at: HOUR,
+    });
+    expect(direct.quotes).toEqual({});
+    expect(direct.missing[vendorCurrencyOutputId]).toBeTruthy();
+    const options = { realm: "pc" as const, ids: [vendorCurrencyOutputId], at: HOUR };
+    expect((await findCraftingSourcePrices(graph, engine, options, database)).quotes).toEqual({});
+    const result = await findCraftingSourcePrices(
+        graph,
+        engine,
+        { ...options, vendorUpgrade: { inputId: vendorCurrencyInputId } },
+        database,
+    );
+    expect(result.missing).toEqual({});
+    const source = result.quotes[vendorCurrencyOutputId]!;
+    expect(source).toMatchObject({
+        source: "vendor-upgrade",
+        path: vendorCurrencyQuote.path,
+        amount: 4 * (7 / 3150),
+        ingredient: { hour: HOUR, itemVolume: 3150, quoteVolume: 7 },
+    });
+    const bound = bindCraftingSourcePrice(graph, engine, vendorCurrencyOutputId, source);
+    expect(bound.prices[vendorCurrencyOutputId]).toMatchObject({
+        source: "market",
+        confidence: null,
+        observedAt: new Date(HOUR * 1000).toISOString(),
+    });
+    expect(bound.prices[vendorCurrencyOutputId]).not.toHaveProperty("samples");
+    expect(
+        decodeCraftingSourceReference(bound.prices[vendorCurrencyOutputId]?.cohortId),
+    ).toMatchObject({
+        path: vendorCurrencyQuote.path,
+        ingredient: { hour: HOUR, itemId: vendorCurrencyInputId },
+    });
+    await mysql.insert(tStashCurrencyHourly).values([
+        {
+            ...vendorCurrencySnapshot,
+            hour: HOUR + 3600,
+            volumeTraded: { [vendorCurrencyInputId]: 3150, [chaosId]: 14 },
+        },
+        {
+            ...vendorCurrencySnapshot,
+            hour: HOUR + 3600,
+            marketId: `${vendorCurrencyOutputId}|${chaosId}`,
+            volumeTraded: { [vendorCurrencyOutputId]: 1, [chaosId]: 99 },
+        },
+    ]);
+    const refreshed = await refreshCraftingMarketPrices(database, bound, engine, HOUR + 3600);
+    expect(refreshed.issues).toEqual([]);
+    expect(refreshed.graph.prices[vendorCurrencyOutputId]).toMatchObject({
+        amount: 4 * (14 / 3150),
+        observedAt: new Date((HOUR + 3600) * 1000).toISOString(),
+    });
+    expect(
+        decodeCraftingSourceReference(refreshed.graph.prices[vendorCurrencyOutputId]?.cohortId),
+    ).toMatchObject({
+        path: vendorCurrencyQuote.path,
+        ingredient: { hour: HOUR + 3600, itemId: vendorCurrencyInputId },
+    });
+    await mysql.insert(tStashCurrencyHourly).values([
+        {
+            ...vendorCurrencySnapshot,
+            hour: HOUR + 7200,
+            volumeTraded: { [vendorCurrencyInputId]: 0, [chaosId]: 0 },
+        },
+        { ...vendorCurrencySnapshot, hour: HOUR + 7200, league: "Other" },
+    ]);
+    const unavailable = await refreshCraftingMarketPrices(
+        database,
+        refreshed.graph,
+        engine,
+        HOUR + 7200,
+    );
+    expect(unavailable.graph).toEqual(refreshed.graph);
+    expect(unavailable.issues).toEqual([expect.stringContaining(vendorCurrencyOutputId)]);
+    expect(
+        await craftingMarketSnapshots(database, bound, engine, [HOUR, HOUR + 3600, HOUR + 7200]),
+    ).toMatchObject({
+        points: [
+            {
+                graph: { prices: { [vendorCurrencyOutputId]: { amount: 4 * (7 / 3150) } } },
+                issues: [],
+            },
+            {
+                graph: { prices: { [vendorCurrencyOutputId]: { amount: 4 * (14 / 3150) } } },
+                issues: [],
+            },
+            { graph: null, issues: [expect.stringContaining(vendorCurrencyOutputId)] },
+        ],
+    });
 });
 
 it("ingests fractional essence unit asks into MySQL and shares source binding and history without reusing a newer zero price", async () => {

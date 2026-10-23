@@ -15,6 +15,9 @@ import {
 import { exchangeGraph } from "./crafting-exchange-fixtures";
 import { engine } from "./crafting-fixtures";
 import {
+    vendorCurrencyInputId,
+    vendorCurrencyOutputId,
+    vendorCurrencyQuote,
     vendorInputId,
     vendorMiddleId,
     vendorOutputId,
@@ -364,6 +367,74 @@ it("keeps direct asking prices separate from an explicitly selected vendor ingre
         source: "vendor-upgrade",
         path: vendorQuote.path,
         ingredient: vendorQuote.ingredient,
+    });
+});
+
+it.each([
+    false,
+    true,
+])("offers an explicit NPC purchase without changing its manual price (service input: %s)", async (includeService) => {
+    const fetcher = vi.fn().mockResolvedValue(
+        new Response(
+            JSON.stringify({
+                quotes: { [vendorCurrencyOutputId]: vendorCurrencyQuote },
+                missing: {},
+            }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    const onChange = vi.fn();
+    render(
+        <SourcePricePicker
+            graph={{
+                ...exchangeGraph(),
+                prices: {
+                    [vendorCurrencyOutputId]: {
+                        amount: 123,
+                        currency: "chaos",
+                        source: "manual",
+                        confidence: null,
+                    },
+                },
+            }}
+            engine={engine}
+            entries={[
+                [vendorCurrencyOutputId, "Orb of Augmentation"],
+                ...(includeService
+                    ? [["service:recombine", "Recombination"] as [string, string]]
+                    : []),
+            ]}
+            onChange={onChange}
+        />,
+    );
+    fireEvent.click(
+        screen.getByText(
+            includeService ? "Vendor, beast & temple prices" : "Vendor ingredient estimates",
+        ),
+    );
+    if (!includeService)
+        expect(screen.queryByRole("button", { name: "Find beast & temple prices" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Find asking prices" })).toBeNull();
+    fireEvent.click(screen.getByText("Vendor-upgrade ingredient estimates"));
+    expect(screen.getByText(/Purchase Items at Nessa/)).toBeTruthy();
+    expect(fetcher).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Find vendor-upgrade estimate" }));
+    await screen.findByText(/4 × Orb of Transmutation at/);
+    expect(JSON.parse(fetcher.mock.calls[0]![1].body)).toMatchObject({
+        ids: [vendorCurrencyOutputId],
+        vendorUpgrade: { inputId: vendorCurrencyInputId },
+    });
+    expect(screen.getByRole("link", { name: "Recipe" }).getAttribute("href")).toBe(
+        vendorCurrencyQuote.path.steps[0]!.sourceUrl,
+    );
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Use vendor-upgrade estimate" }));
+    const price = onChange.mock.calls[0]![0].prices[vendorCurrencyOutputId];
+    expect(price.amount).toBeCloseTo((4 * 7) / 3150);
+    expect(decodeCraftingSourceReference(price.cohortId)).toMatchObject({
+        source: "vendor-upgrade",
+        path: vendorCurrencyQuote.path,
+        ingredient: vendorCurrencyQuote.ingredient,
     });
 });
 

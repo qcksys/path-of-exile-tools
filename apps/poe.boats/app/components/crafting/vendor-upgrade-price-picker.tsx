@@ -29,12 +29,16 @@ export function VendorUpgradeQuoteDetails({ quote }: { quote: VendorUpgradeQuote
                         {step.outputName}{" "}
                         <a
                             className="underline"
-                            href={`https://www.poewiki.net/wiki/${encodeURIComponent(step.outputName.replaceAll(" ", "_"))}`}
+                            href={
+                                step.sourceUrl ??
+                                `https://www.poewiki.net/wiki/${encodeURIComponent(step.outputName.replaceAll(" ", "_"))}`
+                            }
                             target="_blank"
                             rel="noreferrer"
                         >
                             Recipe
                         </a>
+                        {step.method === "purchase" && <p>{step.instructions}</p>}
                     </li>
                 ))}
             </ul>
@@ -152,6 +156,11 @@ export function VendorUpgradePricePicker({
             className="space-y-2 rounded border border-border p-3"
         >
             <p className="font-medium">Make {name} with a vendor recipe</p>
+            {path.steps
+                .filter((step) => step.method === "purchase")
+                .map((step) => (
+                    <p key={step.recipeId}>{step.instructions}</p>
+                ))}
             <FormSelect
                 aria-label={`Vendor ingredient for ${name}`}
                 value={path.inputId}

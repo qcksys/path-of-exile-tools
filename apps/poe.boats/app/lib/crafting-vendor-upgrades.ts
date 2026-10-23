@@ -1,7 +1,59 @@
 import { convertExchangeQuote, type ExchangeQuote, quoteExchangeSnapshot } from "@poe-tools/market";
+import { CURRENCY_VENDOR_RECIPES } from "~/data/currency-vendor-recipes";
 import { VENDOR_RECIPES } from "~/data/vendor-recipes";
 import type { VendorUpgradePath } from "~/schemas/crafting-sources";
 import type { CraftingEngine } from "./crafting-engine";
+
+function currencyPurchasePaths(engine: CraftingEngine, outputId: string): VendorUpgradePath[] {
+    const currencies = engine.catalog.crafting.currencies;
+    const identity = (name: string) => {
+        const matches = currencies.filter((entry) => entry.name === name);
+        const match = matches.length === 1 ? matches[0] : undefined;
+        return match?.id.startsWith("Metadata/Items/Currency/") &&
+            currencies.filter((entry) => entry.id === match.id).length === 1
+            ? match
+            : undefined;
+    };
+    const output = currencies.find((entry) => entry.id === outputId);
+    if (!output || identity(output.name)?.id !== outputId) return [];
+    return CURRENCY_VENDOR_RECIPES.filter(
+        (recipe) =>
+            recipe.game === "1" &&
+            recipe.category === "currency" &&
+            recipe.method === "purchase" &&
+            recipe.output.name === output.name &&
+            recipe.output.quantity === 1 &&
+            Number.isInteger(recipe.input.quantity) &&
+            recipe.input.quantity > 0 &&
+            recipe.input.quantity <= 729,
+    ).flatMap((recipe) => {
+        const input = identity(recipe.input.name);
+        if (!input) return [];
+        return [
+            {
+                inputId: input.id,
+                inputName: input.name,
+                outputId,
+                outputName: output.name,
+                quantity: recipe.input.quantity,
+                steps: [
+                    {
+                        recipeId: recipe.id,
+                        inputId: input.id,
+                        inputName: input.name,
+                        outputId,
+                        outputName: output.name,
+                        inputQuantity: recipe.input.quantity,
+                        outputQuantity: 1 as const,
+                        method: "purchase" as const,
+                        instructions: recipe.notes,
+                        sourceUrl: recipe.source,
+                    },
+                ],
+            },
+        ];
+    });
+}
 
 export function craftingVendorUpgradePaths(
     engine: CraftingEngine,
@@ -20,7 +72,8 @@ export function craftingVendorUpgradePaths(
             : undefined;
     };
     const output = engine.catalog.crafting.essences.find((entry) => entry.id === outputId);
-    if (!output || identity(output.name)?.id !== outputId) return [];
+    if (!output) return currencyPurchasePaths(engine, outputId);
+    if (identity(output.name)?.id !== outputId) return [];
     const paths: VendorUpgradePath[] = [];
     let current = output;
     let quantity = 1;
@@ -66,7 +119,7 @@ export function craftingVendorUpgrade(engine: CraftingEngine, outputId: string, 
     );
     if (!path)
         throw new Error(
-            "No verified forward PoE 1 essence vendor-upgrade path connects these exact inputs.",
+            "No verified forward PoE 1 vendor recipe path connects these exact inputs.",
         );
     return path;
 }
