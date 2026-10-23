@@ -65,6 +65,28 @@ function matchModifier(
     return all(matches);
 }
 
+function hasCompleteModifierSide(record: ItemRecord, side: ModifierFact["side"]): boolean {
+    if (record.item.identified !== true || (side !== "prefix" && side !== "suffix")) return false;
+    const field = side === "prefix" ? "prefixes" : "suffixes";
+    const count = record.facts[field];
+    const sourceCount = record.item.extended?.[field];
+    if (count === undefined || (sourceCount !== undefined && sourceCount !== count)) return false;
+    const ids = new Set<string>();
+    let resolved = 0;
+    for (const mod of record.facts.modifiers) {
+        if (mod.side === undefined) return false;
+        if (mod.id !== undefined) {
+            if (ids.has(mod.id)) return false;
+            ids.add(mod.id);
+        }
+        if (mod.side === side) {
+            if (mod.id === undefined || mod.possibleIds !== undefined) return false;
+            resolved++;
+        }
+    }
+    return resolved === count;
+}
+
 export function matchItemCondition(record: ItemRecord, filter: ItemCondition): ItemMatch {
     const { item, facts } = record;
     switch (filter.kind) {
@@ -129,7 +151,7 @@ export function matchItemCondition(record: ItemRecord, filter: ItemCondition): I
             return countMatches(
                 facts.modifiers.map((mod) => matchModifier(mod, filter)),
                 filter.count,
-                !facts.modifiersComplete,
+                !facts.modifiersComplete && !hasCompleteModifierSide(record, filter.side),
             );
         case "stat":
             return inRange(

@@ -128,6 +128,13 @@ requested cutoff. Missing definitions, truncated lookup and empty newest prices 
 issues. HTTP/MCP success and refusal tests, MySQL history tests and browser reload coverage verify
 this behavior; crafting rules and acquisition pins remain unchanged.
 
+Generated preset cohorts scope explicit modifier IDs to their catalog prefix or suffix side.
+For identified items, a known side count fully accounted for by distinct resolved modifiers can
+rule out a different modifier on that side even when implicit identities remain unresolved.
+Missing, ambiguous or contradictory evidence remains unknown. Unsided and implicit queries retain
+their existing completeness rules. The added side produces a new cohort identity; saved unsided
+bindings stay on their original definitions until explicitly replaced.
+
 Equipment lookup exposes per-lookup `Server-Timing` diagnostics through both HTTP and MCP:
 `equipment_db` measures the cohort database await, `equipment_parse` measures validation and
 coverage checks, `equipment_fx` measures exchange conversion and price selection, and
