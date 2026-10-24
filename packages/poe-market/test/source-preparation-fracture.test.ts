@@ -4,8 +4,12 @@ import {
     normalizeApiItem,
     type SourcePreparationProfile,
 } from "@poe-tools/item-query";
-import { expect, it } from "vite-plus/test";
-import { compileMarketCohorts, marketCohortManifestSchema } from "../src/index.ts";
+import { beforeAll, describe, expect, it } from "vite-plus/test";
+import {
+    compileMarketCohorts,
+    type MarketCohortManifest,
+    marketCohortManifestSchema,
+} from "../src/index.ts";
 
 const target = "BreachBodyCriticalChanceIncreasedByUncappedLightningResistance1";
 const hybrid = "LocalBaseArmourAndEvasionRating7";
@@ -215,40 +219,50 @@ it("leaves Scouring and ordinary cohorts unchanged", () => {
     }
 });
 
-it("rejects the saved hybrid Conquest mechanics using generated ordinary facts without altering the item", () => {
-    const generated = marketCohortManifestSchema.parse(
-        JSON.parse(readFileSync(new URL("../data/cohorts-poe1.json", import.meta.url), "utf8")),
-    );
-    generated.cohorts = generated.cohorts.filter(
-        (cohort) => cohort.query.sourcePreparation?.kind === "fractured-fossil-v1",
-    );
-    expect(generated.cohorts).toHaveLength(4);
-    const record = source();
-    record.item.extended = { prefixes: 1, suffixes: 3 };
-    record.facts.suffixes = 3;
-    record.item.explicitMods!.unshift(
-        { description: "+41% to Fire Resistance" },
-        { description: "25% increased Stun and Block Recovery" },
-        { description: "8% additional Physical Damage Reduction" },
-    );
-    record.item.properties = [
-        { name: "Armour", values: [["1108", 1]], displayMode: 0, type: 16 },
-        { name: "Evasion Rating", values: [["1109", 1]], displayMode: 0, type: 17 },
-    ];
-    const before = structuredClone(record);
-    expect(
-        compileModifierTextModel(generated.modifierTextModel!)(record).facts.modifiers,
-    ).toContainEqual(expect.objectContaining({ id: hybrid, fractured: true }));
-    const legacy = compileMarketCohorts({
-        ...generated,
-        sourcePreparationModel: { ...generated.sourcePreparationModel!, format: 2 },
-    });
-    expect(legacy.classify(record).unknown).toHaveLength(1);
-    expect(
-        compileMarketCohorts({
+describe("generated fracture sources", () => {
+    let generated: MarketCohortManifest;
+    let resolve: ReturnType<typeof compileModifierTextModel>;
+    let legacy: ReturnType<typeof compileMarketCohorts>;
+    let current: ReturnType<typeof compileMarketCohorts>;
+
+    beforeAll(() => {
+        generated = marketCohortManifestSchema.parse(
+            JSON.parse(readFileSync(new URL("../data/cohorts-poe1.json", import.meta.url), "utf8")),
+        );
+        generated.cohorts = generated.cohorts.filter(
+            (cohort) => cohort.query.sourcePreparation?.kind === "fractured-fossil-v1",
+        );
+        resolve = compileModifierTextModel(generated.modifierTextModel!);
+        legacy = compileMarketCohorts({
+            ...generated,
+            sourcePreparationModel: { ...generated.sourcePreparationModel!, format: 2 },
+        });
+        current = compileMarketCohorts({
             ...generated,
             sourcePreparationModel: { ...generated.sourcePreparationModel!, format: 3 },
-        }).classify(record),
-    ).toEqual({ matches: [], unknown: [] });
-    expect(record).toEqual(before);
+        });
+    });
+
+    it("rejects the saved hybrid Conquest mechanics using generated ordinary facts without altering the item", () => {
+        expect(generated.cohorts).toHaveLength(4);
+        const record = source();
+        record.item.extended = { prefixes: 1, suffixes: 3 };
+        record.facts.suffixes = 3;
+        record.item.explicitMods!.unshift(
+            { description: "+41% to Fire Resistance" },
+            { description: "25% increased Stun and Block Recovery" },
+            { description: "8% additional Physical Damage Reduction" },
+        );
+        record.item.properties = [
+            { name: "Armour", values: [["1108", 1]], displayMode: 0, type: 16 },
+            { name: "Evasion Rating", values: [["1109", 1]], displayMode: 0, type: 17 },
+        ];
+        const before = structuredClone(record);
+        expect(resolve(record).facts.modifiers).toContainEqual(
+            expect.objectContaining({ id: hybrid, fractured: true }),
+        );
+        expect(legacy.classify(record).unknown).toHaveLength(1);
+        expect(current.classify(record)).toEqual({ matches: [], unknown: [] });
+        expect(record).toEqual(before);
+    });
 });
