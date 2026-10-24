@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 IMAGE = "ghcr.io/qcksys/poe-stash-ingest"
 STATUS_URL = "https://dev.poe.boats/api/v1/server/status"
@@ -53,7 +53,10 @@ def verify_workers(directory, compose, env, image_id):
             local = [json.loads((directory / "data" / service / "status.json").read_text()) for service in SERVICES]
             if not all(verified_report(report, started[service], now) for service, report in zip(SERVICES, local)):
                 raise ValueError("A worker has not completed a healthy cycle since starting")
-            with urlopen(STATUS_URL, timeout=20) as response:
+            request = Request(STATUS_URL, headers={
+                "User-Agent": "poe.boats-ingest-deploy/1.0 (+https://github.com/qcksys/path-of-exile-tools)",
+            })
+            with urlopen(request, timeout=60) as response:
                 remote = {worker["workerId"]: worker for worker in json.load(response)["workers"]}
             for report in local:
                 received = remote.get(report["workerId"], {})
