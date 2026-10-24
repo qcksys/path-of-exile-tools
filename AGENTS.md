@@ -50,3 +50,5 @@ This applies even for read-only/diagnostic commands — e.g. use `vp exec biome 
 ## Agent configuration
 
 Edit shared MCP servers in `.agents/agents.json`, then run `vp run agents:sync` and `vp run agents:check`. The tool-specific MCP files and root `CLAUDE.md` are generated; edit instructions here in `AGENTS.md`.
+
+In a fresh git worktree, run `vp install` before diagnosing anything. Add any gitignored file a worktree needs to `.worktreeinclude`. See `docs/worktrees.md`.

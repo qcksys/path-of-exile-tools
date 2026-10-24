@@ -143,6 +143,8 @@ Sync generates `.codex/config.toml` and `.mcp.json` locally. These files, `.agen
 
 Restart the client's MCP servers after syncing and complete PlanetScale authentication when prompted.
 
+New agent worktrees copy the generated MCP files and local env overrides from the main checkout through [`.worktreeinclude`](.worktreeinclude), so keep the main checkout synced. See [working in a git worktree](docs/worktrees.md) for that and for the `core.hooksPath` repair.
+
 ## Local game data
 
 The [game-data pipeline guide](packages/poe-game-data/README.md) covers GGPK, local bundles, and patch-CDN extraction for both games, repeatable snapshots, and comparison with PoEDB and Craft of Exile. The [research report](docs/research/poe-game-data-extraction.md) explains the formats and website provenance.
