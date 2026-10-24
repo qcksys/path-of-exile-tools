@@ -82,6 +82,35 @@ function source(base = model.bases[0]!, rarity: "Magic" | "Rare" = "Magic") {
     });
 }
 
+it("preserves Scouring inputs only when model 3 proves no Intangibility", () => {
+    const current = compileSourcePreparation(textModel, { ...model, format: 3 });
+    const property = {
+        name: "[Intangibility|Intangibility]",
+        type: 110,
+        displayMode: 0,
+        values: [["84%", 0]],
+    };
+    for (const base of model.bases) {
+        const input = source(base);
+        input.facts.baseId = base.id;
+        input.item.properties = [property];
+        for (const format of [1, 2] as const)
+            expect(
+                compileSourcePreparation(textModel, { ...model, format })(input, profile).status,
+            ).toBe("match");
+        const before = structuredClone(input);
+        expect(current(input, profile)).toEqual({ status: "no-match" });
+        expect(input).toEqual(before);
+        input.item.properties = [{ ...property, values: [["0%", 0]] }];
+        expect(current(input, profile).status).toBe("match");
+        input.item.intangibility = 84;
+        expect(current(input, profile)).toEqual({ status: "unknown" });
+        delete input.item.intangibility;
+        input.item.properties = [property, property];
+        expect(current(input, profile)).toEqual({ status: "unknown" });
+    }
+});
+
 it("serializes strict source variants without changing retained fractured profiles", () => {
     const fracture = {
         kind: "fractured-fossil-v1",

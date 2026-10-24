@@ -9,7 +9,7 @@ import { compileMarketCohorts, marketCohortManifestSchema } from "../src/index.t
 const fractureText = "Critical Strike Chance is increased by Overcapped Lightning Resistance";
 const kinds = ["fractured-fossil-v1", "scour-v1"] as const;
 
-function fixture(kind: SourcePreparationProfile["kind"], format: 1 | 2) {
+function fixture(kind: SourcePreparationProfile["kind"], format: 1 | 2 | 3) {
     const fractured = kind === "fractured-fossil-v1";
     return marketCohortManifestSchema.parse({
         format: 1,
@@ -147,10 +147,34 @@ it("retains uncertainty for matching or missing levels and uses the shared level
     }
 });
 
+it("preserves level filtering when source preparation advances to format 3", () => {
+    for (const kind of kinds) {
+        const classifier = compileMarketCohorts(fixture(kind, 3));
+        for (const fields of [
+            { ilvl: 85 },
+            { ilvl: undefined, itemLevel: 85 },
+            { ilvl: 85, itemLevel: 86 },
+        ]) {
+            const record = source(kind);
+            Object.assign(record.item, fields);
+            expect(classifier.classify(record)).toEqual({ matches: [], unknown: [] });
+        }
+        for (const fields of [{ ilvl: 86 }, { ilvl: undefined }]) {
+            const record = source(kind);
+            Object.assign(record.item, fields);
+            expect(classifier.classify(record)).toEqual({ matches: [], unknown: ["source"] });
+        }
+        expect(classifier.classify(source(kind, true))).toEqual({
+            matches: ["source"],
+            unknown: [],
+        });
+    }
+});
+
 it("does not treat an individual OR, NOT or COUNT level condition as mandatory", () => {
     for (const kind of kinds) {
         for (const type of ["or", "not", "count"] as const) {
-            const manifests = ([1, 2] as const).map((format) => fixture(kind, format));
+            const manifests = ([1, 2, 3] as const).map((format) => fixture(kind, format));
             const group: ItemQueryGroup = {
                 type,
                 filters: [
@@ -178,7 +202,7 @@ it("evaluates transformed rarity and affix requirements only after successful pr
     for (const kind of kinds) {
         const record = source(kind, true);
         const before = structuredClone(record);
-        for (const format of [1, 2] as const) {
+        for (const format of [1, 2, 3] as const) {
             const classifier = compileMarketCohorts(fixture(kind, format));
             expect(classifier.classify(record)).toEqual({ matches: ["source"], unknown: [] });
             const wrongLevel = structuredClone(record);
@@ -191,7 +215,7 @@ it("evaluates transformed rarity and affix requirements only after successful pr
 
 it("leaves ordinary cohorts and missing preparation-model behavior unchanged", () => {
     for (const kind of kinds) {
-        for (const format of [1, 2] as const) {
+        for (const format of [1, 2, 3] as const) {
             const manifest = fixture(kind, format);
             delete manifest.cohorts[0]!.query.sourcePreparation;
             const record = source(kind);

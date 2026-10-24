@@ -108,7 +108,7 @@ export function compileMarketCohorts(input: MarketCohortManifest) {
                 if (sourcePreparation) {
                     // Preparation preserves item level, unlike rarity and affix counts.
                     if (
-                        manifest.sourcePreparationModel?.format === 2 &&
+                        (manifest.sourcePreparationModel?.format ?? 1) >= 2 &&
                         query.groups.some(
                             (group) =>
                                 group.type === "and" &&
@@ -118,6 +118,18 @@ export function compileMarketCohorts(input: MarketCohortManifest) {
                                         filter.field === "ilvl" &&
                                         matchItemCondition(identified, filter) === "no-match",
                                 ),
+                        )
+                    )
+                        continue;
+                    // Resolved facts hold across all assignments; missing identities prove nothing.
+                    if (
+                        manifest.sourcePreparationModel?.format === 3 &&
+                        sourcePreparation.kind === "fractured-fossil-v1" &&
+                        resolved.facts.modifiers.some(
+                            (mod) =>
+                                mod.fractured === true &&
+                                mod.id !== undefined &&
+                                mod.id !== sourcePreparation.fractureId,
                         )
                     )
                         continue;
