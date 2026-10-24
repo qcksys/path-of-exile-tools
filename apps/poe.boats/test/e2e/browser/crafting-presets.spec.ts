@@ -92,7 +92,9 @@ for (const preset of craftingPresets) {
                     "sushi-mercenary-chest",
                 ].includes(preset.id)
                     ? 60_000
-                    : 5000,
+                    : preset.id === "sushi-rf-totem-shield"
+                      ? 10_000
+                      : 5000,
             })
             .toBe(1);
         const result = craftingGraphResultSchema.parse(
