@@ -7,6 +7,7 @@ import {
     type ItemRecord,
     itemQuerySchema,
     matchItem,
+    matchItemCondition,
     modifierIdentitySchema,
     modifierTextModelSchema,
     type SourcePreparationResult,
@@ -105,6 +106,21 @@ export function compileMarketCohorts(input: MarketCohortManifest) {
                 const { sourcePreparation, ...query } = cohort.query;
                 let match: ReturnType<typeof matchItem>;
                 if (sourcePreparation) {
+                    // Preparation preserves item level, unlike rarity and affix counts.
+                    if (
+                        manifest.sourcePreparationModel?.format === 2 &&
+                        query.groups.some(
+                            (group) =>
+                                group.type === "and" &&
+                                group.filters.some(
+                                    (filter) =>
+                                        filter.kind === "range" &&
+                                        filter.field === "ilvl" &&
+                                        matchItemCondition(identified, filter) === "no-match",
+                                ),
+                        )
+                    )
+                        continue;
                     const key = JSON.stringify(sourcePreparation);
                     if (!sources.has(key))
                         sources.set(key, resolveSource(identified, sourcePreparation));
