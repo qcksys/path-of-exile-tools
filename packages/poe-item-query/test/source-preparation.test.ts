@@ -362,9 +362,94 @@ it("accepts preparation model formats 1 and 2 without changing the source projec
     input.item.explicitMods = [];
     expect(current(input, profile)).toEqual({ status: "unknown" });
     expect(current(input, profile)).toEqual(legacy(input, profile));
-    expect(sourcePreparationModelSchema.safeParse({ ...sourceModel, format: 3 }).success).toBe(
+    expect(sourcePreparationModelSchema.safeParse({ ...sourceModel, format: 4 }).success).toBe(
         false,
     );
+});
+
+it("excludes positive Intangibility properties only in preparation model 3", () => {
+    const property = {
+        name: "[Intangibility|Intangibility]",
+        values: [["84%", 0]],
+        displayMode: 0,
+        type: 110,
+    };
+    const input = source();
+    input.item.properties = [property];
+    const before = structuredClone(input);
+    for (const format of [1, 2] as const)
+        expect(compileResult(model, { ...sourceModel, format })(input, profile).status).toBe(
+            "match",
+        );
+    const current = compileResult(model, { ...sourceModel, format: 3 });
+    for (const name of ["Intangibility", "[Intangibility]", property.name]) {
+        input.item.properties = [{ ...property, name }];
+        expect(current(input, profile)).toEqual({ status: "no-match" });
+    }
+    input.item.properties = [property];
+    input.item.intangibility = 84;
+    expect(current(input, profile)).toEqual({ status: "no-match" });
+    delete input.item.properties;
+    expect(current(input, profile)).toEqual({ status: "no-match" });
+    delete input.item.intangibility;
+    input.item.properties = [property];
+    expect(input).toEqual(before);
+});
+
+it("preserves absent and proven zero Intangibility for fractured preparation", () => {
+    const current = compileResult(model, { ...sourceModel, format: 3 });
+    const input = source();
+    expect(current(input, profile).status).toBe("match");
+    input.item.properties = [{ name: "Quality", values: [["+20%", 1]], type: 6 }];
+    expect(current(input, profile).status).toBe("match");
+    input.item.properties.push({ name: "Intangibility", values: [["0%", 0]] });
+    expect(current(input, profile).status).toBe("match");
+    input.item.intangibility = 0;
+    expect(current(input, profile).status).toBe("match");
+    delete input.item.properties;
+    expect(current(input, profile).status).toBe("match");
+});
+
+it("keeps malformed, duplicate and contradictory Intangibility proof unknown", () => {
+    const current = compileResult(model, { ...sourceModel, format: 3 });
+    const zero = { name: "Intangibility", type: 110, values: [["0%", 0]] };
+    for (const properties of [
+        null,
+        [null],
+        [[]],
+        [{ ...zero, name: "Armour" }],
+        [{ type: 110, values: [["0%", 0]] }],
+        [{ ...zero, type: 6 }],
+        [{ name: "Intangibility", type: 110 }],
+        [{ ...zero, values: [] }],
+        [
+            {
+                ...zero,
+                values: [
+                    ["0%", 0],
+                    ["1%", 0],
+                ],
+            },
+        ],
+        [{ ...zero, values: [[0, 0]] }],
+        ...["-1%", "101%", "0.5%", "unknown"].map((value) => [{ ...zero, values: [[value, 0]] }]),
+        [zero, zero],
+        [zero, { ...zero, values: [["84%", 0]] }],
+    ]) {
+        const input = source();
+        input.item.properties = properties;
+        expect(current(input, profile)).toEqual({ status: "unknown" });
+    }
+    for (const [top, value] of [
+        [0, "84%"],
+        [84, "0%"],
+        ["0", "0%"],
+    ] as const) {
+        const input = source();
+        input.item.intangibility = top;
+        input.item.properties = [{ ...zero, values: [[value, 0]] }];
+        expect(current(input, profile)).toEqual({ status: "unknown" });
+    }
 });
 
 it("reports definite partition and eligibility mismatches without creating unknown observations", () => {

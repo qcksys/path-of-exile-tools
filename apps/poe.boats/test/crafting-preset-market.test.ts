@@ -733,7 +733,7 @@ it("does not price ambiguous elemental modifier identities from names, tiers or 
 });
 
 it("classifies an omitted zero suffix count only when the complete catalog interpretation proves it", () => {
-    expect(manifest.modifierTextModel?.format).toBe(4);
+    expect(manifest.modifierTextModel?.format).toBe(5);
     for (const [preset, nodeId, expected] of [
         ["physical-bow", "donor-2", true],
         ["physical-bow", "donor-1", false],

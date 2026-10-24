@@ -1,5 +1,6 @@
 import { expect, it } from "vite-plus/test";
 import {
+    compileFracturedModifierTextModel,
     compileModifierIdentities,
     compileModifierTextModel,
     itemQuerySchema,
@@ -673,6 +674,259 @@ it("rejects modifiers whose displayed magnitudes have unsupported item effects",
     expect(compileModifierTextModel(definition)(input)).toBe(input);
 });
 
+const physicalReductionModel: ModifierTextModel = {
+    format: 5,
+    unsupportedImplicitTexts: [
+        "Cannot roll Modifiers of Non-Physical Damage Types\n3% additional Physical Damage Reduction",
+    ],
+    modifiers: [
+        {
+            id: "LocalBaseArmourAndEvasionRating7",
+            name: "Adaptable",
+            side: "prefix",
+            groups: ["BaseLocalDefences"],
+            crafted: false,
+            text: "+(221-300) to Armour\n+(221-300) to Evasion Rating",
+        },
+        {
+            id: "LifeRegeneration11____",
+            name: "of Convalescence",
+            side: "suffix",
+            groups: ["LifeRegeneration"],
+            crafted: false,
+            text: "Regenerate (152.1-176) Life per second",
+        },
+        {
+            id: "FireResist6",
+            name: "of the Volcano",
+            side: "suffix",
+            groups: ["FireResistance"],
+            crafted: false,
+            text: "+(36-41)% to Fire Resistance",
+        },
+        {
+            id: "FireResist8",
+            name: "of Tzteosh",
+            side: "suffix",
+            groups: ["FireResistance"],
+            crafted: false,
+            text: "+(46-48)% to Fire Resistance",
+        },
+        {
+            id: "StunRecovery5",
+            name: "of Adamantite Skin",
+            side: "suffix",
+            groups: ["StunRecovery"],
+            crafted: false,
+            text: "(23-25)% increased Stun and Block Recovery",
+        },
+        {
+            id: "AttackerTakesDamage4",
+            name: "Jagged",
+            side: "prefix",
+            groups: ["AttackerTakesDamageNoRange"],
+            crafted: false,
+            text: "Reflects (25-50) Physical Damage to Melee Attackers",
+        },
+        {
+            id: "AdditionalPhysicalDamageReduction5_",
+            name: "of the Conservator",
+            side: "suffix",
+            groups: ["ReducedPhysicalDamageTaken"],
+            crafted: false,
+            text: "8% additional Physical Damage Reduction",
+        },
+    ],
+    bases: [{ baseType: "Conquest Lamellar" }],
+};
+const recordedFractures = [
+    {
+        id: "AdditionalPhysicalDamageReduction5_",
+        rows: [
+            { description: "Regenerate 174.7 Life per second" },
+            { description: "+48% to Fire Resistance" },
+            { description: "Reflects 46 Physical Damage to Melee Attackers" },
+            { description: "8% additional Physical Damage Reduction", flags: { fractured: true } },
+        ],
+    },
+    {
+        id: "LocalBaseArmourAndEvasionRating7",
+        rows: [
+            { description: "+41% to Fire Resistance" },
+            { description: "25% increased Stun and Block Recovery" },
+            { description: "8% additional Physical Damage Reduction" },
+            { description: "+291 to Armour", flags: { fractured: true } },
+            { description: "+292 to Evasion Rating", flags: { fractured: true } },
+        ],
+    },
+];
+
+it.each(
+    recordedFractures,
+)("resolves recorded $id despite an ordinary line shared with a fossil effect", ({ id, rows }) => {
+    const input = normalizeApiItem("poe1", "stash", {
+        baseType: "Conquest Lamellar",
+        typeLine: "Conquest Lamellar",
+        ilvl: 86,
+        rarity: "Rare",
+        identified: true,
+        fractured: true,
+        extended: { prefixes: 1, suffixes: 3 },
+        explicitMods: rows,
+    });
+    const original = structuredClone(input);
+    for (const format of [1, 2, 3, 4] as const) {
+        const historical = { ...physicalReductionModel, format };
+        expect(compileModifierTextModel(historical)(input)).toBe(input);
+        expect(compileFracturedModifierTextModel(historical)(input)).toBe(input);
+    }
+    const resolved = compileModifierTextModel(physicalReductionModel)(input);
+    expect(resolved.facts.modifiers).toHaveLength(4);
+    expect(resolved.facts.modifiers.filter((mod) => mod.fractured)).toMatchObject([{ id }]);
+    expect(
+        compileFracturedModifierTextModel(physicalReductionModel)(input).facts.modifiers,
+    ).toContainEqual(expect.objectContaining({ id, fractured: true }));
+    expect(input).toEqual(original);
+});
+
+it.each([
+    {
+        rows: [
+            "Cannot roll Modifiers of Non-Physical Damage Types\n8% additional Physical Damage Reduction",
+        ],
+    },
+    {
+        rows: [
+            "Cannot roll Modifiers of Non-Physical Damage Types",
+            "8% additional Physical Damage Reduction",
+        ],
+    },
+    {
+        rows: [
+            "8% additional [Physical Damage] Reduction",
+            "Cannot roll Modifiers of [damage|Non-Physical Damage] Types",
+        ],
+    },
+])("format 5 refuses complete unsupported groups across explicit display rows: $rows", ({
+    rows,
+}) => {
+    const effect = physicalReductionModel.unsupportedImplicitTexts![0]!;
+    const data: ModifierTextModel = {
+        ...physicalReductionModel,
+        modifiers: [
+            {
+                id: "effect",
+                name: "Effect",
+                side: "suffix",
+                groups: ["Effect"],
+                crafted: false,
+                text: effect.replace("3%", "8%"),
+            },
+        ],
+    };
+    const input = normalizeApiItem("poe1", "stash", {
+        baseType: "Conquest Lamellar",
+        rarity: "Rare",
+        identified: true,
+        extended: { prefixes: 0, suffixes: 1 },
+        explicitMods: rows.map((description) => ({ description, flags: { fractured: true } })),
+    });
+    expect(
+        compileModifierTextModel({ ...data, unsupportedImplicitTexts: [] })(input).facts.modifiers,
+    ).toMatchObject([{ id: "effect" }]);
+    expect(compileModifierTextModel(data)(input)).toBe(input);
+    expect(compileFracturedModifierTextModel(data)(input)).toBe(input);
+});
+
+it("format 5 retains singleton effects and partial or malformed implicit refusals", () => {
+    const data: ModifierTextModel = {
+        ...model(),
+        format: 5,
+        unsupportedImplicitTexts: [
+            "(20-50)% increased Explicit Modifier magnitudes",
+            ...physicalReductionModel.unsupportedImplicitTexts!,
+        ],
+    };
+    for (const implicitMods of [
+        ["40% increased Explicit Modifier magnitudes"],
+        ["40% increased Explicit Modifier magnitudes\n"],
+        ["40% increased Explicit Modifier magnitudes\n{unknown}"],
+        ["8% additional Physical Damage Reduction"],
+        [physicalReductionModel.unsupportedImplicitTexts![0]!],
+        physicalReductionModel.unsupportedImplicitTexts![0]!.split("\n"),
+    ]) {
+        const input = item(["+47% to Cold Resistance"], 0, 1);
+        input.item.implicitMods = implicitMods;
+        expect(compileModifierTextModel(data)(input)).toBe(input);
+        expect(compileFracturedModifierTextModel(data)(input)).toBe(input);
+    }
+    const explicit = item(["40% increased Explicit Modifier magnitudes"], 0, 1, true);
+    const effect: ModifierTextModel = {
+        ...data,
+        modifiers: [{ ...modifiers[3]!, text: data.unsupportedImplicitTexts![0]! }],
+        bases: [{ baseType: "Axe" }],
+    };
+    expect(
+        compileModifierTextModel({ ...effect, unsupportedImplicitTexts: [] })(explicit).facts
+            .modifiers,
+    ).toMatchObject([{ id: "cold" }]);
+    expect(compileModifierTextModel(effect)(explicit)).toBe(explicit);
+    expect(compileFracturedModifierTextModel(effect)(explicit)).toBe(explicit);
+});
+
+it("format 5 does not mistake repeated shared lines for a complete unsupported group", () => {
+    const reduction = physicalReductionModel.modifiers.find(
+        (mod) => mod.id === "AdditionalPhysicalDamageReduction5_",
+    )!;
+    const data: ModifierTextModel = {
+        ...physicalReductionModel,
+        modifiers: [{ ...reduction, text: "(8-16)% additional Physical Damage Reduction" }],
+    };
+    const input = normalizeApiItem("poe1", "stash", {
+        baseType: "Conquest Lamellar",
+        rarity: "Rare",
+        identified: true,
+        extended: { prefixes: 0, suffixes: 1 },
+        explicitMods: [
+            { description: "8% additional Physical Damage Reduction", flags: { fractured: true } },
+            { description: "8% additional Physical Damage Reduction", flags: { fractured: true } },
+        ],
+    });
+    expect(compileModifierTextModel(data)(input).facts.modifiers).toMatchObject([
+        { id: reduction.id, fractured: true },
+    ]);
+    expect(compileFracturedModifierTextModel(data)(input).facts.modifiers).toMatchObject([
+        { id: reduction.id, fractured: true },
+    ]);
+});
+
+it("format 5 preserves ambiguous identities, unsupported candidates and search exhaustion", () => {
+    const reduction = physicalReductionModel.modifiers.find(
+        (mod) => mod.id === "AdditionalPhysicalDamageReduction5_",
+    )!;
+    const data: ModifierTextModel = { ...physicalReductionModel, modifiers: [reduction] };
+    const input = normalizeApiItem("poe1", "stash", {
+        baseType: "Conquest Lamellar",
+        rarity: "Rare",
+        identified: true,
+        extended: { prefixes: 0, suffixes: 1 },
+        explicitMods: [
+            { description: "8% additional Physical Damage Reduction", flags: { fractured: true } },
+        ],
+    });
+    for (const extra of [
+        { ...reduction, id: "indistinguishable" },
+        { ...reduction, id: "unsupported", unsupported: true },
+        { ...reduction, id: "untranslated", text: null },
+    ]) {
+        const unresolved = { ...data, modifiers: [reduction, extra] };
+        expect(compileModifierTextModel(unresolved)(input)).toBe(input);
+        expect(compileFracturedModifierTextModel(unresolved)(input)).toBe(input);
+    }
+    expect(compileModifierTextModel(data, 1)(input)).toBe(input);
+    expect(compileFracturedModifierTextModel(data, 1)(input)).toBe(input);
+});
+
 it("represents an indistinguishable affix as one bounded identity choice, without claiming either ID", () => {
     const data = model([...modifiers, { ...modifiers[4]!, id: "legacy-temple" }]);
     data.identityFamilies = [["temple", "legacy-temple"]];
@@ -801,9 +1055,12 @@ it("uses catalyst-specific ranges without mistaking a lower raw tier for an unsc
     expect(resolve(invalid)).toBe(invalid);
 });
 
-it("adds native magnitude and catalyst effects only when the source confirms the native implicit", () => {
+it.each([
+    2, 5,
+] as const)("format %s adds native magnitude and catalyst effects only with the native implicit", (format) => {
     const name = "Quality (Resistance Modifiers)";
     const data = model([modifiers[3]!]);
+    data.format = format;
     const implicit = "100% increased Explicit Modifier magnitudes";
     data.unsupportedImplicitTexts = ["(10-100)% increased Explicit Modifier magnitudes"];
     data.bases[0]!.magnitude = { prefix: 100, suffix: 100, texts: [implicit] };

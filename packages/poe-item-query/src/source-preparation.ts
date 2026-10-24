@@ -10,7 +10,7 @@ import {
 } from "./schema.ts";
 
 export const sourcePreparationModelSchema = z.strictObject({
-    format: z.union([z.literal(1), z.literal(2)]),
+    format: z.union([z.literal(1), z.literal(2), z.literal(3)]),
     bases: z
         .array(
             z.strictObject({
@@ -62,19 +62,61 @@ function descriptions(value: unknown): ModLine[] | null {
     return result.every((entry) => entry.description.trim().length > 0) ? result : null;
 }
 
+function displayText(text: string) {
+    return text
+        .replace(/\[([^\]|]+)\|([^\]]+)\]/g, "$2")
+        .replace(/\[([^\]]+)\]/g, "$1")
+        .trim()
+        .replace(/\s+/g, " ");
+}
+
 function implicitSignature(texts: string[]) {
     return JSON.stringify(
         texts
             .flatMap((text) => text.split("\n"))
-            .map((text) =>
-                text
-                    .replace(/\[([^\]|]+)\|([^\]]+)\]/g, "$2")
-                    .replace(/\[([^\]]+)\]/g, "$1")
-                    .trim()
-                    .replace(/\s+/g, " "),
-            )
+            .map(displayText)
             .sort(),
     );
+}
+
+function sourceIntangibility(item: ApiItem): number | null {
+    const field = item.intangibility;
+    if (
+        field !== undefined &&
+        (typeof field !== "number" || !Number.isInteger(field) || field < 0 || field > 100)
+    )
+        return null;
+    if (item.properties !== undefined && !Array.isArray(item.properties)) return null;
+    let observed: number | undefined;
+    for (const property of item.properties ?? []) {
+        if (
+            typeof property !== "object" ||
+            property === null ||
+            Array.isArray(property) ||
+            typeof property.name !== "string" ||
+            (property.type !== undefined && !Number.isInteger(property.type))
+        )
+            return null;
+        const named = displayText(property.name) === "Intangibility";
+        if (!named && property.type !== 110) continue;
+        if (
+            !named ||
+            (property.type !== undefined && property.type !== 110) ||
+            observed !== undefined ||
+            !Array.isArray(property.values) ||
+            property.values.length !== 1 ||
+            !Array.isArray(property.values[0]) ||
+            property.values[0].length !== 2 ||
+            typeof property.values[0][0] !== "string" ||
+            !Number.isInteger(property.values[0][1])
+        )
+            return null;
+        const value = /^(0|[1-9]\d?|100)%$/.exec(property.values[0][0].trim());
+        if (!value) return null;
+        observed = Number(value[1]);
+    }
+    if (field !== undefined && observed !== undefined && field !== observed) return null;
+    return observed ?? field ?? 0;
 }
 
 /** The result is an input to an explicit paid preparation, never a replacement for ordinary facts. */
@@ -139,6 +181,11 @@ export function compileSourcePreparation(
             (facts.memoryStrandsSpent ?? 0) > 0
         )
             return { status: "no-match" };
+        if (model.format === 3) {
+            const intangibility = sourceIntangibility(item);
+            if (intangibility === null) return { status: "unknown" };
+            if (intangibility > 0) return { status: "no-match" };
+        }
         if (
             !base ||
             (scour && !base.scourImplicits) ||

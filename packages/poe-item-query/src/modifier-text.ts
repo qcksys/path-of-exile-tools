@@ -10,7 +10,7 @@ import type { ItemRecord, ModifierFact } from "./schema.ts";
 const identifier = z.string().min(1).max(500);
 const influence = z.enum(["shaper", "elder", "crusader", "redeemer", "hunter", "warlord"]);
 export const modifierTextModelSchema = z.strictObject({
-    format: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+    format: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
     identityFamilies: z.array(z.array(identifier).min(2).max(100)).max(1000).optional(),
     unsupportedImplicitTexts: z.array(z.string().max(5000)).max(1000).optional(),
     translations: modifierTranslationsSchema.optional(),
@@ -232,11 +232,11 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
         contexts.set(key, result);
         return result;
     }
-    const unsupportedImplicitKeys = new Set(
-        (model.unsupportedImplicitTexts ?? []).flatMap(
-            (text) => lines(text, true)?.map((line) => line.key) ?? [],
-        ),
-    );
+    const unsupportedImplicitGroups = (model.unsupportedImplicitTexts ?? []).flatMap((text) => {
+        const parsed = lines(text, true);
+        return parsed?.length ? [parsed.map((line) => line.key)] : [];
+    });
+    const unsupportedImplicitKeys = new Set(unsupportedImplicitGroups.flat());
     return (record: ItemRecord): ItemRecord => {
         const { item } = record;
         const base = bases.get(item.baseType);
@@ -309,9 +309,11 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
                 catalyst = { name: recipe.name, quality: Number(match[1]) };
             }
         }
-        const implicitLines = (item.implicitMods ?? []).flatMap(
-            (row) => lines(typeof row === "string" ? row : row.description, false) ?? [],
+        const implicitRows = (item.implicitMods ?? []).map((row) =>
+            lines(typeof row === "string" ? row : row.description, false),
         );
+        if (model.format >= 5 && implicitRows.some((row) => row === null)) return record;
+        const implicitLines = implicitRows.flatMap((row) => row ?? []);
         const fixed = base.fixedInfluences;
         const fixedLines = fixed?.texts.flatMap((text) => lines(text, false) ?? []) ?? [];
         if (
@@ -397,7 +399,7 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
             const parsed = lines(row.description, false);
             if (!parsed) return record;
             for (const line of parsed) {
-                if (unsupportedImplicitKeys.has(line.key)) return record;
+                if (model.format < 5 && unsupportedImplicitKeys.has(line.key)) return record;
                 observedLines.add(line.key);
                 for (const [position, value] of line.values.entries()) {
                     const key = JSON.stringify([flagKey, line.key, position]);
@@ -411,6 +413,11 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
                 }
             }
         }
+        if (
+            model.format >= 5 &&
+            unsupportedImplicitGroups.some((group) => group.every((key) => observedLines.has(key)))
+        )
+            return record;
         if (!targets.length || targets.length > 64) return record;
         let magicNames: { prefix: string; suffix: string } | undefined;
         if (

@@ -86,7 +86,7 @@ it.each(
         extended: sample.extended,
     });
     const resolved = resolve(record);
-    expect(model.format).toBe(4);
+    expect(model.format).toBe(5);
     expect([resolved.facts.prefixes, resolved.facts.suffixes]).toEqual(sample.counts);
     expect(resolved.facts.modifiers.map((mod) => mod.id).sort()).toEqual([...sample.ids].sort());
     expect(resolved.item).toBe(record.item);
