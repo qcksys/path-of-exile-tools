@@ -9,6 +9,7 @@ import { craftingNodeCostKey } from "../app/lib/crafting-node-prices";
 import { validateRulesetIndex } from "../app/lib/crafting-rulesets";
 import { type CraftingGraph, craftingGraphSchema } from "../app/schemas/crafting-graph";
 import index from "../crafting-history/index.json";
+import { byText } from "./control-helpers";
 import { exchangeGraph, transmuteId } from "./crafting-exchange-fixtures";
 import { baseId, catalog, engine } from "./crafting-fixtures";
 import { graphFixture } from "./crafting-graph-fixtures";
@@ -140,7 +141,7 @@ it("prices generated steps separately, restores the shared fallback, and keeps s
     const second = screen.getByRole("spinbutton", {
         name: /Second generated item · Generated rare item \(chaos\)/,
     });
-    expect(screen.getAllByText("Uses shared price: 3 chaos")).toHaveLength(2);
+    expect(screen.getAllByText(byText("Uses shared price: 3 chaos"))).toHaveLength(2);
     fireEvent.change(first, { target: { value: "2" } });
     fireEvent.change(second, { target: { value: "7" } });
     expect(saved().prices[craftingNodeCostKey("transmute", "generated:rare")]?.amount).toBe(2);

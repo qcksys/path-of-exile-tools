@@ -1,4 +1,5 @@
 import { Form, useNavigation } from "react-router";
+import { CurrencyLabel } from "~/components/currency-label";
 import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
@@ -129,8 +130,16 @@ export function MarketFiltersForm({
             ) : null}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">
-                    Price sorting uses {filters.currency || "the selected currency"}; missing prices
-                    appear last.
+                    Price sorting uses{" "}
+                    {filters.currency ? (
+                        <CurrencyLabel
+                            currency={filters.currency}
+                            game={filters.realm === "poe2" ? "poe2" : "poe1"}
+                        />
+                    ) : (
+                        "the selected currency"
+                    )}
+                    ; missing prices appear last.
                 </p>
                 <Button type="submit" disabled={navigation.state !== "idle"}>
                     {navigation.state === "idle" ? "Apply filters" : "Loading…"}

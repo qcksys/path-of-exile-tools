@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
@@ -293,7 +294,10 @@ export function ProcessCostHistory({ graph }: { graph: CraftingGraph }) {
                         <thead>
                             <tr>
                                 <th className="p-2">UTC hour</th>
-                                <th className="p-2">Expected cost ({graph.currency})</th>
+                                <th className="p-2">
+                                    Expected cost (
+                                    <CurrencyLabel currency={graph.currency} game={graph.game} />)
+                                </th>
                                 <th className="p-2">Cost sampling interval</th>
                                 <th className="p-2">Oldest price observation</th>
                                 <th className="p-2">Lowest item confidence</th>

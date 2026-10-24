@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogItemArt, ItemName } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -268,7 +269,10 @@ export function FossilOptimizerPanel({
                     />
                 ) : null}
                 <details>
-                    <summary className="cursor-pointer text-sm">Optimizer prices in chaos</summary>
+                    <summary className="cursor-pointer text-sm">
+                        Optimizer prices in{" "}
+                        <CurrencyLabel currency="chaos" game={engine.catalog.game} />
+                    </summary>
                     <div className="mt-3 grid max-h-60 gap-3 overflow-y-auto sm:grid-cols-2">
                         {costs.map((entry) => (
                             <Label key={entry.id} className="block space-y-1 text-xs">
@@ -383,9 +387,19 @@ export function FossilOptimizerPanel({
                                             {entry.probability
                                                 ? `${(1 / entry.probability).toFixed(1)} attempts`
                                                 : "No successes observed"}
-                                            {entry.costPerSuccess !== null
-                                                ? ` · ${entry.costPerSuccess.toFixed(2)} chaos per success`
-                                                : ""}
+                                            {entry.costPerSuccess !== null ? (
+                                                <>
+                                                    {" "}
+                                                    · {entry.costPerSuccess.toFixed(2)}{" "}
+                                                    <CurrencyLabel
+                                                        currency="chaos"
+                                                        game={engine.catalog.game}
+                                                    />{" "}
+                                                    per success
+                                                </>
+                                            ) : (
+                                                ""
+                                            )}
                                         </p>
                                     </div>
                                     <Button

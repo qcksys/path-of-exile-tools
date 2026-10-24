@@ -4,6 +4,7 @@ import { AppFooter } from "~/components/app-footer";
 import { AppHeader } from "~/components/app-header";
 import { ManualRecipeCalculator } from "~/components/arbitrage/manual-recipe-calculator";
 import { RecipeItems } from "~/components/arbitrage/recipe-items";
+import { CurrencyLabel } from "~/components/currency-label";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button, buttonVariants } from "~/components/ui/button";
@@ -70,7 +71,13 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
         (!Number.isFinite(Number(minimumProfit)) ||
             !minimumProfit.trim() ||
             Number(minimumProfit) < 0);
-    const value = (amount: number) => `${formatNumber.format(amount)} ${currency}`;
+    const currencyGame = game === "1" ? "poe1" : "poe2";
+    const currencyLabel = <CurrencyLabel currency={currency} game={currencyGame} />;
+    const value = (amount: number) => (
+        <>
+            {formatNumber.format(amount)} {currencyLabel}
+        </>
+    );
 
     return (
         <div className="flex min-h-screen flex-col">
@@ -102,7 +109,7 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
                     <CardHeader>
                         <CardTitle>Market and filters</CardTitle>
                         <CardDescription>
-                            PC trade leagues · Prices from poe.ninja · All values in {currency}
+                            PC trade leagues · Prices from poe.ninja · All values in {currencyLabel}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-6">
@@ -187,7 +194,7 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
                             </Field>
                             <Field data-invalid={invalidMinimum}>
                                 <FieldLabel htmlFor="minimum-profit">
-                                    Minimum profit ({currency})
+                                    Minimum profit ({currencyLabel})
                                 </FieldLabel>
                                 <Input
                                     id="minimum-profit"

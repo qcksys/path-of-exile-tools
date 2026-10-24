@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { CurrencyLabel } from "~/components/currency-label";
 import { ItemArt } from "~/components/item-art";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
 import { MarketPriceChart } from "~/components/market-price-chart";
@@ -26,6 +27,8 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
         ...new Set([filters.currency, ...history.flatMap((row) => Object.keys(row.prices ?? {}))]),
     ].sort();
     const periodSales = history.reduce((sum, row) => sum + row.likelySales, 0);
+    const game = filters.realm === "poe2" ? "poe2" : "poe1";
+    const currencyLabel = <CurrencyLabel currency={filters.currency} game={game} />;
     return (
         <>
             <MarketFiltersForm filters={filters} seasons={seasons} />
@@ -49,10 +52,7 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                             </Link>
                             <h2 className="mt-2 flex items-center gap-3 text-2xl font-semibold">
                                 <ItemArt
-                                    src={marketItemArtUrl(
-                                        selected.iconAsset,
-                                        filters.realm === "poe2" ? "poe2" : "poe1",
-                                    )}
+                                    src={marketItemArtUrl(selected.iconAsset, game)}
                                     name={selected.name || selected.baseType}
                                     className="size-16"
                                     decorative
@@ -84,11 +84,11 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                                 aria-current={currency === filters.currency ? "true" : undefined}
                                 className={`rounded-full border px-3 py-1 ${currency === filters.currency ? "border-primary bg-primary/10 text-primary" : "border-border"}`}
                             >
-                                {currency}
+                                <CurrencyLabel currency={currency} game={game} />
                             </Link>
                         ))}
                     </div>
-                    <MarketPriceChart points={history} currency={filters.currency} />
+                    <MarketPriceChart points={history} currency={filters.currency} game={game} />
                     <details>
                         <summary className="cursor-pointer text-sm">
                             Hourly observations and inferred sale prices (latest 72 hours with data)
@@ -118,9 +118,17 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                                             >
                                                 <td className={cellClass}>{marketUtc(row.hour)}</td>
                                                 <td className={cellClass}>
-                                                    {row.prices?.[filters.currency]
-                                                        ? `${number(row.prices[filters.currency]!.median)} ${filters.currency}`
-                                                        : "—"}
+                                                    {row.prices?.[filters.currency] ? (
+                                                        <>
+                                                            {number(
+                                                                row.prices[filters.currency]!
+                                                                    .median,
+                                                            )}{" "}
+                                                            {currencyLabel}
+                                                        </>
+                                                    ) : (
+                                                        "—"
+                                                    )}
                                                 </td>
                                                 <td className={cellClass}>
                                                     {number(row.listingCount)}
@@ -129,9 +137,17 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                                                     {number(row.likelySales)}
                                                 </td>
                                                 <td className={cellClass}>
-                                                    {row.salesPrices?.[filters.currency]
-                                                        ? `${number(row.salesPrices[filters.currency]!.median)} ${filters.currency}`
-                                                        : "—"}
+                                                    {row.salesPrices?.[filters.currency] ? (
+                                                        <>
+                                                            {number(
+                                                                row.salesPrices[filters.currency]!
+                                                                    .median,
+                                                            )}{" "}
+                                                            {currencyLabel}
+                                                        </>
+                                                    ) : (
+                                                        "—"
+                                                    )}
                                                 </td>
                                                 <td className={cellClass}>
                                                     {number(row.pendingCount)}

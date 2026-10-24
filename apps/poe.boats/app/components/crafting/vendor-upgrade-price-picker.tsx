@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
@@ -15,12 +16,12 @@ export function VendorUpgradeQuoteDetails({ quote }: { quote: VendorUpgradeQuote
     return (
         <>
             <p>
-                {number(quote.amount)} {quote.currency} per output · vendor-upgrade ingredient
-                estimate
+                {number(quote.amount)} <CurrencyLabel currency={quote.currency} /> per output ·
+                vendor-upgrade ingredient estimate
             </p>
             <p>
                 {quote.path.quantity} × {quote.path.inputName} at {number(quote.ingredient.amount)}{" "}
-                {quote.currency} each.
+                <CurrencyLabel currency={quote.currency} /> each.
             </p>
             <ul>
                 {quote.path.steps.map((step) => (

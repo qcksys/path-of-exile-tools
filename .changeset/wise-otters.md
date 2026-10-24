@@ -31,3 +31,5 @@ Expand the boots example through elevated Tailwind, Onslaught and Elusive, resis
 Add simple currency targets with generated same-item retry paths and input eligibility, shared across the graph editor, HTTP and MCP. Show model probabilities per recombination attempt separately from success after retries, including the triple energy-shield chest's overlapping 2p + 2p merge. Retain earlier engines and publish these calculations as revision 7.
 
 Add five SpicySushiPoE Allflame crafting samples: RF totem and Luminary block shields, a magic find RF helmet, a fractured mercenary chest and Spectre boots. Include source notes, explicit prepared purchases and recovery costs. Publish retained crafting revision 10 with prepared Delve minion modifiers and Pantheon Aspect Ducat recombination support while preserving earlier saved rules.
+
+Show currency icons beside currency names in prices, costs, labels and table headers across crafting, market, arbitrage and the idol planner. Keep the currency text for reading and copying, and replace the idol planner's compact "c" suffix with the Chaos Orb icon while retaining screen-reader text.
