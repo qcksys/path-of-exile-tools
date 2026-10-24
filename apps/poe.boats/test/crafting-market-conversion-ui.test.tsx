@@ -11,13 +11,25 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
-it("sends the preparation policy and clears quotes when required cleanup changes", async () => {
-    const sourcePreparation = {
-        kind: "fractured-fossil-v1" as const,
-        fractureId: "fracture",
-        crafted: true,
-        enchanted: true,
-    };
+it.each([
+    {
+        sourcePreparation: {
+            kind: "fractured-fossil-v1" as const,
+            fractureId: "fracture",
+            crafted: true,
+            enchanted: true,
+        },
+        explanation:
+            /Cleanup, the first fossil roll and Eldritch currencies are charged separately/,
+    },
+    {
+        sourcePreparation: { kind: "scour-v1" as const, crafted: true, enchanted: true },
+        explanation: /Required craft and enchantment removal, followed by one Orb of Scouring/,
+    },
+])("sends $sourcePreparation.kind and clears quotes when required cleanup changes", async ({
+    sourcePreparation,
+    explanation,
+}) => {
     const fetcher = vi.fn().mockResolvedValue(
         new Response(
             JSON.stringify({
@@ -42,11 +54,9 @@ it("sends the preparation policy and clears quotes when required cleanup changes
         <MarketPricePicker {...props} sourcePreparation={sourcePreparation} />,
     );
     fireEvent.click(screen.getByText("Equipment market price"));
-    expect(
-        screen.getByText(
-            /Cleanup, the first fossil roll and Eldritch currencies are charged separately/,
-        ),
-    ).toBeTruthy();
+    expect(screen.getByText(explanation)).toBeTruthy();
+    if (sourcePreparation.kind === "scour-v1")
+        expect(screen.queryByText(/first fossil roll/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
     await screen.findByRole("button", { name: "Use live median" });
     expect(JSON.parse(fetcher.mock.calls[0]![1].body).sourcePreparation).toEqual(sourcePreparation);

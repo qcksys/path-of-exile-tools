@@ -1,9 +1,9 @@
 import type {
-    FracturedFossilSourcePreparation,
     ItemCondition,
     ItemQuery,
     ItemRecord,
     NumericRange,
+    SourcePreparationProfile,
 } from "@poe-tools/item-query";
 import { itemRarity, matchItem, matchItemCondition } from "@poe-tools/item-query";
 import type { MarketCohort } from "./cohorts.ts";
@@ -17,13 +17,14 @@ export function isDisplayEquivalentCohort(cohort: MarketCohort) {
 }
 
 export function sameSourcePreparation(
-    left: FracturedFossilSourcePreparation | undefined,
-    right: FracturedFossilSourcePreparation | undefined,
+    left: SourcePreparationProfile | undefined,
+    right: SourcePreparationProfile | undefined,
 ) {
     return left === undefined || right === undefined
         ? left === right
         : left.kind === right.kind &&
-              left.fractureId === right.fractureId &&
+              (left.kind !== "fractured-fossil-v1" ||
+                  (right.kind === "fractured-fossil-v1" && left.fractureId === right.fractureId)) &&
               left.crafted === right.crafted &&
               left.enchanted === right.enchanted;
 }
@@ -96,7 +97,7 @@ export function cohortPriceCoverage(
     item: ItemRecord,
     requirements: ItemQuery,
     assumption?: CohortPriceReference["assumption"],
-    sourcePreparation?: FracturedFossilSourcePreparation,
+    sourcePreparation?: SourcePreparationProfile,
 ) {
     const reasons: string[] = [];
     const { sourcePreparation: cohortPreparation, ...query } = cohort.query;
@@ -106,13 +107,25 @@ export function cohortPriceCoverage(
     )
         reasons.push("The configured item does not definitely match this cohort.");
     if (
-        sourcePreparation &&
+        sourcePreparation?.kind === "fractured-fossil-v1" &&
         (item.facts.modifiers.filter((mod) => mod.side !== "implicit").length !== 1 ||
             !item.facts.modifiers.some(
                 (mod) => mod.id === sourcePreparation.fractureId && mod.fractured,
             ))
     )
         reasons.push("Source preparation requires a template containing only its sole fracture.");
+    if (
+        sourcePreparation?.kind === "scour-v1" &&
+        (itemRarity(item.item) !== "Normal" ||
+            item.facts.prefixes !== 0 ||
+            item.facts.suffixes !== 0 ||
+            item.facts.modifiers.some(
+                (mod) => mod.side !== "implicit" || mod.fractured || mod.crafted,
+            ))
+    )
+        reasons.push(
+            "Scouring source preparation requires a Normal template with only native implicits.",
+        );
     if (item.game !== requirements.game)
         reasons.push("Item and requirements belong to different games.");
     const conditions = cohort.query.groups.flatMap((group) =>

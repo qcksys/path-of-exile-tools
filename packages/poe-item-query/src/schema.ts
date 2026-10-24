@@ -237,13 +237,22 @@ export const fracturedFossilSourcePreparationSchema = z.strictObject({
     crafted: z.boolean(),
     enchanted: z.boolean(),
 });
+export const scourSourcePreparationSchema = z.strictObject({
+    kind: z.literal("scour-v1"),
+    crafted: z.boolean(),
+    enchanted: z.boolean(),
+});
+export const sourcePreparationProfileSchema = z.discriminatedUnion("kind", [
+    fracturedFossilSourcePreparationSchema,
+    scourSourcePreparationSchema,
+]);
 
 export const itemQuerySchema = z
     .strictObject({
         format: z.literal(1).default(1),
         game: gameSchema,
         groups: z.array(itemQueryGroupSchema).max(16).default([]),
-        sourcePreparation: fracturedFossilSourcePreparationSchema.optional(),
+        sourcePreparation: sourcePreparationProfileSchema.optional(),
     })
     .refine(
         (query) => query.groups.reduce((sum, group) => sum + group.filters.length, 0) <= 128,
@@ -261,3 +270,5 @@ export type NumericRange = z.infer<typeof rangeSchema>;
 export type FracturedFossilSourcePreparation = z.infer<
     typeof fracturedFossilSourcePreparationSchema
 >;
+export type ScourSourcePreparation = z.infer<typeof scourSourcePreparationSchema>;
+export type SourcePreparationProfile = z.infer<typeof sourcePreparationProfileSchema>;
