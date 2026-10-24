@@ -62,6 +62,31 @@ const classifier = compileMarketCohorts(
         ),
     }),
 );
+const preparedClassifier = compileMarketCohorts(
+    marketCohortManifestSchema.parse({
+        ...classifier.manifest,
+        cohorts: [
+            ...classifier.manifest.cohorts,
+            ...bases.map((baseType, index) => ({
+                id: `prepared-${index}`,
+                name: `${baseType} prepared item`,
+                purpose: "isolated-modifier",
+                query: {
+                    game: "poe1",
+                    groups: [
+                        {
+                            type: "and",
+                            filters: [
+                                { kind: "base", field: "baseType", values: [baseType] },
+                                { kind: "range", field: "prefixes", value: { min: 1, max: 1 } },
+                            ],
+                        },
+                    ],
+                },
+            })),
+        ],
+    }),
+);
 const observedAt = new Date("2026-10-25T03:12:00Z");
 function sourceItem(base = bases[0]!, ilvl = 86) {
     return {
@@ -106,12 +131,104 @@ async function saved() {
     return { text, fixtures: JSON.parse(text).fixtures as EquipmentDiagnosticFixture[] };
 }
 
-describe("bounded equipment source diagnostics", () => {
-    it("stays disabled without a file, current expiry, or source target", () => {
+describe("bounded equipment diagnostics", () => {
+    it("stays disabled without a file, current expiry, or known target", () => {
         expect(create({ file: undefined })).toBeUndefined();
         expect(create({ expiresAt: Date.now() })).toBeUndefined();
         expect(create({ expiresAt: Number.NaN })).toBeUndefined();
-        expect(create({ cohortIds: ["ordinary-0", "missing"] })).toBeUndefined();
+        expect(create({ cohortIds: ["missing"] })).toBeUndefined();
+    });
+
+    it("captures an ordinary prepared-item unknown with the same privacy and full parity", async () => {
+        const diagnostics = create({
+            classifier: preparedClassifier,
+            cohortIds: ["prepared-0"],
+        });
+        expect(diagnostics).toBeDefined();
+        const raw = {
+            ...sourceItem(),
+            extended: undefined,
+            id: "private-id",
+            name: "private-name",
+            accountName: "private-account",
+            note: "private-asking-price",
+            icon: "private-url",
+        };
+        const result = preparedClassifier.classify(normalizeApiItem("poe1", "stash", raw));
+        expect(result.unknown).toContain("prepared-0");
+        const fixture = diagnostics!.collect(raw, result, observedAt)!;
+        expect(fixture.targets).toEqual([{ cohortId: "prepared-0" }]);
+        expect(fixture.item.name).toBe("present");
+        expect(
+            preparedClassifier.classify(normalizeApiItem("poe1", "stash", fixture.item)),
+        ).toEqual(result);
+        expect(diagnostics!.collect({ ...raw, privateFlag: true }, result, observedAt)).toBeNull();
+        expect(
+            diagnostics!.collect({ ...raw, ilvl: 87 }, { ...result, matches: [] }, observedAt),
+        ).toBeNull();
+        expect(
+            diagnostics!.collect(
+                { ...raw, ilvl: 88 },
+                { ...result, unknown: [...result.unknown, "unrelated"] },
+                observedAt,
+            ),
+        ).toBeNull();
+        await diagnostics!.flush([fixture]);
+        const output = await saved();
+        expect(output.fixtures).toHaveLength(1);
+        expect(output.fixtures[0]!.classification).toEqual({
+            matches: [...result.matches].sort(),
+            unknown: [...result.unknown].sort(),
+        });
+        expect(output.text).not.toContain("private-");
+    });
+
+    it("does not collect ordinary matches or definite no-matches", () => {
+        const diagnostics = create({
+            classifier: preparedClassifier,
+            cohortIds: ["prepared-0"],
+        });
+        expect(diagnostics).toBeDefined();
+        const match = sourceItem();
+        const matched = preparedClassifier.classify(normalizeApiItem("poe1", "stash", match));
+        expect(matched.matches).toContain("prepared-0");
+        expect(diagnostics!.collect(match, matched, observedAt)).toBeNull();
+        const miss = { ...match, extended: { prefixes: 0, suffixes: 0 } };
+        const rejected = preparedClassifier.classify(normalizeApiItem("poe1", "stash", miss));
+        expect(rejected.matches).not.toContain("prepared-0");
+        expect(rejected.unknown).not.toContain("prepared-0");
+        expect(diagnostics!.collect(miss, rejected, observedAt)).toBeNull();
+    });
+
+    it("shares the existing fixture cap across source and ordinary unknown targets", async () => {
+        const diagnostics = create({
+            classifier: preparedClassifier,
+            cohortIds: bases.flatMap((_, index) => [`source-${index}`, `prepared-${index}`]),
+        })!;
+        const fixtures: EquipmentDiagnosticFixture[] = [];
+        for (const [index, base] of bases.entries()) {
+            for (let variant = 0; variant < 2; variant++) {
+                const raw = { ...sourceItem(base, 86 + variant), extended: undefined };
+                const result = preparedClassifier.classify(normalizeApiItem("poe1", "stash", raw));
+                const fixture = diagnostics.collect(raw, result, observedAt);
+                if (index < 8) {
+                    expect(fixture?.targets).toEqual([
+                        { cohortId: `prepared-${index}` },
+                        {
+                            cohortId: `source-${index}`,
+                            sourcePreparation: {
+                                kind: "scour-v1",
+                                crafted: false,
+                                enchanted: false,
+                            },
+                        },
+                    ]);
+                    fixtures.push(fixture!);
+                } else expect(fixture).toBeNull();
+            }
+        }
+        await diagnostics.flush(fixtures);
+        expect((await saved()).fixtures).toHaveLength(16);
     });
 
     it("preserves actual model-3 unknowns and full membership without identities or listing data", async () => {
