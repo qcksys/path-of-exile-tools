@@ -1,5 +1,13 @@
 # Browser coverage
 
+Run `vp exec playwright test --config playwright.market.config.ts` for the market suite.
+It starts a disposable MySQL container, applies migrations, seeds fixed observations and runs
+the built Worker. Docker and Playwright Chromium must be available. It covers category groups,
+search, rarity and variant filters, price ordering across pages, nested history, legacy URLs,
+currency and period changes, reload/back navigation and mobile overflow. The ordinary browser
+config excludes this database-backed suite so it can still run without Docker.
+CI runs the market suite in the checks job alongside the MySQL integration tests.
+
 `crafting-presets.spec.ts` creates each of the nine common PoE 1 crafts through the preset picker,
 calculates it in the real retained worker and compares the full result with the HTTP operation.
 It checks successful target items, missing-price reporting, independent new tabs, editing and reload.

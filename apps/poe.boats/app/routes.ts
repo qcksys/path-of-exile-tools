@@ -20,7 +20,10 @@ export default [
         route("arbitrage", "routes/arbitrage/poe1.tsx"),
         route("recombinator", "routes/recombinator.tsx"),
         route("crafting/:mode?", "routes/crafting/poe1.tsx"),
-        route("market", "routes/market.tsx"),
+        route("market", "routes/market.tsx", [
+            index("routes/market/index.tsx"),
+            route("items/:item", "routes/market/item.tsx"),
+        ]),
         ...prefix("idol-planner", [
             index("routes/idol-planner/home.tsx"),
             route("share/:id", "routes/idol-planner/share.$id.tsx"),

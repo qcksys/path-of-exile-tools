@@ -38,6 +38,14 @@ classification behavior, and replay publishes corrections under the new manifest
 
 ## Coverage
 
+Season market browsing uses a parent layout and outlet with separate list and item-history
+routes. Legacy `?item=` bookmarks redirect to `/1/market/items/:item` with all variant axes intact.
+The shared market query applies category, text, rarity, identification, corruption and ordering
+before pagination. Categories use the verified per-game base catalog, grouped like
+[poe.ninja's economy navigation](https://poe.ninja/poe1/economy); unknown bases remain in Other items.
+Price ordering compares only the selected original currency, with missing quotes last.
+The HTTP and MCP market operation exposes the same filters and category assignments.
+
 CI runs app tests in four shards and workspace package tests in a separate required job.
 The workbench UI suites are grouped by behavior so individual files can run on different
 workers; shared fixture catalogs are parsed once per test file. Browser cases use isolated

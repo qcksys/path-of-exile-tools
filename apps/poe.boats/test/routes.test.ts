@@ -1,10 +1,18 @@
+import type { RouteConfigEntry } from "@react-router/dev/routes";
 import { matchRoutes } from "react-router";
 import { describe, expect, it } from "vite-plus/test";
 import { buildShareUrl } from "~/lib/share";
 import routeConfig from "~/routes";
 import { action, loader } from "~/routes/legacy-idol-planner";
 
-const routes = routeConfig.map(({ file, path, index }) => ({ id: file, path, index }));
+function routeObjects(entries: RouteConfigEntry[]): import("react-router").RouteObject[] {
+    return entries.map(({ file, path, index, children }) =>
+        index
+            ? { id: file, path, index: true }
+            : { id: file, path, children: children ? routeObjects(children) : undefined },
+    );
+}
+const routes = routeObjects(routeConfig);
 
 describe("game routes", () => {
     it.each([
@@ -12,7 +20,8 @@ describe("game routes", () => {
         ["/1/", "routes/poe1-home.tsx"],
         ["/2/", "routes/poe2-home.tsx"],
         ["/1/arbitrage", "routes/arbitrage/poe1.tsx"],
-        ["/1/market", "routes/market.tsx"],
+        ["/1/market", "routes/market/index.tsx"],
+        ["/1/market/items/Abberath's%20Hooves", "routes/market/item.tsx"],
         ["/2/arbitrage", "routes/arbitrage/poe2.tsx"],
         ["/3/arbitrage", "routes/404.tsx"],
         ["/1/idol-planner", "routes/idol-planner/home.tsx"],

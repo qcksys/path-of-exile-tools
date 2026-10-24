@@ -15,6 +15,12 @@ describe("market browsing", () => {
             league: "Season A",
             realm: "poe2",
             currency: "chaos",
+            category: "jewels",
+            order: "price-asc",
+            rarity: "unique",
+            corruption: "true",
+            identification: "true",
+            page: 3,
         });
         const link = marketLink(filters, {
             itemKey: "Watcher's Eye",
@@ -27,11 +33,19 @@ describe("market browsing", () => {
         const parsed = marketFiltersSchema.parse(
             Object.fromEntries(new URL(link, "https://example.invalid").searchParams),
         );
+        expect(decodeURIComponent(new URL(link, "https://example.invalid").pathname)).toBe(
+            "/1/market/items/Watcher's Eye",
+        );
         expect(parsed).toMatchObject({
             league: "Season A",
             realm: "poe2",
             currency: "chaos",
-            item: "Watcher's Eye",
+            category: "jewels",
+            order: "price-asc",
+            rarity: "unique",
+            corruption: "true",
+            identification: "true",
+            page: 3,
             identified: "true",
             corrupted: "true",
             foil: 3,
@@ -44,6 +58,10 @@ describe("market browsing", () => {
         { page: "NaN" },
         { realm: "invalid" },
         { q: "a".repeat(101) },
+        { category: "unknown" },
+        { order: "unknown" },
+        { rarity: "legendary" },
+        { corruption: "yes" },
     ])("rejects unbounded or invalid filters %j", (input) => {
         expect(marketFiltersSchema.safeParse(input).success).toBe(false);
     });
