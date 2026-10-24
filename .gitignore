@@ -6,7 +6,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
 node_modules
 .pnpm-store
 .varlock
@@ -23,7 +22,6 @@ node_modules
 dist
 dist-ssr
 *.local
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -35,27 +33,8 @@ dist-ssr
 *.sln
 *.sw?
 **/tsconfig.tsbuildinfo
-
 # Generated agent configuration and local overrides
 .agents/local.json
 .agents/generated/
 .agents/agents.json.*.bak
 .agents/plugin-data/
-CLAUDE.md
-.agents/mcp_config.json
-.codex/
-.gemini/
-.mcp.json
-.vscode/mcp.json
-.cursor/
-.antigravity/
-.windsurf/
-.opencode/
-opencode.json
-.junie/mcp/
-.grok/config.toml
-.factory/mcp.json
-.devin/mcp_config.json
-.claude/skills
-.junie/skills
-.kilo/skills
