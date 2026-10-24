@@ -1,7 +1,6 @@
 import { Client } from "@planetscale/database";
 import { drizzle } from "drizzle-orm/planetscale-serverless";
 import { relations } from "~/db/relations.ts";
-import { schema } from "~/db/schema";
 
 export type TDatabase = ReturnType<typeof createDbConnection>;
 export const createDbConnection = (url: string) => {
@@ -16,7 +15,6 @@ export const createDbConnection = (url: string) => {
     });
     return drizzle({
         client,
-        schema,
         relations,
     });
 };
@@ -29,7 +27,7 @@ export async function openDatabase(url: string, driver = "planetscale") {
         import("drizzle-orm/mysql2"),
     ]);
     const client = await createConnection({ uri: url, disableEval: true });
-    const db = mysqlDrizzle({ client, schema, relations, mode: "default" });
+    const db = mysqlDrizzle({ client, relations });
     // Both adapters execute the same MySQL schema and queries; driver result metadata differs.
     return { db: db as unknown as TDatabase, close: () => client.end() };
 }
