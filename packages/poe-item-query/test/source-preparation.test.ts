@@ -10,6 +10,7 @@ import {
     matchItem,
     normalizeApiItem,
     type SourcePreparationModel,
+    sourcePreparationModelSchema,
 } from "../src/index.ts";
 
 const target = "critical-fracture";
@@ -351,6 +352,19 @@ it("uses strict serializable policy fields and fails closed when the solver exha
         fracturedFossilSourcePreparationSchema.safeParse({ ...profile, arbitrary: true }).success,
     ).toBe(false);
     expect(compileSourcePreparation(model, sourceModel, 1)(source(), profile)).toBeNull();
+});
+
+it("accepts preparation model formats 1 and 2 without changing the source projection", () => {
+    const legacy = compileResult(model, sourceModel);
+    const current = compileResult(model, { ...sourceModel, format: 2 });
+    const input = source();
+    expect(current(input, profile)).toEqual(legacy(input, profile));
+    input.item.explicitMods = [];
+    expect(current(input, profile)).toEqual({ status: "unknown" });
+    expect(current(input, profile)).toEqual(legacy(input, profile));
+    expect(sourcePreparationModelSchema.safeParse({ ...sourceModel, format: 3 }).success).toBe(
+        false,
+    );
 });
 
 it("reports definite partition and eligibility mismatches without creating unknown observations", () => {

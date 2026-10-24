@@ -10,7 +10,7 @@ import {
 } from "./schema.ts";
 
 export const sourcePreparationModelSchema = z.strictObject({
-    format: z.literal(1),
+    format: z.union([z.literal(1), z.literal(2)]),
     bases: z
         .array(
             z.strictObject({
