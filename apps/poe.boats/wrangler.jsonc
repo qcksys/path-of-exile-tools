@@ -10,6 +10,9 @@
         "enabled": true,
         "logs": {
             "invocation_logs": false
+        },
+        "traces": {
+            "enabled": true
         }
     },
     "placement": {
@@ -26,6 +29,9 @@
                 "enabled": true,
                 "logs": {
                     "invocation_logs": false
+                },
+                "traces": {
+                    "enabled": true
                 }
             },
             "vars": {
@@ -48,6 +54,9 @@
                 "enabled": true,
                 "logs": {
                     "invocation_logs": false
+                },
+                "traces": {
+                    "enabled": true
                 }
             },
             "vars": {
