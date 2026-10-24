@@ -15,6 +15,11 @@ import type { CraftingCost, CraftingEngine, CraftingRandom } from "./crafting-en
 import { createCraftingItemQuery } from "./crafting-item-query";
 import { craftingNodeCostPrice } from "./crafting-node-prices";
 
+const additionalScouringBases = new Set([
+    "Metadata/Items/Armours/Boots/BootsAtlas1",
+    "Metadata/Items/Armours/BodyArmours/BodyDex16",
+]);
+
 export function purchaseSourceProfile(alternative: GraphPurchase) {
     if (!alternative.sourcePreparation) return undefined;
     if (alternative.sourcePreparation.kind === "scour-v1")
@@ -26,13 +31,16 @@ export function purchaseSourceProfile(alternative: GraphPurchase) {
 export function validateSourcePreparationRevision(
     engine: string,
     source: SourcePreparationProfile | undefined,
+    baseId: string,
 ) {
     if (!source) return;
     if (source.kind === "scour-v1") {
-        if (engine !== "crafting-graph-12")
-            throw new Error("Scouring source preparation requires crafting engine 12.");
-    } else if (!["crafting-graph-11", "crafting-graph-12"].includes(engine))
-        throw new Error("Source preparation requires crafting engine 11 or 12.");
+        if (!["crafting-graph-12", "crafting-graph-13"].includes(engine))
+            throw new Error("Scouring source preparation requires crafting engine 12 or 13.");
+        if (additionalScouringBases.has(baseId) && engine !== "crafting-graph-13")
+            throw new Error("Scouring these boots or body armour requires crafting engine 13.");
+    } else if (!["crafting-graph-11", "crafting-graph-12", "crafting-graph-13"].includes(engine))
+        throw new Error("Source preparation requires crafting engine 11, 12 or 13.");
 }
 
 export function sourcePreparationMethodList(source: SourcePreparation): CraftingMethod[] {
@@ -80,7 +88,8 @@ export function validateSourcePreparation(engine: CraftingEngine, purchase: Grap
         };
         if (
             engine.catalog.game !== "poe1" ||
-            !["Shield", "Helmet"].includes(engine.base(item).item_class) ||
+            (!["Shield", "Helmet"].includes(engine.base(item).item_class) &&
+                !additionalScouringBases.has(item.baseId)) ||
             Object.keys(item).some(
                 (field) =>
                     JSON.stringify(item[field as keyof CraftingItem]) !==
@@ -88,7 +97,7 @@ export function validateSourcePreparation(engine: CraftingEngine, purchase: Grap
             )
         )
             throw new Error(
-                "A Scouring source requires a baseline Normal shield or helmet template with only its preserved influences and native implicits.",
+                "A Scouring source requires a baseline Normal shield or helmet, Cold/Lightning Two-Toned Boots, or Zodiac Leather template with only its preserved influences and native implicits.",
             );
         sourcePreparationMethods(engine, source);
         return;

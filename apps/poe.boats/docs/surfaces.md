@@ -235,7 +235,12 @@ are bound to their preparation profile and cannot price an ordinary clean purcha
 purchase or preparation prices keep the total unknown, and existing choices remain pinned.
 The shared classifier, binding, calculation and UI expose the same policy. Earlier revisions
 retain their published behavior.
-The fifteen current presets contain 102 purchase alternatives across 52 acquisitions and 81
+Revision 13 adds the same four paid profiles to the uninfluenced Normal Cold/Lightning
+Two-Toned Boots and Zodiac Leather inputs. The boots must retain their native resistance
+implicit, and Zodiac Leather must have no implicit. Both preserve the exact item level and
+feed the existing influence and modifier preparation routes. These two source bases require
+revision 13 even when an older graph already supports shield and helmet Scouring.
+The fifteen current presets contain 110 purchase alternatives across 52 acquisitions and 89
 distinct preset cohorts; 26 production alternatives include Hunter, Redeemer, NNN and Scouring
 preparation. Capture fixtures cover every new base without modifier metadata;
 definitions do not imply observed inventory or available quotes.

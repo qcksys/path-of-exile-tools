@@ -23,7 +23,7 @@ import { workbenchCatalog } from "./crafting-workbench-fixtures";
 vi.mock("~/services/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r12",
+    (entry) => entry.game === "poe1" && entry.revision === "r13",
 )!;
 const fossil: CraftingMethod = {
     kind: "fossils",

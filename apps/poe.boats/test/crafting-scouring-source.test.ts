@@ -4,8 +4,9 @@ import { discoverGraphCraftingCosts } from "../app/lib/crafting-cost-inputs";
 import { seededRandom } from "../app/lib/crafting-engine";
 import { CraftingGraphSimulation } from "../app/lib/crafting-graph-simulation";
 import { validateCraftingGraph } from "../app/lib/crafting-graph-validation";
+import { bindCohortPurchasePrice } from "../app/lib/crafting-market";
 import { craftingNodeCostKey } from "../app/lib/crafting-node-prices";
-import { validateRulesetGraph } from "../app/lib/crafting-rulesets";
+import { rulesetReference, validateRulesetGraph } from "../app/lib/crafting-rulesets";
 import {
     estimateSourcePurchase,
     prepareSourcePurchase,
@@ -20,13 +21,14 @@ import {
 } from "../app/schemas/crafting-graph";
 import { baseId as bodyArmourId, catalog, currency, engine } from "./crafting-fixtures";
 import { anyItem, graphFixture, quote, runGraphTrial } from "./crafting-graph-fixtures";
-import { historyIndex } from "./crafting-history-fixtures";
+import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
+import { marketCandidate } from "./crafting-market-fixtures";
 
 const scour = currency("convert_to_normal").id;
 const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
-const ruleset = { ...prior, revision: "r12", engine: "crafting-graph-12" };
+const ruleset = { ...prior, revision: "r13", engine: "crafting-graph-13" };
 const scopes = [
     "Heat-attuned Tower Shield",
     "Pinnacle Tower Shield",
@@ -45,7 +47,7 @@ function fixture(name = scopes[0]!, crafted = true, enchanted = true) {
         ([id, base]) => base.name === name && !id.includes("Royale"),
     )![0];
     const item = engine.createItem(baseId, 86);
-    if (name !== "Hubris Circlet")
+    if (engine.base(item).item_class === "Shield")
         item.influences = [catalog.crafting.modRules.RecoverLifePercentOnBlockUber1_!.influence!];
     const source: ScourSourcePreparation = { kind: "scour-v1", crafted, enchanted };
     const purchase: GraphPurchase = {
@@ -57,7 +59,7 @@ function fixture(name = scopes[0]!, crafted = true, enchanted = true) {
         price: quote(11),
     };
     const graph = graphFixture();
-    graph.ruleset = { ...graph.ruleset, revision: "r12", engine: "crafting-graph-12" };
+    graph.ruleset = { ...graph.ruleset, revision: "r13", engine: "crafting-graph-13" };
     const node: GraphAcquireNode = {
         kind: "acquire" as const,
         id: "base",
@@ -102,6 +104,87 @@ function actualSource(purchase: GraphPurchase, rarity: "magic" | "rare") {
         ];
     return engine.validateItem(item);
 }
+
+it.each([
+    ["Two-Toned Boots", "Metadata/Items/Armours/Boots/BootsAtlas1"],
+    ["Zodiac Leather", "Metadata/Items/Armours/BodyArmours/BodyDex16"],
+])("prepares only the configured %s base with every paid cleanup partition", (name, baseId) => {
+    for (const [crafted, enchanted] of partitions) {
+        const { graph, node, purchase, source } = fixture(name, crafted, enchanted);
+        expect(purchase.item.baseId).toBe(baseId);
+        expect(() => validateCraftingGraph(catalog, graph)).not.toThrow();
+        expect(() => validateRulesetGraph(ruleset, graph)).not.toThrow();
+        const prepared = prepareSourcePurchase(engine, purchase, seededRandom(4));
+        expect(prepared.item).toEqual(purchase.item);
+        // The catalog has no modeled boot enchantment. Its raw source still pays the
+        // class-supported removal bench; no invented enchantment enters the template.
+        if (name !== "Two-Toned Boots" || !enchanted) {
+            let actual = actualSource(purchase, "rare");
+            const costs = [];
+            for (const method of sourcePreparationMethods(engine, source)) {
+                const result = engine.apply(actual, method, seededRandom(4));
+                costs.push(...result.cost);
+                actual = result.item;
+            }
+            expect(actual).toEqual(purchase.item);
+            expect(prepared.costs).toEqual(costs);
+        }
+        expect(
+            catalog.crafting.bench.find((entry) => entry.id === "bench:373")!.itemClasses,
+        ).toContain(engine.base(purchase.item).item_class);
+        expect(prepared.costs.every((cost) => cost.id === scour)).toBe(true);
+        expect(prepared.costs.reduce((sum, cost) => sum + cost.amount, 0)).toBe(
+            1 + Number(crafted) + 3 * Number(enchanted),
+        );
+        expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
+            expectedCost: 11 + 2 * (1 + Number(crafted) + 3 * Number(enchanted)),
+            expectedActions: 1 + Number(crafted) + Number(enchanted),
+            missingPrices: [],
+        });
+        expect(runGraphTrial(graph, seededRandom(4))).toMatchObject({
+            success: true,
+            actions: 1 + Number(crafted) + Number(enchanted),
+            spending: { [scour]: 1 + Number(crafted) + 3 * Number(enchanted) },
+        });
+    }
+});
+
+it("keeps the two new bases out of retained r12 validation, binding and execution", async () => {
+    const retained = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r12",
+    )!;
+    const loaded = await retainedRevision(retained);
+    for (const name of ["Two-Toned Boots", "Zodiac Leather"]) {
+        const { graph, node, purchase } = fixture(name);
+        graph.ruleset = rulesetReference(retained);
+        expect(() => validateRulesetGraph(retained, graph)).toThrow("engine 13");
+        expect(() =>
+            bindCohortPurchasePrice(graph, engine, node.id, purchase.id, marketCandidate),
+        ).toThrow("engine 13");
+        expect(() => loaded.runtime.createSimulation(loaded.catalog, graph)).toThrow(
+            "shield or helmet",
+        );
+    }
+    const { graph } = fixture();
+    graph.ruleset = rulesetReference(retained);
+    expect(() => validateRulesetGraph(retained, graph)).not.toThrow();
+    expect(() => loaded.runtime.createSimulation(loaded.catalog, graph)).not.toThrow();
+});
+
+it("does not extend Scouring preparation to other boots or body armours", () => {
+    for (const baseId of [
+        "Metadata/Items/Armours/Boots/BootsAtlas2",
+        "Metadata/Items/Armours/Boots/BootsAtlas3",
+        bodyArmourId,
+    ]) {
+        const { graph, purchase } = fixture();
+        purchase.item = engine.createItem(baseId, 86);
+        expect(() => validateCraftingGraph(catalog, graph)).toThrow("Scouring source");
+        expect(() => prepareSourcePurchase(engine, purchase, seededRandom(1))).toThrow(
+            "Scouring source",
+        );
+    }
+});
 
 it.each(
     scopes,

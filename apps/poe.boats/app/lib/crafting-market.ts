@@ -135,7 +135,11 @@ export function bindCohortPurchasePrice(
     if (itemIssue) throw new Error(itemIssue);
     const { definition, latest } = candidate;
     const sourcePreparation = purchaseSourceProfile(alternative);
-    validateSourcePreparationRevision(graph.ruleset.engine, sourcePreparation);
+    validateSourcePreparationRevision(
+        graph.ruleset.engine,
+        sourcePreparation,
+        alternative.item.baseId,
+    );
     validateSourcePreparation(engine, alternative);
     validateSourcePreparationOutput(alternative, node.output);
     if (!sameSourcePreparation(sourcePreparation, candidate.sourcePreparation))

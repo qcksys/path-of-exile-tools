@@ -22,7 +22,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r10",
 )!;
-const ruleset = { ...prior, revision: "r12", engine: "crafting-graph-12" };
+const ruleset = { ...prior, revision: "r13", engine: "crafting-graph-13" };
 const fractureId = "BreachBodyCriticalChanceIncreasedByUncappedLightningResistance1";
 const scour = currency("convert_to_normal").id;
 const ichor = currency("add_great_tangle_implicit_1").id;
