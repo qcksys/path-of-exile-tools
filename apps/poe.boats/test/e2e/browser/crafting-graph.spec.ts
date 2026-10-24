@@ -269,7 +269,17 @@ test("terminal outcomes and required bases are edited inside their graph node", 
     await select(page, "Crafting preset", "Physical bow");
     await page.getByRole("button", { name: "Create from preset", exact: true }).click();
     const graph = page.getByRole("region", { name: "Crafting project graph", exact: true });
-    await selectValue(graph.getByRole("combobox", { name: "Focus graph step" }), "outcome:target");
+    const focus = graph.getByRole("combobox", { name: "Focus graph step" });
+    await focus.press("ArrowDown");
+    const listbox = page.getByRole("listbox");
+    await expect(listbox).toBeVisible();
+    await page.keyboard.press("End");
+    const target = listbox.locator('[role="option"][data-value="outcome:target"]');
+    await expect(target).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(focus.locator('[data-slot="select-value"]')).toHaveText("Outcome: Physical bow");
+    await expect(focus).toHaveAttribute("aria-expanded", "false");
+    await expect(listbox).toHaveCount(0);
     const outcome = graph.locator('.react-flow__node[data-id="outcome:target"]');
     await outcome.getByRole("button", { name: /^Edit outcome / }).click();
     const editor = outcome.getByRole("region", { name: "Outcome editor" });
