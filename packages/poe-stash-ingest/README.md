@@ -96,6 +96,40 @@ acknowledged delivery path. Logs report reclassified page and completed-hour cou
 Each acknowledged upload batch also advances worker progress, so a long historical
 delivery is not reported as stalled while its receiver is accepting rows.
 
+### Temporary equipment diagnostics
+
+To investigate unknown source-preparation matches without opening the live DuckDB file,
+place `equipment-diagnostics.request.json` beside the worker's `INGEST_STATUS_FILE` before
+its next normal deployment. The processing command reads this optional request once at
+startup. It must name the exact worker realm and league, current source cohort IDs, and
+an expiry no more than 24 hours away:
+
+```json
+{
+    "format": 1,
+    "realm": "pc",
+    "league": "Allflame",
+    "expiresAt": "2026-10-25T12:00:00Z",
+    "cohortIds": ["replace-with-a-current-source-cohort-id"]
+}
+```
+
+Use a future expiry and actual IDs from the active cohort manifest. Missing, expired,
+invalid or mismatched requests leave capture disabled; PoE 2 and all-league workers skip it.
+The owning process samples only newly observed target unknowns, then reclassifies sanitized
+items and requires identical complete matches and unknowns. It writes
+`equipment-diagnostics.json` in the same directory only after the page transaction commits.
+The file excludes account, stash and item identifiers, listing notes, prices and credentials.
+Samples retain their real observation hour and do not explain earlier hours retroactively.
+Unsupported shapes and unknown active flag names are skipped rather than changed; missing
+diagnostic samples do not establish that the corresponding items are absent from the market.
+
+The collector permits at most 64 verification attempts and 16 saved fixtures per process,
+with 16 KiB per fixture and 256 KiB total. It stops at expiry; write failures do not stop
+ingestion. Read only this output file for diagnosis and remove the request when the
+investigation ends. No additional database connection, cursor reset or credential resolution
+is needed. This debug facility does not change classification or public market APIs.
+
 To seed a recent cursor on an empty volume, stop the worker, then run a one-off command with
 the same host credentials (`varlock run` from this package directory):
 

@@ -21,6 +21,10 @@ export async function captureEquipment(
     change: PublicStashChange,
     classifier: EquipmentClassifier,
     observedAt: Date,
+    onClassified?: (
+        item: PublicStashChange["items"][number],
+        classification: ReturnType<EquipmentClassifier["classify"]>,
+    ) => void,
 ) {
     const time = observedAt.toISOString();
     if (!change.public) {
@@ -36,6 +40,7 @@ export async function captureEquipment(
     for (const item of change.items) {
         if (!item.id || !classifier.acceptsBase(item.baseType)) continue;
         const { matches, unknown } = classifier.classify(normalizeApiItem("poe1", "stash", item));
+        if (unknown.length) onClassified?.(item, { matches, unknown });
         if (!matches.length && !unknown.length) continue;
         const price = extractListingPrice(item, change.stash);
         rows.push({
