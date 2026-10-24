@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -91,9 +92,10 @@ export function WorkbenchMarketPrices({
             className="space-y-3 border-t border-border pt-3"
         >
             <p className="text-xs text-muted-foreground">
-                Copy selected market estimates into your chaos prices. Entered amounts stay until
-                you explicitly replace them. Copied estimates are fixed amounts; look them up again
-                to update them. Starting item cost is entered separately.
+                Copy selected market estimates into your{" "}
+                <CurrencyLabel currency="chaos" game={engine.catalog.game} /> prices. Entered
+                amounts stay until you explicitly replace them. Copied estimates are fixed amounts;
+                look them up again to update them. Starting item cost is entered separately.
             </p>
             {graph ? (
                 <>

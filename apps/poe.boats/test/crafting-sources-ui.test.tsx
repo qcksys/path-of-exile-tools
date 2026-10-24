@@ -6,7 +6,7 @@ import { GraphPriceInput } from "~/components/crafting/graph-node-editor";
 import { SourcePricePicker } from "~/components/crafting/source-price-picker";
 import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
-import { changeControl } from "./control-helpers";
+import { byText, changeControl } from "./control-helpers";
 import {
     commodityQuote,
     convertedCommodityQuote,
@@ -28,6 +28,8 @@ import {
     vendorOutputId,
     vendorQuote,
 } from "./crafting-vendor-upgrade-fixtures";
+
+vi.mock("~/hooks/use-item-presentations", () => ({ useItemPresentations: () => ({}) }));
 
 afterEach(() => {
     cleanup();
@@ -98,7 +100,7 @@ it("offers captured currency asks without a beast assumption and only replaces a
     expect(screen.queryByRole("checkbox", { name: /Mountain Lynx/ })).toBeNull();
     expect(screen.getByText(/not completed exchange trades/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
-    await screen.findByText(/200 chaos per item/);
+    await screen.findByText(byText(/200 chaos per item/));
     expect(JSON.parse(fetcher.mock.calls[0]![1].body)).toMatchObject({
         ids: [unravellingId],
         realm: "pc",
@@ -249,7 +251,7 @@ it("shows captured per-item asks and fills only unpriced inputs until explicitly
     fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
     await screen.findByText("2 of 2 inputs priced.");
     const result = within(screen.getByRole("region", { name: `Source price for ${essenceName}` }));
-    expect(result.getByText(/16.5 chaos per item/)).toBeTruthy();
+    expect(result.getByText(byText(/16.5 chaos per item/))).toBeTruthy();
     expect(
         result.getByText(/2 priced samples · 25 total listings · 24 total sellers/),
     ).toBeTruthy();
@@ -316,8 +318,8 @@ it("makes conversion explicit, shows the original ask and keeps manual prices un
     fireEvent.click(choice);
     expect(screen.queryByText("No chaos asks")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
-    await screen.findByText(/600 chaos per item · converted asking median/);
-    expect(screen.getByText(/Original ask: 2 divine per item/).textContent).toContain(
+    await screen.findByText(byText(/600 chaos per item · converted asking median/));
+    expect(screen.getByText(byText(/Original ask: 2 divine per item/)).textContent).toContain(
         "Matching-hour exchange: 1 divine = 300 chaos",
     );
     expect(
@@ -443,12 +445,12 @@ it("keeps direct asking prices separate from an explicitly selected vendor ingre
         target: { value: vendorInputId },
     });
     fireEvent.click(screen.getByRole("button", { name: "Find vendor-upgrade estimate" }));
-    await screen.findByText("18 chaos per output · vendor-upgrade ingredient estimate");
+    await screen.findByText(byText("18 chaos per output · vendor-upgrade ingredient estimate"));
     expect(JSON.parse(fetcher.mock.calls[1]![1].body)).toMatchObject({
         ids: [vendorOutputId],
         vendorUpgrade: { inputId: vendorInputId },
     });
-    expect(screen.getByText(/9 × Weeping Essence of Rage at 2 chaos each/)).toBeTruthy();
+    expect(screen.getByText(byText(/9 × Weeping Essence of Rage at 2 chaos each/))).toBeTruthy();
     expect(screen.getByText(/3 ingredient units traded/)).toBeTruthy();
     expect(screen.getByText(/Confidence is unknown/)).toBeTruthy();
     expect(onChange).not.toHaveBeenCalled();

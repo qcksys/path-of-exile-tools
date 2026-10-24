@@ -1,8 +1,17 @@
+import { CurrencyLabel } from "~/components/currency-label";
 import { marketNumber } from "~/lib/market-number";
 
 type Point = { hour: number; prices: Record<string, { median: number }> | null };
 
-export function MarketPriceChart({ points, currency }: { points: Point[]; currency: string }) {
+export function MarketPriceChart({
+    points,
+    currency,
+    game,
+}: {
+    points: Point[];
+    currency: string;
+    game?: "poe1" | "poe2";
+}) {
     const priced = points.flatMap((point) => {
         const price = point.prices?.[currency]?.median;
         return price === undefined ? [] : [{ hour: point.hour, price }];
@@ -10,7 +19,8 @@ export function MarketPriceChart({ points, currency }: { points: Point[]; curren
     if (priced.length === 0)
         return (
             <p className="py-12 text-center text-muted-foreground">
-                No asking prices in {currency} for this period.
+                No asking prices in <CurrencyLabel currency={currency} game={game} /> for this
+                period.
             </p>
         );
     const lowest = Math.min(...priced.map((p) => p.price));

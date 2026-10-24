@@ -9,7 +9,7 @@ import { CraftingEngine } from "../app/lib/crafting-engine";
 import { validateRulesetIndex } from "../app/lib/crafting-rulesets";
 import { craftingProjectSchema } from "../app/schemas/crafting";
 import index from "../crafting-history/index.json";
-import { changeControl } from "./control-helpers";
+import { byText, changeControl } from "./control-helpers";
 import { commodityQuote, convertedCommodityQuote, essenceId } from "./crafting-commodity-fixtures";
 import { exchangeQuote, transmuteId } from "./crafting-exchange-fixtures";
 import { baseId, catalog, engine, getCatalog } from "./crafting-fixtures";
@@ -220,7 +220,7 @@ it.each([
             }),
         );
     fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
-    await screen.findByText(new RegExp(`${quote.amount} chaos per item`));
+    await screen.findByText(byText(new RegExp(`${quote.amount} chaos per item`)));
     const amount = screen.getByLabelText("Manual input price") as HTMLInputElement;
     expect(amount.value).toBe("123");
     expect(
@@ -402,7 +402,7 @@ it("updates the standalone workbench's editable price after explicit quote selec
         </MemoryRouter>,
     );
     chooseStartingItem(catalog);
-    fireEvent.click(screen.getByText("Custom prices in chaos"));
+    fireEvent.click(screen.getByText(byText("Custom prices in chaos")));
     const price = screen.getByRole("spinbutton", { name: currency.name }) as HTMLInputElement;
     fireEvent.change(price, { target: { value: "123" } });
     await lookup();

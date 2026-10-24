@@ -5,7 +5,7 @@ import { seededRandom } from "~/lib/crafting-engine";
 import { CraftingSimulation } from "~/lib/crafting-simulation";
 import type { CraftingProject } from "~/schemas/crafting";
 import { craftingProjectSchema } from "~/schemas/crafting";
-import { changeControl, expectControlValue } from "./control-helpers";
+import { byText, changeControl, expectControlValue } from "./control-helpers";
 import { baseId, catalog, currency, engine } from "./crafting-fixtures";
 import { button, CraftingWorker, mount } from "./crafting-workbench-ui-fixtures";
 
@@ -142,7 +142,7 @@ describe("crafting workbench", () => {
         changeControl(screen.getByLabelText("Donor item"), {
             target: { value: donor.id },
         });
-        fireEvent.click(screen.getByText("Custom prices in chaos"));
+        fireEvent.click(screen.getByText(byText("Custom prices in chaos")));
         changeControl(screen.getByLabelText("Donor · Elder donor"), {
             target: { value: "50" },
         });
