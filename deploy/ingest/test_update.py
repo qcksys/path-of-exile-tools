@@ -98,7 +98,7 @@ class DeploymentTests(unittest.TestCase):
                     update.main()
         deploy.assert_not_called()
 
-    def verify_fixture(self, remote_success=True, image="sha256:config", require_client_identity=False):
+    def verify_fixture(self, remote_success=True, image="sha256:config", require_client_identity=False, require_workers_view=False):
         reports = []
         for service in update.SERVICES:
             report = {"workerId": service, "startedAt": 200_000, "lastSuccessAt": 250_000, "reportedAt": 290_000, "state": "idle", "failedStages": []}
@@ -112,6 +112,8 @@ class DeploymentTests(unittest.TestCase):
             return "container-id"
 
         def receiver(request, **unused):
+            if require_workers_view and request.full_url != "https://dev.poe.boats/api/v1/server/status?view=workers":
+                raise TimeoutError("Full coverage aggregates exceeded the status request timeout")
             if require_client_identity:
                 agent = request.get_header("User-agent", "") if not isinstance(request, str) else ""
                 if not agent.startswith("poe.boats-ingest-deploy/"):
@@ -136,6 +138,11 @@ class DeploymentTests(unittest.TestCase):
 
     def test_receiver_request_identifies_the_deployment_monitor(self):
         self.verify_fixture(require_client_identity=True)
+
+    def test_worker_verification_does_not_wait_for_coverage_aggregates(self):
+        self.verify_fixture(require_workers_view=True)
+        with self.assertRaisesRegex(RuntimeError, "receiver has not confirmed"):
+            self.verify_fixture(remote_success=False, require_workers_view=True)
 
 
 if __name__ == "__main__":

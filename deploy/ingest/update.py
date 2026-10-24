@@ -10,7 +10,7 @@ from datetime import datetime
 from urllib.request import Request, urlopen
 
 IMAGE = "ghcr.io/qcksys/poe-stash-ingest"
-STATUS_URL = "https://dev.poe.boats/api/v1/server/status"
+STATUS_URL = "https://dev.poe.boats/api/v1/server/status?view=workers"
 SERVICES = ("pc", "poe2")
 
 

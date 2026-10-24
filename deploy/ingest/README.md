@@ -15,6 +15,10 @@ the running stack alone; a failed rollout exits unsuccessfully and preserves the
 successful deployment record. It does not automatically roll back potentially migrated
 DuckDB data. The timer retries failures, and the journal records the error.
 
+Rollout verification requests `/api/v1/server/status?view=workers` to check worker
+health and progress without waiting for coverage aggregates. All image, successful
+cycle, freshness and deadline checks still apply.
+
 The image is built only from the Dockerfile's source allowlist. Set the GHCR package to
 public after its first publication, matching this public repository, so the host can pull it
 without a GitHub credential. Alternatively, authenticate Docker on the host using a
@@ -89,6 +93,7 @@ journalctl --user -u poe-ingest-update.service -n 50 --no-pager
 Linger keeps the timer active after logout and starts it at boot. The existing unrelated
 Compose project on the host is not involved. Host Compose/updater changes need to be installed
 from a reviewed revision; automatic updates replace the ingestion image.
+Deploy receiver support for `view=workers` before installing this updater on the host.
 
 ## Operation
 
