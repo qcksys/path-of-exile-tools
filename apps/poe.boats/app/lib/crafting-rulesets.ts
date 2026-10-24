@@ -87,6 +87,7 @@ export function rulesetAllowsConditionalSteps(ruleset: Pick<CraftingRuleset, "en
         "crafting-graph-10",
         "crafting-graph-11",
         "crafting-graph-12",
+        "crafting-graph-13",
     ].includes(ruleset.engine);
 }
 
@@ -98,6 +99,7 @@ export function rulesetAllowsSimpleCraft(ruleset: Pick<CraftingRuleset, "engine"
         "crafting-graph-10",
         "crafting-graph-11",
         "crafting-graph-12",
+        "crafting-graph-13",
     ].includes(ruleset.engine);
 }
 
@@ -108,6 +110,7 @@ export function rulesetAllowsScopedCraftPrices(ruleset: Pick<CraftingRuleset, "e
         "crafting-graph-10",
         "crafting-graph-11",
         "crafting-graph-12",
+        "crafting-graph-13",
     ].includes(ruleset.engine);
 }
 
@@ -117,6 +120,7 @@ export function rulesetAllowsPresetPreparation(ruleset: Pick<CraftingRuleset, "e
         "crafting-graph-10",
         "crafting-graph-11",
         "crafting-graph-12",
+        "crafting-graph-13",
     ].includes(ruleset.engine);
 }
 
@@ -135,6 +139,7 @@ export function validateRulesetGraph(ruleset: CraftingRuleset, input: unknown) {
                     validateSourcePreparationRevision(
                         ruleset.engine,
                         alternative.sourcePreparation,
+                        alternative.item.baseId,
                     );
         if (
             node.kind === "acquire" &&

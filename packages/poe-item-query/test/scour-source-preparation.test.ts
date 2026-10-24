@@ -44,6 +44,23 @@ const model: SourcePreparationModel = {
             itemClass: "Helmet",
             scourImplicits: { ids: [], texts: [[]] },
         },
+        {
+            id: "Metadata/Items/Armours/Boots/BootsAtlas1",
+            baseType: "Two-Toned Boots",
+            itemClass: "Boots",
+            scourImplicits: {
+                ids: ["ColdAndLightningResistImplicitBoots1"],
+                texts: Array.from({ length: 5 }, (_, i) => [
+                    `+${8 + i}% to Cold and Lightning Resistances`,
+                ]),
+            },
+        },
+        {
+            id: "Metadata/Items/Armours/BodyArmours/BodyDex16",
+            baseType: "Zodiac Leather",
+            itemClass: "Body Armour",
+            scourImplicits: { ids: [], texts: [[]] },
+        },
     ],
 };
 const textModel = { format: 4 as const, modifiers: [], bases: [] };
@@ -93,7 +110,7 @@ it("serializes strict source variants without changing retained fractured profil
     });
 });
 
-it("projects four native bases in all cleanup partitions without resolving disposable identities", () => {
+it("projects supported native bases in all cleanup partitions without resolving disposable identities", () => {
     for (const base of model.bases)
         for (const rarity of ["Magic", "Rare"] as const)
             for (const crafted of [false, true])
@@ -184,12 +201,94 @@ it("accepts every pinned native roll and exact whitespace/link normalization onl
     input.item.implicitMods = ["+31 to maximum Life"];
     input.item.baseType = base.baseType;
     expect(classify(input, profile)).toEqual({ status: "unknown" });
-    for (const noImplicit of model.bases.slice(2)) {
+    for (const noImplicit of model.bases.filter((base) => !base.scourImplicits!.ids.length)) {
         const empty = source(noImplicit);
         delete empty.item.implicitMods;
         expect(classify(empty, profile).status).toBe("match");
         empty.item.implicitMods = ["An extra persistent implicit"];
         expect(classify(empty, profile)).toEqual({ status: "unknown" });
+    }
+});
+
+it("requires exact Two-Toned native identity and preserves every legal roll", () => {
+    const boots = model.bases[4]!;
+    const resolve = compileSourcePreparation(textModel, {
+        ...model,
+        bases: [
+            ...model.bases,
+            ...[2, 3].map((variant) => ({
+                id: `Metadata/Items/Armours/Boots/BootsAtlas${variant}`,
+                baseType: "Two-Toned Boots",
+                itemClass: "Boots" as const,
+            })),
+        ],
+    });
+    for (const texts of boots.scourImplicits!.texts) {
+        const input = source(boots);
+        input.facts.baseId = boots.id;
+        input.facts.baseTypeAmbiguous = true;
+        input.item.implicitMods = texts;
+        const original = structuredClone(input);
+        const result = resolve(input, profile);
+        expect(result.status).toBe("match");
+        if (result.status !== "match") throw new Error("Expected exact native boot source.");
+        expect(result.record.item.implicitMods).toEqual(texts);
+        expect(result.record.facts.baseId).toBe(boots.id);
+        expect(input).toEqual(original);
+    }
+    for (const texts of [
+        [],
+        ["+7% to Cold and Lightning Resistances"],
+        ["+13% to Cold and Lightning Resistances"],
+        ["+10% to Fire and Cold Resistances"],
+        ["+10% to Fire and Lightning Resistances"],
+        ["+10% to Cold and Lightning Resistances", "An extra implicit"],
+        ["+10% to Cold and Lightning Resistances", "+10% to Cold and Lightning Resistances"],
+    ]) {
+        const input = source(boots);
+        input.facts.baseId = boots.id;
+        input.item.implicitMods = texts;
+        expect(resolve(input, profile)).toEqual({ status: "unknown" });
+    }
+    const ambiguous = source(boots);
+    expect(resolve(ambiguous, profile)).toEqual({ status: "unknown" });
+    for (const variant of [2, 3]) {
+        const input = source(boots);
+        input.facts.baseId = `Metadata/Items/Armours/Boots/BootsAtlas${variant}`;
+        expect(resolve(input, profile)).toEqual({ status: "unknown" });
+    }
+    const conflicting = source(boots);
+    conflicting.facts.baseId = boots.id;
+    conflicting.facts.modifiers = [{ id: "FireAndColdResistImplicitBoots1_", side: "implicit" }];
+    expect(resolve(conflicting, profile)).toEqual({ status: "unknown" });
+});
+
+it("keeps prior native-proof models and unsupported persistent state conservative for new bases", () => {
+    const prior = compileSourcePreparation(textModel, {
+        ...model,
+        bases: model.bases.map((base, index) => {
+            if (index < 4) return base;
+            const { scourImplicits: _native, ...withoutProof } = base;
+            return withoutProof;
+        }),
+    });
+    for (const base of model.bases.slice(4)) {
+        expect(prior(source(base), profile)).toEqual({ status: "unknown" });
+        for (const field of [
+            "searing",
+            "tangled",
+            "fractured",
+            "synthesised",
+            "corrupted",
+            "memoryItem",
+        ]) {
+            const input = source(base);
+            input.item[field] = true;
+            expect(classify(input, profile)).toEqual({ status: "no-match" });
+        }
+        const input = source(base);
+        input.item.unknownPersistentFlag = true;
+        expect(classify(input, profile)).toEqual({ status: "unknown" });
     }
 });
 

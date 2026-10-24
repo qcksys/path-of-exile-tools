@@ -25,7 +25,7 @@ export function sourceMarketFixture(
     ruleset?: CraftingGraph["ruleset"],
 ) {
     const graph = marketGraph();
-    graph.ruleset = ruleset ?? { ...graph.ruleset, engine: CRAFTING_GRAPH_ENGINE, revision: "r11" };
+    graph.ruleset = ruleset ?? { ...graph.ruleset, engine: CRAFTING_GRAPH_ENGINE, revision: "r13" };
     graph.iterations = 1;
     graph.seed = 42;
     const { node, alternative } = sourceMarketPurchase(graph);
@@ -103,7 +103,7 @@ export function scouringMarketFixture(
     ruleset?: CraftingGraph["ruleset"],
 ) {
     const graph = marketGraph();
-    graph.ruleset = ruleset ?? { ...graph.ruleset, engine: "crafting-graph-12", revision: "r12" };
+    graph.ruleset = ruleset ?? { ...graph.ruleset, engine: CRAFTING_GRAPH_ENGINE, revision: "r13" };
     const { node, alternative } = sourceMarketPurchase(graph);
     const baseId = "Metadata/Items/Armours/Helmets/HelmetInt11";
     alternative.item = engine.createItem(baseId, 86);

@@ -93,6 +93,76 @@ describe("market cohorts", () => {
         resolve = compileModifierTextModel(generated.modifierTextModel!);
     });
 
+    it.each([
+        ["Two-Toned Boots", "Metadata/Items/Armours/Boots/BootsAtlas1"],
+        ["Zodiac Leather", "Metadata/Items/Armours/BodyArmours/BodyDex16"],
+    ])("resolves raw %s identity before assigning its generated Scouring partition", (baseType, baseId) => {
+        const sources = generated.cohorts.filter(
+            (cohort) =>
+                cohort.query.sourcePreparation?.kind === "scour-v1" &&
+                cohort.query.groups.some((group) =>
+                    group.filters.some(
+                        (filter) =>
+                            filter.kind === "base" &&
+                            ((filter.field === "baseId" && filter.values.includes(baseId)) ||
+                                (filter.field === "baseType" && filter.values.includes(baseType))),
+                    ),
+                ),
+        );
+        expect(sources).toHaveLength(4);
+        const sourceIds = new Set(sources.map((source) => source.id));
+        const nativeRolls =
+            baseType === "Two-Toned Boots"
+                ? [8, 9, 10, 11, 12].map((roll) => [`+${roll}% to Cold and Lightning Resistances`])
+                : [[]];
+        for (const source of sources) {
+            const profile = source.query.sourcePreparation!;
+            for (const implicitMods of nativeRolls) {
+                const record = normalizeApiItem("poe1", "stash", {
+                    baseType,
+                    typeLine: baseType,
+                    identified: true,
+                    rarity: "Rare",
+                    ilvl: 86,
+                    influences: {},
+                    implicitMods,
+                    explicitMods: ["An unresolved disposable explicit modifier"],
+                    craftedMods: profile.crafted ? ["Suffixes Cannot Be Changed"] : [],
+                    enchantMods: profile.enchanted ? ["An existing removable enchantment"] : [],
+                });
+                expect(record.facts.baseId).toBeUndefined();
+                const original = structuredClone(record);
+                const result = classifier.classify(record);
+                expect(result.matches.filter((id) => sourceIds.has(id))).toEqual([source.id]);
+                expect(result.unknown.filter((id) => sourceIds.has(id))).toEqual([]);
+                expect(record).toEqual(original);
+            }
+        }
+        for (const implicitMods of baseType === "Two-Toned Boots"
+            ? [
+                  ["+10% to Fire and Cold Resistances"],
+                  ["+10% to Fire and Lightning Resistances"],
+                  ["+7% to Cold and Lightning Resistances"],
+                  ["+13% to Cold and Lightning Resistances"],
+                  [],
+              ]
+            : [["An extra persistent implicit"]]) {
+            const record = normalizeApiItem("poe1", "stash", {
+                baseType,
+                identified: true,
+                rarity: "Magic",
+                ilvl: 86,
+                influences: {},
+                implicitMods,
+                explicitMods: ["An unresolved disposable explicit modifier"],
+            });
+            expect(record.facts.baseId).toBeUndefined();
+            expect(classifier.classify(record).matches.filter((id) => sourceIds.has(id))).toEqual(
+                [],
+            );
+        }
+    });
+
     it("resolves supported facts from the captured catalyst context without forcing ambiguous fractures", () => {
         const source = JSON.parse(
             readFileSync(

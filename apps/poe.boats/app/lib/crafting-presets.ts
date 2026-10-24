@@ -125,6 +125,11 @@ const scouringSources: Partial<Record<CraftingPresetId, readonly string[]>> = {
     "rarity-helmet": ["donor-0-1-make-base", "donor-1-0-make-base", "donor-1-1-make-base"],
 };
 
+const extendedScouringSources: Partial<Record<CraftingPresetId, readonly string[]>> = {
+    "tailwind-boots": ["tailwind-base-make-base"],
+    "suppression-chest": ["suppression-base"],
+};
+
 export function projectFromPreset(
     engine: CraftingEngine,
     ruleset: CraftingRuleset,
@@ -248,7 +253,11 @@ export function projectFromPreset(
     let entry: string;
     let target: ItemQuery;
     if (spicySushiPresets.some((entry) => entry.id === presetId)) {
-        const prepareSource = ["crafting-graph-11", "crafting-graph-12"].includes(ruleset.engine);
+        const prepareSource = [
+            "crafting-graph-11",
+            "crafting-graph-12",
+            "crafting-graph-13",
+        ].includes(ruleset.engine);
         ({ entry, target } = spicySushiPreset(
             { engine, base, buy, craft, currency },
             presetId,
@@ -1133,8 +1142,14 @@ export function projectFromPreset(
                 });
         }
     }
-    if (ruleset.engine === "crafting-graph-12") {
-        for (const id of scouringSources[presetId] ?? []) {
+    if (["crafting-graph-12", "crafting-graph-13"].includes(ruleset.engine)) {
+        const sourceIds = [
+            ...(scouringSources[presetId] ?? []),
+            ...(ruleset.engine === "crafting-graph-13"
+                ? (extendedScouringSources[presetId] ?? [])
+                : []),
+        ];
+        for (const id of sourceIds) {
             const node = nodes.find((entry) => entry.id === id);
             const purchase = node?.kind === "acquire" ? node.alternatives[0] : undefined;
             if (
