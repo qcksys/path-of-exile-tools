@@ -2,6 +2,7 @@ import { itemQuerySchema, normalizeApiItem } from "@poe-tools/item-query";
 import { expect, it } from "vite-plus/test";
 import { type MarketCohort, marketCohortSchema } from "../src/cohorts.ts";
 import { cohortPriceCoverage } from "../src/coverage.ts";
+import { decodeCohortPriceReference, encodeCohortPriceReference } from "../src/reference.ts";
 
 const item = normalizeApiItem(
     "poe1",
@@ -108,4 +109,67 @@ it("requires each configured influence and excludes additional influences", () =
         (filter) => filter.kind !== "influence",
     );
     expect(cohortPriceCoverage(cohort, influenced, requirements).covered).toBe(false);
+});
+
+it("requires the intrinsic preparation profile to price a projected fracture source", () => {
+    const profile = {
+        kind: "fractured-fossil-v1" as const,
+        fractureId: "fracture",
+        crafted: true,
+        enchanted: true,
+    };
+    const template = normalizeApiItem(
+        "poe1",
+        "craft",
+        { ...item.item, rarity: "Rare", fractured: true },
+        {
+            modifiersComplete: true,
+            prefixes: 0,
+            suffixes: 1,
+            modifiers: [{ id: "fracture", side: "suffix", fractured: true }],
+        },
+    );
+    const cohort = exactCohort();
+    cohort.query.sourcePreparation = profile;
+    cohort.query.groups[0]!.filters = cohort.query.groups[0]!.filters.map((condition) => {
+        if (condition.kind === "rarity") return { ...condition, values: ["Rare"] };
+        if (condition.kind === "flag" && condition.field === "fractured")
+            return { ...condition, value: true };
+        if (condition.kind === "range" && condition.field === "suffixes")
+            return { ...condition, value: { min: 1, max: 1 } };
+        return condition;
+    });
+    cohort.query.groups[0]!.filters.push({
+        kind: "mod",
+        ids: ["fracture"],
+        fractured: true,
+        count: { min: 1 },
+    });
+    expect(cohortPriceCoverage(cohort, template, requirements, undefined, profile)).toEqual({
+        covered: true,
+        reasons: [],
+    });
+    for (const preparation of [
+        undefined,
+        { ...profile, crafted: false },
+        { ...profile, enchanted: false },
+        { ...profile, fractureId: "different" },
+    ]) {
+        expect(
+            cohortPriceCoverage(cohort, template, requirements, undefined, preparation).covered,
+        ).toBe(false);
+    }
+    const ordinary = structuredClone(cohort);
+    delete ordinary.query.sourcePreparation;
+    expect(cohortPriceCoverage(ordinary, template, requirements, undefined, profile).covered).toBe(
+        false,
+    );
+    const reference = {
+        realm: "pc" as const,
+        league: "Allflame",
+        revision: "source",
+        cohortId: cohort.id,
+        sourcePreparation: profile,
+    };
+    expect(decodeCohortPriceReference(encodeCohortPriceReference(reference))).toEqual(reference);
 });

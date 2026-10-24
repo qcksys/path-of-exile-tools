@@ -1,4 +1,8 @@
-import { exchangeCurrencyId, exchangeRealmMatchesGame } from "@poe-tools/market";
+import {
+    exchangeCurrencyId,
+    exchangeRealmMatchesGame,
+    sameSourcePreparation,
+} from "@poe-tools/market";
 import type { TDatabase } from "~/db/client";
 import { findCraftingExchangePrices } from "~/db/queries/crafting-exchange.queries";
 import {
@@ -15,6 +19,7 @@ import {
     livePurchasePrices,
 } from "~/lib/crafting-market";
 import { resolveRuleset } from "~/lib/crafting-rulesets";
+import { purchaseSourceProfile } from "~/lib/crafting-source-preparation";
 import {
     bindCraftingSourcePrice,
     craftingCommodityIdentity,
@@ -42,6 +47,11 @@ export async function refreshCraftingMarketPrices(
     const issues: string[] = [];
     const adapter = createCraftingItemQuery(engine);
     for (const { node, alternative, reference } of livePurchasePrices(graph)) {
+        const sourcePreparation = purchaseSourceProfile(alternative);
+        if (!sameSourcePreparation(sourcePreparation, reference.sourcePreparation)) {
+            issues.push(`${node.name}: the saved price requires a different source preparation.`);
+            continue;
+        }
         const itemIssue = craftingMarketItemIssue(engine, alternative.item);
         if (itemIssue) {
             issues.push(`${node.name}: ${itemIssue}`);
@@ -61,6 +71,7 @@ export async function refreshCraftingMarketPrices(
                 currency: graph.currency,
                 window: reference.window,
                 assumption: reference.assumption,
+                sourcePreparation,
                 conversion: reference.conversion,
                 at,
             },

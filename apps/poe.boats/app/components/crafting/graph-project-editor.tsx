@@ -6,7 +6,7 @@ import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { graphCalculationKey, useGraphPreview } from "~/hooks/use-graph-preview";
-import { discoverCraftingCosts } from "~/lib/crafting-cost-inputs";
+import { discoverCraftingCosts, discoverGraphCraftingCosts } from "~/lib/crafting-cost-inputs";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import { liveExchangePrices } from "~/lib/crafting-exchange";
 import { projectFromItem } from "~/lib/crafting-graph-authoring";
@@ -193,12 +193,10 @@ export function GraphProjectEditor({
                     !id.startsWith("sale:") &&
                     !id.startsWith("node:"),
             );
-        return discoverCraftingCosts(
-            engine,
-            graph.nodes.map((node) => (node.kind === "craft" ? node.method : undefined)),
-            observed,
-        ).map(({ id, name }): [string, string] => [id, name]);
-    }, [engine, graph.nodes, result, preview.result]);
+        return discoverGraphCraftingCosts(engine, graph, observed).map(
+            ({ id, name }): [string, string] => [id, name],
+        );
+    }, [engine, graph, result, preview.result]);
     const nodeCosts = useMemo(() => {
         if (!engine || !rulesetAllowsScopedCraftPrices(graph.ruleset)) return [];
         return graph.nodes.flatMap((node) =>

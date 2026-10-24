@@ -169,6 +169,16 @@ Equipment lookup, binding and refresh also require the cohort to guarantee the c
 starting base, exact item level, rarity, affix counts, influences and supported flags.
 Broad base or donor medians cannot price an already prepared input. Exchange history remains
 accessible when a current quote is missing or lookup fails; inspecting it does not fill prices.
+Revision 11 adds an explicit fractured fossil source acquisition. Capture proves the sole retained
+fracture and eligible armour base, then matches a separate projected cohort for each combination
+of crafted modifiers and enchantments. Disposable affix identities and replaceable Eldritch
+implicit tiers do not constrain that source quote. The original captured item and ordinary cohort
+matching remain unchanged. Acquisition pays the source price, required bench removals, the first
+fossil roll, Lesser Ichor and Greater Ember before returning a fully modeled item. The shared
+runtime includes those actions and inputs in comparisons, missing-price reporting and totals.
+Lookup, binding, saved-price refresh and historical snapshots require the same intrinsic source
+policy; a source quote cannot price an ordinary clean-item purchase. Manual prices retain the
+preparation steps. Earlier retained engines refuse the new field and preserve their behavior.
 For bases sharing a display name, the capture classifier resolves a canonical base ID only when
 the complete native implicit descriptions identify exactly one catalog variant. The generated
 model covers Two-Toned Boots and Two-Stone Rings; missing, altered, overlapping or unsupported
@@ -215,8 +225,8 @@ The [ES chest preset](crafting-preset-es-chest.md) prepares its two NNN donors f
 the existing Normal Vaal Regalia acquisition with Screaming Doubt and paid Annulment
 isolation. Losing either required prefix returns the same item to the Essence step;
 all retries are charged and missing input prices keep the total unknown.
-The fifteen current presets contain 68 purchase alternatives across 51 acquisitions and 59
-distinct exact cohorts; 25 production alternatives include Hunter, Redeemer, NNN and Scouring
+The fifteen current presets contain 74 purchase alternatives across 52 acquisitions and 65
+distinct preset cohorts; 26 production alternatives include Hunter, Redeemer, NNN and Scouring
 preparation. Capture fixtures cover every new base without modifier metadata;
 definitions do not imply observed inventory or available quotes.
 

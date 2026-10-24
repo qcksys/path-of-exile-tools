@@ -3,11 +3,14 @@ import {
     compileBaseIdentities,
     compileModifierIdentities,
     compileModifierTextModel,
+    compileSourcePreparation,
     type ItemRecord,
     itemQuerySchema,
     matchItem,
     modifierIdentitySchema,
     modifierTextModelSchema,
+    type SourcePreparationResult,
+    sourcePreparationModelSchema,
 } from "@poe-tools/item-query";
 import { z } from "zod";
 
@@ -27,6 +30,7 @@ export const marketCohortManifestSchema = z
         modifierIdentities: z.array(modifierIdentitySchema).max(20_000).optional(),
         baseIdentities: z.array(baseIdentitySchema).max(2000).optional(),
         modifierTextModel: modifierTextModelSchema.optional(),
+        sourcePreparationModel: sourcePreparationModelSchema.optional(),
     })
     .superRefine((manifest, context) => {
         const ids = new Set<string>();
@@ -61,6 +65,10 @@ export function compileMarketCohorts(input: MarketCohortManifest) {
     const resolveText = manifest.modifierTextModel
         ? compileModifierTextModel(manifest.modifierTextModel)
         : (record: ItemRecord) => record;
+    const resolveSource =
+        manifest.modifierTextModel && manifest.sourcePreparationModel
+            ? compileSourcePreparation(manifest.modifierTextModel, manifest.sourcePreparationModel)
+            : (): SourcePreparationResult => ({ status: "unknown" });
     const byBase = new Map<string, MarketCohort[]>();
     const general: MarketCohort[] = [];
     const definitions = new Map(
@@ -90,9 +98,20 @@ export function compileMarketCohorts(input: MarketCohortManifest) {
             const matches: string[] = [];
             const unknown: string[] = [];
             if (record.game !== manifest.game) return { matches, unknown };
-            const resolved = resolveText(resolve(resolveBase(record)));
+            const identified = resolve(resolveBase(record));
+            const resolved = resolveText(identified);
+            const sources = new Map<string, SourcePreparationResult>();
             for (const cohort of [...general, ...(byBase.get(record.item.baseType) ?? [])]) {
-                const match = matchItem(resolved, cohort.query);
+                const { sourcePreparation, ...query } = cohort.query;
+                let match: ReturnType<typeof matchItem>;
+                if (sourcePreparation) {
+                    const key = JSON.stringify(sourcePreparation);
+                    if (!sources.has(key))
+                        sources.set(key, resolveSource(identified, sourcePreparation));
+                    const source = sources.get(key)!;
+                    match =
+                        source.status === "match" ? matchItem(source.record, query) : source.status;
+                } else match = matchItem(resolved, query);
                 if (match === "match") matches.push(cohort.id);
                 if (match === "unknown") unknown.push(cohort.id);
             }

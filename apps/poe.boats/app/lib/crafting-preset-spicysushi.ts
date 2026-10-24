@@ -164,7 +164,11 @@ function helpers(builder: PresetBuilder) {
     return { ...builder, item, bench, boat, step, keep, trim, purchase, lockSuffixes, life };
 }
 
-export function spicySushiPreset(builder: PresetBuilder, id: CraftingPresetId) {
+export function spicySushiPreset(
+    builder: PresetBuilder,
+    id: CraftingPresetId,
+    prepareSource = false,
+) {
     const {
         engine,
         item,
@@ -382,18 +386,23 @@ export function spicySushiPreset(builder: PresetBuilder, id: CraftingPresetId) {
         );
         const suffixes = [critical, "DelveAbyssJewelSocket1", "OnslaughtWhenHitNewEssence1"];
         keep(roll, query(...suffixes.map((id) => mod(id))), roll.id);
-        const eater = step(
-            "eater",
-            "Replace Eater implicit with Lesser Ichor",
-            roll.id,
-            currency("add_great_tangle_implicit_1"),
-        );
-        const implicit = step(
-            "exarch",
-            "Greater Ember: establish Exarch dominance for prefix crafting",
-            eater.id,
-            currency("add_cleansing_fire_implicit_2"),
-        );
+        if (prepareSource) roll.applyWhen = not(roll.output);
+        const eater =
+            !prepareSource &&
+            step(
+                "eater",
+                "Replace Eater implicit with Lesser Ichor",
+                roll.id,
+                currency("add_great_tangle_implicit_1"),
+            );
+        const implicit =
+            eater &&
+            step(
+                "exarch",
+                "Greater Ember: establish Exarch dominance for prefix crafting",
+                eater.id,
+                currency("add_cleansing_fire_implicit_2"),
+            );
         const defences = [
             mod("LocalBaseArmourAndEvasionRating7", "LocalBaseArmourAndEvasionRating8"),
             mod("LocalIncreasedArmourAndEvasion7", "LocalIncreasedArmourAndEvasion8"),
@@ -401,7 +410,7 @@ export function spicySushiPreset(builder: PresetBuilder, id: CraftingPresetId) {
         const prefixes = step(
             "prefixes",
             "Eldritch Chaos: T2+ flat and increased armour/evasion",
-            implicit.id,
+            implicit ? implicit.id : roll.id,
             currency("reroll_rare_eldritch"),
         );
         keep(prefixes, query(...defences), prefixes.id);

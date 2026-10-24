@@ -171,6 +171,7 @@ export function matchItemGroup(record: ItemRecord, group: ItemQueryGroup): ItemM
 
 export function matchItem(record: ItemRecord, query: ItemQuery): ItemMatch {
     if (record.game !== query.game) return "no-match";
+    if (query.sourcePreparation) return "unknown";
     return all(query.groups.map((group) => matchItemGroup(record, group)));
 }
 

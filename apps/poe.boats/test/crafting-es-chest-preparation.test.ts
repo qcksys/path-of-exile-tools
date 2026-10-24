@@ -11,7 +11,7 @@ import { quote } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r10",
+    (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
 const essence = "Metadata/Items/Currency/CurrencyEssenceDoubt3";
 const annul = "Metadata/Items/Currency/CurrencyRemoveMod";

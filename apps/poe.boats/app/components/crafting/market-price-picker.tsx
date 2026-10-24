@@ -1,4 +1,4 @@
-import type { ItemQuery } from "@poe-tools/item-query";
+import type { FracturedFossilSourcePreparation, ItemQuery } from "@poe-tools/item-query";
 import { decodeCohortPriceReference } from "@poe-tools/market";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
@@ -23,6 +23,7 @@ export function MarketPricePicker({
     engine,
     item,
     requirements,
+    sourcePreparation,
     league,
     currency,
     price,
@@ -32,6 +33,7 @@ export function MarketPricePicker({
     engine: CraftingEngine;
     item: CraftingItem;
     requirements: ItemQuery;
+    sourcePreparation?: FracturedFossilSourcePreparation;
     league?: string;
     currency: string;
     price: CraftingPrice | null;
@@ -52,7 +54,7 @@ export function MarketPricePicker({
     }>();
     const pending = useRef<AbortController | null>(null);
     const record = useMemo(() => createCraftingItemQuery(engine).record(item), [engine, item]);
-    const scope = JSON.stringify([record, requirements]);
+    const scope = JSON.stringify([record, requirements, sourcePreparation]);
     const [representative, setRepresentative] = useState({
         scope,
         enabled: reference?.assumption === "display-equivalent-v1",
@@ -70,7 +72,7 @@ export function MarketPricePicker({
         setError("");
         setBusy(false);
         return () => pending.current?.abort();
-    }, [record, requirements, league, currency, realm, window, assumption, convert]);
+    }, [scope, league, currency, realm, window, assumption, convert]);
     async function lookup() {
         pending.current?.abort();
         const controller = new AbortController();
@@ -84,6 +86,7 @@ export function MarketPricePicker({
                 body: JSON.stringify({
                     item: record,
                     requirements,
+                    sourcePreparation,
                     league,
                     realm,
                     currency,
@@ -154,9 +157,10 @@ export function MarketPricePicker({
             <summary className="cursor-pointer font-medium">Equipment market price</summary>
             <div className="mt-3 space-y-3">
                 <p className="text-muted-foreground">
-                    Base cohorts combine normal, magic and rare listings within an item-level group.
-                    Include any scouring, identification or other preparation in your process. These
-                    are asking-price estimates, not completed sales.
+                    {sourcePreparation
+                        ? "This price buys a fractured source requiring preparation. Its extra affixes and Eldritch implicits are replaced. Cleanup, the first fossil roll and Eldritch currencies are charged separately by the acquisition. "
+                        : "Choose a cohort that covers the configured item. Include any scouring, identification or other preparation in your process. "}
+                    These are asking-price estimates, not completed sales.
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                     <Label>

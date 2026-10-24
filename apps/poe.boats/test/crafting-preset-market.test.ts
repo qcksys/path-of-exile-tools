@@ -16,6 +16,7 @@ import {
     latestCompatibleCohort,
 } from "../app/lib/crafting-market";
 import { craftingPresets, projectFromPreset } from "../app/lib/crafting-presets";
+import { purchaseSourceProfile } from "../app/lib/crafting-source-preparation";
 import { rolledModText } from "../app/lib/crafting-text";
 import type { CraftingItem } from "../app/schemas/crafting";
 import { craftingPresetCohorts } from "../scripts/crafting-preset-cohorts";
@@ -25,7 +26,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r10",
+    (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
 const cohorts = craftingPresetCohorts(engine, ruleset);
 const manifest = marketCohortManifestSchema.parse(
@@ -99,10 +100,18 @@ function rawItem(item: CraftingItem, metadata = false) {
 }
 
 it("classifies the mercenary starting fracture from separate raw text without pricing unfractured or mixed listings", () => {
-    const { item, node } = purchases.find((entry) => entry.preset === "sushi-mercenary-chest")!;
-    const cohort = cohorts.find(
+    const previous = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r10",
+    )!;
+    const graph = projectFromPreset(engine, previous, "sushi-mercenary-chest");
+    const node = graph.nodes.find((node) => node.id === "fractured-base")!;
+    if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
+        throw new Error("Fracture fixture");
+    const item = node.alternatives[0].item;
+    const cohort = craftingPresetCohorts(engine, previous).find(
         (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
     )!;
+    const classifier = compileMarketCohorts({ ...manifest, cohorts: [cohort] });
     const raw = rawItem(item, true);
     expect(capture(raw)).toBe(true);
     const record = normalizeApiItem("poe1", "stash", raw);
@@ -168,9 +177,16 @@ it("scopes every configured explicit modifier to its canonical catalog side", ()
                 expect(["prefix", "suffix"]).toContain(mod.generation_type);
                 expect(filter.side).toBe(mod.generation_type);
             }
-    for (const { item, node } of purchases) {
+    for (const { item, node, alternative } of purchases) {
         const cohort = cohorts.find(
-            (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
+            (entry) =>
+                cohortPriceCoverage(
+                    entry,
+                    queries.record(item),
+                    node.output,
+                    undefined,
+                    purchaseSourceProfile(alternative),
+                ).covered,
         )!;
         const requiredIds = cohort.query.groups.flatMap((group) =>
             group.filters.flatMap((filter) => (filter.kind === "mod" ? (filter.ids ?? []) : [])),
@@ -259,14 +275,21 @@ it("keeps unsided saved identities separate from regenerated sided definitions",
 });
 
 it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
-    expect(purchases).toHaveLength(71);
-    expect(cohorts).toHaveLength(62);
+    expect(purchases).toHaveLength(74);
+    expect(cohorts).toHaveLength(65);
     const definitions = new Map(manifest.cohorts.map((cohort) => [cohort.id, cohort]));
     for (const cohort of cohorts) expect(definitions.get(cohort.id)).toEqual(cohort);
     for (const { preset, graph: project, node, alternative, item } of purchases) {
         const record = queries.record(item);
         const matching = cohorts.filter(
-            (cohort) => cohortPriceCoverage(cohort, record, node.output).covered,
+            (cohort) =>
+                cohortPriceCoverage(
+                    cohort,
+                    record,
+                    node.output,
+                    undefined,
+                    purchaseSourceProfile(alternative),
+                ).covered,
         );
         expect(matching.length, `${preset}/${node.id}/${alternative.id}`).toBeGreaterThan(0);
         expect(capture(rawItem(item)), `${preset}/${node.id}/${alternative.id} capture`).toBe(true);
@@ -274,6 +297,7 @@ it("has exact equipment definitions for every preset purchase including canonica
         const cohort = matching[0]!;
         const bind = () =>
             bindCohortPurchasePrice(graph, engine, node.id, alternative.id, {
+                sourcePreparation: purchaseSourceProfile(alternative),
                 definition: {
                     ...cohort,
                     revision: manifest.revision,

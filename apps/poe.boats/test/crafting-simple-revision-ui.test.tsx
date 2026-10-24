@@ -16,6 +16,7 @@ it.each([
     "crafting-graph-8",
     "crafting-graph-9",
     "crafting-graph-10",
+    "crafting-graph-11",
 ])("keeps simple crafting controls available for %s", (engineRevision) => {
     const original = historyIndex.revisions.find(
         (entry) => entry.game === "poe1" && entry.revision === "r7",

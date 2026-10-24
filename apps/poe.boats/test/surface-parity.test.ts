@@ -76,6 +76,7 @@ import {
 } from "./crafting-market-fixtures";
 import { nnnGraph } from "./crafting-nnn-fixtures";
 import { yellowBeastComponent } from "./crafting-source-fixtures";
+import { sourceMarketFixture } from "./crafting-source-market-fixtures";
 import {
     vendorCurrencyInputId,
     vendorCurrencyOutputId,
@@ -166,9 +167,16 @@ const cohortPolicies = [
     "exchange-v1",
     "chrome",
     "canonical-base",
+    "fractured-fossil-v1",
 ] as const;
 
 function cohortPricingFixture(policy: (typeof cohortPolicies)[number]) {
+    if (policy === "fractured-fossil-v1") {
+        const ruleset = historyIndex.revisions.find(
+            (entry) => entry.game === "poe1" && entry.revision === "r11",
+        )!;
+        return { ...sourceMarketFixture(true, true, rulesetReference(ruleset)), window: undefined };
+    }
     const window = policy === "adaptive-v1" ? policy : undefined;
     const family = policy === "display-equivalent-v1" ? donorFamilyMarketFixture() : undefined;
     const candidate = structuredClone(
@@ -246,7 +254,7 @@ describe("transport parity", () => {
 
     it.each(craftingPresets)("creates $name identically over HTTP and MCP", async (preset) => {
         const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === "r10",
+            (entry) => entry.game === "poe1" && entry.revision === "r11",
         )!;
         const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId: preset.id };
         const expected = projectFromPreset(fixtureEngine, ruleset, preset.id);
@@ -1317,6 +1325,7 @@ describe("transport parity", () => {
                     currency: "chaos",
                     window,
                     assumption: candidate.assumption,
+                    sourcePreparation: candidate.sourcePreparation,
                     conversion: candidate.conversion,
                 },
                 lookup,
@@ -1367,6 +1376,12 @@ describe("transport parity", () => {
             operation === "find_crafting_item_prices" ||
                 operation === "refresh_crafting_item_prices"
                 ? [candidate.conversion, candidate.conversion]
+                : [],
+        );
+        expect(findPrices.mock.calls.map(([, input]) => input.sourcePreparation)).toEqual(
+            operation === "find_crafting_item_prices" ||
+                operation === "refresh_crafting_item_prices"
+                ? [candidate.sourcePreparation, candidate.sourcePreparation]
                 : [],
         );
     });

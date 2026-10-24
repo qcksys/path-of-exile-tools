@@ -1,11 +1,17 @@
 import type { ItemQuery } from "@poe-tools/item-query";
+import { decodeCohortPriceReference, sameSourcePreparation } from "@poe-tools/market";
 import type { CraftingCatalog, CraftingMethod } from "../schemas/crafting";
 import { type CraftingGraph, craftingGraphSchema, type GraphNode } from "../schemas/crafting-graph";
 import { CraftingEngine } from "./crafting-engine";
 import { createCraftingItemQuery } from "./crafting-item-query";
 import { simpleCraftRouting } from "./crafting-smart";
+import {
+    purchaseSourceProfile,
+    validateSourcePreparation,
+    validateSourcePreparationOutput,
+} from "./crafting-source-preparation";
 
-export const CRAFTING_GRAPH_ENGINE = "crafting-graph-10";
+export const CRAFTING_GRAPH_ENGINE = "crafting-graph-11";
 
 export function graphInputCount(catalog: CraftingCatalog, method: CraftingMethod) {
     return method.kind === "recombine" ||
@@ -111,6 +117,29 @@ export function validateCraftingGraph(catalog: CraftingCatalog, input: unknown):
                 );
             for (const alternative of node.alternatives)
                 if (alternative.kind === "purchase") {
+                    const effectivePrice =
+                        graph.prices[`purchase:${node.id}:${alternative.id}`] ?? alternative.price;
+                    const reference =
+                        effectivePrice?.source === "market"
+                            ? decodeCohortPriceReference(effectivePrice.cohortId)
+                            : null;
+                    if (
+                        reference &&
+                        !sameSourcePreparation(
+                            reference.sourcePreparation,
+                            purchaseSourceProfile(alternative),
+                        )
+                    )
+                        throw new Error(
+                            "The saved purchase price uses a different source preparation; rebind it or enter a manual price.",
+                        );
+                    if (
+                        alternative.sourcePreparation &&
+                        graph.ruleset.engine !== "crafting-graph-11"
+                    )
+                        throw new Error("Source preparation requires crafting engine 11.");
+                    validateSourcePreparation(engine, alternative);
+                    validateSourcePreparationOutput(alternative, node.output);
                     engine.validateItem(alternative.item);
                     if (alternative.item.destroyed)
                         throw new Error("A destroyed item cannot be purchased as a graph input.");

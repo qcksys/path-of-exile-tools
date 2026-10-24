@@ -4,7 +4,7 @@ import { eldritchTier, seededRandom } from "../app/lib/crafting-engine";
 import { projectFromPreset } from "../app/lib/crafting-presets";
 import type { CraftingItem } from "../app/schemas/crafting";
 import { currency, engine } from "./crafting-fixtures";
-import { quote, runGraphTrial } from "./crafting-graph-fixtures";
+import { quote } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
@@ -124,10 +124,17 @@ it.each([
     null,
     ichor.id,
     ember.id,
-])("accounts for normalization and leaves a missing %s price unknown", (missing) => {
+])("accounts for normalization and leaves a missing %s price unknown", async (missing) => {
     const input = pricedGraph();
     if (missing) delete input.prices[missing];
-    const result = runGraphTrial(input, seededRandom(42));
+    const retained = await retainedRevision(ruleset);
+    const simulation = retained.runtime.createSimulation(
+        retained.catalog,
+        { ...input, iterations: 1, seed: 42 },
+        { estimateIterations: 1, workLimit: 10000 },
+    );
+    while (!simulation.done) simulation.runBatch();
+    const result = simulation.result().samples[0]!;
     expect(result.success).toBe(true);
     expect(result.spending[ichor.id]).toBe(1);
     expect(result.spending[ember.id]).toBe(1);

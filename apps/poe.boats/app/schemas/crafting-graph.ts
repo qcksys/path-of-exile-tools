@@ -1,6 +1,6 @@
-import { itemQuerySchema } from "@poe-tools/item-query";
+import { fracturedFossilSourcePreparationSchema, itemQuerySchema } from "@poe-tools/item-query";
 import { z } from "zod";
-import { craftingItemSchema, craftingMethodSchema } from "./crafting";
+import { craftingItemSchema, craftingMethodSchema, fossilMethodSchema } from "./crafting";
 import { acquisitionChoiceSchema, craftingPriceSchema } from "./crafting-economy";
 import { craftingRulesetRefSchema } from "./crafting-rulesets";
 import { simpleCraftGoalSchema } from "./crafting-smart";
@@ -39,6 +39,9 @@ export const graphPurchaseSchema = z.strictObject({
     name,
     item: craftingItemSchema,
     price: craftingPriceSchema.nullable(),
+    sourcePreparation: fracturedFossilSourcePreparationSchema
+        .extend({ fossils: fossilMethodSchema })
+        .optional(),
 });
 export const graphProductionSchema = z.strictObject({
     kind: z.literal("production"),
@@ -106,5 +109,7 @@ export type CraftingGraph = z.infer<typeof craftingGraphSchema>;
 export type GraphNode = z.infer<typeof graphNodeSchema>;
 export type GraphCraftNode = Extract<GraphNode, { kind: "craft" }>;
 export type GraphAcquireNode = Extract<GraphNode, { kind: "acquire" }>;
+export type GraphPurchase = z.infer<typeof graphPurchaseSchema>;
+export type SourcePreparation = NonNullable<GraphPurchase["sourcePreparation"]>;
 export type GraphDestination = z.infer<typeof graphDestinationSchema>;
 export type GraphOutcome = z.infer<typeof graphOutcomeSchema>;

@@ -25,6 +25,7 @@ import { graphProductionOrder, validateCraftingGraph } from "./crafting-graph-va
 import { createCraftingItemQuery } from "./crafting-item-query";
 import { craftingNodeCostPrice } from "./crafting-node-prices";
 import { wilsonInterval } from "./crafting-simulation";
+import { estimateSourcePurchase } from "./crafting-source-preparation";
 
 interface Totals {
     trials: number;
@@ -183,18 +184,13 @@ export class CraftingGraphSimulation {
     private selectAcquisition(node: Extract<GraphNode, { kind: "acquire" }>) {
         const alternatives = node.alternatives.map((alternative): AcquisitionEstimate => {
             if (alternative.kind === "purchase") {
-                const key = `purchase:${node.id}:${alternative.id}`;
-                const price = this.graph.prices[key] ?? alternative.price;
                 return {
                     id: alternative.id,
                     name: alternative.name,
                     kind: "purchase",
                     currency: this.graph.currency,
-                    expectedCost: price?.amount ?? null,
-                    expectedActions: 0,
                     guaranteed: true,
-                    confidence: price?.confidence ?? null,
-                    missingPrices: price ? [] : [key],
+                    ...estimateSourcePurchase(this.engine, this.graph, node, alternative),
                 };
             }
             const estimate = this.estimates.get(alternative.nodeId);

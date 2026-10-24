@@ -11,6 +11,7 @@ import type { CraftingMarketInput } from "~/schemas/crafting-market";
 import { ServerTiming } from "~/services/server-timing.server";
 import { baseId, engine } from "./crafting-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
+import { sourceMarketFixture, sourceMarketPurchase } from "./crafting-source-market-fixtures";
 
 const now = Date.parse("2026-10-22T12:30:00Z") / 1000;
 const completed = now - 5400;
@@ -112,6 +113,42 @@ function capture(hour: number, currency = "chaos", median = 20) {
             row.lastSeenAt,
         );
 }
+
+it("returns source quotes only for their matching paid preparation profile", async () => {
+    const { graph, candidate, profile } = sourceMarketFixture();
+    const { node, alternative } = sourceMarketPurchase(graph);
+    sqlite
+        .prepare(`UPDATE ${DB_TABLE_PREFIX}stash_cohort SET query = ?, baseTypes = ?, purpose = ?`)
+        .run(
+            JSON.stringify(candidate.definition.query),
+            JSON.stringify(["Conquest Lamellar"]),
+            "fracture",
+        );
+    capture(completed, "chaos", 220);
+    const lookup: CraftingMarketInput = {
+        ...input,
+        item: createCraftingItemQuery(engine).record(alternative.item),
+        requirements: node.output,
+        sourcePreparation: profile,
+    };
+    const result = await findCraftingMarketPrices(db, lookup);
+    expect(result.candidates).toHaveLength(1);
+    expect(result.candidates[0]).toMatchObject({
+        covered: true,
+        reasons: [],
+        sourcePreparation: profile,
+        definition: { query: { sourcePreparation: profile } },
+        latest: { prices: { chaos: { median: 220 } } },
+    });
+    for (const sourcePreparation of [
+        undefined,
+        { ...profile, crafted: false },
+        { ...profile, enchanted: false },
+    ])
+        expect(
+            (await findCraftingMarketPrices(db, { ...lookup, sourcePreparation })).candidates,
+        ).toEqual([]);
+});
 function exchange(hour: number, realm = "pc", league = "Standard", currency = "divine") {
     const itemId =
         currency === "chrome"

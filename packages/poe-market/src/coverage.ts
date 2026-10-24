@@ -1,4 +1,10 @@
-import type { ItemCondition, ItemQuery, ItemRecord, NumericRange } from "@poe-tools/item-query";
+import type {
+    FracturedFossilSourcePreparation,
+    ItemCondition,
+    ItemQuery,
+    ItemRecord,
+    NumericRange,
+} from "@poe-tools/item-query";
 import { itemRarity, matchItem, matchItemCondition } from "@poe-tools/item-query";
 import type { MarketCohort } from "./cohorts.ts";
 import type { CohortPriceReference } from "./reference.ts";
@@ -8,6 +14,18 @@ export function isDisplayEquivalentCohort(cohort: MarketCohort) {
         cohort.id.startsWith("donor-family:") &&
         ["isolated-modifier", "transfer-donor"].includes(cohort.purpose)
     );
+}
+
+export function sameSourcePreparation(
+    left: FracturedFossilSourcePreparation | undefined,
+    right: FracturedFossilSourcePreparation | undefined,
+) {
+    return left === undefined || right === undefined
+        ? left === right
+        : left.kind === right.kind &&
+              left.fractureId === right.fractureId &&
+              left.crafted === right.crafted &&
+              left.enchanted === right.enchanted;
 }
 
 function within(actual: NumericRange, required: NumericRange) {
@@ -78,10 +96,23 @@ export function cohortPriceCoverage(
     item: ItemRecord,
     requirements: ItemQuery,
     assumption?: CohortPriceReference["assumption"],
+    sourcePreparation?: FracturedFossilSourcePreparation,
 ) {
     const reasons: string[] = [];
-    if (matchItem(item, cohort.query) !== "match")
+    const { sourcePreparation: cohortPreparation, ...query } = cohort.query;
+    if (
+        !sameSourcePreparation(sourcePreparation, cohortPreparation) ||
+        matchItem(item, query) !== "match"
+    )
         reasons.push("The configured item does not definitely match this cohort.");
+    if (
+        sourcePreparation &&
+        (item.facts.modifiers.filter((mod) => mod.side !== "implicit").length !== 1 ||
+            !item.facts.modifiers.some(
+                (mod) => mod.id === sourcePreparation.fractureId && mod.fractured,
+            ))
+    )
+        reasons.push("Source preparation requires a template containing only its sole fracture.");
     if (item.game !== requirements.game)
         reasons.push("Item and requirements belong to different games.");
     const conditions = cohort.query.groups.flatMap((group) =>

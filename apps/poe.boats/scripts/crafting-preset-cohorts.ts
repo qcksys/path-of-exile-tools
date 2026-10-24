@@ -4,6 +4,7 @@ import type { MarketCohort } from "@poe-tools/market";
 import type { CraftingEngine } from "../app/lib/crafting-engine";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
 import { craftingPresets, projectFromPreset } from "../app/lib/crafting-presets";
+import { purchaseSourceProfile } from "../app/lib/crafting-source-preparation";
 import type { CraftingRuleset } from "../app/schemas/crafting-rulesets";
 
 export function craftingPresetCohorts(engine: CraftingEngine, ruleset: CraftingRuleset) {
@@ -17,6 +18,7 @@ export function craftingPresetCohorts(engine: CraftingEngine, ruleset: CraftingR
             for (const alternative of node.alternatives) {
                 if (alternative.kind !== "purchase") continue;
                 const { item } = alternative;
+                const sourcePreparation = purchaseSourceProfile(alternative);
                 const record = queries.record(item);
                 const base = engine.base(item);
                 const filters: ItemCondition[] = [
@@ -63,6 +65,7 @@ export function craftingPresetCohorts(engine: CraftingEngine, ruleset: CraftingR
                 const absent = influences.filter((name) => !record.item.influences?.[name]);
                 const query = itemQuerySchema.parse({
                     game: graph.game,
+                    ...(sourcePreparation ? { sourcePreparation } : {}),
                     groups: [
                         { type: "and", filters },
                         ...(absent.length
@@ -75,7 +78,11 @@ export function craftingPresetCohorts(engine: CraftingEngine, ruleset: CraftingR
                 cohorts.set(id, {
                     id,
                     name: `${base.name}, ilvl ${item.level}, ${alternative.name}`,
-                    purpose: item.mods.length ? "isolated-modifier" : "base",
+                    purpose: sourcePreparation
+                        ? "fracture"
+                        : item.mods.length
+                          ? "isolated-modifier"
+                          : "base",
                     query,
                 });
             }
