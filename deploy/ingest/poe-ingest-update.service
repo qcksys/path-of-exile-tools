@@ -1,0 +1,9 @@
+[Unit]
+Description=Deploy the latest CI-approved dev ingestion image
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/poe-ingest
+ExecStart=/usr/bin/python3 %h/poe-ingest/update.py
+TimeoutStartSec=25min
+UMask=0077

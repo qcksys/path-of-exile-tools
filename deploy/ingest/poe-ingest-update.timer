@@ -1,0 +1,10 @@
+[Unit]
+Description=Check for a new dev ingestion image every two minutes
+
+[Timer]
+OnStartupSec=1min
+OnUnitInactiveSec=2min
+AccuracySec=10s
+
+[Install]
+WantedBy=timers.target

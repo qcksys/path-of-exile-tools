@@ -36,6 +36,8 @@ jobs:
       - run: vp install --frozen-lockfile
       - name: Lint
         run: vp run lint
+      - name: Ingest deployment tests
+        run: python3 -m unittest discover -s deploy/ingest -p 'test_*.py' -v
       - name: Build
         run: vp run -r build
       - name: Type check
@@ -224,3 +226,45 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: vp exec --filter poe-boats wrangler deploy --env "${CLOUDFLARE_ENV}" --keep-vars
+
+  publish-ingest:
+    needs: [validate, deploy]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    concurrency:
+      group: publish-ingest-dev
+      cancel-in-progress: false
+    env:
+      IMAGE: ghcr.io/qcksys/poe-stash-ingest
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build ingestion image
+        run: >-
+          docker build --file packages/poe-stash-ingest/Dockerfile
+          --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}"
+          --label "org.opencontainers.image.revision=${GITHUB_SHA}"
+          --tag "${IMAGE}:${GITHUB_SHA}" .
+      - name: Verify ingestion image without network or credentials
+        run: >-
+          docker run --rm --network none --memory 2g --cpus 2
+          --tmpfs /data:rw,uid=1000,gid=1000,mode=700
+          -e PS_LOCAL_DB=/data/replay.duckdb "${IMAGE}:${GITHUB_SHA}" replay
+      - name: Publish commit image and promote current dev
+        run: |
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          trap 'docker logout ghcr.io' EXIT
+          docker push "${IMAGE}:${GITHUB_SHA}"
+          current=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/dev" --jq '.object.sha')
+          if [ "$current" != "$GITHUB_SHA" ]; then
+            echo "Dev advanced; leaving the deployment tag unchanged."
+            exit 0
+          fi
+          docker tag "${IMAGE}:${GITHUB_SHA}" "${IMAGE}:dev"
+          docker push "${IMAGE}:dev"

@@ -1,0 +1,7 @@
+config/
+secrets/
+data/
+enabled
+.update.lock
+deployment.json*
+__pycache__/
