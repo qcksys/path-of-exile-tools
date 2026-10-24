@@ -12,7 +12,17 @@ import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 
-export const serverStatusFilters = ingestStatusSchema.pick({ realm: true, league: true }).partial();
+export const serverStatusFilters = ingestStatusSchema
+    .pick({ realm: true, league: true })
+    .partial()
+    .extend({
+        view: z
+            .enum(["full", "workers"])
+            .optional()
+            .describe(
+                "Defaults to full. workers skips stored-history coverage queries; coverage is empty because it was omitted.",
+            ),
+    });
 export const serverStatusResult = z.object({
     checkedAt: z.number(),
     workers: z.array(
@@ -57,14 +67,16 @@ export async function getServerStatus(
                 filters.league ? eq(tIngestWorker.league, filters.league) : undefined,
             ),
         );
+    const coverageStreams =
+        filters.view === "workers"
+            ? []
+            : ([
+                  ["currency", tStashCurrencyHourly],
+                  ["uniques", tStashUniqueHourly],
+                  ["equipment", tStashCohortHourly],
+              ] as const);
     const coverage = await Promise.all(
-        (
-            [
-                ["currency", tStashCurrencyHourly],
-                ["uniques", tStashUniqueHourly],
-                ["equipment", tStashCohortHourly],
-            ] as const
-        ).map(async ([stream, table]) => {
+        coverageStreams.map(async ([stream, table]) => {
             const rows = await db
                 .select({
                     realm: table.realm,
