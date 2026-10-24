@@ -146,7 +146,9 @@ it("replays a crafted and enchanted fractured source with its preparation profil
             ),
         ),
     );
-    manifest.cohorts = manifest.cohorts.filter((cohort) => cohort.query.sourcePreparation);
+    manifest.cohorts = manifest.cohorts.filter(
+        (cohort) => cohort.query.sourcePreparation?.kind === "fractured-fossil-v1",
+    );
     expect(manifest.cohorts).toHaveLength(4);
     const expected = manifest.cohorts.find(
         (cohort) =>
@@ -224,6 +226,122 @@ it("replays a crafted and enchanted fractured source with its preparation profil
             uniqueSellers: 1,
             unknownCount: 0,
             prices: { divine: { median: 220, min: 220, max: 220, count: 1 } },
+        },
+    ]);
+    expect(Date.parse(`${rows[0]!.firstSeenAt}Z`)).toBe(observedAt * 1000);
+    expect(Date.parse(`${rows[0]!.lastSeenAt}Z`)).toBe(observedAt * 1000);
+    const definitions = await queryAll<{ definition: string }>(
+        local.conn,
+        "SELECT definition::VARCHAR AS definition FROM ps_equipment_cohort",
+    );
+    expect(definitions.map((row) => JSON.parse(row.definition))).toEqual([
+        current.definition(expected.id),
+    ]);
+    expect(await equipmentHourly(local.conn, HOUR + 3600, "Standard")).toEqual([]);
+    expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_listing")).toEqual([]);
+    expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
+});
+
+it("replays a paid Scouring source with native implicit proof at its original priced hour", async () => {
+    const manifest = marketCohortManifestSchema.parse(
+        JSON.parse(
+            await readFile(
+                new URL("../../../../packages/poe-market/data/cohorts-poe1.json", import.meta.url),
+                "utf8",
+            ),
+        ),
+    );
+    manifest.cohorts = manifest.cohorts.filter(
+        (cohort) =>
+            cohort.query.sourcePreparation?.kind === "scour-v1" &&
+            cohort.query.groups.some((group) =>
+                group.filters.some(
+                    (filter) =>
+                        filter.kind === "base" &&
+                        filter.field === "baseType" &&
+                        filter.values.includes("Pinnacle Tower Shield"),
+                ),
+            ),
+    );
+    expect(manifest.cohorts).toHaveLength(4);
+    const expected = manifest.cohorts.find(
+        (cohort) =>
+            cohort.query.sourcePreparation?.crafted && cohort.query.sourcePreparation.enchanted,
+    )!;
+    expect(expected.query.sourcePreparation).toEqual({
+        kind: "scour-v1",
+        crafted: true,
+        enchanted: true,
+    });
+    const current = compileMarketCohorts(manifest);
+    const accepts = await defaultCraftingCapture(manifest);
+    const shield = {
+        ...item,
+        typeLine: "Pinnacle Tower Shield",
+        baseType: "Pinnacle Tower Shield",
+        frameType: 2,
+        influences: { shaper: true },
+        extended: { prefixes: 3, suffixes: 3 },
+        explicitMods: [
+            { description: "Unresolved disposable affix" },
+            { description: "Prefixes Cannot Be Changed", flags: { crafted: true } },
+        ],
+        enchantMods: ["Quality does not increase Defences"],
+        implicitMods: ["+30 to maximum Life"],
+        note: "~price 6 chaos",
+    };
+    const before = structuredClone(shield);
+    expect(accepts(shield)).toBe(true);
+    expect(current.classify(normalizeApiItem("poe1", "stash", shield))).toEqual({
+        matches: [expected.id],
+        unknown: [],
+    });
+    expect(
+        current.classify(
+            normalizeApiItem("poe1", "stash", {
+                ...shield,
+                implicitMods: ["+31 to maximum Life"],
+            }),
+        ),
+    ).toEqual({ matches: [], unknown: [expected.id] });
+    expect(shield).toEqual(before);
+    const observedAt = HOUR + 29;
+    const page = await archivePage(
+        local.conn,
+        { next_change_id: "scouring-source-page", stashes: [{ ...stash, items: [shield] }] },
+        { realm: "pc", league: "Standard", capturedAt: observedAt * 1000 },
+        accepts,
+    );
+    await local.conn.run(
+        "UPDATE ps_capture_page SET processed_at = current_timestamp, equipment_revision = 'before-scouring-source' WHERE id = $1",
+        [page],
+    );
+    const [saved] = await queryAll<{ hash: string }>(
+        local.conn,
+        "SELECT response_hash AS hash FROM ps_capture_page WHERE id = $1",
+        [page],
+    );
+    expect((await readArchivedPage(local.conn, saved!.hash)).stashes[0]!.items[0]).toEqual(shield);
+    await setCursor(local.conn, "psapi", "live-cursor");
+    expect(
+        await reclassifyArchivedEquipment(local.conn, {
+            realm: "pc",
+            league: "Standard",
+            classifier: current,
+            completedBefore: HOUR + 3600,
+            limitPages: 1,
+        }),
+    ).toMatchObject({ pages: 1, completedHours: [HOUR], pending: false });
+    const rows = await equipmentHourly(local.conn, HOUR, "Standard");
+    expect(rows).toMatchObject([
+        {
+            revision: manifest.revision,
+            cohortId: expected.id,
+            hour: HOUR,
+            listingCount: 1,
+            uniqueSellers: 1,
+            unknownCount: 0,
+            prices: { chaos: { median: 6, min: 6, max: 6, count: 1 } },
         },
     ]);
     expect(Date.parse(`${rows[0]!.firstSeenAt}Z`)).toBe(observedAt * 1000);
