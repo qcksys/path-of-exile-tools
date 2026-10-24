@@ -3,19 +3,11 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { createRoutesStub } from "react-router";
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, describe, expect, it } from "vite-plus/test";
 import { ArbitragePage } from "~/components/arbitrage/arbitrage-page";
 import { getVendorRecipes } from "~/data/vendor-recipes";
 import type { ArbitrageMarketData } from "~/services/arbitrage.server";
 
-vi.mock("~/components/app-header", () => {
-    const AppHeader = () => null;
-    return { AppHeader };
-});
-vi.mock("~/components/app-footer", () => {
-    const AppFooter = () => null;
-    return { AppFooter };
-});
 afterEach(cleanup);
 
 const data: ArbitrageMarketData = {
