@@ -173,7 +173,11 @@ Unrelated same-base cohorts cannot consume the 2,000 relevant-candidate allowanc
 item-matching but uncovered cohorts retain their coverage reasons. A genuinely truncated
 result still prevents refresh from silently choosing an older or incomplete price.
 
-Market aggregation reads a covering secondary index before fetching the selected full rows.
+Market aggregation reads a covering secondary index, including base-type and rarity filters,
+before fetching the selected full rows.
+Text search also reads historical names and leaves index selection to MySQL: including both
+name and base type would exceed the optimizer's
+[3,072-byte extended-index limit](https://dev.mysql.com/doc/refman/8.0/en/index-extensions.html).
 Historical search, latest nonempty observations, variant identity and period totals retain
 their existing semantics. MySQL plan and result regressions live in
 `test/e2e/market-query.test.ts` and `test/e2e/crafting-market-performance.test.ts`.

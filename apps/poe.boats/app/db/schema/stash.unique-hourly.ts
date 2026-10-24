@@ -103,7 +103,8 @@ export const tStashUniqueHourly = mysqlTable(
             table.likelySales,
             table.removedCount,
             table.pendingCount,
-            table.name,
+            table.baseType,
+            table.frameType,
         ),
     ],
 );

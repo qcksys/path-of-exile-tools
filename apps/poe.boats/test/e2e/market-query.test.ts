@@ -96,19 +96,33 @@ it("fetches full item records by primary key only after selecting the market pag
 });
 
 it.each([
-    "",
-    "Item",
-])("aggregates historical counters from a covering index (search %s)", async (q) => {
+    {},
+    { rarity: "unique" },
+    { category: "accessories", rarity: "unique", identification: "true", corruption: "false" },
+])("aggregates historical counters from a covering index (filters %j)", async (filters) => {
     statements.length = 0;
     await getMarketData(
         db as unknown as TDatabase,
-        marketFiltersSchema.parse({ league: "Current", q }),
+        marketFiltersSchema.parse({ league: "Current", ...filters }),
     );
     const query = statements[1]!;
     const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
     const aggregate = plan.find((row) => row.select_type === "DERIVED");
     expect(aggregate?.key).toBe("stash_unique_market_cover_idx");
     expect(String(aggregate?.Extra)).toMatch(/Using index(?:;|$)/);
+});
+
+it.each([
+    "Item",
+    "Leather",
+])("preserves text search without forcing a noncovering index (%s)", async (q) => {
+    statements.length = 0;
+    const result = await getMarketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "Current", q }),
+    );
+    expect(result.rows).toHaveLength(20);
+    expect(statements[1]!.sql).not.toContain("FORCE INDEX");
 });
 
 it("reads status coverage from indexes without loading hourly payloads", async () => {

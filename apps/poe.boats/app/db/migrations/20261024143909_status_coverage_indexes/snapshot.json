@@ -3248,7 +3248,11 @@
                     "isExpression": false
                 },
                 {
-                    "value": "name",
+                    "value": "baseType",
+                    "isExpression": false
+                },
+                {
+                    "value": "frameType",
                     "isExpression": false
                 }
             ],
