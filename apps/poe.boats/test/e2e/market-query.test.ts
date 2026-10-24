@@ -1,16 +1,20 @@
+import { mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection, type RowDataPacket } from "mysql2/promise";
 import { afterAll, beforeAll, expect, it } from "vite-plus/test";
 import type { TDatabase } from "~/db/client";
 import { getMarketData } from "~/db/queries/market.queries";
+import { upsertStashCurrencyHourly } from "~/db/queries/stash-ingest.queries";
+import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import {
     tStashUniqueHourly as market,
     type TStashUniqueHourlyI,
 } from "~/db/schema/stash.unique-hourly";
+import { getServerStatus } from "~/operations/server-status.server";
 import { marketFiltersSchema } from "~/schemas/market";
 
 const hour = 1_792_836_000;
@@ -90,6 +94,196 @@ it("fetches full item records by primary key only after selecting the market pag
         ),
     ).toBe(true);
 });
+
+it.each([
+    {},
+    { rarity: "unique" },
+    { category: "accessories", rarity: "unique", identification: "true", corruption: "false" },
+])("aggregates historical counters from a covering index (filters %j)", async (filters) => {
+    statements.length = 0;
+    await getMarketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "Current", ...filters }),
+    );
+    const query = statements[1]!;
+    const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
+    const aggregate = plan.find((row) => row.select_type === "DERIVED");
+    expect(aggregate?.key).toBe("stash_unique_market_cover_idx");
+    expect(String(aggregate?.Extra)).toMatch(/Using index(?:;|$)/);
+});
+
+it.each([
+    "Item",
+    "Leather",
+])("preserves text search without forcing a noncovering index (%s)", async (q) => {
+    statements.length = 0;
+    const result = await getMarketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "Current", q }),
+    );
+    expect(result.rows).toHaveLength(20);
+    expect(statements[1]!.sql).not.toContain("FORCE INDEX");
+});
+
+it("reads status coverage from indexes without loading hourly payloads", async () => {
+    statements.length = 0;
+    const result = await getServerStatus(db as unknown as TDatabase);
+    expect(
+        result.coverage.find(
+            (row) => row.stream === "uniques" && row.realm === "pc" && row.league === "Current",
+        ),
+    ).toMatchObject({ hours: 20, rows: 400 });
+    const queries = statements.filter((query) => query.sql.includes("count(distinct"));
+    expect(queries).toHaveLength(3);
+    for (const query of queries) {
+        const [plan] = await connection.query<RowDataPacket[]>(
+            `EXPLAIN ${query.sql}`,
+            query.params,
+        );
+        expect(String(plan[0]?.Extra)).toMatch(/Using index(?:;|$)/);
+        expect(plan[0]?.key).not.toBe("PRIMARY");
+    }
+});
+
+it("commits overlapping currency batches from separate connections without losing zero volumes", async () => {
+    const other = await createConnection(container.getConnectionUri());
+    const otherDb = drizzle({ client: other });
+    const rows = Array.from({ length: 401 }, (_, index) => ({
+        realm: "pc",
+        league: "Concurrent",
+        marketId: `pair:${String(index).padStart(4, "0")}`,
+        hour,
+        volumeTraded: { chaos: 0 },
+        lowestRatio: { chaos: 1 },
+    }));
+    try {
+        for (let run = 0; run < 3; run++) {
+            const written = await Promise.all([
+                upsertStashCurrencyHourly(db as unknown as TDatabase, rows),
+                upsertStashCurrencyHourly(otherDb as unknown as TDatabase, rows.toReversed()),
+            ]);
+            expect(written).toEqual([401, 401]);
+        }
+        const stored = await db
+            .select()
+            .from(tStashCurrencyHourly)
+            .where(eq(tStashCurrencyHourly.league, "Concurrent"));
+        expect(stored).toHaveLength(401);
+        expect(
+            stored.every((row) => row.volumeTraded?.chaos === 0 && row.lowestRatio?.chaos === 1),
+        ).toBe(true);
+    } finally {
+        await other.end();
+    }
+});
+
+it("recovers an actual MySQL deadlock victim by replaying its autocommitted batch", async () => {
+    const blocker = await createConnection(container.getConnectionUri());
+    const observer = await createConnection(container.getConnectionUri(true));
+    const rows = Array.from({ length: 30 }, (_, index) => ({
+        realm: "pc",
+        league: "Deadlock",
+        hour,
+        marketId: `pair:${String(index).padStart(4, "0")}`,
+        volumeTraded: { chaos: 1 },
+    }));
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, rows);
+    let writer: Promise<number> | undefined;
+    try {
+        await blocker.beginTransaction();
+        await blocker.query(
+            "SELECT marketId FROM qsPoeBoats__stash_currency_hourly WHERE realm = 'pc' AND league = 'Deadlock' AND marketId >= 'pair:0001' FOR UPDATE",
+        );
+        writer = upsertStashCurrencyHourly(
+            db as unknown as TDatabase,
+            rows.slice(0, 2).map((row) => ({ ...row, volumeTraded: { chaos: 0 } })),
+        );
+        // Observe the first wait before closing the lock cycle; the smaller writer is the victim.
+        await expect
+            .poll(async () => {
+                const [waits] = await observer.query<RowDataPacket[]>(
+                    "SELECT COUNT(*) AS n FROM performance_schema.data_lock_waits",
+                );
+                return Number(waits[0]?.n);
+            })
+            .toBeGreaterThan(0);
+        await blocker.query(
+            "UPDATE qsPoeBoats__stash_currency_hourly SET volumeTraded = JSON_OBJECT('chaos', 2) WHERE realm = 'pc' AND league = 'Deadlock' AND marketId = 'pair:0000'",
+        );
+        await blocker.commit();
+        expect(await writer).toBe(2);
+        const stored = await db
+            .select()
+            .from(tStashCurrencyHourly)
+            .where(
+                and(
+                    eq(tStashCurrencyHourly.league, "Deadlock"),
+                    eq(tStashCurrencyHourly.marketId, "pair:0000"),
+                ),
+            );
+        expect(stored[0]?.volumeTraded).toEqual({ chaos: 0 });
+    } finally {
+        await blocker.rollback();
+        await Promise.allSettled(writer ? [writer] : []);
+        await blocker.end();
+        await observer.end();
+    }
+});
+
+it.runIf(process.env.MARKET_QUERY_BENCHMARK === "1")(
+    "benchmarks the covering aggregate against the clustered scan",
+    async () => {
+        const total = 168_000;
+        for (let start = 0; start < total; start += 500) {
+            await db.insert(market).values(
+                Array.from({ length: 500 }, (_, offset) => {
+                    const position = start + offset;
+                    return observation({
+                        league: "Benchmark",
+                        hour: hour - Math.floor(position / 1000) * 3600,
+                        itemKey: `Item:${position % 1000}`,
+                        name: `Item ${position % 1000}`,
+                        likelySales: position % 11,
+                        signatureData: { fixture: "x".repeat(1024) },
+                    });
+                }),
+            );
+        }
+        await db.execute(sql`ANALYZE TABLE ${market}`);
+        statements.length = 0;
+        await getMarketData(
+            db as unknown as TDatabase,
+            marketFiltersSchema.parse({ league: "Benchmark" }),
+        );
+        const query = statements[1]!;
+        const baseline = query.sql.replace(
+            "FORCE INDEX (`stash_unique_market_cover_idx`)",
+            "FORCE INDEX (PRIMARY)",
+        );
+        const timings: Record<string, number[]> = { primary: [], covering: [] };
+        let expected: unknown;
+        for (let run = 0; run < 3; run++) {
+            for (const [label, statement] of [
+                ["primary", baseline],
+                ["covering", query.sql],
+            ] as const) {
+                const start = performance.now();
+                const [rows] = await connection.query(statement, query.params);
+                timings[label]!.push(performance.now() - start);
+                if (expected === undefined) expected = rows;
+                else expect(rows).toEqual(expected);
+            }
+        }
+        const directory = fileURLToPath(new URL("../../../../.artifacts/", import.meta.url));
+        await mkdir(directory, { recursive: true });
+        await writeFile(
+            `${directory}/market-covering-benchmark.json`,
+            JSON.stringify({ rows: total, milliseconds: timings }, null, 2),
+        );
+        console.log(JSON.stringify({ rows: total, milliseconds: timings }));
+    },
+    180_000,
+);
 
 function observation(overrides: Partial<TStashUniqueHourlyI>): TStashUniqueHourlyI {
     return {

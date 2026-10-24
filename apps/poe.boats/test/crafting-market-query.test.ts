@@ -39,7 +39,9 @@ beforeEach(() => {
         Number(JSON.parse(String(values)).includes(JSON.parse(String(value)))),
     );
     sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_cohort (
-        id TEXT, revision TEXT, catalogHash TEXT, name TEXT, purpose TEXT, query TEXT, baseTypes TEXT);
+        id TEXT, revision TEXT, catalogHash TEXT, name TEXT, purpose TEXT, query TEXT, baseTypes TEXT,
+        baseTypeKey TEXT GENERATED ALWAYS AS (
+            CASE WHEN json_array_length(baseTypes) = 1 THEN json_extract(baseTypes, '$[0]') ELSE '' END));
         CREATE TABLE ${DB_TABLE_PREFIX}stash_cohort_hourly (
         realm TEXT, league TEXT, hour INTEGER, revision TEXT, cohortId TEXT, listingCount INTEGER,
         uniqueSellers INTEGER, unknownCount INTEGER, prices TEXT, confidenceMethod TEXT, firstSeenAt TEXT, lastSeenAt TEXT);
@@ -58,6 +60,7 @@ beforeEach(() => {
             JSON.stringify(["Plate Vest"]),
         );
     db = drizzle(async (sql, params) => {
+        sql = sql.replace(/ force index \([^)]+\)/gi, "");
         reads.push({ sql, params });
         if (beforeRead) await beforeRead();
         elapsed += 25;
@@ -169,9 +172,9 @@ function exchange(hour: number, realm = "pc", league = "Standard", currency = "d
 }
 
 describe("equipment market lookup", () => {
-    it("pages definitions in primary-key order without sorting the full definition table", async () => {
+    it("pages definitions in base/index order without sorting the full definition table", async () => {
         sqlite.exec(
-            `CREATE UNIQUE INDEX definition_primary ON ${DB_TABLE_PREFIX}stash_cohort(revision,id)`,
+            `CREATE INDEX definition_base ON ${DB_TABLE_PREFIX}stash_cohort(baseTypeKey,revision,id)`,
         );
         capture(completed);
         const result = await findCraftingMarketPrices(db, input);
@@ -183,7 +186,7 @@ describe("equipment market lookup", () => {
         for (const read of definitionReads) {
             const plan = sqlite.prepare(`EXPLAIN QUERY PLAN ${read.sql}`).all(...read.params);
             expect(JSON.stringify(plan)).not.toContain("TEMP B-TREE");
-            expect(JSON.stringify(plan)).toContain("definition_primary");
+            expect(JSON.stringify(plan)).toContain("definition_base");
         }
     });
     it("finds a relevant observation after more than 2000 incompatible same-base definitions", async () => {

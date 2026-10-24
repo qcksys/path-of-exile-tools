@@ -27,6 +27,7 @@ export const tStashCohortHourly = mysqlTable(
             columns: [table.realm, table.league, table.revision, table.cohortId, table.hour],
         }),
         index("stash_cohort_history_idx").on(table.realm, table.league, table.cohortId, table.hour),
+        index("stash_cohort_coverage_idx").on(table.realm, table.league, table.hour),
     ],
 );
 export type TStashCohortHourlyS = InferSelectModel<typeof tStashCohortHourly>;

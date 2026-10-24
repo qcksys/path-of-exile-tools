@@ -196,6 +196,27 @@ it("preserves latest rows while reducing unrelated cohort work before aggregatio
     );
     if (benchmark) {
         const old = await measure(baseline().toSQL());
+        const oldDefinitions = await measure(
+            db
+                .select({
+                    id: cohort.id,
+                    revision: cohort.revision,
+                    catalogHash: cohort.catalogHash,
+                    name: cohort.name,
+                    purpose: cohort.purpose,
+                    query: cohort.query,
+                })
+                .from(cohort)
+                .where(
+                    or(
+                        isNull(cohort.baseTypes),
+                        sql`JSON_CONTAINS(${cohort.baseTypes}, ${JSON.stringify(input.item.item.baseType)})`,
+                    ),
+                )
+                .orderBy(cohort.revision, cohort.id)
+                .limit(500)
+                .toSQL(),
+        );
         const production = [];
         for (const query of current) production.push(await measure(query));
         const path = fileURLToPath(
@@ -207,7 +228,13 @@ it("preserves latest rows while reducing unrelated cohort work before aggregatio
         await writeFile(
             path,
             JSON.stringify(
-                { distractors, hourlyDistractors: distractors * 24, old, production },
+                {
+                    distractors,
+                    hourlyDistractors: distractors * 24,
+                    old,
+                    oldDefinitions,
+                    production,
+                },
                 null,
                 2,
             ),
@@ -216,6 +243,7 @@ it("preserves latest rows while reducing unrelated cohort work before aggregatio
             JSON.stringify({
                 path,
                 old: old.milliseconds,
+                oldDefinitions: oldDefinitions.milliseconds,
                 production: production.map((query) => query.milliseconds),
             }),
         );
@@ -264,6 +292,23 @@ it("preserves exact cohort filtering, all revisions, historical cutoffs and late
         if (request.currency === "divine")
             expect(result.candidates.every((entry) => !entry.covered)).toBe(true);
     }
+});
+
+it("seeks matching base definitions without scanning unrelated catalog rows", async () => {
+    statements.length = 0;
+    await findCraftingMarketPrices(db as unknown as TDatabase, input);
+    const query = statements[0]!;
+    const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
+    expect(plan[0]?.key).toBe("stash_cohort_base_page_idx");
+    expect(String(plan[0]?.Extra)).not.toContain("filesort");
+    const [before] = await connection.query<RowDataPacket[]>(
+        "SHOW SESSION STATUS LIKE 'Handler_read_next'",
+    );
+    await connection.query(query.sql, query.params);
+    const [after] = await connection.query<RowDataPacket[]>(
+        "SHOW SESSION STATUS LIKE 'Handler_read_next'",
+    );
+    expect(Number(after[0]?.Value) - Number(before[0]?.Value)).toBeLessThan(10);
 });
 
 it("keeps ordering and the 2001-row boundary without quadratic history reads", async () => {
@@ -396,6 +441,6 @@ it("retains late primary-key pages at the global tie boundary using database col
             query.params,
         );
         expect(plan[0]?.EXPLAIN).not.toContain("Sort:");
-        expect(plan[0]?.EXPLAIN).toContain("using PRIMARY");
+        expect(plan[0]?.EXPLAIN).toContain("stash_cohort_base_page_idx");
     }
 });
