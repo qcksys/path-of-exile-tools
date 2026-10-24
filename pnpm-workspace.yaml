@@ -9,6 +9,7 @@ allowBuilds:
   workerd: true
 
 catalog:
+  '@agents-dev/cli': 0.9.2
   "@base-ui/react": ^1.4.1
   '@better-auth/drizzle-adapter': ^1.6.9
   "@biomejs/biome": 2.4.8
