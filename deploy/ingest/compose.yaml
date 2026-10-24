@@ -1,0 +1,53 @@
+name: poe-ingest-dev
+
+x-worker: &worker
+  image: ${INGEST_IMAGE:?Set INGEST_IMAGE to the deployment digest}
+  init: true
+  restart: unless-stopped
+  stop_grace_period: 2m
+  mem_limit: 2g
+  healthcheck:
+    test: [CMD, node, src/container-health.ts]
+    interval: 30s
+    timeout: 5s
+    start_period: 5m
+    retries: 3
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  pc:
+    <<: *worker
+    cpus: 2.0
+    env_file: ./config/pc.env
+    volumes:
+      - ./data/pc:/data
+    secrets:
+      - source: pc_client_secret
+        target: poe_client_secret
+      - source: pc_ingest_token
+        target: poe_boats_ingest_token
+  poe2:
+    <<: *worker
+    cpus: 1.0
+    env_file: ./config/poe2.env
+    volumes:
+      - ./data/poe2:/data
+    secrets:
+      - source: poe2_client_secret
+        target: poe_client_secret
+      - source: poe2_ingest_token
+        target: poe_boats_ingest_token
+
+secrets:
+  pc_client_secret:
+    file: ./secrets/pc_client_secret
+  pc_ingest_token:
+    file: ./secrets/pc_ingest_token
+  poe2_client_secret:
+    file: ./secrets/poe2_client_secret
+  poe2_ingest_token:
+    file: ./secrets/poe2_ingest_token
