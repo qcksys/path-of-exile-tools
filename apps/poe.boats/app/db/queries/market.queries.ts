@@ -6,6 +6,7 @@ import type { MarketFilters } from "~/schemas/market";
 const PAGE_SIZE = 50;
 
 export async function getMarketData(db: TDatabase, input: MarketFilters) {
+    // Group by the full index prefix so MySQL can skip between season boundaries.
     const seasons = await db
         .select({
             league: market.league,
@@ -14,7 +15,7 @@ export async function getMarketData(db: TDatabase, input: MarketFilters) {
         })
         .from(market)
         .where(eq(market.realm, input.realm))
-        .groupBy(market.league)
+        .groupBy(market.realm, market.league)
         .orderBy(desc(max(market.hour)));
     const filters = { ...input, league: input.league || seasons[0]?.league || "" };
     const season = seasons.find((entry) => entry.league === filters.league);
@@ -24,22 +25,24 @@ export async function getMarketData(db: TDatabase, input: MarketFilters) {
         eq(market.league, filters.league),
         gte(market.hour, cutoff),
     );
-    const partition = sql`${market.itemKey}, ${market.identified}, ${market.corrupted}, ${market.foilVariation}, ${market.signatureKind}, ${market.signatureValue}`;
     const search = filters.q ? `%${filters.q.replace(/[\\%_]/g, "\\$&")}%` : undefined;
-    const ranked = db
+    const page = db
         .select({
-            ...getTableColumns(market),
-            rank: sql<number>`row_number() over (partition by ${partition} order by (${market.listingCount} > 0) desc, ${market.hour} desc)`.as(
-                "market_rank",
-            ),
-            periodSales: sql<number>`sum(${market.likelySales}) over (partition by ${partition})`
-                .mapWith(Number)
-                .as("period_sales"),
-            periodRemovals:
-                sql<number>`sum(${market.removedCount}) over (partition by ${partition})`
+            itemKey: market.itemKey,
+            identified: market.identified,
+            corrupted: market.corrupted,
+            foilVariation: market.foilVariation,
+            signatureKind: market.signatureKind,
+            signatureValue: market.signatureValue,
+            latestHour:
+                sql<number>`coalesce(max(case when ${market.listingCount} > 0 then ${market.hour} end), max(${market.hour}))`
                     .mapWith(Number)
-                    .as("period_removals"),
-            periodPending: sql<number>`sum(${market.pendingCount}) over (partition by ${partition})`
+                    .as("latest_hour"),
+            periodSales: sql<number>`sum(${market.likelySales})`.mapWith(Number).as("period_sales"),
+            periodRemovals: sql<number>`sum(${market.removedCount})`
+                .mapWith(Number)
+                .as("period_removals"),
+            periodPending: sql<number>`sum(${market.pendingCount})`
                 .mapWith(Number)
                 .as("period_pending"),
         })
@@ -56,22 +59,59 @@ export async function getMarketData(db: TDatabase, input: MarketFilters) {
                     : undefined,
             ),
         )
-        .as("ranked");
-    const rowsPromise = db
-        .select()
-        .from(ranked)
-        .where(eq(ranked.rank, 1))
-        .orderBy(
-            desc(ranked.periodSales),
-            asc(ranked.itemKey),
-            asc(ranked.identified),
-            asc(ranked.corrupted),
-            asc(ranked.foilVariation),
-            asc(ranked.signatureKind),
-            asc(ranked.signatureValue),
+        .groupBy(
+            market.itemKey,
+            market.identified,
+            market.corrupted,
+            market.foilVariation,
+            market.signatureKind,
+            market.signatureValue,
         )
+        .orderBy(({ periodSales }) => [
+            desc(periodSales),
+            asc(market.itemKey),
+            asc(market.identified),
+            asc(market.corrupted),
+            asc(market.foilVariation),
+            asc(market.signatureKind),
+            asc(market.signatureValue),
+        ])
         .limit(PAGE_SIZE + 1)
-        .offset((filters.page - 1) * PAGE_SIZE);
+        .offset((filters.page - 1) * PAGE_SIZE)
+        .as("page");
+    // Keep prices and other full-row payloads out of aggregation and pagination.
+    const rowsPromise = db
+        .select({
+            ...getTableColumns(market),
+            rank: sql<number>`1`,
+            periodSales: page.periodSales,
+            periodRemovals: page.periodRemovals,
+            periodPending: page.periodPending,
+        })
+        .from(page)
+        .innerJoin(
+            market,
+            and(
+                eq(market.realm, filters.realm),
+                eq(market.league, filters.league),
+                eq(market.hour, page.latestHour),
+                eq(market.itemKey, page.itemKey),
+                eq(market.identified, page.identified),
+                eq(market.corrupted, page.corrupted),
+                eq(market.foilVariation, page.foilVariation),
+                eq(market.signatureKind, page.signatureKind),
+                eq(market.signatureValue, page.signatureValue),
+            ),
+        )
+        .orderBy(
+            desc(page.periodSales),
+            asc(page.itemKey),
+            asc(page.identified),
+            asc(page.corrupted),
+            asc(page.foilVariation),
+            asc(page.signatureKind),
+            asc(page.signatureValue),
+        );
     const historyPromise = filters.item
         ? db
               .select()
