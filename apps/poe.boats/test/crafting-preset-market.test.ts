@@ -26,7 +26,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r11",
+    (entry) => entry.game === "poe1" && entry.revision === "r12",
 )!;
 const cohorts = craftingPresetCohorts(engine, ruleset);
 const manifest = marketCohortManifestSchema.parse(
@@ -50,7 +50,9 @@ const purchases = craftingPresets.flatMap((preset) => {
             : [],
     );
 });
-const startingBases = purchases.filter(({ node }) => node.id.endsWith("-make-base"));
+const startingBases = purchases.filter(
+    ({ node, alternative }) => node.id.endsWith("-make-base") && !alternative.sourcePreparation,
+);
 const originalPurchases = purchases.filter(
     ({ preset, node, alternative }) =>
         !preset.startsWith("sushi-") && alternative.id === "buy" && !node.id.includes("-make-"),
@@ -275,8 +277,8 @@ it("keeps unsided saved identities separate from regenerated sided definitions",
 });
 
 it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
-    expect(purchases).toHaveLength(74);
-    expect(cohorts).toHaveLength(65);
+    expect(purchases).toHaveLength(102);
+    expect(cohorts).toHaveLength(81);
     const definitions = new Map(manifest.cohorts.map((cohort) => [cohort.id, cohort]));
     for (const cohort of cohorts) expect(definitions.get(cohort.id)).toEqual(cohort);
     for (const { preset, graph: project, node, alternative, item } of purchases) {

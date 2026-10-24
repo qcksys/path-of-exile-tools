@@ -10,6 +10,7 @@ import { CraftingEngine } from "../app/lib/crafting-engine";
 import { incursionGloveModifiers } from "../app/lib/crafting-incursion";
 import { modifierTiers } from "../app/lib/crafting-modifier-details";
 import { validateRulesetIndex } from "../app/lib/crafting-rulesets";
+import { rolledModText } from "../app/lib/crafting-text";
 import { craftingCatalogSchema } from "../app/schemas/crafting";
 import { craftingPresetCohorts } from "./crafting-preset-cohorts";
 import { writeCapturePolicy } from "./generate-capture-policy";
@@ -342,19 +343,56 @@ const baseIdentities = marketBaseIdentities(
         ),
     ),
 );
+const scourBases = new Set([
+    "Metadata/Items/Armours/Shields/ShieldStrE3",
+    "Metadata/Items/Armours/Shields/ShieldStr17",
+    "Metadata/Items/Armours/Shields/ShieldInt16",
+    "Metadata/Items/Armours/Helmets/HelmetInt11",
+]);
 const sourcePreparationModel = {
     format: 1,
     bases: Object.entries(catalog.bases)
         .filter(
-            ([, base]) =>
-                ["Body Armour", "Helmet", "Gloves", "Boots"].includes(base.item_class) &&
+            ([id, base]) =>
+                (["Body Armour", "Helmet", "Gloves", "Boots"].includes(base.item_class) ||
+                    scourBases.has(id)) &&
                 !base.implicits.some((id) =>
                     engine
                         .mod(id)
                         .stats.some((stat) => stat.id === "local_implicit_mod_cannot_be_changed"),
                 ),
         )
-        .map(([id, base]) => ({ id, baseType: base.name, itemClass: base.item_class })),
+        .map(([id, base]) => {
+            const definition = { id, baseType: base.name, itemClass: base.item_class };
+            if (!scourBases.has(id)) return definition;
+            let texts: string[][] = [[]];
+            for (const modId of base.implicits) {
+                let rolls: number[][] = [[]];
+                for (const stat of engine.mod(modId).stats) {
+                    const count = stat.max - stat.min + 1;
+                    if (
+                        !Number.isInteger(count) ||
+                        count < 1 ||
+                        rolls.length * count * texts.length > 256
+                    )
+                        throw new Error(
+                            `Unbounded native implicit rolls for Scouring source ${id}.`,
+                        );
+                    rolls = rolls.flatMap((values) =>
+                        Array.from({ length: count }, (_, index) => [...values, stat.min + index]),
+                    );
+                }
+                const rendered = rolls.map((values) =>
+                    rolledModText(catalog, { id: modId, values, fractured: false, crafted: false }),
+                );
+                if (rendered.some((text) => !text))
+                    throw new Error(`Unrenderable native implicit for Scouring source ${id}.`);
+                texts = texts.flatMap((lines) =>
+                    rendered.map((text) => [...lines, ...text!.split("\n")]),
+                );
+            }
+            return { ...definition, scourImplicits: { ids: base.implicits, texts } };
+        }),
 };
 const revision = createHash("sha256")
     .update(

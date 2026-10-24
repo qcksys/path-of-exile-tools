@@ -1,4 +1,8 @@
-import { fracturedFossilSourcePreparationSchema, type ItemQuery } from "@poe-tools/item-query";
+import {
+    type ItemQuery,
+    type SourcePreparationProfile,
+    sourcePreparationProfileSchema,
+} from "@poe-tools/item-query";
 import type { CraftingItem, CraftingMethod } from "../schemas/crafting";
 import type {
     CraftingGraph,
@@ -13,17 +17,41 @@ import { craftingNodeCostPrice } from "./crafting-node-prices";
 
 export function purchaseSourceProfile(alternative: GraphPurchase) {
     if (!alternative.sourcePreparation) return undefined;
+    if (alternative.sourcePreparation.kind === "scour-v1")
+        return sourcePreparationProfileSchema.parse(alternative.sourcePreparation);
     const { fossils: _fossils, ...profile } = alternative.sourcePreparation;
-    return fracturedFossilSourcePreparationSchema.parse(profile);
+    return sourcePreparationProfileSchema.parse(profile);
+}
+
+export function validateSourcePreparationRevision(
+    engine: string,
+    source: SourcePreparationProfile | undefined,
+) {
+    if (!source) return;
+    if (source.kind === "scour-v1") {
+        if (engine !== "crafting-graph-12")
+            throw new Error("Scouring source preparation requires crafting engine 12.");
+    } else if (!["crafting-graph-11", "crafting-graph-12"].includes(engine))
+        throw new Error("Source preparation requires crafting engine 11 or 12.");
 }
 
 export function sourcePreparationMethodList(source: SourcePreparation): CraftingMethod[] {
     return [
         ...(source.crafted ? [{ kind: "bench" as const, id: "bench:84" }] : []),
         ...(source.enchanted ? [{ kind: "bench" as const, id: "bench:373" }] : []),
-        source.fossils,
-        { kind: "currency", id: "Metadata/Items/Currency/CurrencyEldritchIchor1" },
-        { kind: "currency", id: "Metadata/Items/Currency/CurrencyEldritchEmber2" },
+        ...(source.kind === "scour-v1"
+            ? [{ kind: "currency" as const, id: "Metadata/Items/Currency/CurrencyConvertToNormal" }]
+            : [
+                  source.fossils,
+                  {
+                      kind: "currency" as const,
+                      id: "Metadata/Items/Currency/CurrencyEldritchIchor1",
+                  },
+                  {
+                      kind: "currency" as const,
+                      id: "Metadata/Items/Currency/CurrencyEldritchEmber2",
+                  },
+              ]),
     ];
 }
 
@@ -45,6 +73,26 @@ export function validateSourcePreparation(engine: CraftingEngine, purchase: Grap
     const source = purchase.sourcePreparation;
     if (!source) return;
     const item = engine.validateItem(purchase.item);
+    if (source.kind === "scour-v1") {
+        const expected = {
+            ...engine.createItem(item.baseId, item.level),
+            influences: item.influences,
+        };
+        if (
+            engine.catalog.game !== "poe1" ||
+            !["Shield", "Helmet"].includes(engine.base(item).item_class) ||
+            Object.keys(item).some(
+                (field) =>
+                    JSON.stringify(item[field as keyof CraftingItem]) !==
+                    JSON.stringify(expected[field as keyof CraftingItem]),
+            )
+        )
+            throw new Error(
+                "A Scouring source requires a baseline Normal shield or helmet template with only its preserved influences and native implicits.",
+            );
+        sourcePreparationMethods(engine, source);
+        return;
+    }
     const fracture = item.mods[0];
     if (
         engine.catalog.game !== "poe1" ||
@@ -100,7 +148,35 @@ export function validateSourcePreparation(engine: CraftingEngine, purchase: Grap
 }
 
 export function validateSourcePreparationOutput(purchase: GraphPurchase, query: ItemQuery) {
-    if (!purchase.sourcePreparation) return;
+    const source = purchase.sourcePreparation;
+    if (!source) return;
+    if (source.kind === "scour-v1") {
+        if (
+            query.sourcePreparation ||
+            query.groups.some(
+                (group) =>
+                    group.type !== "and" ||
+                    group.filters.some(
+                        (condition) =>
+                            !(
+                                condition.kind === "base" &&
+                                ["baseId", "baseType", "itemClass"].includes(condition.field)
+                            ) &&
+                            condition.kind !== "rarity" &&
+                            condition.kind !== "influence" &&
+                            !(condition.kind === "flag" && condition.field !== "split") &&
+                            !(
+                                condition.kind === "range" &&
+                                ["ilvl", "prefixes", "suffixes"].includes(condition.field)
+                            ),
+                    ),
+            )
+        )
+            throw new Error(
+                "A Scouring source can guarantee only its Normal base, level, affix counts, influences and supported flags.",
+            );
+        return;
+    }
     if (
         query.sourcePreparation ||
         query.groups.some(
@@ -113,7 +189,7 @@ export function validateSourcePreparationOutput(purchase: GraphPurchase, query: 
                         !(
                             condition.kind === "mod" &&
                             condition.ids?.length === 1 &&
-                            condition.ids[0] === purchase.sourcePreparation!.fractureId
+                            condition.ids[0] === source.fractureId
                         ),
                 ),
         )
@@ -166,7 +242,7 @@ export function prepareSourcePurchase(
     const costs: CraftingCost[] = [];
     const methods = sourcePreparationMethods(engine, source);
     for (const method of methods) {
-        if (method.kind === "bench") {
+        if (method.kind === "bench" || source.kind === "scour-v1") {
             // The source policy proves these discarded fields exist; the template does not invent their IDs.
             const paid = engine.costs(method);
             costs.push(...paid);

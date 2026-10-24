@@ -3,10 +3,10 @@ import { compileFracturedModifierTextModel, type ModifierTextModel } from "./mod
 import { itemRarity } from "./normalize.ts";
 import {
     type ApiItem,
-    type FracturedFossilSourcePreparation,
-    fracturedFossilSourcePreparationSchema,
     type ItemRecord,
     itemFactsSchema,
+    type SourcePreparationProfile,
+    sourcePreparationProfileSchema,
 } from "./schema.ts";
 
 export const sourcePreparationModelSchema = z.strictObject({
@@ -16,7 +16,16 @@ export const sourcePreparationModelSchema = z.strictObject({
             z.strictObject({
                 id: z.string().min(1).max(500),
                 baseType: z.string().min(1).max(500),
-                itemClass: z.enum(["Body Armour", "Helmet", "Gloves", "Boots"]),
+                itemClass: z.enum(["Body Armour", "Helmet", "Gloves", "Boots", "Shield"]),
+                scourImplicits: z
+                    .strictObject({
+                        ids: z.array(z.string().min(1).max(500)).max(8),
+                        texts: z
+                            .array(z.array(z.string().min(1).max(5000)).max(32))
+                            .min(1)
+                            .max(256),
+                    })
+                    .optional(),
             }),
         )
         .max(2000),
@@ -53,6 +62,21 @@ function descriptions(value: unknown): ModLine[] | null {
     return result.every((entry) => entry.description.trim().length > 0) ? result : null;
 }
 
+function implicitSignature(texts: string[]) {
+    return JSON.stringify(
+        texts
+            .flatMap((text) => text.split("\n"))
+            .map((text) =>
+                text
+                    .replace(/\[([^\]|]+)\|([^\]]+)\]/g, "$2")
+                    .replace(/\[([^\]]+)\]/g, "$1")
+                    .trim()
+                    .replace(/\s+/g, " "),
+            )
+            .sort(),
+    );
+}
+
 /** The result is an input to an explicit paid preparation, never a replacement for ordinary facts. */
 export function compileSourcePreparation(
     modifierModel: ModifierTextModel,
@@ -80,11 +104,9 @@ export function compileSourcePreparation(
         },
         visitLimit,
     );
-    return (
-        record: ItemRecord,
-        inputPolicy: FracturedFossilSourcePreparation,
-    ): SourcePreparationResult => {
-        const policy = fracturedFossilSourcePreparationSchema.parse(inputPolicy);
+    return (record: ItemRecord, inputPolicy: SourcePreparationProfile): SourcePreparationResult => {
+        const policy = sourcePreparationProfileSchema.parse(inputPolicy);
+        const scour = policy.kind === "scour-v1";
         const { item, facts } = record;
         const variants = bases.get(item.baseType) ?? [];
         const base = facts.baseId
@@ -98,9 +120,10 @@ export function compileSourcePreparation(
             !["stash", "trade"].includes(record.source) ||
             !variants.length ||
             (facts.baseId !== undefined && !base) ||
-            (rarity !== undefined && rarity !== "Rare") ||
+            (rarity !== undefined && !(scour ? ["Magic", "Rare"] : ["Rare"]).includes(rarity)) ||
             item.identified === false ||
-            item.fractured === false ||
+            (!scour && (item.fractured === false || base?.itemClass === "Shield")) ||
+            (scour && (item.searing === true || item.tangled === true)) ||
             facts.destroyed ||
             [
                 item.corrupted,
@@ -111,13 +134,19 @@ export function compileSourcePreparation(
                 item.memoryItem,
                 item.allflameCrafted,
             ].some((value) => value === true) ||
-            Object.values(item.influences ?? {}).some(Boolean) ||
+            (!scour && Object.values(item.influences ?? {}).some(Boolean)) ||
             (facts.memoryStrands ?? 0) > 0 ||
             (facts.memoryStrandsSpent ?? 0) > 0
         )
             return { status: "no-match" };
         if (
             !base ||
+            (scour && !base.scourImplicits) ||
+            (scour &&
+                ((facts.baseTypeAmbiguous && !facts.baseId) ||
+                    (facts.itemClass !== undefined && facts.itemClass !== base.itemClass) ||
+                    (item.frameType !== undefined &&
+                        item.frameType !== (rarity === "Magic" ? 1 : 2)))) ||
             modifierModel.format < 4 ||
             rarity === undefined ||
             item.identified !== true ||
@@ -139,6 +168,22 @@ export function compileSourcePreparation(
             ["mutated", "memoryItem", "allflameCrafted"].some(
                 (key) => item[key] !== undefined && item[key] !== false,
             ) ||
+            (scour &&
+                (["searing", "tangled"].some(
+                    (key) => item[key] !== undefined && item[key] !== false,
+                ) ||
+                    Object.entries(item.influences ?? {}).some(
+                        ([key, value]) =>
+                            value &&
+                            ![
+                                "shaper",
+                                "elder",
+                                "crusader",
+                                "redeemer",
+                                "hunter",
+                                "warlord",
+                            ].includes(key),
+                    ))) ||
             [
                 item.scourgeMods,
                 item.crucibleMods,
@@ -150,9 +195,10 @@ export function compileSourcePreparation(
             ["prefixes", "suffixes"].some((side) => {
                 const field = side as "prefixes" | "suffixes";
                 const count = item.extended?.[field];
+                const maximum = scour && rarity === "Magic" ? 1 : 3;
                 return (
-                    (count !== undefined && count > 3) ||
-                    (facts[field] !== undefined && facts[field]! > 3) ||
+                    (count !== undefined && count > maximum) ||
+                    (facts[field] !== undefined && facts[field]! > maximum) ||
                     (count !== undefined && facts[field] !== undefined && count !== facts[field])
                 );
             })
@@ -187,7 +233,8 @@ export function compileSourcePreparation(
         )
             return { status: "unknown" };
         const fractures = [...inlineFractures, ...separateFractures];
-        if (!fractures.length) return { status: item.fractured === true ? "unknown" : "no-match" };
+        if (!scour && !fractures.length)
+            return { status: item.fractured === true ? "unknown" : "no-match" };
         if (
             policy.crafted !== Boolean(inlineCrafts.length || separateCrafts.length) ||
             policy.enchanted !== Boolean(enchants.length)
@@ -197,14 +244,78 @@ export function compileSourcePreparation(
             explicit.some(
                 (row) =>
                     row.flags?.crafted !== true &&
-                    /^(?:Prefixes Cannot Be Changed|Suffixes Cannot Be Changed|Cannot roll Attack Modifiers|Cannot roll Caster Modifiers)$/i.test(
+                    (/^(?:Prefixes Cannot Be Changed|Suffixes Cannot Be Changed|Cannot roll Attack Modifiers|Cannot roll Caster Modifiers)$/i.test(
                         row.description.trim(),
-                    ),
+                    ) ||
+                        (scour &&
+                            /^Can have up to \d+ Crafted Modifiers$/i.test(
+                                row.description.trim(),
+                            ))),
             )
         )
             return { status: "unknown" };
         if (!policy.crafted && facts.modifiers.some((mod) => mod.crafted))
             return { status: "unknown" };
+        if (scour) {
+            if (fractures.length || facts.modifiers.some((mod) => mod.fractured))
+                return { status: item.fractured === false ? "unknown" : "no-match" };
+            if (item.fractured === true) return { status: "no-match" };
+            const native = base.scourImplicits!;
+            const knownImplicits = facts.modifiers.filter((mod) => mod.side === "implicit");
+            if (
+                knownImplicits.some(
+                    (mod) =>
+                        mod.crafted ||
+                        mod.fractured ||
+                        (mod.id !== undefined && !native.ids.includes(mod.id)) ||
+                        mod.possibleIds?.some((id) => !native.ids.includes(id)),
+                ) ||
+                new Set(knownImplicits.map((mod) => mod.id)).size !== knownImplicits.length ||
+                (facts.modifiersComplete && knownImplicits.length !== native.ids.length)
+            )
+                return { status: "unknown" };
+            if (
+                !native.texts.some(
+                    (texts) =>
+                        implicitSignature(texts) ===
+                        implicitSignature(implicits.map((row) => row.description)),
+                )
+            )
+                return { status: "unknown" };
+            return {
+                status: "match",
+                record: {
+                    ...record,
+                    item: {
+                        ...item,
+                        rarity: "Normal",
+                        frameType: 0,
+                        explicitMods: [],
+                        fracturedMods: [],
+                        craftedMods: [],
+                        enchantMods: [],
+                        fractured: false,
+                        extended: { ...item.extended, prefixes: 0, suffixes: 0 },
+                    },
+                    facts: {
+                        ...facts,
+                        baseId: base.id,
+                        itemClass: base.itemClass,
+                        prefixes: 0,
+                        suffixes: 0,
+                        modifiers: native.ids.map((id) => ({
+                            id,
+                            side: "implicit",
+                            fractured: false,
+                            crafted: false,
+                        })),
+                        modifiersComplete: true,
+                        stats: { explicit: {}, implicit: {}, total: {} },
+                        statsComplete: false,
+                    },
+                },
+            };
+        }
         if (
             facts.modifiers.some(
                 (mod) =>

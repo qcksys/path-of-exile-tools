@@ -22,7 +22,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r10",
 )!;
-const ruleset = { ...prior, revision: "r11", engine: "crafting-graph-11" };
+const ruleset = { ...prior, revision: "r12", engine: "crafting-graph-12" };
 const fractureId = "BreachBodyCriticalChanceIncreasedByUncappedLightningResistance1";
 const scour = currency("convert_to_normal").id;
 const ichor = currency("add_great_tangle_implicit_1").id;
@@ -35,7 +35,7 @@ function fixture(id = "buy-crafted-enchanted") {
     if (node.kind !== "acquire") throw new Error("Missing source acquisition.");
     node.choice = { mode: "pinned", alternativeId: id };
     const purchase = node.alternatives.find((entry) => entry.id === id)!;
-    if (purchase.kind !== "purchase" || !purchase.sourcePreparation)
+    if (purchase.kind !== "purchase" || purchase.sourcePreparation?.kind !== "fractured-fossil-v1")
         throw new Error("Missing source profile.");
     purchase.price = quote(11);
     for (const cost of discoverGraphCraftingCosts(engine, graph)) graph.prices[cost.id] = quote(2);
@@ -78,7 +78,11 @@ it("keeps r10 purchases and steps unchanged while r11 uses four explicit source 
     });
     expect(old.nodes.find((node) => node.id === "eater")).toBeDefined();
     expect(old.nodes.find((node) => node.id === "exarch")).toBeDefined();
-    const graph = projectFromPreset(engine, ruleset, "sushi-mercenary-chest");
+    const graph = projectFromPreset(
+        engine,
+        { ...ruleset, revision: "r11", engine: "crafting-graph-11" },
+        "sushi-mercenary-chest",
+    );
     const node = graph.nodes.find((node) => node.id === "fractured-base")!;
     if (node.kind !== "acquire") throw new Error("Missing source acquisition.");
     expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
@@ -250,7 +254,9 @@ it("uses the best first Allflame copy and skips a duplicated fossil roll when it
     expect(result.visits.fossils?.skipped).toBe(1);
     expect(result.spending[ichor]).toBe(1);
     expect(result.spending[ember]).toBe(1);
-    expect(result.spending[purchase.sourcePreparation!.fossils.resonator]).toBe(1);
+    if (purchase.sourcePreparation?.kind !== "fractured-fossil-v1")
+        throw new Error("Missing fossil source.");
+    expect(result.spending[purchase.sourcePreparation.fossils.resonator]).toBe(1);
 });
 
 it.each([

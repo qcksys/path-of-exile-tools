@@ -225,7 +225,17 @@ The [ES chest preset](crafting-preset-es-chest.md) prepares its two NNN donors f
 the existing Normal Vaal Regalia acquisition with Screaming Doubt and paid Annulment
 isolation. Losing either required prefix returns the same item to the Essence step;
 all retries are charged and missing input prices keep the total unknown.
-The fifteen current presets contain 74 purchase alternatives across 52 acquisitions and 65
+Revision 12 adds four paid Scouring source profiles to seven existing Normal acquisitions:
+the three life-shield bases, the shared ES-shield base and the three ordinary Hubris donors.
+Identified Magic/Rare sources must prove their exact base, level, influence, native implicits
+and removable explicit state. Crafted modifiers and enchantments are removed when present,
+then Scouring is charged once. Every acquisition pays again. Unknown persistent state or a
+fracture prevents a clean Normal projection; raw source records remain intact. Source quotes
+are bound to their preparation profile and cannot price an ordinary clean purchase. Missing
+purchase or preparation prices keep the total unknown, and existing choices remain pinned.
+The shared classifier, binding, calculation and UI expose the same policy. Earlier revisions
+retain their published behavior.
+The fifteen current presets contain 102 purchase alternatives across 52 acquisitions and 81
 distinct preset cohorts; 26 production alternatives include Hunter, Redeemer, NNN and Scouring
 preparation. Capture fixtures cover every new base without modifier metadata;
 definitions do not imply observed inventory or available quotes.

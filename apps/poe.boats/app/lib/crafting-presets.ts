@@ -119,6 +119,12 @@ const magicDonors: Partial<Record<CraftingPresetId, readonly string[]>> = {
     "energy-shield-chest": ["donor-0"],
 };
 
+const scouringSources: Partial<Record<CraftingPresetId, readonly string[]>> = {
+    "life-block-shield": ["block-make-base", "max-res-make-base", "recovery-make-base"],
+    "es-block-shield": ["flat-make-base"],
+    "rarity-helmet": ["donor-0-1-make-base", "donor-1-0-make-base", "donor-1-1-make-base"],
+};
+
 export function projectFromPreset(
     engine: CraftingEngine,
     ruleset: CraftingRuleset,
@@ -242,7 +248,7 @@ export function projectFromPreset(
     let entry: string;
     let target: ItemQuery;
     if (spicySushiPresets.some((entry) => entry.id === presetId)) {
-        const prepareSource = ruleset.engine === "crafting-graph-11";
+        const prepareSource = ["crafting-graph-11", "crafting-graph-12"].includes(ruleset.engine);
         ({ entry, target } = spicySushiPreset(
             { engine, base, buy, craft, currency },
             presetId,
@@ -1125,6 +1131,53 @@ export function projectFromPreset(
                             : "Scour a Magic Shaper base",
                     nodeId: scour.id,
                 });
+        }
+    }
+    if (ruleset.engine === "crafting-graph-12") {
+        for (const id of scouringSources[presetId] ?? []) {
+            const node = nodes.find((entry) => entry.id === id);
+            const purchase = node?.kind === "acquire" ? node.alternatives[0] : undefined;
+            if (
+                node?.kind !== "acquire" ||
+                purchase?.kind !== "purchase" ||
+                purchase.item.rarity !== "normal"
+            )
+                throw new Error("Scouring preparation must have a Normal base purchase.");
+            node.alternatives.push(
+                ...[
+                    {
+                        id: "buy-scour",
+                        name: "Uncrafted, unenchanted Magic/Rare source; Scour",
+                        crafted: false,
+                        enchanted: false,
+                    },
+                    {
+                        id: "buy-scour-crafted",
+                        name: "Crafted Magic/Rare source; remove crafts and Scour",
+                        crafted: true,
+                        enchanted: false,
+                    },
+                    {
+                        id: "buy-scour-enchanted",
+                        name: "Enchanted Magic/Rare source; remove enchantments and Scour",
+                        crafted: false,
+                        enchanted: true,
+                    },
+                    {
+                        id: "buy-scour-crafted-enchanted",
+                        name: "Crafted and enchanted Magic/Rare source; remove both and Scour",
+                        crafted: true,
+                        enchanted: true,
+                    },
+                ].map(({ id, name, crafted, enchanted }) => ({
+                    kind: "purchase" as const,
+                    id,
+                    name,
+                    item: structuredClone(purchase.item),
+                    price: null,
+                    sourcePreparation: { kind: "scour-v1" as const, crafted, enchanted },
+                })),
+            );
         }
     }
     const graph = projectFromItem(ruleset, base("Spine Bow"), preset.name);

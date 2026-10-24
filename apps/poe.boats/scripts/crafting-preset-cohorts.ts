@@ -78,11 +78,12 @@ export function craftingPresetCohorts(engine: CraftingEngine, ruleset: CraftingR
                 cohorts.set(id, {
                     id,
                     name: `${base.name}, ilvl ${item.level}, ${alternative.name}`,
-                    purpose: sourcePreparation
-                        ? "fracture"
-                        : item.mods.length
-                          ? "isolated-modifier"
-                          : "base",
+                    purpose:
+                        sourcePreparation?.kind === "fractured-fossil-v1"
+                            ? "fracture"
+                            : item.mods.length
+                              ? "isolated-modifier"
+                              : "base",
                     query,
                 });
             }
