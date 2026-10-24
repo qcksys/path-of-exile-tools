@@ -36,6 +36,23 @@ const classifier = compileMarketCohorts(
                     ],
                 },
             },
+            {
+                id: "prepared",
+                name: "Ordinary prepared item with unknown affix counts",
+                purpose: "isolated-modifier",
+                query: {
+                    game: "poe1",
+                    groups: [
+                        {
+                            type: "and",
+                            filters: [
+                                { kind: "base", field: "baseType", values: ["Conquest Lamellar"] },
+                                { kind: "range", field: "prefixes", value: { min: 1, max: 1 } },
+                            ],
+                        },
+                    ],
+                },
+            },
         ],
     }),
 );
@@ -48,6 +65,7 @@ const item = {
     frameType: 2,
     identified: true,
     verified: true,
+    explicitMods: ["Unresolved ordinary modifier"],
     w: 2,
     h: 3,
     icon: "https://example.invalid/private-icon",
@@ -109,12 +127,21 @@ it("stays disabled without a request, a status path, or a supported specific sco
 });
 
 it.each([
+    { cohortIds: ["prepared"] },
+    { cohortIds: ["source", "prepared"] },
+])("accepts current ordinary and mixed cohort requests: $cohortIds", async ({ cohortIds }) => {
+    await request({ cohortIds });
+    expect(await load()).toBeDefined();
+});
+
+it.each([
     { realm: "poe2" },
     { league: "Standard" },
     { expiresAt: "invalid" },
     { expiresAt: "2000-01-01T00:00:00Z" },
     { expiresAt: "2999-01-01T00:00:00Z" },
-    { cohortIds: ["not-a-source-cohort"] },
+    { cohortIds: ["missing-cohort"] },
+    { cohortIds: ["prepared", "missing-cohort"] },
     { cohortIds: Array.from({ length: 65 }, () => "source") },
 ])("ignores invalid diagnostic requests without exposing their contents: %j", async (value) => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -125,8 +152,11 @@ it.each([
     );
 });
 
-it("saves observations only after the same page commits its cursor", async () => {
-    await request();
+it.each([
+    "source",
+    "prepared",
+])("saves %s observations only after the same page commits its cursor", async (cohortId) => {
+    await request({ cohortIds: [cohortId] });
     const diagnostics = (await load())!;
     const db = await openDb(":memory:");
     const client = createClient({ userAgent: "diagnostic-test", token: "inert" });
@@ -145,6 +175,11 @@ it("saves observations only after the same page commits its cursor", async () =>
         });
         expect(flush).toHaveBeenCalledTimes(1);
         const saved = await readFile(join(directory, "equipment-diagnostics.json"), "utf8");
+        expect(
+            JSON.parse(saved).fixtures[0].targets.map(
+                (target: { cohortId: string }) => target.cohortId,
+            ),
+        ).toEqual([cohortId]);
         expect(saved).toContain("Conquest Lamellar");
         expect(saved).not.toContain("private-");
         expect(saved).not.toContain("220 divine");
@@ -153,8 +188,11 @@ it("saves observations only after the same page commits its cursor", async () =>
     }
 });
 
-it("discards the page's diagnostic samples when its transaction rolls back", async () => {
-    await request();
+it.each([
+    "source",
+    "prepared",
+])("discards the page's %s samples when its transaction rolls back", async (cohortId) => {
+    await request({ cohortIds: [cohortId] });
     const diagnostics = (await load())!;
     const collect = vi.spyOn(diagnostics, "collect");
     const flush = vi.spyOn(diagnostics, "flush");
@@ -171,7 +209,11 @@ it("discards the page's diagnostic samples when its transaction rolls back", asy
                 equipmentDiagnostics: diagnostics,
             }),
         ).rejects.toThrow("ps_checkpoint");
-        expect(collect).toHaveReturnedWith(expect.any(Object));
+        expect(collect).toHaveReturnedWith(
+            expect.objectContaining({
+                targets: [expect.objectContaining({ cohortId })],
+            }),
+        );
         expect(flush).not.toHaveBeenCalled();
         expect(await getCursor(db.conn, "psapi")).toBeUndefined();
         expect(await queryAll(db.conn, "SELECT * FROM ps_equipment_listing")).toEqual([]);

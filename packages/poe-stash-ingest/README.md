@@ -98,10 +98,10 @@ delivery is not reported as stalled while its receiver is accepting rows.
 
 ### Temporary equipment diagnostics
 
-To investigate unknown source-preparation matches without opening the live DuckDB file,
+To investigate unknown equipment cohort matches without opening the live DuckDB file,
 place `equipment-diagnostics.request.json` beside the worker's `INGEST_STATUS_FILE` before
 its next normal deployment. The processing command reads this optional request once at
-startup. It must name the exact worker realm and league, current source cohort IDs, and
+startup. It must name the exact worker realm and league, current cohort IDs, and
 an expiry no more than 24 hours away:
 
 ```json
@@ -110,12 +110,16 @@ an expiry no more than 24 hours away:
     "realm": "pc",
     "league": "Allflame",
     "expiresAt": "2026-10-25T12:00:00Z",
-    "cohortIds": ["replace-with-a-current-source-cohort-id"]
+    "cohortIds": ["replace-with-a-current-cohort-id"]
 }
 ```
 
 Use a future expiry and actual IDs from the active cohort manifest. Missing, expired,
 invalid or mismatched requests leave capture disabled; PoE 2 and all-league workers skip it.
+Ordinary prepared-item cohorts and source-preparation cohorts can share one request;
+unknown IDs reject the whole request. Source-preparation metadata is present in a fixture's
+target only when its cohort has that profile. Known matches and definite no-matches are
+not sampled.
 The owning process samples only newly observed target unknowns, then reclassifies sanitized
 items and requires identical complete matches and unknowns. It writes
 `equipment-diagnostics.json` in the same directory only after the page transaction commits.
@@ -125,10 +129,13 @@ Unsupported shapes and unknown active flag names are skipped rather than changed
 diagnostic samples do not establish that the corresponding items are absent from the market.
 
 The collector permits at most 64 verification attempts and 16 saved fixtures per process,
-with 16 KiB per fixture and 256 KiB total. It stops at expiry; write failures do not stop
-ingestion. Read only this output file for diagnosis and remove the request when the
-investigation ends. No additional database connection, cursor reset or credential resolution
-is needed. This debug facility does not change classification or public market APIs.
+with 16 KiB per fixture and 256 KiB total, shared across all requested cohort types. It stops
+at expiry; write failures do not stop ingestion. Read only this output file for diagnosis
+and remove the request when the investigation ends. No additional database connection,
+cursor reset or credential resolution is needed. This debug facility does not change
+classification or public market APIs.
+Stage the request before a normal deployment; editing it after startup does not reload it.
+Do not restart a worker solely to collect observations.
 
 To seed a recent cursor on an empty volume, stop the worker, then run a one-off command with
 the same host credentials (`varlock run` from this package directory):

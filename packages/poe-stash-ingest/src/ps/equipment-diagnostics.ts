@@ -62,7 +62,7 @@ export interface EquipmentDiagnosticFixture {
     modifierTextModelFormat: number | null;
     itemSha256: string;
     item: JsonObject;
-    targets: Array<{ cohortId: string; sourcePreparation: SourcePreparationProfile }>;
+    targets: Array<{ cohortId: string; sourcePreparation?: SourcePreparationProfile }>;
     classification: Classification;
 }
 
@@ -235,8 +235,10 @@ export function createEquipmentDiagnostics(options: {
         return undefined;
     const file = options.file;
     const targets = [...new Set(options.cohortIds)].sort().flatMap((cohortId) => {
-        const profile = options.classifier.definition(cohortId)?.query.sourcePreparation;
-        return profile ? [{ cohortId, sourcePreparation: profile }] : [];
+        const definition = options.classifier.definition(cohortId);
+        if (!definition) return [];
+        const sourcePreparation = definition.query.sourcePreparation;
+        return [{ cohortId, ...(sourcePreparation ? { sourcePreparation } : {}) }];
     });
     if (!targets.length) return undefined;
     const issued = new WeakMap<EquipmentDiagnosticFixture, { key: string; json: string }>();

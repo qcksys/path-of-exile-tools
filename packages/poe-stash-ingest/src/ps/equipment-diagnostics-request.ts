@@ -38,8 +38,8 @@ export async function loadEquipmentDiagnostics(opts: {
         if (!Number.isFinite(expiresAt) || expiresAt <= now || expiresAt > now + 86_400_000)
             throw new Error("Invalid expiry");
         const classifier = opts.classifier ?? (await defaultEquipmentClassifier());
-        if (request.cohortIds.some((id) => !classifier.definition(id)?.query.sourcePreparation))
-            throw new Error("Unknown source cohort");
+        if (request.cohortIds.some((id) => !classifier.definition(id)))
+            throw new Error("Unknown equipment cohort");
         return createEquipmentDiagnostics({
             file: join(directory, "equipment-diagnostics.json"),
             cohortIds: request.cohortIds,
