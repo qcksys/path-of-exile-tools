@@ -10,7 +10,8 @@
             "!apps/poe.boats/public/game-data/*.json",
             "!apps/poe.boats/crafting-history/engines",
             "!packages/poe-market/data",
-            "!apps/poe.boats/app/lib/crafting-runtimes.generated.ts"
+            "!apps/poe.boats/app/lib/crafting-runtimes.generated.ts",
+            "!.mcp.json"
         ]
     },
     "vcs": {
