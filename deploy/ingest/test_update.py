@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
+from urllib.error import HTTPError
 
 import update
 
@@ -97,7 +98,7 @@ class DeploymentTests(unittest.TestCase):
                     update.main()
         deploy.assert_not_called()
 
-    def verify_fixture(self, remote_success=True, image="sha256:config"):
+    def verify_fixture(self, remote_success=True, image="sha256:config", require_client_identity=False):
         reports = []
         for service in update.SERVICES:
             report = {"workerId": service, "startedAt": 200_000, "lastSuccessAt": 250_000, "reportedAt": 290_000, "state": "idle", "failedStages": []}
@@ -110,8 +111,15 @@ class DeploymentTests(unittest.TestCase):
                 return f"{image} 1970-01-01T00:03:20.000000000Z"
             return "container-id"
 
+        def receiver(request, **unused):
+            if require_client_identity:
+                agent = request.get_header("User-agent", "") if not isinstance(request, str) else ""
+                if not agent.startswith("poe.boats-ingest-deploy/"):
+                    raise HTTPError(update.STATUS_URL, 403, "Forbidden", {}, None)
+            return response
+
         with patch.object(update, "run", side_effect=inspect):
-            with patch.object(update, "urlopen", return_value=response):
+            with patch.object(update, "urlopen", side_effect=receiver):
                 with patch.object(update.time, "time", return_value=300):
                     with patch.object(update.time, "monotonic", side_effect=[0, 1, 601]):
                         with patch.object(update.time, "sleep"):
@@ -125,6 +133,9 @@ class DeploymentTests(unittest.TestCase):
     def test_wrong_running_image_cannot_pass_verification(self):
         with self.assertRaisesRegex(RuntimeError, "selected digest"):
             self.verify_fixture(image="sha256:old")
+
+    def test_receiver_request_identifies_the_deployment_monitor(self):
+        self.verify_fixture(require_client_identity=True)
 
 
 if __name__ == "__main__":
