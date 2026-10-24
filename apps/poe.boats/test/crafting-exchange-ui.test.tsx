@@ -14,6 +14,11 @@ import {
 vi.mock("~/components/item-art", () => ({
     ItemName: ({ name }: { name: string }) => <span>{name}</span>,
 }));
+vi.mock("~/components/currency-label", () => ({
+    CurrencyLabel: ({ currency, label }: { currency: string; label?: string }) => (
+        <>{label ?? currency}</>
+    ),
+}));
 
 afterEach(() => {
     cleanup();

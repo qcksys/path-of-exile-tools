@@ -2,7 +2,7 @@
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vite-plus/test";
 import { craftingProjectSchema } from "~/schemas/crafting";
-import { changeControl, expectControlValue } from "./control-helpers";
+import { byText, changeControl, expectControlValue } from "./control-helpers";
 import { baseId, catalog, engine } from "./crafting-fixtures";
 import { button, CraftingWorker, mount } from "./crafting-workbench-ui-fixtures";
 
@@ -589,7 +589,7 @@ describe("crafting workbench", () => {
         fireEvent.click(screen.getByText("Fossil optimizer"));
         const optimizer = within(screen.getByText("Fossil optimizer").closest("details")!);
         expect(optimizer.getByRole("note").textContent).toContain("Uses Allflame");
-        fireEvent.click(optimizer.getByText("Optimizer prices in chaos"));
+        fireEvent.click(optimizer.getByText(byText("Optimizer prices in chaos")));
         changeControl(optimizer.getByLabelText("Dead Man's Sulphur"), {
             target: { value: "0.01" },
         });

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
+import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -1146,7 +1147,14 @@ export function CraftingWorkbench({
                                                         </dd>
                                                     </div>
                                                     <div className="flex justify-between gap-2">
-                                                        <dt>Starting item spending (chaos)</dt>
+                                                        <dt>
+                                                            Starting item spending (
+                                                            <CurrencyLabel
+                                                                currency="chaos"
+                                                                game={engine.catalog.game}
+                                                            />
+                                                            )
+                                                        </dt>
                                                         <dd className="font-mono">
                                                             {(
                                                                 history[cursor]!.baseItems *
@@ -1614,13 +1622,22 @@ export function CraftingWorkbench({
                                 </section>
                                 <details className="rounded-lg border border-border bg-card p-4">
                                     <summary className="cursor-pointer text-sm font-medium">
-                                        Custom prices in chaos
+                                        Custom prices in{" "}
+                                        <CurrencyLabel
+                                            currency="chaos"
+                                            game={engine.catalog.game}
+                                        />
                                     </summary>
                                     <div className="mt-3 space-y-3">
                                         {useProcess ? (
                                             <Field>
                                                 <FieldLabel htmlFor="crafting-base-cost">
-                                                    Starting item cost (chaos)
+                                                    Starting item cost (
+                                                    <CurrencyLabel
+                                                        currency="chaos"
+                                                        game={engine.catalog.game}
+                                                    />
+                                                    )
                                                 </FieldLabel>
                                                 <Input
                                                     id="crafting-base-cost"
