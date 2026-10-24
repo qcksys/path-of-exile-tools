@@ -33,12 +33,24 @@ for (const { donor, chance, warning } of [
             /\(of Nullification, ilvl 86\)$/,
         );
         await select(page, "Step 1 input B preparation", "Prepare an essence NNN donor");
-        await choose(
-            page,
-            "Step 1 input B preparation recipe",
-            "Screaming Essence of Rage",
-            "Screaming Essence of Rage · Suffix: +(33-37) to Strength",
+        const recipe = page.getByRole("combobox", {
+            name: "Step 1 input B preparation recipe",
+            exact: true,
+        });
+        const recipeLabel = "Screaming Essence of Rage · Suffix: +(33-37) to Strength";
+        await recipe.fill("Screaming Essence of Rage");
+        await recipe.press("ArrowDown");
+        const listbox = page.getByRole("listbox");
+        const option = listbox.getByRole("option", { name: recipeLabel, exact: true });
+        await expect(option).toHaveAttribute(
+            "data-value",
+            "Metadata/Items/Currency/CurrencyEssenceRage3:BodyArmour",
         );
+        await expect(option).toHaveAttribute("data-highlighted", "");
+        await recipe.press("Enter");
+        await expect(recipe).toHaveValue(recipeLabel);
+        await expect(recipe).toHaveAttribute("aria-expanded", "false");
+        await expect(listbox).toHaveCount(0);
         await expect(page.getByText(warning, { exact: false })).toBeVisible();
         await page.getByRole("button", { name: "Calculate plan", exact: true }).click();
         await page.getByRole("checkbox", { name: /\(of Nullification,/ }).check();
