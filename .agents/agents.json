@@ -1,0 +1,26 @@
+{
+    "schemaVersion": 4,
+    "instructions": {
+        "path": "AGENTS.md"
+    },
+    "integrations": {
+        "enabled": ["codex", "claude"],
+        "options": {
+            "claudeScope": "project"
+        }
+    },
+    "syncMode": "source-only",
+    "mcp": {
+        "servers": {
+            "planetscale": {
+                "transport": "http",
+                "url": "https://mcp.pscale.dev/mcp/planetscale"
+            }
+        }
+    },
+    "workspace": {
+        "vscode": {
+            "hideGenerated": false
+        }
+    }
+}

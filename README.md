@@ -130,6 +130,19 @@ vp run poe-boats#test:e2e:browser
 
 Playwright builds and previews the app on `127.0.0.1:4173` using the inert test environment and checks the generated recipes with the real calculation worker. The tests cover physical axes with essence or bench preparation, suppression transfers, triple ES body armour, triple elemental bows, life/resistance crafts, and multi-step plans. See the [craft coverage and expected probabilities](apps/poe.boats/test/e2e/browser/README.md) for research sources and model assumptions. CI runs the same Chromium suite. Failure screenshots and traces are saved under `apps/poe.boats/test-results/` and uploaded as the `browser-test-results` CI artifact for seven days.
 
+## Agent configuration
+
+[agents](https://github.com/amtiYo/agents) manages repository MCP configuration from `.agents/agents.json`. PlanetScale is enabled for Codex and Claude Code. Dependency installation runs the sync automatically; after editing the shared configuration, run:
+
+```sh
+vp run agents:sync
+vp run agents:check
+```
+
+Sync generates `.codex/config.toml` and `.mcp.json` locally. These files, `.agents/generated/`, and optional secrets in `.agents/local.json` are gitignored. Commit `.agents/agents.json` as the shared MCP source. Keep repository instructions in `AGENTS.md`; the root `CLAUDE.md` imports it.
+
+Restart the client's MCP servers after syncing and complete PlanetScale authentication when prompted.
+
 ## Local game data
 
 The [game-data pipeline guide](packages/poe-game-data/README.md) covers GGPK, local bundles, and patch-CDN extraction for both games, repeatable snapshots, and comparison with PoEDB and Craft of Exile. The [research report](docs/research/poe-game-data-extraction.md) explains the formats and website provenance.
