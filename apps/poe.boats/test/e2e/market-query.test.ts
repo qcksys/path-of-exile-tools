@@ -194,3 +194,148 @@ it("keeps stable sales ordering and page boundaries when fetching full records",
     expect(first.hasMore).toBe(true);
     expect(second.hasMore).toBe(false);
 });
+
+it("filters categories and variant state before pagination and searches base types", async () => {
+    await db.insert(market).values([
+        ...Array.from({ length: 60 }, (_, index) =>
+            observation({ league: "Categories", itemKey: `Belt ${index}`, likelySales: 100 }),
+        ),
+        observation({
+            league: "Categories",
+            itemKey: "Abberath's Hooves",
+            name: "Abberath's Hooves",
+            baseType: "Goathide Boots",
+        }),
+        observation({
+            league: "Categories",
+            itemKey: "Unidentified boots",
+            baseType: "Goathide Boots",
+            identified: false,
+        }),
+        observation({
+            league: "Categories",
+            itemKey: "Corrupted boots",
+            baseType: "Goathide Boots",
+            corrupted: true,
+        }),
+        observation({
+            league: "Categories",
+            itemKey: "Rare boots",
+            baseType: "Goathide Boots",
+            frameType: 2,
+        }),
+        observation({ league: "Categories", itemKey: "Unknown", baseType: "Future base" }),
+    ]);
+    const filters = marketFiltersSchema.parse({
+        league: "Categories",
+        category: "armour",
+        rarity: "unique",
+        identification: "true",
+        corruption: "false",
+        q: "Goathide",
+    });
+    const result = await getMarketData(db as unknown as TDatabase, filters);
+    expect(result.rows.map((row) => [row.itemKey, row.category])).toEqual([
+        ["Abberath's Hooves", "armour"],
+    ]);
+    expect(result.hasMore).toBe(false);
+    const other = await getMarketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "Categories", category: "other" }),
+    );
+    expect(other.rows.map((row) => row.itemKey)).toEqual(["Unknown"]);
+});
+
+it("sorts the latest asking price in the selected currency across page boundaries, with missing prices last", async () => {
+    await db.insert(market).values([
+        ...Array.from({ length: 55 }, (_, index) =>
+            observation({
+                league: "Prices",
+                itemKey: `Item ${String(index).padStart(2, "0")}`,
+                prices: { divine: { count: 1, min: index + 1, median: index + 1, max: index + 1 } },
+            }),
+        ),
+        observation({
+            league: "Prices",
+            itemKey: "Item 00",
+            hour: hour - 3600,
+            prices: { divine: { count: 1, min: 999, median: 999, max: 999 } },
+        }),
+        observation({
+            league: "Prices",
+            itemKey: "Fraction",
+            prices: { divine: { count: 1, min: 0.0002, median: 0.0002, max: 0.0002 } },
+        }),
+        observation({
+            league: "Prices",
+            itemKey: "Chaos only",
+            prices: { chaos: { count: 1, min: 1, median: 1, max: 1 } },
+        }),
+        observation({ league: "Prices", itemKey: "Unpriced" }),
+    ]);
+    const filters = marketFiltersSchema.parse({ league: "Prices", order: "price-asc" });
+    const first = await getMarketData(db as unknown as TDatabase, filters);
+    const second = await getMarketData(db as unknown as TDatabase, { ...filters, page: 2 });
+    expect(first.rows[0]?.itemKey).toBe("Fraction");
+    expect(first.rows[1]?.prices?.divine?.median).toBe(1);
+    expect(first.rows.at(-1)?.itemKey).toBe("Item 48");
+    expect(second.rows.map((row) => row.itemKey)).toEqual([
+        "Item 49",
+        "Item 50",
+        "Item 51",
+        "Item 52",
+        "Item 53",
+        "Item 54",
+        "Chaos only",
+        "Unpriced",
+    ]);
+    const descending = await getMarketData(db as unknown as TDatabase, {
+        ...filters,
+        order: "price-desc",
+    });
+    expect(descending.rows[0]?.itemKey).toBe("Item 54");
+    const chaos = await getMarketData(db as unknown as TDatabase, {
+        ...filters,
+        currency: "chaos",
+    });
+    expect(chaos.rows[0]?.itemKey).toBe("Chaos only");
+});
+
+it("keeps item history independent of browsing filters and skips the list query for detail routes", async () => {
+    statements.length = 0;
+    const result = await getMarketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({
+            league: "Current",
+            item: "Item 0",
+            category: "weapons",
+            q: "not a match",
+            corruption: "true",
+        }),
+        "history",
+    );
+    expect(result.history).toHaveLength(20);
+    expect(result.rows).toEqual([]);
+    expect(statements).toHaveLength(2);
+});
+
+it("orders names in both directions and uses the latest observation for recency", async () => {
+    await db
+        .insert(market)
+        .values([
+            observation({ league: "Ordering", itemKey: "Alpha", hour: hour - 3600 }),
+            observation({ league: "Ordering", itemKey: "Beta", hour: hour - 7200 }),
+            observation({ league: "Ordering", itemKey: "Gamma", hour }),
+        ]);
+    for (const [order, expected] of [
+        ["name-asc", ["Alpha", "Beta", "Gamma"]],
+        ["name-desc", ["Gamma", "Beta", "Alpha"]],
+        ["newest", ["Gamma", "Alpha", "Beta"]],
+    ] as const) {
+        const result = await getMarketData(
+            db as unknown as TDatabase,
+            marketFiltersSchema.parse({ league: "Ordering", order }),
+        );
+        expect(result.rows.map((row) => row.itemKey)).toEqual(expected);
+    }
+});

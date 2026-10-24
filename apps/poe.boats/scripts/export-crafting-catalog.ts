@@ -16,6 +16,7 @@ import { heistEnchantmentKind } from "../app/lib/crafting-heist";
 import { supportedStrongbox } from "../app/lib/crafting-strongboxes";
 import { cleanModText } from "../app/lib/crafting-text";
 import { itemArtUrl, itemPresentationsSchema } from "../app/lib/item-presentation";
+import { marketBaseCategory } from "../app/lib/market-categories";
 import {
     type CraftingBase,
     craftingBaseSchema,
@@ -75,6 +76,16 @@ export async function exportCraftingCatalog(directory: string, output: string) {
         ),
     );
     await mkdir(dirname(output), { recursive: true });
+    await writeFile(
+        resolve(dirname(output), `market-categories-${manifest.game}.json`),
+        `${JSON.stringify(
+            Object.fromEntries(
+                Object.values(bases)
+                    .filter((base) => base.name)
+                    .map((base) => [base.name, marketBaseCategory(base.name, base.item_class)]),
+            ),
+        )}\n`,
+    );
     await writeFile(
         resolve(dirname(output), `items-${manifest.game}.json`),
         `${JSON.stringify(presentations)}\n`,

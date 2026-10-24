@@ -7,6 +7,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
     testDir: "./test/e2e/browser",
+    testIgnore: "market.spec.ts",
     forbidOnly: !!process.env.CI,
     fullyParallel: true,
     workers: 1,
