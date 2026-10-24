@@ -3,7 +3,8 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { afterEach, expect, it, vi } from "vite-plus/test";
-import Market from "~/routes/market";
+import MarketIndex from "~/routes/market/index";
+import MarketItem from "~/routes/market/item";
 import { marketFiltersSchema } from "~/schemas/market";
 
 vi.mock("~/components/app-header", () => ({ AppHeader: () => null }));
@@ -13,6 +14,7 @@ afterEach(cleanup);
 function showMarket(
     realm: "pc" | "poe2",
     iconAsset: string | null = "2DItems/Armours/BodyArmours/Unique",
+    view: "list" | "history" = "list",
 ) {
     const row = {
         realm,
@@ -43,45 +45,67 @@ function showMarket(
         rowUpdatedAt: new Date(),
         rowDeletedAt: null,
     };
-    const loaderData: Parameters<typeof Market>[0]["loaderData"] = {
+    const loaderData: Parameters<typeof MarketIndex>[0]["loaderData"] = {
         filters: marketFiltersSchema.parse({ realm, league: "Standard", item: row.itemKey }),
         seasons: [],
         season: undefined,
         hasMore: false,
-        rows: [{ ...row, rank: 1, periodSales: 2, periodRemovals: 2, periodPending: 0 }],
+        rows: [
+            {
+                ...row,
+                category: "armour",
+                rank: 1,
+                periodSales: 2,
+                periodRemovals: 2,
+                periodPending: 0,
+            },
+        ],
         history: [row],
     };
     const Routes = createRoutesStub([
-        { path: "/", Component: () => <Market loaderData={loaderData} /> },
+        {
+            path: "/",
+            Component: () =>
+                view === "list" ? (
+                    <MarketIndex loaderData={loaderData} />
+                ) : (
+                    <MarketItem loaderData={loaderData} />
+                ),
+        },
     ]);
     return render(<Routes />);
 }
 
 it.each([
-    "pc",
-    "poe2",
-] as const)("uses captured unique artwork in %s rows and history without duplicating accessible names", (realm) => {
-    const { container } = showMarket(realm);
+    ["pc", "list"],
+    ["poe2", "list"],
+    ["pc", "history"],
+    ["poe2", "history"],
+] as const)("uses captured unique artwork in %s %s without duplicating accessible names", (realm, view) => {
+    const { container } = showMarket(realm, undefined, view);
     const images = [
         ...container.querySelectorAll<HTMLImageElement>('[data-item-art="Unique armour"] img'),
     ];
-    expect(images).toHaveLength(2);
+    expect(images).toHaveLength(1);
     expect(images.map((image) => image.src)).toEqual(
-        Array(2).fill(
+        Array(1).fill(
             realm === "poe2"
                 ? "https://cdn.poe2db.tw/image/Art/2DItems/Armours/BodyArmours/Unique.webp"
                 : "https://www.pathofexile.com/image/Art/2DItems/Armours/BodyArmours/Unique.png",
         ),
     );
-    expect(screen.getByRole("link", { name: "Unique armour" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Unique armour" })).toBeTruthy();
+    expect(
+        screen.getByRole(view === "list" ? "link" : "heading", { name: "Unique armour" }),
+    ).toBeTruthy();
     fireEvent.error(images[0]!);
-    expect(screen.getByRole("heading", { name: "Unique armour" })).toBeTruthy();
+    expect(
+        screen.getByRole(view === "list" ? "link" : "heading", { name: "Unique armour" }),
+    ).toBeTruthy();
 });
 
 it("keeps market identity visible when a captured icon is missing", () => {
     const { container } = showMarket("pc", null);
-    expect(container.querySelectorAll('[data-item-art="Unique armour"]')).toHaveLength(2);
+    expect(container.querySelectorAll('[data-item-art="Unique armour"]')).toHaveLength(1);
     expect(container.querySelectorAll('[data-item-art="Unique armour"] img')).toHaveLength(0);
     expect(screen.getByRole("link", { name: "Unique armour" })).toBeTruthy();
 });

@@ -14,6 +14,7 @@ import { SCARABS } from "~/data/scarab-data";
 import { createDbConnection } from "~/db/client";
 import * as craftingExchangeQueries from "~/db/queries/crafting-exchange.queries";
 import * as craftingMarketQueries from "~/db/queries/crafting-market.queries";
+import * as marketQueries from "~/db/queries/market.queries";
 import { calculateRecipeScenario } from "~/lib/arbitrage";
 import { CraftingEngine, seededRandom } from "~/lib/crafting-engine";
 import { bindExchangePrice } from "~/lib/crafting-exchange";
@@ -92,6 +93,7 @@ import {
     workbenchProject,
 } from "./crafting-workbench-fixtures";
 import { catalogFixture } from "./fixtures/recombinator-catalog";
+import { marketFixture } from "./market-fixtures";
 
 vi.mock("~/services/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
@@ -2496,4 +2498,56 @@ describe("planner shared operations", () => {
             "Keep at least one set",
         );
     });
+});
+
+it("shares market categories, search, ordering and filters across HTTP and MCP", async () => {
+    const input = {
+        league: "Allflame",
+        category: "armour",
+        order: "price-asc",
+        rarity: "unique",
+        identification: "true",
+        corruption: "false",
+        q: "Goathide",
+        currency: "chaos",
+        page: 2,
+    };
+    const fixture = marketFixture(input);
+    const query = vi.spyOn(marketQueries, "getMarketData").mockResolvedValue(fixture);
+    try {
+        const queryString = new URLSearchParams(
+            Object.entries(input).map(([key, value]) => [key, String(value)]),
+        );
+        const response = await api.request(
+            `https://poe.boats/api/v1/market?${queryString}`,
+            {},
+            { runtime },
+        );
+        expect(response.status).toBe(200);
+        const expected = JSON.parse(JSON.stringify(fixture));
+        expect(await response.json()).toEqual(expected);
+        const rpc = RpcSchema.parse(
+            await (await mcp("tools/call", { name: "get_season_market", arguments: input })).json(),
+        );
+        expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(expected);
+        expect(query).toHaveBeenLastCalledWith(context.db, expect.objectContaining(input));
+        const invalid = await api.request(
+            "https://poe.boats/api/v1/market?category=invalid",
+            {},
+            { runtime },
+        );
+        expect(invalid.status).toBe(400);
+        const invalidRpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", {
+                    name: "get_season_market",
+                    arguments: { order: "invalid" },
+                })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(invalidRpc.result).isError).toBe(true);
+        expect(query).toHaveBeenCalledTimes(2);
+    } finally {
+        query.mockRestore();
+    }
 });

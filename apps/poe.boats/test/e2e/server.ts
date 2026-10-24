@@ -5,6 +5,10 @@ import { execSyncVarlock } from "varlock/exec-sync-varlock";
 import { unstable_startWorker } from "wrangler";
 
 const fixtures = parseEnv(await readFile(new URL("../../.env.test", import.meta.url), "utf8"));
+if (process.env.PLAYWRIGHT_MARKET_DATABASE_URL) {
+    fixtures.DATABASE_URL = process.env.PLAYWRIGHT_MARKET_DATABASE_URL;
+    fixtures.DATABASE_DRIVER = "mysql";
+}
 const { stdout } = execSyncVarlock("load --format json-full --compact", {
     fullResult: true,
     env: { ...process.env, ...fixtures, APP_ENV: "test", OP_SERVICE_ACCOUNT_TOKEN: "" },

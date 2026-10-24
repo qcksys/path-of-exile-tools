@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getMarketData } from "~/db/queries/market.queries";
 import { sStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
 import { ArbitrageGameSchema, MarketSnapshotSchema, VendorRecipeSchema } from "~/schemas/arbitrage";
-import { marketFiltersSchema } from "~/schemas/market";
+import { marketCategorySchema, marketFiltersSchema } from "~/schemas/market";
 import { recombinatorCatalogSchema } from "~/schemas/recombinator-catalog";
 import { ScarabPricesDataSchema } from "~/schemas/scarab";
 import { SharedSetSchema } from "~/schemas/share";
@@ -240,6 +240,7 @@ export const operations = [
             season: season.optional(),
             rows: z.array(
                 marketRow.extend({
+                    category: marketCategorySchema,
                     rank: z.coerce.number(),
                     periodSales: z.number(),
                     periodRemovals: z.number(),
