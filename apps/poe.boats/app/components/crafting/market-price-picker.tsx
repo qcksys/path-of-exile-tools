@@ -1,4 +1,4 @@
-import type { FracturedFossilSourcePreparation, ItemQuery } from "@poe-tools/item-query";
+import type { ItemQuery, SourcePreparationProfile } from "@poe-tools/item-query";
 import { decodeCohortPriceReference } from "@poe-tools/market";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
@@ -33,7 +33,7 @@ export function MarketPricePicker({
     engine: CraftingEngine;
     item: CraftingItem;
     requirements: ItemQuery;
-    sourcePreparation?: FracturedFossilSourcePreparation;
+    sourcePreparation?: SourcePreparationProfile;
     league?: string;
     currency: string;
     price: CraftingPrice | null;
@@ -157,9 +157,11 @@ export function MarketPricePicker({
             <summary className="cursor-pointer font-medium">Equipment market price</summary>
             <div className="mt-3 space-y-3">
                 <p className="text-muted-foreground">
-                    {sourcePreparation
-                        ? "This price buys a fractured source requiring preparation. Its extra affixes and Eldritch implicits are replaced. Cleanup, the first fossil roll and Eldritch currencies are charged separately by the acquisition. "
-                        : "Choose a cohort that covers the configured item. Include any scouring, identification or other preparation in your process. "}
+                    {sourcePreparation?.kind === "scour-v1"
+                        ? "This price buys a Magic or Rare source requiring Scouring. Its explicit modifiers are removed; its base, item level, influences and native implicits are preserved. Required craft and enchantment removal, followed by one Orb of Scouring, are charged separately by the acquisition. "
+                        : sourcePreparation
+                          ? "This price buys a fractured source requiring preparation. Its extra affixes and Eldritch implicits are replaced. Cleanup, the first fossil roll and Eldritch currencies are charged separately by the acquisition. "
+                          : "Choose a cohort that covers the configured item. Include any scouring, identification or other preparation in your process. "}
                     These are asking-price estimates, not completed sales.
                 </p>
                 <div className="grid grid-cols-2 gap-2">

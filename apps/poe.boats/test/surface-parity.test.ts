@@ -76,7 +76,7 @@ import {
 } from "./crafting-market-fixtures";
 import { nnnGraph } from "./crafting-nnn-fixtures";
 import { yellowBeastComponent } from "./crafting-source-fixtures";
-import { sourceMarketFixture } from "./crafting-source-market-fixtures";
+import { scouringMarketFixture, sourceMarketFixture } from "./crafting-source-market-fixtures";
 import {
     vendorCurrencyInputId,
     vendorCurrencyOutputId,
@@ -168,9 +168,19 @@ const cohortPolicies = [
     "chrome",
     "canonical-base",
     "fractured-fossil-v1",
+    "scour-v1",
 ] as const;
 
 function cohortPricingFixture(policy: (typeof cohortPolicies)[number]) {
+    if (policy === "scour-v1") {
+        const ruleset = historyIndex.revisions.find(
+            (entry) => entry.game === "poe1" && entry.revision === "r12",
+        )!;
+        return {
+            ...scouringMarketFixture(true, true, rulesetReference(ruleset)),
+            window: undefined,
+        };
+    }
     if (policy === "fractured-fossil-v1") {
         const ruleset = historyIndex.revisions.find(
             (entry) => entry.game === "poe1" && entry.revision === "r11",

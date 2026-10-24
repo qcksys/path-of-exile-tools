@@ -81,7 +81,9 @@ describe("intrinsic fractured-source market bindings", () => {
 
     it("refuses source binding with an unavailable preparation method", () => {
         const { graph, candidate } = fixture();
-        purchase(graph).alternative.sourcePreparation!.fossils.ids = ["missing-fossil"];
+        const source = purchase(graph).alternative.sourcePreparation;
+        if (source?.kind !== "fractured-fossil-v1") throw new Error("Missing fossil source.");
+        source.fossils.ids = ["missing-fossil"];
         expect(() => bindCohortPurchasePrice(graph, engine, "base", "buy", candidate)).toThrow();
     });
 

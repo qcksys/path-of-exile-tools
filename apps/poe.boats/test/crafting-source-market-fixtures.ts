@@ -96,3 +96,32 @@ export function sourceMarketFixture(
     });
     return { graph, candidate, profile };
 }
+
+export function scouringMarketFixture(
+    crafted = true,
+    enchanted = true,
+    ruleset?: CraftingGraph["ruleset"],
+) {
+    const graph = marketGraph();
+    graph.ruleset = ruleset ?? { ...graph.ruleset, engine: "crafting-graph-12", revision: "r12" };
+    const { node, alternative } = sourceMarketPurchase(graph);
+    const baseId = "Metadata/Items/Armours/Helmets/HelmetInt11";
+    alternative.item = engine.createItem(baseId, 86);
+    alternative.sourcePreparation = { kind: "scour-v1", crafted, enchanted };
+    const profile = purchaseSourceProfile(alternative)!;
+    const candidate = structuredClone(marketCandidate);
+    candidate.sourcePreparation = profile;
+    candidate.definition.id = candidate.latest.cohortId = `source:hubris:${crafted}:${enchanted}`;
+    candidate.definition.query.sourcePreparation = profile;
+    candidate.definition.query.groups[0]!.filters =
+        candidate.definition.query.groups[0]!.filters.map((filter) =>
+            filter.kind === "base" ? { ...filter, values: ["Hubris Circlet"] } : filter,
+        );
+    candidate.definition.query.groups[0]!.filters.push({
+        kind: "base",
+        field: "baseId",
+        values: [baseId],
+    });
+    graph.outcomes[0]!.query = node.output;
+    return { graph, candidate, profile };
+}

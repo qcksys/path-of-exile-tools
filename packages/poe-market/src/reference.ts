@@ -8,7 +8,7 @@ export const cohortPriceReferenceSchema = z.strictObject({
     cohortId: z.string().min(1).max(128),
     window: z.literal("adaptive-v1").optional(),
     assumption: z.literal("display-equivalent-v1").optional(),
-    sourcePreparation: fracturedFossilSourcePreparationSchema.optional(),
+    sourcePreparation: sourcePreparationProfileSchema.optional(),
     conversion: z.literal("exchange-v1").optional(),
     exchange: z
         .strictObject({
@@ -33,4 +33,4 @@ export function decodeCohortPriceReference(value: string | undefined): CohortPri
     }
 }
 
-import { fracturedFossilSourcePreparationSchema } from "@poe-tools/item-query";
+import { sourcePreparationProfileSchema } from "@poe-tools/item-query";

@@ -1,4 +1,8 @@
-import { fracturedFossilSourcePreparationSchema, itemQuerySchema } from "@poe-tools/item-query";
+import {
+    fracturedFossilSourcePreparationSchema,
+    itemQuerySchema,
+    scourSourcePreparationSchema,
+} from "@poe-tools/item-query";
 import { z } from "zod";
 import { craftingItemSchema, craftingMethodSchema, fossilMethodSchema } from "./crafting";
 import { acquisitionChoiceSchema, craftingPriceSchema } from "./crafting-economy";
@@ -39,8 +43,11 @@ export const graphPurchaseSchema = z.strictObject({
     name,
     item: craftingItemSchema,
     price: craftingPriceSchema.nullable(),
-    sourcePreparation: fracturedFossilSourcePreparationSchema
-        .extend({ fossils: fossilMethodSchema })
+    sourcePreparation: z
+        .discriminatedUnion("kind", [
+            fracturedFossilSourcePreparationSchema.extend({ fossils: fossilMethodSchema }),
+            scourSourcePreparationSchema,
+        ])
         .optional(),
 });
 export const graphProductionSchema = z.strictObject({

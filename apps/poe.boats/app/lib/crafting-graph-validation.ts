@@ -9,9 +9,10 @@ import {
     purchaseSourceProfile,
     validateSourcePreparation,
     validateSourcePreparationOutput,
+    validateSourcePreparationRevision,
 } from "./crafting-source-preparation";
 
-export const CRAFTING_GRAPH_ENGINE = "crafting-graph-11";
+export const CRAFTING_GRAPH_ENGINE = "crafting-graph-12";
 
 export function graphInputCount(catalog: CraftingCatalog, method: CraftingMethod) {
     return method.kind === "recombine" ||
@@ -133,11 +134,10 @@ export function validateCraftingGraph(catalog: CraftingCatalog, input: unknown):
                         throw new Error(
                             "The saved purchase price uses a different source preparation; rebind it or enter a manual price.",
                         );
-                    if (
-                        alternative.sourcePreparation &&
-                        graph.ruleset.engine !== "crafting-graph-11"
-                    )
-                        throw new Error("Source preparation requires crafting engine 11.");
+                    validateSourcePreparationRevision(
+                        graph.ruleset.engine,
+                        alternative.sourcePreparation,
+                    );
                     validateSourcePreparation(engine, alternative);
                     validateSourcePreparationOutput(alternative, node.output);
                     engine.validateItem(alternative.item);

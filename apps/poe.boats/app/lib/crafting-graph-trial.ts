@@ -373,8 +373,9 @@ export class CraftingGraphTrial {
                     const preferences = [...this.nodes.values()].flatMap((consumer) =>
                         consumer.kind === "craft" &&
                         consumer.method.kind === "fossils" &&
+                        alternative.sourcePreparation?.kind === "fractured-fossil-v1" &&
                         JSON.stringify(consumer.method) ===
-                            JSON.stringify(alternative.sourcePreparation?.fossils) &&
+                            JSON.stringify(alternative.sourcePreparation.fossils) &&
                         consumer.inputs.some((input) => input.source === node.id)
                             ? orderCraftingBranches(this.branches(consumer), consumer.ordering).map(
                                   (branch) => branch.query,

@@ -7,7 +7,10 @@ import {
     craftingRulesetIndexSchema,
     craftingRulesetRefSchema,
 } from "../schemas/crafting-rulesets";
-import { sourcePreparationMethodList } from "./crafting-source-preparation";
+import {
+    sourcePreparationMethodList,
+    validateSourcePreparationRevision,
+} from "./crafting-source-preparation";
 
 export const CRAFTING_RULESET_INDEX_URL = "/game-data/history/index.json";
 export const craftingCatalogUrl = (ruleset: CraftingRuleset) =>
@@ -83,6 +86,7 @@ export function rulesetAllowsConditionalSteps(ruleset: Pick<CraftingRuleset, "en
         "crafting-graph-9",
         "crafting-graph-10",
         "crafting-graph-11",
+        "crafting-graph-12",
     ].includes(ruleset.engine);
 }
 
@@ -93,6 +97,7 @@ export function rulesetAllowsSimpleCraft(ruleset: Pick<CraftingRuleset, "engine"
         "crafting-graph-9",
         "crafting-graph-10",
         "crafting-graph-11",
+        "crafting-graph-12",
     ].includes(ruleset.engine);
 }
 
@@ -102,11 +107,17 @@ export function rulesetAllowsScopedCraftPrices(ruleset: Pick<CraftingRuleset, "e
         "crafting-graph-9",
         "crafting-graph-10",
         "crafting-graph-11",
+        "crafting-graph-12",
     ].includes(ruleset.engine);
 }
 
 export function rulesetAllowsPresetPreparation(ruleset: Pick<CraftingRuleset, "engine">) {
-    return ["crafting-graph-9", "crafting-graph-10", "crafting-graph-11"].includes(ruleset.engine);
+    return [
+        "crafting-graph-9",
+        "crafting-graph-10",
+        "crafting-graph-11",
+        "crafting-graph-12",
+    ].includes(ruleset.engine);
 }
 
 export function validateRulesetGraph(ruleset: CraftingRuleset, input: unknown) {
@@ -118,14 +129,13 @@ export function validateRulesetGraph(ruleset: CraftingRuleset, input: unknown) {
     )
         throw new Error("Per-step prices require a revision with scoped crafting prices.");
     for (const node of graph.nodes) {
-        if (
-            node.kind === "acquire" &&
-            node.alternatives.some(
-                (alternative) => alternative.kind === "purchase" && alternative.sourcePreparation,
-            ) &&
-            ruleset.engine !== "crafting-graph-11"
-        )
-            throw new Error("Source preparation requires crafting engine 11.");
+        if (node.kind === "acquire")
+            for (const alternative of node.alternatives)
+                if (alternative.kind === "purchase")
+                    validateSourcePreparationRevision(
+                        ruleset.engine,
+                        alternative.sourcePreparation,
+                    );
         if (
             node.kind === "acquire" &&
             node.alternatives.some(

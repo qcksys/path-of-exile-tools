@@ -17,6 +17,7 @@ import {
     purchaseSourceProfile,
     validateSourcePreparation,
     validateSourcePreparationOutput,
+    validateSourcePreparationRevision,
 } from "./crafting-source-preparation";
 
 export function selectCraftingMarketPrice(candidate: CraftingMarketCandidate, currency: string) {
@@ -134,8 +135,7 @@ export function bindCohortPurchasePrice(
     if (itemIssue) throw new Error(itemIssue);
     const { definition, latest } = candidate;
     const sourcePreparation = purchaseSourceProfile(alternative);
-    if (sourcePreparation && graph.ruleset.engine !== "crafting-graph-11")
-        throw new Error("Source preparation requires crafting engine 11.");
+    validateSourcePreparationRevision(graph.ruleset.engine, sourcePreparation);
     validateSourcePreparation(engine, alternative);
     validateSourcePreparationOutput(alternative, node.output);
     if (!sameSourcePreparation(sourcePreparation, candidate.sourcePreparation))
