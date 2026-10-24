@@ -1,7 +1,7 @@
 import type { Item } from "@poe-tools/api-client";
-import { index, integer, primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, real, snakeCase, text } from "drizzle-orm/sqlite-core";
 
-export const tListing = sqliteTable(
+export const tListing = snakeCase.table(
     "listing",
     {
         accountName: text().notNull(),
@@ -35,7 +35,7 @@ export const tListing = sqliteTable(
 // observed in the stream; used to resolve unidentified drops that share a
 // baseType with many different uniques (e.g. Cobalt Jewel → Forbidden Flesh
 // vs That Which Was Taken vs Uber Cortex).
-export const tIconBasemap = sqliteTable("icon_basemap", {
+export const tIconBasemap = snakeCase.table("icon_basemap", {
     iconAsset: text().primaryKey(),
     name: text().notNull(),
     baseType: text().notNull(),
@@ -44,7 +44,7 @@ export const tIconBasemap = sqliteTable("icon_basemap", {
     lastSeenAt: integer({ mode: "timestamp_ms" }).notNull(),
 });
 
-export const tCurrencyRate = sqliteTable(
+export const tCurrencyRate = snakeCase.table(
     "currency_rate",
     {
         league: text().notNull(),
@@ -59,7 +59,7 @@ export const tCurrencyRate = sqliteTable(
     (t) => [primaryKey({ columns: [t.league, t.marketId, t.observedHour] })],
 );
 
-export const tStreamCursor = sqliteTable("stream_cursor", {
+export const tStreamCursor = snakeCase.table("stream_cursor", {
     streamName: text().primaryKey(),
     cursor: text().notNull(),
     updatedAt: integer({ mode: "timestamp_ms" }).notNull(),
