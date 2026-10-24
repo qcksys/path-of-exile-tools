@@ -22,6 +22,7 @@ const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r12",
 )!;
 const ruleset = { ...prior, revision: "r13", engine: "crafting-graph-13" };
+const current = { ...prior, revision: "r14", engine: "crafting-graph-14" };
 const scour = currency("convert_to_normal").id;
 const transmute = currency("transmute_to_magic");
 const targets = [
@@ -46,7 +47,7 @@ const partitions = [
 ] as const;
 
 function fixture(target: (typeof targets)[number], id: string = partitions[3].id) {
-    const graph = projectFromPreset(engine, ruleset, target.preset);
+    const graph = projectFromPreset(engine, current, target.preset);
     const node = graph.nodes.find((entry) => entry.id === target.nodeId)!;
     if (node.kind !== "acquire") throw new Error("Expected Normal acquisition.");
     const purchase = node.alternatives.find((entry) => entry.id === id)!;

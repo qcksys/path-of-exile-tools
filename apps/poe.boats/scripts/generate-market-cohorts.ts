@@ -348,6 +348,7 @@ const scourBases = new Set([
     "Metadata/Items/Armours/Shields/ShieldStr17",
     "Metadata/Items/Armours/Shields/ShieldInt16",
     "Metadata/Items/Armours/Helmets/HelmetInt11",
+    "Metadata/Items/Armours/Helmets/HelmetStr10",
     "Metadata/Items/Armours/Boots/BootsAtlas1",
     "Metadata/Items/Armours/BodyArmours/BodyDex16",
 ]);

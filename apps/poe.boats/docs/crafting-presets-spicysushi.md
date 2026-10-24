@@ -67,6 +67,19 @@ every action in the videos.
   rarity, the blocked T4+ life slam and crafted rare/unique rarity. Cleanup uses
   Allflame annuls to select surviving required modifiers. Rarity misses preserve
   the elevated suffixes where possible. It stops before the optional final armour slam.
+- **RF helmet preparation (r14)** retains the prepared purchase as the default
+  and also offers preparation from a verified Scouring source Royal Burgonet at
+  item level 86. It pays for source cleanup, Transmutation, Regal and Hunter's
+  Exalted Orb, then Harvest
+  influence rerolls until Elder. Every influence reroll costs 1,000 Primal
+  Crystallised Lifeforce. It uses Essence of Horror until level 20 Burning Damage
+  and Horror are its only suffixes, with room for a prefix craft.
+  Suffixes Cannot Be Changed and Scouring then produce the original prepared
+  input. All attempts and cleanup are charged; ordinary rolling retries reuse
+  the base. Four source profiles distinguish required crafted-modifier and
+  enchantment cleanup and exclude Eldritch or other incompatible persistent
+  state. This alternative preserves the final target and does not assert
+  market availability or a cheaper expected cost.
 - **Mercenary chest** in r11 buys Conquest Lamellar with the exact fractured Breach
   modifier through an explicit preparation profile. Four purchase alternatives
   distinguish crafted modifiers and enchantments. Each acquisition pays for its

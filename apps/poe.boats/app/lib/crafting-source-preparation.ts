@@ -35,12 +35,24 @@ export function validateSourcePreparationRevision(
 ) {
     if (!source) return;
     if (source.kind === "scour-v1") {
-        if (!["crafting-graph-12", "crafting-graph-13"].includes(engine))
-            throw new Error("Scouring source preparation requires crafting engine 12 or 13.");
-        if (additionalScouringBases.has(baseId) && engine !== "crafting-graph-13")
-            throw new Error("Scouring these boots or body armour requires crafting engine 13.");
-    } else if (!["crafting-graph-11", "crafting-graph-12", "crafting-graph-13"].includes(engine))
-        throw new Error("Source preparation requires crafting engine 11, 12 or 13.");
+        if (!["crafting-graph-12", "crafting-graph-13", "crafting-graph-14"].includes(engine))
+            throw new Error("Scouring source preparation requires crafting engine 12, 13 or 14.");
+        if (
+            additionalScouringBases.has(baseId) &&
+            !["crafting-graph-13", "crafting-graph-14"].includes(engine)
+        )
+            throw new Error(
+                "Scouring these boots or body armour requires crafting engine 13 or 14.",
+            );
+    } else if (
+        ![
+            "crafting-graph-11",
+            "crafting-graph-12",
+            "crafting-graph-13",
+            "crafting-graph-14",
+        ].includes(engine)
+    )
+        throw new Error("Source preparation requires crafting engine 11, 12, 13 or 14.");
 }
 
 export function sourcePreparationMethodList(source: SourcePreparation): CraftingMethod[] {

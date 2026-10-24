@@ -96,6 +96,7 @@ describe("market cohorts", () => {
     it.each([
         ["Two-Toned Boots", "Metadata/Items/Armours/Boots/BootsAtlas1"],
         ["Zodiac Leather", "Metadata/Items/Armours/BodyArmours/BodyDex16"],
+        ["Royal Burgonet", "Metadata/Items/Armours/Helmets/HelmetStr10"],
     ])("resolves raw %s identity before assigning its generated Scouring partition", (baseType, baseId) => {
         const sources = generated.cohorts.filter(
             (cohort) =>
@@ -110,6 +111,10 @@ describe("market cohorts", () => {
                 ),
         );
         expect(sources).toHaveLength(4);
+        if (baseType === "Royal Burgonet")
+            expect(
+                generated.sourcePreparationModel!.bases.find((base) => base.id === baseId),
+            ).toMatchObject({ scourImplicits: { ids: [], texts: [[]] } });
         const sourceIds = new Set(sources.map((source) => source.id));
         const nativeRolls =
             baseType === "Two-Toned Boots"
@@ -160,6 +165,20 @@ describe("market cohorts", () => {
             expect(classifier.classify(record).matches.filter((id) => sourceIds.has(id))).toEqual(
                 [],
             );
+        }
+        for (const influences of [{ elder: true }, { shaper: true, elder: true }]) {
+            const record = normalizeApiItem("poe1", "stash", {
+                baseType,
+                identified: true,
+                rarity: "Rare",
+                ilvl: 86,
+                influences,
+                implicitMods: nativeRolls[0],
+                explicitMods: ["An unresolved disposable explicit modifier"],
+            });
+            const result = classifier.classify(record);
+            expect(result.matches.filter((id) => sourceIds.has(id))).toEqual([]);
+            expect(result.unknown.filter((id) => sourceIds.has(id))).toEqual([]);
         }
     });
 

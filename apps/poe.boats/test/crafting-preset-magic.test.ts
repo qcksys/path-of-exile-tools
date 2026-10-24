@@ -10,7 +10,7 @@ import { runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r13",
+    (entry) => entry.game === "poe1" && entry.revision === "r14",
 )!;
 const singleModifiers: [CraftingPresetId, string[]][] = [
     ["life-block-shield", ["block", "max-res"]],
@@ -41,7 +41,10 @@ it.each(
                 node.alternatives.some((alternative) => alternative.id === "buy-magic"),
             )
             .map((node) => node.id),
-    ).toEqual(selected.find(([id]) => id === preset)![1]);
+    ).toEqual([
+        ...(preset === "rarity-helmet" ? ["donor-0-0"] : []),
+        ...selected.find(([id]) => id === preset)![1],
+    ]);
     const queries = createCraftingItemQuery(engine);
     for (const node of purchases) {
         const rare = node.alternatives[0]!;
