@@ -1716,7 +1716,7 @@ test("prepared Temple gloves pass from the workbench into a saved current projec
     await page.getByRole("button", { name: "Use item in new project", exact: true }).click();
     await expect(page).toHaveURL(/\/1\/crafting\/projects$/);
     const project = (await stored(page)).projects[0]!;
-    expect(project.graph.ruleset.revision).toBe("r10");
+    expect(project.graph.ruleset.revision).toBe("r11");
     const node = project.graph.nodes[0]!;
     expect(node.kind).toBe("acquire");
     if (node.kind === "acquire" && node.alternatives[0]?.kind === "purchase")
@@ -1860,8 +1860,8 @@ test("historical projects retain their rules until a correction is explicitly ad
     ).toHaveCount(0);
     expect((await stored(page)).projects[0]!.graph.ruleset).toMatchObject({
         era: "3.29",
-        revision: "r10",
-        engine: "crafting-graph-10",
+        revision: "r11",
+        engine: "crafting-graph-11",
     });
 });
 

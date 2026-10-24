@@ -117,6 +117,15 @@ type Candidate = {
 
 /** Interval sums deliberately over-approximate correlated rolls; uncertainty never picks a tier. */
 export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 20_000) {
+    return compileTextModel(input, visitLimit, false);
+}
+
+/** Resolves protected modifiers without claiming identities for disposable affixes. */
+export function compileFracturedModifierTextModel(input: ModifierTextModel, visitLimit = 20_000) {
+    return compileTextModel(input, visitLimit, true);
+}
+
+function compileTextModel(input: ModifierTextModel, visitLimit: number, fracturesOnly: boolean) {
     const model = modifierTextModelSchema.parse(input);
     const definitions = new Map(
         model.modifiers.map((mod) => [
@@ -241,7 +250,7 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
             !["Magic", "Rare"].includes(itemRarity(item) ?? "") ||
             !base ||
             base.unsupported ||
-            (prefixes === undefined && suffixes === undefined) ||
+            (!fracturesOnly && prefixes === undefined && suffixes === undefined) ||
             (model.format === 1 && (prefixes === undefined || suffixes === undefined)) ||
             (prefixes ?? 0) + (suffixes ?? 0) > 12 ||
             (prefixes !== undefined &&
@@ -524,6 +533,7 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
         let expectedPrefixes = prefixes ?? 0;
         let expectedSuffixes = suffixes ?? 0;
         const totals = new Set<number>();
+        const fractureTotals = new Set<number>();
         const keyOf = (fact: ModifierFact) => JSON.stringify(fact);
         const sameIdentity = (left: ModifierFact, right: ModifierFact) =>
             left.id === right.id &&
@@ -596,6 +606,10 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
                     return;
                 }
                 totals.add(p + s);
+                if (fracturesOnly)
+                    fractureTotals.add(
+                        chosen.filter((candidate) => candidate.fact.fractured).length,
+                    );
                 const facts = new Map(
                     chosen.map((candidate) => {
                         const fact = familyFact(candidate.fact);
@@ -643,11 +657,33 @@ export function compileModifierTextModel(input: ModifierTextModel, visitLimit = 
         const knownCount = (prefixes ?? 0) + (suffixes ?? 0);
         const missingCount = prefixes === undefined || suffixes === undefined;
         const maximumMissing = missingCount ? 12 - knownCount : 0;
-        for (let count = 0; count <= maximumMissing; count++) {
-            expectedPrefixes = prefixes ?? count;
-            expectedSuffixes = suffixes ?? count;
-            search(0, 0, 0);
-            if (exhausted || unsupported) return record;
+        if (fracturesOnly && prefixes === undefined && suffixes === undefined) {
+            for (let p = 0; p <= 6; p++) {
+                for (let s = 0; s <= 6 - p; s++) {
+                    expectedPrefixes = p;
+                    expectedSuffixes = s;
+                    search(0, 0, 0);
+                    if (exhausted || unsupported) return record;
+                }
+            }
+        } else {
+            for (let count = 0; count <= maximumMissing; count++) {
+                expectedPrefixes = prefixes ?? count;
+                expectedSuffixes = suffixes ?? count;
+                search(0, 0, 0);
+                if (exhausted || unsupported) return record;
+            }
+        }
+        if (fracturesOnly) {
+            const fractures = [...(common?.values() ?? [])].filter((mod) => mod.fractured);
+            if (fractureTotals.size !== 1 || !fractureTotals.has(1) || fractures.length !== 1)
+                return record;
+            const fracture = fractures[0]!;
+            if (!fracture.id || fracture.possibleIds || fracture.crafted) return record;
+            return {
+                ...record,
+                facts: { ...record.facts, modifiers: fractures, modifiersComplete: false },
+            };
         }
         const inferredCount =
             missingCount && totals.size === 1 ? [...totals][0]! - knownCount : undefined;

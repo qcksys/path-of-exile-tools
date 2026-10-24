@@ -342,6 +342,20 @@ const baseIdentities = marketBaseIdentities(
         ),
     ),
 );
+const sourcePreparationModel = {
+    format: 1,
+    bases: Object.entries(catalog.bases)
+        .filter(
+            ([, base]) =>
+                ["Body Armour", "Helmet", "Gloves", "Boots"].includes(base.item_class) &&
+                !base.implicits.some((id) =>
+                    engine
+                        .mod(id)
+                        .stats.some((stat) => stat.id === "local_implicit_mod_cannot_be_changed"),
+                ),
+        )
+        .map(([id, base]) => ({ id, baseType: base.name, itemClass: base.item_class })),
+};
 const revision = createHash("sha256")
     .update(
         JSON.stringify({
@@ -350,6 +364,7 @@ const revision = createHash("sha256")
             modifierIdentities,
             modifierTextModel,
             baseIdentities,
+            sourcePreparationModel,
         }),
     )
     .digest("hex");
@@ -362,6 +377,7 @@ const manifest = marketCohortManifestSchema.parse({
     modifierIdentities,
     modifierTextModel,
     baseIdentities,
+    sourcePreparationModel,
 });
 await mkdir("../../packages/poe-market/data", { recursive: true });
 await writeFile(

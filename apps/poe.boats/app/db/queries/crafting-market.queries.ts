@@ -164,6 +164,7 @@ export async function findCraftingMarketPrices(
                         input.item,
                         input.requirements,
                         assumption,
+                        input.sourcePreparation,
                     );
                     return {
                         definition,
@@ -171,6 +172,9 @@ export async function findCraftingMarketPrices(
                         reasons: coverage.reasons,
                         ...(input.window ? { window: input.window } : {}),
                         ...(assumption ? { assumption } : {}),
+                        ...(input.sourcePreparation
+                            ? { sourcePreparation: input.sourcePreparation }
+                            : {}),
                         ...(input.conversion ? { conversion: input.conversion } : {}),
                     };
                 })

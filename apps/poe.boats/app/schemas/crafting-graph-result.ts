@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { craftingItemSchema } from "./crafting";
+import { craftingItemSchema, craftingMethodSchema } from "./crafting";
 import { acquisitionComparisonSchema } from "./crafting-economy";
 import { graphDestinationSchema } from "./crafting-graph";
 
@@ -32,6 +32,7 @@ export const graphTraceEntrySchema = z.object({
     branchId: z.string().optional(),
     destination: graphDestinationSchema.optional(),
     skipped: z.literal(true).optional(),
+    preparation: z.array(craftingMethodSchema).optional(),
 });
 export const graphTrialResultSchema = z.object({
     status: z.enum(["running", "returned", "terminal", "truncated", "error"]),

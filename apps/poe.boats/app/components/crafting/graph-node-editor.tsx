@@ -19,6 +19,7 @@ import {
     rulesetAllowsSimpleCraft,
 } from "~/lib/crafting-rulesets";
 import { graphCraftInput, simpleCraftCapability } from "~/lib/crafting-smart";
+import { purchaseSourceProfile } from "~/lib/crafting-source-preparation";
 import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
 import { craftingItemOptions } from "~/lib/item-presentation";
 import type { CraftingMethod } from "~/schemas/crafting";
@@ -537,6 +538,7 @@ export function GraphNodeEditor({
                                             engine={engine}
                                             item={alternative.item}
                                             requirements={node.output}
+                                            sourcePreparation={purchaseSourceProfile(alternative)}
                                             league={graph.league}
                                             currency={graph.currency}
                                             price={

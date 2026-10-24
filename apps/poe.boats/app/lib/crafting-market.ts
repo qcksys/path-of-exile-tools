@@ -5,6 +5,7 @@ import {
     exchangeCurrencyId,
     isDisplayEquivalentCohort,
     type MarketCohortDefinition,
+    sameSourcePreparation,
     selectCohortPrice,
 } from "@poe-tools/market";
 import type { CraftingItem } from "~/schemas/crafting";
@@ -12,6 +13,11 @@ import type { CraftingGraph } from "~/schemas/crafting-graph";
 import type { CraftingMarketCandidate } from "~/schemas/crafting-market";
 import type { CraftingEngine } from "./crafting-engine";
 import { createCraftingItemQuery } from "./crafting-item-query";
+import {
+    purchaseSourceProfile,
+    validateSourcePreparation,
+    validateSourcePreparationOutput,
+} from "./crafting-source-preparation";
 
 export function selectCraftingMarketPrice(candidate: CraftingMarketCandidate, currency: string) {
     const native = selectCohortPrice(candidate.latest, currency, candidate.window);
@@ -127,6 +133,13 @@ export function bindCohortPurchasePrice(
     const itemIssue = craftingMarketItemIssue(engine, alternative.item);
     if (itemIssue) throw new Error(itemIssue);
     const { definition, latest } = candidate;
+    const sourcePreparation = purchaseSourceProfile(alternative);
+    if (sourcePreparation && graph.ruleset.engine !== "crafting-graph-11")
+        throw new Error("Source preparation requires crafting engine 11.");
+    validateSourcePreparation(engine, alternative);
+    validateSourcePreparationOutput(alternative, node.output);
+    if (!sameSourcePreparation(sourcePreparation, candidate.sourcePreparation))
+        throw new Error("The price requires a different source preparation.");
     if (candidate.assumption) {
         if (!isDisplayEquivalentCohort(definition))
             throw new Error(
@@ -158,6 +171,7 @@ export function bindCohortPurchasePrice(
         createCraftingItemQuery(engine).record(alternative.item),
         node.output,
         candidate.assumption,
+        sourcePreparation,
     );
     if (!coverage.covered) throw new Error(coverage.reasons.join(" "));
     const price = selectCraftingMarketPrice(candidate, graph.currency);
@@ -176,6 +190,7 @@ export function bindCohortPurchasePrice(
             cohortId: latest.cohortId,
             window: candidate.window,
             assumption: candidate.assumption,
+            sourcePreparation,
             conversion: candidate.conversion,
             exchange: latest.prices[graph.currency] ? undefined : candidate.exchange,
         }),

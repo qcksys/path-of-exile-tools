@@ -26,6 +26,11 @@ import { createCraftingItemQuery } from "./crafting-item-query";
 import { craftingNodeCostPrice } from "./crafting-node-prices";
 import { orderCraftingBranches, routeCraftingItem } from "./crafting-query-routing";
 import { validateSimpleCraftInput } from "./crafting-smart";
+import {
+    estimateSourcePurchase,
+    prepareSourcePurchase,
+    sourcePreparationMethods,
+} from "./crafting-source-preparation";
 
 class GraphLimit extends Error {}
 class GraphTerminal extends Error {
@@ -332,12 +337,15 @@ export class CraftingGraphTrial {
                 if (!this.options.acquisitions)
                     for (const alternative of node.alternatives) {
                         if (alternative.kind !== "purchase") continue;
-                        const price =
-                            this.graph.prices[`purchase:${node.id}:${alternative.id}`] ??
-                            alternative.price;
-                        if (price && price.amount < defaultCost) {
+                        const price = estimateSourcePurchase(
+                            this.engine,
+                            this.graph,
+                            node,
+                            alternative,
+                        ).expectedCost;
+                        if (price !== null && price < defaultCost) {
                             defaultId = alternative.id;
-                            defaultCost = price.amount;
+                            defaultCost = price;
                         }
                     }
                 const selected =
@@ -352,23 +360,62 @@ export class CraftingGraphTrial {
                         `No priced acquisition choice is available at ${node.name}; pin a choice to calculate with unknown prices.`,
                     );
                 this.visits(node.id).visits++;
-                const token =
-                    alternative.kind === "production"
-                        ? yield* this.produce(alternative.nodeId)
-                        : this.token(structuredClone(alternative.item));
-                if (this.options.trace) {
-                    this.state.nodeItems ??= {};
-                    this.state.nodeItems[node.id] = token.item;
-                }
-                if (alternative.kind === "purchase") {
+                let token: GraphToken;
+                if (alternative.kind === "production")
+                    token = yield* this.produce(alternative.nodeId);
+                else {
                     this.state.purchases++;
                     const id = `purchase:${node.id}:${alternative.id}`;
                     this.spend(
                         { id, name: alternative.name, amount: 1 },
                         this.graph.prices[id] ?? alternative.price,
                     );
+                    const preferences = [...this.nodes.values()].flatMap((consumer) =>
+                        consumer.kind === "craft" &&
+                        consumer.method.kind === "fossils" &&
+                        JSON.stringify(consumer.method) ===
+                            JSON.stringify(alternative.sourcePreparation?.fossils) &&
+                        consumer.inputs.some((input) => input.source === node.id)
+                            ? orderCraftingBranches(this.branches(consumer), consumer.ordering).map(
+                                  (branch) => branch.query,
+                              )
+                            : [],
+                    );
+                    const prepared = prepareSourcePurchase(
+                        this.engine,
+                        alternative,
+                        this.random,
+                        preferences,
+                        (costs) => {
+                            for (const cost of costs)
+                                this.spend(
+                                    cost,
+                                    craftingNodeCostPrice(this.graph.prices, node.id, cost.id),
+                                );
+                            this.state.actions++;
+                        },
+                    );
+                    token = this.token(prepared.item);
+                }
+                if (this.options.trace) {
+                    this.state.nodeItems ??= {};
+                    this.state.nodeItems[node.id] = token.item;
+                }
+                if (alternative.kind === "purchase") {
                     if (this.options.trace)
-                        this.state.trace.push({ nodeId: node.id, inputs: [], outputs: [token.id] });
+                        this.state.trace.push({
+                            nodeId: node.id,
+                            inputs: [],
+                            outputs: [token.id],
+                            ...(alternative.sourcePreparation
+                                ? {
+                                      preparation: sourcePreparationMethods(
+                                          this.engine,
+                                          alternative.sourcePreparation,
+                                      ),
+                                  }
+                                : {}),
+                        });
                 }
                 if (this.queries.matches(token.item, node.output) !== "match")
                     throw new Error(

@@ -231,11 +231,19 @@ export const itemQueryGroupSchema = z
         "Count groups need a count range.",
     );
 
+export const fracturedFossilSourcePreparationSchema = z.strictObject({
+    kind: z.literal("fractured-fossil-v1"),
+    fractureId: id,
+    crafted: z.boolean(),
+    enchanted: z.boolean(),
+});
+
 export const itemQuerySchema = z
     .strictObject({
         format: z.literal(1).default(1),
         game: gameSchema,
         groups: z.array(itemQueryGroupSchema).max(16).default([]),
+        sourcePreparation: fracturedFossilSourcePreparationSchema.optional(),
     })
     .refine(
         (query) => query.groups.reduce((sum, group) => sum + group.filters.length, 0) <= 128,
@@ -250,3 +258,6 @@ export type ItemCondition = z.infer<typeof itemConditionSchema>;
 export type ItemQuery = z.infer<typeof itemQuerySchema>;
 export type ItemQueryGroup = z.infer<typeof itemQueryGroupSchema>;
 export type NumericRange = z.infer<typeof rangeSchema>;
+export type FracturedFossilSourcePreparation = z.infer<
+    typeof fracturedFossilSourcePreparationSchema
+>;

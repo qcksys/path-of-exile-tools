@@ -242,7 +242,62 @@ export function projectFromPreset(
     let entry: string;
     let target: ItemQuery;
     if (spicySushiPresets.some((entry) => entry.id === presetId)) {
-        ({ entry, target } = spicySushiPreset({ engine, base, buy, craft, currency }, presetId));
+        const prepareSource = ruleset.engine === "crafting-graph-11";
+        ({ entry, target } = spicySushiPreset(
+            { engine, base, buy, craft, currency },
+            presetId,
+            prepareSource,
+        ));
+        if (prepareSource && presetId === "sushi-mercenary-chest") {
+            const acquisition = nodes.find((node) => node.id === "fractured-base");
+            const roll = nodes.find((node) => node.id === "fossils");
+            if (
+                acquisition?.kind !== "acquire" ||
+                acquisition.alternatives[0]?.kind !== "purchase" ||
+                roll?.kind !== "craft" ||
+                roll.method.kind !== "fossils"
+            )
+                throw new Error("The mercenary source preparation is unavailable.");
+            const purchase = acquisition.alternatives[0];
+            const fossilMethod = roll.method;
+            acquisition.alternatives = [
+                {
+                    id: "buy",
+                    name: "Uncrafted, unenchanted fractured source",
+                    crafted: false,
+                    enchanted: false,
+                },
+                {
+                    id: "buy-crafted",
+                    name: "Crafted fractured source; remove crafted modifiers",
+                    crafted: true,
+                    enchanted: false,
+                },
+                {
+                    id: "buy-enchanted",
+                    name: "Enchanted fractured source; remove enchantments",
+                    crafted: false,
+                    enchanted: true,
+                },
+                {
+                    id: "buy-crafted-enchanted",
+                    name: "Crafted and enchanted fractured source; remove both",
+                    crafted: true,
+                    enchanted: true,
+                },
+            ].map(({ id, name, crafted, enchanted }) => ({
+                ...purchase,
+                id,
+                name,
+                sourcePreparation: {
+                    kind: "fractured-fossil-v1",
+                    fractureId: purchase.item.mods[0]!.id,
+                    crafted,
+                    enchanted,
+                    fossils: structuredClone(fossilMethod),
+                },
+            }));
+        }
     } else if (presetId === "life-block-shield" || presetId === "es-block-shield") {
         const life = presetId === "life-block-shield";
         const item = base(life ? "Heat-attuned Tower Shield" : "Titanium Spirit Shield");

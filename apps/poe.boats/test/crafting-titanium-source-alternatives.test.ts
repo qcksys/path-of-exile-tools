@@ -18,7 +18,7 @@ import { quote } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r10",
+    (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
 const scour = "Metadata/Items/Currency/CurrencyConvertToNormal";
 const sourceId = "shield-make-titanium-base";

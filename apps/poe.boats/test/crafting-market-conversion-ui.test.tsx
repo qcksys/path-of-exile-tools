@@ -10,6 +10,56 @@ afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
 });
+
+it("sends the preparation policy and clears quotes when required cleanup changes", async () => {
+    const sourcePreparation = {
+        kind: "fractured-fossil-v1" as const,
+        fractureId: "fracture",
+        crafted: true,
+        enchanted: true,
+    };
+    const fetcher = vi.fn().mockResolvedValue(
+        new Response(
+            JSON.stringify({
+                candidates: [marketCandidate],
+                truncated: false,
+                message: null,
+            }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    const props = {
+        engine,
+        item: engine.createItem(baseId, 86),
+        requirements: { format: 1 as const, game: "poe1" as const, groups: [] },
+        league: "Standard",
+        currency: "chaos",
+        price: null,
+        onLeagueChange: vi.fn(),
+        onSelect: vi.fn(),
+    };
+    const { rerender } = render(
+        <MarketPricePicker {...props} sourcePreparation={sourcePreparation} />,
+    );
+    fireEvent.click(screen.getByText("Equipment market price"));
+    expect(
+        screen.getByText(
+            /Cleanup, the first fossil roll and Eldritch currencies are charged separately/,
+        ),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
+    await screen.findByRole("button", { name: "Use live median" });
+    expect(JSON.parse(fetcher.mock.calls[0]![1].body).sourcePreparation).toEqual(sourcePreparation);
+    rerender(
+        <MarketPricePicker
+            {...props}
+            sourcePreparation={{ ...sourcePreparation, enchanted: false }}
+        />,
+    );
+    await waitFor(() =>
+        expect(screen.queryByRole("button", { name: "Use live median" })).toBeNull(),
+    );
+});
 it.each([
     "divine",
     "chrome",

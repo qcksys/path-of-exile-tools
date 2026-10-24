@@ -1,5 +1,27 @@
 import type { CraftingMethod } from "../schemas/crafting";
+import type { CraftingGraph } from "../schemas/crafting-graph";
 import type { CraftingCost, CraftingEngine } from "./crafting-engine";
+import { sourcePreparationMethods } from "./crafting-source-preparation";
+
+export function discoverGraphCraftingCosts(
+    engine: CraftingEngine,
+    graph: CraftingGraph,
+    observedIds: string[] = [],
+) {
+    return discoverCraftingCosts(
+        engine,
+        graph.nodes.flatMap((node) =>
+            node.kind === "craft"
+                ? [node.method]
+                : node.alternatives.flatMap((alternative) =>
+                      alternative.kind === "purchase" && alternative.sourcePreparation
+                          ? sourcePreparationMethods(engine, alternative.sourcePreparation)
+                          : [],
+                  ),
+        ),
+        observedIds,
+    );
+}
 
 export function discoverCraftingCosts(
     engine: CraftingEngine,

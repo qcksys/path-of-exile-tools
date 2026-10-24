@@ -1,14 +1,21 @@
 // biome-ignore-all lint/style/useNamingConvention: Fixtures preserve upstream and database fields.
-import { mkdtemp, rmdir, unlink } from "node:fs/promises";
+import { mkdtemp, readFile, rmdir, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { normalizeApiItem } from "@poe-tools/item-query";
-import { compileMarketCohorts, type MarketCohortManifest } from "@poe-tools/market";
+import {
+    compileMarketCohorts,
+    type MarketCohortManifest,
+    marketCohortManifestSchema,
+} from "@poe-tools/market";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { readArchivedPage } from "../../../../packages/poe-stash-ingest/src/ps/archive-payload.ts";
 import { archivePage } from "../../../../packages/poe-stash-ingest/src/ps/capture-archive.ts";
-import { compileCraftingCapture } from "../../../../packages/poe-stash-ingest/src/ps/crafting-capture.ts";
+import {
+    compileCraftingCapture,
+    defaultCraftingCapture,
+} from "../../../../packages/poe-stash-ingest/src/ps/crafting-capture.ts";
 import { captureEquipment } from "../../../../packages/poe-stash-ingest/src/ps/equipment.ts";
 import { reclassifyArchivedEquipment } from "../../../../packages/poe-stash-ingest/src/ps/equipment-reclassify.ts";
 import { equipmentHourly } from "../../../../packages/poe-stash-ingest/src/ps/equipment-rollup.ts";
@@ -129,6 +136,109 @@ async function legacyBodies() {
     await local.conn.run("DELETE FROM ps_capture_payload_chunk");
     await local.conn.run("DELETE FROM ps_capture_payload_meta");
 }
+
+it("replays a crafted and enchanted fractured source with its preparation profile", async () => {
+    const manifest = marketCohortManifestSchema.parse(
+        JSON.parse(
+            await readFile(
+                new URL("../../../../packages/poe-market/data/cohorts-poe1.json", import.meta.url),
+                "utf8",
+            ),
+        ),
+    );
+    manifest.cohorts = manifest.cohorts.filter((cohort) => cohort.query.sourcePreparation);
+    expect(manifest.cohorts).toHaveLength(4);
+    const expected = manifest.cohorts.find(
+        (cohort) =>
+            cohort.query.sourcePreparation?.crafted && cohort.query.sourcePreparation.enchanted,
+    )!;
+    const current = compileMarketCohorts(manifest);
+    const accepts = await defaultCraftingCapture(manifest);
+    const chest = {
+        ...item,
+        typeLine: "Conquest Lamellar",
+        baseType: "Conquest Lamellar",
+        frameType: 2,
+        fractured: true,
+        extended: { prefixes: 3, suffixes: 3 },
+        // Disposable lines remain opaque rather than acquiring invented canonical identities.
+        explicitMods: [
+            { description: "Unresolved disposable prefix" },
+            { description: "Unresolved disposable suffix" },
+            { description: "Crafted disposable line", flags: { crafted: true } },
+            {
+                description:
+                    "Critical Strike Chance is increased by Overcapped Lightning Resistance",
+                flags: { fractured: true },
+            },
+        ],
+        enchantMods: [
+            "Quality does not increase Defences",
+            "Grants +1% to Lightning Resistance per 2% Quality",
+        ],
+        implicitMods: [
+            "While a Unique Enemy is in your Presence, Haste has 39% increased Aura Effect",
+            "While a Unique Enemy is in your Presence, Gain a Frenzy Charge every 10 seconds",
+        ],
+        note: "~price 220 divine",
+    };
+    expect(accepts(chest)).toBe(true);
+    expect(current.classify(normalizeApiItem("poe1", "stash", chest))).toEqual({
+        matches: [expected.id],
+        unknown: [],
+    });
+    const observedAt = HOUR + 17;
+    const page = await archivePage(
+        local.conn,
+        { next_change_id: "fractured-source-page", stashes: [{ ...stash, items: [chest] }] },
+        { realm: "pc", league: "Standard", capturedAt: observedAt * 1000 },
+        accepts,
+    );
+    await local.conn.run(
+        "UPDATE ps_capture_page SET processed_at = current_timestamp, equipment_revision = 'before-source-preparation' WHERE id = $1",
+        [page],
+    );
+    const [saved] = await queryAll<{ hash: string }>(
+        local.conn,
+        "SELECT response_hash AS hash FROM ps_capture_page WHERE id = $1",
+        [page],
+    );
+    expect((await readArchivedPage(local.conn, saved!.hash)).stashes[0]!.items[0]).toEqual(chest);
+    await setCursor(local.conn, "psapi", "live-cursor");
+    expect(
+        await reclassifyArchivedEquipment(local.conn, {
+            realm: "pc",
+            league: "Standard",
+            classifier: current,
+            completedBefore: HOUR + 3600,
+            limitPages: 1,
+        }),
+    ).toMatchObject({ pages: 1, completedHours: [HOUR], pending: false });
+    const rows = await equipmentHourly(local.conn, HOUR, "Standard");
+    expect(rows).toMatchObject([
+        {
+            revision: manifest.revision,
+            cohortId: expected.id,
+            hour: HOUR,
+            listingCount: 1,
+            uniqueSellers: 1,
+            unknownCount: 0,
+            prices: { divine: { median: 220, min: 220, max: 220, count: 1 } },
+        },
+    ]);
+    expect(Date.parse(`${rows[0]!.firstSeenAt}Z`)).toBe(observedAt * 1000);
+    expect(Date.parse(`${rows[0]!.lastSeenAt}Z`)).toBe(observedAt * 1000);
+    const definitions = await queryAll<{ definition: string }>(
+        local.conn,
+        "SELECT definition::VARCHAR AS definition FROM ps_equipment_cohort",
+    );
+    expect(definitions.map((row) => JSON.parse(row.definition))).toEqual([
+        current.definition(expected.id),
+    ]);
+    expect(await equipmentHourly(local.conn, HOUR + 3600, "Standard")).toEqual([]);
+    expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_listing")).toEqual([]);
+    expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
+});
 
 it.each([
     false,

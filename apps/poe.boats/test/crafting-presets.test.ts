@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { discoverCraftingCosts } from "../app/lib/crafting-cost-inputs";
+import { discoverGraphCraftingCosts } from "../app/lib/crafting-cost-inputs";
 import { seededRandom } from "../app/lib/crafting-engine";
 import { calculateCraftingGraph } from "../app/lib/crafting-graph-simulation";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
@@ -14,7 +14,7 @@ import { graphFixture, quote, runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r10",
+    (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
 
 describe("common crafting project presets", () => {
@@ -95,10 +95,7 @@ describe("common crafting project presets", () => {
                             if (alternative.kind === "purchase") alternative.price = quote(10);
                     }
                 }
-                for (const cost of discoverCraftingCosts(
-                    engine,
-                    graph.nodes.flatMap((node) => (node.kind === "craft" ? [node.method] : [])),
-                ))
+                for (const cost of discoverGraphCraftingCosts(engine, graph))
                     graph.prices[cost.id] ??= quote(1);
                 const priced = calculateCraftingGraph(catalog, graph, {
                     estimateIterations: 1,
