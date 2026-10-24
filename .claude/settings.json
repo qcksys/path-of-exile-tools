@@ -1,0 +1,38 @@
+{
+    "$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "hooks": {
+        "SessionStart": [
+            {
+                "matcher": "startup|resume",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "node \"${CLAUDE_PROJECT_DIR}/scripts/check-claude-mcp.ts\""
+                    }
+                ]
+            }
+        ],
+        "PreToolUse": [
+            {
+                "matcher": "Bash",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "if": "Bash(git commit *)",
+                        "command": "node \"${CLAUDE_PROJECT_DIR}/scripts/unset-worktree-hookspath.ts\""
+                    }
+                ]
+            },
+            {
+                "matcher": "PowerShell",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "if": "PowerShell(git commit *)",
+                        "command": "node \"${CLAUDE_PROJECT_DIR}/scripts/unset-worktree-hookspath.ts\""
+                    }
+                ]
+            }
+        ]
+    }
+}
