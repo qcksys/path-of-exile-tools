@@ -28,7 +28,7 @@ const scour = currency("convert_to_normal").id;
 const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
-const ruleset = { ...prior, revision: "r13", engine: "crafting-graph-13" };
+const ruleset = { ...prior, revision: "r14", engine: "crafting-graph-14" };
 const scopes = [
     "Heat-attuned Tower Shield",
     "Pinnacle Tower Shield",
@@ -59,7 +59,7 @@ function fixture(name = scopes[0]!, crafted = true, enchanted = true) {
         price: quote(11),
     };
     const graph = graphFixture();
-    graph.ruleset = { ...graph.ruleset, revision: "r13", engine: "crafting-graph-13" };
+    graph.ruleset = { ...graph.ruleset, revision: "r14", engine: "crafting-graph-14" };
     const node: GraphAcquireNode = {
         kind: "acquire" as const,
         id: "base",

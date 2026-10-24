@@ -176,7 +176,7 @@ const cohortPolicies = [
 function cohortPricingFixture(policy: (typeof cohortPolicies)[number]) {
     if (policy === "scour-v1") {
         const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === "r13",
+            (entry) => entry.game === "poe1" && entry.revision === "r14",
         )!;
         return {
             ...scouringMarketFixture(true, true, rulesetReference(ruleset)),

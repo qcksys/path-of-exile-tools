@@ -94,6 +94,19 @@ Surviving global defences can be annulled again, while losing it discards the it
 and buys another source. The existing recombination preserves the original target
 and reaches item level 86. Earlier revisions and saved drafts remain unchanged.
 
+The r14 RF helmet preset also offers paid preparation from a Royal Burgonet
+verified by its Scouring source profile. The four cleanup profiles exclude
+incompatible persistent state, including Eldritch implicits that prevent the
+Hunter slam. Source cleanup, influence application and rerolls, Horror attempts,
+the suffix lock and Scouring use the same graph runtime on all surfaces. The exact
+prepared purchase remains the default; source quotes and preparation costs are
+separate. Earlier revisions retain their routes.
+
+The r14 rarity helmet preset also offers an isolated Magic Janus donor with its
+own exact purchase cohort. It enters recombination directly and has the same
+outcomes as the Rare donor. The original Rare purchase remains the default;
+the Magic purchase must have its own quote, and no rarity conversion is charged.
+
 | UI capability | HTTP family under `/api/v1` | MCP / shared implementation |
 | --- | --- | --- |
 | Server status, worker health, progress and stored league history | `server/status` | `get_server_status`; shared `getServerStatus`. Authenticated ingestion heartbeats report stages and committed progress without credentials, raw cursors or account data. Missing heartbeats and stalled stages are distinct from failures; stored coverage counts actual distinct hours. Optional `view=workers` reads worker reports and computes the same health without querying any hourly coverage tables; `coverage: []` means coverage was omitted, not that history is absent. Omitted `view` or `view=full` retains full coverage and the existing UI behavior. HTTP and MCP share this selection and validation. |

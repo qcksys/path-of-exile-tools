@@ -19,6 +19,7 @@ for (const [revision, preset, acquisition] of [
     ["r12", "life-block-shield", "block-make-base"],
     ["r13", "tailwind-boots", "tailwind-base-make-base"],
     ["r13", "suppression-chest", "suppression-base"],
+    ["r14", "sushi-rf-helmet", "suffixes-make-base"],
 ] as const) {
     test(`${revision} ${preset}: paid Scouring source selection, cleanup policy and manual prices survive reload`, async ({
         page,
@@ -34,7 +35,10 @@ for (const [revision, preset, acquisition] of [
             (alternative) => alternative.id === "buy-scour-crafted-enchanted",
         )!;
         if (prepared.kind !== "purchase") throw new Error("Missing paid Scouring source.");
-        expect(source.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+        expect(source.choice).toEqual({
+            mode: "pinned",
+            alternativeId: preset === "sushi-rf-helmet" ? "buy-scour" : "buy",
+        });
         expect(prepared.sourcePreparation).toEqual({
             kind: "scour-v1",
             crafted: true,

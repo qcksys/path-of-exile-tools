@@ -13,7 +13,7 @@ const ring = () =>
         86,
     );
 const current = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r13",
+    (entry) => entry.game === "poe1" && entry.revision === "r14",
 )!;
 describe("memory-strand graph crafting", () => {
     it("matches strand thresholds and measures spending from the imprint, without inventing a missing checkpoint", () => {

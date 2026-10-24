@@ -17,6 +17,7 @@ import {
     presetRange,
     presetRecover,
 } from "./crafting-preset-preparation";
+import { rfHelmetPreparation } from "./crafting-preset-rf-preparation";
 import { spicySushiPreset, spicySushiPresets } from "./crafting-preset-spicysushi";
 import { nonNativeEssenceSources } from "./crafting-recombination";
 import { rulesetAllowsPresetPreparation, validateRulesetGraph } from "./crafting-rulesets";
@@ -128,6 +129,10 @@ const scouringSources: Partial<Record<CraftingPresetId, readonly string[]>> = {
 const extendedScouringSources: Partial<Record<CraftingPresetId, readonly string[]>> = {
     "tailwind-boots": ["tailwind-base-make-base"],
     "suppression-chest": ["suppression-base"],
+};
+
+const rfScouringSources: Partial<Record<CraftingPresetId, readonly string[]>> = {
+    "sushi-rf-helmet": ["suffixes-make-base"],
 };
 
 export function projectFromPreset(
@@ -257,12 +262,26 @@ export function projectFromPreset(
             "crafting-graph-11",
             "crafting-graph-12",
             "crafting-graph-13",
+            "crafting-graph-14",
         ].includes(ruleset.engine);
         ({ entry, target } = spicySushiPreset(
             { engine, base, buy, craft, currency },
             presetId,
             prepareSource,
         ));
+        if (ruleset.engine === "crafting-graph-14" && presetId === "sushi-rf-helmet") {
+            const acquisition = nodes.find((node) => node.id === "suffixes");
+            const purchase =
+                acquisition?.kind === "acquire" ? acquisition.alternatives[0] : undefined;
+            if (acquisition?.kind !== "acquire" || purchase?.kind !== "purchase")
+                throw new Error("RF suffix preparation requires the original prepared purchase.");
+            acquisition.alternatives.push({
+                kind: "production",
+                id: "make-suffixes",
+                name: "Prepare the exact suffixes from a safely scourable Royal Burgonet",
+                nodeId: rfHelmetPreparation({ engine, base, buy, craft, currency }, purchase.item),
+            });
+        }
         if (prepareSource && presetId === "sushi-mercenary-chest") {
             const acquisition = nodes.find((node) => node.id === "fractured-base");
             const roll = nodes.find((node) => node.id === "fossils");
@@ -558,6 +577,18 @@ export function projectFromPreset(
             });
         });
         entry = finish.id;
+        if (ruleset.engine === "crafting-graph-14") {
+            const donor = nodes.find((node) => node.id === "donor-0-0");
+            const purchase = donor?.kind === "acquire" ? donor.alternatives[0] : undefined;
+            if (donor?.kind !== "acquire" || purchase?.kind !== "purchase")
+                throw new Error("The Magic Janus alternative requires the original Rare purchase.");
+            donor.alternatives.push({
+                ...purchase,
+                id: "buy-magic",
+                name: "Buy isolated Magic Janus unveiled rarity donor",
+                item: engine.validateItem({ ...purchase.item, rarity: "magic" }),
+            });
+        }
     } else if (presetId === "strength-helical-ring") {
         ({ entry, target } = helicalRingPreset({ engine, base, buy, craft, currency }));
     } else if (presetId === "suppression-chest") {
@@ -1142,12 +1173,13 @@ export function projectFromPreset(
                 });
         }
     }
-    if (["crafting-graph-12", "crafting-graph-13"].includes(ruleset.engine)) {
+    if (["crafting-graph-12", "crafting-graph-13", "crafting-graph-14"].includes(ruleset.engine)) {
         const sourceIds = [
             ...(scouringSources[presetId] ?? []),
-            ...(ruleset.engine === "crafting-graph-13"
+            ...(["crafting-graph-13", "crafting-graph-14"].includes(ruleset.engine)
                 ? (extendedScouringSources[presetId] ?? [])
                 : []),
+            ...(ruleset.engine === "crafting-graph-14" ? (rfScouringSources[presetId] ?? []) : []),
         ];
         for (const id of sourceIds) {
             const node = nodes.find((entry) => entry.id === id);
@@ -1193,6 +1225,13 @@ export function projectFromPreset(
                     sourcePreparation: { kind: "scour-v1" as const, crafted, enchanted },
                 })),
             );
+            if (
+                ruleset.engine === "crafting-graph-14" &&
+                rfScouringSources[presetId]?.includes(id)
+            ) {
+                node.alternatives = node.alternatives.filter((entry) => entry.id !== "buy");
+                node.choice = { mode: "pinned", alternativeId: "buy-scour" };
+            }
         }
     }
     const graph = projectFromItem(ruleset, base("Spine Bow"), preset.name);

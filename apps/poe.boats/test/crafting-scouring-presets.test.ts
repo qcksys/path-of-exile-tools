@@ -10,7 +10,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
-const ruleset = { ...prior, revision: "r13", engine: "crafting-graph-13" };
+const ruleset = { ...prior, revision: "r14", engine: "crafting-graph-14" };
 const sources: [CraftingPresetId, string, string][] = [
     ["life-block-shield", "block-make-base", "Heat-attuned Tower Shield"],
     ["life-block-shield", "max-res-make-base", "Heat-attuned Tower Shield"],
@@ -82,7 +82,7 @@ it.each(
     expect(result.spending[transmute]).toBe(1);
 });
 
-it("preserves the four r11 mercenary sources in r13", () => {
+it("preserves the four r11 mercenary sources in r14", () => {
     const before = projectFromPreset(engine, prior, "sushi-mercenary-chest");
     const graph = projectFromPreset(engine, ruleset, "sushi-mercenary-chest");
     expect(graph.nodes).toEqual(before.nodes);
