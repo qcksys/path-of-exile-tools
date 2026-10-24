@@ -14,6 +14,7 @@ import {
     getTableColumns,
     gt,
     gte,
+    inArray,
     isNull,
     lt,
     lte,
@@ -128,33 +129,40 @@ export async function findCraftingMarketPrices(
                     .limit(limit),
             );
         }
-        let cursor: { id: string; revision: string } | undefined;
+        let cursor: { id: string; revision: string; baseTypeKey: string | null } | undefined;
         while (true) {
             const definitions = await read(
                 db
-                    .select(definitionColumns)
-                    .from(cohort)
+                    .select({ ...definitionColumns, baseTypeKey: cohort.baseTypeKey })
+                    .from(cohort, { forceIndex: "stash_cohort_base_page_idx" })
                     .where(
                         and(
                             bases,
+                            inArray(cohort.baseTypeKey, ["", input.item.item.baseType]),
                             cohortId === undefined ? undefined : eq(cohort.id, cohortId),
                             cursor
                                 ? or(
-                                      gt(cohort.revision, cursor.revision),
+                                      gt(cohort.baseTypeKey, cursor.baseTypeKey!),
                                       and(
-                                          eq(cohort.revision, cursor.revision),
-                                          gt(cohort.id, cursor.id),
+                                          eq(cohort.baseTypeKey, cursor.baseTypeKey!),
+                                          or(
+                                              gt(cohort.revision, cursor.revision),
+                                              and(
+                                                  eq(cohort.revision, cursor.revision),
+                                                  gt(cohort.id, cursor.id),
+                                              ),
+                                          ),
                                       ),
                                   )
                                 : undefined,
                         ),
                     )
-                    .orderBy(cohort.revision, cohort.id)
+                    .orderBy(cohort.baseTypeKey, cohort.revision, cohort.id)
                     .limit(500),
             );
             const parseStarted = performance.now();
             const matching = definitions
-                .map((row) => {
+                .map(({ baseTypeKey: _baseTypeKey, ...row }) => {
                     const definition = marketCohortDefinitionSchema.parse(row);
                     const assumption = isDisplayEquivalentCohort(definition)
                         ? input.assumption

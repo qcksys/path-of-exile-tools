@@ -53,7 +53,7 @@ export async function getMarketData(
                 .mapWith(Number)
                 .as("period_pending"),
         })
-        .from(market)
+        .from(market, { forceIndex: "stash_unique_market_cover_idx" })
         .where(
             and(
                 scope,

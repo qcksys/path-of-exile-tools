@@ -166,10 +166,36 @@ their existing completeness rules. The added side produces a new cohort identity
 bindings stay on their original definitions until explicitly replaced.
 
 Definitions are matched to the item before the candidate limit is applied. Bounded
-definition pages retain database ordering, and hourly reads use exact revision/ID pairs.
+definition pages seek the indexed generated base key, revision and ID, and hourly reads use
+exact revision/ID pairs. Single-base definitions are indexed by their base; multi-base and
+unrestricted definitions use a fallback range and retain the exact JSON membership check.
 Unrelated same-base cohorts cannot consume the 2,000 relevant-candidate allowance;
 item-matching but uncovered cohorts retain their coverage reasons. A genuinely truncated
 result still prevents refresh from silently choosing an older or incomplete price.
+
+Market aggregation reads a covering secondary index before fetching the selected full rows.
+Historical search, latest nonempty observations, variant identity and period totals retain
+their existing semantics. MySQL plan and result regressions live in
+`test/e2e/market-query.test.ts` and `test/e2e/crafting-market-performance.test.ts`.
+
+Full server status uses index-only coverage scans and reuses each database/realm/league
+summary for up to one minute per Worker isolate. Concurrent requests share a pending read;
+failures are evicted. Worker reports and health remain live. `coverageCheckedAt` identifies
+the coverage snapshot through the UI, HTTP and MCP, and is null for `view=workers`.
+`test/server-status.test.ts` covers expiry, scope isolation, failed reads and transport parity.
+
+Both scheduled and worker currency ingestion use the same primary-key-ordered batches.
+Only a deadlock victim (MySQL 1213) is retried, with jitter and at most three attempts per
+autocommitted batch. Other failures and exhausted retries propagate. Unit and MySQL
+concurrency tests preserve replay, correction and zero-volume behavior.
+
+Apply the [market covering index](../app/db/migrations/20261024143220_market_covering_index/migration.sql),
+[cohort base lookup](../app/db/migrations/20261024143620_cohort_base_lookup/migration.sql) and
+[status coverage indexes](../app/db/migrations/20261024143909_status_coverage_indexes/migration.sql)
+migrations before deploying these query changes: the queries name the indexes explicitly.
+The generated cohort key indexes existing definitions automatically. Roll back application
+code before removing any of these indexes. New indexes add storage and ingestion write work;
+check live Query Insights after deployment rather than treating local timings as production results.
 
 Equipment lookup exposes per-lookup `Server-Timing` diagnostics through both HTTP and MCP:
 `equipment_db` measures the total cohort database awaits, `equipment_parse` measures validation and

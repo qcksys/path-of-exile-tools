@@ -21,8 +21,14 @@ export const createDbConnection = (url: string) => {
     });
 };
 
+let sharedDatabase: { url: string; db: TDatabase } | undefined;
+
 export async function openDatabase(url: string, driver = "planetscale") {
-    if (driver === "planetscale") return { db: createDbConnection(url), close: async () => {} };
+    if (driver === "planetscale") {
+        // The HTTP client owns no socket. Reusing it also scopes summary caches to this database.
+        if (sharedDatabase?.url !== url) sharedDatabase = { url, db: createDbConnection(url) };
+        return { db: sharedDatabase.db, close: async () => {} };
+    }
     if (driver !== "mysql") throw new Error("Unsupported database driver");
     const [{ createConnection }, { drizzle: mysqlDrizzle }] = await Promise.all([
         import("mysql2/promise"),

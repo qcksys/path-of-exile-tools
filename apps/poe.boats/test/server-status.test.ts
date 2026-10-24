@@ -40,7 +40,7 @@ beforeEach(() => {
     )`);
     db = drizzle(async (sql, params) => {
         reads.push(sql);
-        const statement = sqlite.prepare(sql);
+        const statement = sqlite.prepare(sql.replace(/ force index \([^)]+\)/gi, ""));
         statement.setReturnArrays(true);
         return {
             rows: statement
@@ -135,6 +135,7 @@ it.each([
     );
     expect(result).toEqual({
         checkedAt: now,
+        coverageCheckedAt: null,
         workers: [{ ...report, receivedAt, health }],
         coverage: [],
     });
@@ -164,6 +165,80 @@ it.each([undefined, "full"])("retains full coverage when view is %s", async (vie
     expect(reads.filter((sql) => sql.includes("count(distinct"))).toHaveLength(3);
 });
 
+it("reuses coverage for one minute while checking worker health on every request", async () => {
+    worker();
+    coverageTables();
+    const filters = { realm: "pc" as const, league: "Allflame" };
+    const [first, simultaneous] = await Promise.all([
+        getServerStatus(db, filters),
+        getServerStatus(db, filters),
+    ]);
+    expect(simultaneous.coverage).toEqual(first.coverage);
+    expect(reads.filter((query) => query.includes("count(distinct"))).toHaveLength(3);
+    sqlite.exec(
+        `INSERT INTO ${DB_TABLE_PREFIX}stash_currency_hourly VALUES ('pc', 'Allflame', 14400)`,
+    );
+    vi.mocked(Date.now).mockReturnValue(now + 59_999);
+    expect((await getServerStatus(db, filters)).coverage).toEqual(first.coverage);
+    expect(reads.filter((query) => query.includes("ingest_worker"))).toHaveLength(3);
+    expect(reads.filter((query) => query.includes("count(distinct"))).toHaveLength(3);
+    vi.mocked(Date.now).mockReturnValue(now + 60_001);
+    const refreshed = await getServerStatus(db, filters);
+    expect(refreshed.coverageCheckedAt).toBe(now + 60_001);
+    expect(refreshed.coverage[0]).toMatchObject({ hours: 3, rows: 4, latestHour: 14400 });
+    expect(reads.filter((query) => query.includes("count(distinct"))).toHaveLength(6);
+});
+
+it("keeps cached coverage isolated by realm, league and database", async () => {
+    coverageTables();
+    await getServerStatus(db, { realm: "pc", league: "Allflame" });
+    const other = await getServerStatus(db, { realm: "poe2", league: "Allflame" });
+    expect(other.coverage[0]).toMatchObject({ realm: "poe2", rows: 1 });
+    const league = await getServerStatus(db, { realm: "pc", league: "Other" });
+    expect(league.coverage[0]).toMatchObject({ league: "Other", rows: 1 });
+    expect(reads.filter((query) => query.includes("count(distinct"))).toHaveLength(9);
+    const otherDb = drizzle(async () => ({ rows: [] })) as unknown as TDatabase;
+    expect((await getServerStatus(otherDb, { realm: "pc", league: "Allflame" })).coverage).toEqual(
+        [],
+    );
+});
+
+it("retries failed coverage reads instead of caching the rejection", async () => {
+    coverageTables();
+    sqlite.exec(`DROP TABLE ${DB_TABLE_PREFIX}stash_unique_hourly`);
+    await expect(getServerStatus(db)).rejects.toThrow("Failed query");
+    sqlite.exec(
+        `CREATE TABLE ${DB_TABLE_PREFIX}stash_unique_hourly (realm TEXT, league TEXT, hour INTEGER)`,
+    );
+    expect((await getServerStatus(db)).coverage).toHaveLength(3);
+});
+
+it("expires an unfinished refresh without replacing a newer successful snapshot", async () => {
+    const pending = Promise.withResolvers<void>();
+    let coverageReads = 0;
+    const delayedDb = drizzle(async (query) => {
+        if (query.includes("count(distinct")) {
+            coverageReads++;
+            if (coverageReads <= 3) await pending.promise;
+        }
+        return { rows: [] };
+    }) as unknown as TDatabase;
+    const first = getServerStatus(delayedDb);
+    let second: ReturnType<typeof getServerStatus> | undefined;
+    try {
+        await expect.poll(() => coverageReads).toBe(3);
+        vi.mocked(Date.now).mockReturnValue(now + 60_001);
+        second = getServerStatus(delayedDb);
+        await expect.poll(() => coverageReads, { timeout: 500 }).toBe(6);
+        await second;
+    } finally {
+        pending.resolve();
+        await Promise.all([first, second]);
+    }
+    expect((await getServerStatus(delayedDb)).coverageCheckedAt).toBe(now + 60_001);
+    expect(coverageReads).toBe(6);
+});
+
 it.each([undefined, "full", "workers"])("shares view %s through HTTP and MCP", async (view) => {
     worker();
     if (view !== "workers") coverageTables();
@@ -181,7 +256,7 @@ it.each([undefined, "full", "workers"])("shares view %s through HTTP and MCP", a
     const result = CallToolResultSchema.parse(rpcSchema.parse(await rpc.json()).result);
     expect(result.isError).not.toBe(true);
     expect(result.structuredContent).toEqual(expected);
-    expect(reads).toHaveLength(view === "workers" ? 2 : 8);
+    expect(reads).toHaveLength(2);
 });
 
 it("rejects unsupported views through both transports before querying", async () => {

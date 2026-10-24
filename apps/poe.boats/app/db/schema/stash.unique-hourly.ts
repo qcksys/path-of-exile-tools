@@ -94,6 +94,17 @@ export const tStashUniqueHourly = mysqlTable(
         index("idx_stash_unique_item").on(table.league, table.itemKey),
         index("idx_stash_unique_sig").on(table.signatureKind, table.signatureValue),
         index("idx_stash_unique_icon").on(table.iconAsset),
+        // InnoDB appends the variant primary key; aggregation never needs the JSON payloads.
+        index("stash_unique_market_cover_idx").on(
+            table.realm,
+            table.league,
+            table.hour,
+            table.listingCount,
+            table.likelySales,
+            table.removedCount,
+            table.pendingCount,
+            table.name,
+        ),
     ],
 );
 
