@@ -179,6 +179,11 @@ copy rather than resetting the original worker's delivery state.
 
 ## Unattended ingestion server
 
+For automatic deployment of the dev ingestion workers on a Linux host, see the
+[CI publication and host updater runbook](../deploy/ingest/README.md). It publishes
+images only after dev validation and receiver deployment, then replaces workers using
+their existing databases and verifies successful cycles on the receiver.
+
 For a Linux server targeting the deployed app, install Docker Engine/Compose using Docker's
 distribution instructions, clone a pinned repository revision, and supply the variables in
 `packages/poe-stash-ingest/docker.env.schema` through a secret manager. Compose consumes
