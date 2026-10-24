@@ -402,47 +402,42 @@ describe.each(["poe1", "poe2"] as const)("%s crafting extraction", (game) => {
         );
     });
 
-    it("rejects invalid Allflame references, bounds, duplicates and absent provenance", () => {
+    it.each([
+        "currency",
+        "sulphur",
+        "class",
+        "duplicate-class",
+        "duplicate-bracket",
+        "duplicate-tier",
+        "missing-level",
+        "duplicate-level",
+        "outcomes",
+        "intangibility",
+        "cost",
+        "percentage",
+        "provenance",
+    ])("rejects invalid Allflame references, bounds, duplicates and absent provenance: %s", (mutation) => {
         if (game === "poe2") return;
         const result = validateCraftingData(input, expected, data);
-        const mutations = [
-            "currency",
-            "sulphur",
-            "class",
-            "duplicate-class",
-            "duplicate-bracket",
-            "duplicate-tier",
-            "missing-level",
-            "duplicate-level",
-            "outcomes",
-            "intangibility",
-            "cost",
-            "percentage",
-            "provenance",
-        ];
-        for (const mutation of mutations) {
-            const changed = structuredClone(result);
-            const allflame = changed.allflame!;
-            const bracket = allflame.currencies[0]!;
-            if (mutation === "currency") bracket.currency = "missing";
-            if (mutation === "sulphur") allflame.sulphur = "missing";
-            if (mutation === "class") allflame.classes[0]!.itemClass = "missing";
-            if (mutation === "duplicate-class") allflame.classes.push(allflame.classes[0]!);
-            if (mutation === "duplicate-bracket") allflame.currencies.push(bracket);
-            if (mutation === "duplicate-tier")
-                allflame.currencies.push({ ...bracket, id: "different" });
-            if (mutation === "missing-level") allflame.levels.pop();
-            if (mutation === "duplicate-level")
-                allflame.levels[1]!.level = allflame.levels[0]!.level;
-            if (mutation === "outcomes") bracket.outcomes.min = bracket.outcomes.max + 1;
-            if (mutation === "intangibility")
-                bracket.intangibility.min = bracket.intangibility.max + 1;
-            if (mutation === "cost") bracket.sulphurCost = -1;
-            if (mutation === "percentage") allflame.levels[0]!.costIncreasePercent = -100;
-            if (mutation === "provenance")
-                delete changed.source.tables["Data/DeepwaterCraftingCurrencies.datc64"];
-            expect(() => validateCraftingData(changed, expected, data), mutation).toThrow();
-        }
+        const changed = structuredClone(result);
+        const allflame = changed.allflame!;
+        const bracket = allflame.currencies[0]!;
+        if (mutation === "currency") bracket.currency = "missing";
+        if (mutation === "sulphur") allflame.sulphur = "missing";
+        if (mutation === "class") allflame.classes[0]!.itemClass = "missing";
+        if (mutation === "duplicate-class") allflame.classes.push(allflame.classes[0]!);
+        if (mutation === "duplicate-bracket") allflame.currencies.push(bracket);
+        if (mutation === "duplicate-tier")
+            allflame.currencies.push({ ...bracket, id: "different" });
+        if (mutation === "missing-level") allflame.levels.pop();
+        if (mutation === "duplicate-level") allflame.levels[1]!.level = allflame.levels[0]!.level;
+        if (mutation === "outcomes") bracket.outcomes.min = bracket.outcomes.max + 1;
+        if (mutation === "intangibility") bracket.intangibility.min = bracket.intangibility.max + 1;
+        if (mutation === "cost") bracket.sulphurCost = -1;
+        if (mutation === "percentage") allflame.levels[0]!.costIncreasePercent = -100;
+        if (mutation === "provenance")
+            delete changed.source.tables["Data/DeepwaterCraftingCurrencies.datc64"];
+        expect(() => validateCraftingData(changed, expected, data), mutation).toThrow();
     });
 
     it("derives maximum-socket beastcrafts from build text with matching provenance", () => {
