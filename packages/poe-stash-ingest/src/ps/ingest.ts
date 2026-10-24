@@ -8,6 +8,10 @@ import {
     defaultEquipmentClassifier,
     type EquipmentClassifier,
 } from "#src/ps/equipment.ts";
+import type {
+    EquipmentDiagnosticFixture,
+    EquipmentDiagnostics,
+} from "#src/ps/equipment-diagnostics.ts";
 import { evaluateSales, recordRemovals } from "#src/ps/sales.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { learnBasemap } from "#src/shared/basemap.ts";
@@ -223,6 +227,7 @@ export async function ingestPs(
         cursor?: string;
         league?: string | null;
         equipment?: EquipmentClassifier;
+        equipmentDiagnostics?: EquipmentDiagnostics;
         observedAt?: Date;
     },
 ): Promise<PsIngestResult> {
@@ -271,6 +276,7 @@ export async function ingestPs(
             accepts,
         );
 
+        const fixtures: EquipmentDiagnosticFixture[] = [];
         await withTransaction(conn, async () => {
             const [clock] = await queryAll<{ millis: number }>(
                 conn,
@@ -294,6 +300,16 @@ export async function ingestPs(
                     change,
                     equipment,
                     observedAt,
+                    opts.equipmentDiagnostics
+                        ? (item, classification) => {
+                              const fixture = opts.equipmentDiagnostics!.collect(
+                                  item,
+                                  classification,
+                                  observedAt,
+                              );
+                              if (fixture) fixtures.push(fixture);
+                          }
+                        : undefined,
                 );
                 result.inserted += r.inserted;
                 result.updated += r.updated;
@@ -312,6 +328,7 @@ export async function ingestPs(
                     [captureId, equipment.manifest.revision],
                 );
         });
+        if (fixtures.length) await opts.equipmentDiagnostics?.flush(fixtures);
 
         cursor = page.next_change_id;
         result.pages++;

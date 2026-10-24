@@ -266,6 +266,14 @@ program
         const client = createPoeClient();
         const { REALM } = await import("#src/shared/auth.ts");
         const { createStatusReporter } = await import("#src/shared/status.ts");
+        const { loadEquipmentDiagnostics } = await import(
+            "#src/ps/equipment-diagnostics-request.ts"
+        );
+        const equipmentDiagnostics = await loadEquipmentDiagnostics({
+            statusFile: process.env.INGEST_STATUS_FILE,
+            realm: REALM ?? "pc",
+            league: opts.league,
+        });
         const status = createStatusReporter({
             workerId: process.env.INGEST_WORKER_ID || `${REALM ?? "pc"}:${opts.league}`,
             realm: REALM ?? "pc",
@@ -291,6 +299,7 @@ program
                             ? undefined
                             : opts.currencyFromHour,
                         onStatus: status.update,
+                        equipmentDiagnostics,
                     });
                     console.log(JSON.stringify(result));
                     return { caughtUp: result.stash?.caughtUp ?? true };

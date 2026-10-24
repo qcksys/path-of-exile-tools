@@ -4,6 +4,7 @@ import type { IngestStatus } from "@poe-tools/market";
 import { ingestCx } from "#src/cx/ingest.ts";
 import { rollupCx } from "#src/cx/rollup.ts";
 import { flushCheckpoints } from "#src/ps/checkpoints.ts";
+import type { EquipmentDiagnostics } from "#src/ps/equipment-diagnostics.ts";
 import { reclassifyArchivedEquipment } from "#src/ps/equipment-reclassify.ts";
 import { rollupEquipment } from "#src/ps/equipment-rollup.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
@@ -93,6 +94,7 @@ export async function runPipeline(
         cursor?: string;
         currency?: boolean;
         observedAt?: Date;
+        equipmentDiagnostics?: EquipmentDiagnostics;
         onStatus?: (patch: Partial<IngestStatus>) => Promise<void>;
         currencyFromHour?: number;
         currencyHours?: number;
