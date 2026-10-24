@@ -25,6 +25,7 @@ export const tStashCurrencyHourly = mysqlTable(
     (table) => [
         primaryKey({ columns: [table.realm, table.league, table.marketId, table.hour] }),
         index("idx_stash_cx_league_hour").on(table.league, table.hour),
+        index("stash_currency_coverage_idx").on(table.realm, table.league, table.hour),
     ],
 );
 

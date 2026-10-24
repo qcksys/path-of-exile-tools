@@ -93,22 +93,61 @@ export async function upsertStashCurrencyHourly(
 ): Promise<number> {
     if (rows.length === 0) return 0;
     let written = 0;
-    for (const batch of chunk(rows, UPSERT_CHUNK)) {
-        await db
-            .insert(tStashCurrencyHourly)
-            .values(batch)
-            .onDuplicateKeyUpdate({
-                set: {
-                    lowestRatio: sql`values(${tStashCurrencyHourly.lowestRatio})`,
-                    highestRatio: sql`values(${tStashCurrencyHourly.highestRatio})`,
-                    volumeTraded: sql`values(${tStashCurrencyHourly.volumeTraded})`,
-                    lowestStock: sql`values(${tStashCurrencyHourly.lowestStock})`,
-                    highestStock: sql`values(${tStashCurrencyHourly.highestStock})`,
-                },
-            });
+    const ordered = rows.toSorted((a, b) => {
+        for (const [left, right] of [
+            [a.realm ?? "pc", b.realm ?? "pc"],
+            [a.league, b.league],
+            [a.marketId, b.marketId],
+        ] as const) {
+            if (left < right) return -1;
+            if (left > right) return 1;
+        }
+        return a.hour - b.hour;
+    });
+    for (const batch of chunk(ordered, UPSERT_CHUNK)) {
+        await retryCurrencyDeadlock(() =>
+            db
+                .insert(tStashCurrencyHourly)
+                .values(batch)
+                .onDuplicateKeyUpdate({
+                    set: {
+                        lowestRatio: sql`values(${tStashCurrencyHourly.lowestRatio})`,
+                        highestRatio: sql`values(${tStashCurrencyHourly.highestRatio})`,
+                        volumeTraded: sql`values(${tStashCurrencyHourly.volumeTraded})`,
+                        lowestStock: sql`values(${tStashCurrencyHourly.lowestStock})`,
+                        highestStock: sql`values(${tStashCurrencyHourly.highestStock})`,
+                    },
+                }),
+        );
         written += batch.length;
     }
     return written;
+}
+
+function isDeadlock(error: unknown): boolean {
+    if (!error || typeof error !== "object") return false;
+    if (
+        ("errno" in error && error.errno === 1213) ||
+        ("code" in error && error.code === "ER_LOCK_DEADLOCK")
+    )
+        return true;
+    // Inspect the driver cause, not Drizzle's SQL/parameter text in its wrapper message.
+    if ("cause" in error && error.cause) return isDeadlock(error.cause);
+    return error instanceof Error && /\bDeadlock found\b.*\(errno 1213\)/is.test(error.message);
+}
+
+async function retryCurrencyDeadlock(write: () => PromiseLike<unknown>) {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            return await write();
+        } catch (error) {
+            if (attempt === 2 || !isDeadlock(error)) throw error;
+            // Each batch is one autocommitted upsert, so only the deadlock victim needs replay.
+            await new Promise((resolve) =>
+                setTimeout(resolve, 25 * 2 ** attempt + Math.random() * 25),
+            );
+        }
+    }
 }
 
 export async function upsertStashBasemapSnapshot(

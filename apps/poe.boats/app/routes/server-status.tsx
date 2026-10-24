@@ -43,7 +43,7 @@ export default function ServerStatus({ loaderData }: Pick<Route.ComponentProps, 
         }, 30_000);
         return () => clearInterval(timer);
     }, [revalidator]);
-    const { workers, coverage, checkedAt } = loaderData;
+    const { workers, coverage, checkedAt, coverageCheckedAt } = loaderData;
     const attention = workers.filter((worker) =>
         ["error", "stale", "stalled"].includes(worker.health),
     ).length;
@@ -234,6 +234,8 @@ export default function ServerStatus({ loaderData }: Pick<Route.ComponentProps, 
                         Coverage counts distinct stored hours. Gaps are not filled. Exchange
                         snapshots can be backfilled; equipment and unique-item history begins when
                         listings were observed.
+                        {coverageCheckedAt !== null &&
+                            ` Coverage checked ${date(coverageCheckedAt)}; summaries are reused for up to one minute.`}
                     </p>
                     {!coverage.length ? (
                         <p className="rounded-lg border border-dashed p-6 text-muted-foreground">

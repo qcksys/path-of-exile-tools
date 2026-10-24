@@ -1,0 +1,2 @@
+CREATE INDEX `stash_cohort_coverage_idx` ON `qsPoeBoats__stash_cohort_hourly` (`realm`,`league`,`hour`);--> statement-breakpoint
+CREATE INDEX `stash_currency_coverage_idx` ON `qsPoeBoats__stash_currency_hourly` (`realm`,`league`,`hour`);

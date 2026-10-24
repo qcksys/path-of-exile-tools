@@ -30,7 +30,9 @@ it("shows empty coverage and refreshes manually and on the polling interval", ()
     vi.useFakeTimers();
     const view = render(
         <MemoryRouter>
-            <ServerStatus loaderData={{ checkedAt: 0, workers: [], coverage: [] }} />
+            <ServerStatus
+                loaderData={{ checkedAt: 0, coverageCheckedAt: 0, workers: [], coverage: [] }}
+            />
         </MemoryRouter>,
     );
     expect(screen.getByText(/No worker has reported/)).toBeTruthy();
@@ -50,6 +52,7 @@ it("shows stale workers separately from stored history and never implies continu
             <ServerStatus
                 loaderData={{
                     checkedAt: 1_000_000,
+                    coverageCheckedAt: 950_000,
                     workers: [
                         {
                             workerId: "local-allflame",
@@ -93,5 +96,8 @@ it("shows stale workers separately from stored history and never implies continu
     expect(screen.getByText("1 need attention")).toBeTruthy();
     expect(screen.getByRole("table").textContent).toContain("Allflame");
     expect(screen.getByText(/Gaps are not filled/)).toBeTruthy();
+    expect(
+        screen.getByText(/Coverage checked.*summaries are reused for up to one minute/),
+    ).toBeTruthy();
     expect(screen.getByText(/Next snapshot to request/)).toBeTruthy();
 });
