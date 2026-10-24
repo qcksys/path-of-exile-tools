@@ -36,6 +36,8 @@ jobs:
       - run: vp install --frozen-lockfile
       - name: Lint
         run: vp run lint
+      - name: Repository script tests
+        run: vp run test:scripts
       - name: Ingest deployment tests
         run: python3 -m unittest discover -s deploy/ingest -p 'test_*.py' -v
       - name: Build
