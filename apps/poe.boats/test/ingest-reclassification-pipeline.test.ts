@@ -1,18 +1,20 @@
 import { expect, it, vi } from "vite-plus/test";
 import { createClient } from "../../../packages/poe-api-client/src/client";
 import { runPipeline } from "../../../packages/poe-stash-ingest/src/pipeline";
+import type { EquipmentDiagnostics } from "../../../packages/poe-stash-ingest/src/ps/equipment-diagnostics";
 import { openDb } from "../../../packages/poe-stash-ingest/src/shared/db";
 
 const fixture = vi.hoisted(() => ({
     events: [] as string[],
+    ingest: vi.fn(),
     reclassify: vi.fn(),
 }));
 vi.mock("../../../packages/poe-stash-ingest/src/shared/auth.ts", () => ({ REALM: "pc" }));
 vi.mock("../../../packages/poe-stash-ingest/src/ps/ingest.ts", () => ({
-    ingestPs: async () => {
+    ingestPs: fixture.ingest.mockImplementation(async () => {
         fixture.events.push("capture");
         return { caughtUp: false };
-    },
+    }),
 }));
 vi.mock("../../../packages/poe-stash-ingest/src/cx/ingest.ts", () => ({
     ingestCx: async () => {
@@ -36,14 +38,29 @@ it("reclassifies a bounded archive batch on the owning connection after live exc
         return { pages: 1, hours: 0, completedHours: [], pending: true };
     });
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const equipmentDiagnostics: EquipmentDiagnostics = {
+        collect: vi.fn(() => null),
+        flush: vi.fn(async () => {}),
+    };
+    fixture.ingest.mockClear();
     try {
-        await runPipeline(db.conn, client, { pages: 50, league: "Allflame" });
+        await runPipeline(db.conn, client, { pages: 50, league: "Allflame", equipmentDiagnostics });
         expect(fixture.events).toEqual(["capture", "exchange", "reclassify", "delivery"]);
+        expect(fixture.ingest).toHaveBeenCalledExactlyOnceWith(
+            db.conn,
+            client,
+            expect.objectContaining({ equipmentDiagnostics }),
+        );
+        expect(fixture.ingest.mock.calls[0]![2].equipmentDiagnostics).toBe(equipmentDiagnostics);
         expect(fixture.reclassify).toHaveBeenCalledExactlyOnceWith(db.conn, {
             realm: "pc",
             league: "Allflame",
             limitPages: 5,
+            equipmentDiagnostics,
         });
+        expect(fixture.reclassify.mock.calls[0]![1].equipmentDiagnostics).toBe(
+            equipmentDiagnostics,
+        );
         expect(log).toHaveBeenCalledWith(
             "reclassified 1 archived equipment pages; completed hours=none; pending=true",
         );
@@ -74,6 +91,7 @@ it("reports projection failure but still attempts pending delivery after exchang
             realm: "pc",
             league: "all",
             limitPages: 1,
+            equipmentDiagnostics: undefined,
         });
     } finally {
         await db.close();

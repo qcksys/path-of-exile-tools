@@ -186,6 +186,7 @@ export async function runPipeline(
                 realm: REALM ?? "pc",
                 league: opts.league ?? "all",
                 limitPages: Math.min(opts.pages, 5),
+                equipmentDiagnostics: opts.equipmentDiagnostics,
             })
                 .then(async (result) => {
                     if (result.pages)

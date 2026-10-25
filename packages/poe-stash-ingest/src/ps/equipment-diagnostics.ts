@@ -52,7 +52,7 @@ type Classification = { matches: string[]; unknown: string[] };
 
 export interface EquipmentDiagnosticFixture {
     format: 1;
-    origin: "live";
+    origin: "live" | "archive";
     observedAt: string;
     hour: number;
     realm: string;
@@ -255,7 +255,12 @@ export function createEquipmentDiagnostics(options: {
         disabled = true;
     }
     return {
-        collect(input: unknown, classification: Classification, observedAt: Date) {
+        collect(
+            input: unknown,
+            classification: Classification,
+            observedAt: Date,
+            origin: EquipmentDiagnosticFixture["origin"] = "live",
+        ) {
             if (!active() || saved.size >= MAX_FIXTURES) return null;
             const selected = targets.filter((target) =>
                 classification.unknown.includes(target.cohortId),
@@ -295,7 +300,7 @@ export function createEquipmentDiagnostics(options: {
                 }
                 const fixture: EquipmentDiagnosticFixture = {
                     format: 1,
-                    origin: "live",
+                    origin,
                     observedAt: observedAt.toISOString(),
                     hour: Math.floor(observedAt.getTime() / 3_600_000) * 3600,
                     realm: options.realm,

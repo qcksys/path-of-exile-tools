@@ -120,17 +120,21 @@ Ordinary prepared-item cohorts and source-preparation cohorts can share one requ
 unknown IDs reject the whole request. Source-preparation metadata is present in a fixture's
 target only when its cohort has that profile. Known matches and definite no-matches are
 not sampled.
-The owning process samples only newly observed target unknowns, then reclassifies sanitized
-items and requires identical complete matches and unknowns. It writes
-`equipment-diagnostics.json` in the same directory only after the page transaction commits.
+The owning process samples target unknowns during live capture and normal pending archive
+reclassification, then reclassifies sanitized items and requires identical complete matches
+and unknowns. It writes `equipment-diagnostics.json` in the same directory only after the
+page transaction commits.
 The file excludes account, stash and item identifiers, listing notes, prices and credentials.
-Samples retain their real observation hour and do not explain earlier hours retroactively.
+Samples identify their `live` or `archive` origin and retain the original capture time and
+hour. Archive sampling does not revisit completed pages or start an additional scan; samples
+do not explain other hours retroactively.
 Unsupported shapes and unknown active flag names are skipped rather than changed; missing
 diagnostic samples do not establish that the corresponding items are absent from the market.
 
 The collector permits at most 64 verification attempts and 16 saved fixtures per process,
-with 16 KiB per fixture and 256 KiB total, shared across all requested cohort types. It stops
-at expiry; write failures do not stop ingestion. Read only this output file for diagnosis
+with 16 KiB per fixture and 256 KiB total, shared across live and archive sampling and all
+requested cohort types. It stops at expiry; write failures do not stop ingestion. Read only
+this output file for diagnosis
 and remove the request when the investigation ends. No additional database connection,
 cursor reset or credential resolution is needed. This debug facility does not change
 classification or public market APIs.
