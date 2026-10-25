@@ -137,6 +137,36 @@ classification or public market APIs.
 Stage the request before a normal deployment; editing it after startup does not reload it.
 Do not restart a worker solely to collect observations.
 
+### Temporary resonator diagnostics
+
+To establish how captured Prime Chaotic Resonators represent socket contents, place
+`resonator-diagnostics.request.json` beside `INGEST_STATUS_FILE` before a normal deployment:
+
+```json
+{
+    "format": 1,
+    "realm": "pc",
+    "league": "Allflame",
+    "expiresAt": "2026-10-26T08:00:00Z"
+}
+```
+
+Use a future expiry no more than 24 hours away. Only a specific PoE 1 PC league is supported;
+missing, invalid, mismatched and expired requests leave diagnostics disabled. The worker reads
+the request once at startup and writes `resonator-diagnostics.json` in the same directory only
+after the observed page commits. Private stashes and other leagues are excluded.
+
+The output records at most 16 distinct sanitized shapes, with 16 KiB per fixture and 256 KiB
+total. Socket contents retain only presence, type and count: missing, null, empty, nonempty
+and malformed values remain distinct. Socket attributes use a fixed vocabulary. Item/account/
+stash identifiers, notes, prices, icons and nested item contents are excluded. Observation
+timestamps describe these captures only. A shape does not itself establish a priceable empty
+resonator, and this diagnostic does not alter market classification or historical summaries.
+
+Collection stops at expiry. Output failures warn once and disable diagnostics without stopping
+ingestion. Read only the diagnostic output and remove the request when finished; no additional
+database connection, cursor reset, credential resolution or diagnostic-only restart is needed.
+
 To seed a recent cursor on an empty volume, stop the worker, then run a one-off command with
 the same host credentials (`varlock run` from this package directory):
 

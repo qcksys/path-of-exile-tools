@@ -12,6 +12,10 @@ import type {
     EquipmentDiagnosticFixture,
     EquipmentDiagnostics,
 } from "#src/ps/equipment-diagnostics.ts";
+import type {
+    ResonatorDiagnosticFixture,
+    ResonatorDiagnostics,
+} from "#src/ps/resonator-diagnostics.ts";
 import { evaluateSales, recordRemovals } from "#src/ps/sales.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { learnBasemap } from "#src/shared/basemap.ts";
@@ -228,6 +232,7 @@ export async function ingestPs(
         league?: string | null;
         equipment?: EquipmentClassifier;
         equipmentDiagnostics?: EquipmentDiagnostics;
+        resonatorDiagnostics?: ResonatorDiagnostics;
         observedAt?: Date;
     },
 ): Promise<PsIngestResult> {
@@ -277,6 +282,7 @@ export async function ingestPs(
         );
 
         const fixtures: EquipmentDiagnosticFixture[] = [];
+        const resonatorFixtures = new Map<string, ResonatorDiagnosticFixture>();
         await withTransaction(conn, async () => {
             const [clock] = await queryAll<{ millis: number }>(
                 conn,
@@ -295,6 +301,12 @@ export async function ingestPs(
                     result.leagues.set(lg, acc);
                 }
                 const r = await applyStashChange(conn, change);
+                if (change.public && opts.resonatorDiagnostics) {
+                    for (const item of change.items) {
+                        const fixture = opts.resonatorDiagnostics.collect(item, observedAt);
+                        if (fixture) resonatorFixtures.set(fixture.shapeSha256, fixture);
+                    }
+                }
                 result.equipmentObserved += await captureEquipment(
                     conn,
                     change,
@@ -329,6 +341,8 @@ export async function ingestPs(
                 );
         });
         if (fixtures.length) await opts.equipmentDiagnostics?.flush(fixtures);
+        if (resonatorFixtures.size)
+            await opts.resonatorDiagnostics?.flush([...resonatorFixtures.values()]);
 
         cursor = page.next_change_id;
         result.pages++;

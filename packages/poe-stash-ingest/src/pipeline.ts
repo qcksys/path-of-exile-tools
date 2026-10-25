@@ -8,6 +8,7 @@ import type { EquipmentDiagnostics } from "#src/ps/equipment-diagnostics.ts";
 import { reclassifyArchivedEquipment } from "#src/ps/equipment-reclassify.ts";
 import { rollupEquipment } from "#src/ps/equipment-rollup.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
+import type { ResonatorDiagnostics } from "#src/ps/resonator-diagnostics.ts";
 import { rollupPs } from "#src/ps/rollup.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { queryAll, TransactionRollbackError } from "#src/shared/db.ts";
@@ -95,6 +96,7 @@ export async function runPipeline(
         currency?: boolean;
         observedAt?: Date;
         equipmentDiagnostics?: EquipmentDiagnostics;
+        resonatorDiagnostics?: ResonatorDiagnostics;
         onStatus?: (patch: Partial<IngestStatus>) => Promise<void>;
         currencyFromHour?: number;
         currencyHours?: number;
