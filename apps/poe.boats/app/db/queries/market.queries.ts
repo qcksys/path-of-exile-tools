@@ -31,26 +31,47 @@ import {
     mergeMarketPrices,
 } from "~/lib/market-price-merge";
 import type { MarketFilters, MarketOrder } from "~/schemas/market";
+import { type Span, traceQuery, traceSpan } from "~/services/tracing.server";
 
 const PAGE_SIZE = 50;
 
-export async function getMarketData(
-    db: TDatabase,
-    input: MarketFilters,
-    view: "all" | "list" | "history" = "all",
-) {
+type MarketView = "all" | "list" | "history";
+
+export function getMarketData(db: TDatabase, input: MarketFilters, view: MarketView = "all") {
+    return traceSpan("market.data", (span) => readMarketData(db, input, view, span));
+}
+
+async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketView, span: Span) {
     // Group by the full index prefix so MySQL can skip between season boundaries.
-    const seasons = await db
-        .select({
-            league: market.league,
-            firstHour: min(market.hour),
-            latestHour: max(market.hour),
-        })
-        .from(market)
-        .where(eq(market.realm, input.realm))
-        .groupBy(market.realm, market.league)
-        .orderBy(desc(max(market.hour)));
+    const seasons = await traceQuery(
+        "market.seasons",
+        db
+            .select({
+                league: market.league,
+                firstHour: min(market.hour),
+                latestHour: max(market.hour),
+            })
+            .from(market)
+            .where(eq(market.realm, input.realm))
+            .groupBy(market.realm, market.league)
+            .orderBy(desc(max(market.hour))),
+    );
     const filters = { ...input, league: input.league || seasons[0]?.league || "" };
+    span.setAttributes({
+        "market.view": view,
+        "market.realm": filters.realm,
+        "market.league": filters.league,
+        "market.category": filters.category,
+        "market.order": filters.order,
+        "market.days": filters.days,
+        "market.page": filters.page,
+        "market.currency": filters.currency,
+        "market.rarity": filters.rarity,
+        "market.identification": filters.identification,
+        "market.corruption": filters.corruption,
+        "market.search": Boolean(filters.q),
+        "market.item": Boolean(filters.item),
+    });
     const season = seasons.find((entry) => entry.league === filters.league);
     const cutoff = Number(season?.latestHour ?? 0) - Number(filters.days) * 86400 + 3600;
     const scope = and(
@@ -182,28 +203,41 @@ export async function getMarketData(
         )
         .$dynamic();
     if (pageLatestRows) rowsQuery.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
-    const rowsPromise = view === "history" ? Promise.resolve([]) : rowsQuery;
+    const rowsPromise =
+        view === "history"
+            ? Promise.resolve([])
+            : traceQuery("market.rows", rowsQuery, {
+                  "market.page_latest_rows": pageLatestRows,
+                  "market.force_index": !search,
+              });
     const historyPromise =
         filters.item && view !== "list"
-            ? db
-                  .select()
-                  .from(market)
-                  .where(
-                      and(
-                          scope,
-                          eq(market.itemKey, filters.item),
-                          eq(market.identified, filters.identified === "true"),
-                          eq(market.corrupted, filters.corrupted === "true"),
-                          eq(market.foilVariation, filters.foil),
-                          eq(market.signatureKind, filters.kind),
-                          eq(market.signatureValue, filters.value),
-                      ),
-                  )
-                  .orderBy(asc(market.hour))
-                  .limit(2160)
+            ? traceQuery(
+                  "market.history",
+                  db
+                      .select()
+                      .from(market)
+                      .where(
+                          and(
+                              scope,
+                              eq(market.itemKey, filters.item),
+                              eq(market.identified, filters.identified === "true"),
+                              eq(market.corrupted, filters.corrupted === "true"),
+                              eq(market.foilVariation, filters.foil),
+                              eq(market.signatureKind, filters.kind),
+                              eq(market.signatureValue, filters.value),
+                          ),
+                      )
+                      .orderBy(asc(market.hour))
+                      .limit(2160),
+              )
             : Promise.resolve([]);
     const [rows, history] = await Promise.all([rowsPromise, historyPromise]);
     const rates = await historyChaosRates(db, filters, history);
+    span.setAttributes({
+        "market.rows": rows.length,
+        "market.history_rows": history.length,
+    });
     return {
         filters,
         seasons,
@@ -253,26 +287,30 @@ async function historyChaosRates(
             ]),
         ]),
     ];
-    const snapshots = await db
-        .select({
-            realm: currencyHourly.realm,
-            league: currencyHourly.league,
-            marketId: currencyHourly.marketId,
-            hour: currencyHourly.hour,
-            volumeTraded: currencyHourly.volumeTraded,
-            lowestRatio: currencyHourly.lowestRatio,
-            highestRatio: currencyHourly.highestRatio,
-        })
-        .from(currencyHourly)
-        .where(
-            and(
-                eq(currencyHourly.realm, filters.realm),
-                eq(currencyHourly.league, filters.league),
-                inArray(currencyHourly.marketId, marketRatePairs(currencies)),
-                gte(currencyHourly.hour, history[0]!.hour - MARKET_RATE_MAX_AGE),
-                lte(currencyHourly.hour, history.at(-1)!.hour),
+    const snapshots = await traceQuery(
+        "market.rates",
+        db
+            .select({
+                realm: currencyHourly.realm,
+                league: currencyHourly.league,
+                marketId: currencyHourly.marketId,
+                hour: currencyHourly.hour,
+                volumeTraded: currencyHourly.volumeTraded,
+                lowestRatio: currencyHourly.lowestRatio,
+                highestRatio: currencyHourly.highestRatio,
+            })
+            .from(currencyHourly)
+            .where(
+                and(
+                    eq(currencyHourly.realm, filters.realm),
+                    eq(currencyHourly.league, filters.league),
+                    inArray(currencyHourly.marketId, marketRatePairs(currencies)),
+                    gte(currencyHourly.hour, history[0]!.hour - MARKET_RATE_MAX_AGE),
+                    lte(currencyHourly.hour, history.at(-1)!.hour),
+                ),
             ),
-        );
+        { "market.currencies": currencies.length },
+    );
     return chaosRatesByHour(
         snapshots.map((row) => exchangeSnapshotSchema.parse(row)),
         currencies,
