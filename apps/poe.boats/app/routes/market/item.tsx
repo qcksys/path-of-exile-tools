@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { Link } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
+import { DataTable, dataTableColumns } from "~/components/data-table";
 import { ItemArt } from "~/components/item-art";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
 import { MarketPriceChart } from "~/components/market-price-chart";
@@ -18,7 +20,78 @@ export function loader({ request, context, params }: Route.LoaderArgs) {
     );
 }
 
-const cellClass = "px-4 py-3 text-left";
+type HistoryRow = Awaited<ReturnType<typeof getMarketData>>["history"][number];
+
+const column = dataTableColumns<HistoryRow>();
+
+function HourlyTable({
+    rows,
+    currency,
+    game,
+}: {
+    rows: HistoryRow[];
+    currency: string;
+    game: "poe1" | "poe2";
+}) {
+    const columns = useMemo(() => {
+        const price = (value: number | undefined) =>
+            value === undefined ? (
+                "—"
+            ) : (
+                <>
+                    {number(value)} <CurrencyLabel currency={currency} game={game} />
+                </>
+            );
+        const count = { sortDescFirst: true, meta: { filter: "range" } } as const;
+        return column.columns([
+            column.accessor((row) => marketUtc(row.hour), {
+                id: "hour",
+                header: "Hour (UTC)",
+                sortDescFirst: true,
+                meta: { filter: "text", className: "whitespace-nowrap" },
+            }),
+            column.accessor((row) => row.merged?.median, {
+                id: "ask",
+                header: "Median ask",
+                ...count,
+                sortUndefined: "last",
+                cell: ({ getValue }) => price(getValue()),
+            }),
+            column.accessor("listingCount", {
+                header: "Listings observed",
+                ...count,
+                cell: ({ getValue }) => number(getValue()),
+            }),
+            column.accessor("likelySales", {
+                header: "Likely sales",
+                ...count,
+                cell: ({ getValue }) => number(getValue()),
+            }),
+            column.accessor((row) => row.mergedSales?.median, {
+                id: "salesAsk",
+                header: "Median last ask of likely sales",
+                ...count,
+                sortUndefined: "last",
+                cell: ({ getValue }) => price(getValue()),
+            }),
+            column.accessor("pendingCount", {
+                header: "Pending",
+                ...count,
+                cell: ({ getValue }) => number(getValue()),
+            }),
+        ]);
+    }, [currency, game]);
+    return (
+        <DataTable
+            label="Hourly observations"
+            data={rows}
+            columns={columns}
+            getRowId={(row) => String(row.hour)}
+            search
+            className="mt-3"
+        />
+    );
+}
 
 export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
     const { filters, seasons, history } = loaderData;
@@ -28,7 +101,6 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
     ].sort();
     const periodSales = history.reduce((sum, row) => sum + row.likelySales, 0);
     const game = filters.realm === "poe2" ? "poe2" : "poe1";
-    const currencyLabel = <CurrencyLabel currency={filters.currency} game={game} />;
     return (
         <>
             <MarketFiltersForm filters={filters} seasons={seasons} />
@@ -95,64 +167,11 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                         <summary className="cursor-pointer text-sm">
                             Hourly observations and inferred sale prices (latest 72 hours with data)
                         </summary>
-                        <div className="mt-3 overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-border">
-                                        <th className={cellClass}>Hour (UTC)</th>
-                                        <th className={cellClass}>Median ask</th>
-                                        <th className={cellClass}>Listings observed</th>
-                                        <th className={cellClass}>Likely sales</th>
-                                        <th className={cellClass}>
-                                            Median last ask of likely sales
-                                        </th>
-                                        <th className={cellClass}>Pending</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {history
-                                        .slice(-72)
-                                        .reverse()
-                                        .map((row) => (
-                                            <tr
-                                                key={row.hour}
-                                                className="border-b border-border/60"
-                                            >
-                                                <td className={cellClass}>{marketUtc(row.hour)}</td>
-                                                <td className={cellClass}>
-                                                    {row.merged ? (
-                                                        <>
-                                                            {number(row.merged.median)}{" "}
-                                                            {currencyLabel}
-                                                        </>
-                                                    ) : (
-                                                        "—"
-                                                    )}
-                                                </td>
-                                                <td className={cellClass}>
-                                                    {number(row.listingCount)}
-                                                </td>
-                                                <td className={cellClass}>
-                                                    {number(row.likelySales)}
-                                                </td>
-                                                <td className={cellClass}>
-                                                    {row.mergedSales ? (
-                                                        <>
-                                                            {number(row.mergedSales.median)}{" "}
-                                                            {currencyLabel}
-                                                        </>
-                                                    ) : (
-                                                        "—"
-                                                    )}
-                                                </td>
-                                                <td className={cellClass}>
-                                                    {number(row.pendingCount)}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        <HourlyTable
+                            rows={history.slice(-72).reverse()}
+                            currency={filters.currency}
+                            game={game}
+                        />
                     </details>
                 </section>
             ) : filters.item ? (

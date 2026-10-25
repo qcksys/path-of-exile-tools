@@ -495,6 +495,77 @@ it("sorts the latest asking price in the selected currency across page boundarie
     expect(chaos.rows[0]?.itemKey).toBe("Chaos only");
 });
 
+it("filters and orders by table column ranges before pagination", async () => {
+    await db.insert(market).values([
+        ...Array.from({ length: 60 }, (_, index) => {
+            const itemKey = `Item ${String(index).padStart(2, "0")}`;
+            return [
+                observation({
+                    league: "Ranges",
+                    itemKey,
+                    listingCount: index + 1,
+                    uniqueSellers: 60 - index,
+                    likelySales: index % 5,
+                    prices: { divine: { count: 1, min: index, median: index, max: index } },
+                }),
+                observation({
+                    league: "Ranges",
+                    itemKey,
+                    hour: hour - 3600,
+                    listingCount: 999,
+                    uniqueSellers: 999,
+                    likelySales: 1,
+                }),
+            ];
+        }).flat(),
+        observation({ league: "Ranges", itemKey: "Stale", hour: hour - 7200 }),
+    ]);
+    const read = async (filters: Record<string, unknown>) =>
+        getMarketData(
+            db as unknown as TDatabase,
+            marketFiltersSchema.parse({ league: "Ranges", order: "name-asc", ...filters }),
+        );
+    const keys = (indexes: number[]) =>
+        indexes.map((index) => `Item ${String(index).padStart(2, "0")}`);
+    const range = (from: number, to: number) =>
+        Array.from({ length: to - from + 1 }, (_, index) => from + index);
+    const everyFifth = (offset: number) => range(0, 11).map((index) => index * 5 + offset);
+
+    expect(
+        (await read({ listingsMin: 10, listingsMax: 19 })).rows.map((row) => row.itemKey),
+    ).toEqual(keys(range(9, 18)));
+    expect((await read({ sellersMin: 55 })).rows.map((row) => row.itemKey)).toEqual(
+        keys(range(0, 5)),
+    );
+    expect((await read({ priceMin: 50, priceMax: 59.5 })).rows.map((row) => row.itemKey)).toEqual(
+        keys(range(50, 59)),
+    );
+    expect((await read({ salesMin: 5 })).rows.map((row) => row.itemKey)).toEqual(
+        keys(everyFifth(4)),
+    );
+    expect((await read({ salesMax: 1 })).rows.map((row) => row.itemKey)).toEqual([
+        ...keys(everyFifth(0)),
+        "Stale",
+    ]);
+    const priced = await read({ priceMin: 0 });
+    expect(priced.rows).toHaveLength(50);
+    expect(priced.hasMore).toBe(true);
+    expect((await read({ priceMin: 0, page: 2 })).rows.map((row) => row.itemKey)).toEqual(
+        keys(range(50, 59)),
+    );
+
+    expect((await read({ order: "listings-desc" })).rows[0]?.itemKey).toBe("Item 59");
+    expect((await read({ order: "listings-asc" })).rows[0]?.itemKey).toBe("Item 00");
+    expect((await read({ order: "sellers-desc" })).rows[0]?.itemKey).toBe("Item 00");
+    expect((await read({ order: "sales-asc" })).rows[0]?.itemKey).toBe("Stale");
+    expect((await read({ order: "oldest" })).rows[0]?.itemKey).toBe("Stale");
+    const listingsPage2 = await read({ order: "listings-desc", page: 2 });
+    expect(listingsPage2.rows.map((row) => row.itemKey)).toEqual([
+        ...keys(range(0, 9).reverse()),
+        "Stale",
+    ]);
+});
+
 it("keeps item history independent of browsing filters and skips the list query for detail routes", async () => {
     statements.length = 0;
     const result = await getMarketData(

@@ -170,3 +170,120 @@ it("keeps an empty detail route navigable", async () => {
     ).toBeTruthy();
     expect(screen.getByRole("link", { name: /Back to markets/ })).toBeTruthy();
 });
+
+it("sorts and filters the market list from its table headers through the URL", async () => {
+    showMarket();
+    const table = await screen.findByRole("table", { name: "Armour markets" });
+    const itemHeader = within(table).getByRole("columnheader", { name: /Item \/ variant/ });
+    expect(itemHeader.getAttribute("aria-sort")).toBe("ascending");
+    fireEvent.click(within(table).getByRole("button", { name: "Likely sales" }));
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ order: "sales", page: 1, category: "armour" }),
+            "list",
+        ),
+    );
+    await waitFor(() =>
+        expect(
+            within(screen.getByRole("table", { name: "Armour markets" }))
+                .getByRole("columnheader", { name: /Likely sales/ })
+                .getAttribute("aria-sort"),
+        ).toBe("descending"),
+    );
+
+    const minimum = within(screen.getByRole("table", { name: "Armour markets" })).getByRole(
+        "spinbutton",
+        { name: "Minimum Median asking price" },
+    );
+    fireEvent.change(minimum, { target: { value: "1.5" } });
+    expect(getMarketData).not.toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({ priceMin: 1.5 }),
+        "list",
+    );
+    fireEvent.keyDown(minimum, { key: "Enter" });
+    await waitFor(() =>
+        expect(screen.getByLabelText("Current URL").textContent).toContain("priceMin=1.5"),
+    );
+
+    const text = within(screen.getByRole("table", { name: "Armour markets" })).getByRole(
+        "textbox",
+        { name: "Filter Item / variant" },
+    );
+    fireEvent.change(text, { target: { value: "Goathide" } });
+    fireEvent.blur(text);
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ q: "Goathide", priceMin: 1.5, order: "sales", page: 1 }),
+            "list",
+        ),
+    );
+    await waitFor(() =>
+        expect(
+            (screen.getByRole("searchbox", { name: "Search items" }) as HTMLInputElement).value,
+        ).toBe("Goathide"),
+    );
+});
+
+it("keeps the column filters visible when they match nothing", async () => {
+    vi.mocked(getMarketData).mockImplementation(async (_db, filters) => ({
+        ...marketFixture(filters),
+        rows: [],
+        hasMore: false,
+    }));
+    showMarket("/1/market?league=Allflame&priceMin=999");
+    const table = await screen.findByRole("table", { name: "Item markets" });
+    expect(within(table).getByRole("status").textContent).toContain(
+        "No markets match these filters",
+    );
+    expect(
+        (
+            within(table).getByRole("spinbutton", {
+                name: "Minimum Median asking price",
+            }) as HTMLInputElement
+        ).value,
+    ).toBe("999");
+});
+
+it("searches, filters and sorts hourly observations in the browser", async () => {
+    vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+        const fixture = marketFixture(filters);
+        const [row] = fixture.history;
+        return {
+            ...fixture,
+            history: [3, 7, 5].map((listingCount, index) => ({
+                ...row!,
+                hour: row!.hour + index * 3600,
+                listingCount,
+            })),
+        };
+    });
+    showMarket("/1/market/items/Abberath's%20Hooves?league=Allflame");
+    const table = await screen.findByRole("table", { name: "Hourly observations" });
+    const listings = () =>
+        within(table)
+            .getAllByRole("row")
+            .slice(1)
+            .map((row) => within(row).getAllByRole("cell")[2]!.textContent);
+    expect(listings()).toEqual(["5", "7", "3"]);
+
+    fireEvent.click(within(table).getByRole("button", { name: "Listings observed" }));
+    expect(listings()).toEqual(["7", "5", "3"]);
+
+    fireEvent.change(within(table).getByRole("spinbutton", { name: "Minimum Listings observed" }), {
+        target: { value: "4" },
+    });
+    expect(listings()).toEqual(["7", "5"]);
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search Hourly observations" }), {
+        target: { value: "12:00" },
+    });
+    expect(listings()).toEqual(["5"]);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search Hourly observations" }), {
+        target: { value: "no such hour" },
+    });
+    expect(within(table).getByText("No rows match these filters.")).toBeTruthy();
+    expect(getMarketData).toHaveBeenCalledTimes(1);
+});

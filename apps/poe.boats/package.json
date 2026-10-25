@@ -46,6 +46,7 @@
         "@react-router/cloudflare": "catalog:",
         "@scalar/hono-api-reference": "catalog:",
         "@tailwindcss/typography": "catalog:",
+        "@tanstack/react-table": "catalog:",
         "@varlock/1password-plugin": "catalog:",
         "@varlock/cloudflare-integration": "catalog:",
         "@xyflow/react": "catalog:",
