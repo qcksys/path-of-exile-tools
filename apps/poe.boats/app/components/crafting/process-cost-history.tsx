@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { EChart } from "~/components/echart";
 import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { liveExchangePrices } from "~/lib/crafting-exchange";
 import { livePurchasePrices } from "~/lib/crafting-market";
+import type { ChartOption } from "~/lib/echarts";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import {
     type CraftingGraphResult,
@@ -13,7 +15,7 @@ import {
 import { craftingMarketSnapshotsResultSchema } from "~/schemas/crafting-market";
 import { graphControl } from "./graph-query-editor";
 
-interface CostPoint {
+export interface CostPoint {
     at: number;
     result: CraftingGraphResult | null;
     issues: string[];
@@ -57,60 +59,41 @@ function cost(point: CostPoint) {
     return point.result?.complete ? point.result.meanCost : null;
 }
 
+export function historyChartOption(points: CostPoint[], currency: string): ChartOption | null {
+    if (!points.some((point) => cost(point) !== null)) return null;
+    return {
+        useUTC: true,
+        grid: { left: 8, right: 24, top: 16, bottom: 8, outerBoundsMode: "same" },
+        tooltip: {
+            trigger: "axis",
+            valueFormatter: (value) =>
+                typeof value === "number" && Number.isFinite(value)
+                    ? `${value.toFixed(2)} ${currency}`
+                    : "Unavailable",
+        },
+        xAxis: { type: "time" },
+        yAxis: { type: "value", min: 0 },
+        series: [
+            {
+                type: "line",
+                name: `Expected cost (${currency})`,
+                // Unavailable costs are null, which leaves a gap in the line.
+                data: points.map((point) => [point.at * 1000, cost(point)]),
+                symbolSize: 6,
+            },
+        ],
+    };
+}
+
 function HistoryChart({ points, currency }: { points: CostPoint[]; currency: string }) {
-    const values = points.flatMap((point) => (cost(point) === null ? [] : [cost(point)!]));
-    if (!values.length) return null;
-    const maximum = Math.max(...values, 1);
-    const start = points[0]!.at;
-    const duration = Math.max(1, points.at(-1)!.at - start);
-    const segments: string[][] = [[]];
-    for (const point of points) {
-        const value = cost(point);
-        if (value === null) segments.push([]);
-        else
-            segments
-                .at(-1)!
-                .push(
-                    `${20 + ((point.at - start) / duration) * 560},${150 - (value / maximum) * 130}`,
-                );
-    }
+    const option = useMemo(() => historyChartOption(points, currency), [points, currency]);
+    if (!option) return null;
     return (
-        <svg
-            viewBox="0 0 600 175"
-            className="h-44 w-full text-primary"
-            role="img"
-            aria-label={`Historical expected process cost in ${currency}; values are listed below`}
-        >
-            <path d="M20 10V150H580" fill="none" stroke="currentColor" opacity="0.2" />
-            {segments
-                .filter((segment) => segment.length)
-                .map((segment) => (
-                    <polyline
-                        key={segment.join(" ")}
-                        points={segment.join(" ")}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                    />
-                ))}
-            {points.map((point) =>
-                cost(point) === null ? null : (
-                    <circle
-                        key={point.at}
-                        cx={20 + ((point.at - start) / duration) * 560}
-                        cy={150 - (cost(point)! / maximum) * 130}
-                        r="3"
-                        fill="currentColor"
-                    />
-                ),
-            )}
-            <text x="24" y="15" fontSize="11" fill="currentColor">
-                {maximum.toFixed(2)} {currency}
-            </text>
-            <text x="24" y="165" fontSize="11" fill="currentColor">
-                0
-            </text>
-        </svg>
+        <EChart
+            option={option}
+            label={`Historical expected process cost in ${currency}; values are listed below`}
+            className="h-44"
+        />
     );
 }
 

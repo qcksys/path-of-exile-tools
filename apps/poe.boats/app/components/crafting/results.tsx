@@ -4,6 +4,7 @@ import type { CraftingEngine } from "~/lib/crafting-engine";
 import type { CraftingResult } from "~/lib/crafting-simulation";
 import type { CraftingItem } from "~/schemas/crafting";
 import { ItemCard, modText } from "./item-card";
+import { ModifierFrequencyChart } from "./modifier-frequency-chart";
 import { SuccessDistribution } from "./success-distribution";
 
 const number = (value: number | null) =>
@@ -276,27 +277,16 @@ export function CraftingResults({
                     <summary className="cursor-pointer text-sm font-medium">
                         Most frequent modifiers
                     </summary>
-                    <ol className="mt-3 space-y-3">
-                        {Object.entries(result.affixes)
+                    <ModifierFrequencyChart
+                        rows={Object.entries(result.affixes)
                             .sort((a, b) => b[1] - a[1])
                             .slice(0, 20)
-                            .map(([id, count]) => (
-                                <li key={id} className="text-sm">
-                                    <div className="flex justify-between gap-3">
-                                        <span>{modText(engine.mod(id))}</span>
-                                        <span className="font-mono">
-                                            {((count / result.trials) * 100).toFixed(1)}%
-                                        </span>
-                                    </div>
-                                    <div className="mt-1 h-1 rounded bg-muted">
-                                        <div
-                                            className="h-1 rounded bg-primary"
-                                            style={{ width: `${(count / result.trials) * 100}%` }}
-                                        />
-                                    </div>
-                                </li>
-                            ))}
-                    </ol>
+                            .map(([id, count]) => ({
+                                id,
+                                text: modText(engine.mod(id)),
+                                share: (count / result.trials) * 100,
+                            }))}
+                    />
                 </details>
             ) : null}
             {result.successDistribution ? (

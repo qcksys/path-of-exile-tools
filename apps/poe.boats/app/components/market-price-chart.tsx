@@ -1,88 +1,68 @@
+import { useMemo } from "react";
+import { EChart } from "~/components/echart";
+import type { ChartOption } from "~/lib/echarts";
 import { marketNumber } from "~/lib/market-number";
 
 type Point = { hour: number; prices: Record<string, { median: number }> | null };
 
-export function MarketPriceChart({ points, currency }: { points: Point[]; currency: string }) {
-    const priced = points.flatMap((point) => {
+export function marketPriceChartOption(points: Point[], currency: string): ChartOption | null {
+    const data: [number, number | null][] = [];
+    let previous = -Infinity;
+    for (const point of points) {
         const price = point.prices?.[currency]?.median;
-        return price === undefined ? [] : [{ hour: point.hour, price }];
-    });
-    if (priced.length === 0)
+        if (price === undefined) continue;
+        // A null value breaks the line, so hours without observations stay unconnected.
+        if (data.length && point.hour - previous > 3600)
+            data.push([(previous + 3600) * 1000, null]);
+        previous = point.hour;
+        data.push([point.hour * 1000, price]);
+    }
+    if (!data.length) return null;
+    return {
+        useUTC: true,
+        grid: { left: 8, right: 24, top: 16, bottom: 8, outerBoundsMode: "same" },
+        tooltip: {
+            trigger: "axis",
+            valueFormatter: (value) =>
+                typeof value === "number" && Number.isFinite(value)
+                    ? `${marketNumber(value)} ${currency}`
+                    : "No observations",
+        },
+        xAxis: {
+            type: "time",
+            min: points[0]!.hour * 1000,
+            max: Math.max(points.at(-1)!.hour, points[0]!.hour + 3600) * 1000,
+        },
+        yAxis: {
+            type: "value",
+            scale: true,
+            axisLabel: { formatter: (value: number) => marketNumber(value) },
+        },
+        series: [
+            {
+                type: "line",
+                name: `Median ask (${currency})`,
+                data,
+                symbolSize: 5,
+                lineStyle: { width: 2.5 },
+            },
+        ],
+    };
+}
+
+export function MarketPriceChart({ points, currency }: { points: Point[]; currency: string }) {
+    const option = useMemo(() => marketPriceChartOption(points, currency), [points, currency]);
+    if (!option)
         return (
             <p className="py-12 text-center text-muted-foreground">
                 No asking prices in {currency} for this period.
             </p>
         );
-    const lowest = Math.min(...priced.map((p) => p.price));
-    const highest = Math.max(...priced.map((p) => p.price));
-    const padding = lowest === highest ? Math.abs(lowest) * 0.1 || 1 : 0;
-    const minimum = lowest - padding;
-    const maximum = highest + padding;
-    const first = points[0]!.hour;
-    const last = points.at(-1)!.hour;
-    const x = (hour: number) => 68 + ((hour - first) / Math.max(last - first, 3600)) * 800;
-    const y = (price: number) => 210 - ((price - minimum) / (maximum - minimum || 1)) * 160;
-    let previous = -Infinity;
-    const path = priced
-        .map((point) => {
-            const command = point.hour - previous > 3600 ? "M" : "L";
-            previous = point.hour;
-            return `${command}${x(point.hour)},${y(point.price)}`;
-        })
-        .join(" ");
     return (
-        <svg
-            viewBox="0 0 920 260"
-            role="img"
-            aria-label={`Hourly median asking price in ${currency}. Gaps indicate no observations.`}
-            className="w-full text-primary"
-        >
-            <title>Hourly median asking price in {currency}</title>
-            {[0, 1, 2, 3, 4].map((tick) => {
-                const value = minimum + ((maximum - minimum) * tick) / 4;
-                const position = 210 - tick * 40;
-                return (
-                    <g key={tick}>
-                        <line
-                            x1="68"
-                            x2="868"
-                            y1={position}
-                            y2={position}
-                            stroke="currentColor"
-                            opacity="0.15"
-                        />
-                        <text
-                            x="58"
-                            y={position + 4}
-                            textAnchor="end"
-                            fill="currentColor"
-                            fontSize="12"
-                        >
-                            {marketNumber(value)}
-                        </text>
-                    </g>
-                );
-            })}
-            <path d={path} fill="none" stroke="currentColor" strokeWidth="2.5" />
-            {priced.map((point) => (
-                <circle
-                    key={point.hour}
-                    cx={x(point.hour)}
-                    cy={y(point.price)}
-                    r="2.5"
-                    fill="currentColor"
-                >
-                    <title>
-                        {new Date(point.hour * 1000).toISOString()}: {point.price} {currency}
-                    </title>
-                </circle>
-            ))}
-            <text x="68" y="244" fill="currentColor" fontSize="12">
-                {new Date(first * 1000).toISOString().slice(0, 16).replace("T", " ")} UTC
-            </text>
-            <text x="868" y="244" textAnchor="end" fill="currentColor" fontSize="12">
-                {new Date(last * 1000).toISOString().slice(0, 16).replace("T", " ")} UTC
-            </text>
-        </svg>
+        <EChart
+            option={option}
+            label={`Hourly median asking price in ${currency}. Gaps indicate no observations.`}
+            className="h-64"
+        />
     );
 }

@@ -51,6 +51,7 @@ catalog:
   date-fns: ^4.1.0
   drizzle-kit: 1.0.0-rc.5
   drizzle-orm: 1.0.0-rc.5
+  echarts: ^6.1.0
   hono: ^4.13.13
   i18next: ^26.0.7
   i18next-browser-languagedetector: ^8.2.1
