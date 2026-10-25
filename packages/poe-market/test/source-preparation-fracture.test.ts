@@ -21,7 +21,7 @@ const profile: SourcePreparationProfile = {
     enchanted: false,
 };
 
-function fixture(format: 1 | 2 | 3 = 3) {
+function fixture(format: 1 | 2 | 3 | 4 = 3) {
     return marketCohortManifestSchema.parse({
         format: 1,
         game: "poe1",
@@ -114,10 +114,10 @@ function source() {
     });
 }
 
-it("uses a proven incompatible fracture only as a format-3 negative fact", () => {
+it("retains the proven incompatible-fracture rejection from format 3 onward", () => {
     const record = source();
     const before = structuredClone(record);
-    for (const format of [1, 2, 3] as const) {
+    for (const format of [1, 2, 3, 4] as const) {
         const manifest = fixture(format);
         const resolved = compileModifierTextModel(manifest.modifierTextModel!)(record);
         expect(resolved.facts.modifiers).toEqual([
@@ -126,7 +126,7 @@ it("uses a proven incompatible fracture only as a format-3 negative fact", () =>
         expect(resolved.facts.modifiersComplete).toBe(false);
         expect(compileMarketCohorts(manifest).classify(record)).toEqual({
             matches: [],
-            unknown: format === 3 ? [] : ["source"],
+            unknown: format >= 3 ? [] : ["source"],
         });
     }
     expect(record).toEqual(before);
@@ -263,6 +263,41 @@ describe("generated fracture sources", () => {
         );
         expect(legacy.classify(record).unknown).toHaveLength(1);
         expect(current.classify(record)).toEqual({ matches: [], unknown: [] });
+        expect(record).toEqual(before);
+    });
+
+    it("captures an invariant Breach fracture behind a paid defence-enchantment removal only in model 4", () => {
+        const record = normalizeApiItem("poe1", "stash", {
+            baseType: "Conquest Lamellar",
+            ilvl: 86,
+            rarity: "Rare",
+            identified: true,
+            fractured: true,
+            searing: true,
+            tangled: true,
+            extended: { prefixes: 3, suffixes: 3 },
+            explicitMods: [
+                { description: targetText, flags: { fractured: true } },
+                { description: "Unresolved disposable affix" },
+                { description: "+15% to Fire and Chaos Resistances", flags: { crafted: true } },
+            ],
+            implicitMods: [
+                { description: "Melee Hits have 9% chance to Fortify" },
+                { description: "Gain an Endurance Charge every 15 seconds" },
+            ],
+            enchantMods: ["8% increased Explicit Defence Modifier magnitudes"],
+        });
+        const before = structuredClone(record);
+        const expected = generated.cohorts.find(
+            (cohort) =>
+                cohort.query.sourcePreparation?.crafted && cohort.query.sourcePreparation.enchanted,
+        )!;
+        expect(current.classify(record)).toEqual({ matches: [], unknown: [expected.id] });
+        const next = compileMarketCohorts({
+            ...generated,
+            sourcePreparationModel: { ...generated.sourcePreparationModel!, format: 4 },
+        });
+        expect(next.classify(record)).toEqual({ matches: [expected.id], unknown: [] });
         expect(record).toEqual(before);
     });
 });

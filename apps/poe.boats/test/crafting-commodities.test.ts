@@ -37,6 +37,8 @@ let sqlite: DatabaseSync;
 let db: TDatabase;
 const graph = exchangeGraph();
 const identity = { id: essenceId, baseType: essenceName };
+const fossilId = "Metadata/Items/Currency/CurrencyDelveCraftingSockets";
+const fossilName = "Fundamental Fossil";
 const prices: Record<string, { count: number; min: number; median: number; max: number }> = {
     chaos: { count: 2, min: 3, median: 16.5, max: 30 },
 };
@@ -163,6 +165,103 @@ it("returns an exact captured unit asking quote and preserves the source separat
             bound.prices[essenceId]!.cohortId!.replace("stash-commodity:v1:", "poeninja:v1:"),
         ),
     ).toBeNull();
+});
+
+it("verifies exact fossil catalog identities without accepting ambiguous or contradictory records", () => {
+    expect(catalog.crafting.fossils.filter((entry) => entry.name)).toHaveLength(25);
+    for (const fossil of catalog.crafting.fossils) {
+        if (fossil.name)
+            expect(craftingCommodityIdentity(engine, fossil.id)).toEqual({
+                id: fossil.id,
+                baseType: fossil.name,
+            });
+        else expect(craftingCommodityIdentity(engine, fossil.id)).toBeNull();
+    }
+    const fossil = catalog.crafting.fossils.find((entry) => entry.id === fossilId)!;
+    const currency = catalog.crafting.currencies.find((entry) => entry.id === fossilId)!;
+    for (const extra of [
+        { ...fossil, id: "duplicate" },
+        { ...fossil, name: "Other name" },
+        fossil,
+    ]) {
+        const duplicate = structuredClone(catalog);
+        duplicate.crafting.fossils.push(extra);
+        expect(craftingCommodityIdentity(new CraftingEngine(duplicate), fossilId)).toBeNull();
+    }
+    for (const extra of [
+        { ...currency, id: "duplicate" },
+        { ...currency, name: "Other name" },
+        currency,
+    ]) {
+        const duplicate = structuredClone(catalog);
+        duplicate.crafting.currencies.push(extra);
+        expect(craftingCommodityIdentity(new CraftingEngine(duplicate), fossilId)).toBeNull();
+    }
+    for (const collection of ["fossils", "currencies"] as const) {
+        const contradictory = structuredClone(catalog);
+        contradictory.crafting[collection].find((entry) => entry.id === fossilId)!.name =
+            "Other name";
+        expect(craftingCommodityIdentity(new CraftingEngine(contradictory), fossilId)).toBeNull();
+    }
+    for (const id of [
+        "Metadata/Items/Delve/DelveSocketableCurrencyReroll4",
+        "Metadata/Items/Delve/DelveStackableSocketableCurrencyReroll4",
+    ]) {
+        expect(catalog.crafting.currencies.find((entry) => entry.id === id)).toBeDefined();
+        expect(craftingCommodityIdentity(engine, id)).toBeNull();
+    }
+    expect(craftingCommodityIdentity(new CraftingEngine(getCatalog("poe2")), fossilId)).toBeNull();
+});
+
+it("selects and refreshes the latest Fundamental Fossil ask without using an older positive observation", async () => {
+    const fossilRow = {
+        itemKey: fossilName,
+        baseType: fossilName,
+        listingCount: 4,
+        uniqueSellers: 4,
+    };
+    capture({
+        ...fossilRow,
+        hour: hour - 3600,
+        prices: { chaos: { count: 1, min: 50, median: 50, max: 50 } },
+    });
+    capture({ ...fossilRow, prices: { chaos: { count: 1, min: 19, median: 19, max: 19 } } });
+    const quote = commoditySourceQuoteSchema.parse({
+        ...commodityQuote,
+        id: fossilId,
+        baseType: fossilName,
+        amount: 19,
+        low: 19,
+        high: 19,
+        samples: 1,
+        listingCount: 4,
+        uniqueSellers: 4,
+    });
+    const options = { ids: [fossilId], realm: "pc" as const };
+    expect(await findCraftingSourcePrices(graph, engine, options, db)).toEqual({
+        quotes: { [fossilId]: quote },
+        missing: {},
+    });
+    const bound = bindCraftingSourcePrice(graph, engine, fossilId, quote);
+    expect(bound.prices[fossilId]).toMatchObject({
+        amount: 19,
+        samples: 1,
+        observedAt: new Date(hour * 1000).toISOString(),
+    });
+    expect(decodeCraftingSourceReference(bound.prices[fossilId]?.cohortId)).toMatchObject({
+        source: "stash-commodity",
+        id: fossilId,
+        baseType: fossilName,
+    });
+    expect((await refreshCraftingMarketPrices(db, bound, engine)).issues).toEqual([]);
+    expect(
+        (await craftingMarketSnapshots(db, bound, engine, [hour - 3600, hour])).points.map(
+            (point) => point.graph?.prices[fossilId]?.amount,
+        ),
+    ).toEqual([50, 19]);
+    sqlite.prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_unique_hourly WHERE hour=?`).run(hour);
+    capture({ ...fossilRow, prices: {} });
+    expect((await findCraftingSourcePrices(graph, engine, options, db)).quotes).toEqual({});
 });
 
 it("supports uniquely named modeled currencies and refuses stateful, unknown, duplicate and PoE 2 identities", () => {

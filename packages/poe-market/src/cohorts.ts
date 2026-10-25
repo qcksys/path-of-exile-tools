@@ -123,7 +123,7 @@ export function compileMarketCohorts(input: MarketCohortManifest) {
                         continue;
                     // Resolved facts hold across all assignments; missing identities prove nothing.
                     if (
-                        manifest.sourcePreparationModel?.format === 3 &&
+                        (manifest.sourcePreparationModel?.format ?? 1) >= 3 &&
                         sourcePreparation.kind === "fractured-fossil-v1" &&
                         resolved.facts.modifiers.some(
                             (mod) =>

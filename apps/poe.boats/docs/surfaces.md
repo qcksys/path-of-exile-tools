@@ -26,13 +26,17 @@ The PoE 1 pipeline checkpoints committed writes before replay so capture indexes
 exhaust the memory needed for publication. Failed checkpoints defer replay while pending
 delivery remains eligible; a failed rollback stops the process before checkpointing.
 
-Source-preparation model 3 checks Intangibility in captured item properties as well as
+Source-preparation models 3 and 4 check Intangibility in captured item properties as well as
 top-level fields. Positive or uncertain persistent state cannot be priced as the preset's
 ordinary preparation source. Resolved incompatible fractures are excluded before source
 projection; unresolved facts cannot establish a positive match. Modifier-text model 5 distinguishes complete unsupported
 multi-line modifiers from ordinary explicit affixes that share one of their lines;
 implicit magnitude safeguards remain conservative. Earlier model formats retain their
 classification behavior, and replay publishes corrections under the new manifest revision.
+Model 4 additionally recognizes a sole invariant literal fracture beneath a known defence-magnitude
+enchantment when its paid source preparation removes that enchantment. Numeric or scalable fracture
+text, competing identities, implicit magnitude effects and unsupported state remain uncertain.
+The original captured item and ordinary cohort classification remain unchanged.
 
 `app/operations/registry.server.ts` assembles the feature operation catalogs. HTTP routes, OpenAPI, MCP tool registration, and `/integrations` all read that catalog. A registration points at the function the normal UI uses; it is not an alternative implementation. Pure calculations can run locally in the browser, including the recombinator's Web Worker, without an HTTP round trip.
 

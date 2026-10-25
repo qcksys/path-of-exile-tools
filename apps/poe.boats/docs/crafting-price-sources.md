@@ -28,7 +28,7 @@ captured history survive restarts. DuckDB 1.4.5 contains the upstream fix for th
 | Cost | Source | Coverage and limits |
 | --- | --- | --- |
 | Currency, essences, oils, fossils, resonators, lifeforce and other canonical exchange items | [GGG hourly currency exchange](https://www.pathofexile.com/developer/docs/reference#currencyexchange) | Direct traded-volume ratios in the selected game, realm and league. Optional `reference-currency-v1` tries a two-leg conversion through chaos, divine, then exalted when a direct quote is absent. Both legs must have positive volume and the same hour and adaptive window. The result exposes both legs and does not invent direct traded volume or a traded range. Old bindings retain direct-pair behavior. |
-| Supported PoE 1 crafting currencies and essences | Captured public stash commodity buckets | Explicit alternative asking-price source for supported currencies with a unique matching ID/name in the retained catalog. Stored imprints and unsupported stateful currencies are excluded. Requires exact base type, empty name, currency frame, ordinary item flags and no variant signature. Prices are per item in the selected league and currency, with observed hour, range, priced sample count, total listings and total sellers. Never silently replaces an exchange quote. |
+| Supported PoE 1 crafting currencies, essences and fossils | Captured public stash commodity buckets | Explicit alternative asking-price source for supported currencies with a unique matching ID/name in the retained catalog. Fossils also require agreeing extracted fossil metadata. Stored imprints, resonators and unsupported stateful currencies are excluded. Requires exact base type, empty name, currency frame, ordinary item flags and no variant signature. Prices are per item in the selected league and currency, with observed hour, range, priced sample count, total listings and total sellers. Never silently replaces an exchange quote. |
 | Base items and supported prepared donors | Captured public stash cohorts | Asking-price distributions, seller counts and coverage checks. Requires actual matching observations; unsupported modifiers, exact preparation and PoE 2 equipment remain manual. |
 | Beast recipes | [poe.ninja Beast overview](https://poe.ninja/docs/api) | Derives all four sacrifices from the project's retained catalog. Named recipe beasts use exact feed identities. Remaining rare sacrifices use one generic Yellow Beast pool: the listing-count-weighted mean of positive eligible species estimates. Every component needs a positive quote. Level-sensitive recipes remain manual because this feed does not distinguish beast levels. |
 | Locus of Corruption | [poe.ninja IncursionTemple overview](https://poe.ninja/docs/api) | Exact `locus-of-corruption-tier-3-temple` entry only, for one usable room; combined temple variants are not substituted. |
@@ -70,6 +70,11 @@ to a broader cohort is insufficient: mixed-rarity or level-band medians can
 omit preparation costs or change the available modifier pool. Such cohorts
 remain market evidence for a manual assumption, not a complete purchase price.
 The same validation applies to binding and refreshing existing prices.
+
+Fractured-source model 4 can identify one exact invariant literal fracture despite a known
+defence-magnitude enchantment. The selected source profile still charges enchantment removal;
+the exception does not apply to numeric/scalable fracture text, ambiguous identities or
+implicit magnitude effects. Earlier capture models retain their original classifications.
 
 The cohort generator derives 53 purchase-specific definitions from all 62 purchase
 alternatives in the ten configured presets. These preserve canonical base identity,

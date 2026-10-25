@@ -362,7 +362,7 @@ it("accepts preparation model formats 1 and 2 without changing the source projec
     input.item.explicitMods = [];
     expect(current(input, profile)).toEqual({ status: "unknown" });
     expect(current(input, profile)).toEqual(legacy(input, profile));
-    expect(sourcePreparationModelSchema.safeParse({ ...sourceModel, format: 4 }).success).toBe(
+    expect(sourcePreparationModelSchema.safeParse({ ...sourceModel, format: 5 }).success).toBe(
         false,
     );
 });

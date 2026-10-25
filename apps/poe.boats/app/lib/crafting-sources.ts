@@ -115,7 +115,13 @@ export function craftingCommodityIdentity(engine: CraftingEngine, id: string) {
     const currency = engine.catalog.crafting.currencies.find((entry) => entry.id === id);
     if (!currency) return null;
     const essence = engine.catalog.crafting.essences.some((entry) => entry.id === id);
-    if (!essence && !commodityCurrencyActions.has(currency.action)) return null;
+    const fossils = engine.catalog.crafting.fossils.filter(
+        (entry) => entry.id === id || entry.name === currency.name,
+    );
+    const fossil =
+        fossils.length === 1 && fossils[0]?.id === id && fossils[0].name === currency.name;
+    if (fossils.length && !fossil) return null;
+    if (!essence && !fossil && !commodityCurrencyActions.has(currency.action)) return null;
     const currencies = engine.catalog.crafting.currencies.filter(
         (entry) => entry.id === id || entry.name === currency.name,
     );
