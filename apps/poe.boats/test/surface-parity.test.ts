@@ -866,6 +866,18 @@ describe("transport parity", () => {
             commodity: unravellingQuote,
             converted: { ...convertedCommodityQuote, id: unravellingId, baseType: unravellingName },
         },
+        {
+            commodity: {
+                ...commodityQuote,
+                id: "Metadata/Items/Currency/CurrencyDelveCraftingSockets",
+                baseType: "Fundamental Fossil",
+            },
+            converted: {
+                ...convertedCommodityQuote,
+                id: "Metadata/Items/Currency/CurrencyDelveCraftingSockets",
+                baseType: "Fundamental Fossil",
+            },
+        },
     ])("captured $commodity.baseType", ({
         commodity: commodityQuote,
         converted: convertedCommodityQuote,

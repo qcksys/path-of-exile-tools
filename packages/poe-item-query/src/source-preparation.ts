@@ -10,7 +10,7 @@ import {
 } from "./schema.ts";
 
 export const sourcePreparationModelSchema = z.strictObject({
-    format: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    format: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
     bases: z
         .array(
             z.strictObject({
@@ -146,6 +146,18 @@ export function compileSourcePreparation(
         },
         visitLimit,
     );
+    const invariantFractures = new Map(
+        modifierModel.modifiers
+            .filter(
+                (mod) => mod.text && !/[\d\n{}]/.test(mod.text) && !mod.scaling && !mod.unsupported,
+            )
+            .map((mod) => [mod.id, displayText(mod.text!)]),
+    );
+    const defenceMagnitudeEnchants = new Set(
+        (modifierModel.unsupportedImplicitTexts ?? [])
+            .map(displayText)
+            .filter((text) => /^\d+% increased Explicit Defence Modifier magnitudes$/.test(text)),
+    );
     return (record: ItemRecord, inputPolicy: SourcePreparationProfile): SourcePreparationResult => {
         const policy = sourcePreparationProfileSchema.parse(inputPolicy);
         const scour = policy.kind === "scour-v1";
@@ -181,7 +193,7 @@ export function compileSourcePreparation(
             (facts.memoryStrandsSpent ?? 0) > 0
         )
             return { status: "no-match" };
-        if (model.format === 3) {
+        if (model.format >= 3) {
             const intangibility = sourceIntangibility(item);
             if (intangibility === null) return { status: "unknown" };
             if (intangibility > 0) return { status: "no-match" };
@@ -378,6 +390,10 @@ export function compileSourcePreparation(
             description: row.description,
             flags: { fractured: true },
         }));
+        const invariantFracture =
+            model.format >= 4 &&
+            fractures.length === 1 &&
+            invariantFractures.get(policy.fractureId) === displayText(fractures[0]!.description);
         const isolated: ItemRecord = {
             ...record,
             item: {
@@ -386,8 +402,15 @@ export function compileSourcePreparation(
                 identified: true,
                 influences: {},
                 explicitMods: protectedLines,
-                // Magnitude-changing enchantments must not identify a false numeric tier.
-                implicitMods: [...implicits, ...enchants],
+                // Known defence magnitudes cannot alter an invariant literal fracture identity.
+                implicitMods: [
+                    ...implicits,
+                    ...enchants.filter(
+                        (row) =>
+                            !invariantFracture ||
+                            !defenceMagnitudeEnchants.has(displayText(row.description)),
+                    ),
+                ],
                 ...(item.properties !== undefined ? { properties: item.properties } : {}),
             },
             facts: itemFactsSchema.parse({}),
