@@ -44,6 +44,13 @@ The shared market query applies category, text, rarity, identification, corrupti
 before pagination. Categories use the verified per-game base catalog, grouped like
 [poe.ninja's economy navigation](https://poe.ninja/poe1/economy); unknown bases remain in Other items.
 Price ordering compares only the selected original currency, with missing quotes last.
+Item history keeps the per-currency hourly summaries (count, min, mean, p10–p90 quantiles, max;
+older rows lack mean and quantiles) and adds `merged`/`mergedSales`: each listing currency
+converted to chaos at read time with that hour's same-league exchange rate (direct, or via divine),
+reusing the latest rate up to 24 hours old, then into the display currency. The merged
+distribution is the listing-count-weighted mixture of the per-currency quantile curves, so it is
+exact for one currency and an estimate otherwise; listings without a rate are counted as
+`unconverted`. The item chart and table show the merged median and interquartile range.
 The HTTP and MCP market operation exposes the same filters and category assignments.
 
 CI runs app tests in four shards and workspace package tests in a separate required job.
@@ -118,7 +125,7 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | PoE 1 and PoE 2 arbitrage leagues, prices, recipes | `arbitrage/market` | `get_arbitrage_market`; `loadArbitrageMarket` |
 | Arbitrage filters, ranking, buffer, profit/ROI | `arbitrage/calculate` | `calculate_arbitrage`; `findArbitrage` |
 | Manual recipe reference, calculator and trade links | `arbitrage/recipes`, `arbitrage/scenario`, `arbitrage/trade` | `list_vendor_recipes`, `calculate_recipe_scenario`, `build_recipe_trade_url` |
-| Season market search, seasons, paging, variants, history | `market` | `get_season_market`; `getMarketData`. Season boundaries use the existing index prefix; variant totals and pagination precede full-row primary-key reads. MySQL regressions cover these query plans, variant selection, search, history, and page boundaries. |
+| Season market search, seasons, paging, variants, history | `market` | `get_season_market`; `getMarketData`. Season boundaries use the existing index prefix; variant totals and pagination precede full-row primary-key reads. MySQL regressions cover these query plans, variant selection, search, history, merged-currency history, and page boundaries. |
 | Recombinator equipment, modifiers, preparation recipes | `recombinator/catalog`, `bases`, `mods`, `recipes`, `draft` | Catalog, base/mod/recipe filtering, and `parseRecombinatorDraft` |
 | Recombination outcomes, preparation, target odds | `recombinator/calculate`, `target` | `calculateRecombinatorPlan`, `matchesTarget`, `summarizeCounts` |
 | PoE 1 and PoE 2 workbench catalog, calculation, process simulation and item emulation | `crafting/workbench/catalog`, `workbench/calculate`, `workbench/process`, `workbench/emulate` | `get_crafting_workbench_catalog`, `calculate_crafting_workbench`, `emulate_crafting_process`, `emulate_crafting_item`; shared `CraftingWorkbenchCalculation`, `CraftingProcess` and `emulateCraftingItem`. Current workbench catalogs and client-build validation match the browser; retained graph rulesets remain separate. HTTP calculations refuse manual-stop runs and requests above 5,000 trials or 100,000 potential steps. Allflame preview costs remain deferred until selection, reveal choices stay explicit, and paid bench failures retain the changed item and costs. Stateless operations never modify browser drafts. |
