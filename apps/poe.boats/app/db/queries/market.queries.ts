@@ -12,6 +12,8 @@ import {
     max,
     min,
     or,
+    type SQL,
+    type SQLWrapper,
     sql,
 } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
@@ -28,7 +30,7 @@ import {
     marketRatePairs,
     mergeMarketPrices,
 } from "~/lib/market-price-merge";
-import type { MarketFilters } from "~/schemas/market";
+import type { MarketFilters, MarketOrder } from "~/schemas/market";
 
 const PAGE_SIZE = 50;
 
@@ -57,7 +59,23 @@ export async function getMarketData(
         gte(market.hour, cutoff),
     );
     const search = filters.q ? `%${filters.q.replace(/[\\%_]/g, "\\$&")}%` : undefined;
-    const priceOrder = filters.order === "price-asc" || filters.order === "price-desc";
+    const price = sql`cast(json_unquote(json_extract(${market.prices}, ${`$.${JSON.stringify(filters.currency)}.median`})) as decimal(30, 10))`;
+    const latestRowOrders: Partial<Record<MarketOrder, SQL>> = {
+        "price-asc": asc(price),
+        "price-desc": desc(price),
+        "listings-asc": asc(market.listingCount),
+        "listings-desc": desc(market.listingCount),
+        "sellers-asc": asc(market.uniqueSellers),
+        "sellers-desc": desc(market.uniqueSellers),
+    };
+    const latestRowOrder = latestRowOrders[filters.order];
+    const latestRowFilters = [
+        ...between(price, filters.priceMin, filters.priceMax),
+        ...between(market.listingCount, filters.listingsMin, filters.listingsMax),
+        ...between(market.uniqueSellers, filters.sellersMin, filters.sellersMax),
+    ];
+    // Ordering or filtering on the latest row's values must happen before pagination.
+    const pageLatestRows = Boolean(latestRowOrder) || latestRowFilters.length > 0;
     const rarity = { normal: 0, magic: 1, rare: 2, unique: 3 };
     const grouped = db
         .select({
@@ -109,12 +127,11 @@ export async function getMarketData(
             market.signatureKind,
             market.signatureValue,
         )
+        .having(({ periodSales }) =>
+            and(...between(periodSales, filters.salesMin, filters.salesMax)),
+        )
         .orderBy(({ periodSales, latestHour }) => [
-            ...(filters.order === "sales"
-                ? [desc(periodSales)]
-                : filters.order === "newest"
-                  ? [desc(latestHour)]
-                  : []),
+            ...aggregateOrder(filters.order, periodSales, latestHour),
             filters.order === "name-desc" ? desc(market.itemKey) : asc(market.itemKey),
             asc(market.identified),
             asc(market.corrupted),
@@ -123,10 +140,8 @@ export async function getMarketData(
             asc(market.signatureValue),
         ])
         .$dynamic();
-    if (!priceOrder) grouped.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
+    if (!pageLatestRows) grouped.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
     const page = grouped.as("page");
-    const price = sql`cast(json_unquote(json_extract(${market.prices}, ${`$.${JSON.stringify(filters.currency)}.median`})) as decimal(30, 10))`;
-    // Only price ordering needs the latest price rows before pagination.
     const rowsQuery = db
         .select({
             ...getTableColumns(market),
@@ -150,17 +165,14 @@ export async function getMarketData(
                 eq(market.signatureValue, page.signatureValue),
             ),
         )
+        .where(and(...latestRowFilters))
         .orderBy(
-            ...(priceOrder
+            ...(latestRowOrder
                 ? [
-                      asc(sql`${price} is null`),
-                      filters.order === "price-asc" ? asc(price) : desc(price),
+                      ...(filters.order.startsWith("price-") ? [asc(sql`${price} is null`)] : []),
+                      latestRowOrder,
                   ]
-                : filters.order === "sales"
-                  ? [desc(page.periodSales)]
-                  : filters.order === "newest"
-                    ? [desc(page.latestHour)]
-                    : []),
+                : aggregateOrder(filters.order, page.periodSales, page.latestHour)),
             filters.order === "name-desc" ? desc(page.itemKey) : asc(page.itemKey),
             asc(page.identified),
             asc(page.corrupted),
@@ -169,7 +181,7 @@ export async function getMarketData(
             asc(page.signatureValue),
         )
         .$dynamic();
-    if (priceOrder) rowsQuery.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
+    if (pageLatestRows) rowsQuery.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
     const rowsPromise = view === "history" ? Promise.resolve([]) : rowsQuery;
     const historyPromise =
         filters.item && view !== "list"
@@ -209,6 +221,21 @@ export async function getMarketData(
             };
         }),
     };
+}
+
+function between(column: SQLWrapper, min: number | undefined, max: number | undefined) {
+    return [
+        ...(min === undefined ? [] : [gte(column, min)]),
+        ...(max === undefined ? [] : [lte(column, max)]),
+    ];
+}
+
+function aggregateOrder(order: MarketOrder, periodSales: SQLWrapper, latestHour: SQLWrapper) {
+    if (order === "sales") return [desc(periodSales)];
+    if (order === "sales-asc") return [asc(periodSales)];
+    if (order === "newest") return [desc(latestHour)];
+    if (order === "oldest") return [asc(latestHour)];
+    return [];
 }
 
 async function historyChaosRates(

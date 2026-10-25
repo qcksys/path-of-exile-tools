@@ -4,7 +4,12 @@ import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { MARKET_ORDERS, type MarketFilters, marketLink } from "~/schemas/market";
+import {
+    MARKET_ORDERS,
+    MARKET_RANGE_PARAMS,
+    type MarketFilters,
+    marketLink,
+} from "~/schemas/market";
 
 export const marketUtc = (hour: number) =>
     `${new Date(hour * 1000).toISOString().slice(0, 16).replace("T", " ")} UTC`;
@@ -52,6 +57,11 @@ export function MarketFiltersForm({
             className="space-y-4 rounded-xl border border-border bg-card p-4"
         >
             <Input type="hidden" name="category" value={filters.category} />
+            {MARKET_RANGE_PARAMS.map((param) =>
+                filters[param] === undefined ? null : (
+                    <Input key={param} type="hidden" name={param} value={filters[param]} />
+                ),
+            )}
             {item
                 ? Object.entries({
                       q: filters.q,
@@ -130,7 +140,7 @@ export function MarketFiltersForm({
             ) : null}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">
-                    Price sorting uses{" "}
+                    Price sorting and filters use{" "}
                     {filters.currency ? (
                         <CurrencyLabel
                             currency={filters.currency}
