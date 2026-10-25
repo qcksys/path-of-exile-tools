@@ -4,6 +4,10 @@ Equipment lookups require the `stash_cohort` and `stash_cohort_hourly` migration
 including the `baseTypes` column. Apply the existing migrations to the target
 database before deploying code that queries them (`APP_ENV=dev vp run db:migrate`
 from this app). An HTTP 500 here is a deployment failure, not missing market data.
+Lookups read only revisions listed in `stash_cohort_revision_hour`, which ingest
+writes with each equipment batch. Its migration backfills existing observations;
+after deploying, rerun that backfill with `WHERE hour >= <migration hour>` so hours
+written by the previous worker in between are listed.
 
 The app's existing 15-minute schedule captures the six most recent completed
 exchange hours for PC PoE 1 and PoE 2, across all leagues in each digest. Failed
