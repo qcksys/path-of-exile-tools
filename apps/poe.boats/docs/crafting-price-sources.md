@@ -6,8 +6,9 @@ database before deploying code that queries them (`APP_ENV=dev vp run db:migrate
 from this app). An HTTP 500 here is a deployment failure, not missing market data.
 
 The app's existing 15-minute schedule captures the six most recent completed
-exchange hours for PC PoE 1 and PoE 2, across all leagues in each digest. Failed
-hours are retried on the next sweep; older gaps require a historical backfill.
+exchange hours for PC PoE 1 and PoE 2, across all leagues in each digest. Hours
+whose digest markets are already all stored are not rewritten. Failed or partially
+stored hours are retried on the next sweep; older gaps require a historical backfill.
 Exchange collection runs independently of scarab collection. Deploying this
 code activates collection using the existing database and cron configuration.
 

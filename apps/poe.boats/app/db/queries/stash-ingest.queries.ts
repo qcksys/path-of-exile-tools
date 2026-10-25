@@ -1,5 +1,5 @@
 import { type CohortHourly, cohortBaseTypes, type MarketCohortDefinition } from "@poe-tools/market";
-import { sql } from "drizzle-orm";
+import { and, count, eq, inArray, sql } from "drizzle-orm";
 import type { TDatabase } from "~/db/client.ts";
 import { tStashBasemapSnapshot } from "~/db/schema/stash.basemap-snapshot";
 import { tStashCohort } from "~/db/schema/stash.cohort";
@@ -85,6 +85,26 @@ export async function upsertStashUniqueHourly(
         written += batch.length;
     }
     return written;
+}
+
+export async function countStashCurrencyHour(
+    db: TDatabase,
+    realm: string,
+    hour: number,
+    leagues: string[],
+): Promise<number> {
+    if (leagues.length === 0) return 0;
+    const [row] = await db
+        .select({ rows: count() })
+        .from(tStashCurrencyHourly)
+        .where(
+            and(
+                eq(tStashCurrencyHourly.realm, realm),
+                inArray(tStashCurrencyHourly.league, leagues),
+                eq(tStashCurrencyHourly.hour, hour),
+            ),
+        );
+    return row?.rows ?? 0;
 }
 
 export async function upsertStashCurrencyHourly(
