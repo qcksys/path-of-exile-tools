@@ -25,7 +25,7 @@ export function sourceMarketFixture(
     ruleset?: CraftingGraph["ruleset"],
 ) {
     const graph = marketGraph();
-    graph.ruleset = ruleset ?? { ...graph.ruleset, engine: CRAFTING_GRAPH_ENGINE, revision: "r14" };
+    graph.ruleset = ruleset ?? { ...graph.ruleset, engine: CRAFTING_GRAPH_ENGINE, revision: "r15" };
     graph.iterations = 1;
     graph.seed = 42;
     const { node, alternative } = sourceMarketPurchase(graph);
@@ -51,7 +51,9 @@ export function sourceMarketFixture(
         groups: [{ type: "and", filters: [{ kind: "mod", ids: [fractureId], fractured: true }] }],
     });
     graph.outcomes[0]!.query = node.output;
-    const profile = purchaseSourceProfile(alternative)!;
+    const profile = purchaseSourceProfile(alternative);
+    if (profile?.kind !== "fractured-fossil-v1")
+        throw new Error("Missing fractured source profile.");
     const candidate = craftingMarketCandidateSchema.parse({
         ...structuredClone(marketCandidate),
         sourcePreparation: profile,
@@ -103,12 +105,13 @@ export function scouringMarketFixture(
     ruleset?: CraftingGraph["ruleset"],
 ) {
     const graph = marketGraph();
-    graph.ruleset = ruleset ?? { ...graph.ruleset, engine: CRAFTING_GRAPH_ENGINE, revision: "r14" };
+    graph.ruleset = ruleset ?? { ...graph.ruleset, engine: CRAFTING_GRAPH_ENGINE, revision: "r15" };
     const { node, alternative } = sourceMarketPurchase(graph);
     const baseId = "Metadata/Items/Armours/Helmets/HelmetInt11";
     alternative.item = engine.createItem(baseId, 86);
     alternative.sourcePreparation = { kind: "scour-v1", crafted, enchanted };
-    const profile = purchaseSourceProfile(alternative)!;
+    const profile = purchaseSourceProfile(alternative);
+    if (profile?.kind !== "scour-v1") throw new Error("Missing Scouring source profile.");
     const candidate = structuredClone(marketCandidate);
     candidate.sourcePreparation = profile;
     candidate.definition.id = candidate.latest.cohortId = `source:hubris:${crafted}:${enchanted}`;

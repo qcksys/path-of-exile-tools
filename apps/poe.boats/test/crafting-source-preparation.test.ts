@@ -22,7 +22,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r10",
 )!;
-const ruleset = { ...prior, revision: "r14", engine: "crafting-graph-14" };
+const ruleset = { ...prior, revision: "r15", engine: "crafting-graph-15" };
 const fractureId = "BreachBodyCriticalChanceIncreasedByUncappedLightningResistance1";
 const scour = currency("convert_to_normal").id;
 const ichor = currency("add_great_tangle_implicit_1").id;
@@ -50,16 +50,19 @@ function acquisitionGraph(id?: string) {
 }
 
 function actualSource(purchase: GraphPurchase) {
+    const source = purchase.sourcePreparation;
+    if (source?.kind !== "fractured-fossil-v1")
+        throw new Error("Expected fractured source profile.");
     let item = structuredClone(purchase.item);
     const extra = engine.pool(item).find((entry) => entry.mod.generation_type === "prefix")!;
     item = engine.addStartingMod(item, extra.id, seededRandom(1));
-    if (purchase.sourcePreparation!.crafted) {
+    if (source.crafted) {
         const recipe = engine.catalog.crafting.bench.find(
             (entry) => entry.mod === "DexMasterItemGenerationCannotChangeSuffixes",
         )!;
         item = engine.apply(item, { kind: "bench", id: recipe.id }, seededRandom(2)).item;
     }
-    if (purchase.sourcePreparation!.enchanted)
+    if (source.enchanted)
         item.enchantments = [
             engine.rollMod("HarvestAlternateArmourQualityLightningResistance", seededRandom(3)),
         ];

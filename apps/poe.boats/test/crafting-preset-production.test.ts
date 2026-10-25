@@ -12,7 +12,7 @@ import { quote, runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r14",
+    (entry) => entry.game === "poe1" && entry.revision === "r15",
 )!;
 const donors: [CraftingPresetId, string[]][] = [
     ["life-block-shield", ["block", "max-res", "recovery"]],
@@ -449,7 +449,7 @@ it.each([
             .map((cost) => cost.id)
             .sort(),
     ).toEqual([...nnnShieldCosts].sort());
-    expect(graph.nodes.filter((node) => node.kind === "acquire")).toHaveLength(6);
+    expect(graph.nodes.filter((node) => node.kind === "acquire")).toHaveLength(7);
     const nnn = alternative.item.mods.find((mod) => mod.essence)!;
     const wanted = alternative.item.mods.find((mod) => !mod.essence)!.id;
     const isolated = { ...alternative.item, mods: [nnn] };

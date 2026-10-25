@@ -10,7 +10,7 @@ import {
 } from "./schema.ts";
 
 export const sourcePreparationModelSchema = z.strictObject({
-    format: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+    format: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
     bases: z
         .array(
             z.strictObject({
@@ -43,6 +43,10 @@ const weaponPlaceholders = new Set([
     "StormBladeExplicitLocalIncreasedCriticalStrikeChance",
     "StormBladeExplicitShockChance",
     "StormBladeExplicitAttackLightningConvertToChaos",
+]);
+const influenceReadyBases = new Set([
+    "Metadata/Items/Armours/Shields/ShieldStr17",
+    "Metadata/Items/Armours/Shields/ShieldInt16",
 ]);
 
 function descriptions(value: unknown): ModLine[] | null {
@@ -119,7 +123,7 @@ function sourceIntangibility(item: ApiItem): number | null {
     return observed ?? field ?? 0;
 }
 
-/** The result is an input to an explicit paid preparation, never a replacement for ordinary facts. */
+/** The result proves an explicit source contract without changing ordinary item facts. */
 export function compileSourcePreparation(
     modifierModel: ModifierTextModel,
     input: SourcePreparationModel,
@@ -158,7 +162,10 @@ export function compileSourcePreparation(
             .map(displayText)
             .filter((text) => /^\d+% increased Explicit Defence Modifier magnitudes$/.test(text)),
     );
-    return (record: ItemRecord, inputPolicy: SourcePreparationProfile): SourcePreparationResult => {
+    return function classify(
+        record: ItemRecord,
+        inputPolicy: SourcePreparationProfile,
+    ): SourcePreparationResult {
         const policy = sourcePreparationProfileSchema.parse(inputPolicy);
         const scour = policy.kind === "scour-v1";
         const { item, facts } = record;
@@ -169,6 +176,52 @@ export function compileSourcePreparation(
               ? variants[0]
               : undefined;
         const rarity = itemRarity(item);
+        if (policy.kind === "influence-ready-v1") {
+            if (model.format < 5) return { status: "unknown" };
+            if (
+                (base && !influenceReadyBases.has(base.id)) ||
+                (rarity !== undefined && rarity !== "Normal") ||
+                Object.values(item.influences ?? {}).some(Boolean) ||
+                item.fractured === true
+            )
+                return { status: "no-match" };
+            if (
+                !base ||
+                rarity === undefined ||
+                (item.frameType !== undefined && item.frameType !== 0) ||
+                facts.modifiers.some(
+                    (mod) => mod.side !== "implicit" || mod.crafted || mod.fractured,
+                )
+            )
+                return { status: "unknown" };
+            for (const lines of [
+                item.explicitMods,
+                item.fracturedMods,
+                item.craftedMods,
+                item.enchantMods,
+            ]) {
+                const parsed = descriptions(lines);
+                if (!parsed) return { status: "unknown" };
+                if (parsed.length) return { status: "no-match" };
+            }
+            if (
+                [
+                    facts.prefixes,
+                    facts.suffixes,
+                    item.extended?.prefixes,
+                    item.extended?.suffixes,
+                ].some((count) => count !== undefined && count !== 0)
+            )
+                return { status: "unknown" };
+            // Reuse the native-implicit and persistent-state proof; no cleanup is applied or charged.
+            const proof = classify(
+                { ...record, item: { ...item, rarity: "Magic", frameType: 1 } },
+                { kind: "scour-v1", crafted: false, enchanted: false },
+            );
+            return proof.status === "match"
+                ? { status: "match", record: { ...record, facts: proof.record.facts } }
+                : proof;
+        }
         if (
             record.game !== "poe1" ||
             !["stash", "trade"].includes(record.source) ||

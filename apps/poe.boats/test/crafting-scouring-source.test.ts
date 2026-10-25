@@ -28,7 +28,7 @@ const scour = currency("convert_to_normal").id;
 const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
-const ruleset = { ...prior, revision: "r14", engine: "crafting-graph-14" };
+const ruleset = { ...prior, revision: "r15", engine: "crafting-graph-15" };
 const scopes = [
     "Heat-attuned Tower Shield",
     "Pinnacle Tower Shield",
@@ -59,7 +59,7 @@ function fixture(name = scopes[0]!, crafted = true, enchanted = true) {
         price: quote(11),
     };
     const graph = graphFixture();
-    graph.ruleset = { ...graph.ruleset, revision: "r14", engine: "crafting-graph-14" };
+    graph.ruleset = rulesetReference(ruleset);
     const node: GraphAcquireNode = {
         kind: "acquire" as const,
         id: "base",
@@ -86,19 +86,21 @@ function fixture(name = scopes[0]!, crafted = true, enchanted = true) {
 }
 
 function actualSource(purchase: GraphPurchase, rarity: "magic" | "rare") {
+    const source = purchase.sourcePreparation;
+    if (source?.kind !== "scour-v1") throw new Error("Expected Scouring source profile.");
     let item: CraftingItem = { ...structuredClone(purchase.item), rarity };
     for (const side of ["prefix", "suffix"]) {
         const mod = engine.pool(item).find((entry) => entry.mod.generation_type === side)!;
         item = engine.addStartingMod(item, mod.id, seededRandom(1));
     }
-    if (purchase.sourcePreparation!.crafted) {
+    if (source.crafted) {
         item.rarity = "rare";
         const recipe = catalog.crafting.bench.find(
             (entry) => entry.mod === "DexMasterItemGenerationCannotChangeSuffixes",
         )!;
         item = engine.apply(item, { kind: "bench", id: recipe.id }, seededRandom(2)).item;
     }
-    if (purchase.sourcePreparation!.enchanted)
+    if (source.enchanted)
         item.enchantments = [
             engine.rollMod("HarvestAlternateArmourQualityLightningResistance", seededRandom(3)),
         ];

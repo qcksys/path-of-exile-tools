@@ -14,7 +14,7 @@ import { graphFixture, quote, runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r14",
+    (entry) => entry.game === "poe1" && entry.revision === "r15",
 )!;
 
 describe("common crafting project presets", () => {

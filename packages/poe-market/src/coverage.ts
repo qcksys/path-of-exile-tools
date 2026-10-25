@@ -20,6 +20,8 @@ export function sameSourcePreparation(
     left: SourcePreparationProfile | undefined,
     right: SourcePreparationProfile | undefined,
 ) {
+    if (left?.kind === "influence-ready-v1" || right?.kind === "influence-ready-v1")
+        return left?.kind === right?.kind;
     return left === undefined || right === undefined
         ? left === right
         : left.kind === right.kind &&
@@ -37,6 +39,54 @@ function within(actual: NumericRange, required: NumericRange) {
 }
 function subset(actual: string[] | undefined, required: string[] | undefined) {
     return required === undefined || (actual?.every((value) => required.includes(value)) ?? false);
+}
+function influenceReadyTemplate(record: ItemRecord) {
+    const { item, facts } = record;
+    const native =
+        facts.baseId === "Metadata/Items/Armours/Shields/ShieldStr17"
+            ? { name: "Pinnacle Tower Shield", ids: ["IncreasedLifeImplicitShield2"] }
+            : facts.baseId === "Metadata/Items/Armours/Shields/ShieldInt16"
+              ? { name: "Titanium Spirit Shield", ids: [] }
+              : undefined;
+    return (
+        record.game === "poe1" &&
+        record.source === "craft" &&
+        native !== undefined &&
+        item.baseType === native.name &&
+        itemRarity(item) === "Normal" &&
+        (item.frameType === undefined || item.frameType === 0) &&
+        facts.itemClass === "Shield" &&
+        facts.modifiersComplete &&
+        facts.prefixes === 0 &&
+        facts.suffixes === 0 &&
+        !facts.destroyed &&
+        !facts.memoryStrands &&
+        !facts.memoryStrandsSpent &&
+        !facts.quality &&
+        !facts.catalystQuality &&
+        (facts.qualityType === undefined || facts.qualityType === "base") &&
+        (facts.catalystId === undefined || facts.catalystId === "none") &&
+        !Object.values(item.influences ?? {}).some(Boolean) &&
+        facts.modifiers.length === native.ids.length &&
+        facts.modifiers.every(
+            (mod, index) =>
+                mod.id === native.ids[index] &&
+                mod.side === "implicit" &&
+                !mod.crafted &&
+                !mod.fractured &&
+                !mod.possibleIds,
+        ) &&
+        // Coverage receives canonical craft templates; raw state needs the capture model's proof.
+        Object.entries(item).every(([key, value]) => {
+            if (key.endsWith("Mods") || key === "properties")
+                return value === undefined || (Array.isArray(value) && value.length === 0);
+            if (["intangibility", "memoryStrands", "memoryStrandsSpent"].includes(key))
+                return value === undefined || value === 0;
+            if (["searing", "tangled", "mutated", "memoryItem", "allflameCrafted"].includes(key))
+                return value === undefined || value === false;
+            return value !== true || key === "identified";
+        })
+    );
 }
 function implies(actual: ItemCondition, required: ItemCondition, item: ItemRecord): boolean {
     if (actual.kind === "base" && required.kind === "base") {
@@ -106,6 +156,8 @@ export function cohortPriceCoverage(
         matchItem(item, query) !== "match"
     )
         reasons.push("The configured item does not definitely match this cohort.");
+    if (sourcePreparation?.kind === "influence-ready-v1" && !influenceReadyTemplate(item))
+        reasons.push("An influence-ready source requires a clean canonical shield template.");
     if (
         sourcePreparation?.kind === "fractured-fossil-v1" &&
         (item.facts.modifiers.filter((mod) => mod.side !== "implicit").length !== 1 ||

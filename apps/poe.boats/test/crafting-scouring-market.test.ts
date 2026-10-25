@@ -37,7 +37,9 @@ describe("paid Scouring market source", () => {
         const { graph, candidate } = fixture();
         const bound = bindCohortPurchasePrice(graph, engine, "base", "buy", candidate);
         const { alternative } = purchase(bound);
-        if (edit === "change") alternative.sourcePreparation!.crafted = false;
+        if (alternative.sourcePreparation?.kind !== "scour-v1")
+            throw new Error("Expected Scouring source profile.");
+        if (edit === "change") alternative.sourcePreparation.crafted = false;
         else if (edit === "remove") delete alternative.sourcePreparation;
         else {
             const other = fixture(false, true);

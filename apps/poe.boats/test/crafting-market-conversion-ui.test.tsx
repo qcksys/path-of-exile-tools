@@ -29,7 +29,11 @@ it.each([
         sourcePreparation: { kind: "scour-v1" as const, crafted: true, enchanted: true },
         explanation: /Required craft and enchantment removal, followed by one Orb of Scouring/,
     },
-])("sends $sourcePreparation.kind and clears quotes when required cleanup changes", async ({
+    {
+        sourcePreparation: { kind: "influence-ready-v1" as const },
+        explanation: /This price buys an eligible uninfluenced Normal base/,
+    },
+])("sends $sourcePreparation.kind and clears quotes when the source policy changes", async ({
     sourcePreparation,
     explanation,
 }) => {
@@ -58,7 +62,7 @@ it.each([
     );
     fireEvent.click(screen.getByText("Equipment market price"));
     expect(screen.getByText(explanation)).toBeTruthy();
-    if (sourcePreparation.kind === "scour-v1")
+    if (sourcePreparation.kind !== "fractured-fossil-v1")
         expect(screen.queryByText(/first fossil roll/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
     await screen.findByRole("button", { name: "Use live median" });
@@ -66,7 +70,11 @@ it.each([
     rerender(
         <MarketPricePicker
             {...props}
-            sourcePreparation={{ ...sourcePreparation, enchanted: false }}
+            sourcePreparation={
+                sourcePreparation.kind === "influence-ready-v1"
+                    ? undefined
+                    : { ...sourcePreparation, enchanted: false }
+            }
         />,
     );
     await waitFor(() =>

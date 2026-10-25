@@ -242,7 +242,7 @@ for (const game of ["poe1", "poe2"] as const) {
             alternatives: [{ item: result.samples[1].item, price: null }],
         });
         await expect(
-            page.getByRole("button", { name: "Correction available · adopt r14", exact: true }),
+            page.getByRole("button", { name: "Correction available · adopt r15", exact: true }),
         ).toBeVisible();
         await page.reload();
         await expect(page.getByRole("tab")).toHaveCount(2);
@@ -1718,7 +1718,7 @@ test("prepared Temple gloves pass from the workbench into a saved current projec
     await page.getByRole("button", { name: "Use item in new project", exact: true }).click();
     await expect(page).toHaveURL(/\/1\/crafting\/projects$/);
     const project = (await stored(page)).projects[0]!;
-    expect(project.graph.ruleset.revision).toBe("r14");
+    expect(project.graph.ruleset.revision).toBe("r15");
     const node = project.graph.nodes[0]!;
     expect(node.kind).toBe("acquire");
     if (node.kind === "acquire" && node.alternatives[0]?.kind === "purchase")
@@ -1842,7 +1842,7 @@ test("historical projects retain their rules until a correction is explicitly ad
     );
     await page.getByRole("button", { name: "Apply selected version", exact: true }).click();
     await expect(
-        page.getByRole("button", { name: "Correction available · adopt r14", exact: true }),
+        page.getByRole("button", { name: "Correction available · adopt r15", exact: true }),
     ).toBeVisible();
     expect((await stored(page)).projects[0]!.graph.ruleset).toMatchObject({
         era: "3.29",
@@ -1851,19 +1851,19 @@ test("historical projects retain their rules until a correction is explicitly ad
     });
     await page.reload();
     await expect(
-        page.getByRole("button", { name: "Correction available · adopt r14", exact: true }),
+        page.getByRole("button", { name: "Correction available · adopt r15", exact: true }),
     ).toBeVisible();
     expect((await stored(page)).projects[0]!.graph.ruleset.revision).toBe("r1");
     await page
-        .getByRole("button", { name: "Correction available · adopt r14", exact: true })
+        .getByRole("button", { name: "Correction available · adopt r15", exact: true })
         .click();
     await expect(
-        page.getByRole("button", { name: "Correction available · adopt r14", exact: true }),
+        page.getByRole("button", { name: "Correction available · adopt r15", exact: true }),
     ).toHaveCount(0);
     expect((await stored(page)).projects[0]!.graph.ruleset).toMatchObject({
         era: "3.29",
-        revision: "r14",
-        engine: "crafting-graph-14",
+        revision: "r15",
+        engine: "crafting-graph-15",
     });
 });
 

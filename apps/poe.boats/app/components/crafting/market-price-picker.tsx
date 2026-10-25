@@ -158,11 +158,13 @@ export function MarketPricePicker({
             <summary className="cursor-pointer font-medium">Equipment market price</summary>
             <div className="mt-3 space-y-3">
                 <p className="text-muted-foreground">
-                    {sourcePreparation?.kind === "scour-v1"
-                        ? "This price buys a Magic or Rare source requiring Scouring. Its explicit modifiers are removed; its base, item level, influences and native implicits are preserved. Required craft and enchantment removal, followed by one Orb of Scouring, are charged separately by the acquisition. "
-                        : sourcePreparation
-                          ? "This price buys a fractured source requiring preparation. Its extra affixes and Eldritch implicits are replaced. Cleanup, the first fossil roll and Eldritch currencies are charged separately by the acquisition. "
-                          : "Choose a cohort that covers the configured item. Include any scouring, identification or other preparation in your process. "}
+                    {sourcePreparation?.kind === "influence-ready-v1"
+                        ? "This price buys an eligible uninfluenced Normal base. The following crafting steps charge for Transmutation, Regal, Shaper's Exalted and Scouring Orbs. "
+                        : sourcePreparation?.kind === "scour-v1"
+                          ? "This price buys a Magic or Rare source requiring Scouring. Its explicit modifiers are removed; its base, item level, influences and native implicits are preserved. Required craft and enchantment removal, followed by one Orb of Scouring, are charged separately by the acquisition. "
+                          : sourcePreparation
+                            ? "This price buys a fractured source requiring preparation. Its extra affixes and Eldritch implicits are replaced. Cleanup, the first fossil roll and Eldritch currencies are charged separately by the acquisition. "
+                            : "Choose a cohort that covers the configured item. Include any scouring, identification or other preparation in your process. "}
                     These are asking-price estimates, not completed sales.
                 </p>
                 <div className="grid grid-cols-2 gap-2">
