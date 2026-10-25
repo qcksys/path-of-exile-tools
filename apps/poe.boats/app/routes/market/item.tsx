@@ -76,7 +76,9 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <span className="text-muted-foreground">Asking price currency</span>
+                        <span className="text-muted-foreground">
+                            Show prices from all listing currencies in
+                        </span>
                         {currencies.map((currency) => (
                             <Link
                                 key={currency}
@@ -118,8 +120,8 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                                             >
                                                 <td className={cellClass}>{marketUtc(row.hour)}</td>
                                                 <td className={cellClass}>
-                                                    {row.prices?.[filters.currency]
-                                                        ? `${number(row.prices[filters.currency]!.median)} ${filters.currency}`
+                                                    {row.merged
+                                                        ? `${number(row.merged.median)} ${filters.currency}`
                                                         : "—"}
                                                 </td>
                                                 <td className={cellClass}>
@@ -129,8 +131,8 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                                                     {number(row.likelySales)}
                                                 </td>
                                                 <td className={cellClass}>
-                                                    {row.salesPrices?.[filters.currency]
-                                                        ? `${number(row.salesPrices[filters.currency]!.median)} ${filters.currency}`
+                                                    {row.mergedSales
+                                                        ? `${number(row.mergedSales.median)} ${filters.currency}`
                                                         : "—"}
                                                 </td>
                                                 <td className={cellClass}>

@@ -235,7 +235,19 @@ it("captures and rolls up essence asking prices per item regardless of stack siz
             frameType: 5,
             listingCount: 2,
             uniqueSellers: 2,
-            prices: { chaos: { count: 2, min: 2, max: 4, median: 3 } },
+            prices: {
+                chaos: {
+                    count: 2,
+                    min: 2,
+                    mean: 3,
+                    p10: expect.closeTo(2.2, 9),
+                    p25: 2.5,
+                    median: 3,
+                    p75: 3.5,
+                    p90: expect.closeTo(3.8, 9),
+                    max: 4,
+                },
+            },
         }),
     ]);
 });

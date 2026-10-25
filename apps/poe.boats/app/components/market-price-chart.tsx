@@ -1,20 +1,20 @@
 import { marketNumber } from "~/lib/market-number";
+import type { MergedMarketPrice } from "~/schemas/market";
 
-type Point = { hour: number; prices: Record<string, { median: number }> | null };
+type Point = { hour: number; merged: MergedMarketPrice | null };
 
 export function MarketPriceChart({ points, currency }: { points: Point[]; currency: string }) {
-    const priced = points.flatMap((point) => {
-        const price = point.prices?.[currency]?.median;
-        return price === undefined ? [] : [{ hour: point.hour, price }];
-    });
+    const priced = points.flatMap((point) =>
+        point.merged ? [{ ...point.merged, hour: point.hour }] : [],
+    );
     if (priced.length === 0)
         return (
             <p className="py-12 text-center text-muted-foreground">
-                No asking prices in {currency} for this period.
+                No asking prices convertible to {currency} for this period.
             </p>
         );
-    const lowest = Math.min(...priced.map((p) => p.price));
-    const highest = Math.max(...priced.map((p) => p.price));
+    const lowest = Math.min(...priced.map((p) => p.p25));
+    const highest = Math.max(...priced.map((p) => p.p75));
     const padding = lowest === highest ? Math.abs(lowest) * 0.1 || 1 : 0;
     const minimum = lowest - padding;
     const maximum = highest + padding;
@@ -22,22 +22,22 @@ export function MarketPriceChart({ points, currency }: { points: Point[]; curren
     const last = points.at(-1)!.hour;
     const x = (hour: number) => 68 + ((hour - first) / Math.max(last - first, 3600)) * 800;
     const y = (price: number) => 210 - ((price - minimum) / (maximum - minimum || 1)) * 160;
-    let previous = -Infinity;
-    const path = priced
-        .map((point) => {
-            const command = point.hour - previous > 3600 ? "M" : "L";
-            previous = point.hour;
-            return `${command}${x(point.hour)},${y(point.price)}`;
-        })
-        .join(" ");
+    const segments: (typeof priced)[] = [];
+    for (const point of priced) {
+        const segment = segments.at(-1);
+        if (segment && point.hour - segment.at(-1)!.hour <= 3600) segment.push(point);
+        else segments.push([point]);
+    }
+    const line = (segment: typeof priced, key: "p25" | "median" | "p75", start: "M" | "L") =>
+        segment.map((point, index) => `${index ? "L" : start}${x(point.hour)},${y(point[key])}`);
     return (
         <svg
             viewBox="0 0 920 260"
             role="img"
-            aria-label={`Hourly median asking price in ${currency}. Gaps indicate no observations.`}
+            aria-label={`Hourly median asking price across all listing currencies in ${currency}, with the interquartile range shaded. Gaps indicate no observations.`}
             className="w-full text-primary"
         >
-            <title>Hourly median asking price in {currency}</title>
+            <title>{`Hourly median asking price in ${currency}`}</title>
             {[0, 1, 2, 3, 4].map((tick) => {
                 const value = minimum + ((maximum - minimum) * tick) / 4;
                 const position = 210 - tick * 40;
@@ -63,17 +63,34 @@ export function MarketPriceChart({ points, currency }: { points: Point[]; curren
                     </g>
                 );
             })}
-            <path d={path} fill="none" stroke="currentColor" strokeWidth="2.5" />
+            {segments.map((segment) => (
+                <path
+                    key={segment[0]!.hour}
+                    d={[
+                        ...line(segment, "p75", "M"),
+                        ...line([...segment].reverse(), "p25", "L"),
+                        "Z",
+                    ].join(" ")}
+                    fill="currentColor"
+                    opacity="0.15"
+                />
+            ))}
+            <path
+                d={segments.flatMap((segment) => line(segment, "median", "M")).join(" ")}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+            />
             {priced.map((point) => (
                 <circle
                     key={point.hour}
                     cx={x(point.hour)}
-                    cy={y(point.price)}
+                    cy={y(point.median)}
                     r="2.5"
                     fill="currentColor"
                 >
                     <title>
-                        {new Date(point.hour * 1000).toISOString()}: {point.price} {currency}
+                        {`${new Date(point.hour * 1000).toISOString()}: ${marketNumber(point.median)} ${currency} (interquartile ${marketNumber(point.p25)}–${marketNumber(point.p75)}, ${point.count} listings${point.unconverted ? `, ${point.unconverted} without an exchange rate` : ""})`}
                     </title>
                 </circle>
             ))}
