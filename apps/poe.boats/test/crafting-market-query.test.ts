@@ -45,6 +45,11 @@ beforeEach(() => {
         CREATE TABLE ${DB_TABLE_PREFIX}stash_cohort_hourly (
         realm TEXT, league TEXT, hour INTEGER, revision TEXT, cohortId TEXT, listingCount INTEGER,
         uniqueSellers INTEGER, unknownCount INTEGER, prices TEXT, confidenceMethod TEXT, firstSeenAt TEXT, lastSeenAt TEXT);
+        CREATE TABLE ${DB_TABLE_PREFIX}stash_cohort_revision_hour (
+        realm TEXT, league TEXT, hour INTEGER, revision TEXT, PRIMARY KEY (realm, league, hour, revision));
+        CREATE TRIGGER cohort_revision_hour AFTER INSERT ON ${DB_TABLE_PREFIX}stash_cohort_hourly BEGIN
+        INSERT OR IGNORE INTO ${DB_TABLE_PREFIX}stash_cohort_revision_hour
+        VALUES (NEW.realm, NEW.league, NEW.hour, NEW.revision); END;
         CREATE TABLE ${DB_TABLE_PREFIX}stash_currency_hourly (
         realm TEXT, league TEXT, marketId TEXT, hour INTEGER, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT);`);
     const definition = marketCandidate.definition;
@@ -189,6 +194,34 @@ describe("equipment market lookup", () => {
             expect(JSON.stringify(plan)).toContain("definition_base");
         }
     });
+    it("reads definitions only from revisions observed in the lookup window", async () => {
+        capture(completed);
+        sqlite.exec(`INSERT INTO ${DB_TABLE_PREFIX}stash_cohort
+            SELECT id, 'stale', catalogHash, name, purpose, query, baseTypes FROM ${DB_TABLE_PREFIX}stash_cohort`);
+        sqlite
+            .prepare(
+                `INSERT INTO ${DB_TABLE_PREFIX}stash_cohort_hourly
+                SELECT realm, league, ?, 'stale', cohortId, listingCount, uniqueSellers,
+                unknownCount, prices, confidenceMethod, firstSeenAt, lastSeenAt
+                FROM ${DB_TABLE_PREFIX}stash_cohort_hourly`,
+            )
+            .run(completed - 14 * 86400);
+        const timing = new ServerTiming();
+        const result = await findCraftingMarketPrices(db, input, undefined, timing);
+        expect(result.candidates.map((candidate) => candidate.definition.revision)).toEqual([
+            marketCandidate.definition.revision,
+        ]);
+        const definitionReads = reads.filter(
+            (read) => read.sql.includes("catalogHash") && !read.sql.includes("stash_cohort_hourly"),
+        );
+        expect(definitionReads).toHaveLength(1);
+        expect(definitionReads[0]?.params).toContain(marketCandidate.definition.revision);
+        expect(definitionReads[0]?.params).not.toContain("stale");
+        // One revision, one definition and one hourly row: the stale definition is never read.
+        expect(timing.toString()).toContain(
+            'equipment_counts;desc="queries=3 rows=3 exchange_rows=0"',
+        );
+    });
     it("finds a relevant observation after more than 2000 incompatible same-base definitions", async () => {
         capture(completed - 3600, "chaos", 30);
         capture(completed);
@@ -284,11 +317,12 @@ describe("equipment market lookup", () => {
         const result = await findCraftingMarketPrices(db, input, undefined, timing);
         expect(result).toEqual(await findCraftingMarketPrices(db, input));
         const header = timing.toString();
-        expect(header).toContain("equipment_db;dur=50.0");
+        // Without observed revisions the lookup ends before reading any definitions.
+        expect(header).toContain("equipment_db;dur=25.0");
         expect(header).toContain("equipment_parse;dur=0.0");
         expect(header).toContain("equipment_fx;dur=0.0");
-        expect(header).toContain("equipment_total;dur=50.0");
-        expect(header).toContain('equipment_counts;desc="queries=2 rows=1 exchange_rows=0"');
+        expect(header).toContain("equipment_total;dur=25.0");
+        expect(header).toContain('equipment_counts;desc="queries=1 rows=0 exchange_rows=0"');
         expect(header).not.toMatch(/Standard|Plate Vest|SELECT|test-market|Metadata/);
         expect(new ServerTiming().toString()).toBe("");
     });
@@ -302,21 +336,22 @@ describe("equipment market lookup", () => {
         expect(result).toEqual(await findCraftingMarketPrices(db, converted));
         expect(result.candidates[0]?.covered).toBe(true);
         const header = timing.toString();
-        expect(header).toContain("equipment_db;dur=50.0");
+        expect(header).toContain("equipment_db;dur=75.0");
         expect(header).toContain("equipment_parse;dur=0.0");
         expect(header).toContain("equipment_fx;dur=25.0");
-        expect(header).toContain("equipment_total;dur=75.0");
-        expect(header).toContain('equipment_counts;desc="queries=3 rows=2 exchange_rows=1"');
+        expect(header).toContain("equipment_total;dur=100.0");
+        expect(header).toContain('equipment_counts;desc="queries=4 rows=3 exchange_rows=1"');
     });
 
     it("records a failed database wait and keeps the original rejection", async () => {
+        capture(completed);
         sqlite.exec(`DROP TABLE ${DB_TABLE_PREFIX}stash_cohort_hourly`);
         const timing = new ServerTiming();
         await expect(findCraftingMarketPrices(db, input, undefined, timing)).rejects.toThrow();
-        expect(timing.toString()).toContain("equipment_db;dur=50.0");
-        expect(timing.toString()).toContain("equipment_total;dur=50.0");
+        expect(timing.toString()).toContain("equipment_db;dur=75.0");
+        expect(timing.toString()).toContain("equipment_total;dur=75.0");
         expect(timing.toString()).toContain(
-            'equipment_counts;desc="queries=2 rows=1 exchange_rows=0"',
+            'equipment_counts;desc="queries=3 rows=2 exchange_rows=0"',
         );
     });
 
@@ -339,13 +374,13 @@ describe("equipment market lookup", () => {
         await waiting;
         elapsed = 100;
         await findCraftingMarketPrices(db, input, undefined, timing);
-        expect(timing.toString()).toContain("equipment_db;dur=50.0");
+        expect(timing.toString()).toContain("equipment_db;dur=25.0");
         releaseFirst();
         await first;
-        expect(timing.toString()).toContain("equipment_db;dur=200.0");
-        expect(timing.toString()).toContain("equipment_total;dur=200.0");
+        expect(timing.toString()).toContain("equipment_db;dur=150.0");
+        expect(timing.toString()).toContain("equipment_total;dur=150.0");
         expect(timing.toString()).toContain(
-            'equipment_counts;desc="queries=2 rows=1 exchange_rows=0"',
+            'equipment_counts;desc="queries=1 rows=0 exchange_rows=0"',
         );
     });
 

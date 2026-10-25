@@ -9,6 +9,7 @@ import { type Connection, createConnection, type RowDataPacket } from "mysql2/pr
 import { afterAll, beforeAll, expect, it } from "vite-plus/test";
 import type { TDatabase } from "~/db/client";
 import { findCraftingMarketPrices } from "~/db/queries/crafting-market.queries";
+import { upsertStashCohortHourly } from "~/db/queries/stash-ingest.queries";
 import { tStashCohort as cohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly as hourly } from "~/db/schema/stash.cohort-hourly";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
@@ -43,6 +44,15 @@ function observation(
 ) {
     return { ...marketCandidate.latest, cohortId, revision, hour: at, prices };
 }
+// Observations go through the ingest writer so the revision-hour table matches production.
+function observe(rows: Array<ReturnType<typeof observation>>) {
+    return upsertStashCohortHourly(db as unknown as TDatabase, rows);
+}
+function definitionRead() {
+    return statements.find(
+        (entry) => entry.sql.includes("catalogHash") && !entry.sql.includes("stash_cohort_hourly"),
+    )!;
+}
 
 beforeAll(async () => {
     container = await new MySqlContainer("mysql:8.4")
@@ -66,20 +76,18 @@ beforeAll(async () => {
             definition("multi", "current", ["Other", "Plate Vest"]),
             definition("selected", "other-base", ["Other"]),
         ]);
-    await db
-        .insert(hourly)
-        .values([
-            observation("selected", "old", hour - 3600),
-            observation("selected", "current", hour - 3600),
-            observation("selected", "current", hour, {}),
-            observation("unbounded"),
-            observation("multi"),
-            observation("selected", "other-base"),
-            { ...observation("selected", "current", hour), league: "Other" },
-            { ...observation("selected", "current", hour), realm: "sony" },
-            observation("selected", "current", hour + 3600),
-            observation("selected", "current", hour - 86400),
-        ]);
+    await observe([
+        observation("selected", "old", hour - 3600),
+        observation("selected", "current", hour - 3600),
+        observation("selected", "current", hour, {}),
+        observation("unbounded"),
+        observation("multi"),
+        observation("selected", "other-base"),
+        { ...observation("selected", "current", hour), league: "Other" },
+        { ...observation("selected", "current", hour), realm: "sony" },
+        observation("selected", "current", hour + 3600),
+        observation("selected", "current", hour - 86400),
+    ]);
     for (let start = 0; start < distractors; start += 400) {
         const definitions = Array.from(
             { length: Math.min(400, distractors - start) },
@@ -90,9 +98,9 @@ beforeAll(async () => {
         );
         await db.insert(cohort).values(definitions);
         for (let age = 0; age < 24; age++)
-            await db
-                .insert(hourly)
-                .values(definitions.map(({ id }) => observation(id, "current", hour - age * 3600)));
+            await observe(
+                definitions.map(({ id }) => observation(id, "current", hour - age * 3600)),
+            );
     }
     await db.execute(sql`ANALYZE TABLE ${cohort}, ${hourly}`);
     statements.length = 0;
@@ -297,7 +305,7 @@ it("preserves exact cohort filtering, all revisions, historical cutoffs and late
 it("seeks matching base definitions without scanning unrelated catalog rows", async () => {
     statements.length = 0;
     await findCraftingMarketPrices(db as unknown as TDatabase, input);
-    const query = statements[0]!;
+    const query = definitionRead();
     const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
     expect(plan[0]?.key).toBe("stash_cohort_base_page_idx");
     expect(String(plan[0]?.Extra)).not.toContain("filesort");
@@ -317,12 +325,10 @@ it("keeps ordering and the 2001-row boundary without quadratic history reads", a
             definition(`limit:${String(start + offset).padStart(4, "0")}`),
         );
         await db.insert(cohort).values(definitions);
-        await db
-            .insert(hourly)
-            .values(definitions.map(({ id }) => observation(id, "current", hour - 3600)));
+        await observe(definitions.map(({ id }) => observation(id, "current", hour - 3600)));
     }
     await db.insert(cohort).values(definition("zz:newest"));
-    await db.insert(hourly).values(observation("zz:newest"));
+    await observe([observation("zz:newest")]);
     statements.length = 0;
     const [readsBefore] = await connection.query<RowDataPacket[]>(
         "SHOW SESSION STATUS LIKE 'Handler_read_next'",
@@ -360,9 +366,7 @@ it("does not spend the observation cap on incompatible definitions or definition
             query: incompatible,
         }));
         await db.insert(cohort).values(definitions);
-        await db
-            .insert(hourly)
-            .values(definitions.map(({ id }) => ({ ...observation(id), league })));
+        await observe(definitions.map(({ id }) => ({ ...observation(id), league })));
     }
     await db
         .insert(cohort)
@@ -371,7 +375,7 @@ it("does not spend the observation cap on incompatible definitions or definition
             definition("zz:eligible", "current"),
             { ...definition("zz:eligible", "incompatible"), query: incompatible },
         ]);
-    await db.insert(hourly).values([
+    await observe([
         { ...observation("zz:eligible", "old", hour - 3600), league },
         { ...observation("zz:eligible", "current", hour - 3600), league },
         { ...observation("zz:eligible", "current", hour, {}), league },
@@ -399,7 +403,7 @@ it("retains late primary-key pages at the global tie boundary using database col
             definition(`Z:tie:${String(start + offset).padStart(4, "0")}`, "aa-first"),
         );
         await db.insert(cohort).values(definitions);
-        await db.insert(hourly).values(
+        await observe(
             definitions.map(({ id, revision }) => ({
                 ...observation(id, revision, hour - 3600),
                 league,
@@ -409,7 +413,7 @@ it("retains late primary-key pages at the global tie boundary using database col
     await db
         .insert(cohort)
         .values([definition("a:late", "zz-last"), definition("Z:newest-correction", "zz-last")]);
-    await db.insert(hourly).values([
+    await observe([
         { ...observation("a:late", "zz-last", hour - 3600), league },
         { ...observation("Z:newest-correction", "zz-last", hour - 3600), league },
         { ...observation("Z:newest-correction", "zz-last", hour, {}), league },
@@ -443,4 +447,56 @@ it("retains late primary-key pages at the global tie boundary using database col
         expect(plan[0]?.EXPLAIN).not.toContain("Sort:");
         expect(plan[0]?.EXPLAIN).toContain("stash_cohort_base_page_idx");
     }
+});
+
+it("skips same-base definitions from revisions without observations in the window", async () => {
+    const league = "Stale revision fixture";
+    for (let start = 0; start < 500; start += 250) {
+        const definitions = Array.from({ length: 250 }, (_, offset) =>
+            definition(`stale:${String(start + offset).padStart(4, "0")}`, "aa-stale"),
+        );
+        await db.insert(cohort).values(definitions);
+        await observe(
+            definitions.map(({ id, revision }) => ({
+                ...observation(id, revision, hour - 3 * 86400),
+                league,
+            })),
+        );
+    }
+    await db.insert(cohort).values(definition("live", "zz-live"));
+    await observe([{ ...observation("live", "zz-live"), league }]);
+    const request = { ...input, league };
+    statements.length = 0;
+    const result = await findCraftingMarketPrices(db as unknown as TDatabase, request);
+    expect(result.candidates.map(({ definition, latest }) => ({ definition, latest }))).toEqual(
+        await baseline(request),
+    );
+    expect(result.candidates.map((entry) => entry.definition.id)).toEqual(["live"]);
+    const query = definitionRead();
+    expect(query.params).toContain("zz-live");
+    expect(query.params).not.toContain("aa-stale");
+    const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
+    expect(plan[0]?.key).toBe("stash_cohort_base_page_idx");
+    expect(String(plan[0]?.Extra)).not.toContain("filesort");
+    const [before] = await connection.query<RowDataPacket[]>(
+        "SHOW SESSION STATUS LIKE 'Handler_read_next'",
+    );
+    const [rows] = await connection.query<RowDataPacket[]>(query.sql, query.params);
+    const [after] = await connection.query<RowDataPacket[]>(
+        "SHOW SESSION STATUS LIKE 'Handler_read_next'",
+    );
+    expect(rows).toHaveLength(1);
+    expect(Number(after[0]?.Value) - Number(before[0]?.Value)).toBeLessThan(10);
+});
+
+it("reads no definitions when no revision has observations in the window", async () => {
+    statements.length = 0;
+    const result = await findCraftingMarketPrices(db as unknown as TDatabase, {
+        ...input,
+        league: "Unobserved league",
+    });
+    expect(result).toMatchObject({ candidates: [], truncated: false });
+    expect(result.message).toContain("24 completed hours");
+    expect(statements).toHaveLength(1);
+    expect(statements[0]?.sql).toContain("stash_cohort_revision_hour");
 });
