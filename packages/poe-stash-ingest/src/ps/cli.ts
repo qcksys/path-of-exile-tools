@@ -274,6 +274,14 @@ program
             realm: REALM ?? "pc",
             league: opts.league,
         });
+        const { loadResonatorDiagnostics } = await import(
+            "#src/ps/resonator-diagnostics-request.ts"
+        );
+        const resonatorDiagnostics = await loadResonatorDiagnostics({
+            statusFile: process.env.INGEST_STATUS_FILE,
+            realm: REALM ?? "pc",
+            league: opts.league,
+        });
         const status = createStatusReporter({
             workerId: process.env.INGEST_WORKER_ID || `${REALM ?? "pc"}:${opts.league}`,
             realm: REALM ?? "pc",
@@ -300,6 +308,7 @@ program
                             : opts.currencyFromHour,
                         onStatus: status.update,
                         equipmentDiagnostics,
+                        resonatorDiagnostics,
                     });
                     console.log(JSON.stringify(result));
                     return { caughtUp: result.stash?.caughtUp ?? true };
