@@ -437,13 +437,18 @@ it("replays a paid Scouring source with native implicit proof at its original pr
     manifest.cohorts = manifest.cohorts.filter(
         (cohort) =>
             cohort.query.sourcePreparation?.kind === "scour-v1" &&
-            cohort.query.groups.some((group) =>
-                group.filters.some(
-                    (filter) =>
-                        filter.kind === "base" &&
-                        filter.field === "baseType" &&
-                        filter.values.includes("Pinnacle Tower Shield"),
-                ),
+            cohort.query.groups.some(
+                (group) =>
+                    group.type === "and" &&
+                    group.filters.some(
+                        (filter) =>
+                            filter.kind === "base" &&
+                            filter.field === "baseType" &&
+                            filter.values.includes("Pinnacle Tower Shield"),
+                    ) &&
+                    group.filters.some(
+                        (filter) => filter.kind === "influence" && filter.values.includes("shaper"),
+                    ),
             ),
     );
     expect(manifest.cohorts).toHaveLength(4);
