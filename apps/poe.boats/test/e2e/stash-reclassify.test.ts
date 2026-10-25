@@ -1,5 +1,5 @@
 // biome-ignore-all lint/style/useNamingConvention: Fixtures preserve upstream and database fields.
-import { mkdtemp, readFile, rmdir, unlink } from "node:fs/promises";
+import { mkdtemp, readFile, rm, rmdir, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
@@ -17,6 +17,7 @@ import {
     defaultCraftingCapture,
 } from "../../../../packages/poe-stash-ingest/src/ps/crafting-capture.ts";
 import { captureEquipment } from "../../../../packages/poe-stash-ingest/src/ps/equipment.ts";
+import { createEquipmentDiagnostics } from "../../../../packages/poe-stash-ingest/src/ps/equipment-diagnostics.ts";
 import { reclassifyArchivedEquipment } from "../../../../packages/poe-stash-ingest/src/ps/equipment-reclassify.ts";
 import { equipmentHourly } from "../../../../packages/poe-stash-ingest/src/ps/equipment-rollup.ts";
 import { getCursor, setCursor } from "../../../../packages/poe-stash-ingest/src/shared/cursor.ts";
@@ -81,6 +82,7 @@ const stash: Parameters<typeof captureEquipment>[1] = {
 };
 let local: DbHandle;
 let directory: string | undefined;
+let diagnosticsDirectory: string | undefined;
 beforeEach(async () => {
     local = await openDb(":memory:");
     await configureSource(local.conn, "pc", "Standard");
@@ -91,6 +93,10 @@ afterEach(async () => {
         await unlink(join(directory, "capture.duckdb"));
         await rmdir(directory);
         directory = undefined;
+    }
+    if (diagnosticsDirectory) {
+        await rm(diagnosticsDirectory, { recursive: true, force: true });
+        diagnosticsDirectory = undefined;
     }
 });
 
@@ -136,6 +142,181 @@ async function legacyBodies() {
     await local.conn.run("DELETE FROM ps_capture_payload_chunk");
     await local.conn.run("DELETE FROM ps_capture_payload_meta");
 }
+
+const diagnosticClassifier = compileMarketCohorts({
+    ...classifier.manifest,
+    revision: "archive-diagnostics",
+    cohorts: [false, true].map((unknown) => ({
+        id: unknown ? "prepared-unknown" : "ordinary-base",
+        name: unknown ? "Unproven prepared Plate Vest" : "Plate Vest",
+        purpose: "base",
+        query: {
+            format: 1,
+            game: "poe1",
+            groups: [
+                {
+                    type: "and",
+                    filters: [
+                        { kind: "base", field: "baseType", values: ["Plate Vest"] },
+                        ...(unknown
+                            ? [
+                                  {
+                                      kind: "mod" as const,
+                                      ids: ["UnprovenModifier"],
+                                      count: { min: 1 },
+                                  },
+                              ]
+                            : []),
+                    ],
+                },
+            ],
+        },
+    })),
+});
+const diagnosticItem = {
+    ...item,
+    frameType: 2,
+    explicitMods: ["+5 to maximum Life"],
+    id: "private-item",
+    accountName: "private-account",
+    stashId: "private-stash",
+    name: "private-name",
+    note: "~price 12345 chaos",
+    icon: "https://private.invalid/icon",
+};
+async function archiveDiagnostics() {
+    diagnosticsDirectory = await mkdtemp(join(tmpdir(), "poe-archive-diagnostics-"));
+    const file = join(diagnosticsDirectory, "fixtures.json");
+    const diagnostics = createEquipmentDiagnostics({
+        file,
+        cohortIds: ["prepared-unknown"],
+        classifier: diagnosticClassifier,
+        realm: "pc",
+        league: "Standard",
+        expiresAt: Date.now() + 3_600_000,
+    });
+    expect(diagnostics).toBeDefined();
+    return { file, diagnostics: diagnostics! };
+}
+
+it("flushes deduplicated archive diagnostics after page commit with original time and full private-safe classification", async () => {
+    const observedAt = new Date(HOUR * 1000 + 17_123);
+    await archive(observedAt.getTime() / 1000, [
+        {
+            ...stash,
+            items: [diagnosticItem, { ...diagnosticItem, id: "private-duplicate" }],
+        },
+    ]);
+    await archive(HOUR + 18, [{ ...stash, items: [diagnosticItem] }]);
+    const { file, diagnostics } = await archiveDiagnostics();
+    const classification = diagnosticClassifier.classify(
+        normalizeApiItem("poe1", "stash", diagnosticItem),
+    );
+    expect(classification).toEqual({ matches: ["ordinary-base"], unknown: ["prepared-unknown"] });
+    const events: string[] = [];
+    const run = local.conn.run.bind(local.conn);
+    const statements = vi.spyOn(local.conn, "run").mockImplementation(async (...args) => {
+        const result = await run(...args);
+        if (args[0] === "COMMIT") events.push("commit");
+        if (args[0].startsWith("UPDATE ps_equipment_reclassify SET after_time"))
+            events.push("progress");
+        return result;
+    });
+    const collect = vi.spyOn(diagnostics, "collect");
+    const write = diagnostics.flush.bind(diagnostics);
+    const flush = vi.spyOn(diagnostics, "flush").mockImplementation(async (fixtures) => {
+        expect(events.slice(-2)).toEqual(["progress", "commit"]);
+        expect(
+            await queryAll(
+                local.conn,
+                "SELECT after_time::DOUBLE AS at, completed FROM ps_equipment_reclassify",
+            ),
+        ).toEqual([{ at: observedAt.getTime(), completed: false }]);
+        expect(
+            await queryAll(local.conn, "SELECT item_id FROM ps_equipment_reclassify_hour"),
+        ).toHaveLength(2);
+        expect(fixtures).toHaveLength(1);
+        await write(fixtures);
+    });
+    try {
+        expect(
+            await reclassifyArchivedEquipment(local.conn, {
+                realm: "pc",
+                league: "Standard",
+                classifier: diagnosticClassifier,
+                completedBefore: HOUR + 3600,
+                limitPages: 1,
+                equipmentDiagnostics: diagnostics,
+            }),
+        ).toMatchObject({ pages: 1, hours: 0, pending: true });
+        expect(collect).toHaveBeenCalledWith(diagnosticItem, classification, observedAt, "archive");
+        expect(flush).toHaveBeenCalledOnce();
+        const text = await readFile(file, "utf8");
+        const saved = JSON.parse(text).fixtures;
+        expect(saved).toHaveLength(1);
+        expect(saved[0]).toMatchObject({
+            origin: "archive",
+            observedAt: observedAt.toISOString(),
+            hour: HOUR,
+            classification,
+        });
+        expect(
+            diagnosticClassifier.classify(normalizeApiItem("poe1", "stash", saved[0].item)),
+        ).toEqual(classification);
+        expect(text).not.toContain("private-");
+        expect(text).not.toContain("private.invalid");
+        expect(text).not.toContain("12345");
+        for (const field of ["id", "accountName", "stashId", "note", "icon"])
+            expect(saved[0].item).not.toHaveProperty(field);
+    } finally {
+        statements.mockRestore();
+        collect.mockRestore();
+        flush.mockRestore();
+    }
+});
+
+it("does not flush a rolled-back archive diagnostic and saves the original observation on retry", async () => {
+    const observedAt = new Date((HOUR + 21) * 1000);
+    await archive(HOUR + 21, [{ ...stash, items: [diagnosticItem] }]);
+    const { file, diagnostics } = await archiveDiagnostics();
+    const collect = vi.spyOn(diagnostics, "collect");
+    const flush = vi.spyOn(diagnostics, "flush");
+    const run = local.conn.run.bind(local.conn);
+    const fail = vi.spyOn(local.conn, "run").mockImplementation(async (...args) => {
+        if (args[0].startsWith("UPDATE ps_equipment_reclassify SET after_time"))
+            throw new Error("Injected replay progress failure");
+        return run(...args);
+    });
+    const replay = () =>
+        reclassifyArchivedEquipment(local.conn, {
+            realm: "pc",
+            league: "Standard",
+            classifier: diagnosticClassifier,
+            completedBefore: HOUR + 3600,
+            equipmentDiagnostics: diagnostics,
+        });
+    try {
+        await expect(replay()).rejects.toThrow("Injected replay progress failure");
+        expect(collect).toHaveBeenCalledOnce();
+        expect(collect.mock.results[0]!.value).not.toBeNull();
+        expect(flush).not.toHaveBeenCalled();
+        await expect(readFile(file)).rejects.toMatchObject({ code: "ENOENT" });
+        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify")).toEqual([]);
+        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour")).toEqual(
+            [],
+        );
+        fail.mockRestore();
+        expect(await replay()).toMatchObject({ pages: 1, hours: 1, pending: false });
+        expect(flush).toHaveBeenCalledOnce();
+        expect(JSON.parse(await readFile(file, "utf8")).fixtures).toMatchObject([
+            { origin: "archive", observedAt: observedAt.toISOString(), hour: HOUR },
+        ]);
+    } finally {
+        fail.mockRestore();
+        collect.mockRestore();
+        flush.mockRestore();
+    }
+});
 
 it("replays a crafted and enchanted fractured source with its preparation profile", async () => {
     const manifest = marketCohortManifestSchema.parse(
@@ -663,13 +844,24 @@ it.each([
         );
     }
     const classify = vi.spyOn(classifier, "classify");
+    const equipmentDiagnostics = { collect: vi.fn(() => null), flush: vi.fn(async () => {}) };
     try {
-        await expect(project()).rejects.toThrow(
+        await expect(
+            reclassifyArchivedEquipment(local.conn, {
+                realm: "pc",
+                league: "Standard",
+                classifier,
+                completedBefore: HOUR + 2 * 3600,
+                equipmentDiagnostics,
+            }),
+        ).rejects.toThrow(
             failure === "wrong-hash"
                 ? "The archived payload does not match its recorded hash."
                 : "The archived payload chunks are incomplete or invalid.",
         );
         expect(classify).not.toHaveBeenCalled();
+        expect(equipmentDiagnostics.collect).not.toHaveBeenCalled();
+        expect(equipmentDiagnostics.flush).not.toHaveBeenCalled();
         expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify")).toEqual(
             progress,
         );

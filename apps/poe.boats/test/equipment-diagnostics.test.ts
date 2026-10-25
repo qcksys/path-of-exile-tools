@@ -200,7 +200,7 @@ describe("bounded equipment diagnostics", () => {
         expect(diagnostics!.collect(miss, rejected, observedAt)).toBeNull();
     });
 
-    it("shares the existing fixture cap across source and ordinary unknown targets", async () => {
+    it("shares the fixture cap across live and archive source and ordinary unknown targets", async () => {
         const diagnostics = create({
             classifier: preparedClassifier,
             cohortIds: bases.flatMap((_, index) => [`source-${index}`, `prepared-${index}`]),
@@ -210,8 +210,10 @@ describe("bounded equipment diagnostics", () => {
             for (let variant = 0; variant < 2; variant++) {
                 const raw = { ...sourceItem(base, 86 + variant), extended: undefined };
                 const result = preparedClassifier.classify(normalizeApiItem("poe1", "stash", raw));
-                const fixture = diagnostics.collect(raw, result, observedAt);
+                const origin = variant ? "archive" : "live";
+                const fixture = diagnostics.collect(raw, result, observedAt, origin);
                 if (index < 8) {
+                    expect(fixture?.origin).toBe(origin);
                     expect(fixture?.targets).toEqual([
                         { cohortId: `prepared-${index}` },
                         {
@@ -228,10 +230,15 @@ describe("bounded equipment diagnostics", () => {
             }
         }
         await diagnostics.flush(fixtures);
-        expect((await saved()).fixtures).toHaveLength(16);
+        const output = await saved();
+        expect(output.fixtures).toHaveLength(16);
+        expect(output.fixtures.filter((fixture) => fixture.origin === "archive")).toHaveLength(8);
     });
 
-    it("preserves actual model-3 unknowns and full membership without identities or listing data", async () => {
+    it.each([
+        "live",
+        "archive",
+    ] as const)("preserves %s model-3 unknowns and full membership without identities or listing data", async (origin) => {
         const diagnostics = create()!;
         const raw = {
             ...sourceItem(),
@@ -259,10 +266,10 @@ describe("bounded equipment diagnostics", () => {
         };
         const result = classify(raw);
         expect(result).toEqual({ matches: ["ordinary-0"], unknown: ["source-0"] });
-        const fixture = diagnostics.collect(raw, result, observedAt)!;
+        const fixture = diagnostics.collect(raw, result, observedAt, origin)!;
         expect(fixture).toMatchObject({
             format: 1,
-            origin: "live",
+            origin,
             observedAt: observedAt.toISOString(),
             hour: 1792897200,
             realm: "pc",
@@ -344,41 +351,61 @@ describe("bounded equipment diagnostics", () => {
         expect(diagnostics.collect(malformed, classify(malformed), observedAt)).toBeNull();
     });
 
-    it("requires full matches and unknown equality, not only the requested unknown target", () => {
+    it.each([
+        "live",
+        "archive",
+    ] as const)("requires full %s matches and unknown equality, not only the requested unknown target", (origin) => {
         const diagnostics = create()!;
         const raw = sourceItem();
         expect(
-            diagnostics.collect(raw, { matches: [], unknown: ["source-0"] }, observedAt),
+            diagnostics.collect(raw, { matches: [], unknown: ["source-0"] }, observedAt, origin),
         ).toBeNull();
         expect(
             diagnostics.collect(
                 { ...raw, ilvl: 87 },
                 { matches: ["ordinary-0"], unknown: ["source-0", "unrelated"] },
                 observedAt,
+                origin,
             ),
         ).toBeNull();
     });
 
-    it("deduplicates before replay, leaves rare bases capacity, and permits retry after discarded pages", async () => {
+    it("shares live and archive deduplication and group caps, preserving the first committed provenance", async () => {
         const diagnostics = create()!;
         const raw = sourceItem(bases[1]);
         const classification = classify(raw);
         const replay = vi.spyOn(classifier, "classify");
         const first = diagnostics.collect(raw, classification, observedAt)!;
+        expect(first.origin).toBe("live");
         for (let index = 0; index < 100; index++)
-            expect(diagnostics.collect(raw, classification, observedAt)).not.toBeNull();
+            expect(
+                diagnostics.collect(
+                    raw,
+                    classification,
+                    observedAt,
+                    index % 2 ? "archive" : "live",
+                ),
+            ).not.toBeNull();
         expect(replay).toHaveBeenCalledTimes(1);
-        const retryTime = new Date(observedAt.getTime() + 60_000);
-        const retry = diagnostics.collect(raw, classification, retryTime)!;
+        const retryTime = new Date(observedAt.getTime() - 3_601_234);
+        const retry = diagnostics.collect(raw, classification, retryTime, "archive")!;
+        expect(retry.origin).toBe("archive");
         expect(retry.observedAt).toBe(retryTime.toISOString());
+        expect(retry.hour).toBe(Math.floor(retryTime.getTime() / 3_600_000) * 3600);
         await diagnostics.flush([retry, retry]);
         expect((await saved()).fixtures).toHaveLength(1);
         expect(diagnostics.collect(raw, classification, observedAt)).toBeNull();
+        expect(diagnostics.collect(raw, classification, retryTime, "archive")).toBeNull();
         const second = diagnostics.collect(sourceItem(bases[1], 87), classification, observedAt)!;
         expect(second).not.toBeNull();
         for (let ilvl = 88; ilvl < 180; ilvl++)
             expect(
-                diagnostics.collect(sourceItem(bases[1], ilvl), classification, observedAt),
+                diagnostics.collect(
+                    sourceItem(bases[1], ilvl),
+                    classification,
+                    observedAt,
+                    "archive",
+                ),
             ).toBeNull();
         const rare = sourceItem(bases[0]);
         const rareFixture = diagnostics.collect(
@@ -389,34 +416,47 @@ describe("bounded equipment diagnostics", () => {
         expect(rareFixture).not.toBeNull();
         expect(replay).toHaveBeenCalledTimes(3);
         await diagnostics.flush([first, second, rareFixture]);
-        expect((await saved()).fixtures).toHaveLength(3);
+        const output = await saved();
+        expect(output.fixtures).toHaveLength(3);
+        expect(output.fixtures[0]).toMatchObject({
+            origin: "archive",
+            observedAt: retryTime.toISOString(),
+            hour: retry.hour,
+        });
     });
 
-    it("caps attempted classifier replays at 64 and deduplicates parity failures", () => {
+    it("shares the 64 replay attempts and parity-failure deduplication across origins", () => {
         const diagnostics = create()!;
         const replay = vi.spyOn(classifier, "classify");
         const wrong = { matches: [], unknown: ["source-0"] };
         for (let index = 0; index < 100; index++)
-            diagnostics.collect(sourceItem(), wrong, observedAt);
+            diagnostics.collect(sourceItem(), wrong, observedAt, index % 2 ? "archive" : "live");
         expect(replay).toHaveBeenCalledTimes(1);
         for (let ilvl = 1; ilvl <= 100; ilvl++)
-            diagnostics.collect(sourceItem(bases[0], ilvl), wrong, observedAt);
+            diagnostics.collect(
+                sourceItem(bases[0], ilvl),
+                wrong,
+                observedAt,
+                ilvl % 2 ? "archive" : "live",
+            );
         expect(replay).toHaveBeenCalledTimes(64);
     });
 
-    it("bounds both records and serialized bytes without discarding an entire full page", async () => {
+    it("bounds mixed-origin records and serialized bytes without discarding an entire full page", async () => {
         const diagnostics = create()!;
         const fixtures: EquipmentDiagnosticFixture[] = [];
         for (const [index, base] of bases.entries()) {
             for (let variant = 0; variant < 2; variant++) {
                 const raw = sourceItem(base, 86 + variant);
                 const result = classify(raw);
-                const probe = create()!.collect(raw, result, observedAt)!;
+                const origin = variant ? "archive" : "live";
+                const probe = create()!.collect(raw, result, observedAt, origin)!;
                 const padding = 16 * 1024 - Buffer.byteLength(JSON.stringify(probe));
                 const fixture = diagnostics.collect(
                     { ...raw, typeLine: raw.typeLine + "x".repeat(padding) },
                     result,
                     observedAt,
+                    origin,
                 );
                 if (index < 8) {
                     expect(fixture).not.toBeNull();
@@ -428,6 +468,9 @@ describe("bounded equipment diagnostics", () => {
         await diagnostics.flush(fixtures);
         const output = await saved();
         expect(output.fixtures).toHaveLength(15);
+        expect(new Set(output.fixtures.map((fixture) => fixture.origin))).toEqual(
+            new Set(["live", "archive"]),
+        );
         expect(Buffer.byteLength(output.text)).toBeLessThanOrEqual(256 * 1024);
         expect(
             create()!.collect(
@@ -453,15 +496,25 @@ describe("bounded equipment diagnostics", () => {
         expect(replay).toHaveBeenCalledTimes(2);
     });
 
-    it("does not collect or persist after expiry", async () => {
+    it("expires live and archive collection and pending writes together", async () => {
         const expiresAt = Date.now() + 1000;
         const diagnostics = create({ expiresAt })!;
         const raw = sourceItem();
         const result = classify(raw);
         const fixture = diagnostics.collect(raw, result, observedAt)!;
+        const archivedRaw = sourceItem(bases[1]);
+        const archived = diagnostics.collect(
+            archivedRaw,
+            classify(archivedRaw),
+            observedAt,
+            "archive",
+        )!;
         vi.spyOn(Date, "now").mockReturnValue(expiresAt);
         expect(diagnostics.collect(raw, result, observedAt)).toBeNull();
-        await diagnostics.flush([fixture]);
+        expect(
+            diagnostics.collect(archivedRaw, classify(archivedRaw), observedAt, "archive"),
+        ).toBeNull();
+        await diagnostics.flush([fixture, archived]);
         await expect(saved()).rejects.toThrow();
     });
 

@@ -2,6 +2,10 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import { normalizeApiItem } from "@poe-tools/item-query";
 import { readArchivedPage } from "#src/ps/archive-payload.ts";
 import { defaultEquipmentClassifier, type EquipmentClassifier } from "#src/ps/equipment.ts";
+import type {
+    EquipmentDiagnosticFixture,
+    EquipmentDiagnostics,
+} from "#src/ps/equipment-diagnostics.ts";
 import { queryAll, withTransaction } from "#src/shared/db.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
 import { assertSourceRealm } from "#src/shared/source.ts";
@@ -12,6 +16,7 @@ export async function reclassifyArchivedEquipment(
         realm: string;
         league: string;
         classifier?: EquipmentClassifier;
+        equipmentDiagnostics?: EquipmentDiagnostics;
         completedBefore?: number;
         limitPages?: number;
     },
@@ -79,6 +84,7 @@ export async function reclassifyArchivedEquipment(
     while (pages < limit) {
         const hour = await nextHour();
         if (hour === undefined) break;
+        const fixtures = new Map<string, EquipmentDiagnosticFixture>();
         await withTransaction(conn, async () => {
             const [state] = await queryAll<{ afterTime: number; afterId: string }>(
                 conn,
@@ -134,6 +140,13 @@ export async function reclassifyArchivedEquipment(
                     const result = classifier.acceptsBase(item.baseType)
                         ? classifier.classify(normalizeApiItem("poe1", "stash", item))
                         : { matches: [], unknown: [] };
+                    const fixture = opts.equipmentDiagnostics?.collect(
+                        item,
+                        result,
+                        new Date(page.capturedAt),
+                        "archive",
+                    );
+                    if (fixture) fixtures.set(fixture.itemSha256, fixture);
                     const price =
                         result.matches.length || result.unknown.length
                             ? extractListingPrice(item, stash.stash)
@@ -176,6 +189,7 @@ export async function reclassifyArchivedEquipment(
             }
             pages++;
         });
+        if (fixtures.size) await opts.equipmentDiagnostics?.flush([...fixtures.values()]);
     }
     return {
         revision,
