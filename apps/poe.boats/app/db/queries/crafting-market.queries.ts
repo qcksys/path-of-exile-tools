@@ -25,6 +25,7 @@ import {
 import type { TDatabase } from "~/db/client";
 import { tStashCohort as cohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly as hourly } from "~/db/schema/stash.cohort-hourly";
+import { tStashCohortRevisionHour as revisionHour } from "~/db/schema/stash.cohort-revision-hour";
 import { selectCraftingMarketPrice } from "~/lib/crafting-market";
 import type {
     CraftingMarketCandidate,
@@ -50,6 +51,8 @@ const {
     rowDeletedAt: _deleted,
     ...summaryColumns
 } = hourColumns;
+const noCoverageMessage =
+    "No captured cohort covers this item in the latest 24 completed hours at this cutoff. Enter a manual price or check trade.";
 
 export async function craftingMarketDefinition(db: TDatabase, id: string, revision: string) {
     const [row] = await db
@@ -99,6 +102,24 @@ export async function findCraftingMarketPrices(
             lte(hourly.hour, range.latestHour),
             cohortId === undefined ? undefined : eq(hourly.cohortId, cohortId),
         );
+        // Definitions from revisions without observations in the window cannot produce a candidate.
+        const revisions = (
+            await read(
+                db
+                    .selectDistinct({ revision: revisionHour.revision })
+                    .from(revisionHour)
+                    .where(
+                        and(
+                            eq(revisionHour.realm, input.realm),
+                            eq(revisionHour.league, input.league),
+                            gte(revisionHour.hour, range.earliestHour),
+                            lte(revisionHour.hour, range.latestHour),
+                        ),
+                    ),
+            )
+        ).map(({ revision }) => revision);
+        if (!revisions.length)
+            return { candidates: [], truncated: false, message: noCoverageMessage };
         const bases = or(
             isNull(cohort.baseTypes),
             sql`JSON_CONTAINS(${cohort.baseTypes}, ${JSON.stringify(input.item.item.baseType)})`,
@@ -139,6 +160,7 @@ export async function findCraftingMarketPrices(
                         and(
                             bases,
                             inArray(cohort.baseTypeKey, ["", input.item.item.baseType]),
+                            inArray(cohort.revision, revisions),
                             cohortId === undefined ? undefined : eq(cohort.id, cohortId),
                             cursor
                                 ? or(
@@ -350,9 +372,7 @@ export async function findCraftingMarketPrices(
         return {
             candidates: priced,
             truncated: ranked.length > 2000,
-            message: candidates.length
-                ? null
-                : "No captured cohort covers this item in the latest 24 completed hours at this cutoff. Enter a manual price or check trade.",
+            message: candidates.length ? null : noCoverageMessage,
         };
     } finally {
         const ended = performance.now();

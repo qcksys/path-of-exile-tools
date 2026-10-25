@@ -28,10 +28,12 @@ import {
     findCraftingMarketPrices,
 } from "~/db/queries/crafting-market.queries";
 import { getMarketData } from "~/db/queries/market.queries";
+import { upsertStashCohortHourly } from "~/db/queries/stash-ingest.queries";
 import { tIngestWorker } from "~/db/schema/ingest.worker";
 import { tStashCheckpoint, tStashDailySample } from "~/db/schema/stash.checkpoint";
 import { tStashCohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
+import { tStashCohortRevisionHour } from "~/db/schema/stash.cohort-revision-hour";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { seededRandom } from "~/lib/crafting-engine";
@@ -217,6 +219,7 @@ beforeEach(async () => {
     await mysql.delete(tStashCurrencyHourly);
     await mysql.delete(tStashUniqueHourly);
     await mysql.delete(tStashCohortHourly);
+    await mysql.delete(tStashCohortRevisionHour);
     await mysql.delete(tStashCohort);
     local = await openDb(":memory:");
     upstreamResponses = [];
@@ -584,6 +587,44 @@ it("waits for a saved exchange hour to complete without fetching an upstream 404
     expect(await queryAll(local.conn, "SELECT * FROM cx_market_hour")).toEqual([]);
 });
 
+it("records each observed equipment revision hour once across batches and repeated pushes", async () => {
+    // 450 rows span three upsert batches but only four distinct revision hours.
+    const rows = Array.from({ length: 450 }, (_, index) => ({
+        ...marketCandidate.latest,
+        cohortId: `cohort:${String(index).padStart(3, "0")}`,
+        revision: index % 2 ? "odd-revision" : "even-revision",
+        hour: marketCandidate.latest.hour + (index < 225 ? 0 : 3600),
+    }));
+    const post = () =>
+        fetch(`${baseUrl}/api/stash-ingest`, {
+            method: "POST",
+            headers: { authorization: `Bearer ${TOKEN}`, "content-type": "application/json" },
+            body: JSON.stringify({ stream: "equipment", rows }),
+        });
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const response = await post();
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ stream: "equipment", written: 450 });
+    }
+    const recorded = await mysql
+        .select({
+            realm: tStashCohortRevisionHour.realm,
+            league: tStashCohortRevisionHour.league,
+            hour: tStashCohortRevisionHour.hour,
+            revision: tStashCohortRevisionHour.revision,
+        })
+        .from(tStashCohortRevisionHour)
+        .orderBy(tStashCohortRevisionHour.hour, tStashCohortRevisionHour.revision);
+    const { realm, league, hour } = marketCandidate.latest;
+    expect(recorded).toEqual([
+        { realm, league, hour, revision: "even-revision" },
+        { realm, league, hour, revision: "odd-revision" },
+        { realm, league, hour: hour + 3600, revision: "even-revision" },
+        { realm, league, hour: hour + 3600, revision: "odd-revision" },
+    ]);
+    expect(await mysql.select().from(tStashCohortHourly)).toHaveLength(450);
+});
+
 it("refreshes across compatible persisted revisions and recovers earlier prices without rewriting history", async () => {
     const current = structuredClone(marketCandidate);
     current.definition.revision = "next-market";
@@ -593,8 +634,8 @@ it("refreshes across compatible persisted revisions and recovers earlier prices 
     current.latest.prices.chaos!.median = 27;
     vi.spyOn(Date, "now").mockReturnValue((current.latest.hour + 3600) * 1000);
     await mysql.insert(tStashCohort).values([marketCandidate.definition, current.definition]);
-    await mysql.insert(tStashCohortHourly).values([marketCandidate.latest, current.latest]);
     const db = mysql as unknown as TDatabase;
+    await upsertStashCohortHourly(db, [marketCandidate.latest, current.latest]);
     const graph = bindCohortPurchasePrice(marketGraph(), engine, "base", "buy", marketCandidate);
     const node = graph.nodes[0]!;
     if (node.kind !== "acquire") throw new Error("Fixture");
@@ -642,7 +683,10 @@ it("refreshes across compatible persisted revisions and recovers earlier prices 
 it("offers stored donor-family quotes only under an explicit representative assumption", async () => {
     const { graph, candidate } = donorFamilyMarketFixture();
     await mysql.insert(tStashCohort).values([candidate.definition, marketCandidate.definition]);
-    await mysql.insert(tStashCohortHourly).values([candidate.latest, marketCandidate.latest]);
+    await upsertStashCohortHourly(mysql as unknown as TDatabase, [
+        candidate.latest,
+        marketCandidate.latest,
+    ]);
     const node = graph.nodes[0]!;
     if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
         throw new Error("Fixture");

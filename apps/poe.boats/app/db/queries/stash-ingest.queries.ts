@@ -4,6 +4,7 @@ import type { TDatabase } from "~/db/client.ts";
 import { tStashBasemapSnapshot } from "~/db/schema/stash.basemap-snapshot";
 import { tStashCohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
+import { tStashCohortRevisionHour } from "~/db/schema/stash.cohort-revision-hour";
 import {
     type TStashCurrencyHourlyI,
     tStashCurrencyHourly,
@@ -28,6 +29,21 @@ export async function upsertStashCohortHourly(
     db: TDatabase,
     rows: CohortHourly[],
 ): Promise<number> {
+    // Record revisions before their observations: a failed request may over-list a revision, never omit one.
+    const revisionHours = new Map(
+        rows.map(({ realm, league, hour, revision }) => [
+            JSON.stringify([realm, league, hour, revision]),
+            { realm, league, hour, revision },
+        ]),
+    );
+    const orderedRevisionHours = [...revisionHours]
+        .toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([, row]) => row);
+    for (const batch of chunk(orderedRevisionHours, UPSERT_CHUNK))
+        await db
+            .insert(tStashCohortRevisionHour)
+            .values(batch)
+            .onDuplicateKeyUpdate({ set: { revision: sql`${tStashCohortRevisionHour.revision}` } });
     for (const batch of chunk(rows, UPSERT_CHUNK)) {
         await db
             .insert(tStashCohortHourly)
