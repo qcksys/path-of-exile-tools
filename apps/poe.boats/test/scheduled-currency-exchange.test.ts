@@ -1,12 +1,18 @@
 // biome-ignore-all lint/style/useNamingConvention: The feed uses GGG's public field names.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { openDatabase } from "~/db/client";
-import { upsertStashCurrencyHourly } from "~/db/queries/stash-ingest.queries";
+import {
+    countStashCurrencyHour,
+    upsertStashCurrencyHourly,
+} from "~/db/queries/stash-ingest.queries";
 import { handleScheduled } from "~/scheduled";
 import { updateScarabPrices } from "~/scheduled/poeninja";
 
 vi.mock("~/db/client", () => ({ openDatabase: vi.fn() }));
-vi.mock("~/db/queries/stash-ingest.queries", () => ({ upsertStashCurrencyHourly: vi.fn() }));
+vi.mock("~/db/queries/stash-ingest.queries", () => ({
+    countStashCurrencyHour: vi.fn(),
+    upsertStashCurrencyHourly: vi.fn(),
+}));
 vi.mock("~/scheduled/poeninja", () => ({ updateScarabPrices: vi.fn() }));
 vi.mock("~/services/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
@@ -48,6 +54,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(openDatabase).mockResolvedValue({ db: database, close });
     vi.mocked(updateScarabPrices).mockResolvedValue({ successCount: 1, errorCount: 0 });
+    vi.mocked(countStashCurrencyHour).mockResolvedValue(0);
     vi.mocked(upsertStashCurrencyHourly).mockImplementation(async (_, rows) => rows.length);
     vi.stubGlobal(
         "fetch",
@@ -141,6 +148,30 @@ describe("scheduled exchange capture", () => {
         expect(vi.mocked(upsertStashCurrencyHourly).mock.calls[0]![1][0]!.hour).toBe(
             hour - 2 * 3600,
         );
+    });
+
+    it("skips hours already stored in full and rewrites partially stored hours", async () => {
+        vi.mocked(countStashCurrencyHour).mockImplementation(async (_, realm, storedHour) =>
+            realm === "pc" && storedHour < hour ? 1 : 0,
+        );
+        await handleScheduled(controller, env);
+        expect(countStashCurrencyHour).toHaveBeenCalledWith(database, "pc", hour, ["Allflame"]);
+        const rows = vi.mocked(upsertStashCurrencyHourly).mock.calls.flatMap(([, batch]) => batch);
+        expect(rows.filter((row) => row.realm === "pc").map((row) => row.hour)).toEqual([hour]);
+        expect(rows.filter((row) => row.realm === "poe2")).toHaveLength(6);
+
+        vi.mocked(upsertStashCurrencyHourly).mockClear();
+        vi.mocked(fetch).mockImplementation(async (request) => {
+            const response: { markets: Record<string, unknown>[] } = await feed(request).json();
+            response.markets.push({ ...response.markets[0], market_id: `${chaos}|${item}` });
+            return Response.json(response);
+        });
+        await handleScheduled(controller, env);
+        expect(
+            vi
+                .mocked(upsertStashCurrencyHourly)
+                .mock.calls.filter(([, batch]) => batch.every((row) => row.realm === "pc")),
+        ).toHaveLength(6);
     });
 
     it("keeps an empty source hour empty instead of synthesizing observations", async () => {

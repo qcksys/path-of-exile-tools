@@ -1421,7 +1421,9 @@ test("equipment currency conversion requires consent and preserves its source un
     ).toBeVisible();
     await editor.getByRole("button", { name: "View price history", exact: true }).click();
     const history = editor.getByRole("region", { name: "Equipment price history" });
-    await expect(history.getByRole("columnheader", { name: "Median (divine)" })).toBeVisible();
+    await expect(
+        history.getByRole("columnheader", { name: /^Median \(\s*divine\s*\)$/ }),
+    ).toBeVisible();
     await expect(history.getByRole("cell", { name: "20", exact: true })).toBeVisible();
     await history.scrollIntoViewIfNeeded();
     await page.screenshot({
