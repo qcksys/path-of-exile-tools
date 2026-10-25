@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogItemArt } from "~/components/item-art";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Label } from "~/components/ui/label";
@@ -76,9 +77,14 @@ export function GraphSamples({
             {sample && (
                 <p className="text-xs text-muted-foreground">
                     This trial: {sample.actions} craft actions ·{" "}
-                    {sample.cost === null
-                        ? "incomplete cost"
-                        : `${sample.cost.toFixed(2)} ${graph.currency} spent`}
+                    {sample.cost === null ? (
+                        "incomplete cost"
+                    ) : (
+                        <>
+                            {sample.cost.toFixed(2)}{" "}
+                            <CurrencyLabel currency={graph.currency} game={graph.game} /> spent
+                        </>
+                    )}
                 </p>
             )}
             {sample?.error && <p className="text-sm">{sample.error}</p>}

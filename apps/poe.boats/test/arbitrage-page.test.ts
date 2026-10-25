@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vite-plus/test";
 import { ArbitragePage } from "~/components/arbitrage/arbitrage-page";
 import { getVendorRecipes } from "~/data/vendor-recipes";
 import type { ArbitrageMarketData } from "~/services/arbitrage.server";
+import { byText } from "./control-helpers";
 
 afterEach(cleanup);
 
@@ -40,7 +41,7 @@ describe("arbitrage page", () => {
         showPage();
         expect(screen.getByText("1 opportunities")).toBeTruthy();
         expect(screen.getByRole("link", { name: "3 × Clear Oil → 1 × Sepia Oil" })).toBeTruthy();
-        expect(screen.getByText("2 chaos")).toBeTruthy();
+        expect(screen.getByText(byText("2 chaos"))).toBeTruthy();
         expect(screen.getByRole("link", { name: "Buy Clear Oil" }).getAttribute("href")).toContain(
             "/trade/exchange/Standard",
         );

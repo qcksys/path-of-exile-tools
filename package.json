@@ -4,13 +4,14 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "ready": "biome check && vp run -r build && vp run -r typecheck && vp run -r test",
+        "ready": "biome check && vp run -r build && vp run -r typecheck && vp run -r test && vp run test:scripts",
         "lint": "biome check",
         "format": "biome check --write --unsafe",
         "dev": "vp run poe-boats#dev",
         "agents:sync": "agents sync",
         "agents:check": "agents sync --check",
-        "prepare": "vp config && vp run agents:sync"
+        "test:scripts": "vp test --run",
+        "prepare": "node scripts/prepare-worktree.ts && vp config && vp run agents:sync"
     },
     "devDependencies": {
         "@agents-dev/cli": "catalog:",

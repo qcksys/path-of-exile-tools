@@ -12,6 +12,7 @@ import {
     XIcon,
 } from "lucide-react";
 import { type ComponentProps, type ReactNode, useCallback, useEffect, useMemo } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogItemArt, ItemName } from "~/components/item-art";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -222,9 +223,17 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                 {outcome.disposition === "sell" && (
                     <p className="text-xs">
                         Sale:{" "}
-                        {outcome.price
-                            ? `${outcome.price.amount} ${outcome.price.currency}`
-                            : "price unknown"}
+                        {outcome.price ? (
+                            <>
+                                {outcome.price.amount}{" "}
+                                <CurrencyLabel
+                                    currency={outcome.price.currency}
+                                    game={graph.game}
+                                />
+                            </>
+                        ) : (
+                            "price unknown"
+                        )}
                     </p>
                 )}
                 {!data.editing && <QueryLines lines={graphQueryText(engine, outcome.query)} />}
@@ -509,11 +518,19 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                                     game={graph.game}
                                 />
                                 :{" "}
-                                {option.kind === "production"
-                                    ? "Produced upstream"
-                                    : option.price
-                                      ? `${option.price.amount} ${option.price.currency}`
-                                      : "price unknown"}
+                                {option.kind === "production" ? (
+                                    "Produced upstream"
+                                ) : option.price ? (
+                                    <>
+                                        {option.price.amount}{" "}
+                                        <CurrencyLabel
+                                            currency={option.price.currency}
+                                            game={graph.game}
+                                        />
+                                    </>
+                                ) : (
+                                    "price unknown"
+                                )}
                             </p>
                         ))}
                     </>
@@ -588,11 +605,18 @@ export function FlowStep({ id, data }: NodeProps<CraftingFlowNode>) {
                 hidden={compact}
                 className="border-t px-3 py-2 font-mono text-xs text-muted-foreground"
             >
-                {estimate?.expectedCost == null
-                    ? estimate
-                        ? "Cost unknown · missing prices"
-                        : "Cost not calculated"
-                    : `${estimate.expectedCost.toFixed(2)} ${graph.currency} / item`}
+                {estimate?.expectedCost == null ? (
+                    estimate ? (
+                        "Cost unknown · missing prices"
+                    ) : (
+                        "Cost not calculated"
+                    )
+                ) : (
+                    <>
+                        {estimate.expectedCost.toFixed(2)}{" "}
+                        <CurrencyLabel currency={graph.currency} game={graph.game} /> / item
+                    </>
+                )}
                 {result?.visits[id] && ` · ${result.visits[id].visits} visits`}
             </div>
             {editor}

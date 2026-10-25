@@ -1,5 +1,6 @@
 import { itemQuerySchema } from "@poe-tools/item-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
@@ -431,26 +432,38 @@ export function GraphProjectEditor({
                 </section>
             )}
             <section className="grid gap-3 sm:grid-cols-3" aria-label="Process estimate">
-                {[
+                {(
                     [
-                        "Expected cost",
-                        result?.meanCost === null || !result
-                            ? "Unresolved"
-                            : `${result.meanCost.toFixed(2)} ${graph.currency}`,
-                    ],
-                    [
-                        "Target probability after retries",
-                        result?.probability === null || !result
-                            ? "Not calculated"
-                            : `${(result.probability * 100).toFixed(1)}%`,
-                    ],
-                    [
-                        "Net after explicit sales",
-                        result?.meanProfit === null || !result
-                            ? "Unresolved"
-                            : `${result.meanProfit.toFixed(2)} ${graph.currency}`,
-                    ],
-                ].map(([label, value]) => (
+                        [
+                            "Expected cost",
+                            result?.meanCost === null || !result ? (
+                                "Unresolved"
+                            ) : (
+                                <>
+                                    {result.meanCost.toFixed(2)}{" "}
+                                    <CurrencyLabel currency={graph.currency} game={graph.game} />
+                                </>
+                            ),
+                        ],
+                        [
+                            "Target probability after retries",
+                            result?.probability === null || !result
+                                ? "Not calculated"
+                                : `${(result.probability * 100).toFixed(1)}%`,
+                        ],
+                        [
+                            "Net after explicit sales",
+                            result?.meanProfit === null || !result ? (
+                                "Unresolved"
+                            ) : (
+                                <>
+                                    {result.meanProfit.toFixed(2)}{" "}
+                                    <CurrencyLabel currency={graph.currency} game={graph.game} />
+                                </>
+                            ),
+                        ],
+                    ] satisfies [string, ReactNode][]
+                ).map(([label, value]) => (
                     <div key={label} className="rounded border border-border bg-card px-4 py-3">
                         <p className="text-xs text-muted-foreground">{label}</p>
                         <p className="mt-1 font-mono text-xl">{value}</p>
@@ -669,6 +682,7 @@ export function GraphProjectEditor({
                                                 key={id}
                                                 label={label}
                                                 currency={graph.currency}
+                                                game={graph.game}
                                                 value={graph.prices[id] ?? null}
                                                 fallback={graph.prices[costId] ?? null}
                                                 onChange={(price) => {

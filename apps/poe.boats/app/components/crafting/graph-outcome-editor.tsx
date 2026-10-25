@@ -114,6 +114,7 @@ export function GraphOutcomeEditor({
                                 <GraphPriceInput
                                     label="Sale price"
                                     currency={graph.currency}
+                                    game={graph.game}
                                     value={graph.prices[`outcome:${outcome.id}`] ?? outcome.price}
                                     onChange={(price) => {
                                         const prices = { ...graph.prices };
