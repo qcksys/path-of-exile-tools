@@ -2,7 +2,22 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vite-plus/test";
 import { MarketPriceChart } from "~/components/market-price-chart";
 import { marketNumber } from "~/lib/market-number";
-import { marketFiltersSchema, marketLink } from "~/schemas/market";
+import { type MergedMarketPrice, marketFiltersSchema, marketLink } from "~/schemas/market";
+
+function flat(price: number): MergedMarketPrice {
+    return {
+        count: 1,
+        unconverted: 0,
+        mean: price,
+        min: price,
+        p10: price,
+        p25: price,
+        median: price,
+        p75: price,
+        p90: price,
+        max: price,
+    };
+}
 
 describe("market browsing", () => {
     it("preserves small fractional prices without rounding them to zero", () => {
@@ -65,22 +80,16 @@ describe("market browsing", () => {
     ])("rejects unbounded or invalid filters %j", (input) => {
         expect(marketFiltersSchema.safeParse(input).success).toBe(false);
     });
-    it("shows missing currency data without inventing a zero price", () => {
+    it("shows unconvertible currency data without inventing a zero price", () => {
         const markup = renderToStaticMarkup(
-            <MarketPriceChart
-                points={[{ hour: 3600, prices: { chaos: { median: 20 } } }]}
-                currency="divine"
-            />,
+            <MarketPriceChart points={[{ hour: 3600, merged: null }]} currency="divine" />,
         );
         expect(markup).toContain("No asking prices");
         expect(markup).not.toContain("<svg");
     });
     it("gives a constant price history a nonzero chart range", () => {
         const markup = renderToStaticMarkup(
-            <MarketPriceChart
-                points={[{ hour: 3600, prices: { divine: { median: 10 } } }]}
-                currency="divine"
-            />,
+            <MarketPriceChart points={[{ hour: 3600, merged: flat(10) }]} currency="divine" />,
         );
         expect(markup).toContain('cy="130"');
         expect(markup).toContain(">9</text>");
@@ -90,13 +99,27 @@ describe("market browsing", () => {
         const markup = renderToStaticMarkup(
             <MarketPriceChart
                 points={[
-                    { hour: 3600, prices: { divine: { median: 10 } } },
-                    { hour: 10800, prices: { divine: { median: 20 } } },
+                    { hour: 3600, merged: flat(10) },
+                    { hour: 10800, merged: flat(20) },
                 ]}
                 currency="divine"
             />,
         );
         expect(markup).toContain('d="M68,210 M868,50"');
         expect(markup).toContain("Hourly median asking price in divine");
+    });
+    it("shades the interquartile range and reports unconverted listings", () => {
+        const markup = renderToStaticMarkup(
+            <MarketPriceChart
+                points={[
+                    { hour: 3600, merged: { ...flat(10), p25: 5, p75: 15, unconverted: 2 } },
+                    { hour: 7200, merged: { ...flat(10), p25: 5, p75: 15 } },
+                ]}
+                currency="chaos"
+            />,
+        );
+        expect(markup).toContain('d="M68,50 L868,50 L868,210 L68,210 Z"');
+        expect(markup).toContain('d="M68,130 L868,130"');
+        expect(markup).toContain("2 without an exchange rate");
     });
 });

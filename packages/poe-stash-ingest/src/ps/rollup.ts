@@ -95,7 +95,12 @@ prices AS (
         signature_kind, signature_value, price_currency, status,
         COUNT(*) AS price_count,
         MIN(price_amount) AS min,
+        AVG(price_amount) AS mean,
+        QUANTILE_CONT(price_amount, 0.1) AS p10,
+        QUANTILE_CONT(price_amount, 0.25) AS p25,
         MEDIAN(price_amount) AS median,
+        QUANTILE_CONT(price_amount, 0.75) AS p75,
+        QUANTILE_CONT(price_amount, 0.9) AS p90,
         MAX(price_amount) AS max
     FROM windowed
     WHERE price_amount > 0 AND price_currency IS NOT NULL AND status IN ('listing', 'likely-sold')
@@ -108,7 +113,10 @@ prices_agg AS (
         signature_kind, signature_value, status,
         json_group_object(
             price_currency,
-            json_object('count', price_count, 'min', min, 'median', median, 'max', max)
+            json_object(
+                'count', price_count, 'min', min, 'mean', mean, 'p10', p10, 'p25', p25,
+                'median', median, 'p75', p75, 'p90', p90, 'max', max
+            )
         ) AS prices_json
     FROM prices
     GROUP BY league, hour, item_key, corrupted, foil_variation,

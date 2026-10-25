@@ -37,6 +37,25 @@ export const marketFiltersSchema = z.object({
 
 export type MarketFilters = z.infer<typeof marketFiltersSchema>;
 
+/**
+ * One hour's asking prices across every listing currency, converted through chaos into the
+ * display currency. Quantiles come from the per-currency summaries, so they are estimates when
+ * more than one currency contributes. `unconverted` counts listings without an exchange rate.
+ */
+export const mergedMarketPriceSchema = z.object({
+    count: z.number().int().positive(),
+    unconverted: z.number().int().nonnegative(),
+    mean: z.number().positive().nullable(),
+    min: z.number().positive(),
+    p10: z.number().positive(),
+    p25: z.number().positive(),
+    median: z.number().positive(),
+    p75: z.number().positive(),
+    p90: z.number().positive(),
+    max: z.number().positive(),
+});
+export type MergedMarketPrice = z.infer<typeof mergedMarketPriceSchema>;
+
 export function marketLink(
     filters: MarketFilters,
     item?: {

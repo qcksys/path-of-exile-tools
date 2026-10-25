@@ -2,7 +2,11 @@ import { z } from "zod";
 import { getMarketData } from "~/db/queries/market.queries";
 import { sStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
 import { ArbitrageGameSchema, MarketSnapshotSchema, VendorRecipeSchema } from "~/schemas/arbitrage";
-import { marketCategorySchema, marketFiltersSchema } from "~/schemas/market";
+import {
+    marketCategorySchema,
+    marketFiltersSchema,
+    mergedMarketPriceSchema,
+} from "~/schemas/market";
 import { recombinatorCatalogSchema } from "~/schemas/recombinator-catalog";
 import { ScarabPricesDataSchema } from "~/schemas/scarab";
 import { SharedSetSchema } from "~/schemas/share";
@@ -248,7 +252,12 @@ export const operations = [
                 }),
             ),
             hasMore: z.boolean(),
-            history: z.array(marketRow),
+            history: z.array(
+                marketRow.extend({
+                    merged: mergedMarketPriceSchema.nullable(),
+                    mergedSales: mergedMarketPriceSchema.nullable(),
+                }),
+            ),
         }),
         execute: async (filters, context) => {
             const data = await getMarketData(context.db, filters);

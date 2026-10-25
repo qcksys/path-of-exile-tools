@@ -5,6 +5,19 @@
 
 import type { CohortHourly, MarketCohortDefinition } from "@poe-tools/market";
 
+/** Listing prices in one currency. Rows pushed before mean and quantiles were added omit them. */
+export interface PriceSummary {
+    count: number;
+    min: number;
+    mean?: number;
+    p10?: number;
+    p25?: number;
+    median: number;
+    p75?: number;
+    p90?: number;
+    max: number;
+}
+
 export interface UniqueHourlyRow {
     realm?: string;
     league: string;
@@ -35,9 +48,9 @@ export interface UniqueHourlyRow {
     likelySales?: number;
     relistedCount?: number;
     pendingCount?: number;
-    salesPrices?: Record<string, { count: number; min: number; median: number; max: number }>;
-    /** Per-currency price aggregates: { chaos: { count, min, median, max }, divine: {...} } */
-    prices: Record<string, { count: number; min: number; median: number; max: number }>;
+    salesPrices?: Record<string, PriceSummary>;
+    /** Per-currency price aggregates: { chaos: { count, min, median, max, ... }, divine: {...} } */
+    prices: Record<string, PriceSummary>;
     firstSeenAt: string; // ISO
     lastSeenAt: string; // ISO
 }
