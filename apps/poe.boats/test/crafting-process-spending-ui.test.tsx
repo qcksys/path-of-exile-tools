@@ -3,14 +3,14 @@ import { act, fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vite-plus/test";
 import { seededRandom } from "~/lib/crafting-engine";
 import { CraftingProcess, calculateProcessExact } from "~/lib/crafting-simulation";
-import { changeControl, expectControlValue } from "./control-helpers";
+import { byText, changeControl, expectControlValue } from "./control-helpers";
 import { button, CraftingWorker, catalogs, fixture } from "./crafting-process-ui-fixtures";
 
 describe.each(catalogs)("$game process routes and flowchart", (data) => {
     it("prices starting items in process results, saves the price and excludes it when cleared", () => {
         const { engine, project, key, mount } = fixture(data);
         mount();
-        fireEvent.click(screen.getByText("Custom prices in chaos"));
+        fireEvent.click(screen.getByText(byText("Custom prices in chaos")));
         changeControl(screen.getByLabelText("Starting item cost (chaos)"), {
             target: { value: "8" },
         });
@@ -26,12 +26,12 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
             "1.75",
         );
         expect(
-            results.getByText("Starting item cost / attempt (chaos)").nextElementSibling
+            results.getByText(byText("Starting item cost / attempt (chaos)")).nextElementSibling
                 ?.textContent,
         ).toBe("14");
-        expect(results.getByText("Average cost (chaos)").nextElementSibling?.textContent).toBe(
-            "17.5",
-        );
+        expect(
+            results.getByText(byText("Average cost (chaos)")).nextElementSibling?.textContent,
+        ).toBe("17.5");
         fireEvent.click(button("Save project"));
         expect(JSON.parse(localStorage.getItem(key)!)["My crafting project"].baseCost).toBe(8);
         changeControl(screen.getByLabelText("Starting item cost (chaos)"), {
@@ -80,7 +80,8 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         const quantity = () =>
             screen.getByText("Starting items used").nextElementSibling?.textContent;
         const cost = () =>
-            screen.getByText("Starting item spending (chaos)").nextElementSibling?.textContent;
+            screen.getByText(byText("Starting item spending (chaos)")).nextElementSibling
+                ?.textContent;
         expect(quantity()).toBe("1");
         fireEvent.click(button("Apply process"));
         const discarded = CraftingWorker.instances[0]!;

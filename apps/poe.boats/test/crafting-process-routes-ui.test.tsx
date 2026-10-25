@@ -8,7 +8,7 @@ import {
     calculateProcessExact,
 } from "~/lib/crafting-simulation";
 import { craftingProjectSchema } from "~/schemas/crafting";
-import { changeControl, expectControlValue } from "./control-helpers";
+import { byText, changeControl, expectControlValue } from "./control-helpers";
 import {
     button,
     CraftingWorker,
@@ -217,7 +217,7 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
         const routes = screen.getByRole("region", { name: "Process route results" });
         expect(routes.textContent).toContain("Exact within the model");
         const first = within(screen.getByRole("article", { name: "Keep life route results" }));
-        expect(first.getByText("1.75 visits · 3.5 chaos / attempt")).toBeDefined();
+        expect(first.getByText(byText("1.75 visits · 3.5 chaos / attempt"))).toBeDefined();
         expect(first.getByRole("row", { name: "Passed Final check 0.875" })).toBeDefined();
         expect(first.getByRole("row", { name: "Failed restart 0.875" })).toBeDefined();
         expect(node.textContent).toContain("1.75 visits / attempt");

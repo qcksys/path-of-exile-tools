@@ -1,4 +1,5 @@
 import { type ReactNode, useMemo } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogItemArt } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import type { CraftingEngine } from "~/lib/crafting-engine";
@@ -83,9 +84,17 @@ export function NnnEssences({
                                 </p>
                             )}
                             <p className="font-mono">
-                                {prices[source.id] === undefined
-                                    ? "Price unknown"
-                                    : `${prices[source.id]} ${currency}`}
+                                {prices[source.id] === undefined ? (
+                                    "Price unknown"
+                                ) : (
+                                    <>
+                                        {prices[source.id]}{" "}
+                                        <CurrencyLabel
+                                            currency={currency}
+                                            game={engine.catalog.game}
+                                        />
+                                    </>
+                                )}
                             </p>
                         </div>
                         <Button

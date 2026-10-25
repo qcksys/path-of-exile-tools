@@ -1,6 +1,7 @@
 import { itemQuerySchema } from "@poe-tools/item-query";
 import { decodeCohortPriceReference, decodeExchangePriceReference } from "@poe-tools/market";
 import { useEffect, useId, useMemo, useRef } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogItemArt } from "~/components/item-art";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
@@ -65,7 +66,7 @@ export function GraphPriceInput({
         <Label className="block space-y-1 text-xs">
             <span className="flex items-center gap-2">
                 {itemId && <CatalogItemArt id={itemId} name={label} game={game} />}
-                {label} ({currency})
+                {label} (<CurrencyLabel currency={currency} game={game} />)
             </span>
             <Input
                 className={graphControl}
@@ -88,23 +89,45 @@ export function GraphPriceInput({
                 }
             />
             <span className="block text-muted-foreground">
-                {value?.source === "market"
-                    ? `Market estimate · ${value.observedAt ? new Date(value.observedAt).toLocaleString() : "unknown observation time"} · ${value.confidence === null ? "unknown confidence" : `${(value.confidence * 100).toFixed(0)}% data confidence`} · edit to override`
-                    : value
-                      ? "Manual price"
-                      : fallback !== undefined
-                        ? fallback
-                            ? `Uses shared price: ${fallback.amount} ${currency}`
-                            : "Shared price unknown"
-                        : "Unpriced; excluded from a complete cost estimate"}
+                {value?.source === "market" ? (
+                    `Market estimate · ${value.observedAt ? new Date(value.observedAt).toLocaleString() : "unknown observation time"} · ${value.confidence === null ? "unknown confidence" : `${(value.confidence * 100).toFixed(0)}% data confidence`} · edit to override`
+                ) : value ? (
+                    "Manual price"
+                ) : fallback !== undefined ? (
+                    fallback ? (
+                        <>
+                            Uses shared price: {fallback.amount}{" "}
+                            <CurrencyLabel currency={currency} game={game} />
+                        </>
+                    ) : (
+                        "Shared price unknown"
+                    )
+                ) : (
+                    "Unpriced; excluded from a complete cost estimate"
+                )}
             </span>
             {value?.source === "market" && sourceReference && (
                 <span className="block text-muted-foreground">
-                    {sourceReference.source === "stash-commodity"
-                        ? `Captured per-item asking estimate${sourceReference.exchange ? ` · converted from ${sourceReference.exchange.amount.toLocaleString(undefined, { maximumSignificantDigits: 6 })} ${sourceReference.exchange.currency} using matching-hour exchange · combined confidence unknown` : ""} · ${value.samples ?? "unknown"} priced samples · time shown is the observed hour · captured history available`
-                        : sourceReference.source === "vendor-upgrade"
-                          ? `Vendor-upgrade ingredient estimate · ${sourceReference.path.quantity} × ${sourceReference.path.inputName} · ${sourceReference.ingredient.itemVolume ?? "unknown"} ingredient units traded · confidence unknown · time shown is the ingredient observation hour · fixed recipe path supports captured history`
-                          : `poe.ninja listing estimate · time shown is retrieval time · ${sourceReference.assumption ? "retired species-specific beast estimate; rebind using the generic Yellow Beast pool" : sourceReference.yellowBeasts ? "complete recipe includes the generic Yellow Beast listing-count-weighted mean" : "exact temple room estimate"} · historical source unavailable`}
+                    {sourceReference.source === "stash-commodity" ? (
+                        <>
+                            Captured per-item asking estimate
+                            {sourceReference.exchange && (
+                                <>
+                                    {` · converted from ${sourceReference.exchange.amount.toLocaleString(undefined, { maximumSignificantDigits: 6 })} `}
+                                    <CurrencyLabel
+                                        currency={sourceReference.exchange.currency}
+                                        game={game}
+                                    />
+                                    {" using matching-hour exchange · combined confidence unknown"}
+                                </>
+                            )}
+                            {` · ${value.samples ?? "unknown"} priced samples · time shown is the observed hour · captured history available`}
+                        </>
+                    ) : sourceReference.source === "vendor-upgrade" ? (
+                        `Vendor-upgrade ingredient estimate · ${sourceReference.path.quantity} × ${sourceReference.path.inputName} · ${sourceReference.ingredient.itemVolume ?? "unknown"} ingredient units traded · confidence unknown · time shown is the ingredient observation hour · fixed recipe path supports captured history`
+                    ) : (
+                        `poe.ninja listing estimate · time shown is retrieval time · ${sourceReference.assumption ? "retired species-specific beast estimate; rebind using the generic Yellow Beast pool" : sourceReference.yellowBeasts ? "complete recipe includes the generic Yellow Beast listing-count-weighted mean" : "exact temple room estimate"} · historical source unavailable`
+                    )}
                 </span>
             )}
             {value?.source === "market" &&
@@ -198,6 +221,7 @@ export function GraphDestinationEditor({
                 <GraphPriceInput
                     label="Sale revenue"
                     currency={graph.currency}
+                    game={graph.game}
                     value={value.price}
                     onChange={(price) => onChange({ ...value, price })}
                 />
@@ -500,6 +524,7 @@ export function GraphNodeEditor({
                                         <GraphPriceInput
                                             label="Purchase price"
                                             currency={graph.currency}
+                                            game={graph.game}
                                             value={
                                                 graph.prices[
                                                     `purchase:${node.id}:${alternative.id}`
@@ -668,9 +693,17 @@ export function GraphNodeEditor({
                                             "Not estimated"
                                         ) : (
                                             <>
-                                                {estimate.expectedCost === null
-                                                    ? "Cost unresolved"
-                                                    : `${estimate.expectedCost.toFixed(2)} ${graph.currency}`}{" "}
+                                                {estimate.expectedCost === null ? (
+                                                    "Cost unresolved"
+                                                ) : (
+                                                    <>
+                                                        {estimate.expectedCost.toFixed(2)}{" "}
+                                                        <CurrencyLabel
+                                                            currency={graph.currency}
+                                                            game={graph.game}
+                                                        />
+                                                    </>
+                                                )}{" "}
                                                 ·{" "}
                                                 {estimate.guaranteed
                                                     ? "Guaranteed purchase"

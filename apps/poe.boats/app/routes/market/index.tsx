@@ -1,4 +1,5 @@
 import { Link, redirect } from "react-router";
+import { CurrencyLabel } from "~/components/currency-label";
 import { ItemArt } from "~/components/item-art";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
 import { dbContext } from "~/context";
@@ -31,6 +32,7 @@ const cellClass = "px-4 py-3 text-left";
 export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
     const { filters, seasons, season, rows, hasMore } = loaderData;
     const categories = Object.keys(MARKET_CATEGORIES) as MarketCategory[];
+    const game = filters.realm === "poe2" ? "poe2" : "poe1";
     return (
         <>
             <MarketFiltersForm filters={filters} seasons={seasons} />
@@ -92,9 +94,7 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                                                         <ItemArt
                                                             src={marketItemArtUrl(
                                                                 row.iconAsset,
-                                                                filters.realm === "poe2"
-                                                                    ? "poe2"
-                                                                    : "poe1",
+                                                                game,
                                                             )}
                                                             name={row.name || row.baseType}
                                                             decorative
@@ -129,7 +129,10 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                                                                       }
                                                                   >
                                                                       {number(price.median)}{" "}
-                                                                      {currency}
+                                                                      <CurrencyLabel
+                                                                          currency={currency}
+                                                                          game={game}
+                                                                      />
                                                                       <span className="ml-2 text-xs text-muted-foreground">
                                                                           n={price.count}
                                                                       </span>

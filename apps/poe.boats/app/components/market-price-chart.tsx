@@ -1,16 +1,26 @@
+import { CurrencyLabel } from "~/components/currency-label";
 import { marketNumber } from "~/lib/market-number";
 import type { MergedMarketPrice } from "~/schemas/market";
 
 type Point = { hour: number; merged: MergedMarketPrice | null };
 
-export function MarketPriceChart({ points, currency }: { points: Point[]; currency: string }) {
+export function MarketPriceChart({
+    points,
+    currency,
+    game,
+}: {
+    points: Point[];
+    currency: string;
+    game?: "poe1" | "poe2";
+}) {
     const priced = points.flatMap((point) =>
         point.merged ? [{ ...point.merged, hour: point.hour }] : [],
     );
     if (priced.length === 0)
         return (
             <p className="py-12 text-center text-muted-foreground">
-                No asking prices convertible to {currency} for this period.
+                No asking prices convertible to <CurrencyLabel currency={currency} game={game} />{" "}
+                for this period.
             </p>
         );
     const lowest = Math.min(...priced.map((p) => p.p25));
@@ -34,7 +44,7 @@ export function MarketPriceChart({ points, currency }: { points: Point[]; curren
         <svg
             viewBox="0 0 920 260"
             role="img"
-            aria-label={`Hourly median asking price across all listing currencies in ${currency}, with the interquartile range shaded. Gaps indicate no observations.`}
+            aria-label={`Hourly median asking price in ${currency} across all listing currencies, with the interquartile range shaded. Gaps indicate no observations.`}
             className="w-full text-primary"
         >
             <title>{`Hourly median asking price in ${currency}`}</title>

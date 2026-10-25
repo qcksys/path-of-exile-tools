@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { ItemArt } from "~/components/item-art";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -112,7 +113,13 @@ function CraftingOptionSection({ craftingOption }: { craftingOption: MapCrafting
             </h4>
             <div className="mb-1 text-muted-foreground text-xs">
                 {craftingOption.name}
-                {craftingOption.cost > 0 && ` (${craftingOption.cost}c)`}
+                {craftingOption.cost > 0 && (
+                    <>
+                        {" "}
+                        ({craftingOption.cost}
+                        <CurrencyLabel currency="chaos" iconOnly />)
+                    </>
+                )}
                 {craftingOption.imbued && " - Imbued"}
             </div>
             <div className="text-secondary-foreground text-sm">
@@ -251,7 +258,8 @@ export function StatsSummary({ placements, inventory, mapDevice }: StatsSummaryP
                     </div>
                     {totalCost > 0 && (
                         <div className="text-right text-sm text-yellow-600 dark:text-yellow-400">
-                            {t("stats.totalCost")} {formatChaosPrice(totalCost)}c
+                            {t("stats.totalCost")} {formatChaosPrice(totalCost)}
+                            <CurrencyLabel currency="chaos" iconOnly />
                         </div>
                     )}
                 </div>

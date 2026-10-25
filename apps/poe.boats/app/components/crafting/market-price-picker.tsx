@@ -1,6 +1,7 @@
 import type { ItemQuery, SourcePreparationProfile } from "@poe-tools/item-query";
 import { decodeCohortPriceReference } from "@poe-tools/market";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
@@ -214,9 +215,11 @@ export function MarketPricePicker({
                 </Label>
                 {convert && (
                     <p className="text-muted-foreground">
-                        Prefer prices in {currency}; otherwise convert a supported listing currency
-                        using an exchange observation from the same hour. Converted estimates use
-                        one hour, even when the adaptive window is selected.
+                        Prefer prices in{" "}
+                        <CurrencyLabel currency={currency} game={engine.catalog.game} />; otherwise
+                        convert a supported listing currency using an exchange observation from the
+                        same hour. Converted estimates use one hour, even when the adaptive window
+                        is selected.
                     </p>
                 )}
                 <Label className="flex items-start gap-2">
@@ -260,9 +263,25 @@ export function MarketPricePicker({
                                 {candidate.definition.name}
                             </p>
                             <p>
-                                {quote
-                                    ? `${quote.median} ${currency} median · ${quote.count} listings · ${quote.sellers} sellers · ${(quote.confidence * 100).toFixed(0)}% data confidence`
-                                    : `No price in ${currency}`}
+                                {quote ? (
+                                    <>
+                                        {quote.median}{" "}
+                                        <CurrencyLabel
+                                            currency={currency}
+                                            game={engine.catalog.game}
+                                        />{" "}
+                                        median · {quote.count} listings · {quote.sellers} sellers ·{" "}
+                                        {(quote.confidence * 100).toFixed(0)}% data confidence
+                                    </>
+                                ) : (
+                                    <>
+                                        No price in{" "}
+                                        <CurrencyLabel
+                                            currency={currency}
+                                            game={engine.catalog.game}
+                                        />
+                                    </>
+                                )}
                             </p>
                             <p className="text-muted-foreground">
                                 Observed {new Date(candidate.latest.hour * 1000).toLocaleString()} ·{" "}
@@ -273,11 +292,20 @@ export function MarketPricePicker({
                                 <p className="text-muted-foreground">
                                     Converted from{" "}
                                     {candidate.latest.prices[candidate.exchange.currency]?.median}{" "}
-                                    {candidate.exchange.currency} at{" "}
-                                    {candidate.exchange.quote.amount} {currency} per{" "}
-                                    {candidate.exchange.currency}. Confidence above describes the
-                                    listing sample; combined conversion confidence is unknown. Price
-                                    history shows the original listing currency.
+                                    <CurrencyLabel
+                                        currency={candidate.exchange.currency}
+                                        game={engine.catalog.game}
+                                    />{" "}
+                                    at {candidate.exchange.quote.amount}{" "}
+                                    <CurrencyLabel currency={currency} game={engine.catalog.game} />{" "}
+                                    per{" "}
+                                    <CurrencyLabel
+                                        currency={candidate.exchange.currency}
+                                        game={engine.catalog.game}
+                                    />
+                                    . Confidence above describes the listing sample; combined
+                                    conversion confidence is unknown. Price history shows the
+                                    original listing currency.
                                 </p>
                             )}
                             {quote && candidate.window && (
@@ -322,7 +350,14 @@ export function MarketPricePicker({
                             <thead>
                                 <tr>
                                     <th>Observed hour</th>
-                                    <th>Median ({history.currency})</th>
+                                    <th>
+                                        Median (
+                                        <CurrencyLabel
+                                            currency={history.currency}
+                                            game={engine.catalog.game}
+                                        />
+                                        )
+                                    </th>
                                     <th>Listings</th>
                                 </tr>
                             </thead>

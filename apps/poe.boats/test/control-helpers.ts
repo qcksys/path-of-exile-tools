@@ -31,6 +31,15 @@ function selectMenu(element: HTMLElement) {
     return menu;
 }
 
+// Currency labels split prices across elements; match the innermost element's full text.
+export const byText = (pattern: RegExp | string) => (_: string, element: Element | null) => {
+    const matches = (node: Element) =>
+        typeof pattern === "string"
+            ? node.textContent === pattern
+            : pattern.test(node.textContent ?? "");
+    return !!element && matches(element) && ![...element.children].some(matches);
+};
+
 export function expectControlValue(element: HTMLElement, value: unknown) {
     if (element.tagName !== "BUTTON" || element.getAttribute("role") !== "combobox") {
         expect(element).toHaveProperty("value", value);

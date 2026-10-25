@@ -1,3 +1,4 @@
+import { CurrencyLabel } from "~/components/currency-label";
 import {
     Table,
     TableBody,
@@ -68,9 +69,15 @@ export function ProcessRouteResults({
                         <h4 className="text-sm font-medium">{processStepName(step, index)}</h4>
                         <p className="text-xs text-muted-foreground">
                             {format(route.visits / denominator)} visits ·{" "}
-                            {unpriced
-                                ? "Enter missing currency prices"
-                                : `${format(cost)} chaos / attempt`}
+                            {unpriced ? (
+                                "Enter missing currency prices"
+                            ) : (
+                                <>
+                                    {format(cost)}{" "}
+                                    <CurrencyLabel currency="chaos" game={engine.catalog.game} /> /
+                                    attempt
+                                </>
+                            )}
                         </p>
                         <Table>
                             <TableHeader>

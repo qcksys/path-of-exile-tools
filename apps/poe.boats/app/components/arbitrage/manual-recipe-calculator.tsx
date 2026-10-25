@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { RecipeItems } from "~/components/arbitrage/recipe-items";
+import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogItemArt } from "~/components/item-art";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
@@ -44,7 +45,12 @@ export function ManualRecipeCalculator() {
         buffer: buffer.trim() ? Number(buffer) : Number.NaN,
     });
     const result = parsed.success ? calculateRecipeScenario(parsed.data) : null;
-    const money = (value: number) => `${numberFormat.format(value)} chaos`;
+    const chaos = <CurrencyLabel currency="chaos" game="poe1" />;
+    const money = (value: number) => (
+        <>
+            {numberFormat.format(value)} {chaos}
+        </>
+    );
 
     return (
         <Card>
@@ -120,7 +126,7 @@ export function ManualRecipeCalculator() {
                 <div className="grid gap-4 md:grid-cols-3">
                     <Field>
                         <FieldLabel htmlFor="manual-cost">
-                            Total cost of {recipe.input.quantity} inputs (chaos)
+                            Total cost of {recipe.input.quantity} inputs ({chaos})
                         </FieldLabel>
                         <Input
                             id="manual-cost"
@@ -133,7 +139,7 @@ export function ManualRecipeCalculator() {
                     </Field>
                     <Field>
                         <FieldLabel htmlFor="manual-value">
-                            Estimated output sale price (chaos)
+                            Estimated output sale price ({chaos})
                         </FieldLabel>
                         <Input
                             id="manual-value"
