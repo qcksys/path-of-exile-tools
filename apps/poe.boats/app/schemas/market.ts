@@ -6,12 +6,43 @@ export const marketCategorySchema = z.enum(
 );
 export const MARKET_ORDERS = {
     sales: "Most likely sales",
+    "sales-asc": "Fewest likely sales",
     "name-asc": "Name: A–Z",
     "name-desc": "Name: Z–A",
     newest: "Recently observed",
+    oldest: "Least recently observed",
     "price-asc": "Price: low to high",
     "price-desc": "Price: high to low",
+    "listings-desc": "Most listings",
+    "listings-asc": "Fewest listings",
+    "sellers-desc": "Most sellers",
+    "sellers-asc": "Fewest sellers",
 } as const;
+export type MarketOrder = keyof typeof MARKET_ORDERS;
+
+/** The `order` each sortable market table column applies in each direction. */
+export const MARKET_SORT_COLUMNS = {
+    item: { asc: "name-asc", desc: "name-desc" },
+    price: { asc: "price-asc", desc: "price-desc" },
+    listings: { asc: "listings-asc", desc: "listings-desc" },
+    sellers: { asc: "sellers-asc", desc: "sellers-desc" },
+    sales: { asc: "sales-asc", desc: "sales" },
+    observed: { asc: "oldest", desc: "newest" },
+} as const satisfies Record<string, Record<"asc" | "desc", MarketOrder>>;
+export type MarketSortColumn = keyof typeof MARKET_SORT_COLUMNS;
+
+/** The URL params holding each range-filtered market table column's bounds. */
+export const MARKET_RANGE_COLUMNS = {
+    price: ["priceMin", "priceMax"],
+    listings: ["listingsMin", "listingsMax"],
+    sellers: ["sellersMin", "sellersMax"],
+    sales: ["salesMin", "salesMax"],
+} as const;
+export type MarketRangeColumn = keyof typeof MARKET_RANGE_COLUMNS;
+type MarketRangeParam = (typeof MARKET_RANGE_COLUMNS)[MarketRangeColumn][number];
+export const MARKET_RANGE_PARAMS = Object.values(MARKET_RANGE_COLUMNS).flat() as MarketRangeParam[];
+
+const rangeBound = z.coerce.number().nonnegative().max(1e12).optional();
 
 export const marketFiltersSchema = z.object({
     realm: z.enum(["pc", "poe2", "xbox", "sony"]).default("pc"),
@@ -20,9 +51,7 @@ export const marketFiltersSchema = z.object({
     days: z.enum(["7", "30", "90"]).default("7"),
     page: z.coerce.number().int().min(1).max(10000).default(1),
     category: marketCategorySchema.or(z.literal("all")).default("all"),
-    order: z
-        .enum(["sales", "name-asc", "name-desc", "newest", "price-asc", "price-desc"])
-        .default("sales"),
+    order: z.enum(Object.keys(MARKET_ORDERS) as [MarketOrder, ...MarketOrder[]]).default("sales"),
     rarity: z.enum(["all", "normal", "magic", "rare", "unique"]).default("all"),
     identification: z.enum(["all", "true", "false"]).default("all"),
     corruption: z.enum(["all", "true", "false"]).default("all"),
@@ -33,6 +62,10 @@ export const marketFiltersSchema = z.object({
     kind: z.string().max(32).default(""),
     value: z.string().max(255).default(""),
     currency: z.string().max(40).default("divine"),
+    ...(Object.fromEntries(MARKET_RANGE_PARAMS.map((param) => [param, rangeBound])) as Record<
+        MarketRangeParam,
+        typeof rangeBound
+    >),
 });
 
 export type MarketFilters = z.infer<typeof marketFiltersSchema>;
@@ -80,6 +113,10 @@ export function marketLink(
         identification: filters.identification,
         corruption: filters.corruption,
     });
+    for (const param of MARKET_RANGE_PARAMS) {
+        const bound = filters[param];
+        if (bound !== undefined) params.set(param, String(bound));
+    }
     if (item) {
         params.set("identified", String(item.identified));
         params.set("corrupted", String(item.corrupted));

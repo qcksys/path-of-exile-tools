@@ -30,6 +30,7 @@ catalog:
   '@scalar/hono-api-reference': ^0.12.10
   "@tailwindcss/typography": ^0.5.19
   '@tailwindcss/vite': ^4.2.4
+  '@tanstack/react-table': ^9.3.1
   '@testcontainers/mysql': ^12.2.0
   "@testing-library/jest-dom": ^6.9.1
   "@testing-library/react": ^16.3.2
