@@ -242,9 +242,13 @@ export const scourSourcePreparationSchema = z.strictObject({
     crafted: z.boolean(),
     enchanted: z.boolean(),
 });
+export const influenceReadySourcePreparationSchema = z.strictObject({
+    kind: z.literal("influence-ready-v1"),
+});
 export const sourcePreparationProfileSchema = z.discriminatedUnion("kind", [
     fracturedFossilSourcePreparationSchema,
     scourSourcePreparationSchema,
+    influenceReadySourcePreparationSchema,
 ]);
 
 export const itemQuerySchema = z
@@ -271,4 +275,5 @@ export type FracturedFossilSourcePreparation = z.infer<
     typeof fracturedFossilSourcePreparationSchema
 >;
 export type ScourSourcePreparation = z.infer<typeof scourSourcePreparationSchema>;
+export type InfluenceReadySourcePreparation = z.infer<typeof influenceReadySourcePreparationSchema>;
 export type SourcePreparationProfile = z.infer<typeof sourcePreparationProfileSchema>;

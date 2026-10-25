@@ -263,13 +263,17 @@ export function projectFromPreset(
             "crafting-graph-12",
             "crafting-graph-13",
             "crafting-graph-14",
+            "crafting-graph-15",
         ].includes(ruleset.engine);
         ({ entry, target } = spicySushiPreset(
             { engine, base, buy, craft, currency },
             presetId,
             prepareSource,
         ));
-        if (ruleset.engine === "crafting-graph-14" && presetId === "sushi-rf-helmet") {
+        if (
+            ["crafting-graph-14", "crafting-graph-15"].includes(ruleset.engine) &&
+            presetId === "sushi-rf-helmet"
+        ) {
             const acquisition = nodes.find((node) => node.id === "suffixes");
             const purchase =
                 acquisition?.kind === "acquire" ? acquisition.alternatives[0] : undefined;
@@ -577,7 +581,7 @@ export function projectFromPreset(
             });
         });
         entry = finish.id;
-        if (ruleset.engine === "crafting-graph-14") {
+        if (["crafting-graph-14", "crafting-graph-15"].includes(ruleset.engine)) {
             const donor = nodes.find((node) => node.id === "donor-0-0");
             const purchase = donor?.kind === "acquire" ? donor.alternatives[0] : undefined;
             if (donor?.kind !== "acquire" || purchase?.kind !== "purchase")
@@ -1173,13 +1177,65 @@ export function projectFromPreset(
                 });
         }
     }
-    if (["crafting-graph-12", "crafting-graph-13", "crafting-graph-14"].includes(ruleset.engine)) {
+    const influenceSourceIds: string[] = [];
+    if (
+        ruleset.engine === "crafting-graph-15" &&
+        (presetId === "life-block-shield" || presetId === "es-block-shield")
+    ) {
+        const targetId = presetId === "life-block-shield" ? "recovery-make-base" : "flat-make-base";
+        const target = nodes.find((node) => node.id === targetId);
+        const purchase = target?.kind === "acquire" ? target.alternatives[0] : undefined;
+        if (target?.kind !== "acquire" || purchase?.kind !== "purchase")
+            throw new Error("Influence preparation requires the original Normal base purchase.");
+        const name = engine.base(purchase.item).name;
+        let source = buy(
+            `${targetId}-influence-base`,
+            `Buy uninfluenced Normal ${name}`,
+            engine.validateItem({ ...purchase.item, influences: [] }),
+        );
+        const acquisition = nodes.find((node) => node.id === source);
+        if (acquisition?.kind !== "acquire" || acquisition.alternatives[0]?.kind !== "purchase")
+            throw new Error("Influence preparation requires an uninfluenced base purchase.");
+        acquisition.alternatives[0].sourcePreparation = { kind: "influence-ready-v1" };
+        influenceSourceIds.push(source);
+        for (const [id, label, method] of [
+            ["transmute", "Transmute the uninfluenced base", currency("transmute_to_magic")],
+            ["regal", "Regal the magic base", currency("upgrade_magic_to_rare")],
+            [
+                "shaper",
+                "Add Shaper influence with a Shaper's Exalted Orb",
+                { kind: "currency", id: "Metadata/Items/Currency/CurrencyAddModToRareShaper" },
+            ],
+            ["scour", "Scour modifiers, keeping Shaper influence", currency("convert_to_normal")],
+        ] satisfies [string, string, CraftingMethod][]) {
+            source = craft(`${targetId}-influence-${id}`, label, [source], method).id;
+        }
+        target.alternatives.push({
+            kind: "production",
+            id: "make-shaper",
+            name: `Add Shaper influence to an unrolled ${name}`,
+            nodeId: source,
+        });
+    }
+    if (
+        [
+            "crafting-graph-12",
+            "crafting-graph-13",
+            "crafting-graph-14",
+            "crafting-graph-15",
+        ].includes(ruleset.engine)
+    ) {
         const sourceIds = [
             ...(scouringSources[presetId] ?? []),
-            ...(["crafting-graph-13", "crafting-graph-14"].includes(ruleset.engine)
+            ...(["crafting-graph-13", "crafting-graph-14", "crafting-graph-15"].includes(
+                ruleset.engine,
+            )
                 ? (extendedScouringSources[presetId] ?? [])
                 : []),
-            ...(ruleset.engine === "crafting-graph-14" ? (rfScouringSources[presetId] ?? []) : []),
+            ...(["crafting-graph-14", "crafting-graph-15"].includes(ruleset.engine)
+                ? (rfScouringSources[presetId] ?? [])
+                : []),
+            ...influenceSourceIds,
         ];
         for (const id of sourceIds) {
             const node = nodes.find((entry) => entry.id === id);
@@ -1226,7 +1282,7 @@ export function projectFromPreset(
                 })),
             );
             if (
-                ruleset.engine === "crafting-graph-14" &&
+                ["crafting-graph-14", "crafting-graph-15"].includes(ruleset.engine) &&
                 rfScouringSources[presetId]?.includes(id)
             ) {
                 node.alternatives = node.alternatives.filter((entry) => entry.id !== "buy");

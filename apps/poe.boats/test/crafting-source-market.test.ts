@@ -37,12 +37,12 @@ describe("intrinsic fractured-source market bindings", () => {
         expect(purchase(bound).alternative.price?.amount).toBe(20);
         expect(livePurchasePrices(bound)[0]!.reference.sourcePreparation).toEqual(profile);
         const wrong = structuredClone(candidate);
-        wrong.sourcePreparation!.crafted = !crafted;
+        wrong.sourcePreparation = { ...profile, crafted: !crafted };
         expect(() =>
             bindCohortPurchasePrice(graph, engine, node.id, alternative.id, wrong),
         ).toThrow("different source preparation");
         wrong.sourcePreparation = profile;
-        wrong.definition.query.sourcePreparation!.enchanted = !enchanted;
+        wrong.definition.query.sourcePreparation = { ...profile, enchanted: !enchanted };
         expect(() =>
             bindCohortPurchasePrice(graph, engine, node.id, alternative.id, wrong),
         ).toThrow("does not definitely match");
@@ -149,8 +149,10 @@ describe("intrinsic fractured-source market bindings", () => {
         const { graph, candidate } = fixture();
         const bound = bindCohortPurchasePrice(graph, engine, "base", "buy", candidate);
         const { alternative } = purchase(bound);
+        if (alternative.sourcePreparation?.kind !== "fractured-fossil-v1")
+            throw new Error("Expected fractured source profile.");
         if (edit === "remove") delete alternative.sourcePreparation;
-        else alternative.sourcePreparation!.crafted = false;
+        else alternative.sourcePreparation.crafted = false;
         const lookup = vi.spyOn(marketQueries, "findCraftingMarketPrices");
         try {
             const result = await refreshCraftingMarketPrices(
@@ -195,7 +197,9 @@ describe("intrinsic fractured-source market bindings", () => {
         const { graph, candidate } = fixture();
         const bound = bindCohortPurchasePrice(graph, engine, "base", "buy", candidate);
         const { alternative } = purchase(bound);
-        if (edit === "change") alternative.sourcePreparation!.crafted = false;
+        if (alternative.sourcePreparation?.kind !== "fractured-fossil-v1")
+            throw new Error("Expected fractured source profile.");
+        if (edit === "change") alternative.sourcePreparation.crafted = false;
         else if (edit === "remove") delete alternative.sourcePreparation;
         else {
             const other = fixture(false, true);
@@ -217,7 +221,9 @@ describe("intrinsic fractured-source market bindings", () => {
         const { graph, candidate } = fixture();
         const bound = bindCohortPurchasePrice(graph, engine, "base", "buy", candidate);
         const { alternative } = purchase(bound);
-        alternative.sourcePreparation!.crafted = false;
+        if (alternative.sourcePreparation?.kind !== "fractured-fossil-v1")
+            throw new Error("Expected fractured source profile.");
+        alternative.sourcePreparation.crafted = false;
         bound.prices["purchase:base:buy"] = quote(17);
         for (const cost of sourcePreparationCosts(
             engine,

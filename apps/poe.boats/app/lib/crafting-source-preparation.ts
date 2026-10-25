@@ -19,10 +19,14 @@ const additionalScouringBases = new Set([
     "Metadata/Items/Armours/Boots/BootsAtlas1",
     "Metadata/Items/Armours/BodyArmours/BodyDex16",
 ]);
+const influenceReadyBases = new Set([
+    "Metadata/Items/Armours/Shields/ShieldStr17",
+    "Metadata/Items/Armours/Shields/ShieldInt16",
+]);
 
 export function purchaseSourceProfile(alternative: GraphPurchase) {
     if (!alternative.sourcePreparation) return undefined;
-    if (alternative.sourcePreparation.kind === "scour-v1")
+    if (alternative.sourcePreparation.kind !== "fractured-fossil-v1")
         return sourcePreparationProfileSchema.parse(alternative.sourcePreparation);
     const { fossils: _fossils, ...profile } = alternative.sourcePreparation;
     return sourcePreparationProfileSchema.parse(profile);
@@ -34,15 +38,29 @@ export function validateSourcePreparationRevision(
     baseId: string,
 ) {
     if (!source) return;
+    if (source.kind === "influence-ready-v1") {
+        if (engine !== "crafting-graph-15" || !influenceReadyBases.has(baseId))
+            throw new Error("Influence-ready shield sources require crafting engine 15.");
+        return;
+    }
     if (source.kind === "scour-v1") {
-        if (!["crafting-graph-12", "crafting-graph-13", "crafting-graph-14"].includes(engine))
-            throw new Error("Scouring source preparation requires crafting engine 12, 13 or 14.");
         if (
-            additionalScouringBases.has(baseId) &&
-            !["crafting-graph-13", "crafting-graph-14"].includes(engine)
+            ![
+                "crafting-graph-12",
+                "crafting-graph-13",
+                "crafting-graph-14",
+                "crafting-graph-15",
+            ].includes(engine)
         )
             throw new Error(
-                "Scouring these boots or body armour requires crafting engine 13 or 14.",
+                "Scouring source preparation requires crafting engine 12, 13, 14 or 15.",
+            );
+        if (
+            additionalScouringBases.has(baseId) &&
+            !["crafting-graph-13", "crafting-graph-14", "crafting-graph-15"].includes(engine)
+        )
+            throw new Error(
+                "Scouring these boots or body armour requires crafting engine 13, 14 or 15.",
             );
     } else if (
         ![
@@ -50,12 +68,14 @@ export function validateSourcePreparationRevision(
             "crafting-graph-12",
             "crafting-graph-13",
             "crafting-graph-14",
+            "crafting-graph-15",
         ].includes(engine)
     )
-        throw new Error("Source preparation requires crafting engine 11, 12, 13 or 14.");
+        throw new Error("Source preparation requires crafting engine 11, 12, 13, 14 or 15.");
 }
 
 export function sourcePreparationMethodList(source: SourcePreparation): CraftingMethod[] {
+    if (source.kind === "influence-ready-v1") return [];
     return [
         ...(source.crafted ? [{ kind: "bench" as const, id: "bench:84" }] : []),
         ...(source.enchanted ? [{ kind: "bench" as const, id: "bench:373" }] : []),
@@ -93,13 +113,14 @@ export function validateSourcePreparation(engine: CraftingEngine, purchase: Grap
     const source = purchase.sourcePreparation;
     if (!source) return;
     const item = engine.validateItem(purchase.item);
-    if (source.kind === "scour-v1") {
+    if (source.kind === "scour-v1" || source.kind === "influence-ready-v1") {
         const expected = {
             ...engine.createItem(item.baseId, item.level),
-            influences: item.influences,
+            influences: source.kind === "scour-v1" ? item.influences : [],
         };
         if (
             engine.catalog.game !== "poe1" ||
+            (source.kind === "influence-ready-v1" && !influenceReadyBases.has(item.baseId)) ||
             (!["Shield", "Helmet"].includes(engine.base(item).item_class) &&
                 !additionalScouringBases.has(item.baseId)) ||
             Object.keys(item).some(
@@ -109,7 +130,9 @@ export function validateSourcePreparation(engine: CraftingEngine, purchase: Grap
             )
         )
             throw new Error(
-                "A Scouring source requires a baseline Normal shield or helmet, Cold/Lightning Two-Toned Boots, or Zodiac Leather template with only its preserved influences and native implicits.",
+                source.kind === "influence-ready-v1"
+                    ? "An influence-ready source requires a clean uninfluenced Normal Pinnacle Tower Shield or Titanium Spirit Shield template with only native implicits."
+                    : "A Scouring source requires a baseline Normal shield or helmet, Cold/Lightning Two-Toned Boots, or Zodiac Leather template with only its preserved influences and native implicits.",
             );
         sourcePreparationMethods(engine, source);
         return;
@@ -171,7 +194,7 @@ export function validateSourcePreparation(engine: CraftingEngine, purchase: Grap
 export function validateSourcePreparationOutput(purchase: GraphPurchase, query: ItemQuery) {
     const source = purchase.sourcePreparation;
     if (!source) return;
-    if (source.kind === "scour-v1") {
+    if (source.kind === "scour-v1" || source.kind === "influence-ready-v1") {
         if (
             query.sourcePreparation ||
             query.groups.some(
@@ -194,7 +217,9 @@ export function validateSourcePreparationOutput(purchase: GraphPurchase, query: 
             )
         )
             throw new Error(
-                "A Scouring source can guarantee only its Normal base, level, affix counts, influences and supported flags.",
+                source.kind === "influence-ready-v1"
+                    ? "An influence-ready source can guarantee only its clean Normal base, level, affix counts, influences and supported flags."
+                    : "A Scouring source can guarantee only its Normal base, level, affix counts, influences and supported flags.",
             );
         return;
     }

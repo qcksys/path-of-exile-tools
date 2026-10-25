@@ -22,7 +22,7 @@ const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r12",
 )!;
 const ruleset = { ...prior, revision: "r13", engine: "crafting-graph-13" };
-const current = { ...prior, revision: "r14", engine: "crafting-graph-14" };
+const current = { ...prior, revision: "r15", engine: "crafting-graph-15" };
 const scour = currency("convert_to_normal").id;
 const transmute = currency("transmute_to_magic");
 const targets = [
@@ -180,7 +180,8 @@ it.each(
 )("binds only the exact $preset source policy and keeps cleanup separate", (target) => {
     const { graph, node, purchase } = fixture(target);
     graph.league = marketCandidate.latest.league;
-    const profile = purchaseSourceProfile(purchase)!;
+    const profile = purchaseSourceProfile(purchase);
+    if (profile?.kind !== "scour-v1") throw new Error("Expected Scouring source profile.");
     const record = createCraftingItemQuery(engine).record(purchase.item);
     const definitions = craftingPresetCohorts(engine, ruleset);
     const matching = definitions.filter(

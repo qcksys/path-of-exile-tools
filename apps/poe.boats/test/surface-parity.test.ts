@@ -42,6 +42,7 @@ import type { OperationContext } from "~/operations/operation";
 import { editPlanner, newPlannerSet } from "~/operations/planner";
 import { operations } from "~/operations/registry.server";
 import { craftingCatalogSchema, craftingMethodSchema } from "~/schemas/crafting";
+import { craftingGraphSchema } from "~/schemas/crafting-graph";
 import { craftingItemQueryTextResultSchema } from "~/schemas/crafting-item-query-text";
 import { craftingSourceQuoteSchema } from "~/schemas/crafting-sources";
 import type { CraftingItemEdit } from "~/schemas/crafting-workbench";
@@ -346,6 +347,67 @@ describe("transport parity", () => {
         expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual({
             graph: { ...expected, id: expect.any(String) },
         });
+    });
+
+    it.each([
+        ["r14", "life-block-shield", "recovery-make-base"],
+        ["r14", "es-block-shield", "flat-make-base"],
+        ["r15", "life-block-shield", "recovery-make-base"],
+        ["r15", "es-block-shield", "flat-make-base"],
+    ] as const)("preserves %s %s direct Shaper preparation over HTTP and MCP", async (revision, presetId, nodeId) => {
+        const ruleset = historyIndex.revisions.find(
+            (entry) => entry.game === "poe1" && entry.revision === revision,
+        )!;
+        const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId };
+        const expected = projectFromPreset(fixtureEngine, ruleset, presetId);
+        const response = await api.request(
+            "https://poe.boats/api/v1/crafting/graph/from-preset",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
+            },
+            { runtime },
+        );
+        expect(response.status).toBe(200);
+        const http = z.object({ graph: craftingGraphSchema }).parse(await response.json());
+        expect(http.graph).toEqual({ ...expected, id: expect.any(String) });
+        const rpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", {
+                    name: "create_crafting_graph_from_preset",
+                    arguments: input,
+                })
+            ).json(),
+        );
+        const result = CallToolResultSchema.parse(rpc.result);
+        expect(result.isError).not.toBe(true);
+        const tool = z.object({ graph: craftingGraphSchema }).parse(result.structuredContent);
+        expect({ ...tool.graph, id: http.graph.id }).toEqual(http.graph);
+        for (const graph of [http.graph, tool.graph]) {
+            const node = graph.nodes.find((entry) => entry.id === nodeId);
+            if (node?.kind !== "acquire") throw new Error("Expected base acquisition.");
+            expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+            const production = node.alternatives.find((entry) => entry.id === "make-shaper");
+            const source = graph.nodes.find((entry) => entry.id === `${nodeId}-influence-base`);
+            if (revision === "r14") {
+                expect(production).toBeUndefined();
+                expect(source).toBeUndefined();
+            } else {
+                expect(production).toMatchObject({ kind: "production", id: "make-shaper" });
+                expect(source).toMatchObject({
+                    kind: "acquire",
+                    alternatives: expect.arrayContaining([
+                        expect.objectContaining({
+                            kind: "purchase",
+                            id: "buy",
+                            item: expect.objectContaining({ rarity: "normal", influences: [] }),
+                            sourcePreparation: { kind: "influence-ready-v1" },
+                        }),
+                    ]),
+                });
+            }
+        }
     });
 
     it.each([

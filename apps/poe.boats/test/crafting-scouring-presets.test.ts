@@ -54,7 +54,11 @@ it.each(
 it.each(
     sources,
 )("charges cleanup once before the existing Transmutation in %s/%s", (preset, id) => {
-    const graph = projectFromPreset(engine, ruleset, preset);
+    const graph = projectFromPreset(
+        engine,
+        { ...ruleset, revision: "r15", engine: "crafting-graph-15" },
+        preset,
+    );
     const node = graph.nodes.find((entry) => entry.id === id)!;
     if (node.kind !== "acquire") throw new Error("Expected base acquisition.");
     const source = node.alternatives.find((entry) => entry.id === "buy-scour-crafted-enchanted")!;

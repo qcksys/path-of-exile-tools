@@ -310,9 +310,16 @@ Two-Toned Boots and Zodiac Leather inputs. The boots must retain their native re
 implicit, and Zodiac Leather must have no implicit. Both preserve the exact item level and
 feed the existing influence and modifier preparation routes. These two source bases require
 revision 13 even when an older graph already supports shield and helmet Scouring.
-The fifteen current presets contain 110 purchase alternatives across 52 acquisitions and 89
-distinct preset cohorts; 26 production alternatives include Hunter, Redeemer, NNN and Scouring
-preparation. Capture fixtures cover every new base without modifier metadata;
+Revision 15 adds optional Shaper-base preparation to the Life on block and ES on block shields.
+An eligible uninfluenced Pinnacle Tower Shield or Titanium Spirit Shield is Transmuted,
+Regaled, given Shaper influence with a Shaper's Exalted Orb, then Scoured. The result is the
+exact Normal Shaper base consumed by the existing affix preparation. Source model 5 proves
+the clean Normal input's native implicits and absence of incompatible persistent state;
+this eligibility profile adds no cleanup action. The four paid Scouring profiles also remain
+available for Magic/Rare sources. Every currency and cleanup fee is charged separately,
+existing choices remain pinned, and earlier revision graphs and source model behavior remain
+unchanged. Browser, HTTP and MCP use the same preset, eligibility and price-binding logic.
+Capture fixtures cover every new base without modifier metadata;
 definitions do not imply observed inventory or available quotes.
 
 Source lookup and binding also accept uniquely identified supported PoE 1 PC crafting currencies

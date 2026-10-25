@@ -1,5 +1,6 @@
 import {
     fracturedFossilSourcePreparationSchema,
+    influenceReadySourcePreparationSchema,
     itemQuerySchema,
     scourSourcePreparationSchema,
 } from "@poe-tools/item-query";
@@ -47,6 +48,7 @@ export const graphPurchaseSchema = z.strictObject({
         .discriminatedUnion("kind", [
             fracturedFossilSourcePreparationSchema.extend({ fossils: fossilMethodSchema }),
             scourSourcePreparationSchema,
+            influenceReadySourcePreparationSchema,
         ])
         .optional(),
 });

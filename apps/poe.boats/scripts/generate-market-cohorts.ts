@@ -353,7 +353,7 @@ const scourBases = new Set([
     "Metadata/Items/Armours/BodyArmours/BodyDex16",
 ]);
 const sourcePreparationModel = {
-    format: 4,
+    format: 5,
     bases: Object.entries(catalog.bases)
         .filter(
             ([id, base]) =>

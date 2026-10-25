@@ -362,9 +362,20 @@ it("accepts preparation model formats 1 and 2 without changing the source projec
     input.item.explicitMods = [];
     expect(current(input, profile)).toEqual({ status: "unknown" });
     expect(current(input, profile)).toEqual(legacy(input, profile));
-    expect(sourcePreparationModelSchema.safeParse({ ...sourceModel, format: 5 }).success).toBe(
+    expect(sourcePreparationModelSchema.safeParse({ ...sourceModel, format: 6 }).success).toBe(
         false,
     );
+});
+
+it("preserves fractured source results when model 5 adds influence-ready eligibility", () => {
+    const previous = compileResult(model, { ...sourceModel, format: 4 });
+    const current = compileResult(model, { ...sourceModel, format: 5 });
+    for (const change of [{}, { corrupted: true }, { intangibility: 84 }, { explicitMods: [] }]) {
+        const input = source();
+        Object.assign(input.item, change);
+        expect(current(input, profile)).toEqual(previous(input, profile));
+    }
+    expect(current(source(), profile).status).toBe("match");
 });
 
 it("excludes positive Intangibility properties only in preparation model 3", () => {

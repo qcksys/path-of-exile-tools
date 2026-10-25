@@ -29,7 +29,8 @@ test("mercenary source policies, separate preparation costs and manual price sur
     const prepared = source.alternatives.find(
         (alternative) =>
             alternative.kind === "purchase" &&
-            alternative.sourcePreparation?.crafted &&
+            alternative.sourcePreparation?.kind === "fractured-fossil-v1" &&
+            alternative.sourcePreparation.crafted &&
             alternative.sourcePreparation.enchanted,
     )!;
     await page.goto("/1/crafting/projects");

@@ -64,7 +64,9 @@ it.each([
     const original = structuredClone(record);
     const expected = cohorts.find(
         (cohort) =>
-            cohort.query.sourcePreparation?.crafted && cohort.query.sourcePreparation.enchanted,
+            cohort.query.sourcePreparation?.kind === "fractured-fossil-v1" &&
+            cohort.query.sourcePreparation.crafted &&
+            cohort.query.sourcePreparation.enchanted,
     )!;
     expect(classifier.classify(record)).toEqual({ matches: [expected.id], unknown: [] });
     expect(record).toEqual(original);

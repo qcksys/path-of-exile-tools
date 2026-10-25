@@ -333,7 +333,9 @@ it("replays a crafted and enchanted fractured source with its preparation profil
     expect(manifest.cohorts).toHaveLength(4);
     const expected = manifest.cohorts.find(
         (cohort) =>
-            cohort.query.sourcePreparation?.crafted && cohort.query.sourcePreparation.enchanted,
+            cohort.query.sourcePreparation?.kind === "fractured-fossil-v1" &&
+            cohort.query.sourcePreparation.crafted &&
+            cohort.query.sourcePreparation.enchanted,
     )!;
     const current = compileMarketCohorts(manifest);
     const accepts = await defaultCraftingCapture(manifest);
@@ -447,7 +449,9 @@ it("replays a paid Scouring source with native implicit proof at its original pr
     expect(manifest.cohorts).toHaveLength(4);
     const expected = manifest.cohorts.find(
         (cohort) =>
-            cohort.query.sourcePreparation?.crafted && cohort.query.sourcePreparation.enchanted,
+            cohort.query.sourcePreparation?.kind === "scour-v1" &&
+            cohort.query.sourcePreparation.crafted &&
+            cohort.query.sourcePreparation.enchanted,
     )!;
     expect(expected.query.sourcePreparation).toEqual({
         kind: "scour-v1",
