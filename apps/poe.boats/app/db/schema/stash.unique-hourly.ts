@@ -13,6 +13,19 @@ import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
 import { DB_TABLE_PREFIX } from "~/const";
 import { timestampCols } from "~/db/helpers/schema.ts";
 
+/** Listing prices in one currency. Rows ingested before mean and quantiles were added omit them. */
+export type MarketPriceSummary = {
+    count: number;
+    min: number;
+    mean?: number;
+    p10?: number;
+    p25?: number;
+    median: number;
+    p75?: number;
+    p90?: number;
+    max: number;
+};
+
 /**
  * Permanent hourly summary of public-stash listings, written by
  * @poe-tools/stash-ingest. One row per *market* per hour, where a market
@@ -63,13 +76,8 @@ export const tStashUniqueHourly = mysqlTable(
         likelySales: int().notNull().default(0),
         relistedCount: int().notNull().default(0),
         pendingCount: int().notNull().default(0),
-        salesPrices:
-            json().$type<
-                Record<string, { count: number; min: number; median: number; max: number }>
-            >(),
-        prices: json().$type<
-            Record<string, { count: number; min: number; median: number; max: number }>
-        >(),
+        salesPrices: json().$type<Record<string, MarketPriceSummary>>(),
+        prices: json().$type<Record<string, MarketPriceSummary>>(),
         signatureData: json().$type<Record<string, unknown>>(),
 
         firstSeenAt: varchar({ length: 32 }).notNull(),

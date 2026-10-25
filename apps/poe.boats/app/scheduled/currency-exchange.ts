@@ -2,7 +2,10 @@
 import { exchangeSnapshotSchema, marketObservationRange } from "@poe-tools/market";
 import { z } from "zod";
 import type { TDatabase } from "~/db/client";
-import { upsertStashCurrencyHourly } from "~/db/queries/stash-ingest.queries";
+import {
+    countStashCurrencyHour,
+    upsertStashCurrencyHourly,
+} from "~/db/queries/stash-ingest.queries";
 import { sStashCurrencyHourlyI } from "~/db/schema/stash.currency-hourly";
 import { logger } from "~/services/logger";
 
@@ -55,6 +58,7 @@ export async function updateCurrencyExchange(db: TDatabase, scheduledTime = Date
     const { latestHour } = marketObservationRange(undefined, scheduledTime / 1000);
     const failures: Error[] = [];
     let hours = 0;
+    let skipped = 0;
     let rows = 0;
     for (const realm of ["pc", "poe2"] as const) {
         for (let offset = 0; offset < 6; offset++) {
@@ -94,6 +98,14 @@ export async function updateCurrencyExchange(db: TDatabase, scheduledTime = Date
                         highestStock: market.highest_stock,
                     };
                 });
+                // The ingest route also writes these rows in chunks, so only skip a complete hour.
+                const stored = await countStashCurrencyHour(db, realm, hour, [
+                    ...new Set(captured.map((row) => row.league)),
+                ]);
+                if (stored === captured.length) {
+                    skipped++;
+                    continue;
+                }
                 rows += await upsertStashCurrencyHourly(db, captured);
                 hours++;
             } catch (cause) {
@@ -109,7 +121,10 @@ export async function updateCurrencyExchange(db: TDatabase, scheduledTime = Date
             }
         }
     }
-    logger.info({ hours, rows, failures: failures.length }, "Currency exchange capture completed");
+    logger.info(
+        { hours, skipped, rows, failures: failures.length },
+        "Currency exchange capture completed",
+    );
     if (failures.length) throw new AggregateError(failures, "Currency exchange capture failed.");
-    return { hours, rows };
+    return { hours, skipped, rows };
 }

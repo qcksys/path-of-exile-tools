@@ -60,7 +60,7 @@ function showMarket(
                 periodPending: 0,
             },
         ],
-        history: [row],
+        history: [{ ...row, merged: null, mergedSales: null }],
     };
     const Routes = createRoutesStub([
         {

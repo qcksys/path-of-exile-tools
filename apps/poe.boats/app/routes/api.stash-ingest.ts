@@ -28,7 +28,12 @@ const PRICE_SCHEMA = z.record(
     z.object({
         count: z.number().int().nonnegative(),
         min: z.number().positive(),
+        mean: z.number().positive().optional(),
+        p10: z.number().positive().optional(),
+        p25: z.number().positive().optional(),
         median: z.number().positive(),
+        p75: z.number().positive().optional(),
+        p90: z.number().positive().optional(),
         max: z.number().positive(),
     }),
 );

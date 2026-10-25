@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, getTableName, sql } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection, type RowDataPacket } from "mysql2/promise";
@@ -510,7 +510,69 @@ it("keeps item history independent of browsing filters and skips the list query 
     );
     expect(result.history).toHaveLength(20);
     expect(result.rows).toEqual([]);
-    expect(statements).toHaveLength(2);
+    expect(statements).toHaveLength(3);
+    expect(statements[2]!.sql).toContain(getTableName(tStashCurrencyHourly));
+});
+
+it("merges every listing currency into the display currency through same-league chaos rates", async () => {
+    const chaosId = "Metadata/Items/Currency/CurrencyRerollRare";
+    const divineId = "Metadata/Items/Currency/CurrencyModValues";
+    await upsertStashCurrencyHourly(
+        db as unknown as TDatabase,
+        [
+            ["Merged", 150],
+            ["Other", 10],
+        ].map(([league, chaosPerDivine]) => ({
+            realm: "pc",
+            league: league as string,
+            marketId: `${divineId}|${chaosId}`,
+            hour: hour - 3600,
+            volumeTraded: { [divineId]: 10, [chaosId]: 10 * (chaosPerDivine as number) },
+            lowestRatio: null,
+            highestRatio: null,
+            lowestStock: null,
+            highestStock: null,
+        })),
+    );
+    await db.insert(market).values([
+        observation({
+            league: "Merged",
+            hour: hour - 3600,
+            prices: {
+                chaos: { count: 1, min: 300, median: 300, max: 300 },
+                divine: {
+                    count: 1,
+                    min: 2,
+                    mean: 2,
+                    p10: 2,
+                    p25: 2,
+                    median: 2,
+                    p75: 2,
+                    p90: 2,
+                    max: 2,
+                },
+                fragment: { count: 4, min: 1, median: 1, max: 1 },
+            },
+        }),
+        observation({
+            league: "Merged",
+            prices: { divine: { count: 1, min: 3, median: 3, max: 3 } },
+        }),
+    ]);
+    const filters = marketFiltersSchema.parse({ league: "Merged", item: "Example" });
+    const inChaos = await getMarketData(
+        db as unknown as TDatabase,
+        { ...filters, currency: "chaos" },
+        "history",
+    );
+    expect(inChaos.history.map((row) => row.merged)).toMatchObject([
+        { count: 2, unconverted: 4, min: 300, median: 300, max: 300, mean: null },
+        // An hour without its own exchange observation reuses the previous hour's rate.
+        { count: 1, unconverted: 0, median: 450 },
+    ]);
+    const inDivine = await getMarketData(db as unknown as TDatabase, filters, "history");
+    expect(inDivine.history[0]!.merged).toMatchObject({ count: 2, median: 2, max: 2 });
+    expect(inDivine.history[1]!.merged).toMatchObject({ median: 3 });
 });
 
 it("orders names in both directions and uses the latest observation for recency", async () => {

@@ -146,6 +146,11 @@ export async function replayFixtures() {
             assert(stash && stash.stream === "psapi");
             assert.equal(stash.rows[0]?.listingCount, 3000);
             assert.equal(stash.rows[0]?.prices.divine?.median, 20);
+            const divine = stash.rows[0]!.prices.divine!;
+            assert(divine.mean !== undefined && divine.mean >= divine.min);
+            assert(divine.min <= divine.p10! && divine.p10! <= divine.p25!);
+            assert(divine.p25! <= divine.median && divine.median <= divine.p75!);
+            assert(divine.p75! <= divine.p90! && divine.p90! <= divine.max);
             const equipment = received
                 .filter((entry) => entry.stream === "equipment")
                 .flatMap((entry) => entry.rows)

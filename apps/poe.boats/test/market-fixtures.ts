@@ -53,6 +53,25 @@ export function marketFixture(
                 periodPending: 1,
             },
         ],
-        history: filters.item ? [row] : [],
+        history: filters.item
+            ? [
+                  {
+                      ...row,
+                      merged: {
+                          count: 9,
+                          unconverted: 0,
+                          mean: null,
+                          min: 1,
+                          p10: 1.1,
+                          p25: 1.4,
+                          median: 2,
+                          p75: 2.5,
+                          p90: 2.8,
+                          max: 3,
+                      },
+                      mergedSales: null,
+                  },
+              ]
+            : [],
     };
 }

@@ -1,7 +1,33 @@
-import { and, asc, desc, eq, getTableColumns, gte, like, max, min, or, sql } from "drizzle-orm";
+import { exchangeSnapshotSchema } from "@poe-tools/market";
+import {
+    and,
+    asc,
+    desc,
+    eq,
+    getTableColumns,
+    gte,
+    inArray,
+    like,
+    lte,
+    max,
+    min,
+    or,
+    sql,
+} from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
-import { tStashUniqueHourly as market } from "~/db/schema/stash.unique-hourly";
+import { tStashCurrencyHourly as currencyHourly } from "~/db/schema/stash.currency-hourly";
+import {
+    tStashUniqueHourly as market,
+    type TStashUniqueHourlyS,
+} from "~/db/schema/stash.unique-hourly";
 import { marketCategory, marketCategoryFilter } from "~/lib/market-categories.server";
+import {
+    chaosRatesByHour,
+    MARKET_RATE_MAX_AGE,
+    marketDisplayRate,
+    marketRatePairs,
+    mergeMarketPrices,
+} from "~/lib/market-price-merge";
 import type { MarketFilters } from "~/schemas/market";
 
 const PAGE_SIZE = 50;
@@ -165,6 +191,7 @@ export async function getMarketData(
                   .limit(2160)
             : Promise.resolve([]);
     const [rows, history] = await Promise.all([rowsPromise, historyPromise]);
+    const rates = await historyChaosRates(db, filters, history);
     return {
         filters,
         seasons,
@@ -173,6 +200,54 @@ export async function getMarketData(
             .slice(0, PAGE_SIZE)
             .map((row) => ({ ...row, category: marketCategory(filters.realm, row.baseType) })),
         hasMore: rows.length > PAGE_SIZE,
-        history,
+        history: history.map((row) => {
+            const rate = marketDisplayRate(rates, filters.currency, row.hour);
+            return {
+                ...row,
+                merged: mergeMarketPrices(row.prices, rate),
+                mergedSales: mergeMarketPrices(row.salesPrices, rate),
+            };
+        }),
     };
+}
+
+async function historyChaosRates(
+    db: TDatabase,
+    filters: MarketFilters,
+    history: TStashUniqueHourlyS[],
+) {
+    if (!history.length) return new Map<number, Map<string, number>>();
+    const currencies = [
+        ...new Set([
+            filters.currency,
+            ...history.flatMap((row) => [
+                ...Object.keys(row.prices ?? {}),
+                ...Object.keys(row.salesPrices ?? {}),
+            ]),
+        ]),
+    ];
+    const snapshots = await db
+        .select({
+            realm: currencyHourly.realm,
+            league: currencyHourly.league,
+            marketId: currencyHourly.marketId,
+            hour: currencyHourly.hour,
+            volumeTraded: currencyHourly.volumeTraded,
+            lowestRatio: currencyHourly.lowestRatio,
+            highestRatio: currencyHourly.highestRatio,
+        })
+        .from(currencyHourly)
+        .where(
+            and(
+                eq(currencyHourly.realm, filters.realm),
+                eq(currencyHourly.league, filters.league),
+                inArray(currencyHourly.marketId, marketRatePairs(currencies)),
+                gte(currencyHourly.hour, history[0]!.hour - MARKET_RATE_MAX_AGE),
+                lte(currencyHourly.hour, history.at(-1)!.hour),
+            ),
+        );
+    return chaosRatesByHour(
+        snapshots.map((row) => exchangeSnapshotSchema.parse(row)),
+        currencies,
+    );
 }

@@ -44,8 +44,40 @@ describe("game routes", () => {
         ["/2/idol-planner", "routes/404.tsx"],
         ["/2/idol-planner/api/share", "routes/404.tsx"],
         ["/3/", "routes/404.tsx"],
+        ["/1/crafting", "routes/crafting/poe1.tsx"],
+        ["/1/crafting/simulate", "routes/crafting/poe1.tsx"],
+        ["/2/crafting/projects", "routes/crafting/poe2.tsx"],
+        ["/crafting/share/example", "routes/crafting/share.tsx"],
     ])("routes %s to %s", (path, id) => {
         expect(matchRoutes(routes, path)?.at(-1)?.route.id).toBe(id);
+    });
+});
+
+describe("site layout", () => {
+    it.each([
+        ["/", true],
+        ["/changelog", true],
+        ["/integrations", true],
+        ["/server-status", true],
+        ["/crafting/share/example", true],
+        ["/1/", true],
+        ["/1/arbitrage", true],
+        ["/1/recombinator", true],
+        ["/1/market/items/example", true],
+        ["/2/", true],
+        ["/2/arbitrage", true],
+        ["/1/crafting", false],
+        ["/2/crafting", false],
+        ["/1/idol-planner", false],
+        ["/1/idol-planner/share/example", false],
+        ["/1/idol-planner/api/sets", false],
+        ["/login", false],
+        ["/account", false],
+        ["/api/stash-ingest", false],
+        ["/3/", false],
+    ])("%s renders inside the site layout: %s", (path, inside) => {
+        const ids = matchRoutes(routes, path)?.map((match) => match.route.id);
+        expect(ids?.includes("routes/layouts/site.tsx")).toBe(inside);
     });
 });
 

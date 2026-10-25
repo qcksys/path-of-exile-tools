@@ -6,7 +6,22 @@ import { type CostPoint, historyChartOption } from "~/components/crafting/proces
 import { MarketPriceChart, marketPriceChartOption } from "~/components/market-price-chart";
 import { type ChartOption, init } from "~/lib/echarts";
 import { marketNumber } from "~/lib/market-number";
-import { marketFiltersSchema, marketLink } from "~/schemas/market";
+import { type MergedMarketPrice, marketFiltersSchema, marketLink } from "~/schemas/market";
+
+function flat(price: number): MergedMarketPrice {
+    return {
+        count: 1,
+        unconverted: 0,
+        mean: price,
+        min: price,
+        p10: price,
+        p25: price,
+        median: price,
+        p75: price,
+        p90: price,
+        max: price,
+    };
+}
 
 function renderSvg(option: ChartOption) {
     const chart = init(null, null, { renderer: "svg", ssr: true, width: 920, height: 260 });
@@ -16,14 +31,24 @@ function renderSvg(option: ChartOption) {
     return svg;
 }
 
-function series(option: ChartOption) {
-    return (option.series as LineSeriesOption[])[0]!;
+function series(option: ChartOption, index = 0) {
+    return (option.series as LineSeriesOption[])[index]!;
 }
 
-function tooltipValue(option: ChartOption, value: number | null) {
-    const { valueFormatter } = option.tooltip as TooltipComponentOption;
-    return valueFormatter!(value as number, 0);
+function tooltipValue(option: ChartOption, index: number, value: number | null, dataIndex = 0) {
+    const valueFormatter =
+        series(option, index).tooltip?.valueFormatter ??
+        (option.tooltip as TooltipComponentOption).valueFormatter;
+    return valueFormatter!(value as number, dataIndex);
 }
+
+function axisLabels(svg: string) {
+    return [...svg.matchAll(/<text[^>]*>([\d.,]+)<\/text>/g)].map(([, label]) =>
+        Number(label!.replaceAll(",", "")),
+    );
+}
+
+const median = 2;
 
 describe("market browsing", () => {
     it("preserves small fractional prices without rounding them to zero", () => {
@@ -86,36 +111,28 @@ describe("market browsing", () => {
     ])("rejects unbounded or invalid filters %j", (input) => {
         expect(marketFiltersSchema.safeParse(input).success).toBe(false);
     });
-    it("shows missing currency data without inventing a zero price", () => {
-        const points = [{ hour: 3600, prices: { chaos: { median: 20 } } }];
+    it("shows unconvertible currency data without inventing a zero price", () => {
+        const points = [{ hour: 3600, merged: null }];
         const markup = renderToStaticMarkup(<MarketPriceChart points={points} currency="divine" />);
         expect(markup).toContain("No asking prices");
         expect(markup).not.toContain('role="img"');
         expect(marketPriceChartOption(points, "divine")).toBeNull();
     });
     it("gives a constant price history a nonzero chart range", () => {
-        const option = marketPriceChartOption(
-            [{ hour: 3600, prices: { divine: { median: 10 } } }],
-            "divine",
-        )!;
-        const labels = new Set(
-            [...renderSvg(option).matchAll(/<text[^>]*>([\d.,]+)<\/text>/g)].map(
-                ([, label]) => label,
-            ),
-        );
-        expect(labels.size).toBeGreaterThan(1);
+        const option = marketPriceChartOption([{ hour: 3600, merged: flat(10) }], "divine")!;
+        expect(new Set(axisLabels(renderSvg(option))).size).toBeGreaterThan(1);
     });
     it("does not connect prices across hours with no observations", () => {
         const option = marketPriceChartOption(
             [
-                { hour: 3600, prices: { divine: { median: 10 } } },
-                { hour: 7200, prices: { divine: { median: 15 } } },
-                { hour: 10800, prices: null },
-                { hour: 14400, prices: { divine: { median: 20 } } },
+                { hour: 3600, merged: flat(10) },
+                { hour: 7200, merged: flat(15) },
+                { hour: 10800, merged: null },
+                { hour: 14400, merged: flat(20) },
             ],
             "divine",
         )!;
-        expect(series(option).data).toEqual([
+        expect(series(option, median).data).toEqual([
             [3600_000, 10],
             [7200_000, 15],
             [10800_000, null],
@@ -123,17 +140,42 @@ describe("market browsing", () => {
         ]);
         const line = renderSvg(option).match(/<path d="([^"]*)"[^>]*stroke-width="2.5"/)![1]!;
         expect(line.match(/M/g)).toHaveLength(2);
-        expect(tooltipValue(option, 15)).toBe("15 divine");
-        expect(tooltipValue(option, null)).toBe("No observations");
-        expect(tooltipValue(option, Number.NaN)).toBe("No observations");
+        expect(tooltipValue(option, median, 15, 1)).toBe(
+            "15 divine (interquartile 15–15, 1 listings)",
+        );
+        expect(tooltipValue(option, median, null, 2)).toBe("No observations");
         expect(
             renderToStaticMarkup(
-                <MarketPriceChart
-                    points={[{ hour: 3600, prices: { divine: { median: 10 } } }]}
-                    currency="divine"
-                />,
+                <MarketPriceChart points={[{ hour: 3600, merged: flat(10) }]} currency="divine" />,
             ),
         ).toContain("Hourly median asking price in divine");
+    });
+    it("shades the interquartile range and reports unconverted listings", () => {
+        const option = marketPriceChartOption(
+            [
+                { hour: 3600, merged: { ...flat(10), p25: 5, p75: 15, unconverted: 2 } },
+                { hour: 7200, merged: { ...flat(10), p25: 5, p75: 15 } },
+            ],
+            "chaos",
+        )!;
+        expect(series(option, 0).data).toEqual([
+            [3600_000, 5],
+            [7200_000, 5],
+        ]);
+        expect(series(option, 1)).toMatchObject({
+            stack: series(option, 0).stack,
+            areaStyle: { opacity: 0.15 },
+            data: [
+                [3600_000, 10],
+                [7200_000, 10],
+            ],
+        });
+        const labels = axisLabels(renderSvg(option));
+        expect(Math.min(...labels)).toBeLessThanOrEqual(5);
+        expect(Math.max(...labels)).toBeGreaterThanOrEqual(15);
+        expect(tooltipValue(option, median, 10, 0)).toBe(
+            "10 chaos (interquartile 5–15, 1 listings, 2 without an exchange rate)",
+        );
     });
     it("plots historical process costs with gaps for unavailable estimates", () => {
         const point = (at: number, meanCost: number | null): CostPoint => ({
@@ -156,7 +198,7 @@ describe("market browsing", () => {
             [10800_000, 10.5],
         ]);
         expect(renderSvg(option)).toContain("<path");
-        expect(tooltipValue(option, 10.5)).toBe("10.50 chaos");
-        expect(tooltipValue(option, null)).toBe("Unavailable");
+        expect(tooltipValue(option, 0, 10.5)).toBe("10.50 chaos");
+        expect(tooltipValue(option, 0, null)).toBe("Unavailable");
     });
 });
