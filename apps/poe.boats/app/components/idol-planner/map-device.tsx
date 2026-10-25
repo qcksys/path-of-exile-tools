@@ -1,5 +1,6 @@
 import { Check, ChevronDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { MapDeviceUnlocks } from "~/components/idol-planner/map-device-unlocks";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -165,7 +166,8 @@ function ScarabSlot({
                                             <span>{getScarabName(scarab, locale)}</span>
                                             {formattedSlotPrice && (
                                                 <span className="text-yellow-600 dark:text-yellow-400">
-                                                    {formattedSlotPrice}c
+                                                    {formattedSlotPrice}
+                                                    <CurrencyLabel currency="chaos" iconOnly />
                                                 </span>
                                             )}
                                         </div>
@@ -270,7 +272,11 @@ function ScarabSlot({
                                                         </span>
                                                         {formattedPrice && (
                                                             <span className="text-xs text-yellow-600 dark:text-yellow-400">
-                                                                {formattedPrice}c
+                                                                {formattedPrice}
+                                                                <CurrencyLabel
+                                                                    currency="chaos"
+                                                                    iconOnly
+                                                                />
                                                             </span>
                                                         )}
                                                         {s.limit > 1 && (
@@ -301,7 +307,14 @@ function ScarabSlot({
                             : "text-muted-foreground/50",
                     )}
                 >
-                    {formattedSlotPrice ? `${formattedSlotPrice}c` : "-"}
+                    {formattedSlotPrice ? (
+                        <>
+                            {formattedSlotPrice}
+                            <CurrencyLabel currency="chaos" iconOnly />
+                        </>
+                    ) : (
+                        "-"
+                    )}
                 </span>
             )}
         </div>
@@ -341,9 +354,14 @@ function CraftingOptionSelector({
                     </span>
                     {selectedOption && (
                         <span className="truncate text-muted-foreground text-xs">
-                            {selectedOption.cost > 0
-                                ? `${selectedOption.cost}c`
-                                : t("mapDevice.costFree")}
+                            {selectedOption.cost > 0 ? (
+                                <>
+                                    {selectedOption.cost}
+                                    <CurrencyLabel currency="chaos" iconOnly />
+                                </>
+                            ) : (
+                                t("mapDevice.costFree")
+                            )}
                             {selectedOption.imbued && " (Imbued)"}
                         </span>
                     )}
@@ -409,7 +427,14 @@ function CraftingOptionItem({
                 <div className="flex items-center gap-2">
                     <span className="text-sm">{option.name}</span>
                     <span className="text-muted-foreground text-xs">
-                        {option.cost > 0 ? `${option.cost}c` : t("mapDevice.costFree")}
+                        {option.cost > 0 ? (
+                            <>
+                                {option.cost}
+                                <CurrencyLabel currency="chaos" iconOnly />
+                            </>
+                        ) : (
+                            t("mapDevice.costFree")
+                        )}
                     </span>
                 </div>
                 <span className="line-clamp-2 text-muted-foreground text-xs">{option.effect}</span>

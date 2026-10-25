@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
@@ -187,7 +188,11 @@ export function SourcePricePicker({
                                                         {quote.amount.toLocaleString(undefined, {
                                                             maximumSignificantDigits: 6,
                                                         })}{" "}
-                                                        {quote.currency} per item ·{" "}
+                                                        <CurrencyLabel
+                                                            currency={quote.currency}
+                                                            game={graph.game}
+                                                        />{" "}
+                                                        per item ·{" "}
                                                         {quote.exchange
                                                             ? "converted asking median"
                                                             : "asking median"}{" "}
@@ -204,7 +209,10 @@ export function SourcePricePicker({
                                                         {quote.high.toLocaleString(undefined, {
                                                             maximumSignificantDigits: 6,
                                                         })}{" "}
-                                                        {quote.currency}{" "}
+                                                        <CurrencyLabel
+                                                            currency={quote.currency}
+                                                            game={graph.game}
+                                                        />{" "}
                                                         {quote.exchange
                                                             ? "converted range"
                                                             : "range"}{" "}
@@ -219,8 +227,11 @@ export function SourcePricePicker({
                                                                 undefined,
                                                                 { maximumSignificantDigits: 6 },
                                                             )}{" "}
-                                                            {quote.exchange.currency} per item{" "}
-                                                            (range{" "}
+                                                            <CurrencyLabel
+                                                                currency={quote.exchange.currency}
+                                                                game={graph.game}
+                                                            />{" "}
+                                                            per item (range{" "}
                                                             {quote.exchange.low.toLocaleString(
                                                                 undefined,
                                                                 { maximumSignificantDigits: 6 },
@@ -231,12 +242,19 @@ export function SourcePricePicker({
                                                                 { maximumSignificantDigits: 6 },
                                                             )}
                                                             ). Matching-hour exchange: 1{" "}
-                                                            {quote.exchange.currency} ={" "}
+                                                            <CurrencyLabel
+                                                                currency={quote.exchange.currency}
+                                                                game={graph.game}
+                                                            />{" "}
+                                                            ={" "}
                                                             {quote.exchange.quote.amount.toLocaleString(
                                                                 undefined,
                                                                 { maximumSignificantDigits: 6 },
                                                             )}{" "}
-                                                            {quote.currency}
+                                                            <CurrencyLabel
+                                                                currency={quote.currency}
+                                                                game={graph.game}
+                                                            />
                                                             {quote.exchange.quote.legs
                                                                 ? " via a two-leg reference-currency conversion"
                                                                 : ""}
@@ -260,7 +278,11 @@ export function SourcePricePicker({
                                                         {quote.amount.toLocaleString(undefined, {
                                                             maximumSignificantDigits: 6,
                                                         })}{" "}
-                                                        {quote.currency} per recipe · retrieved{" "}
+                                                        <CurrencyLabel
+                                                            currency={quote.currency}
+                                                            game={graph.game}
+                                                        />{" "}
+                                                        per recipe · retrieved{" "}
                                                         {new Date(quote.fetchedAt).toLocaleString()}
                                                     </p>
                                                     <ul>
@@ -269,8 +291,12 @@ export function SourcePricePicker({
                                                                 {component.quantity} ×{" "}
                                                                 {component.name}:{" "}
                                                                 {component.unitPrice}{" "}
-                                                                {quote.currency} each ·{" "}
-                                                                {component.listingCount} listings ·{" "}
+                                                                <CurrencyLabel
+                                                                    currency={quote.currency}
+                                                                    game={graph.game}
+                                                                />{" "}
+                                                                each · {component.listingCount}{" "}
+                                                                listings ·{" "}
                                                                 {component.pool &&
                                                                     `${component.pool.species.length} species estimates · listing-count-weighted mean · `}
                                                                 <a

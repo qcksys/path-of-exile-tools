@@ -9,7 +9,7 @@
             "claudeScope": "project"
         }
     },
-    "syncMode": "source-only",
+    "syncMode": "commit-generated",
     "mcp": {
         "servers": {
             "planetscale": {

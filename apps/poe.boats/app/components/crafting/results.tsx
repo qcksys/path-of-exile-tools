@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { Button } from "~/components/ui/button";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import type { CraftingResult } from "~/lib/crafting-simulation";
@@ -94,7 +95,7 @@ export function CraftingResults({
                     {[
                         ["Average attempts", result.attempts],
                         ["Attempts for 95% chance", result.attempts95],
-                        ["Average cost (chaos)", result.meanCost],
+                        ["Average cost", result.meanCost, true],
                         ["Expected cost / success", result.costPerSuccess],
                         ...(result.baseItems === undefined
                             ? []
@@ -103,8 +104,9 @@ export function CraftingResults({
                             ? []
                             : [
                                   [
-                                      "Starting item cost / attempt (chaos)",
+                                      "Starting item cost / attempt",
                                       result.baseSpending / attempts,
+                                      true,
                                   ],
                               ]),
                         [
@@ -115,9 +117,22 @@ export function CraftingResults({
                                   ? result.totalActions / result.trials
                                   : null,
                         ],
-                    ].map(([label, value]) => (
+                    ].map(([label, value, chaos]) => (
                         <div key={String(label)}>
-                            <dt className="text-xs text-muted-foreground">{label}</dt>
+                            <dt className="text-xs text-muted-foreground">
+                                {label}
+                                {chaos ? (
+                                    <>
+                                        {" "}
+                                        (
+                                        <CurrencyLabel
+                                            currency="chaos"
+                                            game={engine.catalog.game}
+                                        />
+                                        )
+                                    </>
+                                ) : null}
+                            </dt>
                             <dd className="mt-1 font-mono">{number(value as number | null)}</dd>
                         </div>
                     ))}
@@ -166,7 +181,8 @@ export function CraftingResults({
                     <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
                         <div>
                             <dt className="text-xs text-muted-foreground">
-                                Cheapest craft (chaos)
+                                Cheapest craft (
+                                <CurrencyLabel currency="chaos" game={engine.catalog.game} />)
                             </dt>
                             <dd className="mt-1 font-mono">
                                 {number(result.successCosts.cheapest)}
@@ -174,7 +190,8 @@ export function CraftingResults({
                         </div>
                         <div>
                             <dt className="text-xs text-muted-foreground">
-                                Costliest craft (chaos)
+                                Costliest craft (
+                                <CurrencyLabel currency="chaos" game={engine.catalog.game} />)
                             </dt>
                             <dd className="mt-1 font-mono">
                                 {number(result.successCosts.costliest)}
@@ -342,7 +359,12 @@ export function CraftingResults({
                                     aria-label="Stored outcome cost"
                                 >
                                     <p className="font-medium">
-                                        Trial cost (chaos):{" "}
+                                        Trial cost (
+                                        <CurrencyLabel
+                                            currency="chaos"
+                                            game={engine.catalog.game}
+                                        />
+                                        ):{" "}
                                         <span className="font-mono">
                                             {number(sample.cost.total)}
                                         </span>
@@ -358,7 +380,14 @@ export function CraftingResults({
                                         ) : null}
                                         {sample.cost.baseSpending !== undefined ? (
                                             <div className="flex justify-between gap-3">
-                                                <dt>Starting item cost (chaos)</dt>
+                                                <dt>
+                                                    Starting item cost (
+                                                    <CurrencyLabel
+                                                        currency="chaos"
+                                                        game={engine.catalog.game}
+                                                    />
+                                                    )
+                                                </dt>
                                                 <dd className="font-mono">
                                                     {number(sample.cost.baseSpending)}
                                                 </dd>

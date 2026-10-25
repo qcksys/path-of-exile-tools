@@ -4,7 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { CraftingEngine, seededRandom } from "~/lib/crafting-engine";
 import { CraftingSimulation } from "~/lib/crafting-simulation";
 import { craftingProjectSchema } from "~/schemas/crafting";
-import { changeControl } from "./control-helpers";
+import { byText, changeControl } from "./control-helpers";
 import { baseId, catalog, currency, engine, getCatalog } from "./crafting-fixtures";
 import { button, CraftingWorker, mount } from "./crafting-workbench-ui-fixtures";
 
@@ -375,7 +375,7 @@ describe("crafting workbench", () => {
         changeControl(screen.getByLabelText("Saved project"), { target: { value: "sockets" } });
         fireEvent.click(button("Load project"));
         const count = screen.getByRole("spinbutton", { name: "Gem sockets" }) as HTMLInputElement;
-        fireEvent.click(screen.getByText("Custom prices in chaos"));
+        fireEvent.click(screen.getByText(byText("Custom prices in chaos")));
         expect(screen.getByRole("spinbutton", { name: "Vaal Orb" })).toBeDefined();
         expect(count.max).toBe("6");
         changeControl(count, { target: { value: "2" } });

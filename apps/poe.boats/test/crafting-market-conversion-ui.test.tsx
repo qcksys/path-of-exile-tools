@@ -3,8 +3,11 @@ import { exchangeCurrencyId } from "@poe-tools/market";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vite-plus/test";
 import { MarketPricePicker } from "../app/components/crafting/market-price-picker";
+import { byText } from "./control-helpers";
 import { baseId, engine } from "./crafting-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
+
+vi.mock("~/hooks/use-item-presentations", () => ({ useItemPresentations: () => ({}) }));
 
 afterEach(() => {
     cleanup();
@@ -135,9 +138,11 @@ it.each([
     fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
     const bind = await screen.findByRole("button", { name: "Use live median" });
     expect(JSON.parse(fetcher.mock.calls[0]![1].body).conversion).toBe("exchange-v1");
-    expect(screen.getByText(/2000 chaos median/)).toBeTruthy();
+    expect(screen.getByText(byText(/2000 chaos median/))).toBeTruthy();
     expect(
-        screen.getByText(new RegExp(`Converted from 20 ${currency} at 100 chaos per ${currency}`)),
+        screen.getByText(
+            byText(new RegExp(`Converted from 20 ${currency} at 100 chaos per ${currency}`)),
+        ),
     ).toBeTruthy();
     expect(select).not.toHaveBeenCalled();
     fireEvent.click(bind);

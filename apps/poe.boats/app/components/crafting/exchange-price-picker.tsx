@@ -5,6 +5,7 @@ import {
     quoteExchangeSnapshot,
 } from "@poe-tools/market";
 import { useEffect, useRef, useState } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
@@ -259,7 +260,11 @@ export function ExchangePricePicker({
                                         {quote.amount.toLocaleString(undefined, {
                                             maximumSignificantDigits: 6,
                                         })}{" "}
-                                        {graph.currency} per unit ·{" "}
+                                        <CurrencyLabel
+                                            currency={graph.currency}
+                                            game={graph.game}
+                                        />{" "}
+                                        per unit ·{" "}
                                         {quote.estimator === "currency-unit-v1"
                                             ? "accounting currency"
                                             : quote.estimator === "cross-rate-v1"
@@ -274,9 +279,18 @@ export function ExchangePricePicker({
                                                 ? "no direct traded volume"
                                                 : `${quote.itemVolume.toLocaleString()} units traded`}{" "}
                                             ·{" "}
-                                            {quote.low === null
-                                                ? "range unavailable"
-                                                : `${quote.low.toPrecision(4)}–${quote.high!.toPrecision(4)} ${graph.currency} observed range`}{" "}
+                                            {quote.low === null ? (
+                                                "range unavailable"
+                                            ) : (
+                                                <>
+                                                    {`${quote.low.toPrecision(4)}–${quote.high!.toPrecision(4)}`}{" "}
+                                                    <CurrencyLabel
+                                                        currency={graph.currency}
+                                                        game={graph.game}
+                                                    />{" "}
+                                                    observed range
+                                                </>
+                                            )}{" "}
                                             · confidence uncalibrated
                                         </p>
                                     )}
@@ -284,8 +298,12 @@ export function ExchangePricePicker({
                                         <p>
                                             Conversion: {quote.legs[0].amount.toPrecision(5)} ×{" "}
                                             {quote.legs[1].amount.toPrecision(5)} via{" "}
-                                            {quote.legs[0].quoteId.split("/").at(-1)}. Both legs
-                                            observed in the same window.
+                                            <CurrencyLabel
+                                                currency={quote.legs[0].quoteId}
+                                                label={quote.legs[0].quoteId.split("/").at(-1)}
+                                                game={graph.game}
+                                            />
+                                            . Both legs observed in the same window.
                                         </p>
                                     )}
                                     {quote.windowStart !== undefined && quote.hour !== null && (
@@ -368,7 +386,14 @@ export function ExchangePricePicker({
                             <thead>
                                 <tr>
                                     <th>Observed hour (unaggregated)</th>
-                                    <th>Price ({graph.currency})</th>
+                                    <th>
+                                        Price (
+                                        <CurrencyLabel
+                                            currency={graph.currency}
+                                            game={graph.game}
+                                        />
+                                        )
+                                    </th>
                                     <th>Units traded</th>
                                 </tr>
                             </thead>

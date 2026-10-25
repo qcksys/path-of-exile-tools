@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { CurrencyLabel } from "~/components/currency-label";
 import { EChart } from "~/components/echart";
 import type { ChartOption } from "~/lib/echarts";
 import { marketNumber } from "~/lib/market-number";
@@ -50,12 +51,21 @@ export function marketPriceChartOption(points: Point[], currency: string): Chart
     };
 }
 
-export function MarketPriceChart({ points, currency }: { points: Point[]; currency: string }) {
+export function MarketPriceChart({
+    points,
+    currency,
+    game,
+}: {
+    points: Point[];
+    currency: string;
+    game?: "poe1" | "poe2";
+}) {
     const option = useMemo(() => marketPriceChartOption(points, currency), [points, currency]);
     if (!option)
         return (
             <p className="py-12 text-center text-muted-foreground">
-                No asking prices in {currency} for this period.
+                No asking prices in <CurrencyLabel currency={currency} game={game} /> for this
+                period.
             </p>
         );
     return (

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { CraftingEngine, seededRandom } from "~/lib/crafting-engine";
 import type { CraftingItem } from "~/schemas/crafting";
 import { craftingProjectSchema } from "~/schemas/crafting";
-import { changeControl } from "./control-helpers";
+import { byText, changeControl } from "./control-helpers";
 import { baseId, catalog, engine, getCatalog } from "./crafting-fixtures";
 import { button, CraftingWorker, mount } from "./crafting-workbench-ui-fixtures";
 
@@ -644,7 +644,7 @@ describe("crafting workbench", () => {
         changeControl(screen.getByLabelText("Saved project"), { target: { value: "echoes" } });
         fireEvent.click(button("Load project"));
         fireEvent.click(screen.getByRole("checkbox", { name: /^Omen of Abyssal Echoes/ }));
-        fireEvent.click(screen.getByText("Custom prices in chaos"));
+        fireEvent.click(screen.getByText(byText("Custom prices in chaos")));
         changeControl(screen.getByRole("spinbutton", { name: omen.name }), {
             target: { value: "7" },
         });
