@@ -156,6 +156,7 @@ export interface Item {
     explicitMods?: Array<string | ItemMod>;
     craftedMods?: string[];
     fracturedMods?: string[];
+    mutatedMods?: string[];
     scourgeMods?: string[];
     crucibleMods?: string[];
     logbookMods?: unknown[];

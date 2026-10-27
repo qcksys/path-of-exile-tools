@@ -15,12 +15,23 @@ import type { Route } from "./+types/item";
 export function loader({ request, context, params }: Route.LoaderArgs) {
     return getMarketData(
         context.get(dbContext),
-        parseMarketFilters(request, params.item),
+        parseMarketFilters(request, { item: params.item }),
         "history",
     );
 }
 
 type HistoryRow = Awaited<ReturnType<typeof getMarketData>>["history"][number];
+type VariantRow = Awaited<ReturnType<typeof getMarketData>>["variants"][number];
+
+function variantLabel(variant: VariantRow) {
+    const parts = [
+        variant.signatureValue,
+        variant.identified ? "" : "Unidentified",
+        variant.corrupted ? "Corrupted" : "",
+        variant.foilVariation >= 0 ? `Foil ${variant.foilVariation}` : "",
+    ].filter(Boolean);
+    return parts.length ? parts.join(" · ") : "Standard";
+}
 
 const column = dataTableColumns<HistoryRow>();
 
@@ -94,8 +105,15 @@ function HourlyTable({
 }
 
 export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
-    const { filters, seasons, history } = loaderData;
+    const { filters, seasons, history, variants } = loaderData;
     const selected = history.at(-1);
+    const isCurrent = (variant: VariantRow) =>
+        String(variant.identified) === filters.identified &&
+        String(variant.corrupted) === filters.corrupted &&
+        variant.foilVariation === filters.foil &&
+        variant.signatureKind === filters.kind &&
+        variant.signatureValue === filters.value;
+    const otherVariants = variants.some((variant) => !isCurrent(variant));
     const currencies = [
         ...new Set([filters.currency, ...history.flatMap((row) => Object.keys(row.prices ?? {}))]),
     ].sort();
@@ -108,6 +126,35 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                 <Link to={marketLink(filters)} className="text-sm text-primary">
                     ← Back to markets
                 </Link>
+            ) : null}
+            {otherVariants ? (
+                <nav
+                    aria-label="Item variants"
+                    className="space-y-2 rounded-xl border border-border bg-card p-4"
+                >
+                    <h2 className="text-sm font-semibold">
+                        Variants of {filters.item}{" "}
+                        <span className="font-normal text-muted-foreground">
+                            ({variants.length})
+                        </span>
+                    </h2>
+                    <ul className="flex flex-wrap gap-2 text-sm">
+                        {variants.map((variant) => (
+                            <li key={marketLink(filters, variant)}>
+                                <Link
+                                    to={marketLink(filters, variant)}
+                                    aria-current={isCurrent(variant) ? "page" : undefined}
+                                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 ${isCurrent(variant) ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted"}`}
+                                >
+                                    {variantLabel(variant)}
+                                    <span className="text-xs text-muted-foreground">
+                                        {number(variant.periodSales)} sales
+                                    </span>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
             ) : null}
             {selected ? (
                 <section
