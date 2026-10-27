@@ -1,12 +1,15 @@
 import { DatabaseSync } from "node:sqlite";
-import { exchangeCurrencyId } from "@poe-tools/market";
+import { exchangeCurrencyId, quoteExchangeSnapshot } from "@poe-tools/market";
 import { drizzle } from "drizzle-orm/mysql-proxy";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { DB_TABLE_PREFIX } from "~/const";
 import type { TDatabase } from "~/db/client";
 import { findCraftingCommodityPrices } from "~/db/queries/crafting-commodities.queries";
+import { craftingCommoditySignature, emptyResonator } from "~/lib/crafting-empty-resonator";
 import { CraftingEngine } from "~/lib/crafting-engine";
+import { bindExchangePrice } from "~/lib/crafting-exchange";
 import {
+    assertCraftingSourcePrices,
     bindCraftingSourcePrice,
     craftingCommodityIdentity,
     decodeCraftingSourceReference,
@@ -15,7 +18,10 @@ import {
     craftingMarketSnapshots,
     refreshCraftingMarketPrices,
 } from "~/operations/crafting-market.server";
-import { commoditySourceQuoteSchema } from "~/schemas/crafting-sources";
+import {
+    commoditySourceQuoteSchema,
+    commoditySourceReferenceSchema,
+} from "~/schemas/crafting-sources";
 import { findCraftingSourcePrices } from "~/services/crafting-sources.server";
 import {
     chaosId,
@@ -23,6 +29,7 @@ import {
     commodityQuote,
     convertedCommodityQuote,
     divineId,
+    emptyResonatorQuote,
     essenceId,
     essenceName,
     unravellingId,
@@ -35,6 +42,7 @@ import { catalog, engine, getCatalog } from "./crafting-fixtures";
 const hour = commodityQuote.hour;
 let sqlite: DatabaseSync;
 let db: TDatabase;
+let statements: string[];
 const graph = exchangeGraph();
 const identity = { id: essenceId, baseType: essenceName };
 const fossilId = "Metadata/Items/Currency/CurrencyDelveCraftingSockets";
@@ -90,6 +98,7 @@ function captureExchange(changes: Partial<typeof commodityExchangeSnapshot> = {}
 beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime((hour + 5400) * 1000);
+    statements = [];
     sqlite = new DatabaseSync(":memory:");
     sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_unique_hourly (
         realm TEXT, league TEXT, hour INTEGER, itemKey TEXT, baseType TEXT, name TEXT,
@@ -98,6 +107,7 @@ beforeEach(() => {
     sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_currency_hourly (
         realm TEXT, league TEXT, hour INTEGER, marketId TEXT, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT)`);
     db = drizzle(async (sql, params) => {
+        statements.push(sql);
         const statement = sqlite.prepare(sql);
         statement.setReturnArrays(true);
         return {
@@ -203,14 +213,279 @@ it("verifies exact fossil catalog identities without accepting ambiguous or cont
             "Other name";
         expect(craftingCommodityIdentity(new CraftingEngine(contradictory), fossilId)).toBeNull();
     }
-    for (const id of [
-        "Metadata/Items/Delve/DelveSocketableCurrencyReroll4",
-        "Metadata/Items/Delve/DelveStackableSocketableCurrencyReroll4",
-    ]) {
-        expect(catalog.crafting.currencies.find((entry) => entry.id === id)).toBeDefined();
-        expect(craftingCommodityIdentity(engine, id)).toBeNull();
-    }
     expect(craftingCommodityIdentity(new CraftingEngine(getCatalog("poe2")), fossilId)).toBeNull();
+});
+
+it("allows only the two equivalent Prime Chaotic Resonator records with explicit empty provenance", () => {
+    for (const id of emptyResonator.ids) {
+        expect(craftingCommodityIdentity(engine, id)).toEqual({
+            id,
+            baseType: emptyResonator.baseType,
+            variant: emptyResonator.variant,
+        });
+        expect(craftingCommodityIdentity(new CraftingEngine(getCatalog("poe2")), id)).toBeNull();
+    }
+    const member = catalog.crafting.currencies.find((entry) => entry.id === emptyResonator.ids[0])!;
+    for (const change of [
+        { name: "Other" },
+        { action: "reroll" },
+        { description: "Other" },
+        { directions: "Other" },
+        { id: "Metadata/Items/Delve/DelveSocketableCurrencyReroll3" },
+    ]) {
+        const altered = structuredClone(catalog);
+        Object.assign(altered.crafting.currencies.find((entry) => entry.id === member.id)!, change);
+        for (const id of emptyResonator.ids)
+            expect(craftingCommodityIdentity(new CraftingEngine(altered), id)).toBeNull();
+    }
+    for (const extra of [member, { ...member, id: "unexpected-alias" }]) {
+        const altered = structuredClone(catalog);
+        altered.crafting.currencies.push(extra);
+        expect(craftingCommodityIdentity(new CraftingEngine(altered), member.id)).toBeNull();
+    }
+    const absent = structuredClone(catalog);
+    absent.crafting.currencies = absent.crafting.currencies.filter(
+        (entry) => entry.id !== member.id,
+    );
+    expect(craftingCommodityIdentity(new CraftingEngine(absent), emptyResonator.ids[1])).toBeNull();
+});
+
+it("rejects old or mislabeled resonator quotes and references while preserving each selected family id", async () => {
+    for (const changes of [
+        { variant: undefined },
+        { variant: "empty-resonator-v2" },
+        { baseType: essenceName },
+        { id: essenceId },
+        { id: "unexpected-alias" },
+    ]) {
+        const invalid = { ...emptyResonatorQuote, ...changes };
+        expect(commoditySourceQuoteSchema.safeParse(invalid).success).toBe(false);
+        expect(() =>
+            bindCraftingSourcePrice(
+                graph,
+                engine,
+                invalid.id,
+                invalid as typeof emptyResonatorQuote,
+            ),
+        ).toThrow();
+    }
+    expect(
+        commoditySourceQuoteSchema.safeParse({ ...commodityQuote, variant: emptyResonator.variant })
+            .success,
+    ).toBe(false);
+    for (const id of emptyResonator.ids) {
+        const bound = bindCraftingSourcePrice(graph, engine, id, { ...emptyResonatorQuote, id });
+        const reference = decodeCraftingSourceReference(bound.prices[id]?.cohortId)!;
+        expect(reference).toMatchObject({
+            id,
+            baseType: emptyResonator.baseType,
+            variant: emptyResonator.variant,
+        });
+        const legacy = { ...reference, variant: undefined };
+        expect(commoditySourceReferenceSchema.safeParse(legacy).success).toBe(false);
+        const legacyId = `stash-commodity:v1:${encodeURIComponent(JSON.stringify(legacy))}`;
+        expect(decodeCraftingSourceReference(legacyId)).toBeNull();
+        const legacyGraph = {
+            ...bound,
+            prices: { [id]: { ...bound.prices[id]!, cohortId: legacyId } },
+        };
+        const refreshed = await refreshCraftingMarketPrices(db, legacyGraph, engine);
+        expect(refreshed.issues).toHaveLength(1);
+        expect(refreshed.graph.prices[id]).toBeUndefined();
+        expect(legacyGraph.prices[id]?.cohortId).toBe(legacyId);
+        expect(() => assertCraftingSourcePrices(legacyGraph)).toThrow(
+            "no verified empty provenance",
+        );
+        expect(() => assertCraftingSourcePrices(refreshed.graph)).not.toThrow();
+        const manual = {
+            ...legacyGraph,
+            prices: { [id]: { ...legacyGraph.prices[id]!, source: "manual" as const } },
+        };
+        expect(() => assertCraftingSourcePrices(manual)).not.toThrow();
+        expect((await refreshCraftingMarketPrices(db, manual, engine)).graph).toBe(manual);
+        expect(
+            (await craftingMarketSnapshots(db, legacyGraph, engine, [hour])).points[0]?.graph,
+        ).toBeNull();
+    }
+});
+
+const resonatorRow = {
+    itemKey: emptyResonator.baseType,
+    baseType: emptyResonator.baseType,
+    ...craftingCommoditySignature(emptyResonatorQuote),
+};
+it("rejects syntactically valid references for a different input or graph scope without rejecting manual or exchange prices", async () => {
+    const id = emptyResonator.ids[0];
+    const valid = bindCraftingSourcePrice(graph, engine, id, emptyResonatorQuote);
+    const reference = decodeCraftingSourceReference(valid.prices[id]?.cohortId)!;
+    const ordinary = bindCraftingSourcePrice(graph, engine, essenceId, commodityQuote).prices[
+        essenceId
+    ]!;
+    const wrongReferences = [
+        decodeCraftingSourceReference(ordinary.cohortId)!,
+        { ...reference, id: emptyResonator.ids[1] },
+        { ...reference, league: "Other" },
+        { ...reference, currency: "divine" },
+    ];
+    for (const wrong of wrongReferences) {
+        const invalid = {
+            ...valid,
+            prices: {
+                [id]: {
+                    ...valid.prices[id]!,
+                    cohortId: `stash-commodity:v1:${encodeURIComponent(JSON.stringify(wrong))}`,
+                },
+                [essenceId]: {
+                    amount: 123,
+                    currency: "chaos",
+                    source: "manual" as const,
+                    confidence: null,
+                },
+            },
+        };
+        expect(decodeCraftingSourceReference(invalid.prices[id]!.cohortId)).not.toBeNull();
+        expect(() => assertCraftingSourcePrices(invalid)).toThrow("no verified empty provenance");
+        const refreshed = await refreshCraftingMarketPrices(db, invalid, engine);
+        expect(refreshed.issues).toHaveLength(1);
+        expect(refreshed.graph.prices[id]).toBeUndefined();
+        expect(refreshed.graph.prices[essenceId]?.amount).toBe(123);
+    }
+    expect(() => assertCraftingSourcePrices({ ...valid, game: "poe2" })).toThrow(
+        "no verified empty provenance",
+    );
+    expect(() => assertCraftingSourcePrices(valid)).not.toThrow();
+    expect(() =>
+        assertCraftingSourcePrices({
+            ...valid,
+            prices: {
+                [id]: { ...valid.prices[id]!, source: "manual", cohortId: ordinary.cohortId },
+            },
+        }),
+    ).not.toThrow();
+    const exchange = quoteExchangeSnapshot(
+        {
+            ...commodityExchangeSnapshot,
+            marketId: `${id}|${chaosId}`,
+            volumeTraded: { [id]: 10, [chaosId]: 165 },
+        },
+        id,
+        chaosId,
+    )!;
+    expect(() => assertCraftingSourcePrices(bindExchangePrice(graph, id, exchange))).not.toThrow();
+});
+it.each([
+    { signatureKind: "", signatureValue: "" },
+    { signatureKind: "empty-resonator-v2" },
+    { signatureValue: "reroll:3" },
+    { signatureValue: "upgrade:4" },
+    { baseType: "Other" },
+    { name: "Named resonator" },
+    { itemKey: "Other" },
+    { realm: "poe2" },
+    { league: "Other" },
+    { corrupted: 1 },
+    { identified: 0 },
+    { foilVariation: 0 },
+    { frameType: 3 },
+    { hour: hour + 3600 },
+    { hour: hour - 24 * 3600 },
+])("never prices an unproven resonator bucket %j", async (changes) => {
+    capture({ ...resonatorRow, ...changes });
+    const result = await findCraftingSourcePrices(
+        graph,
+        engine,
+        { ids: [...emptyResonator.ids], realm: "pc" },
+        db,
+    );
+    expect(result.quotes).toEqual({});
+    expect(Object.keys(result.missing)).toEqual([...emptyResonator.ids]);
+});
+
+it.each([
+    5, -1,
+])("selects exact signature pairs with resonator frame %s and preserves newest-bucket refresh and historical cutoffs", async (frameType) => {
+    const taggedRow = { ...resonatorRow, frameType };
+    capture();
+    capture({
+        ...taggedRow,
+        hour: hour - 3600,
+        prices: { chaos: { count: 1, min: 8, median: 8, max: 8 } },
+    });
+    capture(taggedRow);
+    capture({
+        ...taggedRow,
+        signatureKind: "",
+        signatureValue: "",
+        prices: { chaos: { count: 1, min: 1, median: 1, max: 1 } },
+    });
+    capture({
+        signatureKind: emptyResonator.variant,
+        signatureValue: emptyResonator.signatureValue,
+        prices: { chaos: { count: 1, min: 99, median: 99, max: 99 } },
+    });
+    const options = { ids: [essenceId, ...emptyResonator.ids], realm: "pc" as const };
+    const result = await findCraftingSourcePrices(graph, engine, options, db);
+    expect(result.missing).toEqual({});
+    expect(statements[0]?.match(/`signatureKind` = \?/g)).toHaveLength(2);
+    expect(statements[0]?.match(/`itemKey` in \(/g)).toHaveLength(2);
+    expect(result.quotes[essenceId]).toEqual(commodityQuote);
+    for (const id of emptyResonator.ids)
+        expect(result.quotes[id]).toEqual({ ...emptyResonatorQuote, id });
+    const id = emptyResonator.ids[1];
+    const manual = { amount: 123, currency: "chaos", source: "manual" as const, confidence: null };
+    const bound = bindCraftingSourcePrice(
+        { ...graph, prices: { [essenceId]: manual } },
+        engine,
+        id,
+        { ...emptyResonatorQuote, id, hour: hour - 3600 },
+    );
+    const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
+    expect(refreshed.issues).toEqual([]);
+    expect(refreshed.graph.prices[essenceId]).toEqual(manual);
+    expect(decodeCraftingSourceReference(refreshed.graph.prices[id]?.cohortId)).toMatchObject({
+        id,
+        variant: emptyResonator.variant,
+    });
+    const snapshots = await craftingMarketSnapshots(db, refreshed.graph, engine, [
+        hour - 3600,
+        hour,
+    ]);
+    expect(snapshots.points.map((point) => point.graph?.prices[id]?.amount)).toEqual([8, 16.5]);
+    sqlite
+        .prepare(
+            `DELETE FROM ${DB_TABLE_PREFIX}stash_unique_hourly WHERE hour=? AND itemKey=? AND signatureKind=?`,
+        )
+        .run(hour, emptyResonator.baseType, emptyResonator.variant);
+    capture({ ...taggedRow, prices: {} });
+    expect((await findCraftingSourcePrices(graph, engine, options, db)).quotes[id]).toBeUndefined();
+    expect((await refreshCraftingMarketPrices(db, refreshed.graph, engine)).issues).toHaveLength(1);
+    expect(
+        (await craftingMarketSnapshots(db, refreshed.graph, engine, [hour])).points[0]?.graph,
+    ).toBeNull();
+});
+
+it("requires explicit conversion and the resonator bucket's own exchange hour", async () => {
+    capture({ ...resonatorRow, prices: { divine: { count: 1, min: 2, median: 2, max: 2 } } });
+    const id = emptyResonator.ids[0];
+    const options = { ids: [id], realm: "pc" as const };
+    captureExchange({ hour: hour - 3600 });
+    const convert = { ...options, conversion: "exchange-v1" as const };
+    expect((await findCraftingSourcePrices(graph, engine, convert, db)).quotes).toEqual({});
+    captureExchange();
+    expect((await findCraftingSourcePrices(graph, engine, options, db)).quotes).toEqual({});
+    const result = await findCraftingSourcePrices(graph, engine, convert, db);
+    expect(result.quotes[id]).toEqual({
+        ...convertedCommodityQuote,
+        id,
+        baseType: emptyResonator.baseType,
+        variant: emptyResonator.variant,
+    });
+    const bound = bindCraftingSourcePrice(graph, engine, id, result.quotes[id]!);
+    expect(decodeCraftingSourceReference(bound.prices[id]?.cohortId)).toMatchObject({
+        variant: emptyResonator.variant,
+        conversion: "exchange-v1",
+        exchange: convertedCommodityQuote.exchange,
+    });
 });
 
 it("selects and refreshes the latest Fundamental Fossil ask without using an older positive observation", async () => {
@@ -388,6 +663,7 @@ it.each([
     { baseType: "Other" },
     { name: "Named variant" },
     { frameType: 3 },
+    { frameType: -1 },
     { identified: 0 },
     { corrupted: 1 },
     { foilVariation: 0 },

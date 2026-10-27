@@ -3,6 +3,7 @@ import type { CraftingGraph } from "../schemas/crafting-graph";
 import type { CraftingRuleset } from "../schemas/crafting-rulesets";
 import type { CraftingEngine } from "./crafting-engine";
 import { projectFromItem } from "./crafting-graph-authoring";
+import { assertCraftingSourcePrices } from "./crafting-sources";
 
 export function workbenchPriceGraph(
     engine: CraftingEngine,
@@ -50,6 +51,12 @@ export function copyWorkbenchMarketPrices(
     )
         throw new Error("The price lookup does not match this workbench's game, build or league.");
     const prices = { ...project.prices };
+    assertCraftingSourcePrices({
+        ...graph,
+        prices: Object.fromEntries(
+            ids.flatMap((id) => (graph.prices[id] ? [[id, graph.prices[id]]] : [])),
+        ),
+    });
     for (const id of ids) {
         const price = graph.prices[id];
         if (price?.source !== "market") continue;

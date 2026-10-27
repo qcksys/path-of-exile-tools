@@ -1,10 +1,13 @@
 // biome-ignore-all lint/style/useNamingConvention: Bestiary keys are canonical game-data identifiers.
 import { exchangeCurrencyId } from "@poe-tools/market";
+import { emptyResonator } from "~/lib/crafting-empty-resonator";
 import type { CraftingEngine } from "~/lib/crafting-engine";
+import { craftingNodeCostKey } from "~/lib/crafting-node-prices";
 import { craftingVendorUpgrade, validVendorIngredientQuote } from "~/lib/crafting-vendor-upgrades";
 import { yellowBeastId, yellowBeastPolicy, yellowBeastPool } from "~/lib/crafting-yellow-beasts";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import {
+    type CommoditySourceIdentity,
     type CraftingSourceOptions,
     type CraftingSourceQuote,
     type CraftingSourceReference,
@@ -110,10 +113,36 @@ const commodityCurrencyActions = new Set([
     "apply_zana_influence",
 ]);
 
-export function craftingCommodityIdentity(engine: CraftingEngine, id: string) {
+export function craftingCommodityIdentity(
+    engine: CraftingEngine,
+    id: string,
+): CommoditySourceIdentity | null {
     if (engine.catalog.game !== "poe1") return null;
     const currency = engine.catalog.crafting.currencies.find((entry) => entry.id === id);
     if (!currency) return null;
+    if (emptyResonator.ids.some((candidate) => candidate === id)) {
+        const family = engine.catalog.crafting.currencies.filter(
+            (entry) =>
+                emptyResonator.ids.some((candidate) => candidate === entry.id) ||
+                entry.name === emptyResonator.baseType,
+        );
+        if (
+            family.length !== emptyResonator.ids.length ||
+            !emptyResonator.ids.every(
+                (candidate) => family.filter((entry) => entry.id === candidate).length === 1,
+            ) ||
+            family.some(
+                (entry) =>
+                    entry.name !== emptyResonator.baseType ||
+                    entry.action !== emptyResonator.action ||
+                    Number(entry.id.at(-1)) !== 4 ||
+                    entry.description !== currency.description ||
+                    entry.directions !== currency.directions,
+            )
+        )
+            return null;
+        return { id, baseType: emptyResonator.baseType, variant: emptyResonator.variant };
+    }
     const essence = engine.catalog.crafting.essences.some((entry) => entry.id === id);
     const fossils = engine.catalog.crafting.fossils.filter(
         (entry) => entry.id === id || entry.name === currency.name,
@@ -151,6 +180,35 @@ export function liveSourcePrices(graph: CraftingGraph) {
             price.source === "market" ? decodeCraftingSourceReference(price.cohortId) : null;
         return reference ? [{ id, reference }] : [];
     });
+}
+export function invalidEmptyResonatorSourcePrices(graph: CraftingGraph) {
+    return Object.entries(graph.prices).flatMap(([key, price]) => {
+        if (price.source !== "market" || !price.cohortId?.startsWith(prefixes["stash-commodity"]))
+            return [];
+        const resonator = emptyResonator.ids.find(
+            (id) =>
+                key === id || graph.nodes.some((node) => key === craftingNodeCostKey(node.id, id)),
+        );
+        if (!resonator) return [];
+        const reference = decodeCraftingSourceReference(price.cohortId);
+        return reference?.source === "stash-commodity" &&
+            reference.id === resonator &&
+            reference.baseType === emptyResonator.baseType &&
+            reference.variant === emptyResonator.variant &&
+            reference.game === graph.game &&
+            reference.realm === "pc" &&
+            reference.league === graph.league &&
+            reference.currency === graph.currency
+            ? []
+            : [key];
+    });
+}
+export function assertCraftingSourcePrices(graph: CraftingGraph) {
+    const invalid = invalidEmptyResonatorSourcePrices(graph);
+    if (invalid.length)
+        throw new Error(
+            `${invalid.join(", ")}: the saved resonator price has no verified empty provenance. Select a tagged source or enter a manual price.`,
+        );
 }
 export function bindCraftingSourcePrice(
     graph: CraftingGraph,
@@ -217,7 +275,11 @@ export function bindCraftingSourcePrice(
         if (parsed.hour > Math.floor(Date.now() / 3_600_000) * 3600 - 3600)
             throw new Error("A captured asking-price quote must describe a completed hour.");
         const identity = craftingCommodityIdentity(engine, id);
-        if (!identity || identity.baseType !== parsed.baseType)
+        if (
+            !identity ||
+            identity.baseType !== parsed.baseType ||
+            identity.variant !== parsed.variant
+        )
             throw new Error("The commodity quote does not identify this catalog currency.");
         const reference = commoditySourceReferenceSchema.parse({
             source: parsed.source,

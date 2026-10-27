@@ -1,26 +1,44 @@
 import { exchangeCurrencyId, marketObservationRange } from "@poe-tools/market";
-import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, or } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
 import { tStashUniqueHourly as hourly } from "~/db/schema/stash.unique-hourly";
+import { craftingCommoditySignature, emptyResonator } from "~/lib/crafting-empty-resonator";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
-import { type CraftingSourceResult, commoditySourceQuoteSchema } from "~/schemas/crafting-sources";
+import {
+    type CommoditySourceIdentity,
+    type CraftingSourceResult,
+    commoditySourceQuoteSchema,
+} from "~/schemas/crafting-sources";
 import { findCraftingExchangePrices } from "./crafting-exchange.queries";
 
 export async function findCraftingCommodityPrices(
     db: TDatabase,
     graph: CraftingGraph,
-    identities: Array<{ id: string; baseType: string }>,
+    identities: CommoditySourceIdentity[],
     at?: number,
     conversion?: "exchange-v1",
 ): Promise<CraftingSourceResult> {
     const result: CraftingSourceResult = { quotes: {}, missing: {} };
     if (!identities.length) return result;
     const range = marketObservationRange(at);
+    const groups = new Map<
+        string,
+        { signature: ReturnType<typeof craftingCommoditySignature>; baseTypes: string[] }
+    >();
+    for (const identity of identities) {
+        const signature = craftingCommoditySignature(identity);
+        const key = JSON.stringify(signature);
+        const group = groups.get(key) ?? { signature, baseTypes: [] };
+        group.baseTypes.push(identity.baseType);
+        groups.set(key, group);
+    }
     const rows = await db
         .select({
             itemKey: hourly.itemKey,
             baseType: hourly.baseType,
             name: hourly.name,
+            signatureKind: hourly.signatureKind,
+            signatureValue: hourly.signatureValue,
             hour: hourly.hour,
             listingCount: hourly.listingCount,
             uniqueSellers: hourly.uniqueSellers,
@@ -31,24 +49,36 @@ export async function findCraftingCommodityPrices(
             and(
                 eq(hourly.realm, "pc"),
                 eq(hourly.league, graph.league!),
-                inArray(
-                    hourly.itemKey,
-                    identities.map(({ baseType }) => baseType),
+                or(
+                    ...[...groups.values()].map(({ signature, baseTypes }) => {
+                        return and(
+                            inArray(hourly.itemKey, [...new Set(baseTypes)]),
+                            eq(hourly.signatureKind, signature.signatureKind),
+                            eq(hourly.signatureValue, signature.signatureValue),
+                            signature.signatureKind === emptyResonator.variant
+                                ? inArray(hourly.frameType, [-1, 5])
+                                : eq(hourly.frameType, 5),
+                        );
+                    }),
                 ),
-                eq(hourly.frameType, 5),
                 eq(hourly.identified, true),
                 eq(hourly.corrupted, false),
                 eq(hourly.foilVariation, -1),
-                eq(hourly.signatureKind, ""),
-                eq(hourly.signatureValue, ""),
                 gte(hourly.hour, range.earliestHour),
                 lte(hourly.hour, range.latestHour),
             ),
         )
         .orderBy(desc(hourly.hour));
     const rates = new Map<number, Awaited<ReturnType<typeof findCraftingExchangePrices>>>();
-    for (const { id, baseType } of identities) {
-        const row = rows.find((row) => row.itemKey === baseType);
+    for (const identity of identities) {
+        const { id, baseType, variant } = identity;
+        const signature = craftingCommoditySignature(identity);
+        const row = rows.find(
+            (row) =>
+                row.itemKey === baseType &&
+                row.signatureKind === signature.signatureKind &&
+                row.signatureValue === signature.signatureValue,
+        );
         const price = row?.prices?.[graph.currency];
         const observation = {
             source: "stash-commodity",
@@ -58,6 +88,7 @@ export async function findCraftingCommodityPrices(
             currency: graph.currency,
             id,
             baseType,
+            ...(variant ? { variant } : {}),
             amount: price?.median,
             low: price?.min,
             high: price?.max,

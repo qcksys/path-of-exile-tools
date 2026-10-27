@@ -3,6 +3,7 @@ import { CurrencyLabel } from "~/components/currency-label";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
+import { craftingCommoditySignature } from "~/lib/crafting-empty-resonator";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { bindCraftingSourcePrice, craftingCommodityIdentity } from "~/lib/crafting-sources";
 import { craftingVendorUpgradePaths } from "~/lib/crafting-vendor-upgrades";
@@ -184,6 +185,12 @@ export function SourcePricePicker({
                                         <>
                                             {quote.source === "stash-commodity" ? (
                                                 <>
+                                                    {quote.variant ? (
+                                                        <p>
+                                                            Verified empty resonator · 4 fossil
+                                                            sockets
+                                                        </p>
+                                                    ) : null}
                                                     <p>
                                                         {quote.amount.toLocaleString(undefined, {
                                                             maximumSignificantDigits: 6,
@@ -263,7 +270,7 @@ export function SourcePricePicker({
                                                     )}
                                                     <a
                                                         className="underline"
-                                                        href={`/1/market?${new URLSearchParams({ realm: quote.realm, league: quote.league, q: quote.baseType, item: quote.baseType, currency: quote.exchange?.currency ?? quote.currency })}`}
+                                                        href={`/1/market?${new URLSearchParams({ realm: quote.realm, league: quote.league, q: quote.baseType, item: quote.baseType, currency: quote.exchange?.currency ?? quote.currency, ...(quote.variant ? { kind: craftingCommoditySignature(quote).signatureKind, value: craftingCommoditySignature(quote).signatureValue } : {}) })}`}
                                                         target="_blank"
                                                         rel="noreferrer"
                                                     >

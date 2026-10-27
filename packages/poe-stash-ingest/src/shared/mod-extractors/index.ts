@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Item } from "@poe-tools/api-client";
+import { emptyResonatorExtractor } from "#src/shared/mod-extractors/empty-resonator.ts";
 import { forbiddenJewelExtractor } from "#src/shared/mod-extractors/forbidden-jewels.ts";
 import { forbiddenShakoExtractor } from "#src/shared/mod-extractors/forbidden-shako.ts";
 import { foulbornExtractor } from "#src/shared/mod-extractors/foulborn.ts";
@@ -13,6 +14,7 @@ export const EXTRACTORS: readonly ModExtractor[] = [
     impossibleEscapeExtractor,
     forbiddenShakoExtractor,
     foulbornExtractor,
+    emptyResonatorExtractor,
 ];
 
 export function extractModSignature(item: Item): ModSignature | null {

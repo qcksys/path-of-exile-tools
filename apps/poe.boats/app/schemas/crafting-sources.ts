@@ -6,6 +6,7 @@ import {
     quoteExchangeSnapshot,
 } from "@poe-tools/market";
 import { z } from "zod";
+import { emptyResonator } from "~/lib/crafting-empty-resonator";
 
 const scope = {
     game: z.literal("poe1"),
@@ -61,21 +62,33 @@ const ninjaReference = z.strictObject({
     assumption,
     yellowBeasts,
 });
-export const commoditySourceReferenceSchema = z.strictObject({
-    ...scope,
-    source: z.literal("stash-commodity"),
-    baseType: z.string().min(1).max(100),
-    conversion,
-    exchange: z
-        .strictObject({
-            currency: scope.currency,
-            amount: z.number().positive(),
-            low: z.number().positive(),
-            high: z.number().positive(),
-            quote: exchangeQuoteSchema,
-        })
-        .optional(),
-});
+export const commoditySourceReferenceSchema = z
+    .strictObject({
+        ...scope,
+        source: z.literal("stash-commodity"),
+        baseType: z.string().min(1).max(100),
+        variant: z.literal(emptyResonator.variant).optional(),
+        conversion,
+        exchange: z
+            .strictObject({
+                currency: scope.currency,
+                amount: z.number().positive(),
+                low: z.number().positive(),
+                high: z.number().positive(),
+                quote: exchangeQuoteSchema,
+            })
+            .optional(),
+    })
+    .refine((reference) => {
+        const resonator = emptyResonator.ids.some((id) => id === reference.id);
+        if (resonator || reference.baseType === emptyResonator.baseType)
+            return (
+                resonator &&
+                reference.baseType === emptyResonator.baseType &&
+                reference.variant === emptyResonator.variant
+            );
+        return reference.variant === undefined;
+    }, "Empty resonator prices require the exact family and versioned emptiness provenance.");
 export const craftingSourceReferenceSchema = z.discriminatedUnion("source", [
     ninjaReference,
     commoditySourceReferenceSchema,
@@ -115,7 +128,7 @@ const ninjaQuote = ninjaReference.extend({
         .max(4),
 });
 export const commoditySourceQuoteSchema = commoditySourceReferenceSchema
-    .extend({
+    .safeExtend({
         amount: z.number().positive(),
         hour: z.number().int().nonnegative().multipleOf(3600),
         low: z.number().positive(),
@@ -236,5 +249,6 @@ export type CraftingSourceQuote = z.infer<typeof craftingSourceQuoteSchema>;
 export type CraftingSourceOptions = z.infer<typeof craftingSourceOptionsSchema>;
 export type CraftingSourceResult = z.infer<typeof craftingSourceResultSchema>;
 export type CommoditySourceQuote = z.infer<typeof commoditySourceQuoteSchema>;
+export type CommoditySourceIdentity = Pick<CommoditySourceQuote, "id" | "baseType" | "variant">;
 export type VendorUpgradePath = z.infer<typeof vendorUpgradePathSchema>;
 export type VendorUpgradeQuote = z.infer<typeof vendorUpgradeQuoteSchema>;

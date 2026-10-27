@@ -52,6 +52,8 @@ import { ServerTiming } from "~/services/server-timing.server";
 import {
     commodityQuote,
     convertedCommodityQuote,
+    emptyResonatorQuote,
+    legacyResonatorPrice,
     unravellingId,
     unravellingName,
     unravellingQuote,
@@ -1009,8 +1011,68 @@ describe("transport parity", () => {
         lookup.mockRestore();
     });
 
+    it.each([
+        "market",
+        "manual",
+        "wrong identity",
+    ] as const)("checks legacy resonator %s provenance before HTTP/MCP calculation", async (scenario) => {
+        const id = emptyResonatorQuote.id;
+        const price =
+            scenario === "wrong identity"
+                ? bindCraftingSourcePrice(
+                      exchangeGraph(),
+                      fixtureEngine,
+                      commodityQuote.id,
+                      commodityQuote,
+                  ).prices[commodityQuote.id]!
+                : { ...legacyResonatorPrice(), source: scenario };
+        const graph = {
+            ...exchangeGraph(),
+            iterations: 1,
+            prices: { [id]: price },
+        };
+        const input = { graph, options: { estimateIterations: 1, workLimit: 100 } };
+        const response = await api.request(
+            "https://poe.boats/api/v1/crafting/graph/calculate",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
+            },
+            { runtime },
+        );
+        expect(response.status).toBe(scenario === "manual" ? 200 : 400);
+        const rpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", { name: "calculate_crafting_graph", arguments: input })
+            ).json(),
+        );
+        const result = CallToolResultSchema.parse(rpc.result);
+        if (scenario !== "manual") {
+            expect(await response.text()).toContain("no verified empty provenance");
+            expect(result.isError).toBe(true);
+            expect(result.structuredContent).toBeUndefined();
+        } else {
+            expect(result.isError).not.toBe(true);
+            expect(result.structuredContent).toEqual(await response.json());
+        }
+        expect(graph.prices[id]?.amount).toBe(16.5);
+    });
+
     describe.each([
         { commodity: commodityQuote, converted: convertedCommodityQuote },
+        ...[
+            "Metadata/Items/Delve/DelveSocketableCurrencyReroll4",
+            "Metadata/Items/Delve/DelveStackableSocketableCurrencyReroll4",
+        ].map((id) => ({
+            commodity: { ...emptyResonatorQuote, id },
+            converted: {
+                ...convertedCommodityQuote,
+                id,
+                baseType: emptyResonatorQuote.baseType,
+                variant: emptyResonatorQuote.variant,
+            },
+        })),
         {
             commodity: unravellingQuote,
             converted: { ...convertedCommodityQuote, id: unravellingId, baseType: unravellingName },
@@ -1038,6 +1100,7 @@ describe("transport parity", () => {
             "refresh",
             "wrong identity",
             "invalid counts",
+            "invalid provenance",
             "conversion",
             "invalid conversion",
         ] as const)("shares captured commodity %s through HTTP and MCP", async (scenario) => {
@@ -1080,6 +1143,22 @@ describe("transport parity", () => {
                     "bind_crafting_source_price",
                     "/market/sources/bind",
                     { graph, id: essenceId, quote: { ...commodityQuote, samples: 26 } },
+                    null,
+                ],
+                "invalid provenance": [
+                    "bind_crafting_source_price",
+                    "/market/sources/bind",
+                    {
+                        graph,
+                        id: essenceId,
+                        quote: {
+                            ...commodityQuote,
+                            variant:
+                                "variant" in commodityQuote && commodityQuote.variant
+                                    ? undefined
+                                    : "empty-resonator-v1",
+                        },
+                    },
                     null,
                 ],
                 conversion: [

@@ -348,6 +348,19 @@ lookup, binding, refresh and snapshots preserve the original asking range and ex
 the UI requires explicit selection and labels the conversion. Native quotes take precedence.
 Query, MySQL, HTTP/MCP and browser regressions cover conversion and refusal of older rates.
 
+Prime Chaotic Resonator asks require the forward-captured `empty-resonator-v1` / `reroll:4`
+bucket. The two retained four-socket reroll IDs are accepted only when their catalog metadata
+agrees; quotes and saved references retain explicit emptiness provenance and the selected ID.
+Generic historical resonator buckets remain ineligible. The UI identifies the empty state and
+links its exact variant history. Newest-bucket selection, completed hours, explicit source
+selection and matching-hour conversion apply unchanged; an unpriced newer tagged bucket
+cannot reuse an older price. Missing tagged observations remain unpriced.
+The tagged bucket accepts both legacy frame 5 and modern Currency captures represented by
+frame -1; ordinary commodity buckets still require frame 5. Imported untagged or misbound
+resonator stash references cannot enter browser/API/MCP calculation or be copied into workbench
+prices. Explicit refresh removes those invalid market entries and reports the issue; saved drafts
+remain editable, retained runtimes are unchanged, and explicit manual amounts remain accepted.
+
 The same source lookup, binding and refresh operations support explicitly selected vendor
 ingredient estimates: verified forward essence upgrades and one-step NPC currency purchases.
 Currency purchases retain their exact quantities and Purchase Items instructions, including
