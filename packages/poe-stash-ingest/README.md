@@ -83,6 +83,12 @@ Live stash capture also checkpoints between committed pages before fetching the 
 page, releasing accumulated indexes without splitting a page transaction. A failure
 preserves the last committed cursor and leaves the next page unfetched for retry.
 Single-page and caught-up captures do not add a final page checkpoint.
+On a large database each checkpoint rewrites gigabytes of index. With memory to spare, set
+`PS_CHECKPOINT_THRESHOLD` (for example `1GB`, with `PS_MEMORY_LIMIT=10GB`): pages are then not
+checkpointed individually, and DuckDB checkpoints once its WAL reaches that size. On the hub's
+41 GB database, 60 replayed pages averaged 4.4 s instead of about 22 s and wrote about 0.2 GiB
+each instead of about 4.3 GiB, with peak memory near the DuckDB limit. Index memory is not
+bounded by `PS_MEMORY_LIMIT`, so leave the container several gigabytes above it.
 Before replay, the PoE 1 pipeline checkpoints committed capture and exchange writes
 to release loaded DuckDB indexes before publication loads its own indexes. This
 also runs after ordinary capture failures because earlier pages may have committed.

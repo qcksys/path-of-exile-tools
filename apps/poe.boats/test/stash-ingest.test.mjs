@@ -306,6 +306,29 @@ describe("public stash lifecycle", () => {
             spy.mockRestore();
         }
     });
+    it("leaves checkpoints to DuckDB's WAL threshold when PS_CHECKPOINT_THRESHOLD is set", async () => {
+        vi.stubEnv("PS_CHECKPOINT_THRESHOLD", "64MB");
+        const tuned = await openDb(":memory:");
+        const spy = vi.spyOn(tuned.conn, "run");
+        try {
+            expect(
+                await queryAll(
+                    tuned.conn,
+                    "SELECT current_setting('checkpoint_threshold') AS threshold",
+                ),
+            ).toEqual([{ threshold: "61.0 MiB" }]);
+            for (const amount of [10, 20, 30])
+                page(
+                    [{ ...stash, items: [{ ...item, note: `~price ${amount} divine` }] }],
+                    `cursor-${amount}`,
+                );
+            expect(await ingestPs(tuned.conn, client, { pages: 3 })).toMatchObject({ pages: 3 });
+            expect(spy.mock.calls.filter(([sql]) => sql === "CHECKPOINT")).toEqual([]);
+        } finally {
+            spy.mockRestore();
+            await tuned.close();
+        }
+    });
     it("does not checkpoint after a caught-up page", async () => {
         const spy = vi.spyOn(db.conn, "run");
         try {

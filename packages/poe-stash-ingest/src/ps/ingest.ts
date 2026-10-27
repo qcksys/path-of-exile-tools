@@ -332,8 +332,10 @@ export async function ingestPs(
 
     for (let i = 0; i < opts.pages; i++) {
         if (i > 0) {
-            // Release the committed page's indexes before loading another page.
-            await conn.run("CHECKPOINT");
+            // Release the committed page's indexes before loading another page. On a large
+            // database each checkpoint rewrites gigabytes of index, so with memory to spare
+            // PS_CHECKPOINT_THRESHOLD leaves checkpoints to DuckDB once the WAL reaches it.
+            if (!process.env.PS_CHECKPOINT_THRESHOLD) await conn.run("CHECKPOINT");
             await sleep(PAGE_DELAY_MS);
         }
         const requestCursor = cursor;

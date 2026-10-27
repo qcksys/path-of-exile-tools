@@ -22,9 +22,14 @@ services:
   pc:
     <<: *worker
     cpus: 2.0
+    # The PC database is large; enough memory lets DuckDB checkpoint by WAL size, not per page.
+    # Index memory is not bounded by PS_MEMORY_LIMIT, hence the headroom above it.
+    mem_limit: 16g
     env_file: ./config/pc.env
     environment:
       PS_ARCHIVE_DIR: /backups
+      PS_MEMORY_LIMIT: 10GB
+      PS_CHECKPOINT_THRESHOLD: 1GB
     volumes:
       - ./data/pc:/data
       - ./backups/pc:/backups
