@@ -61,6 +61,7 @@ export async function recordRemovals(
                  WHERE p.league = l.league AND p.item_key = l.item_key
                      AND p.identified = l.identified AND p.corrupted = l.corrupted
                      AND coalesce(p.foil_variation, -1) = coalesce(l.foil_variation, -1)
+                     AND coalesce(p.links, 0) = coalesce(l.links, 0)
                      AND p.signature_value = l.signature_value
                      AND coalesce(p.mod_signature->>'kind', '') = coalesce(l.mod_signature->>'kind', '')
                      AND lower(p.account_name) <> lower(l.account_name)
@@ -94,6 +95,7 @@ export async function evaluateSales(
                         p.item_key = s.item_key AND p.identified = s.identified
                         AND p.corrupted = s.corrupted
                         AND coalesce(p.foil_variation, -1) = coalesce(s.foil_variation, -1)
+                        AND coalesce(p.links, 0) = coalesce(s.links, 0)
                         AND p.signature_value = s.signature_value
                         AND coalesce(p.mod_signature->>'kind', '') = coalesce(s.mod_signature->>'kind', '')
                         AND (p.stash_id <> s.stash_id OR p.item_id <> s.item_id)

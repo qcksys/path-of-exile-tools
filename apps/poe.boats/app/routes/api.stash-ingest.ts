@@ -46,6 +46,8 @@ const UNIQUE_ROW_SCHEMA = z.object({
     itemKey: z.string().min(1).max(255),
     corrupted: z.boolean(),
     foilVariation: z.number().int(),
+    // Ingesters before the links split omit it.
+    links: z.number().int().min(0).max(6).default(0),
     signatureKind: z.string().max(32),
     signatureValue: z.string().max(255),
     signatureData: z.record(z.string(), z.unknown()).nullable(),

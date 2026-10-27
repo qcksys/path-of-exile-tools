@@ -97,6 +97,24 @@ describe("market browsing", () => {
         });
         expect(new URL(link, "https://example.invalid").searchParams.has("foil")).toBe(false);
     });
+    it("links one link count of a unique, or every link count merged", () => {
+        const filters = marketFiltersSchema.parse({ league: "Season A" });
+        const item = {
+            itemKey: "Loreweave",
+            identified: true,
+            corrupted: false,
+            signatureKind: "",
+            signatureValue: "",
+        };
+        const params = (links?: number | null) =>
+            new URL(marketLink(filters, { ...item, links }), "https://example.invalid")
+                .searchParams;
+        expect(marketFiltersSchema.parse(Object.fromEntries(params(6))).links).toBe("6");
+        expect(marketFiltersSchema.parse(Object.fromEntries(params(0))).links).toBe("0");
+        expect(params(null).has("links")).toBe(false);
+        expect(params().has("links")).toBe(false);
+        expect(marketFiltersSchema.safeParse({ links: "4" }).success).toBe(false);
+    });
     it.each([
         { days: "100000" },
         { page: "NaN" },
