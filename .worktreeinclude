@@ -20,11 +20,11 @@
 /.codex/config.toml
 
 # Local env overrides. The committed `.env.schema` files resolve credentials
-# from 1Password, but a `.env`, `.env.local` or `.dev.vars` still wins over the
-# schema, so a checkout that points a package somewhere else on purpose carries
-# that into its worktrees. `*` does not cross `/`, so these match exactly one
-# level under `apps/` and `packages/`.
-apps/*/.dev.vars
+# from 1Password, but a `.env` or `.env.local` still wins over the schema, so a
+# checkout that points a package somewhere else on purpose carries that into its
+# worktrees. `*` does not cross `/`, so these match exactly one level under
+# `apps/` and `packages/`. `.dev.vars` is not copied: varlock injects Cloudflare
+# env itself and refuses to build while one exists.
 apps/*/.env
 apps/*/.env.local
 packages/*/.env
