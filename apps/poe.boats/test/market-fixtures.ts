@@ -39,6 +39,7 @@ export function marketFixture(
     };
     const season = { league: filters.league, firstHour: row.hour, latestHour: row.hour };
     const variant = {
+        name: row.name,
         identified: true,
         corrupted: false,
         foilVariation: -1,
@@ -78,6 +79,12 @@ export function marketFixture(
             ? [
                   { ...variant, itemKey: filters.item, periodSales: 2 },
                   { ...variant, itemKey: filters.item, corrupted: true, periodSales: 1 },
+                  {
+                      ...variant,
+                      itemKey: `unid:${row.iconAsset}`,
+                      identified: false,
+                      periodSales: 1,
+                  },
               ]
             : [],
         history: filters.item

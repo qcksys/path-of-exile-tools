@@ -451,6 +451,43 @@ it("merges every foil variation into one market for the list, variants and histo
     expect(item.history[1]!.merged).toMatchObject({ count: 4, min: 20, max: 100 });
 });
 
+it("lists a unique's markets in both identification states as variants of each other", async () => {
+    const icon = "2DItems/Jewels/ElderJewel";
+    const eye = (overrides: Partial<TStashUniqueHourlyI>) =>
+        observation({
+            league: "Identification",
+            itemKey: "Watcher's Eye",
+            name: "Watcher's Eye",
+            iconAsset: icon,
+            baseType: "Prismatic Jewel",
+            ...overrides,
+        });
+    await db.insert(market).values([
+        eye({ signatureKind: "watchers-eye", signatureValue: "Haste", likelySales: 3 }),
+        eye({ itemKey: `unid:${icon}`, identified: false, likelySales: 2 }),
+        eye({ itemKey: `unid:${icon}`, identified: false, corrupted: true, likelySales: 1 }),
+        // A unique sharing the art shares the unidentified market, which is named after another.
+        eye({ itemKey: "Replica Eye", name: "Replica Eye" }),
+        eye({ itemKey: "unid:2DItems/Jewels/Other", name: "Other", identified: false }),
+    ]);
+    const variants = async (item: string) =>
+        (
+            await getMarketData(
+                db as unknown as TDatabase,
+                marketFiltersSchema.parse({ league: "Identification", item }),
+                "history",
+            )
+        ).variants.map((row) => [row.itemKey, row.name, row.identified, row.corrupted]);
+    const both = [
+        ["Watcher's Eye", "Watcher's Eye", true, false],
+        [`unid:${icon}`, "Watcher's Eye", false, false],
+        [`unid:${icon}`, "Watcher's Eye", false, true],
+    ];
+    expect(await variants("Watcher's Eye")).toEqual(both);
+    expect(await variants(`unid:${icon}`)).toEqual(both);
+    expect(await variants("Replica Eye")).toEqual([["Replica Eye", "Replica Eye", true, false]]);
+});
+
 it("keeps stable sales ordering and page boundaries when fetching full records", async () => {
     const observations = Array.from({ length: 65 }, (_, index) =>
         observation({
@@ -672,7 +709,7 @@ it("keeps item history independent of browsing filters and skips the list query 
     expect(result.variants).toEqual([
         expect.objectContaining({ itemKey: "Item 0", identified: true, corrupted: false }),
     ]);
-    expect(statements).toHaveLength(5);
+    expect(statements).toHaveLength(6);
     expect(statements.filter(({ sql: query }) => /\binner\s+join\b/i.test(query))).toEqual([]);
     expect(
         statements.filter(({ sql: query }) => query.includes(getTableName(tStashCurrencyHourly))),

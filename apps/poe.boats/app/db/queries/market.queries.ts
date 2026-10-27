@@ -397,36 +397,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             : Promise.resolve([]);
     const variantsPromise =
         filters.item && view !== "list"
-            ? traceQuery(
-                  "market.variants",
-                  db
-                      .select({
-                          itemKey: market.itemKey,
-                          identified: market.identified,
-                          corrupted: market.corrupted,
-                          foilVariation: foilGroup.mapWith(Number),
-                          signatureKind: market.signatureKind,
-                          signatureValue: market.signatureValue,
-                          periodSales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
-                      })
-                      .from(market)
-                      .where(and(scope, eq(market.itemKey, filters.item)))
-                      .groupBy(
-                          market.itemKey,
-                          market.identified,
-                          market.corrupted,
-                          foilGroup,
-                          market.signatureKind,
-                          market.signatureValue,
-                      )
-                      .orderBy(
-                          desc(sql`sum(${market.likelySales})`),
-                          asc(market.corrupted),
-                          asc(foilGroup),
-                          asc(market.signatureValue),
-                      )
-                      .limit(100),
-              )
+            ? marketVariants(db, scope, filters.item)
             : Promise.resolve([]);
     const [rows, history, variants, exchange] = await Promise.all([
         rowsPromise,
@@ -481,6 +452,63 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             };
         }),
     };
+}
+
+/**
+ * An item's markets, plus the markets of the same unique in the other identification state.
+ * Unidentified uniques are keyed by their art (`unid:<icon>`) and named from identified copies.
+ */
+async function marketVariants(db: TDatabase, scope: SQL | undefined, item: string) {
+    const identities = await traceQuery(
+        "market.variant_identities",
+        db
+            .selectDistinct({
+                identified: market.identified,
+                name: market.name,
+                iconAsset: market.iconAsset,
+            })
+            .from(market)
+            .where(and(scope, eq(market.itemKey, item), eq(market.frameType, 3))),
+    );
+    const names = new Set(identities.flatMap((row) => row.name ?? []));
+    const counterparts = identities.flatMap((row) =>
+        row.identified ? (row.iconAsset ? `unid:${row.iconAsset}` : []) : (row.name ?? []),
+    );
+    const variants = await traceQuery(
+        "market.variants",
+        db
+            .select({
+                itemKey: market.itemKey,
+                name: max(market.name),
+                identified: market.identified,
+                corrupted: market.corrupted,
+                foilVariation: foilGroup.mapWith(Number),
+                signatureKind: market.signatureKind,
+                signatureValue: market.signatureValue,
+                periodSales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
+            })
+            .from(market)
+            .where(and(scope, inArray(market.itemKey, [...new Set([item, ...counterparts])])))
+            .groupBy(
+                market.itemKey,
+                market.identified,
+                market.corrupted,
+                foilGroup,
+                market.signatureKind,
+                market.signatureValue,
+            )
+            .orderBy(
+                desc(sql`sum(${market.likelySales})`),
+                asc(market.corrupted),
+                asc(foilGroup),
+                asc(market.signatureValue),
+            )
+            .limit(100),
+    );
+    // Uniques that share art (e.g. replicas) share one unidentified market, named after only one of them.
+    return variants.filter(
+        (row) => row.itemKey === item || (row.name !== null && names.has(row.name)),
+    );
 }
 
 /** Items on any retained exchange market observed by `latestHour`. */
