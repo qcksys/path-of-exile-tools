@@ -18,7 +18,7 @@ test("groups categories and applies filtering and price ordering across market p
     await selectValue(page.getByRole("combobox", { name: "Rarity", exact: true }), "unique");
     await selectValue(page.getByRole("combobox", { name: "Identification", exact: true }), "true");
     await selectValue(page.getByRole("combobox", { name: "Corruption", exact: true }), "false");
-    await page.getByRole("button", { name: "Apply filters" }).click();
+    await expect(page).toHaveURL(/corruption=false/);
     const rows = page.getByRole("region", { name: "Item markets" }).getByRole("row");
     await expect(rows.nth(1)).toContainText("Boots 54");
     await expect(rows.nth(1)).toContainText("57 divine");
@@ -28,7 +28,7 @@ test("groups categories and applies filtering and price ordering across market p
     await expect(rows.last()).toContainText("Abberath's Hooves");
     await page.screenshot({ path: testInfo.outputPath("market-desktop.png"), fullPage: true });
     await page.getByRole("searchbox", { name: "Search items" }).fill("Goathide");
-    await page.getByRole("button", { name: "Apply filters" }).click();
+    await expect(page).toHaveURL(/q=Goathide/);
     await expect(page).not.toHaveURL(/page=2/);
     await expect(rows.nth(1)).toContainText("Boots 54");
     await categories.getByRole("link", { name: "Weapons", exact: true }).click();
@@ -36,7 +36,6 @@ test("groups categories and applies filtering and price ordering across market p
     await expect(page.getByRole("searchbox", { name: "Search items" })).toHaveValue("Goathide");
     await expect(page).toHaveURL((url) => url.pathname === "/1/market/weapons");
     await selectValue(page.getByRole("combobox", { name: "Price currency" }), "chaos");
-    await page.getByRole("button", { name: "Apply filters" }).click();
     await expect(page).toHaveURL(
         (url) =>
             url.pathname === "/1/market/weapons" && url.searchParams.get("currency") === "chaos",
@@ -59,7 +58,6 @@ test("opens nested history, preserves variants and browsing state, and supports 
     await page.getByRole("link", { name: "chaos", exact: true }).click();
     await expect(page.getByLabel("Hourly median asking price in chaos")).toBeVisible();
     await selectValue(page.getByRole("combobox", { name: "Period", exact: true }), "30");
-    await page.getByRole("button", { name: "Apply filters" }).click();
     await expect(page).toHaveURL(/days=30/);
     await page.reload();
     await expect(
