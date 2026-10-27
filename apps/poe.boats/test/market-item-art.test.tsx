@@ -50,6 +50,8 @@ function showMarket(
         seasons: [],
         season: undefined,
         hasMore: false,
+        chaosRates: {},
+        exchange: [],
         rows: [
             {
                 ...row,

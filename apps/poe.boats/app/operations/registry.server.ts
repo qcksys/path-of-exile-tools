@@ -252,6 +252,25 @@ export const operations = [
                 }),
             ),
             hasMore: z.boolean(),
+            exchange: z
+                .array(
+                    z.object({
+                        itemId: z.string(),
+                        name: z.string(),
+                        category: marketCategorySchema,
+                        chaos: z.number().nullable(),
+                        volume: z.number(),
+                        hour: z.number().nullable(),
+                    }),
+                )
+                .describe(
+                    "Items on the exchange in the last day, priced in chaos at the best rate via chaos, divine or exalted from each market's latest traded hour (null when none traded); their stash listings are left out of rows",
+                ),
+            chaosRates: z
+                .record(z.string(), z.number())
+                .describe(
+                    "Chaos per unit of each listing currency on the page, at the season's latest hour",
+                ),
             history: z.array(
                 marketRow.extend({
                     merged: mergedMarketPriceSchema.nullable(),

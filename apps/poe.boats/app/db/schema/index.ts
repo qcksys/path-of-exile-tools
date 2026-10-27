@@ -17,6 +17,7 @@ import { tStashCohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCohortRevisionHour } from "~/db/schema/stash.cohort-revision-hour";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
+import { tStashCurrencyLatest } from "~/db/schema/stash.currency-latest";
 import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 
 export const schema = {
@@ -37,6 +38,7 @@ export const schema = {
     tIdolPlannerPriceCache,
     tStashUniqueHourly,
     tStashCurrencyHourly,
+    tStashCurrencyLatest,
     tStashCohortHourly,
     tStashCohortRevisionHour,
     tStashCohort,

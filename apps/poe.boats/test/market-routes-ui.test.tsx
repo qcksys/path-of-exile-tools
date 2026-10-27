@@ -94,6 +94,46 @@ it("renders list and detail through the layout outlet and restores browsing stat
     expect(screen.queryByRole("region", { name: "Item price history" })).toBeNull();
 });
 
+it("lists listing currencies cheapest first with their chaos or divine equivalent", async () => {
+    showMarket();
+    const cell = (await screen.findByText("n=4")).closest("td")!;
+    expect([...cell.querySelectorAll("p")].map((price) => price.textContent)).toEqual([
+        "15 chaos≈ 0.1 divinen=4",
+        "2 divine≈ 300 chaosn=5",
+    ]);
+});
+
+it("shows exchange-traded items in their own table priced in chaos and divine", async () => {
+    showMarket("/1/market?league=Allflame&category=armour");
+    const table = await screen.findByRole("table", { name: "Armour exchange" });
+    const row = within(table).getByText("Scroll of Wisdom").closest("tr")!;
+    expect(row.textContent).toContain("0.002 chaos≈ 0.00001333 divine");
+    expect(row.textContent).toContain("500");
+    expect(screen.getByText("1 on the exchange · 1 variants")).toBeTruthy();
+});
+
+it("collapses listing currencies costing over three times the most listed one", async () => {
+    vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+        const fixture = marketFixture(filters);
+        return {
+            ...fixture,
+            rows: fixture.rows.map((row) => ({
+                ...row,
+                prices: {
+                    chaos: { count: 32, min: 1, median: 1, max: 1 },
+                    divine: { count: 1, min: 6, median: 6, max: 6 },
+                },
+            })),
+        };
+    });
+    showMarket();
+    const cell = (await screen.findByText("n=32")).closest("td")!;
+    const details = cell.querySelector("details")!;
+    expect(details.open).toBe(false);
+    expect(details.querySelector("summary")!.textContent).toBe("1 over 3× the most listed");
+    expect(details.textContent).toContain("6 divine≈ 900 chaosn=1");
+});
+
 it("submits search and filters, resets pagination, and preserves them on category navigation", async () => {
     showMarket();
     const search = await screen.findByRole("searchbox", { name: "Search items" });
