@@ -1,5 +1,6 @@
 import { tAuthAccount } from "~/db/schema/auth.account";
 import { tAuthSession } from "~/db/schema/auth.session";
+import { tAuthTwoFactor } from "~/db/schema/auth.two-factor";
 import { tAuthUser } from "~/db/schema/auth.user";
 import { tAuthVerification } from "~/db/schema/auth.verification";
 import { tCraftingShare } from "~/db/schema/crafting.share";
@@ -30,6 +31,7 @@ export const schema = {
     tIngestWorker,
     tAuthAccount,
     tAuthSession,
+    tAuthTwoFactor,
     tAuthUser,
     tAuthVerification,
     tCraftingWorkspace,

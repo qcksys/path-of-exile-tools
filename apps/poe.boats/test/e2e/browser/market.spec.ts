@@ -11,15 +11,14 @@ test("groups categories and applies filtering and price ordering across market p
     );
     const categories = page.getByRole("navigation", { name: "Market categories" });
     await expect(categories.getByRole("heading", { name: "Equipment & gems" })).toBeVisible();
-    await categories.getByRole("link", { name: "Armour", exact: true }).click();
+    await categories.getByRole("link", { name: "Unique armour", exact: true }).click();
     await expect(page).toHaveURL((url) => url.pathname === "/1/market/armour");
     await expect(
         page
             .getByRole("region", { name: "Item markets", exact: true })
-            .getByRole("heading", { name: "Armour", level: 2, exact: true }),
+            .getByRole("heading", { name: "Unique armour", level: 2, exact: true }),
     ).toBeVisible();
     await selectValue(page.getByRole("combobox", { name: "Order by" }), "price-desc");
-    await selectValue(page.getByRole("combobox", { name: "Rarity", exact: true }), "unique");
     await selectValue(page.getByRole("combobox", { name: "Identification", exact: true }), "true");
     await selectValue(page.getByRole("combobox", { name: "Corruption", exact: true }), "false");
     await expect(page).toHaveURL(/corruption=false/);
@@ -35,7 +34,7 @@ test("groups categories and applies filtering and price ordering across market p
     await expect(page).toHaveURL(/q=Goathide/);
     await expect(page).not.toHaveURL(/page=2/);
     await expect(rows.nth(1)).toContainText("Boots 54");
-    await categories.getByRole("link", { name: "Weapons", exact: true }).click();
+    await categories.getByRole("link", { name: "Unique weapons", exact: true }).click();
     await expect(page.getByText("No markets match these filters")).toBeVisible();
     await expect(page.getByRole("searchbox", { name: "Search items" })).toHaveValue("Goathide");
     await expect(page).toHaveURL((url) => url.pathname === "/1/market/weapons");
@@ -102,9 +101,9 @@ test("redirects legacy bookmarks and displays a usable mobile history page", asy
     await toggle.click();
     await page
         .getByRole("navigation", { name: "Market categories" })
-        .getByRole("link", { name: "Weapons", exact: true })
+        .getByRole("link", { name: "Unique weapons", exact: true })
         .click();
-    await expect(page.getByRole("button", { name: "Categories: Weapons" })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: "Categories: Unique weapons" })).toHaveAttribute(
         "aria-expanded",
         "false",
     );
