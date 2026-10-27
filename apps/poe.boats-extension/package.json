@@ -1,0 +1,30 @@
+{
+    "name": "@poe-tools/browser-extension",
+    "version": "0.1.0",
+    "private": true,
+    "description": "poe.boats trade pricing extension (Chrome/Firefox, Manifest V3 via WXT).",
+    "type": "module",
+    "scripts": {
+        "dev": "wxt",
+        "dev:firefox": "wxt -b firefox",
+        "build": "wxt build",
+        "build:firefox": "wxt build -b firefox",
+        "zip": "wxt zip",
+        "zip:firefox": "wxt zip -b firefox",
+        "typecheck": "wxt prepare && tsc --noEmit",
+        "test": "vp test run",
+        "postinstall": "wxt prepare"
+    },
+    "dependencies": {
+        "@poe-tools/trade-bridge": "workspace:*",
+        "@wxt-dev/storage": "catalog:",
+        "zod": "catalog:"
+    },
+    "devDependencies": {
+        "@types/chrome": "catalog:",
+        "@types/node": "catalog:",
+        "typescript": "catalog:",
+        "vite-plus": "catalog:",
+        "wxt": "catalog:"
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "name": "@poe-tools/trade-bridge",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "description": "Message and listing schemas shared by poe.boats and the poe.boats browser extension.",
+    "exports": "./src/index.ts",
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "test": "vp test run"
+    },
+    "dependencies": {
+        "zod": "catalog:"
+    },
+    "devDependencies": {
+        "@types/node": "catalog:",
+        "typescript": "catalog:",
+        "vite-plus": "catalog:"
+    }
+}
