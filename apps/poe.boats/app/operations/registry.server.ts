@@ -63,8 +63,9 @@ const shared = {
     readOnly: true,
     method: "get",
 } as const;
+// Markets merge foil and non-foil rows, so a market row has no foil variation.
 const marketRow = sStashUniqueHourlyS
-    .omit({ rowCreatedAt: true, rowUpdatedAt: true, rowDeletedAt: true })
+    .omit({ rowCreatedAt: true, rowUpdatedAt: true, rowDeletedAt: true, foilVariation: true })
     .extend({
         rowCreatedAt: z.string(),
         rowUpdatedAt: z.string(),
@@ -315,7 +316,6 @@ export const operations = [
                             name: true,
                             identified: true,
                             corrupted: true,
-                            foilVariation: true,
                             signatureKind: true,
                             signatureValue: true,
                             signatureData: true,

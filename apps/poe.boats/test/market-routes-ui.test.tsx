@@ -366,7 +366,6 @@ it("redirects legacy query links while preserving every variant field", async ()
     expect(Object.fromEntries(url.searchParams)).toMatchObject({
         identified: "false",
         corrupted: "true",
-        foil: "3",
         kind: "watchers-eye",
         value: "a/b",
         currency: "alt",

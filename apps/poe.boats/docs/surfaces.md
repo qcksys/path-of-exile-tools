@@ -55,16 +55,18 @@ routes. Each category list lives at `/1/market/:category`; the web has no all-it
 `/1/market` redirects to `/1/market/currency` with its filters, and legacy `?category=` links
 redirect to their category path. Legacy `?item=` bookmarks redirect to `/1/market/items/:item`
 with all variant axes intact; item links keep `category` in the query for the way back. The item
-page lists every variant of the item in the period (corruption, foil, and extracted signatures
-such as Foulborn mutated modifiers) and links between them, including the same unique's markets in
-the other identification state (unidentified uniques are keyed `unid:<icon>`).
+page lists every variant of the item in the period (corruption and extracted signatures such as
+Foulborn mutated modifiers) and links between them, including the same unique's markets in the
+other identification state (unidentified uniques are keyed `unid:<icon>`). Foil and non-foil
+listings of an item trade as one market in the list, variants and history; stored rows keep each
+`foil_variation`, and market rows omit it.
 Uniques whose mods come from a pool (ingest's `MOD_POOLS`: Watcher's Eye's aura mods, PoE 2
 Loreweave's borrowed unique mods) record one market per combination of masked mods, so every roll
 of the same mods trades together; older Watcher's Eye per-roll markets keep their hashed signature
 until their listings are seen again. The category list and the item's variants merge a pool
 unique's combinations into one market with an empty `value`; its item page shows their merged
 history. Every variant page of a pool unique, and the market operation's `modValues`, value each
-mod over the item's combinations with the same corruption and foil: listings and cheapest ask in
+mod over the item's combinations with the same corruption: listings and cheapest ask in
 the latest hour, likely sales and the median last ask before them over the period, in the display
 currency. Mods are labelled from `signatureData`. The `mods` filter (`|`-separated mod IDs) keeps
 only combinations with every listed mod and `anyMods` those with at least one, so requiring A
@@ -169,7 +171,7 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | PoE 1 and PoE 2 arbitrage leagues, prices, recipes | `arbitrage/market` | `get_arbitrage_market`; `loadArbitrageMarket` |
 | Arbitrage filters, ranking, buffer, profit/ROI | `arbitrage/calculate` | `calculate_arbitrage`; `findArbitrage` |
 | Manual recipe reference, calculator and trade links | `arbitrage/recipes`, `arbitrage/scenario`, `arbitrage/trade` | `list_vendor_recipes`, `calculate_recipe_scenario`, `build_recipe_trade_url` |
-| Season market search, seasons, paging, variants, history, mod pool values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `modPoolValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_market_daily` rollup and pagination precedes full-row primary-key reads. Every foil variation of an item is one market (`foil` -1 or 0): list rows, variants and history sum and mix the variations' hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), page boundaries, and crafting base cohort rows (latest hour, current revision, category). |
+| Season market search, seasons, paging, variants, history, mod pool values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `modPoolValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_market_daily` rollup and pagination precedes full-row primary-key reads. An item's foil and non-foil listings are one market: list rows, variants and history sum and mix every foil variation's hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), page boundaries, and crafting base cohort rows (latest hour, current revision, category). |
 | Recombinator equipment, modifiers, preparation recipes | `recombinator/catalog`, `bases`, `mods`, `recipes`, `draft` | Catalog, base/mod/recipe filtering, and `parseRecombinatorDraft` |
 | Recombination outcomes, preparation, target odds | `recombinator/calculate`, `target` | `calculateRecombinatorPlan`, `matchesTarget`, `summarizeCounts` |
 | PoE 1 and PoE 2 workbench catalog, calculation, process simulation and item emulation | `crafting/workbench/catalog`, `workbench/calculate`, `workbench/process`, `workbench/emulate` | `get_crafting_workbench_catalog`, `calculate_crafting_workbench`, `emulate_crafting_process`, `emulate_crafting_item`; shared `CraftingWorkbenchCalculation`, `CraftingProcess` and `emulateCraftingItem`. Current workbench catalogs and client-build validation match the browser; retained graph rulesets remain separate. HTTP calculations refuse manual-stop runs and requests above 5,000 trials or 100,000 potential steps. Allflame preview costs remain deferred until selection, reveal choices stay explicit, and paid bench failures retain the changed item and costs. Stateless operations never modify browser drafts. |
