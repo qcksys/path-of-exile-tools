@@ -10,6 +10,7 @@ import {
     selectCohortPrice,
 } from "@poe-tools/market";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
+import { sql } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection } from "mysql2/promise";
@@ -35,6 +36,7 @@ import { tStashCohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCohortRevisionHour } from "~/db/schema/stash.cohort-revision-hour";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
+import { tStashCurrencyLatest } from "~/db/schema/stash.currency-latest";
 import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { seededRandom } from "~/lib/crafting-engine";
 import { bindExchangePrice } from "~/lib/crafting-exchange";
@@ -1861,6 +1863,32 @@ it.each([
                 .meanCost,
         ).toBe(12);
     }
+});
+
+it("accepts hourly exchange deliveries for both games without the latest-traded table", async () => {
+    await mysql.execute(sql`drop table ${tStashCurrencyLatest}`);
+    const rows = [
+        { realm: "pc" as const, league: "Allflame" },
+        { realm: "poe2" as const, league: "Forbidden Rites" },
+    ].map(({ realm, league }) => ({
+        realm,
+        league,
+        hour: HOUR,
+        marketId: exchangeSnapshot.marketId,
+        volumeTraded: { [transmuteId]: 10, [chaosId]: 20 },
+        lowestRatio: {},
+        highestRatio: {},
+        lowestStock: {},
+        highestStock: {},
+    }));
+    await push({ stream: "cxapi", rows });
+    const stored = await mysql
+        .select({ realm: tStashCurrencyHourly.realm, league: tStashCurrencyHourly.league })
+        .from(tStashCurrencyHourly);
+    expect(stored).toHaveLength(2);
+    expect(stored).toEqual(
+        expect.arrayContaining(rows.map(({ realm, league }) => ({ realm, league }))),
+    );
 });
 
 it("preserves prior-hour prices after updates and unlisting, and retries upstream 503s", async () => {
