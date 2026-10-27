@@ -1280,6 +1280,56 @@ it("reads one exchange item's list row and hourly history through every pair", a
     expect(unknown.item).toBeNull();
 });
 
+it("limits Divine Orb's history to its anchor and most traded pairs", async () => {
+    const currency = (id: string) => `Metadata/Items/Currency/${id}`;
+    const chaosId = currency("CurrencyRerollRare");
+    const divineId = currency("CurrencyModValues");
+    const exaltedId = currency("CurrencyAddModToRare");
+    const portalId = currency("CurrencyPortal");
+    const others = [
+        "CurrencyUpgradeToRare",
+        "CurrencyRerollMagic",
+        "CurrencyUpgradeRandomly",
+        "CurrencyCorrupt",
+        "CurrencyRerollSocketNumbers",
+        "CurrencyRerollImplicit",
+        "CurrencyRerollSocketColours",
+        "CurrencyRerollSocketLinks",
+        "CurrencyUpgradeToMagic",
+    ].map(currency);
+    const snapshot = (marketId: string, volumeTraded: Record<string, number>) => ({
+        realm: "pc",
+        league: "ExchangeDivine",
+        marketId,
+        hour,
+        volumeTraded,
+    });
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, [
+        snapshot(`${divineId}|${chaosId}`, { [divineId]: 1, [chaosId]: 160 }),
+        snapshot(`${exaltedId}|${divineId}`, { [exaltedId]: 4, [divineId]: 1 }),
+        // The first has the fewest Divine Orbs traded, so it falls outside the eight other pairs.
+        ...others.map((id, index) =>
+            snapshot(`${id}|${divineId}`, { [id]: 10, [divineId]: index + 1 }),
+        ),
+        // Portal Scroll does not trade against Divine Orb, so its chaos market is not read.
+        snapshot(`${portalId}|${chaosId}`, { [portalId]: 10, [chaosId]: 1 }),
+    ]);
+    statements.length = 0;
+    const result = await getMarketExchangeItem(db as unknown as TDatabase, {
+        realm: "pc",
+        league: "ExchangeDivine",
+        days: "7",
+        itemId: divineId,
+    });
+    expect(result.item).toMatchObject({ name: "Divine Orb", chaos: 160, current: true });
+    expect(result.history.pairs.map((pair) => pair.quoteId).toSorted()).toEqual(
+        [chaosId, exaltedId, ...others.slice(1)].toSorted(),
+    );
+    expect(statements.filter(({ params }) => params.includes(`${portalId}|${chaosId}`))).toEqual(
+        [],
+    );
+});
+
 it("orders names in both directions and uses the latest observation for recency", async () => {
     await db
         .insert(market)
