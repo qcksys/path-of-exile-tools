@@ -44,7 +44,6 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
                 itemKey: filters.item,
                 identified: filters.identified === "true",
                 corrupted: filters.corrupted === "true",
-                foilVariation: filters.foil,
                 signatureKind: filters.kind,
                 signatureValue: filters.value,
             }),
@@ -188,7 +187,6 @@ function marketColumns(filters: MarketFilters, game: Game, chaosRates: Record<st
                     <p className="mt-1 max-w-md break-words text-xs text-muted-foreground">
                         {row.baseType} · {row.identified ? "Identified" : "Unidentified"}
                         {row.corrupted ? " · Corrupted" : ""}
-                        {row.foilVariation >= 0 ? " · Foil" : ""}
                         {marketSignatureLabel(row) ? ` · ${marketSignatureLabel(row)}` : ""}
                     </p>
                 </>

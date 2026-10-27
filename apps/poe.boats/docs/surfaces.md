@@ -55,16 +55,18 @@ routes. Each category list lives at `/1/market/:category`; the web has no all-it
 `/1/market` redirects to `/1/market/currency` with its filters, and legacy `?category=` links
 redirect to their category path. Legacy `?item=` bookmarks redirect to `/1/market/items/:item`
 with all variant axes intact; item links keep `category` in the query for the way back. The item
-page lists every variant of the item in the period (corruption, foil, and extracted signatures
-such as Foulborn mutated modifiers) and links between them, including the same unique's markets in
-the other identification state (unidentified uniques are keyed `unid:<icon>`).
+page lists every variant of the item in the period (corruption and extracted signatures such as
+Foulborn mutated modifiers) and links between them, including the same unique's markets in the
+other identification state (unidentified uniques are keyed `unid:<icon>`). Foil and non-foil
+listings of an item trade as one market in the list, variants and history; stored rows keep each
+`foil_variation`, and market rows omit it.
 Uniques whose mods come from a pool (ingest's `MOD_POOLS`: Watcher's Eye's aura mods, PoE 2
 Loreweave's borrowed unique mods) record one market per combination of masked mods, so every roll
 of the same mods trades together; older Watcher's Eye per-roll markets keep their hashed signature
 until their listings are seen again. The category list and the item's variants merge a pool
 unique's combinations into one market with an empty `value`; its item page shows their merged
 history. Every variant page of a pool unique, and the market operation's `modValues`, value each
-mod over the item's combinations with the same corruption and foil: listings and cheapest ask in
+mod over the item's combinations with the same corruption: listings and cheapest ask in
 the latest hour, likely sales and the median last ask before them over the period, in the display
 currency. Mods are labelled from `signatureData`. The `mods` filter (`|`-separated mod IDs) keeps
 only combinations with every listed mod and `anyMods` those with at least one, so requiring A

@@ -34,7 +34,6 @@ export function MarketModValues({
             itemKey: filters.item ?? "",
             identified: filters.identified === "true",
             corrupted: filters.corrupted === "true",
-            foilVariation: filters.foil,
             signatureKind: filters.kind,
             signatureValue: filters.value,
         };

@@ -105,7 +105,7 @@ it("fetches full item records by primary key only after selecting the market pag
     expect(result.rows.every((row) => row.hour === hour && row.rank === 1)).toBe(true);
     const query = rowsStatement();
     const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
-    // Foil variations share a primary key prefix, so each market joins its latest hour's rows.
+    // A market's foil and non-foil rows share a primary key prefix, so each market joins its latest hour's rows.
     expect(
         plan.some((row) => row.type === "ref" && row.key === "PRIMARY" && Number(row.rows) === 1),
     ).toBe(true);
@@ -340,7 +340,6 @@ it("preserves variant totals, the latest listed observation, and exact item hist
         {},
         { identified: false },
         { corrupted: true },
-        { foilVariation: 1 },
         { signatureKind: "watchers-eye" },
         { signatureValue: "alternate" },
     ];
@@ -374,9 +373,9 @@ it("preserves variant totals, the latest listed observation, and exact item hist
         ]);
     const filters = marketFiltersSchema.parse({ league: "Variants", item: "Example" });
     const result = await marketData(db as unknown as TDatabase, filters);
-    expect(result.rows).toHaveLength(7);
+    expect(result.rows).toHaveLength(6);
     const examples = result.rows.filter((row) => row.itemKey === "Example");
-    expect(examples).toHaveLength(6);
+    expect(examples).toHaveLength(5);
     for (const row of examples)
         expect(row).toMatchObject({
             hour: hour - 3600,
@@ -390,13 +389,13 @@ it("preserves variant totals, the latest listed observation, and exact item hist
     expect(result.history.map((row) => row.hour)).toEqual([hour - 7200, hour - 3600, hour]);
     // Daily rollups keep one name per day (the greatest), so a match reports the whole window.
     const searched = await marketData(db as unknown as TDatabase, { ...filters, q: "Older" });
-    expect(searched.rows).toHaveLength(6);
+    expect(searched.rows).toHaveLength(5);
     expect(searched.rows.every((row) => row.hour === hour - 3600 && row.periodSales === 9)).toBe(
         true,
     );
 });
 
-it("merges every foil variation into one market for the list, variants and history", async () => {
+it("merges foil and non-foil listings into one market for the list, variants and history", async () => {
     const foil = (foilVariation: number, overrides: Partial<TStashUniqueHourlyI>) =>
         observation({ league: "Foils", foilVariation, ...overrides });
     const chaos = (count: number, median: number) => ({
@@ -414,61 +413,49 @@ it("merges every foil variation into one market for the list, variants and histo
         ]);
     const filters = marketFiltersSchema.parse({ league: "Foils", currency: "chaos" });
     const list = await marketData(db as unknown as TDatabase, filters, "list");
-    expect(
-        list.rows.map((row) => [row.corrupted, row.foilVariation, row.listingCount, row.hour]),
-    ).toEqual([
-        [false, 0, 4, hour],
-        [true, 0, 4, hour],
-        [false, -1, 9, hour],
-        [true, -1, 1, hour],
+    expect(list.rows.map((row) => [row.corrupted, row.listingCount, row.hour])).toEqual([
+        [false, 13, hour],
+        [true, 5, hour],
     ]);
     expect(list.rows[0]).toMatchObject({
-        uniqueSellers: 3,
-        periodSales: 6,
-        prices: { chaos: { count: 4, min: 20, median: 20, max: 100 } },
+        uniqueSellers: 4,
+        periodSales: 7,
+        prices: { chaos: { count: 13, min: 5, max: 100 } },
     });
     const byListings = await marketData(
         db as unknown as TDatabase,
-        { ...filters, order: "listings-desc", listingsMin: 4, listingsMax: 4 },
+        { ...filters, order: "listings-desc", listingsMin: 5, listingsMax: 5 },
         "list",
     );
-    expect(byListings.rows.map((row) => [row.corrupted, row.foilVariation])).toEqual([
-        [false, 0],
-        [true, 0],
-    ]);
+    expect(byListings.rows.map((row) => row.corrupted)).toEqual([true]);
     const byPrice = await marketData(
         db as unknown as TDatabase,
         { ...filters, order: "price-desc" },
         "list",
     );
-    // The foil market's listing-weighted median is (3 × 20 + 100) / 4 = 40 chaos.
-    expect(byPrice.rows.map((row) => [row.corrupted, row.foilVariation])).toEqual([
-        [false, 0],
-        [true, 0],
-        [true, -1],
-        [false, -1],
-    ]);
+    // Listing-weighted medians: corrupted (6 + 4 × 30) / 5 = 25.2, uncorrupted (9 × 5 + 100 + 3 × 20) / 13 ≈ 15.8.
+    expect(byPrice.rows.map((row) => row.corrupted)).toEqual([true, false]);
 
-    // An old link to one foil variation opens the merged foil market.
+    // An old link to one foil variation opens the merged market.
     const item = await marketData(
         db as unknown as TDatabase,
-        { ...filters, item: "Example", foil: 7 },
+        marketFiltersSchema.parse({
+            league: "Foils",
+            currency: "chaos",
+            item: "Example",
+            foil: "7",
+        }),
         "history",
     );
-    expect(item.filters.foil).toBe(0);
-    expect(item.variants.map((row) => [row.corrupted, row.foilVariation, row.periodSales])).toEqual(
-        [
-            [false, 0, 6],
-            [true, 0, 5],
-            [false, -1, 1],
-            [true, -1, 0],
-        ],
-    );
-    expect(item.history.map((row) => [row.hour, row.foilVariation, row.listingCount])).toEqual([
-        [hour - 3600, 0, 2],
-        [hour, 0, 4],
+    expect(item.variants.map((row) => [row.corrupted, row.periodSales])).toEqual([
+        [false, 7],
+        [true, 5],
     ]);
-    expect(item.history[1]!.merged).toMatchObject({ count: 4, min: 20, max: 100 });
+    expect(item.history.map((row) => [row.hour, row.listingCount])).toEqual([
+        [hour - 3600, 2],
+        [hour, 13],
+    ]);
+    expect(item.history[1]!.merged).toMatchObject({ count: 13, min: 5, max: 100 });
 });
 
 it("lists a unique's markets in both identification states as variants of each other", async () => {
