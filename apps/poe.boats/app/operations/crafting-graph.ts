@@ -17,6 +17,7 @@ import {
 } from "~/lib/crafting-rulesets";
 import type { HistoricalCraftingSimulation } from "~/lib/crafting-runtime";
 import { configureSimpleCraft, simpleCraftCapability } from "~/lib/crafting-smart";
+import { assertCraftingSourcePrices } from "~/lib/crafting-sources";
 import {
     craftingCatalogSchema,
     craftingItemSchema,
@@ -316,6 +317,7 @@ export const craftingGraphOperations = [
             const { catalog, runtime } = await context.loadCraftingRevision(ruleset);
             let simulation: HistoricalCraftingSimulation;
             try {
+                assertCraftingSourcePrices(graph);
                 simulation = runtime.createSimulation(catalog, graph, options);
             } catch (error) {
                 throw new OperationError(

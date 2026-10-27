@@ -1,4 +1,5 @@
 import { exchangeCurrencyId, quoteExchangeSnapshot } from "@poe-tools/market";
+import { emptyResonator } from "~/lib/crafting-empty-resonator";
 import { commoditySourceQuoteSchema } from "~/schemas/crafting-sources";
 
 export const essenceId = "Metadata/Items/Currency/CurrencyEssenceRage3";
@@ -19,6 +20,32 @@ export const commodityQuote = commoditySourceQuoteSchema.parse({
     listingCount: 25,
     uniqueSellers: 24,
 });
+
+export const emptyResonatorQuote = commoditySourceQuoteSchema.parse({
+    ...commodityQuote,
+    id: emptyResonator.ids[0],
+    baseType: emptyResonator.baseType,
+    variant: emptyResonator.variant,
+});
+
+export function legacyResonatorPrice(id = emptyResonatorQuote.id) {
+    const reference = {
+        source: "stash-commodity",
+        game: "poe1",
+        realm: "pc",
+        league: "Standard",
+        currency: "chaos",
+        id,
+        baseType: emptyResonator.baseType,
+    };
+    return {
+        amount: 16.5,
+        currency: "chaos",
+        source: "market" as const,
+        confidence: null,
+        cohortId: `stash-commodity:v1:${encodeURIComponent(JSON.stringify(reference))}`,
+    };
+}
 
 export const unravellingId = "Metadata/Items/Currency/CurrencyRemoveZanaInfluence";
 export const unravellingName = "Orb of Unravelling";
