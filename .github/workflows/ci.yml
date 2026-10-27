@@ -240,6 +240,17 @@ jobs:
       - run: vp install --frozen-lockfile
       - name: Build
         run: vp run poe-boats#build
+      # Migrations run before the new code deploys, so each one must keep working with the
+      # code already deployed. A failed migration stops the deployment.
+      - name: Apply database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::The ${ENVIRONMENT} GitHub environment has no DATABASE_URL secret; deployments apply database migrations first."
+            exit 1
+          fi
+          vp run poe-boats#db:migrate
       - name: Deploy code
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
