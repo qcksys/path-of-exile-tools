@@ -250,7 +250,8 @@ async function captureRound(
         );
     }
 
-    // Active rows were all seen now; replace their observations within this hour.
+    // Active rows were all seen now; refresh their observations within this hour in place, since
+    // DuckDB rejects reinserting a deleted key whose index entry was loaded from disk.
     const touchedIds = touched.map((stash) => stash.stashId);
     await conn.run(
         `CREATE OR REPLACE TEMP TABLE page_equipment AS
@@ -264,16 +265,22 @@ async function captureRound(
         WHERE stash.removed_at IS NULL`,
         [JSON.stringify(touched), ...touchedIds],
     );
+    const sameRow = `h.observed_hour = $1 AND h.account_name = e.account_name
+        AND h.item_id = e.item_id AND h.revision = e.revision`;
     await conn.run(
-        `DELETE FROM ps_equipment_hour h USING page_equipment e
-        WHERE h.observed_hour = $1 AND h.account_name = e.account_name
-            AND h.item_id = e.item_id AND h.revision = e.revision`,
+        `UPDATE ps_equipment_hour h SET
+            stash_id = e.stash_id, league = e.league, matches = e.matches,
+            unknown_matches = e.unknown_matches, price_amount = e.price_amount,
+            price_currency = e.price_currency, last_seen_at = e.last_seen_at
+        FROM page_equipment e WHERE ${sameRow}`,
         [hour],
     );
     await conn.run(
         `INSERT INTO ps_equipment_hour BY NAME
         SELECT * EXCLUDE (row_id), epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
-        FROM page_equipment`,
+        FROM page_equipment e
+        WHERE NOT EXISTS (SELECT 1 FROM ps_equipment_hour h WHERE ${sameRow})`,
+        [hour],
     );
     if (cohorts.length) {
         await conn.run(

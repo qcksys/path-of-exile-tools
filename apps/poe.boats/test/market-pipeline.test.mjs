@@ -1,4 +1,7 @@
 // biome-ignore-all lint/style/useNamingConvention: Source fixtures and SQL rows use upstream names.
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { flushRollups, runPipeline } from "../../../packages/poe-stash-ingest/src/pipeline.ts";
 import { ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest.ts";
@@ -201,6 +204,27 @@ describe("sale inference", () => {
         await ingest([{ ...stash, items: [] }]);
         expect(await events()).toHaveLength(1);
     });
+});
+
+it("re-observes a stash within the same hour after the database is reopened", async () => {
+    // Index entries loaded from disk reject a key deleted and reinserted in one transaction.
+    const dir = await mkdtemp(join(tmpdir(), "ingest-reopen-"));
+    const path = join(dir, "market.duckdb");
+    try {
+        await db.close();
+        db = await openDb(path);
+        await ingest([stash]);
+        await db.close();
+        db = await openDb(path);
+        await ingest([{ ...stash, items: [{ ...item, note: "~price 11 divine" }] }]);
+        expect(
+            await queryAll(db.conn, "SELECT item_id, price_amount FROM ps_listing_hour"),
+        ).toEqual([{ item_id: "item-0", price_amount: 11 }]);
+    } finally {
+        await db.close();
+        db = await openDb(":memory:");
+        await rm(dir, { recursive: true, force: true });
+    }
 });
 
 it("filters ingestion by season and refuses to reuse its cursor for another scope", async () => {

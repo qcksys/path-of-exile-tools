@@ -245,9 +245,10 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
     }
     if (!listed.length) return result;
 
-    // Active listings were all seen now, so replace their observations within the current hour
+    // Active listings were all seen now, so refresh their observations within the current hour
     // instead of merging: zonemaps confine the hour to the newest row groups. Earlier observations
-    // of items removed during this hour stay.
+    // of items removed during this hour stay. Existing rows are updated in place, because DuckDB
+    // rejects reinserting a deleted key whose index entry was loaded from disk.
     const listedIds = listed.map((stash) => stash.stashId);
     await conn.run(
         `CREATE OR REPLACE TEMP TABLE page_listing AS
@@ -260,15 +261,35 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
         WHERE stash.removed_at IS NULL`,
         [JSON.stringify(listed), ...listedIds],
     );
+    const sameRow = `h.observed_hour = epoch(date_trunc('hour', current_timestamp))::BIGINT
+        AND h.stash_id = l.stash_id AND h.account_name = l.account_name AND h.item_id = l.item_id`;
     await conn.run(
-        `DELETE FROM ps_listing_hour h USING page_listing l
-        WHERE h.observed_hour = epoch(date_trunc('hour', current_timestamp))::BIGINT
-            AND h.stash_id = l.stash_id AND h.account_name = l.account_name
-            AND h.item_id = l.item_id`,
+        `UPDATE ps_listing_hour h SET
+            league = l.league,
+            item_key = l.item_key,
+            icon_asset = l.icon_asset,
+            identified = l.identified,
+            frame_type = l.frame_type,
+            type_line = l.type_line,
+            base_type = l.base_type,
+            name = l.name,
+            rarity = l.rarity,
+            corrupted = l.corrupted,
+            foil_variation = l.foil_variation,
+            price_amount = l.price_amount,
+            price_currency = l.price_currency,
+            stack_size = l.stack_size,
+            mod_signature = l.mod_signature,
+            signature_value = l.signature_value,
+            first_seen_at = l.first_seen_at,
+            last_seen_at = l.last_seen_at
+        FROM page_listing l WHERE ${sameRow}`,
     );
     await conn.run(
         `INSERT INTO ps_listing_hour BY NAME
-        SELECT *, epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour FROM page_listing`,
+        SELECT *, epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
+        FROM page_listing l
+        WHERE NOT EXISTS (SELECT 1 FROM ps_listing_hour h WHERE ${sameRow})`,
     );
     return result;
 }
