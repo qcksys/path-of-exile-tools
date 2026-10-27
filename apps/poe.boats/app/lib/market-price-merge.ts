@@ -141,6 +141,19 @@ function cdf(points: Point[], x: number, left: boolean) {
     return to.x === from.x ? from.q : from.q + ((to.q - from.q) * (x - from.x)) / (to.x - from.x);
 }
 
+type Component = { weight: number; mean: number | null; points: Point[] };
+
+function component(summary: MarketPriceSummary, multiplier: number): Component {
+    return {
+        weight: summary.count,
+        mean: summary.mean === undefined ? null : summary.mean * multiplier,
+        points: QUANTILES.flatMap(([key, q]) => {
+            const value = summary[key];
+            return value === undefined ? [] : [{ x: value * multiplier, q }];
+        }),
+    };
+}
+
 /**
  * Merges per-currency listing summaries into one distribution in the display currency. Each
  * currency's stored quantiles define its CDF; the merged CDF is their listing-count-weighted
@@ -150,7 +163,7 @@ export function mergeMarketPrices(
     prices: Record<string, MarketPriceSummary> | null,
     rate: (currency: string) => number | undefined,
 ): MergedMarketPrice | null {
-    const components: { weight: number; mean: number | null; points: Point[] }[] = [];
+    const components: Component[] = [];
     let unconverted = 0;
     for (const [currency, summary] of Object.entries(prices ?? {})) {
         const multiplier = rate(currency);
@@ -158,15 +171,76 @@ export function mergeMarketPrices(
             unconverted += summary.count;
             continue;
         }
-        components.push({
-            weight: summary.count,
-            mean: summary.mean === undefined ? null : summary.mean * multiplier,
-            points: QUANTILES.flatMap(([key, q]) => {
-                const value = summary[key];
-                return value === undefined ? [] : [{ x: value * multiplier, q }];
-            }),
-        });
+        components.push(component(summary, multiplier));
     }
+    const mixed = mixComponents(components);
+    return mixed && { ...mixed, unconverted };
+}
+
+/** Combines the same currency's summaries from several markets, e.g. every foil variation of an item. */
+export function mergePriceSummaries(
+    records: (Record<string, MarketPriceSummary> | null)[],
+): Record<string, MarketPriceSummary> | null {
+    const byCurrency = new Map<string, MarketPriceSummary[]>();
+    for (const record of records)
+        for (const [currency, summary] of Object.entries(record ?? {}))
+            byCurrency.set(currency, [...(byCurrency.get(currency) ?? []), summary]);
+    if (!byCurrency.size) return null;
+    return Object.fromEntries(
+        [...byCurrency].map(([currency, summaries]) => {
+            if (summaries.length === 1) return [currency, summaries[0]!];
+            const { mean, ...mixed } = mixComponents(summaries.map((s) => component(s, 1)))!;
+            return [currency, mean === null ? mixed : { ...mixed, mean }];
+        }),
+    );
+}
+
+type MarketRowCounts = {
+    listingCount: number;
+    uniqueSellers: number;
+    removedCount: number;
+    likelySales: number;
+    relistedCount: number;
+    pendingCount: number;
+    prices: Record<string, MarketPriceSummary> | null;
+    salesPrices: Record<string, MarketPriceSummary> | null;
+    firstSeenAt: string;
+    lastSeenAt: string;
+};
+
+/**
+ * Merges one hour's rows of markets that display as one, such as an item's foil variations.
+ * Counts are summed (sellers listing several variations count once per variation), prices are
+ * mixed per currency, and the other columns come from the row with the most listings.
+ */
+export function mergeMarketRows<Row extends MarketRowCounts>(rows: Row[]): Row {
+    const [first, ...rest] = rows;
+    if (!first) throw new Error("No rows to merge.");
+    if (!rest.length) return first;
+    const representative = rows.reduce((best, row) =>
+        row.listingCount > best.listingCount ? row : best,
+    );
+    const sum = (key: keyof MarketRowCounts) =>
+        rows.reduce((total, row) => total + (row[key] as number), 0);
+    return {
+        ...representative,
+        listingCount: sum("listingCount"),
+        uniqueSellers: sum("uniqueSellers"),
+        removedCount: sum("removedCount"),
+        likelySales: sum("likelySales"),
+        relistedCount: sum("relistedCount"),
+        pendingCount: sum("pendingCount"),
+        prices: mergePriceSummaries(rows.map((row) => row.prices)),
+        salesPrices: mergePriceSummaries(rows.map((row) => row.salesPrices)),
+        firstSeenAt: rows.map((row) => row.firstSeenAt).sort()[0]!,
+        lastSeenAt: rows
+            .map((row) => row.lastSeenAt)
+            .sort()
+            .at(-1)!,
+    };
+}
+
+function mixComponents(components: Component[]): Omit<MergedMarketPrice, "unconverted"> | null {
     const count = components.reduce((total, component) => total + component.weight, 0);
     if (!count) return null;
     const mixture = (x: number, left: boolean) =>
@@ -192,7 +266,6 @@ export function mergeMarketPrices(
     const means = components.map((component) => component.mean);
     return {
         count,
-        unconverted,
         mean: means.every((mean) => mean !== null)
             ? components.reduce((total, c) => total + c.weight * c.mean!, 0) / count
             : null,
