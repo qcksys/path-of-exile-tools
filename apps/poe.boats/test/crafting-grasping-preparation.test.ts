@@ -14,7 +14,7 @@ import { quote } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r15",
+    (entry) => entry.game === "poe1" && entry.revision === "r16",
 )!;
 const previousRuleset = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r9",

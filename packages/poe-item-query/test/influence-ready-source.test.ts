@@ -197,3 +197,54 @@ it("keeps malformed, ambiguous and non-native evidence unknown", () => {
         ),
     ).toEqual({ status: "unknown" });
 });
+
+it("admits native Heat-attuned sources only in model 6 and preserves model 5 behavior", () => {
+    const heat = {
+        id: "Metadata/Items/Armours/Shields/ShieldStrE3",
+        baseType: "Heat-attuned Tower Shield",
+        itemClass: "Shield" as const,
+        scourImplicits: {
+            ids: ["ChanceToInflictScorchOnEnemyOnBlockImplicitE1"],
+            texts: [["Scorch Enemies when you Block their Damage"]],
+        },
+    };
+    const prior = compileSourcePreparation(textModel, { ...model, bases: [...model.bases, heat] });
+    const current = compileSourcePreparation(textModel, {
+        ...model,
+        format: 6,
+        bases: [...model.bases, heat],
+    });
+    const input = source(heat);
+    const original = structuredClone(input);
+    expect(prior(input, profile)).toEqual({ status: "no-match" });
+    expect(current(input, profile)).toMatchObject({
+        status: "match",
+        record: { facts: { baseId: heat.id, prefixes: 0, suffixes: 0 } },
+    });
+    expect(input).toEqual(original);
+    for (const base of model.bases)
+        expect(current(source(base), profile)).toEqual(prior(source(base), profile));
+    for (const change of [
+        { influences: { shaper: true } },
+        { implicitMods: [] },
+        {
+            implicitMods: [
+                "Scorch Enemies when you Block their Damage",
+                "+1% to maximum Fire Resistance",
+            ],
+        },
+        { enchantMods: ["Unremoved enchantment"] },
+        { intangibility: 84 },
+        { fractured: true },
+    ]) {
+        const altered = structuredClone(input);
+        Object.assign(altered.item, change);
+        expect(current(altered, profile).status).not.toBe("match");
+    }
+    const rare = structuredClone(input);
+    rare.item.rarity = "Rare";
+    rare.item.frameType = 2;
+    rare.item.explicitMods = ["Disposable affix"];
+    const cleanup = { kind: "scour-v1", crafted: false, enchanted: false } as const;
+    expect(current(rare, cleanup)).toEqual(prior(rare, cleanup));
+});

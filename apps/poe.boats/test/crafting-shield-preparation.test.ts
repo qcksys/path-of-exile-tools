@@ -9,7 +9,7 @@ import { quote } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r15",
+    (entry) => entry.game === "poe1" && entry.revision === "r16",
 )!;
 const scour = "Metadata/Items/Currency/CurrencyConvertToNormal";
 const sources = [
@@ -209,7 +209,9 @@ it.each([
     for (const node of previous.nodes)
         if (node.kind === "acquire")
             node.alternatives = node.alternatives.filter(
-                (alternative) => alternative.id !== "make-scour",
+                (alternative) =>
+                    alternative.kind !== "production" ||
+                    !alternative.nodeId.startsWith("shield-make-"),
             );
     const options = { estimateIterations: 1, workLimit: 1000 };
     const currentResult = calculateCraftingGraph(catalog, graph, options);

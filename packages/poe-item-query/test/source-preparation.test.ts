@@ -362,14 +362,14 @@ it("accepts preparation model formats 1 and 2 without changing the source projec
     input.item.explicitMods = [];
     expect(current(input, profile)).toEqual({ status: "unknown" });
     expect(current(input, profile)).toEqual(legacy(input, profile));
-    expect(sourcePreparationModelSchema.safeParse({ ...sourceModel, format: 6 }).success).toBe(
+    expect(sourcePreparationModelSchema.safeParse({ ...sourceModel, format: 7 }).success).toBe(
         false,
     );
 });
 
-it("preserves fractured source results when model 5 adds influence-ready eligibility", () => {
+it.each([5, 6] as const)("preserves fractured source results in model %s", (format) => {
     const previous = compileResult(model, { ...sourceModel, format: 4 });
-    const current = compileResult(model, { ...sourceModel, format: 5 });
+    const current = compileResult(model, { ...sourceModel, format });
     for (const change of [{}, { corrupted: true }, { intangibility: 84 }, { explicitMods: [] }]) {
         const input = source();
         Object.assign(input.item, change);

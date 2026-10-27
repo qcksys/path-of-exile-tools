@@ -18,10 +18,12 @@ import { craftingNodeCostPrice } from "./crafting-node-prices";
 const additionalScouringBases = new Set([
     "Metadata/Items/Armours/Boots/BootsAtlas1",
     "Metadata/Items/Armours/BodyArmours/BodyDex16",
+    "Metadata/Items/Armours/BodyArmours/BodyInt17",
 ]);
 const influenceReadyBases = new Set([
     "Metadata/Items/Armours/Shields/ShieldStr17",
     "Metadata/Items/Armours/Shields/ShieldInt16",
+    "Metadata/Items/Armours/Shields/ShieldStrE3",
 ]);
 
 export function purchaseSourceProfile(alternative: GraphPurchase) {
@@ -39,28 +41,46 @@ export function validateSourcePreparationRevision(
 ) {
     if (!source) return;
     if (source.kind === "influence-ready-v1") {
-        if (engine !== "crafting-graph-15" || !influenceReadyBases.has(baseId))
-            throw new Error("Influence-ready shield sources require crafting engine 15.");
+        if (
+            !["crafting-graph-15", "crafting-graph-16"].includes(engine) ||
+            !influenceReadyBases.has(baseId) ||
+            (baseId === "Metadata/Items/Armours/Shields/ShieldStrE3" &&
+                engine !== "crafting-graph-16")
+        )
+            throw new Error(
+                "Influence-ready shield sources require crafting engine 15 or 16; Heat-attuned sources require engine 16.",
+            );
         return;
     }
     if (source.kind === "scour-v1") {
+        if (
+            baseId === "Metadata/Items/Armours/BodyArmours/BodyInt17" &&
+            engine !== "crafting-graph-16"
+        )
+            throw new Error("Scouring Vaal Regalia sources requires crafting engine 16.");
         if (
             ![
                 "crafting-graph-12",
                 "crafting-graph-13",
                 "crafting-graph-14",
                 "crafting-graph-15",
+                "crafting-graph-16",
             ].includes(engine)
         )
             throw new Error(
-                "Scouring source preparation requires crafting engine 12, 13, 14 or 15.",
+                "Scouring source preparation requires crafting engine 12, 13, 14, 15 or 16.",
             );
         if (
             additionalScouringBases.has(baseId) &&
-            !["crafting-graph-13", "crafting-graph-14", "crafting-graph-15"].includes(engine)
+            ![
+                "crafting-graph-13",
+                "crafting-graph-14",
+                "crafting-graph-15",
+                "crafting-graph-16",
+            ].includes(engine)
         )
             throw new Error(
-                "Scouring these boots or body armour requires crafting engine 13, 14 or 15.",
+                "Scouring these boots or body armour requires crafting engine 13, 14, 15 or 16.",
             );
     } else if (
         ![
@@ -69,9 +89,10 @@ export function validateSourcePreparationRevision(
             "crafting-graph-13",
             "crafting-graph-14",
             "crafting-graph-15",
+            "crafting-graph-16",
         ].includes(engine)
     )
-        throw new Error("Source preparation requires crafting engine 11, 12, 13, 14 or 15.");
+        throw new Error("Source preparation requires crafting engine 11, 12, 13, 14, 15 or 16.");
 }
 
 export function sourcePreparationMethodList(source: SourcePreparation): CraftingMethod[] {
@@ -131,8 +152,8 @@ export function validateSourcePreparation(engine: CraftingEngine, purchase: Grap
         )
             throw new Error(
                 source.kind === "influence-ready-v1"
-                    ? "An influence-ready source requires a clean uninfluenced Normal Pinnacle Tower Shield or Titanium Spirit Shield template with only native implicits."
-                    : "A Scouring source requires a baseline Normal shield or helmet, Cold/Lightning Two-Toned Boots, or Zodiac Leather template with only its preserved influences and native implicits.",
+                    ? "An influence-ready source requires a clean uninfluenced Normal Pinnacle, Titanium or Heat-attuned shield template with only native implicits."
+                    : "A Scouring source requires a baseline Normal shield or helmet, Cold/Lightning Two-Toned Boots, Zodiac Leather or Vaal Regalia template with only its preserved influences and native implicits.",
             );
         sourcePreparationMethods(engine, source);
         return;
