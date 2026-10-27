@@ -28,7 +28,7 @@ function variantLabel(variant: VariantRow) {
         variant.signatureValue,
         variant.identified ? "" : "Unidentified",
         variant.corrupted ? "Corrupted" : "",
-        variant.foilVariation >= 0 ? `Foil ${variant.foilVariation}` : "",
+        variant.foilVariation >= 0 ? "Foil" : "",
     ].filter(Boolean);
     return parts.length ? parts.join(" · ") : "Standard";
 }
@@ -181,9 +181,7 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                             <p className="text-sm text-muted-foreground">
                                 {selected.identified ? "Identified" : "Unidentified"}
                                 {selected.corrupted ? " · Corrupted" : ""}
-                                {selected.foilVariation >= 0
-                                    ? ` · Foil ${selected.foilVariation}`
-                                    : ""}
+                                {selected.foilVariation >= 0 ? " · Foil" : ""}
                                 {selected.signatureKind ? ` · ${selected.signatureValue}` : ""}
                             </p>
                         </div>

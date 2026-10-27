@@ -1,10 +1,13 @@
 import { type ExchangeSnapshot, exchangeCurrencyId, listingCurrencyId } from "@poe-tools/market";
 import { describe, expect, it } from "vite-plus/test";
+import type { MarketPriceSummary, TStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
 import {
     chaosRatesByHour,
     marketDisplayRate,
     marketRatePairs,
     mergeMarketPrices,
+    mergeMarketRows,
+    mergePriceSummaries,
 } from "~/lib/market-price-merge";
 
 const hour = 1_792_836_000;
@@ -98,6 +101,75 @@ describe("merging listing currencies", () => {
             ),
         ).toBeNull();
         expect(mergeMarketPrices(null, () => 1)).toBeNull();
+    });
+});
+
+describe("merging foil variations", () => {
+    function row(
+        listingCount: number,
+        prices: Record<string, MarketPriceSummary> | null,
+        overrides: Partial<TStashUniqueHourlyS> = {},
+    ) {
+        return {
+            foilVariation: 3,
+            name: "Example",
+            listingCount,
+            uniqueSellers: listingCount,
+            removedCount: 1,
+            likelySales: 1,
+            relistedCount: 0,
+            pendingCount: 2,
+            prices,
+            salesPrices: null,
+            firstSeenAt: "2026-10-24T02:00:00Z",
+            lastSeenAt: "2026-10-24T02:00:00Z",
+            ...overrides,
+        };
+    }
+
+    it("keeps a single currency summary as stored and mixes repeated ones", () => {
+        const chaosA = { count: 3, min: 10, mean: 10, median: 10, max: 10 };
+        const chaosB = { count: 1, min: 50, mean: 50, median: 50, max: 50 };
+        const divine = { count: 2, min: 1, median: 1, max: 1 };
+        const merged = mergePriceSummaries([{ chaos: chaosA, divine }, { chaos: chaosB }, null])!;
+        expect(merged.divine).toBe(divine);
+        expect(merged.chaos).toMatchObject({ count: 4, min: 10, mean: 20, median: 10, max: 50 });
+        expect(mergePriceSummaries([null, {}])).toBeNull();
+    });
+
+    it("sums counts, mixes prices and keeps the most listed row's details", () => {
+        const merged = mergeMarketRows([
+            row(1, { chaos: { count: 1, min: 100, median: 100, max: 100 } }, { name: "Few" }),
+            row(
+                3,
+                { chaos: { count: 3, min: 20, median: 20, max: 20 } },
+                {
+                    foilVariation: 7,
+                    name: "Most",
+                    firstSeenAt: "2026-10-24T01:00:00Z",
+                    salesPrices: { chaos: { count: 1, min: 25, median: 25, max: 25 } },
+                },
+            ),
+            row(0, null, { lastSeenAt: "2026-10-24T03:00:00Z" }),
+        ]);
+        expect(merged).toMatchObject({
+            foilVariation: 7,
+            name: "Most",
+            listingCount: 4,
+            uniqueSellers: 4,
+            removedCount: 3,
+            likelySales: 3,
+            pendingCount: 6,
+            firstSeenAt: "2026-10-24T01:00:00Z",
+            lastSeenAt: "2026-10-24T03:00:00Z",
+            salesPrices: { chaos: { count: 1, median: 25 } },
+        });
+        expect(merged.prices!.chaos).toMatchObject({ count: 4, min: 20, median: 20, max: 100 });
+    });
+
+    it("returns a lone row unchanged", () => {
+        const only = row(2, null);
+        expect(mergeMarketRows([only])).toBe(only);
     });
 });
 

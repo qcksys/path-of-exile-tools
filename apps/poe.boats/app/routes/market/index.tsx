@@ -187,7 +187,7 @@ function marketColumns(filters: MarketFilters, game: Game, chaosRates: Record<st
                     <p className="mt-1 max-w-md break-words text-xs text-muted-foreground">
                         {row.baseType} · {row.identified ? "Identified" : "Unidentified"}
                         {row.corrupted ? " · Corrupted" : ""}
-                        {row.foilVariation >= 0 ? ` · Foil ${row.foilVariation}` : ""}
+                        {row.foilVariation >= 0 ? " · Foil" : ""}
                         {row.signatureKind ? ` · ${row.signatureValue}` : ""}
                     </p>
                 </>

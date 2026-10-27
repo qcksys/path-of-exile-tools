@@ -105,11 +105,20 @@ it("fetches full item records by primary key only after selecting the market pag
     expect(result.rows.every((row) => row.hour === hour && row.rank === 1)).toBe(true);
     const query = rowsStatement();
     const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
+    // Foil variations share a primary key prefix, so each market joins its latest hour's rows.
     expect(
-        plan.some(
-            (row) => row.type === "eq_ref" && row.key === "PRIMARY" && Number(row.rows) === 1,
-        ),
+        plan.some((row) => row.type === "ref" && row.key === "PRIMARY" && Number(row.rows) === 1),
     ).toBe(true);
+    const records = statements.find((entry) =>
+        entry.sql.includes(`\`${getTableName(market)}\` FORCE INDEX (\`PRIMARY\`)`),
+    )!;
+    const [recordPlan] = await connection.query<RowDataPacket[]>(
+        `EXPLAIN ${records.sql}`,
+        records.params,
+    );
+    expect(recordPlan).toEqual([
+        expect.objectContaining({ type: "range", key: "PRIMARY", rows: 20 }),
+    ]);
 });
 
 it.each([
@@ -385,6 +394,81 @@ it("preserves variant totals, the latest listed observation, and exact item hist
     expect(searched.rows.every((row) => row.hour === hour - 3600 && row.periodSales === 9)).toBe(
         true,
     );
+});
+
+it("merges every foil variation into one market for the list, variants and history", async () => {
+    const foil = (foilVariation: number, overrides: Partial<TStashUniqueHourlyI>) =>
+        observation({ league: "Foils", foilVariation, ...overrides });
+    const chaos = (count: number, median: number) => ({
+        chaos: { count, min: median, median, max: median },
+    });
+    await db
+        .insert(market)
+        .values([
+            foil(-1, { listingCount: 9, likelySales: 1, prices: chaos(9, 5) }),
+            foil(-1, { corrupted: true, listingCount: 1, prices: chaos(1, 6) }),
+            foil(2, { hour: hour - 3600, listingCount: 2, likelySales: 3, prices: chaos(2, 40) }),
+            foil(2, { listingCount: 1, uniqueSellers: 1, likelySales: 1, prices: chaos(1, 100) }),
+            foil(7, { listingCount: 3, uniqueSellers: 2, likelySales: 2, prices: chaos(3, 20) }),
+            foil(7, { corrupted: true, listingCount: 4, likelySales: 5, prices: chaos(4, 30) }),
+        ]);
+    const filters = marketFiltersSchema.parse({ league: "Foils", currency: "chaos" });
+    const list = await marketData(db as unknown as TDatabase, filters, "list");
+    expect(
+        list.rows.map((row) => [row.corrupted, row.foilVariation, row.listingCount, row.hour]),
+    ).toEqual([
+        [false, 0, 4, hour],
+        [true, 0, 4, hour],
+        [false, -1, 9, hour],
+        [true, -1, 1, hour],
+    ]);
+    expect(list.rows[0]).toMatchObject({
+        uniqueSellers: 3,
+        periodSales: 6,
+        prices: { chaos: { count: 4, min: 20, median: 20, max: 100 } },
+    });
+    const byListings = await marketData(
+        db as unknown as TDatabase,
+        { ...filters, order: "listings-desc", listingsMin: 4, listingsMax: 4 },
+        "list",
+    );
+    expect(byListings.rows.map((row) => [row.corrupted, row.foilVariation])).toEqual([
+        [false, 0],
+        [true, 0],
+    ]);
+    const byPrice = await marketData(
+        db as unknown as TDatabase,
+        { ...filters, order: "price-desc" },
+        "list",
+    );
+    // The foil market's listing-weighted median is (3 × 20 + 100) / 4 = 40 chaos.
+    expect(byPrice.rows.map((row) => [row.corrupted, row.foilVariation])).toEqual([
+        [false, 0],
+        [true, 0],
+        [true, -1],
+        [false, -1],
+    ]);
+
+    // An old link to one foil variation opens the merged foil market.
+    const item = await marketData(
+        db as unknown as TDatabase,
+        { ...filters, item: "Example", foil: 7 },
+        "history",
+    );
+    expect(item.filters.foil).toBe(0);
+    expect(item.variants.map((row) => [row.corrupted, row.foilVariation, row.periodSales])).toEqual(
+        [
+            [false, 0, 6],
+            [true, 0, 5],
+            [false, -1, 1],
+            [true, -1, 0],
+        ],
+    );
+    expect(item.history.map((row) => [row.hour, row.foilVariation, row.listingCount])).toEqual([
+        [hour - 3600, 0, 2],
+        [hour, 0, 4],
+    ]);
+    expect(item.history[1]!.merged).toMatchObject({ count: 4, min: 20, max: 100 });
 });
 
 it("keeps stable sales ordering and page boundaries when fetching full records", async () => {
