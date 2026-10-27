@@ -6,9 +6,9 @@ export const MARKET_CATEGORIES = {
     incubators: { label: "Incubators", group: "General" },
     tattoos: { label: "Tattoos", group: "General" },
     omens: { label: "Omens", group: "General" },
-    weapons: { label: "Weapons", group: "Equipment & gems" },
-    armour: { label: "Armour", group: "Equipment & gems" },
-    accessories: { label: "Accessories", group: "Equipment & gems" },
+    weapons: { label: "Unique weapons", group: "Equipment & gems" },
+    armour: { label: "Unique armour", group: "Equipment & gems" },
+    accessories: { label: "Unique accessories", group: "Equipment & gems" },
     flasks: { label: "Flasks", group: "Equipment & gems" },
     jewels: { label: "Jewels", group: "Equipment & gems" },
     gems: { label: "Skill gems", group: "Equipment & gems" },
@@ -24,10 +24,24 @@ export const MARKET_CATEGORIES = {
     essences: { label: "Essences", group: "Crafting" },
     catalysts: { label: "Catalysts", group: "Crafting" },
     beasts: { label: "Beasts", group: "Crafting" },
+    "armour-bases": { label: "Armour bases", group: "Crafting bases" },
+    "weapon-bases": { label: "Weapon bases", group: "Crafting bases" },
+    "accessory-bases": { label: "Accessory bases", group: "Crafting bases" },
     other: { label: "Other items", group: "Other" },
 } as const;
 
 export type MarketCategory = keyof typeof MARKET_CATEGORIES;
+
+/** Normal, magic and rare equipment is listed by crafting base cohort, apart from its uniques. */
+export const MARKET_BASE_CATEGORIES: Partial<Record<MarketCategory, MarketCategory>> = {
+    weapons: "weapon-bases",
+    armour: "armour-bases",
+    accessories: "accessory-bases",
+};
+
+export function isMarketBaseCategory(category: MarketCategory | "all") {
+    return Object.values(MARKET_BASE_CATEGORIES).includes(category as MarketCategory);
+}
 
 export function marketBaseCategory(name: string, itemClass: string): MarketCategory {
     if (name.includes("Scarab")) return "scarabs";

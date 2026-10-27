@@ -24,6 +24,25 @@ export function itemRarity(item: ApiItem): ApiItem["rarity"] {
     );
 }
 
+// The API omits the Quality property at 0% but still lists the item's other properties.
+function baseQuality(item: ApiItem): number | undefined {
+    if (!Array.isArray(item.properties)) return undefined;
+    for (const property of item.properties) {
+        if (
+            typeof property !== "object" ||
+            property === null ||
+            Array.isArray(property) ||
+            property.name !== "Quality"
+        )
+            continue;
+        const values = property.values;
+        const text = Array.isArray(values) && Array.isArray(values[0]) ? values[0][0] : undefined;
+        const match = typeof text === "string" ? /^\+?(\d+)%$/.exec(text) : null;
+        return match ? Number(match[1]) : undefined;
+    }
+    return 0;
+}
+
 export function normalizeApiItem(
     game: ItemRecord["game"],
     source: ItemRecord["source"],
@@ -64,6 +83,7 @@ export function normalizeApiItem(
         facts: itemFactsSchema.parse({
             modifiers: knownModifiers,
             modifiersComplete: complete && !item.implicitMods?.length,
+            quality: baseQuality(item),
             prefixes:
                 item.extended?.prefixes ??
                 (complete
