@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { craftingWorkspaceStorageKey } from "../../../app/lib/crafting-workspace-storage";
-import { selectValue } from "./control-helpers";
+import { hoverOpen, selectValue } from "./control-helpers";
 import { choose, select } from "./recombinator-helpers";
 
 test("closing a hover-opened pinned item preview restores focus without reopening it", async ({
@@ -12,7 +12,7 @@ test("closing a hover-opened pinned item preview restores focus without reopenin
     const graph = page.getByRole("region", { name: "Crafting project graph", exact: true });
     await expect(graph.getByRole("status")).toContainText("Initial sample: 8 trials");
     const preview = graph.getByRole("button", { name: "Preview Buy Merciless donor", exact: true });
-    await preview.hover();
+    await hoverOpen(preview);
     const card = page.getByRole("region", { name: "Buy Merciless donor", exact: true });
     await expect(card).toBeVisible();
     await page.getByRole("button", { name: "Pin item card", exact: true }).click();
@@ -50,8 +50,9 @@ test("graph shows outcome detail, retry paths, pinnable items and measured layou
         0,
     );
     expect(await graph.locator('.react-flow__edge[data-id*="restart"]').count()).toBeGreaterThan(0);
+    await expect(graph.getByRole("status")).toContainText("Initial sample: 8 trials");
     const preview = graph.getByRole("button", { name: "Preview Buy Merciless donor", exact: true });
-    await preview.hover();
+    await hoverOpen(preview);
     const card = page.getByRole("region", { name: "Buy Merciless donor", exact: true });
     await expect(card).toBeVisible();
     await expect(card).toContainText("Spine Bow");
@@ -162,12 +163,12 @@ test("helical stages automatically show modifiers and odds, with inline editors 
     const strength = graph.locator('.react-flow__node[data-id="strength"]');
     await expect(strength.locator("[data-stage-mods]")).toContainText("Strength");
     await expect(strength).toContainText(/100\.0%/);
-    await strength
-        .getByRole("button", {
+    await hoverOpen(
+        strength.getByRole("button", {
             name: "Preview Essence of Rage: spend at most 10 strands",
             exact: true,
-        })
-        .hover();
+        }),
+    );
     const card = page.getByRole("region", {
         name: "Essence of Rage: spend at most 10 strands",
         exact: true,
