@@ -6,6 +6,7 @@ import { ItemArt } from "~/components/item-art";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
 import { MarketModValues } from "~/components/market-mod-values";
 import { MarketPriceChart } from "~/components/market-price-chart";
+import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import { marketItemArtUrl } from "~/lib/item-presentation";
@@ -20,6 +21,10 @@ export function loader({ request, context, params }: Route.LoaderArgs) {
         parseMarketFilters(request, { item: params.item }),
         "history",
     );
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+    return <RouteError error={error} />;
 }
 
 type HistoryRow = Awaited<ReturnType<typeof getMarketData>>["history"][number];

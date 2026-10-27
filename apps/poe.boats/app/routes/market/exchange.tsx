@@ -12,6 +12,7 @@ import {
 } from "~/components/market-exchange";
 import { MarketExchangeChart } from "~/components/market-exchange-chart";
 import { marketUtc } from "~/components/market-filters";
+import { RouteError } from "~/components/route-error";
 import { Button } from "~/components/ui/button";
 import { dbContext } from "~/context";
 import { getMarketExchangeItem } from "~/db/queries/market.queries";
@@ -38,6 +39,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     const { item } = data;
     if (!item) throw new Response("Unknown exchange item", { status: 404 });
     return { ...data, item, filters: { ...filters, league: data.league } };
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+    return <RouteError error={error} />;
 }
 
 const CHAOS = exchangeCurrencyId("chaos")!;
