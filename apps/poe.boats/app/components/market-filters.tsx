@@ -1,7 +1,7 @@
 import { exchangeListingCurrencySchema } from "@poe-tools/market";
-import { Form, useNavigation } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { Form, useNavigation, useSubmit } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
-import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -15,6 +15,8 @@ import {
 export const marketUtc = (hour: number) =>
     `${new Date(hour * 1000).toISOString().slice(0, 16).replace("T", " ")} UTC`;
 
+const APPLY_DELAY_MS = 400;
+
 export function MarketFiltersForm({
     filters,
     seasons,
@@ -23,6 +25,23 @@ export function MarketFiltersForm({
     seasons: { league: string }[];
 }) {
     const navigation = useNavigation();
+    const submit = useSubmit();
+    const form = useRef<HTMLFormElement>(null);
+    const pending = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const apply = () => {
+        clearTimeout(pending.current);
+        pending.current = setTimeout(() => {
+            if (form.current) submit(form.current);
+        }, APPLY_DELAY_MS);
+    };
+    useEffect(() => () => clearTimeout(pending.current), []);
+    // The search box keeps what the user is typing while their earlier text loads;
+    // it only follows the URL (e.g. a table column filter) when it isn't focused.
+    const search = useRef<HTMLInputElement>(null);
+    const [q, setQ] = useState(filters.q);
+    useEffect(() => {
+        if (document.activeElement !== search.current) setQ(filters.q);
+    }, [filters.q]);
     const item = filters.item
         ? {
               itemKey: filters.item,
@@ -42,8 +61,10 @@ export function MarketFiltersForm({
         <Label className="grid gap-1.5 text-xs text-muted-foreground">
             {label}
             <FormSelect
+                key={String(filters[name])}
                 name={name}
                 defaultValue={String(filters[name])}
+                onValueChange={apply}
                 className="min-w-32 bg-background text-sm text-foreground"
             >
                 {Object.entries(options).map(([value, text]) => (
@@ -56,9 +77,9 @@ export function MarketFiltersForm({
     );
     return (
         <Form
+            ref={form}
             method="get"
             action={href.split("?")[0]}
-            key={href}
             className="space-y-4 rounded-xl border border-border bg-card p-4"
         >
             {MARKET_RANGE_PARAMS.map((param) =>
@@ -103,8 +124,10 @@ export function MarketFiltersForm({
                 <Label className="grid gap-1.5 text-xs text-muted-foreground">
                     Price currency
                     <FormSelect
+                        key={filters.currency}
                         name="currency"
                         defaultValue={filters.currency}
+                        onValueChange={apply}
                         className="min-w-32 bg-background text-sm text-foreground"
                     >
                         {currencies.map((currency) => (
@@ -120,9 +143,14 @@ export function MarketFiltersForm({
                     <Label className="grid min-w-48 flex-1 gap-1.5 text-xs text-muted-foreground">
                         Search items
                         <Input
+                            ref={search}
                             type="search"
                             name="q"
-                            defaultValue={filters.q}
+                            value={q}
+                            onChange={(event) => {
+                                setQ(event.target.value);
+                                apply();
+                            }}
                             placeholder="Item, base type or variant…"
                             maxLength={100}
                             className="bg-background text-foreground"
@@ -158,9 +186,9 @@ export function MarketFiltersForm({
                     )}
                     ; missing prices appear last.
                 </p>
-                <Button type="submit" disabled={navigation.state !== "idle"}>
-                    {navigation.state === "idle" ? "Apply filters" : "Loading…"}
-                </Button>
+                <p role="status" className="text-xs text-muted-foreground">
+                    {navigation.state === "idle" ? null : "Loading…"}
+                </p>
             </div>
         </Form>
     );
