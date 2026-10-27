@@ -20,6 +20,7 @@ import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyLatest } from "~/db/schema/stash.currency-latest";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
+import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
 import { tStashUniqueDaily } from "~/db/schema/stash.unique-daily";
 import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 
@@ -41,6 +42,7 @@ export const schema = {
     tIdolPlannerPriceCache,
     tStashUniqueHourly,
     tStashUniqueDaily,
+    tStashMarketDaily,
     tStashCurrencyHourly,
     tStashCurrencyLatest,
     tStashCurrencyMarket,

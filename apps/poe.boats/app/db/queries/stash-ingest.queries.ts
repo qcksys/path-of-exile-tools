@@ -14,7 +14,7 @@ import type { StashCoverageStream } from "~/db/schema/stash.hour-coverage";
 import { type TStashUniqueHourlyI, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import {
     refreshStashHourCoverage,
-    refreshStashUniqueDaily,
+    refreshStashMarketDaily,
     upsertStashCurrencyMarkets,
     utcDay,
 } from "./stash-rollups.queries";
@@ -141,7 +141,7 @@ export async function upsertStashUniqueHourly(
                 days.set(day, (days.get(day) ?? new Set()).add(row.itemKey));
             }
             for (const [day, itemKeys] of days)
-                await refreshStashUniqueDaily(db, {
+                await refreshStashMarketDaily(db, {
                     realm,
                     league,
                     fromHour: day,

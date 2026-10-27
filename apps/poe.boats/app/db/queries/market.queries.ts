@@ -24,7 +24,7 @@ import {
 import type { TDatabase } from "~/db/client";
 import { tStashCurrencyHourly as currencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyMarket as currencyMarket } from "~/db/schema/stash.currency-market";
-import { tStashUniqueDaily as daily } from "~/db/schema/stash.unique-daily";
+import { tStashMarketDaily as daily } from "~/db/schema/stash.market-daily";
 import {
     tStashUniqueHourly as market,
     type TStashUniqueHourlyS,
@@ -65,7 +65,7 @@ function foilMatch(foil: number) {
  * A pool unique's mod combinations merge into one market with an empty value where markets are
  * listed (the market list and the item's variants); the item page values and links the combinations.
  */
-function valueGroup(table: typeof market | typeof daily) {
+function valueGroup(table: typeof market) {
     return sql<string>`case when ${inArray(table.signatureKind, [...MOD_POOL_KINDS])} then '' else ${table.signatureValue} end`;
 }
 
@@ -243,7 +243,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     });
     const season = seasons.find((entry) => entry.league === filters.league);
     const latestHour = Number(season?.latestHour ?? 0);
-    // Windows start at UTC midnight so lists sum whole days of `stash_unique_daily`.
+    // Windows start at UTC midnight so lists sum whole days of `stash_market_daily`.
     const windowStart = utcDay(latestHour - Number(filters.days) * 86400 + 3600);
     const scope = and(
         eq(market.realm, filters.realm),
@@ -293,7 +293,6 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         gte(daily.day, windowStart),
     );
     const dailyFoilGroup = sql<number>`least(${daily.foilVariation}, 0)`;
-    const dailyValueGroup = valueGroup(daily);
     const search = filters.q ? `%${filters.q.replace(/[\\%_]/g, "\\$&")}%` : undefined;
     const currencyField = (field: string) =>
         sql`cast(json_unquote(json_extract(${market.prices}, ${`$.${JSON.stringify(filters.currency)}.${field}`})) as decimal(30, 10))`;
@@ -325,7 +324,8 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             corrupted: daily.corrupted,
             foilVariation: dailyFoilGroup.mapWith(Number).as("foil_group"),
             signatureKind: daily.signatureKind,
-            signatureValue: dailyValueGroup.as("value_group"),
+            // Already empty for a mod pool unique's every-combination market.
+            signatureValue: daily.signatureValue,
             latestHour: sql<number>`coalesce(max(${daily.listedHour}), max(${daily.latestHour}))`
                 .mapWith(Number)
                 .as("latest_hour"),
@@ -337,7 +337,14 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 .mapWith(Number)
                 .as("period_pending"),
         })
-        .from(daily)
+        // A category's base types are a few index ranges; MySQL underrates them against long IN lists.
+        // Search reads `name`, which the index does not cover.
+        .from(
+            daily,
+            filters.category !== "all" && filters.category !== "other" && !search
+                ? { forceIndex: "stash_market_daily_base_idx" }
+                : undefined,
+        )
         .where(
             and(
                 days,
@@ -368,7 +375,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             daily.corrupted,
             dailyFoilGroup,
             daily.signatureKind,
-            dailyValueGroup,
+            daily.signatureValue,
         )
         .having(({ periodSales }) =>
             and(...between(periodSales, filters.salesMin, filters.salesMax)),
@@ -380,7 +387,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             asc(daily.corrupted),
             asc(dailyFoilGroup),
             asc(daily.signatureKind),
-            asc(dailyValueGroup),
+            asc(daily.signatureValue),
         ])
         .$dynamic();
     if (!pageLatestRows) grouped.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
