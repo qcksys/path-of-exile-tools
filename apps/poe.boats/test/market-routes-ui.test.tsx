@@ -25,7 +25,7 @@ afterEach(() => {
     vi.clearAllMocks();
 });
 
-function showMarket(path = "/1/market?league=Allflame&category=armour&order=name-asc&page=2") {
+function showMarket(path = "/1/market/armour?league=Allflame&order=name-asc&page=2") {
     const Routes = createRoutesStub([
         {
             path: "/1/market",
@@ -40,13 +40,13 @@ function showMarket(path = "/1/market?league=Allflame&category=armour&order=name
             ),
             children: [
                 {
-                    index: true,
-                    loader: ({ request }) =>
+                    path: ":category?",
+                    loader: ({ request, params }) =>
                         listLoader({
                             request,
                             context,
-                            params: {},
-                            unstable_pattern: "/1/market",
+                            params: { category: params.category },
+                            unstable_pattern: "/1/market/:category?",
                             unstable_url: new URL(request.url),
                         }),
                     Component: () => <MarketIndex loaderData={useLoaderData()} />,
@@ -89,6 +89,8 @@ it("renders list and detail through the layout outlet and restores browsing stat
     );
     fireEvent.click(screen.getByRole("link", { name: /Back to markets/ }));
     await screen.findByRole("region", { name: "Item markets" });
+    expect(screen.getByLabelText("Current URL").textContent).toMatch(/^\/1\/market\/armour\?/);
+    expect(screen.getByLabelText("Current URL").textContent).not.toContain("category=");
     expect(screen.getByLabelText("Current URL").textContent).toContain("page=2");
     expect(screen.getByLabelText("Current URL").textContent).toContain("order=name-asc");
     expect(screen.queryByRole("region", { name: "Item price history" })).toBeNull();
@@ -129,6 +131,64 @@ it("submits search and filters, resets pagination, and preserves them on categor
     await waitFor(() =>
         expect(screen.getByRole("link", { name: "Weapons" }).getAttribute("aria-current")).toBe(
             "page",
+        ),
+    );
+    expect(screen.getByLabelText("Current URL").textContent).toMatch(/^\/1\/market\/weapons\?/);
+});
+
+it("redirects category query links to the category path", async () => {
+    const response = await listLoader({
+        request: new Request(
+            "https://example.invalid/1/market?league=Allflame&category=weapons&order=listings-desc&currency=chaos",
+        ),
+        context,
+        params: {},
+        unstable_pattern: "/1/market/:category?",
+        unstable_url: new URL("https://example.invalid/1/market"),
+    });
+    if (!(response instanceof Response)) throw new Error("Expected redirect");
+    expect(response.status).toBe(308);
+    const url = new URL(response.headers.get("Location")!, "https://example.invalid");
+    expect(url.pathname).toBe("/1/market/weapons");
+    expect(url.searchParams.has("category")).toBe(false);
+    expect(Object.fromEntries(url.searchParams)).toMatchObject({
+        league: "Allflame",
+        order: "listings-desc",
+        currency: "chaos",
+    });
+    expect(getMarketData).not.toHaveBeenCalled();
+});
+
+it("rejects unknown category paths", async () => {
+    await expect(
+        listLoader({
+            request: new Request("https://example.invalid/1/market/nonsense"),
+            context,
+            params: { category: "nonsense" },
+            unstable_pattern: "/1/market/:category?",
+            unstable_url: new URL("https://example.invalid/1/market/nonsense"),
+        }),
+    ).rejects.toMatchObject({ status: 404 });
+});
+
+it("links between the variants of an item", async () => {
+    showMarket("/1/market/items/Abberath's%20Hooves?league=Allflame&category=armour");
+    const variants = await screen.findByRole("navigation", { name: "Item variants" });
+    expect(
+        within(variants)
+            .getByRole("link", { name: /Standard/ })
+            .getAttribute("aria-current"),
+    ).toBe("page");
+    fireEvent.click(within(variants).getByRole("link", { name: /Corrupted/ }));
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                item: "Abberath's Hooves",
+                corrupted: "true",
+                category: "armour",
+            }),
+            "history",
         ),
     );
 });
