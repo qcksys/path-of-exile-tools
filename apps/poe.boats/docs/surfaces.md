@@ -51,8 +51,9 @@ source models retain their original eligibility, and unknown or incompatible sta
 ## Coverage
 
 Season market browsing uses a parent layout and outlet with separate list and item-history
-routes. Each category list lives at `/1/market/:category` (`/1/market` is all items); legacy
-`?category=` links redirect there. Legacy `?item=` bookmarks redirect to `/1/market/items/:item`
+routes. Each category list lives at `/1/market/:category`; the web has no all-items list, so
+`/1/market` redirects to `/1/market/currency` with its filters, and legacy `?category=` links
+redirect to their category path. Legacy `?item=` bookmarks redirect to `/1/market/items/:item`
 with all variant axes intact; item links keep `category` in the query for the way back. The item
 page lists every variant of the item in the period (corruption, foil, and extracted signatures
 such as Foulborn mutated modifiers) and links between them.
@@ -70,7 +71,11 @@ reusing the latest rate up to 24 hours old, then into the display currency. The 
 distribution is the listing-count-weighted mixture of the per-currency quantile curves, so it is
 exact for one currency and an estimate otherwise; listings without a rate are counted as
 `unconverted`. The item chart and table show the merged median and interquartile range.
-The HTTP and MCP market operation exposes the same filters and category assignments.
+The HTTP and MCP market operation exposes the same filters and category assignments, and still
+accepts `category=all` for every category at once. With an `item`, it returns that item's history
+and variants only (`rows` is empty), skipping the list query.
+Period windows start at UTC midnight of their first day, so a 7-day window covers between 7 and
+8 days of observations.
 
 CI runs app tests in four shards and workspace package tests in a separate required job.
 The workbench UI suites are grouped by behavior so individual files can run on different
@@ -135,7 +140,7 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 
 | UI capability | HTTP family under `/api/v1` | MCP / shared implementation |
 | --- | --- | --- |
-| Server status, worker health, progress and stored league history | `server/status` | `get_server_status`; shared `getServerStatus`. Authenticated ingestion heartbeats report stages and committed progress without credentials, raw cursors or account data. Missing heartbeats and stalled stages are distinct from failures; stored coverage counts actual distinct hours. Optional `view=workers` reads worker reports and computes the same health without querying any hourly coverage tables; `coverage: []` means coverage was omitted, not that history is absent. Omitted `view` or `view=full` retains full coverage and the existing UI behavior. HTTP and MCP share this selection and validation. |
+| Server status, worker health, progress and stored league history | `server/status` | `get_server_status`; shared `getServerStatus`. Authenticated ingestion heartbeats report stages and committed progress without credentials, raw cursors or account data. Missing heartbeats and stalled stages are distinct from failures; stored coverage counts actual distinct hours from the `stash_hour_coverage` rollup. Optional `view=workers` reads worker reports and computes the same health without querying coverage; `coverage: []` means coverage was omitted, not that history is absent. Omitted `view` or `view=full` retains full coverage and the existing UI behavior. HTTP and MCP share this selection and validation. |
 | Common craft presets in a new local project tab | `crafting/presets`, `crafting/graph/from-preset` | `list_crafting_presets`, `create_crafting_graph_from_preset`; shared `listCraftingPresets` and `projectFromPreset`. Fifteen PoE 1 examples include a Heist life-on-block shield with block and maximum resistances, an ES/block shield with NNN preparation, overlapping 2p + 2p bow/chest merges, rarity/life/resistance helmets and a Replica Alberon's Helical Ring with strand budgeting and imprint recovery. [Triple-elevated boots](crafting-preset-boots.md) include donor elevation, resistance, veiled movement speed and crafted life. [Five SpicySushiPoE samples](crafting-presets-spicysushi.md) add RF totem and Luminary block shields, an RF helmet, a fractured mercenary chest and Spectre boots, with real Allflame, fossil, influence and Eldritch steps. Hunter boots, suppression and global-defence donors include rolling and isolation from unrolled bases. Remaining prepared donors are explicit purchases with unknown prices; recoverable misses feed preparation inputs, and discarded items require fresh acquisitions. The nine recombination presets explicitly default to manual 0-chaos self-service, excluding gold and dust opportunity cost; the preset descriptions explain this assumption. Saved/manual prices and custom missing prices are unchanged. Presets create independent editable drafts. PoE 2 returns no presets and refuses PoE 1 recipe creation. |
 | Graph outcome cards, line probabilities, item previews and automatic layout | Existing `crafting/graph/calculate`, `workspace/edit` | Opening or editing a project starts a bounded initial sample in the retained-engine worker; stale workers are terminated and late results ignored. Node cards show actual sampled modifiers and branch percentages, with unknown and observed zero distinct. Simple mode fits compact process icons and continuation percentages, with connection details on hover; detailed mode retains editable connection labels and manual positions. Final cards use trial probabilities. The r6 result includes the last sampled item at each visited node for the first three trials. Unsampled nodes only illustrate explicit modifier requirements; they do not invent blank crafting outputs. Pinnable popovers reuse the static `ItemCard`. Step, method, purchase and outcome editors remain inside scrollable graph nodes. Clicking away saves nested drafts through the existing operations and closes editing; invalid drafts remain open with their validation errors. Contextual help explains modifiers, conditions, connectors and sampled frequencies. Display modes, pointer/keyboard line bends and the active editor are local presentation state; they do not change graph semantics or calculations. Layout uses measured widths and heights, ignores recovery cycles, preserves manual positions until Auto arrange and provides step navigation for long chains. |
 | Memory-strand graph conditions and Helical Ring checkpoints | Existing `crafting/items/match`, `workspace/edit`, `graph/calculate` | Shared item facts and range queries expose `memoryStrands` and `memoryStrandsSpent` since the current imprint. A missing imprint yields an unknown spending comparison. Engine r6 preserves essence-exclusive modifiers during Unravelling while attempting upgrades to eligible ordinary tiers. Revisions r1–r5 remain immutable; correction adoption is explicit. |
@@ -144,7 +149,7 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | PoE 1 and PoE 2 arbitrage leagues, prices, recipes | `arbitrage/market` | `get_arbitrage_market`; `loadArbitrageMarket` |
 | Arbitrage filters, ranking, buffer, profit/ROI | `arbitrage/calculate` | `calculate_arbitrage`; `findArbitrage` |
 | Manual recipe reference, calculator and trade links | `arbitrage/recipes`, `arbitrage/scenario`, `arbitrage/trade` | `list_vendor_recipes`, `calculate_recipe_scenario`, `build_recipe_trade_url` |
-| Season market search, seasons, paging, variants, history | `market` | `get_season_market`; `getMarketData`. Season boundaries use the existing index prefix; variant totals and pagination precede full-row primary-key reads. Every foil variation of an item is one market (`foil` -1 or 0): list rows, variants and history sum and mix the variations' hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), and page boundaries. |
+| Season market search, seasons, paging, variants, history | `market` | `get_season_market`; `getMarketData`. Season boundaries use the existing index prefix; variant totals come from the `stash_unique_daily` rollup and pagination precedes full-row primary-key reads. Every foil variation of an item is one market (`foil` -1 or 0): list rows, variants and history sum and mix the variations' hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), and page boundaries. |
 | Recombinator equipment, modifiers, preparation recipes | `recombinator/catalog`, `bases`, `mods`, `recipes`, `draft` | Catalog, base/mod/recipe filtering, and `parseRecombinatorDraft` |
 | Recombination outcomes, preparation, target odds | `recombinator/calculate`, `target` | `calculateRecombinatorPlan`, `matchesTarget`, `summarizeCounts` |
 | PoE 1 and PoE 2 workbench catalog, calculation, process simulation and item emulation | `crafting/workbench/catalog`, `workbench/calculate`, `workbench/process`, `workbench/emulate` | `get_crafting_workbench_catalog`, `calculate_crafting_workbench`, `emulate_crafting_process`, `emulate_crafting_item`; shared `CraftingWorkbenchCalculation`, `CraftingProcess` and `emulateCraftingItem`. Current workbench catalogs and client-build validation match the browser; retained graph rulesets remain separate. HTTP calculations refuse manual-stop runs and requests above 5,000 trials or 100,000 potential steps. Allflame preview costs remain deferred until selection, reveal choices stay explicit, and paid bench failures retain the changed item and costs. Stateless operations never modify browser drafts. |
@@ -222,16 +227,19 @@ Unrelated same-base cohorts cannot consume the 2,000 relevant-candidate allowanc
 item-matching but uncovered cohorts retain their coverage reasons. A genuinely truncated
 result still prevents refresh from silently choosing an older or incomplete price.
 
-Market aggregation reads a covering secondary index, including base-type and rarity filters,
-before fetching the selected full rows.
-Text search also reads historical names and leaves index selection to MySQL: including both
-name and base type would exceed the optimizer's
-[3,072-byte extended-index limit](https://dev.mysql.com/doc/refman/8.0/en/index-extensions.html).
-Historical search, latest nonempty observations, variant identity and period totals retain
-their existing semantics. MySQL plan and result regressions live in
+Ingest keeps three rollups, each recomputed from the hourly rows it summarises after every
+200-row batch, because the ingester re-pushes whole hours with later sale corrections:
+`stash_unique_daily` (per variant per UTC day: sums, newest and newest listed hour, base type,
+rarity and name), `stash_currency_market` (each exchange market's first hour) and
+`stash_hour_coverage` (stored rows per stream, league and hour). Market aggregation reads the
+daily rollup by primary-key range, including base-type, rarity and text filters, before
+fetching the selected full hourly rows. A day keeps one name (the greatest), so searching a
+renamed item's older name is best-effort. Latest nonempty observations, variant identity and
+period totals otherwise retain their semantics. The exchange lookup reads
+`stash_currency_market`. MySQL plan and result regressions live in
 `test/e2e/market-query.test.ts` and `test/e2e/crafting-market-performance.test.ts`.
 
-Full server status uses index-only coverage scans and reuses each database/realm/league
+Full server status reads `stash_hour_coverage` and reuses each database/realm/league
 summary for up to one minute per Worker isolate. Concurrent requests share a pending read;
 failures are evicted. Worker reports and health remain live. `coverageCheckedAt` identifies
 the coverage snapshot through the UI, HTTP and MCP, and is null for `view=workers`.
@@ -247,7 +255,15 @@ Apply the [market covering index](../app/db/migrations/20261024143220_market_cov
 [status coverage indexes](../app/db/migrations/20261024143909_status_coverage_indexes/migration.sql)
 migrations before deploying these query changes: the queries name the indexes explicitly.
 The generated cohort key indexes existing definitions automatically. Roll back application
-code before removing any of these indexes. New indexes add storage and ingestion write work;
+code before removing any of these indexes.
+Apply the [market rollups](../app/db/migrations/20261027115536_market_rollups/migration.sql)
+migration before deploying the code that reads them; it creates and backfills the three
+rollups from the hourly tables (a one-off scan of each). After deploying, rerun its backfill
+statements with `ON DUPLICATE KEY UPDATE` for hours the previous worker wrote in between: the
+coverage and market statements with `WHERE hour >= <migration hour>`, and the daily statement
+with `WHERE hour >= <UTC midnight of the migration day>`, because each daily row must be
+recomputed from its whole day (`refreshStashRollups` in
+`app/db/queries/stash-rollups.queries.ts` builds the same statements). New indexes add storage and ingestion write work;
 check live Query Insights after deployment rather than treating local timings as production results.
 
 Equipment lookup exposes per-lookup `Server-Timing` diagnostics through both HTTP and MCP:

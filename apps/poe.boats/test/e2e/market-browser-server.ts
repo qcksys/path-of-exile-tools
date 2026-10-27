@@ -3,6 +3,8 @@ import { MySqlContainer } from "@testcontainers/mysql";
 import { drizzle } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import { createConnection } from "mysql2/promise";
+import type { TDatabase } from "../../app/db/client";
+import { refreshStashRollups } from "../../app/db/queries/stash-rollups.queries";
 import { tStashUniqueHourly as market } from "../../app/db/schema/stash.unique-hourly";
 import { marketFixture } from "../market-fixtures";
 
@@ -27,6 +29,7 @@ await db.insert(market).values([
     { ...row, itemKey: "Divine Orb", name: "", baseType: "Divine Orb", frameType: 5 },
     { ...row, itemKey: "Jagged Fossil", name: "", baseType: "Jagged Fossil", frameType: 5 },
 ]);
+await refreshStashRollups(db as unknown as TDatabase);
 await connection.end();
 process.env.PLAYWRIGHT_MARKET_DATABASE_URL = container.getConnectionUri();
 for (const signal of ["SIGINT", "SIGTERM"] as const)

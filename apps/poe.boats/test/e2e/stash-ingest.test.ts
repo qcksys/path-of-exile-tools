@@ -30,7 +30,10 @@ import {
     findCraftingMarketPrices,
 } from "~/db/queries/crafting-market.queries";
 import { getMarketData } from "~/db/queries/market.queries";
-import { upsertStashCohortHourly } from "~/db/queries/stash-ingest.queries";
+import {
+    upsertStashCohortHourly,
+    upsertStashCurrencyHourly,
+} from "~/db/queries/stash-ingest.queries";
 import { tIngestWorker } from "~/db/schema/ingest.worker";
 import { tStashCheckpoint, tStashDailySample } from "~/db/schema/stash.checkpoint";
 import { tStashCohort } from "~/db/schema/stash.cohort";
@@ -591,7 +594,7 @@ it("accepts authenticated worker heartbeats and exposes real coverage through HT
             })
         ).status,
     ).toBe(200);
-    await mysql.insert(tStashCurrencyHourly).values([
+    await upsertStashCurrencyHourly(mysql as unknown as TDatabase, [
         { realm: "pc", league: "Allflame", hour: HOUR, marketId: "first" },
         { realm: "pc", league: "Allflame", hour: HOUR, marketId: "second" },
         { realm: "pc", league: "Allflame", hour: HOUR + 7200, marketId: "first" },

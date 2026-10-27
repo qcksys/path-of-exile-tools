@@ -4,13 +4,14 @@ import {
     ingestHealthSchema,
     ingestStatusSchema,
 } from "@poe-tools/market";
-import { and, count, countDistinct, eq, max, min } from "drizzle-orm";
+import { and, count, eq, max, min, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { TDatabase } from "~/db/client";
 import { tIngestWorker } from "~/db/schema/ingest.worker";
-import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
-import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
-import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
+import {
+    tStashHourCoverage as coverage,
+    STASH_COVERAGE_STREAMS,
+} from "~/db/schema/stash.hour-coverage";
 
 export const serverStatusFilters = ingestStatusSchema
     .pick({ realm: true, league: true })
@@ -75,30 +76,25 @@ async function storedCoverage(db: TDatabase, filters: z.infer<typeof serverStatu
         checkedAt,
         expiresAt: checkedAt + 60_000,
         value: Promise.all(
-            (
-                [
-                    ["currency", tStashCurrencyHourly, "stash_currency_coverage_idx"],
-                    ["uniques", tStashUniqueHourly, "stash_unique_market_cover_idx"],
-                    ["equipment", tStashCohortHourly, "stash_cohort_coverage_idx"],
-                ] as const
-            ).map(async ([stream, table, index]) => {
+            STASH_COVERAGE_STREAMS.map(async (stream) => {
                 const rows = await db
                     .select({
-                        realm: table.realm,
-                        league: table.league,
-                        firstHour: min(table.hour),
-                        latestHour: max(table.hour),
-                        hours: countDistinct(table.hour),
-                        rows: count(),
+                        realm: coverage.realm,
+                        league: coverage.league,
+                        firstHour: min(coverage.hour),
+                        latestHour: max(coverage.hour),
+                        hours: count(),
+                        rows: sql<number>`sum(${coverage.rowCount})`.mapWith(Number),
                     })
-                    .from(table, { forceIndex: index })
+                    .from(coverage)
                     .where(
                         and(
-                            filters.realm ? eq(table.realm, filters.realm) : undefined,
-                            filters.league ? eq(table.league, filters.league) : undefined,
+                            eq(coverage.stream, stream),
+                            filters.realm ? eq(coverage.realm, filters.realm) : undefined,
+                            filters.league ? eq(coverage.league, filters.league) : undefined,
                         ),
                     )
-                    .groupBy(table.realm, table.league);
+                    .groupBy(coverage.realm, coverage.league);
                 return rows.map((row) => ({
                     ...row,
                     stream,

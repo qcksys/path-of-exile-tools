@@ -1,4 +1,3 @@
-import { mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
 import { and, eq, getTableName, sql } from "drizzle-orm";
@@ -8,8 +7,14 @@ import { type Connection, createConnection, type RowDataPacket } from "mysql2/pr
 import { afterAll, beforeAll, expect, it, vi } from "vite-plus/test";
 import type { TDatabase } from "~/db/client";
 import { getMarketData } from "~/db/queries/market.queries";
-import { upsertStashCurrencyHourly } from "~/db/queries/stash-ingest.queries";
+import {
+    upsertStashCurrencyHourly,
+    upsertStashUniqueHourly,
+} from "~/db/queries/stash-ingest.queries";
+import { refreshStashRollups, utcDay } from "~/db/queries/stash-rollups.queries";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
+import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
+import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import {
     tStashUniqueHourly as market,
     type TStashUniqueHourlyI,
@@ -23,6 +28,14 @@ let connection: Connection;
 let db: MySql2Database;
 const statements: Array<{ sql: string; params: unknown[] }> = [];
 const rowsStatement = () => statements.find((query) => query.sql.includes("`latest_hour`"))!;
+
+/** Seeds write hourly rows directly, so rebuild the rollups ingest keeps before reading. */
+async function marketData(...args: Parameters<typeof getMarketData>) {
+    const logged = statements.length;
+    await refreshStashRollups(db as unknown as TDatabase);
+    statements.length = logged;
+    return getMarketData(...args);
+}
 
 beforeAll(async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
@@ -68,7 +81,7 @@ afterAll(async () => {
 
 it("discovers season boundaries without scanning every hourly observation", async () => {
     statements.length = 0;
-    const result = await getMarketData(
+    const result = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "Missing" }),
     );
@@ -84,7 +97,7 @@ it("discovers season boundaries without scanning every hourly observation", asyn
 
 it("fetches full item records by primary key only after selecting the market page", async () => {
     statements.length = 0;
-    const result = await getMarketData(
+    const result = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "Current" }),
     );
@@ -112,50 +125,40 @@ it.each([
     {},
     { rarity: "unique" },
     { category: "accessories", rarity: "unique", identification: "true", corruption: "false" },
-])("aggregates historical counters from a covering index (filters %j)", async (filters) => {
+])("aggregates the period from daily rollups, not hourly rows (filters %j)", async (filters) => {
     statements.length = 0;
-    await getMarketData(
+    await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "Current", ...filters }),
     );
     const query = rowsStatement();
     const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
     const aggregate = plan.find((row) => row.select_type === "DERIVED");
-    expect(aggregate?.key).toBe("stash_unique_market_cover_idx");
-    expect(String(aggregate?.Extra)).toMatch(/Using index(?:;|$)/);
+    expect(aggregate?.table).toBe("qsPoeBoats__stash_unique_daily");
+    expect(aggregate?.key).toBe("PRIMARY");
 });
 
-it.each([
-    "Item",
-    "Leather",
-])("preserves text search without forcing a noncovering index (%s)", async (q) => {
-    statements.length = 0;
-    const result = await getMarketData(
+it.each(["Item", "Leather"])("searches names, item keys and base types (%s)", async (q) => {
+    const result = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "Current", q }),
     );
     expect(result.rows).toHaveLength(20);
-    expect(rowsStatement().sql).not.toContain("FORCE INDEX");
 });
 
-it("reads status coverage from indexes without loading hourly payloads", async () => {
+it("reads status coverage from hourly rollups without scanning hourly tables", async () => {
+    await refreshStashRollups(db as unknown as TDatabase);
     statements.length = 0;
     const result = await getServerStatus(db as unknown as TDatabase);
     expect(
         result.coverage.find(
             (row) => row.stream === "uniques" && row.realm === "pc" && row.league === "Current",
         ),
-    ).toMatchObject({ hours: 20, rows: 400 });
-    const queries = statements.filter((query) => query.sql.includes("count(distinct"));
-    expect(queries).toHaveLength(3);
-    for (const query of queries) {
-        const [plan] = await connection.query<RowDataPacket[]>(
-            `EXPLAIN ${query.sql}`,
-            query.params,
-        );
-        expect(String(plan[0]?.Extra)).toMatch(/Using index(?:;|$)/);
-        expect(plan[0]?.key).not.toBe("PRIMARY");
-    }
+    ).toMatchObject({ firstHour: hour - 19 * 3600, latestHour: hour, hours: 20, rows: 400 });
+    expect(statements.filter((query) => query.sql.includes("stash_hour_coverage"))).toHaveLength(3);
+    expect(
+        statements.some((query) => /stash_(unique|currency|cohort)_hourly/.test(query.sql)),
+    ).toBe(false);
 });
 
 it("commits overlapping currency batches from separate connections without losing zero volumes", async () => {
@@ -243,60 +246,76 @@ it("recovers an actual MySQL deadlock victim by replaying its autocommitted batc
     }
 });
 
-it.runIf(process.env.MARKET_QUERY_BENCHMARK === "1")(
-    "benchmarks the covering aggregate against the clustered scan",
-    async () => {
-        const total = 168_000;
-        for (let start = 0; start < total; start += 500) {
-            await db.insert(market).values(
-                Array.from({ length: 500 }, (_, offset) => {
-                    const position = start + offset;
-                    return observation({
-                        league: "Benchmark",
-                        hour: hour - Math.floor(position / 1000) * 3600,
-                        itemKey: `Item:${position % 1000}`,
-                        name: `Item ${position % 1000}`,
-                        likelySales: position % 11,
-                        signatureData: { fixture: "x".repeat(1024) },
-                    });
-                }),
-            );
-        }
-        await db.execute(sql`ANALYZE TABLE ${market}`);
-        statements.length = 0;
-        await getMarketData(
+it("starts list windows at UTC midnight of the window's first day", async () => {
+    const firstDay = utcDay(hour - 7 * 86400 + 3600);
+    await db
+        .insert(market)
+        .values([
+            observation({ league: "Window", hour: firstDay - 3600, likelySales: 10 }),
+            observation({ league: "Window", hour: firstDay + 3600, likelySales: 3 }),
+            observation({ league: "Window", hour, likelySales: 1 }),
+        ]);
+    const result = await marketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "Window" }),
+    );
+    expect(result.rows).toMatchObject([{ itemKey: "Example", periodSales: 4, hour }]);
+});
+
+it("keeps daily rollups, exchange markets and coverage current through the ingest writers", async () => {
+    const read = (filters: Record<string, unknown>) =>
+        getMarketData(
             db as unknown as TDatabase,
-            marketFiltersSchema.parse({ league: "Benchmark" }),
+            marketFiltersSchema.parse({ league: "Ingested", ...filters }),
+            "list",
         );
-        const query = rowsStatement();
-        const baseline = query.sql.replace(
-            "FORCE INDEX (`stash_unique_market_cover_idx`)",
-            "FORCE INDEX (PRIMARY)",
-        );
-        const timings: Record<string, number[]> = { primary: [], covering: [] };
-        let expected: unknown;
-        for (let run = 0; run < 3; run++) {
-            for (const [label, statement] of [
-                ["primary", baseline],
-                ["covering", query.sql],
-            ] as const) {
-                const start = performance.now();
-                const [rows] = await connection.query(statement, query.params);
-                timings[label]!.push(performance.now() - start);
-                if (expected === undefined) expected = rows;
-                else expect(rows).toEqual(expected);
-            }
-        }
-        const directory = fileURLToPath(new URL("../../../../.artifacts/", import.meta.url));
-        await mkdir(directory, { recursive: true });
-        await writeFile(
-            `${directory}/market-covering-benchmark.json`,
-            JSON.stringify({ rows: total, milliseconds: timings }, null, 2),
-        );
-        console.log(JSON.stringify({ rows: total, milliseconds: timings }));
-    },
-    180_000,
-);
+    const previousDay = utcDay(hour) - 3600;
+    await upsertStashUniqueHourly(db as unknown as TDatabase, [
+        observation({ league: "Ingested", hour: previousDay, likelySales: 2 }),
+        observation({ league: "Ingested", hour, likelySales: 1 }),
+    ]);
+    expect((await read({})).rows).toMatchObject([{ periodSales: 3 }]);
+    // A re-pushed hour replaces its totals, and a correction to an earlier day updates that day.
+    await upsertStashUniqueHourly(db as unknown as TDatabase, [
+        observation({ league: "Ingested", hour, likelySales: 5 }),
+    ]);
+    await upsertStashUniqueHourly(db as unknown as TDatabase, [
+        observation({ league: "Ingested", hour: previousDay, likelySales: 0 }),
+    ]);
+    expect((await read({})).rows).toMatchObject([{ periodSales: 5 }]);
+
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, [
+        { league: "Ingested", marketId: "chaos|divine", hour, volumeTraded: { chaos: 1 } },
+    ]);
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, [
+        {
+            league: "Ingested",
+            marketId: "chaos|divine",
+            hour: hour - 7200,
+            volumeTraded: { chaos: 1 },
+        },
+        { league: "Ingested", marketId: "chaos|divine", hour, volumeTraded: { chaos: 2 } },
+    ]);
+    const markets = await db
+        .select()
+        .from(tStashCurrencyMarket)
+        .where(eq(tStashCurrencyMarket.league, "Ingested"));
+    expect(markets).toMatchObject([{ marketId: "chaos|divine", firstHour: hour - 7200 }]);
+    const coverage = await db
+        .select()
+        .from(tStashHourCoverage)
+        .where(eq(tStashHourCoverage.league, "Ingested"));
+    expect(
+        coverage
+            .map(({ stream, hour, rowCount }) => ({ stream, hour, rowCount }))
+            .toSorted((a, b) => a.stream.localeCompare(b.stream) || a.hour - b.hour),
+    ).toEqual([
+        { stream: "currency", hour: hour - 7200, rowCount: 1 },
+        { stream: "currency", hour, rowCount: 1 },
+        { stream: "uniques", hour: previousDay, rowCount: 1 },
+        { stream: "uniques", hour, rowCount: 1 },
+    ]);
+});
 
 function observation(overrides: Partial<TStashUniqueHourlyI>): TStashUniqueHourlyI {
     return {
@@ -349,12 +368,12 @@ it("preserves variant totals, the latest listed observation, and exact item hist
         .values([
             observation({ realm: "poe2", likelySales: 100 }),
             observation({ league: "Other", likelySales: 100 }),
-            observation({ hour: hour - 7 * 86400, likelySales: 100 }),
+            observation({ hour: utcDay(hour - 7 * 86400 + 3600) - 3600, likelySales: 100 }),
             observation({ itemKey: "Empty", hour: hour - 3600, listingCount: 0 }),
             observation({ itemKey: "Empty", listingCount: 0 }),
         ]);
     const filters = marketFiltersSchema.parse({ league: "Variants", item: "Example" });
-    const result = await getMarketData(db as unknown as TDatabase, filters);
+    const result = await marketData(db as unknown as TDatabase, filters);
     expect(result.rows).toHaveLength(7);
     const examples = result.rows.filter((row) => row.itemKey === "Example");
     expect(examples).toHaveLength(6);
@@ -369,9 +388,10 @@ it("preserves variant totals, the latest listed observation, and exact item hist
         });
     expect(result.rows.find((row) => row.itemKey === "Empty")?.hour).toBe(hour);
     expect(result.history.map((row) => row.hour)).toEqual([hour - 7200, hour - 3600, hour]);
-    const searched = await getMarketData(db as unknown as TDatabase, { ...filters, q: "Older" });
+    // Daily rollups keep one name per day (the greatest), so a match reports the whole window.
+    const searched = await marketData(db as unknown as TDatabase, { ...filters, q: "Older" });
     expect(searched.rows).toHaveLength(6);
-    expect(searched.rows.every((row) => row.hour === hour - 7200 && row.periodSales === 3)).toBe(
+    expect(searched.rows.every((row) => row.hour === hour - 3600 && row.periodSales === 9)).toBe(
         true,
     );
 });
@@ -393,7 +413,7 @@ it("merges every foil variation into one market for the list, variants and histo
             foil(7, { corrupted: true, listingCount: 4, likelySales: 5, prices: chaos(4, 30) }),
         ]);
     const filters = marketFiltersSchema.parse({ league: "Foils", currency: "chaos" });
-    const list = await getMarketData(db as unknown as TDatabase, filters, "list");
+    const list = await marketData(db as unknown as TDatabase, filters, "list");
     expect(
         list.rows.map((row) => [row.corrupted, row.foilVariation, row.listingCount, row.hour]),
     ).toEqual([
@@ -407,7 +427,7 @@ it("merges every foil variation into one market for the list, variants and histo
         periodSales: 6,
         prices: { chaos: { count: 4, min: 20, median: 20, max: 100 } },
     });
-    const byListings = await getMarketData(
+    const byListings = await marketData(
         db as unknown as TDatabase,
         { ...filters, order: "listings-desc", listingsMin: 4, listingsMax: 4 },
         "list",
@@ -416,7 +436,7 @@ it("merges every foil variation into one market for the list, variants and histo
         [false, 0],
         [true, 0],
     ]);
-    const byPrice = await getMarketData(
+    const byPrice = await marketData(
         db as unknown as TDatabase,
         { ...filters, order: "price-desc" },
         "list",
@@ -430,7 +450,7 @@ it("merges every foil variation into one market for the list, variants and histo
     ]);
 
     // An old link to one foil variation opens the merged foil market.
-    const item = await getMarketData(
+    const item = await marketData(
         db as unknown as TDatabase,
         { ...filters, item: "Example", foil: 7 },
         "history",
@@ -465,8 +485,8 @@ it("keeps stable sales ordering and page boundaries when fetching full records",
             Number(b.likelySales) - Number(a.likelySales) || a.itemKey.localeCompare(b.itemKey),
     );
     const filters = marketFiltersSchema.parse({ league: "Paging" });
-    const first = await getMarketData(db as unknown as TDatabase, filters);
-    const second = await getMarketData(db as unknown as TDatabase, { ...filters, page: 2 });
+    const first = await marketData(db as unknown as TDatabase, filters);
+    const second = await marketData(db as unknown as TDatabase, { ...filters, page: 2 });
     expect(first.rows.map((row) => row.itemKey)).toEqual(
         expected.slice(0, 50).map((row) => row.itemKey),
     );
@@ -516,12 +536,12 @@ it("filters categories and variant state before pagination and searches base typ
         corruption: "false",
         q: "Goathide",
     });
-    const result = await getMarketData(db as unknown as TDatabase, filters);
+    const result = await marketData(db as unknown as TDatabase, filters);
     expect(result.rows.map((row) => [row.itemKey, row.category])).toEqual([
         ["Abberath's Hooves", "armour"],
     ]);
     expect(result.hasMore).toBe(false);
-    const other = await getMarketData(
+    const other = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "Categories", category: "other" }),
     );
@@ -556,8 +576,8 @@ it("sorts the latest asking price in the selected currency across page boundarie
         observation({ league: "Prices", itemKey: "Unpriced" }),
     ]);
     const filters = marketFiltersSchema.parse({ league: "Prices", order: "price-asc" });
-    const first = await getMarketData(db as unknown as TDatabase, filters);
-    const second = await getMarketData(db as unknown as TDatabase, { ...filters, page: 2 });
+    const first = await marketData(db as unknown as TDatabase, filters);
+    const second = await marketData(db as unknown as TDatabase, { ...filters, page: 2 });
     expect(first.rows[0]?.itemKey).toBe("Fraction");
     expect(first.rows[1]?.prices?.divine?.median).toBe(1);
     expect(first.rows.at(-1)?.itemKey).toBe("Item 48");
@@ -571,12 +591,12 @@ it("sorts the latest asking price in the selected currency across page boundarie
         "Chaos only",
         "Unpriced",
     ]);
-    const descending = await getMarketData(db as unknown as TDatabase, {
+    const descending = await marketData(db as unknown as TDatabase, {
         ...filters,
         order: "price-desc",
     });
     expect(descending.rows[0]?.itemKey).toBe("Item 54");
-    const chaos = await getMarketData(db as unknown as TDatabase, {
+    const chaos = await marketData(db as unknown as TDatabase, {
         ...filters,
         currency: "chaos",
     });
@@ -609,7 +629,7 @@ it("filters and orders by table column ranges before pagination", async () => {
         observation({ league: "Ranges", itemKey: "Stale", hour: hour - 7200 }),
     ]);
     const read = async (filters: Record<string, unknown>) =>
-        getMarketData(
+        marketData(
             db as unknown as TDatabase,
             marketFiltersSchema.parse({ league: "Ranges", order: "name-asc", ...filters }),
         );
@@ -656,7 +676,7 @@ it("filters and orders by table column ranges before pagination", async () => {
 
 it("keeps item history independent of browsing filters and skips the list query for detail routes", async () => {
     statements.length = 0;
-    const result = await getMarketData(
+    const result = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({
             league: "Current",
@@ -725,7 +745,7 @@ it("merges every listing currency into the display currency through same-league 
         }),
     ]);
     const filters = marketFiltersSchema.parse({ league: "Merged", item: "Example" });
-    const inChaos = await getMarketData(
+    const inChaos = await marketData(
         db as unknown as TDatabase,
         { ...filters, currency: "chaos" },
         "history",
@@ -735,11 +755,11 @@ it("merges every listing currency into the display currency through same-league 
         // An hour without its own exchange observation reuses the previous hour's rate.
         { count: 1, unconverted: 0, median: 450 },
     ]);
-    const inDivine = await getMarketData(db as unknown as TDatabase, filters, "history");
+    const inDivine = await marketData(db as unknown as TDatabase, filters, "history");
     expect(inDivine.history[0]!.merged).toMatchObject({ count: 2, median: 2, max: 2 });
     expect(inDivine.history[1]!.merged).toMatchObject({ median: 3 });
     expect(inDivine.chaosRates).toEqual({});
-    const list = await getMarketData(
+    const list = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "Merged" }),
         "list",
@@ -773,14 +793,14 @@ it("uses the current exchange divine rate for list rows, leaving it absent when 
         }),
     );
     const filters = marketFiltersSchema.parse({ league: "DivineRate" });
-    const current = await getMarketData(db as unknown as TDatabase, filters, "list");
+    const current = await marketData(db as unknown as TDatabase, filters, "list");
     expect(current.exchange).toEqual(
         expect.arrayContaining([expect.objectContaining({ name: "Divine Orb", chaos: 200 })]),
     );
     expect(current.chaosRates.divine).toBe(200);
 
     await upsertStashCurrencyHourly(db as unknown as TDatabase, [snapshot(hour, 0, 0)]);
-    const untraded = await getMarketData(db as unknown as TDatabase, filters, "list");
+    const untraded = await marketData(db as unknown as TDatabase, filters, "list");
     expect(untraded.exchange).toEqual(
         expect.arrayContaining([expect.objectContaining({ name: "Divine Orb", chaos: null })]),
     );
@@ -824,7 +844,7 @@ it("prices exchange-traded items from the exchange and leaves out their stash li
             }),
         ),
     ]);
-    const result = await getMarketData(
+    const result = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "Exchange" }),
         "list",
@@ -836,13 +856,13 @@ it("prices exchange-traded items from the exchange and leaves out their stash li
         expect.objectContaining({ name: "Portal Scroll", chaos: null, volume: 0, hour: null }),
         expect.objectContaining({ name: "Scroll of Wisdom", chaos: null, volume: 0, hour: null }),
     ]);
-    const searched = await getMarketData(
+    const searched = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "Exchange", q: "wisdom", category: "currency" }),
         "list",
     );
     expect(searched.exchange.map((row) => row.name)).toEqual(["Scroll of Wisdom"]);
-    const uniques = await getMarketData(
+    const uniques = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "Exchange", rarity: "unique" }),
         "list",
@@ -871,7 +891,7 @@ it("discovers exchange-only PoE 2 leagues and uses only the latest completed hou
         snapshot(`${exaltedId}|${chaosId}`, hour - 3600, { [exaltedId]: 5, [chaosId]: 10 }),
         snapshot(`${exaltedId}|${chaosId}`, hour, { [exaltedId]: 0, [chaosId]: 0 }),
     ]);
-    const result = await getMarketData(
+    const result = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ realm: "poe2", league: "Forbidden Rites" }),
         "list",
@@ -921,7 +941,7 @@ it("retains old exchange identities without treating future-only markets as list
             }),
         ),
     );
-    const result = await getMarketData(
+    const result = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "IdentityLifetime" }),
         "list",
@@ -948,7 +968,7 @@ it("orders names in both directions and uses the latest observation for recency"
         ["name-desc", ["Gamma", "Beta", "Alpha"]],
         ["newest", ["Gamma", "Alpha", "Beta"]],
     ] as const) {
-        const result = await getMarketData(
+        const result = await marketData(
             db as unknown as TDatabase,
             marketFiltersSchema.parse({ league: "Ordering", order }),
         );

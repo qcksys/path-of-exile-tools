@@ -234,9 +234,9 @@ export const operations = [
         family: "market",
         path: "/",
         name: "get_season_market",
-        ui: "/1/market",
+        ui: "/1/market/currency",
         description:
-            "Read season market rows and item history with the UI's filters and pagination. With an item, also lists every variant of that item in the period.",
+            "Read season market rows with the UI's filters and pagination; category `all` lists every category. With an item, returns that item's history and every variant of it in the period instead of rows.",
         input: marketFiltersSchema,
         output: z.object({
             filters: marketFiltersSchema,
@@ -291,7 +291,11 @@ export const operations = [
             ),
         }),
         execute: async (filters, context) => {
-            const data = await getMarketData(context.db, filters);
+            const data = await getMarketData(
+                context.db,
+                filters,
+                filters.item ? "history" : "list",
+            );
             return {
                 ...data,
                 rows: data.rows.map((row) => ({

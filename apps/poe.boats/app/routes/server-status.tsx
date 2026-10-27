@@ -212,7 +212,7 @@ export default function ServerStatus({ loaderData }: Pick<Route.ComponentProps, 
                     <h2 className="font-semibold text-xl">Stored league history</h2>
                     <Link
                         className="flex items-center gap-1 text-sm underline-offset-4 hover:underline"
-                        to="/1/market"
+                        to="/1/market/currency"
                     >
                         Open market <ArrowRight size={14} />
                     </Link>
