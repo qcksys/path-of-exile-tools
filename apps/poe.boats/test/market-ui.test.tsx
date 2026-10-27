@@ -64,7 +64,6 @@ describe("market browsing", () => {
             currency: "chaos",
             category: "jewels",
             order: "price-asc",
-            rarity: "unique",
             corruption: "true",
             identification: "true",
             page: 3,
@@ -89,7 +88,6 @@ describe("market browsing", () => {
             currency: "chaos",
             category: "jewels",
             order: "price-asc",
-            rarity: "unique",
             corruption: "true",
             identification: "true",
             page: 3,
@@ -107,7 +105,6 @@ describe("market browsing", () => {
         { q: "a".repeat(101) },
         { category: "unknown" },
         { order: "unknown" },
-        { rarity: "legendary" },
         { corruption: "yes" },
     ])("rejects unbounded or invalid filters %j", (input) => {
         expect(marketFiltersSchema.safeParse(input).success).toBe(false);

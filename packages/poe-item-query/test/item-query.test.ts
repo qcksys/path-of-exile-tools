@@ -45,6 +45,22 @@ describe("API-shaped item queries", () => {
         ).toBe("no-match");
     });
 
+    it("reads base quality from listed properties and leaves it unknown without them", () => {
+        const quality = (properties?: unknown[]) =>
+            normalizeApiItem("poe1", "stash", properties ? { ...base, properties } : base).facts
+                .quality;
+        const armour = { name: "Armour", values: [["1200", 1]], displayMode: 0, type: 16 };
+        expect(
+            quality([{ name: "Quality", values: [["+28%", 1]], displayMode: 0, type: 6 }, armour]),
+        ).toBe(28);
+        expect(quality([armour])).toBe(0);
+        expect(
+            quality([{ name: "Quality (Prefix Modifiers)", values: [["+20%", 1]], type: 6 }]),
+        ).toBe(0);
+        expect(quality()).toBeUndefined();
+        expect(quality([{ name: "Quality", values: [] }])).toBeUndefined();
+    });
+
     it("distinguishes PoE 2 rarity and sockets without applying PoE 1 links", () => {
         const record = normalizeApiItem("poe2", "paste", {
             ...base,

@@ -57,7 +57,14 @@ redirect to their category path. Legacy `?item=` bookmarks redirect to `/1/marke
 with all variant axes intact; item links keep `category` in the query for the way back. The item
 page lists every variant of the item in the period (corruption, foil, and extracted signatures
 such as Foulborn mutated modifiers) and links between them.
-The shared market query applies category, text, rarity, identification, corruption, column ranges
+Weapon, armour and accessory categories list uniques only. Normal, magic and rare equipment is
+listed under the Crafting bases group (`armour-bases`, `weapon-bases`, `accessory-bases`) from
+`stash_cohort_hourly`: each base cohort the generator writes to
+`packages/poe-market/data/market-bases-poe1.json` (item level 74 and up, six-socket bases split
+into 1–5 and 6 links, armour also at ilvl 86+ with 25%+ and 30%+ quality) at its latest hour in
+the period, preferring the current manifest revision. Rarities are not split. Base rows have no
+likely-sale estimates; they sort, search and range-filter in memory, with prices compared in chaos.
+The shared market query applies category, text, identification, corruption, column ranges
 and ordering before pagination. The list's TanStack Table headers sort through `order` and filter
 through the URL: the item column sets the text search, and range boxes bound the latest row's
 selected-currency median, listings and sellers, and the period's likely sales. The item page's
@@ -149,7 +156,7 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | PoE 1 and PoE 2 arbitrage leagues, prices, recipes | `arbitrage/market` | `get_arbitrage_market`; `loadArbitrageMarket` |
 | Arbitrage filters, ranking, buffer, profit/ROI | `arbitrage/calculate` | `calculate_arbitrage`; `findArbitrage` |
 | Manual recipe reference, calculator and trade links | `arbitrage/recipes`, `arbitrage/scenario`, `arbitrage/trade` | `list_vendor_recipes`, `calculate_recipe_scenario`, `build_recipe_trade_url` |
-| Season market search, seasons, paging, variants, history | `market` | `get_season_market`; `getMarketData`. Season boundaries use the existing index prefix; variant totals come from the `stash_unique_daily` rollup and pagination precedes full-row primary-key reads. Every foil variation of an item is one market (`foil` -1 or 0): list rows, variants and history sum and mix the variations' hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), and page boundaries. |
+| Season market search, seasons, paging, variants, history | `market` | `get_season_market`; `getMarketData`. Season boundaries use the existing index prefix; variant totals come from the `stash_unique_daily` rollup and pagination precedes full-row primary-key reads. Every foil variation of an item is one market (`foil` -1 or 0): list rows, variants and history sum and mix the variations' hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), page boundaries, and crafting base cohort rows (latest hour, current revision, category). |
 | Recombinator equipment, modifiers, preparation recipes | `recombinator/catalog`, `bases`, `mods`, `recipes`, `draft` | Catalog, base/mod/recipe filtering, and `parseRecombinatorDraft` |
 | Recombination outcomes, preparation, target odds | `recombinator/calculate`, `target` | `calculateRecombinatorPlan`, `matchesTarget`, `summarizeCounts` |
 | PoE 1 and PoE 2 workbench catalog, calculation, process simulation and item emulation | `crafting/workbench/catalog`, `workbench/calculate`, `workbench/process`, `workbench/emulate` | `get_crafting_workbench_catalog`, `calculate_crafting_workbench`, `emulate_crafting_process`, `emulate_crafting_item`; shared `CraftingWorkbenchCalculation`, `CraftingProcess` and `emulateCraftingItem`. Current workbench catalogs and client-build validation match the browser; retained graph rulesets remain separate. HTTP calculations refuse manual-stop runs and requests above 5,000 trials or 100,000 potential steps. Allflame preview costs remain deferred until selection, reveal choices stay explicit, and paid bench failures retain the changed item and costs. Stateless operations never modify browser drafts. |
