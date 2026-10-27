@@ -749,7 +749,7 @@ function exchangeItemMarkets(markets: string[][], itemId: string) {
         .filter(
             (ids) =>
                 ids.includes(itemId) ||
-                (ids.includes(CHAOS) && ids.some((id) => counterparts.has(id))),
+                (ids.includes(CHAOS) && ids.some((id) => id !== CHAOS && counterparts.has(id))),
         )
         .map((ids) => ids.join("|"));
 }
@@ -796,7 +796,10 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
             const traded = ids[0] === input.itemId ? row.firstVolume : row.secondVolume;
             units.set(row.marketId, (units.get(row.marketId) ?? 0) + traded);
         }
-        const always = [CHAOS, DIVINE, exchangeCurrencyId("exalted")!];
+        // Every pair of chaos or divine includes itself, so it must not count as an anchor.
+        const always = [CHAOS, DIVINE, exchangeCurrencyId("exalted")!].filter(
+            (id) => id !== input.itemId,
+        );
         const pairs = markets
             .filter((ids) => ids.includes(input.itemId))
             .map((ids) => ids.join("|"))
