@@ -4,6 +4,7 @@ import { useState } from "react";
 import { afterEach, expect, it, vi } from "vite-plus/test";
 import { GraphPriceInput } from "~/components/crafting/graph-node-editor";
 import { SourcePricePicker } from "~/components/crafting/source-price-picker";
+import { VendorUpgradePricePicker } from "~/components/crafting/vendor-upgrade-price-picker";
 import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import { byText, changeControl } from "./control-helpers";
@@ -24,6 +25,7 @@ import {
     vendorCurrencyInputId,
     vendorCurrencyOutputId,
     vendorCurrencyQuote,
+    vendorHour,
     vendorInputId,
     vendorMiddleId,
     vendorOutputId,
@@ -35,6 +37,7 @@ vi.mock("~/hooks/use-item-presentations", () => ({ useItemPresentations: () => (
 afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
 });
 const id = "EinharMasterCraftMorrigan7";
 
@@ -471,6 +474,7 @@ it("discards a pending quote when the project league changes", async () => {
 });
 
 it("keeps direct asking prices separate from an explicitly selected vendor ingredient estimate", async () => {
+    vi.spyOn(Date, "now").mockReturnValue((vendorHour + 5400) * 1000);
     const fetcher = vi.fn().mockImplementation((_url, init) =>
         Promise.resolve(
             new Response(
@@ -517,7 +521,7 @@ it("keeps direct asking prices separate from an explicitly selected vendor ingre
     await screen.findByText(byText("18 chaos per output · vendor-upgrade ingredient estimate"));
     expect(JSON.parse(fetcher.mock.calls[1]![1].body)).toMatchObject({
         ids: [vendorOutputId],
-        vendorUpgrade: { inputId: vendorInputId },
+        vendorUpgrade: { inputId: vendorInputId, conversion: "two-leg-exchange-v1" },
     });
     expect(screen.getByText(byText(/9 × Weeping Essence of Rage at 2 chaos each/))).toBeTruthy();
     expect(screen.getByText(/3 ingredient units traded/)).toBeTruthy();
@@ -538,6 +542,7 @@ it.each([
     false,
     true,
 ])("offers an explicit NPC purchase without changing its manual price (service input: %s)", async (includeService) => {
+    vi.spyOn(Date, "now").mockReturnValue((vendorHour + 5400) * 1000);
     const fetcher = vi.fn().mockResolvedValue(
         new Response(
             JSON.stringify({
@@ -586,7 +591,7 @@ it.each([
     await screen.findByText(/4 × Orb of Transmutation at/);
     expect(JSON.parse(fetcher.mock.calls[0]![1].body)).toMatchObject({
         ids: [vendorCurrencyOutputId],
-        vendorUpgrade: { inputId: vendorCurrencyInputId },
+        vendorUpgrade: { inputId: vendorCurrencyInputId, conversion: "two-leg-exchange-v1" },
     });
     expect(screen.getByRole("link", { name: "Recipe" }).getAttribute("href")).toBe(
         vendorCurrencyQuote.path.steps[0]!.sourceUrl,
@@ -599,6 +604,134 @@ it.each([
         source: "vendor-upgrade",
         path: vendorCurrencyQuote.path,
         ingredient: vendorCurrencyQuote.ingredient,
+    });
+});
+
+it("refuses a vendor estimate after its exchange hour changes, including when the tab missed its timer", async () => {
+    const now = vi.spyOn(Date, "now").mockReturnValue((vendorHour + 5400) * 1000);
+    vi.stubGlobal(
+        "fetch",
+        vi
+            .fn()
+            .mockResolvedValue(
+                new Response(
+                    JSON.stringify({ quotes: { [vendorOutputId]: vendorQuote }, missing: {} }),
+                ),
+            ),
+    );
+    const onChange = vi.fn();
+    render(
+        <VendorUpgradePricePicker
+            graph={exchangeGraph()}
+            engine={engine}
+            id={vendorOutputId}
+            name={vendorQuote.path.outputName}
+            onChange={onChange}
+        />,
+    );
+    changeControl(screen.getByLabelText(`Vendor ingredient for ${vendorQuote.path.outputName}`), {
+        target: { value: vendorInputId },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Find vendor-upgrade estimate" }));
+    await screen.findByRole("button", { name: "Use vendor-upgrade estimate" });
+    now.mockReturnValue((vendorHour + 9000) * 1000);
+    fireEvent.click(screen.getByRole("button", { name: "Use vendor-upgrade estimate" }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert").textContent).toMatch(/look up/i);
+});
+
+it("rejects an ingredient quote from an older server hour", async () => {
+    vi.spyOn(Date, "now").mockReturnValue((vendorHour + 9000) * 1000);
+    vi.stubGlobal(
+        "fetch",
+        vi
+            .fn()
+            .mockResolvedValue(
+                new Response(
+                    JSON.stringify({ quotes: { [vendorOutputId]: vendorQuote }, missing: {} }),
+                ),
+            ),
+    );
+    const onChange = vi.fn();
+    render(
+        <VendorUpgradePricePicker
+            graph={exchangeGraph()}
+            engine={engine}
+            id={vendorOutputId}
+            name={vendorQuote.path.outputName}
+            onChange={onChange}
+        />,
+    );
+    changeControl(screen.getByLabelText(`Vendor ingredient for ${vendorQuote.path.outputName}`), {
+        target: { value: vendorInputId },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Find vendor-upgrade estimate" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/hour/i);
+    expect(screen.queryByRole("button", { name: "Use vendor-upgrade estimate" })).toBeNull();
+    expect(onChange).not.toHaveBeenCalled();
+});
+
+it("clears a vendor estimate when focus returns in a new exchange hour", async () => {
+    const now = vi.spyOn(Date, "now").mockReturnValue((vendorHour + 5400) * 1000);
+    vi.stubGlobal(
+        "fetch",
+        vi
+            .fn()
+            .mockResolvedValue(
+                new Response(
+                    JSON.stringify({ quotes: { [vendorOutputId]: vendorQuote }, missing: {} }),
+                ),
+            ),
+    );
+    const onChange = vi.fn();
+    render(
+        <VendorUpgradePricePicker
+            graph={exchangeGraph()}
+            engine={engine}
+            id={vendorOutputId}
+            name={vendorQuote.path.outputName}
+            onChange={onChange}
+        />,
+    );
+    changeControl(screen.getByLabelText(`Vendor ingredient for ${vendorQuote.path.outputName}`), {
+        target: { value: vendorInputId },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Find vendor-upgrade estimate" }));
+    await screen.findByRole("button", { name: "Use vendor-upgrade estimate" });
+    now.mockReturnValue((vendorHour + 9000) * 1000);
+    fireEvent.focus(globalThis.window);
+    expect(screen.queryByRole("button", { name: "Use vendor-upgrade estimate" })).toBeNull();
+    expect(screen.getByRole("alert").textContent).toMatch(/look up/i);
+    expect(onChange).not.toHaveBeenCalled();
+});
+
+it("allows an explicit direct-only vendor ingredient lookup", async () => {
+    vi.spyOn(Date, "now").mockReturnValue((vendorHour + 5400) * 1000);
+    const fetcher = vi
+        .fn()
+        .mockResolvedValue(
+            new Response(
+                JSON.stringify({ quotes: { [vendorOutputId]: vendorQuote }, missing: {} }),
+            ),
+        );
+    vi.stubGlobal("fetch", fetcher);
+    render(
+        <VendorUpgradePricePicker
+            graph={exchangeGraph()}
+            engine={engine}
+            id={vendorOutputId}
+            name={vendorQuote.path.outputName}
+            onChange={vi.fn()}
+        />,
+    );
+    changeControl(screen.getByLabelText(`Vendor ingredient for ${vendorQuote.path.outputName}`), {
+        target: { value: vendorInputId },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: /Convert the ingredient/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Find vendor-upgrade estimate" }));
+    await screen.findByRole("button", { name: "Use vendor-upgrade estimate" });
+    expect(JSON.parse(fetcher.mock.calls[0]![1].body).vendorUpgrade).toEqual({
+        inputId: vendorInputId,
     });
 });
 

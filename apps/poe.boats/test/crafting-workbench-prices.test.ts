@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { bindExchangePrice, markExchangePriceUnavailable } from "../app/lib/crafting-exchange";
+import { bindCraftingSourcePrice, markVendorPriceUnavailable } from "../app/lib/crafting-sources";
 import {
     copyWorkbenchMarketPrices,
     workbenchPriceGraph,
@@ -9,6 +10,7 @@ import { emptyResonatorQuote, legacyResonatorPrice } from "./crafting-commodity-
 import { exchangeQuote, transmuteId } from "./crafting-exchange-fixtures";
 import { baseId, engine } from "./crafting-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
+import { vendorOutputId, vendorQuote } from "./crafting-vendor-upgrade-fixtures";
 
 const ruleset = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r7",
@@ -84,5 +86,17 @@ describe("workbench market price copies", () => {
             expect(() =>
                 copyWorkbenchMarketPrices(input, wrong, "Standard", [transmuteId]),
             ).toThrow("does not match");
+    });
+
+    it("refuses to copy an unavailable vendor ingredient while preserving manual assumptions", () => {
+        const input = { ...project(), prices: { [vendorOutputId]: 123 } };
+        const graph = workbenchPriceGraph(engine, input, ruleset, "Standard");
+        const bound = bindCraftingSourcePrice(graph, engine, vendorOutputId, vendorQuote);
+        const unavailable = markVendorPriceUnavailable(bound, vendorOutputId);
+        expect(() =>
+            copyWorkbenchMarketPrices(input, unavailable, "Standard", [vendorOutputId]),
+        ).toThrow("vendor ingredient exchange price is unavailable");
+        expect(copyWorkbenchMarketPrices(input, unavailable, "Standard", [])).toEqual(input.prices);
+        expect(input.prices[vendorOutputId]).toBe(123);
     });
 });

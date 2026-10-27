@@ -1,3 +1,4 @@
+import { marketObservationRange } from "@poe-tools/market";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CurrencyLabel } from "~/components/currency-label";
 import { Button } from "~/components/ui/button";
@@ -88,11 +89,12 @@ export function VendorUpgradePricePicker({
     const paths = useMemo(() => craftingVendorUpgradePaths(engine, id), [engine, id]);
     const [inputId, setInputId] = useState("");
     const path = paths.find((entry) => entry.inputId === inputId) ?? paths[0];
-    const [convert, setConvert] = useState(false);
+    const [convert, setConvert] = useState(true);
     const [quote, setQuote] = useState<VendorUpgradeQuote>();
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
     const pending = useRef<AbortController | null>(null);
+    const quoteHour = useRef<number | undefined>(undefined);
     const scope = JSON.stringify([
         graph.game,
         graph.league,
@@ -104,17 +106,38 @@ export function VendorUpgradePricePicker({
     ]);
     useEffect(() => {
         pending.current?.abort();
+        quoteHour.current = undefined;
         setQuote(undefined);
         setError("");
         setBusy(false);
         return () => pending.current?.abort();
     }, [scope]);
+    useEffect(() => {
+        if (!quote) return;
+        const expire = () => {
+            if (quoteHour.current === marketObservationRange().latestHour) return;
+            quoteHour.current = undefined;
+            setQuote(undefined);
+            setError("A new exchange hour is available. Look up the ingredient again.");
+        };
+        const remaining = 3_600_000 - (Date.now() % 3_600_000) + 1;
+        const timer = globalThis.setTimeout(expire, remaining);
+        globalThis.window.addEventListener("focus", expire);
+        document.addEventListener("visibilitychange", expire);
+        return () => {
+            globalThis.clearTimeout(timer);
+            globalThis.window.removeEventListener("focus", expire);
+            document.removeEventListener("visibilitychange", expire);
+        };
+    }, [quote]);
     if (!path) return null;
     async function lookup() {
         if (!path) return;
         pending.current?.abort();
         const controller = new AbortController();
         pending.current = controller;
+        const requestedHour = marketObservationRange().latestHour;
+        quoteHour.current = undefined;
         setBusy(true);
         setError("");
         setQuote(undefined);
@@ -129,7 +152,7 @@ export function VendorUpgradePricePicker({
                     realm: "pc",
                     vendorUpgrade: {
                         inputId: path.inputId,
-                        conversion: convert ? "reference-currency-v1" : undefined,
+                        conversion: convert ? "two-leg-exchange-v1" : undefined,
                     },
                 }),
             });
@@ -143,7 +166,17 @@ export function VendorUpgradePricePicker({
                 throw new Error(
                     result.missing[id] ?? "The selected vendor ingredient is unpriced.",
                 );
-            if (!controller.signal.aborted) setQuote(next);
+            if (!controller.signal.aborted) {
+                if (
+                    requestedHour !== marketObservationRange().latestHour ||
+                    next.ingredient.hour !== requestedHour
+                )
+                    throw new Error(
+                        "The ingredient quote is not from the latest completed exchange hour. Look up prices again.",
+                    );
+                quoteHour.current = requestedHour;
+                setQuote(next);
+            }
         } catch (error) {
             if (!controller.signal.aborted)
                 setError(error instanceof Error ? error.message : "Vendor lookup failed.");
@@ -175,7 +208,7 @@ export function VendorUpgradePricePicker({
             </FormSelect>
             <Label className="flex items-center gap-2">
                 <Checkbox checked={convert} onCheckedChange={setConvert} />
-                Allow matching-hour reference-currency conversion for the ingredient
+                Convert the ingredient through another exchange item in the same hour
             </Label>
             <Button
                 size="sm"
@@ -192,6 +225,14 @@ export function VendorUpgradePricePicker({
                     <Button
                         size="sm"
                         onClick={() => {
+                            if (quoteHour.current !== marketObservationRange().latestHour) {
+                                quoteHour.current = undefined;
+                                setQuote(undefined);
+                                setError(
+                                    "A new exchange hour is available. Look up the ingredient again.",
+                                );
+                                return;
+                            }
                             try {
                                 onChange(bindCraftingSourcePrice(graph, engine, id, quote));
                             } catch (error) {

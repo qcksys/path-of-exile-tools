@@ -733,6 +733,83 @@ it("fails closed when there are too many same-hour markets to discover conversio
     expect(result.missing[item]).toContain("Too many exchange markets");
 });
 
+it("shares explicit vendor ingredient two-leg conversion across HTTP and MCP", async () => {
+    const bridge = "Metadata/Items/Currency/CurrencyHellscapeAddModToRare";
+    await mysql.insert(tStashCurrencyHourly).values([
+        {
+            realm: "pc",
+            league: "Standard",
+            hour: HOUR,
+            marketId: `${vendorInputId}|${bridge}`,
+            volumeTraded: { [vendorInputId]: 3, [bridge]: 2 },
+        },
+        {
+            realm: "pc",
+            league: "Standard",
+            hour: HOUR,
+            marketId: `${bridge}|${chaosId}`,
+            volumeTraded: { [bridge]: 4, [chaosId]: 40 },
+        },
+        {
+            realm: "pc",
+            league: "Standard",
+            hour: HOUR + 3600,
+            marketId: `${bridge}|${chaosId}`,
+            volumeTraded: { [bridge]: 4, [chaosId]: 80 },
+        },
+    ]);
+    const graph = exchangeGraph();
+    const request = {
+        graph,
+        realm: "pc",
+        ids: [vendorOutputId],
+        at: HOUR,
+        vendorUpgrade: { inputId: vendorInputId, conversion: "two-leg-exchange-v1" },
+    };
+    const result = craftingSourceResultSchema.parse(
+        await parity("crafting/market/sources", "find_crafting_source_prices", request),
+    );
+    const quote = result.quotes[vendorOutputId];
+    expect(quote).toMatchObject({
+        source: "vendor-upgrade",
+        conversion: "two-leg-exchange-v1",
+        ingredient: {
+            hour: HOUR,
+            legs: [
+                { quoteId: bridge, hour: HOUR },
+                { itemId: bridge, hour: HOUR },
+            ],
+        },
+    });
+    expect(quote?.amount).toBeCloseTo(60);
+    const bound = z.object({ graph: craftingGraphSchema }).parse(
+        await parity("crafting/market/sources/bind", "bind_crafting_source_price", {
+            graph,
+            id: vendorOutputId,
+            quote,
+        }),
+    ).graph;
+    expect(bound.prices[vendorOutputId]?.amount).toBeCloseTo(60);
+    const history = await parity("crafting/market/snapshots", "get_crafting_price_snapshots", {
+        graph: bound,
+        hours: [HOUR, HOUR + 3600],
+    });
+    expect(history).toMatchObject({
+        points: [
+            { graph: { prices: { [vendorOutputId]: { amount: expect.closeTo(60) } } }, issues: [] },
+            { graph: null, issues: [expect.any(String)] },
+        ],
+    });
+    const missing = craftingSourceResultSchema.parse(
+        await parity("crafting/market/sources", "find_crafting_source_prices", {
+            ...request,
+            at: HOUR + 3600,
+        }),
+    );
+    expect(missing.quotes).toEqual({});
+    expect(missing.missing[vendorOutputId]).toBeTruthy();
+});
+
 it("waits for a saved exchange hour to complete without fetching an upstream 404 or advancing its cursor", async () => {
     const hour = Math.floor(Date.now() / 3_600_000) * 3600;
     await setCursor(local.conn, "cxapi", String(hour));

@@ -5,7 +5,11 @@ import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { DB_TABLE_PREFIX } from "~/const";
 import type { TDatabase } from "~/db/client";
 import { CraftingEngine } from "~/lib/crafting-engine";
-import { bindCraftingSourcePrice, decodeCraftingSourceReference } from "~/lib/crafting-sources";
+import {
+    assertCraftingSourcePrices,
+    bindCraftingSourcePrice,
+    decodeCraftingSourceReference,
+} from "~/lib/crafting-sources";
 import { craftingVendorUpgrade, craftingVendorUpgradePaths } from "~/lib/crafting-vendor-upgrades";
 import {
     craftingMarketSnapshots,
@@ -263,6 +267,105 @@ it("retains explicit conversion even with a direct quote, and verifies every mat
         ).toThrow();
 });
 
+it("prices an explicitly selected vendor ingredient through a same-hour non-reference exchange item", async () => {
+    vi.setSystemTime((vendorHour + 5400) * 1000);
+    const bridge = "Metadata/Items/Currency/CurrencyHellscapeAddModToRare";
+    const chaos = "Metadata/Items/Currency/CurrencyRerollRare";
+    capture({
+        marketId: `${vendorInputId}|${bridge}`,
+        volumeTraded: { [vendorInputId]: 3, [bridge]: 2 },
+    });
+    capture({
+        marketId: `${bridge}|${chaos}`,
+        volumeTraded: { [bridge]: 4, [chaos]: 40 },
+    });
+    const prior = await findCraftingSourcePrices(
+        exchangeGraph(),
+        engine,
+        {
+            ...options,
+            vendorUpgrade: { inputId: vendorInputId, conversion: "reference-currency-v1" },
+        },
+        db,
+    );
+    expect(prior.quotes).toEqual({});
+    const result = await findCraftingSourcePrices(
+        exchangeGraph(),
+        engine,
+        {
+            ...options,
+            vendorUpgrade: { inputId: vendorInputId, conversion: "two-leg-exchange-v1" },
+        },
+        db,
+    );
+    const quote = result.quotes[vendorOutputId]!;
+    expect(quote).toMatchObject({
+        source: "vendor-upgrade",
+        conversion: "two-leg-exchange-v1",
+        ingredient: {
+            conversion: "two-leg-exchange-v1",
+            hour: vendorHour,
+            estimator: "cross-rate-v1",
+            legs: [
+                { itemId: vendorInputId, quoteId: bridge, hour: vendorHour },
+                { itemId: bridge, quoteId: chaos, hour: vendorHour },
+            ],
+        },
+    });
+    expect(quote.amount).toBeCloseTo(60);
+    const bound = bindCraftingSourcePrice(exchangeGraph(), engine, vendorOutputId, quote);
+    expect(decodeCraftingSourceReference(bound.prices[vendorOutputId]?.cohortId)).toMatchObject({
+        conversion: "two-leg-exchange-v1",
+        path: vendorQuote.path,
+    });
+    vi.setSystemTime((vendorHour + 9000) * 1000);
+    const history = await craftingMarketSnapshots(db, bound, engine, [
+        vendorHour,
+        vendorHour + 3600,
+    ]);
+    expect(history.points[0]?.graph?.prices[vendorOutputId]?.amount).toBeCloseTo(60);
+    expect(history.points[1]?.graph).toBeNull();
+    expect((await refreshCraftingMarketPrices(db, bound, engine)).issues).toHaveLength(1);
+    vi.setSystemTime((vendorHour + 5400) * 1000);
+    const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
+    expect(refreshed.issues).toEqual([]);
+    expect(refreshed.graph.prices[vendorOutputId]?.amount).toBeCloseTo(60);
+    const vendor = craftingSourceQuoteSchema.parse(quote);
+    if (vendor.source !== "vendor-upgrade") throw new Error("Expected vendor-upgrade quote");
+    for (const bad of [
+        {
+            ...vendor,
+            conversion: "reference-currency-v1",
+            ingredient: { ...vendor.ingredient, conversion: "reference-currency-v1" },
+        },
+        {
+            ...vendor,
+            ingredient: {
+                ...vendor.ingredient,
+                legs: [
+                    vendor.ingredient.legs![0],
+                    { ...vendor.ingredient.legs![1], hour: vendorHour - 3600 },
+                ],
+            },
+        },
+        {
+            ...vendor,
+            ingredient: {
+                ...vendor.ingredient,
+                legs: [{ ...vendor.ingredient.legs![0], amount: 5 }, vendor.ingredient.legs![1]],
+            },
+        },
+    ])
+        expect(() =>
+            bindCraftingSourcePrice(
+                exchangeGraph(),
+                engine,
+                vendorOutputId,
+                craftingSourceQuoteSchema.parse(bad),
+            ),
+        ).toThrow();
+});
+
 it("keeps the fixed input and path when a closer-tier quote appears, and refreshes unchanged amounts with new provenance", async () => {
     capture();
     const bound = bindCraftingSourcePrice(exchangeGraph(), engine, vendorOutputId, vendorQuote);
@@ -290,7 +393,7 @@ it("keeps the fixed input and path when a closer-tier quote appears, and refresh
 it.each([
     "missing",
     "zero",
-])("refuses a %s latest ingredient hour; failed refresh preserves the amount while history reports the gap", async (latest) => {
+])("marks a %s latest ingredient hour unavailable and restores it after a later quote", async (latest) => {
     capture();
     if (latest === "zero")
         capture({
@@ -302,7 +405,18 @@ it.each([
     expect(result.quotes).toEqual({});
     expect(result.missing[vendorOutputId]).toBeTruthy();
     const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
-    expect(refreshed.graph.prices[vendorOutputId]).toEqual(bound.prices[vendorOutputId]);
+    expect(refreshed.graph.prices[vendorOutputId]?.amount).toBe(
+        bound.prices[vendorOutputId]?.amount,
+    );
+    expect(refreshed.graph.prices[vendorOutputId]?.cohortId).not.toBe(
+        bound.prices[vendorOutputId]?.cohortId,
+    );
+    expect(
+        decodeCraftingSourceReference(refreshed.graph.prices[vendorOutputId]?.cohortId),
+    ).toMatchObject({ source: "vendor-upgrade", path: vendorQuote.path });
+    expect(() => assertCraftingSourcePrices(refreshed.graph)).toThrow(
+        "vendor ingredient exchange price is unavailable",
+    );
     expect(refreshed.issues).toHaveLength(1);
     const history = await craftingMarketSnapshots(db, bound, engine, [
         vendorHour,
@@ -310,6 +424,15 @@ it.each([
     ]);
     expect(history.points[0]?.graph?.prices[vendorOutputId]?.amount).toBe(18);
     expect(history.points[1]?.graph).toBeNull();
+    sqlite
+        .prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_currency_hourly WHERE hour = ?`)
+        .run(vendorHour + 3600);
+    capture({ hour: vendorHour + 3600 });
+    const restored = await refreshCraftingMarketPrices(db, refreshed.graph, engine);
+    expect(restored.issues).toEqual([]);
+    expect(restored.graph.prices[vendorOutputId]?.amount).toBe(18);
+    expect(restored.graph.prices[vendorOutputId]?.cohortId).not.toContain("unavailable");
+    expect(() => assertCraftingSourcePrices(restored.graph)).not.toThrow();
 });
 
 it("returns explicit refusal for unsupported requests without using a different source", async () => {
@@ -550,8 +673,11 @@ it("keeps an NPC estimate unresolved after newer zero-volume ingredients without
     );
     const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
     expect(refreshed.issues).toHaveLength(1);
-    expect(refreshed.graph.prices[vendorCurrencyOutputId]).toEqual(
-        bound.prices[vendorCurrencyOutputId],
+    expect(refreshed.graph.prices[vendorCurrencyOutputId]?.amount).toBe(
+        bound.prices[vendorCurrencyOutputId]?.amount,
+    );
+    expect(() => assertCraftingSourcePrices(refreshed.graph)).toThrow(
+        "vendor ingredient exchange price is unavailable",
     );
     const history = await craftingMarketSnapshots(db, bound, engine, [vendorHour + 3600]);
     expect(history.points[0]?.graph).toBeNull();

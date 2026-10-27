@@ -29,6 +29,7 @@ import {
     craftingCommodityIdentity,
     invalidEmptyResonatorSourcePrices,
     liveSourcePrices,
+    markVendorPriceUnavailable,
 } from "~/lib/crafting-sources";
 import { craftingVendorUpgrade } from "~/lib/crafting-vendor-upgrades";
 import { craftingCatalogSchema } from "~/schemas/crafting";
@@ -172,6 +173,7 @@ export async function refreshCraftingMarketPrices(
                 )
                     throw new Error("The saved vendor recipe path no longer matches this catalog.");
             } catch (error) {
+                next = markVendorPriceUnavailable(next, id);
                 issues.push(
                     `${id}: ${error instanceof Error ? error.message : "Invalid vendor recipe path."}`,
                 );
@@ -195,6 +197,7 @@ export async function refreshCraftingMarketPrices(
                 (commodity?.baseType !== reference.baseType ||
                     commodity?.variant !== reference.variant))
         ) {
+            if (reference.source === "vendor-upgrade") next = markVendorPriceUnavailable(next, id);
             issues.push(
                 `${id}: the saved source price does not match this input, game, league or currency.`,
             );
@@ -243,8 +246,11 @@ export async function refreshCraftingMarketPrices(
                         : next.prices[id]?.amount !== quote.amount
                 )
                     next = updated;
-            } else
+            } else {
+                if (reference.source === "vendor-upgrade")
+                    next = markVendorPriceUnavailable(next, id);
                 issues.push(`${id}: ${result.missing[id] ?? "The source price is unavailable."}`);
+            }
         }
     }
     return { graph: next, issues };

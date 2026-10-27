@@ -163,7 +163,10 @@ const prefixes = {
     "stash-commodity": "stash-commodity:v1:",
     "vendor-upgrade": "vendor-upgrade:v1:",
 };
+const unavailableVendorPrefix = "vendor-upgrade:unavailable:v1:";
 export function decodeCraftingSourceReference(value?: string): CraftingSourceReference | null {
+    if (value?.startsWith(unavailableVendorPrefix))
+        value = value.slice(unavailableVendorPrefix.length);
     const prefix = Object.values(prefixes).find((prefix) => value?.startsWith(prefix));
     if (!prefix) return null;
     try {
@@ -174,6 +177,23 @@ export function decodeCraftingSourceReference(value?: string): CraftingSourceRef
     } catch {
         return null;
     }
+}
+export function markVendorPriceUnavailable(graph: CraftingGraph, id: string): CraftingGraph {
+    const price = graph.prices[id];
+    if (
+        price?.source !== "market" ||
+        !price.cohortId ||
+        price.cohortId.startsWith(unavailableVendorPrefix) ||
+        decodeCraftingSourceReference(price.cohortId)?.source !== "vendor-upgrade"
+    )
+        return graph;
+    return {
+        ...graph,
+        prices: {
+            ...graph.prices,
+            [id]: { ...price, cohortId: `${unavailableVendorPrefix}${price.cohortId}` },
+        },
+    };
 }
 export function liveSourcePrices(graph: CraftingGraph) {
     return Object.entries(graph.prices).flatMap(([id, price]) => {
@@ -209,6 +229,15 @@ export function assertCraftingSourcePrices(graph: CraftingGraph) {
     if (unavailable.length)
         throw new Error(
             `${unavailable.join(", ")}: the exchange price is unavailable. Refresh it or enter a manual price before calculating.`,
+        );
+    const unavailableVendor = Object.entries(graph.prices).flatMap(([id, price]) =>
+        price.source === "market" && price.cohortId?.startsWith(unavailableVendorPrefix)
+            ? [id]
+            : [],
+    );
+    if (unavailableVendor.length)
+        throw new Error(
+            `${unavailableVendor.join(", ")}: the vendor ingredient exchange price is unavailable. Refresh it or enter a manual price before calculating.`,
         );
     const invalid = invalidEmptyResonatorSourcePrices(graph);
     if (invalid.length)
