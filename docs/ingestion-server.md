@@ -30,9 +30,13 @@ failures as market volume grows. See [Cloudflare's limits](https://developers.cl
 
 This is a bounded recovery policy: an outage longer than six hours can leave older gaps.
 Use the worker's explicit exchange backfill below when longer history is needed. Empty feed
-hours remain empty; absent markets are not invented as zero-volume observations. Stored
-equipment and exchange quotes must come from the latest 24 completed hours at the requested
-cutoff. Historical cutoffs remain inclusive and cannot select the current incomplete hour.
+hours remain empty; absent markets are not invented as zero-volume observations. Equipment
+quotes can use the latest 24 completed hours at the requested cutoff. Crafting exchange quotes
+require a positive observation at the selected completed hour; a missing hour stays unknown.
+Explicit adaptive estimates may widen behind that positive anchor, and both conversion legs
+must use the same selected hour and estimate window. Historical cutoffs remain inclusive and
+cannot select the current incomplete hour. Listing-price conversion still uses the listing's
+exact hour; the separate general-market display-rate fallback is unchanged.
 
 Equipment asking prices and their source archive still require a persistent public-stash
 worker. Deploying the scheduled exchange collector does not create equipment observations

@@ -546,15 +546,13 @@ it("converts captured indirect pairs only with positive matching-hour legs and p
         estimator: "cross-rate-v1",
         hour: HOUR,
     });
-    expect(
-        (
-            await findCraftingExchangePrices(db, {
-                ...input,
-                at: HOUR + 3600,
-                conversion: "reference-currency-v1",
-            })
-        ).quotes[transmuteId],
-    ).toEqual(converted.quotes[transmuteId]);
+    const unavailable = await findCraftingExchangePrices(db, {
+        ...input,
+        at: HOUR + 3600,
+        conversion: "reference-currency-v1",
+    });
+    expect(unavailable.quotes[transmuteId]).toBeUndefined();
+    expect(unavailable.missing[transmuteId]).toContain("selected completed hour");
     for (const wrong of [
         { at: HOUR - 1 },
         { at: HOUR + 24 * 3600 },

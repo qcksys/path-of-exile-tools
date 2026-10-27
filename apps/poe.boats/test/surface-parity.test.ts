@@ -1377,6 +1377,42 @@ describe("transport parity", () => {
                     expected,
                 );
             }
+            const message =
+                "No captured exchange observation is available at the selected completed hour.";
+            const unavailable = { quotes: {}, missing: { [transmuteId]: message } };
+            lookup.mockResolvedValue(unavailable);
+            for (const [name, path, input, expected] of [
+                [
+                    "find_crafting_exchange_prices",
+                    "/market/exchange",
+                    { ...cases[0][2], at: exchangeSnapshot.hour + 3600 },
+                    unavailable,
+                ],
+                [
+                    "refresh_crafting_item_prices",
+                    "/market/refresh",
+                    { graph: bound },
+                    { graph: bound, issues: [`${transmuteId}: ${message}`] },
+                ],
+            ] as const) {
+                const response = await api.request(
+                    `https://poe.boats/api/v1/crafting${path}`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(input),
+                    },
+                    { runtime },
+                );
+                expect(response.status, name).toBe(200);
+                expect(await response.json()).toEqual(expected);
+                const rpc = RpcSchema.parse(
+                    await (await mcp("tools/call", { name, arguments: input })).json(),
+                );
+                const result = CallToolResultSchema.parse(rpc.result);
+                expect(result.isError).not.toBe(true);
+                expect(result.structuredContent, name).toEqual(expected);
+            }
             const invalid = { graph, id: transmuteId, quote: { ...quote, league: "Other" } };
             expect(
                 (

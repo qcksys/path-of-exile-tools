@@ -28,7 +28,7 @@ export function quoteExchangeWindow(
             continue;
         hours.set(row.hour, [...(hours.get(row.hour) ?? []), row]);
     }
-    const latestHour = Math.max(...hours.keys());
+    const latestHour = Math.floor(at / 3600) * 3600;
     function observation(hour: number) {
         const rows = hours.get(hour);
         if (!rows?.length) return null;

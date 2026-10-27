@@ -79,7 +79,7 @@ describe("captured crafting exchange prices", () => {
         snapshot(item, chaos, completedHour - 13 * 24 * 3600);
         const result = await findCraftingExchangePrices(db, input);
         expect(result.quotes[item]).toBeUndefined();
-        expect(result.missing[item]).toContain("24 completed hours");
+        expect(result.missing[item]).toContain("selected completed hour");
     });
 
     it("selects completed hours and preserves an inclusive historical cutoff", async () => {
@@ -107,7 +107,7 @@ describe("captured crafting exchange prices", () => {
         );
         const missing = await findCraftingExchangePrices(db, { ...input, at: at + 24 * 3600 });
         expect(missing.quotes[item]).toBeUndefined();
-        expect(missing.missing[item]).toContain("24 completed hours");
+        expect(missing.missing[item]).toContain("selected completed hour");
     });
 
     it("does not replace a zero-volume newest pair with an older positive observation", async () => {
@@ -124,7 +124,7 @@ describe("captured crafting exchange prices", () => {
         expect((await findCraftingExchangePrices(db, input)).quotes[item]).toBeUndefined();
     });
 
-    it("converts at a usable common hour when the newest leg observations differ", async () => {
+    it("does not reuse an older common hour when a conversion leg is missing at the cutoff", async () => {
         snapshot(item, divine, completedHour, 2);
         snapshot(item, divine, completedHour - 3600, 3);
         snapshot(divine, chaos, completedHour - 3600, 100);
@@ -132,12 +132,8 @@ describe("captured crafting exchange prices", () => {
             ...input,
             conversion: "reference-currency-v1",
         });
-        expect(result.quotes[item]).toMatchObject({
-            amount: 300,
-            hour: completedHour - 3600,
-            estimator: "cross-rate-v1",
-            legs: [{ hour: completedHour - 3600 }, { hour: completedHour - 3600 }],
-        });
+        expect(result.quotes[item]).toBeUndefined();
+        expect(result.missing[item]).toBeTruthy();
     });
 
     it("does not hide a zero-volume newest conversion leg with older positive trades", async () => {
@@ -154,7 +150,7 @@ describe("captured crafting exchange prices", () => {
         ).toBeUndefined();
     });
 
-    it("uses a matching-hour bridge instead of an older direct pair when an exact hour is required", async () => {
+    it("uses a cutoff-hour bridge instead of an older direct pair by default", async () => {
         snapshot(item, chaos, completedHour - 3600, 5);
         snapshot(item, divine, completedHour, 2);
         snapshot(divine, chaos, completedHour, 100);
@@ -163,13 +159,36 @@ describe("captured crafting exchange prices", () => {
             at: completedHour,
             conversion: "reference-currency-v1",
         };
-        expect((await findCraftingExchangePrices(db, request)).quotes[item]?.amount).toBe(5);
+        expect((await findCraftingExchangePrices(db, request)).quotes[item]).toMatchObject({
+            amount: 200,
+            hour: completedHour,
+            estimator: "cross-rate-v1",
+        });
         const result = await findCraftingExchangePrices(db, request, { exactHour: true });
         expect(result.quotes[item]).toMatchObject({
             amount: 200,
             hour: completedHour,
             estimator: "cross-rate-v1",
         });
+    });
+
+    it.each([
+        undefined,
+        "adaptive-v1",
+    ] as const)("leaves an absent cutoff-hour observation unknown with window %s", async (window) => {
+        snapshot(item, chaos, completedHour - 3600, 3);
+        const result = await findCraftingExchangePrices(db, { ...input, window });
+        expect(result.quotes[item]).toBeUndefined();
+        expect(result.missing[item]).toBeTruthy();
+        expect(
+            (
+                await findCraftingExchangePrices(db, {
+                    ...input,
+                    window,
+                    at: completedHour - 3600,
+                })
+            ).quotes[item],
+        ).toMatchObject({ amount: 3, hour: completedHour - 3600 });
     });
 
     it("uses the same adaptive window for both conversion legs", async () => {

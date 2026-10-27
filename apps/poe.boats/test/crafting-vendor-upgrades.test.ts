@@ -117,6 +117,7 @@ it("resolves the verified 9-Weeping route and refuses backwards, cross-family, u
 });
 
 it("prices the selected exact ingredient, retains its low volume and replaces a manual amount only on binding", async () => {
+    vi.setSystemTime((vendorHour + 5400) * 1000);
     capture();
     const graph = {
         ...exchangeGraph(),
@@ -177,6 +178,7 @@ it("refuses forged paths, quantities, arithmetic, input quotes, scope, and incom
 });
 
 it("retains explicit conversion even with a direct quote, and verifies every matching-hour conversion leg", async () => {
+    vi.setSystemTime((vendorHour + 5400) * 1000);
     capture();
     const result = await findCraftingSourcePrices(
         exchangeGraph(),
@@ -285,12 +287,16 @@ it("keeps the fixed input and path when a closer-tier quote appears, and refresh
     );
 });
 
-it("lets a newer zero block old ingredient prices; failed refresh preserves the amount while history reports the gap", async () => {
+it.each([
+    "missing",
+    "zero",
+])("refuses a %s latest ingredient hour; failed refresh preserves the amount while history reports the gap", async (latest) => {
     capture();
-    capture({
-        hour: vendorHour + 3600,
-        volumeTraded: { [vendorInputId]: 0, "Metadata/Items/Currency/CurrencyRerollRare": 0 },
-    });
+    if (latest === "zero")
+        capture({
+            hour: vendorHour + 3600,
+            volumeTraded: { [vendorInputId]: 0, "Metadata/Items/Currency/CurrencyRerollRare": 0 },
+        });
     const bound = bindCraftingSourcePrice(exchangeGraph(), engine, vendorOutputId, vendorQuote);
     const result = await findCraftingSourcePrices(bound, engine, options, db);
     expect(result.quotes).toEqual({});
@@ -372,6 +378,7 @@ it("refuses missing or ambiguous canonical currency names and IDs", () => {
 });
 
 it("quotes four fresh Transmutations only on explicit selection and preserves manual amounts until binding", async () => {
+    vi.setSystemTime((vendorHour + 5400) * 1000);
     capture(vendorCurrencySnapshot);
     const graph = {
         ...exchangeGraph(),
