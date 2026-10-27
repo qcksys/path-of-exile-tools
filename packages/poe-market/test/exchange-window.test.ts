@@ -4,7 +4,7 @@ import {
     type ExchangeSnapshot,
     encodeExchangePriceReference,
 } from "../src/exchange.ts";
-import { quoteExchangeWindow } from "../src/exchange-window.ts";
+import { quoteExchangeConversion, quoteExchangeWindow } from "../src/exchange-window.ts";
 
 const itemId = "Metadata/Items/Currency/CurrencyCorrupt";
 const quoteId = "Metadata/Items/Currency/CurrencyRerollRare";
@@ -28,6 +28,67 @@ function history(volume = 2): ExchangeSnapshot[] {
     }));
 }
 describe("adaptive exchange estimates", () => {
+    it.each([
+        undefined,
+        "adaptive-v1",
+    ] as const)("requires a positive observation at the requested cutoff with window %s", (window) => {
+        const rows = history();
+        const scoped = { ...reference, window };
+        expect(quoteExchangeWindow(rows.slice(1), scoped, end)).toBeNull();
+        expect(quoteExchangeWindow(rows, scoped, end + 3600)).toBeNull();
+        expect(quoteExchangeWindow(rows, scoped, end - 3600)?.hour).toBe(end - 3600);
+        expect(quoteExchangeWindow(rows, scoped, end + 1800)).toEqual(
+            quoteExchangeWindow(rows, scoped, end),
+        );
+        expect(
+            quoteExchangeWindow(
+                [{ ...rows[0]!, hour: end + 3600 }, ...rows.slice(1)],
+                scoped,
+                end + 1800,
+            ),
+        ).toBeNull();
+        expect(
+            quoteExchangeWindow([{ ...rows[0]!, league: "Other" }, ...rows.slice(1)], scoped, end),
+        ).toBeNull();
+    });
+
+    it.each([
+        undefined,
+        "adaptive-v1",
+    ] as const)("does not roll conversion legs back to an older common hour with window %s", (window) => {
+        const bridge = "Metadata/Items/Currency/CurrencyModValues";
+        const first = history().map((row) => ({
+            ...row,
+            marketId: `${itemId}|${bridge}`,
+            volumeTraded: { [itemId]: 2, [bridge]: 4 },
+        }));
+        const second = history().map((row) => ({
+            ...row,
+            marketId: `${bridge}|${quoteId}`,
+            volumeTraded: { [bridge]: 2, [quoteId]: 200 },
+        }));
+        const scoped = { ...reference, window };
+        expect(
+            quoteExchangeConversion([...first, ...second.slice(1)], scoped, bridge, end),
+        ).toBeNull();
+        expect(
+            quoteExchangeConversion([...first.slice(1), ...second], scoped, bridge, end),
+        ).toBeNull();
+        expect(quoteExchangeConversion([...first, ...second], scoped, bridge, end)).toMatchObject({
+            amount: 200,
+            hour: end,
+            legs: [{ hour: end }, { hour: end }],
+        });
+        expect(
+            quoteExchangeConversion(
+                [...first, ...second, { ...second[0]!, hour: end + 3600 }],
+                scoped,
+                bridge,
+                end + 1800,
+            ),
+        ).toEqual(quoteExchangeConversion([...first, ...second], scoped, bridge, end));
+    });
+
     it("keeps busy markets hourly, widens stable thin markets, and preserves the policy in references", () => {
         for (const [volume, hours] of [
             [100, 1],

@@ -140,7 +140,7 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Look up captured exchange trade-volume estimates for canonical crafting inputs in either game. Defaults to the latest hour. Optional adaptive-v1 considers complete 1/6/24-hour windows, widening below 100 traded input units while hourly prices vary at most 10%. Optional reference-currency-v1 converts missing direct pairs through positive matching-hour chaos/divine/exalted legs, preserving both legs and policy. No zero-volume leg is priced. These are historical trades, not current buy offers or calibrated confidence.",
+            "Look up captured exchange trade-volume estimates for canonical crafting inputs in either game at the latest completed hour, or the completed hour selected by at. Missing, zero-volume or conflicting observations at that hour remain unknown. Optional adaptive-v1 widens a positive selected-hour anchor over complete 1/6/24-hour windows below 100 traded input units while hourly prices vary at most 10%. Optional reference-currency-v1 converts missing direct pairs through positive chaos/divine/exalted legs at that same selected hour, preserving both legs and policy without rolling back to an older common hour. These are historical trades, not current buy offers or calibrated confidence.",
         input: craftingExchangeInputSchema,
         output: craftingExchangeResultSchema,
         execute: (input, context) => findCraftingExchangePrices(context.db, input),

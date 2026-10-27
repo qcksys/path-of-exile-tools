@@ -26,26 +26,39 @@ afterEach(() => {
 });
 
 it.each([
-    false,
-    true,
-])("shows history when a current quote is missing (saved binding: %s)", async (bound) => {
+    { bound: false, absent: false },
+    { bound: true, absent: false },
+    { bound: false, absent: true },
+    { bound: true, absent: true },
+])("shows history when a current quote is missing (saved binding: $bound, absent hour: $absent)", async ({
+    bound,
+    absent,
+}) => {
     const latest = {
         ...exchangeSnapshot,
         hour: exchangeSnapshot.hour + 3600,
         volumeTraded: { [transmuteId]: 0, [chaosId]: 0 },
     };
+    const message = absent
+        ? "No captured exchange observation is available at the selected completed hour."
+        : "No positive traded volume in the latest hour.";
     const fetcher = vi
         .fn()
         .mockResolvedValueOnce(
             new Response(
                 JSON.stringify({
                     quotes: {},
-                    missing: { [transmuteId]: "No positive traded volume in the latest hour." },
+                    missing: { [transmuteId]: message },
                 }),
             ),
         )
         .mockResolvedValueOnce(
-            new Response(JSON.stringify({ history: [latest, exchangeSnapshot], nextBefore: null })),
+            new Response(
+                JSON.stringify({
+                    history: absent ? [exchangeSnapshot] : [latest, exchangeSnapshot],
+                    nextBefore: null,
+                }),
+            ),
         );
     vi.stubGlobal("fetch", fetcher);
     const onChange = vi.fn();
@@ -60,15 +73,20 @@ it.each([
         />,
     );
     fireEvent.click(screen.getByRole("button", { name: "Find exchange prices" }));
-    await screen.findByText("No positive traded volume in the latest hour.");
+    await screen.findByText(message);
+    expect(
+        screen.getByRole("combobox", { name: "Exchange estimate window" }).textContent,
+    ).toContain("Latest completed hour");
     const missing = screen.getByRole("region", { name: "Exchange price for Orb of Transmutation" });
     fireEvent.click(within(missing).getByRole("button", { name: "View exchange history" }));
     const history = await screen.findByRole("region", { name: "Exchange price history" });
-    expect(within(history).getAllByRole("row")[1]?.textContent).toContain("Unknown");
-    expect(
-        within(within(history).getAllByRole("row")[1]!).getAllByRole("cell")[2]?.textContent,
-    ).toBe("0");
-    expect(within(history).getAllByRole("row")[2]?.textContent).toContain("2.0000");
+    if (!absent) {
+        expect(within(history).getAllByRole("row")[1]?.textContent).toContain("Unknown");
+        expect(
+            within(within(history).getAllByRole("row")[1]!).getAllByRole("cell")[2]?.textContent,
+        ).toBe("0");
+    }
+    expect(within(history).getAllByRole("row").at(-1)?.textContent).toContain("2.0000");
     expect(JSON.parse(fetcher.mock.calls[1]![1].body)).toEqual({
         realm: "pc",
         league: "Standard",

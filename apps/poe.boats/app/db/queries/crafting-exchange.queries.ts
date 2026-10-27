@@ -75,7 +75,7 @@ export async function findCraftingExchangePrices(
     for (const id of Object.keys(result.missing))
         if (id.startsWith("Metadata/Items/"))
             result.missing[id] =
-                "No positive direct pair or matching-hour conversion through chaos, divine or exalted is available in the latest 24 completed hours at this cutoff.";
+                "No positive direct pair or matching-hour conversion through chaos, divine or exalted is available at the selected completed hour.";
     return result;
 }
 async function findDirectExchangePrices(
@@ -106,7 +106,7 @@ async function findDirectExchangePrices(
         else {
             pairs.push(...pairIds(itemId, quoteId));
             result.missing[itemId] =
-                "No captured exchange observation is available in the latest 24 completed hours at this cutoff.";
+                "No captured exchange observation is available at the selected completed hour.";
         }
     }
     if (!pairs.length || !quoteId) return result;
@@ -123,7 +123,7 @@ async function findDirectExchangePrices(
             delete result.missing[itemId];
         } else if (snapshots.some((row) => pairIds(itemId, quoteId).includes(row.marketId)))
             result.missing[itemId] =
-                "No positive traded volume is available in the latest captured exchange hour, or its observations conflict for this pair.";
+                "No positive traded volume is available at the selected completed hour, or its observations conflict for this pair.";
     }
     return result;
 }

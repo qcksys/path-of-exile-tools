@@ -146,8 +146,8 @@ export function ExchangePricePicker({
                 </Label>
                 {conversion && (
                     <p className="text-muted-foreground">
-                        Both traded legs must use the same observed hour and estimate window.
-                        Converted estimates have no direct traded volume or observed range.
+                        Both traded legs must use the selected completed hour and the same estimate
+                        window. Converted estimates have no direct traded volume or observed range.
                     </p>
                 )}
                 <Label className="block">
@@ -157,7 +157,7 @@ export function ExchangePricePicker({
                         value={window}
                         onValueChange={(selectedValue) => setWindow(selectedValue as typeof window)}
                     >
-                        <FormSelectItem value="hourly">Latest captured hour</FormSelectItem>
+                        <FormSelectItem value="hourly">Latest completed hour</FormSelectItem>
                         <FormSelectItem value="adaptive-v1">
                             Adaptive: 1, 6 or 24 hours
                         </FormSelectItem>
@@ -168,8 +168,8 @@ export function ExchangePricePicker({
                         Widens while fewer than {adaptiveExchangePolicy.minimumItemVolume} input
                         units traded and hourly estimates vary by at most{" "}
                         {adaptiveExchangePolicy.maximumMovement * 100}%. Requires every hour to be
-                        captured. A latest hour with no trades stays unknown. This is a fixed
-                        estimation policy, not calibrated confidence.
+                        captured. A missing latest hour or one with no trades stays unknown. This is
+                        a fixed estimation policy, not calibrated confidence.
                     </p>
                 )}
                 <div className="grid gap-2 sm:grid-cols-2">
