@@ -7,6 +7,7 @@ import {
     json,
     mysqlTable,
     primaryKey,
+    tinyint,
     varchar,
 } from "drizzle-orm/mysql-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
@@ -30,7 +31,11 @@ export type MarketPriceSummary = {
  * Permanent hourly summary of public-stash listings, written by
  * @poe-tools/stash-ingest. One row per *market* per hour, where a market
  * is identified by (league, hour, item_key, corrupted, foil_variation,
- * signature_kind, signature_value).
+ * links, signature_kind, signature_value).
+ *
+ * `links` is 5 or 6 for a unique whose largest linked socket group has that
+ * many sockets, as poe.ninja splits them, otherwise 0. Rows ingested before
+ * the split are 0 whatever their links.
  *
  * `item_key` is the unique's market identity:
  *   - `unid:<icon>`     unidentified unique (variant carried by icon_asset)
@@ -62,6 +67,7 @@ export const tStashUniqueHourly = mysqlTable(
         identified: boolean().notNull(),
         corrupted: boolean().notNull().default(false),
         foilVariation: int().notNull().default(-1),
+        links: tinyint().notNull().default(0),
         signatureKind: varchar({ length: 32 }).notNull().default(""),
         signatureValue: varchar({ length: 255 }).notNull().default(""),
 
@@ -94,6 +100,7 @@ export const tStashUniqueHourly = mysqlTable(
                 table.identified,
                 table.corrupted,
                 table.foilVariation,
+                table.links,
                 table.signatureKind,
                 table.signatureValue,
             ],

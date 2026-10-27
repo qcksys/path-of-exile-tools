@@ -65,9 +65,16 @@ const shared = {
     readOnly: true,
     method: "get",
 } as const;
-// Markets merge foil and non-foil rows, so a market row has no foil variation.
+// Markets merge foil and non-foil rows, and list rows and history merge or filter link counts,
+// so a market row has neither a foil variation nor links.
 const marketRow = sStashUniqueHourlyS
-    .omit({ rowCreatedAt: true, rowUpdatedAt: true, rowDeletedAt: true, foilVariation: true })
+    .omit({
+        rowCreatedAt: true,
+        rowUpdatedAt: true,
+        rowDeletedAt: true,
+        foilVariation: true,
+        links: true,
+    })
     .extend({
         rowCreatedAt: z.string(),
         rowUpdatedAt: z.string(),
@@ -270,7 +277,7 @@ export const operations = [
         name: "get_season_market",
         ui: "/1/market/currency",
         description:
-            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`) return `bases` instead: normal, magic and rare equipment cohorts by base, item level, links and quality, without likely-sale estimates. With an item, returns that item's history and every variant of it in the period instead of rows.",
+            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`) return `bases` instead: normal, magic and rare equipment cohorts by base, item level, links and quality, without likely-sale estimates. With an item, returns that item's history and every variant of it in the period instead of rows. Rows and an item without `links` merge every link count; `links` (0 for under 5, 5 or 6) reads one linked-socket market of a unique, as poe.ninja splits body armours and two-handed weapons.",
         input: marketFiltersSchema,
         output: z.object({
             filters: marketFiltersSchema,
@@ -313,10 +320,18 @@ export const operations = [
                             signatureValue: true,
                             signatureData: true,
                         })
-                        .extend({ periodSales: z.number() }),
+                        .extend({
+                            periodSales: z.number(),
+                            links: z
+                                .number()
+                                .nullable()
+                                .describe(
+                                    "5 or 6 linked sockets, 0 for fewer; null for the market merging every link count (pass it as `links` to read one)",
+                                ),
+                        }),
                 )
                 .describe(
-                    "The item's markets, plus the same unique's markets in the other identification state (unidentified uniques are keyed unid:<icon>)",
+                    "The item's markets, plus the same unique's markets in the other identification state (unidentified uniques are keyed unid:<icon>). A market with 5- or 6-link copies also lists each link count",
                 ),
             modValues: watchersEyeModValues,
             history: z.array(

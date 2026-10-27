@@ -61,6 +61,8 @@ export const marketFiltersSchema = z.object({
     corrupted: z.enum(["true", "false"]).default("false"),
     kind: z.string().max(32).default(""),
     value: z.string().max(255).default(""),
+    /** An item page's linked-socket market (0 for under 5 links); omitted, every link count merges. */
+    links: z.enum(["0", "5", "6"]).optional(),
     /** Watcher's Eye mods every valued item must have, separated by `|`. */
     mods: z.string().max(1000).default(""),
     /** Watcher's Eye mods of which valued items need at least one, separated by `|`. */
@@ -162,6 +164,8 @@ export function marketLink(
         corrupted: boolean;
         signatureKind: string;
         signatureValue: string;
+        /** Null or omitted for the market merging every link count. */
+        links?: number | null;
     },
 ) {
     const params = new URLSearchParams({
@@ -186,6 +190,7 @@ export function marketLink(
         params.set("corrupted", String(item.corrupted));
         params.set("kind", item.signatureKind);
         params.set("value", item.signatureValue);
+        if (item.links != null) params.set("links", String(item.links));
         if (filters.mods) params.set("mods", filters.mods);
         if (filters.anyMods) params.set("anyMods", filters.anyMods);
         return `/1/market/items/${encodeURIComponent(item.itemKey)}?${params}`;

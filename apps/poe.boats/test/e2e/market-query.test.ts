@@ -535,6 +535,81 @@ it("merges foil and non-foil listings into one market for the list, variants and
     expect(item.history[1]!.merged).toMatchObject({ count: 13, min: 5, max: 100 });
 });
 
+it("merges link counts on the list and splits them on the item page, alongside mod splits", async () => {
+    const armour = (links: number, overrides: Partial<TStashUniqueHourlyI>) =>
+        observation({
+            league: "Links",
+            itemKey: "Atziri's Splendour",
+            name: "Atziri's Splendour",
+            baseType: "Sacrificial Garb",
+            signatureKind: "unique-mod-split",
+            signatureValue: "Armour",
+            links,
+            ...overrides,
+        });
+    const chaos = (count: number, median: number) => ({
+        chaos: { count, min: median, median, max: median },
+    });
+    await db.insert(market).values([
+        armour(0, { listingCount: 8, likelySales: 1, prices: chaos(8, 50) }),
+        armour(5, { listingCount: 3, likelySales: 2, prices: chaos(3, 80) }),
+        armour(6, {
+            hour: hour - 3600,
+            listingCount: 2,
+            likelySales: 3,
+            prices: chaos(2, 300),
+        }),
+        armour(6, { listingCount: 1, likelySales: 1, prices: chaos(1, 320) }),
+        armour(6, { foilVariation: 3, listingCount: 1, prices: chaos(1, 400) }),
+        armour(0, { signatureValue: "ES", listingCount: 4, prices: chaos(4, 20) }),
+    ]);
+    const filters = marketFiltersSchema.parse({ league: "Links", currency: "chaos" });
+    const list = await marketData(db as unknown as TDatabase, filters, "list");
+    expect(list.rows.map((row) => [row.signatureValue, row.listingCount, row.periodSales])).toEqual(
+        [
+            ["Armour", 13, 7],
+            ["ES", 4, 0],
+        ],
+    );
+    expect(list.rows[0]).not.toHaveProperty("links");
+    expect(list.rows[0]!.prices).toMatchObject({ chaos: { count: 13, min: 50, max: 400 } });
+
+    const item = (links?: "0" | "5" | "6") =>
+        marketData(
+            db as unknown as TDatabase,
+            marketFiltersSchema.parse({
+                league: "Links",
+                currency: "chaos",
+                item: "Atziri's Splendour",
+                kind: "unique-mod-split",
+                value: "Armour",
+                links,
+            }),
+            "history",
+        );
+    const merged = await item();
+    // A market with linked copies is listed merged first, then by link count; one without stays merged only.
+    expect(merged.variants.map((row) => [row.signatureValue, row.links, row.periodSales])).toEqual([
+        ["Armour", null, 7],
+        ["Armour", 6, 4],
+        ["Armour", 5, 2],
+        ["Armour", 0, 1],
+        ["ES", null, 0],
+    ]);
+    expect(merged.history.map((row) => [row.hour, row.listingCount])).toEqual([
+        [hour - 3600, 2],
+        [hour, 13],
+    ]);
+    const sixLink = await item("6");
+    expect(sixLink.history.map((row) => [row.hour, row.listingCount, row.likelySales])).toEqual([
+        [hour - 3600, 2, 3],
+        [hour, 2, 1],
+    ]);
+    expect(sixLink.history[1]!.merged).toMatchObject({ count: 2, min: 320, max: 400 });
+    expect(sixLink.history[1]).not.toHaveProperty("links");
+    expect((await item("0")).history.map((row) => row.listingCount)).toEqual([8]);
+});
+
 it("lists a unique's markets in both identification states as variants of each other", async () => {
     const icon = "2DItems/Jewels/ElderJewel";
     const eye = (overrides: Partial<TStashUniqueHourlyI>) =>
