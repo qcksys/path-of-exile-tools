@@ -164,9 +164,74 @@ const prefixes = {
     "vendor-upgrade": "vendor-upgrade:v1:",
 };
 const unavailableVendorPrefix = "vendor-upgrade:unavailable:v1:";
+const exchangePriorityPrefix = "stash-commodity:v1:exchange-priority:";
+const unavailableCommodityPrefix = "stash-commodity:v1:exchange-unavailable:";
+
+function commodityPriority(value?: string): { original: string; exchange: string | null } | null {
+    const prefix = [exchangePriorityPrefix, unavailableCommodityPrefix].find((entry) =>
+        value?.startsWith(entry),
+    );
+    if (!prefix || !value) return null;
+    try {
+        const parsed: unknown = JSON.parse(decodeURIComponent(value.slice(prefix.length)));
+        if (
+            typeof parsed !== "object" ||
+            parsed === null ||
+            !("original" in parsed) ||
+            typeof parsed.original !== "string" ||
+            !parsed.original.startsWith(prefixes["stash-commodity"]) ||
+            parsed.original.startsWith(exchangePriorityPrefix) ||
+            parsed.original.startsWith(unavailableCommodityPrefix) ||
+            !("exchange" in parsed) ||
+            (parsed.exchange !== null && typeof parsed.exchange !== "string")
+        )
+            return null;
+        return { original: parsed.original, exchange: parsed.exchange };
+    } catch {
+        return null;
+    }
+}
+
+export function commodityExchangePriority(value?: string) {
+    const wrapper = commodityPriority(value);
+    return wrapper
+        ? { ...wrapper, unavailable: value!.startsWith(unavailableCommodityPrefix) }
+        : null;
+}
+
+export function markCommodityExchangePrice(
+    graph: CraftingGraph,
+    id: string,
+    exchangeGraph?: CraftingGraph,
+): CraftingGraph {
+    const price = graph.prices[id];
+    if (price?.source !== "market" || !price.cohortId) return graph;
+    const original = commodityPriority(price.cohortId)?.original ?? price.cohortId;
+    if (decodeCraftingSourceReference(original)?.source !== "stash-commodity") return graph;
+    const exchangePrice = exchangeGraph?.prices[id];
+    const exchange = exchangePrice?.cohortId ?? commodityPriority(price.cohortId)?.exchange ?? null;
+    return {
+        ...graph,
+        prices: {
+            ...graph.prices,
+            [id]: {
+                ...(exchangePrice ?? price),
+                cohortId: `${exchangePrice ? exchangePriorityPrefix : unavailableCommodityPrefix}${encodeURIComponent(JSON.stringify({ original, exchange }))}`,
+            },
+        },
+    };
+}
 export function decodeCraftingSourceReference(value?: string): CraftingSourceReference | null {
     if (value?.startsWith(unavailableVendorPrefix))
         value = value.slice(unavailableVendorPrefix.length);
+    if (
+        value?.startsWith(exchangePriorityPrefix) ||
+        value?.startsWith(unavailableCommodityPrefix)
+    ) {
+        const wrapper = commodityPriority(value);
+        if (!wrapper) return null;
+        value = wrapper.original;
+    }
     const prefix = Object.values(prefixes).find((prefix) => value?.startsWith(prefix));
     if (!prefix) return null;
     try {
@@ -229,6 +294,15 @@ export function assertCraftingSourcePrices(graph: CraftingGraph) {
     if (unavailable.length)
         throw new Error(
             `${unavailable.join(", ")}: the exchange price is unavailable. Refresh it or enter a manual price before calculating.`,
+        );
+    const unavailableCommodity = Object.entries(graph.prices).flatMap(([id, price]) =>
+        price.source === "market" && price.cohortId?.startsWith(unavailableCommodityPrefix)
+            ? [id]
+            : [],
+    );
+    if (unavailableCommodity.length)
+        throw new Error(
+            `${unavailableCommodity.join(", ")}: the exchange price is unavailable. Refresh it or enter a manual price before calculating.`,
         );
     const unavailableVendor = Object.entries(graph.prices).flatMap(([id, price]) =>
         price.source === "market" && price.cohortId?.startsWith(unavailableVendorPrefix)

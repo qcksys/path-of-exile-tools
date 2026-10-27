@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { TDatabase } from "~/db/client";
 import { findCraftingCommodityPrices } from "~/db/queries/crafting-commodities.queries";
 import { findCraftingExchangePrices } from "~/db/queries/crafting-exchange.queries";
+import { knownCraftingExchangeItems } from "~/db/queries/crafting-exchange-membership.queries";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { craftingCommodityIdentity, craftingSourceRecipe } from "~/lib/crafting-sources";
 import { craftingVendorUpgrade } from "~/lib/crafting-vendor-upgrades";
@@ -92,6 +93,7 @@ export async function findCraftingSourcePrices(
     engine: CraftingEngine,
     options: CraftingSourceOptions,
     db?: TDatabase,
+    membership?: Set<string> | null,
 ): Promise<CraftingSourceResult> {
     const result: CraftingSourceResult = { quotes: {}, missing: {} };
     const feeds = new Map<string, Feed | Error>();
@@ -225,10 +227,21 @@ export async function findCraftingSourcePrices(
         }
     }
     if (commodities.length && db) {
+        const known =
+            membership === undefined
+                ? await knownCraftingExchangeItems(db, graph.league!, options.at)
+                : membership;
+        const eligible = commodities.filter((commodity) => {
+            if (known && !known.has(commodity.id)) return true;
+            result.missing[commodity.id] = known
+                ? "This item has a captured exchange market. Use an exchange quote; the current hour may be unpriced."
+                : "Exchange market membership exceeds the safe lookup limit. Use an exchange quote or a manual price.";
+            return false;
+        });
         const captured = await findCraftingCommodityPrices(
             db,
             graph,
-            commodities,
+            eligible,
             options.at,
             options.conversion,
         );

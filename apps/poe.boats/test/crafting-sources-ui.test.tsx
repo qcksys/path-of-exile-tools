@@ -5,7 +5,12 @@ import { afterEach, expect, it, vi } from "vite-plus/test";
 import { GraphPriceInput } from "~/components/crafting/graph-node-editor";
 import { SourcePricePicker } from "~/components/crafting/source-price-picker";
 import { VendorUpgradePricePicker } from "~/components/crafting/vendor-upgrade-price-picker";
-import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
+import { bindExchangePrice } from "~/lib/crafting-exchange";
+import {
+    bindCraftingSourcePrice,
+    decodeCraftingSourceReference,
+    markCommodityExchangePrice,
+} from "~/lib/crafting-sources";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import { byText, changeControl } from "./control-helpers";
 import {
@@ -18,7 +23,7 @@ import {
     unravellingName,
     unravellingQuote,
 } from "./crafting-commodity-fixtures";
-import { exchangeGraph } from "./crafting-exchange-fixtures";
+import { exchangeGraph, exchangeQuote } from "./crafting-exchange-fixtures";
 import { engine } from "./crafting-fixtures";
 import { yellowBeastComponent } from "./crafting-source-fixtures";
 import {
@@ -40,6 +45,108 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 const id = "EinharMasterCraftMorrigan7";
+
+function bindResponse(init: RequestInit) {
+    const input = JSON.parse(String(init.body));
+    return new Response(
+        JSON.stringify({
+            graph: bindCraftingSourcePrice(input.graph, engine, input.id, input.quote),
+        }),
+    );
+}
+
+it("keeps newer draft edits when a saved source binding finishes late", async () => {
+    let finish: (response: Response) => void = () => {};
+    let bindingInit: RequestInit | undefined;
+    vi.stubGlobal(
+        "fetch",
+        vi.fn().mockImplementation((url, init) => {
+            if (String(url).endsWith("/bind")) {
+                bindingInit = init;
+                return new Promise<Response>((resolve) => {
+                    finish = resolve;
+                });
+            }
+            return Promise.resolve(
+                new Response(
+                    JSON.stringify({ quotes: { [essenceId]: commodityQuote }, missing: {} }),
+                ),
+            );
+        }),
+    );
+    const onChange = vi.fn();
+    const graph = exchangeGraph();
+    const view = render(
+        <SourcePricePicker
+            graph={graph}
+            engine={engine}
+            entries={[[essenceId, essenceName]]}
+            onChange={onChange}
+        />,
+    );
+    fireEvent.click(screen.getByText("Currency asking prices"));
+    fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
+    await screen.findByText("1 of 1 inputs priced.");
+    fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
+    await waitFor(() => expect(bindingInit).toBeDefined());
+    view.rerender(
+        <SourcePricePicker
+            graph={{
+                ...graph,
+                prices: {
+                    [essenceId]: {
+                        amount: 99,
+                        currency: "chaos",
+                        source: "manual",
+                        confidence: null,
+                    },
+                },
+            }}
+            engine={engine}
+            entries={[[essenceId, essenceName]]}
+            onChange={onChange}
+        />,
+    );
+    finish(bindResponse(bindingInit!));
+    await waitFor(() =>
+        expect(
+            screen.getByRole("button", { name: "Find asking prices" }).hasAttribute("disabled"),
+        ).toBe(false),
+    );
+    expect(onChange).not.toHaveBeenCalled();
+});
+
+it("shows unavailable exchange bindings as unknown instead of a saved stash amount", () => {
+    const bound = bindCraftingSourcePrice(exchangeGraph(), engine, essenceId, commodityQuote);
+    const unavailable = markCommodityExchangePrice(bound, essenceId);
+    render(
+        <GraphPriceInput
+            label="Input"
+            currency="chaos"
+            value={unavailable.prices[essenceId]!}
+            onChange={vi.fn()}
+        />,
+    );
+    expect(screen.getByRole("spinbutton").getAttribute("value")).toBe("");
+    expect(screen.getByText(/Exchange price unavailable/)).toBeTruthy();
+    expect(screen.queryByText(/Captured per-item asking estimate/)).toBeNull();
+});
+
+it("labels a migrated amount as an exchange quote instead of a stash asking price", () => {
+    const bound = bindCraftingSourcePrice(exchangeGraph(), engine, essenceId, commodityQuote);
+    const exchange = bindExchangePrice(bound, essenceId, { ...exchangeQuote, itemId: essenceId });
+    const migrated = markCommodityExchangePrice(bound, essenceId, exchange);
+    render(
+        <GraphPriceInput
+            label="Input"
+            currency="chaos"
+            value={migrated.prices[essenceId]!}
+            onChange={vi.fn()}
+        />,
+    );
+    expect(screen.getByText(/Captured exchange price/)).toBeTruthy();
+    expect(screen.queryByText(/Captured per-item asking estimate/)).toBeNull();
+});
 
 it.each([
     [
@@ -72,12 +179,16 @@ it.each([
 });
 
 it("offers captured currency asks without a beast assumption and only replaces a manual amount explicitly", async () => {
-    const fetcher = vi.fn().mockResolvedValue(
-        new Response(
-            JSON.stringify({
-                quotes: { [unravellingId]: unravellingQuote },
-                missing: {},
-            }),
+    const fetcher = vi.fn().mockImplementation((url, init) =>
+        Promise.resolve(
+            String(url).endsWith("/bind")
+                ? bindResponse(init)
+                : new Response(
+                      JSON.stringify({
+                          quotes: { [unravellingId]: unravellingQuote },
+                          missing: {},
+                      }),
+                  ),
         ),
     );
     vi.stubGlobal("fetch", fetcher);
@@ -120,6 +231,7 @@ it("offers captured currency asks without a beast assumption and only replaces a
     ).toBe(true);
     expect(onChange).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
     expect(onChange.mock.calls[0]![0].prices[unravellingId].amount).toBe(200);
     expect(
         decodeCraftingSourceReference(onChange.mock.calls[0]![0].prices[unravellingId].cohortId),
@@ -209,20 +321,24 @@ it("shows captured per-item asks and fills only unpriced inputs until explicitly
     const otherName = engine.costName(otherId);
     vi.stubGlobal(
         "fetch",
-        vi.fn().mockResolvedValue(
-            new Response(
-                JSON.stringify({
-                    quotes: {
-                        [essenceId]: commodityQuote,
-                        [otherId]: {
-                            ...commodityQuote,
-                            id: otherId,
-                            baseType: otherName,
-                            amount: 20,
-                        },
-                    },
-                    missing: {},
-                }),
+        vi.fn().mockImplementation((url, init) =>
+            Promise.resolve(
+                String(url).endsWith("/bind")
+                    ? bindResponse(init)
+                    : new Response(
+                          JSON.stringify({
+                              quotes: {
+                                  [essenceId]: commodityQuote,
+                                  [otherId]: {
+                                      ...commodityQuote,
+                                      id: otherId,
+                                      baseType: otherName,
+                                      amount: 20,
+                                  },
+                              },
+                              missing: {},
+                          }),
+                      ),
             ),
         ),
     );
@@ -268,9 +384,11 @@ it("shows captured per-item asks and fills only unpriced inputs until explicitly
     fireEvent.click(
         screen.getByRole("button", { name: "Use source estimates for unpriced inputs" }),
     );
+    await waitFor(() => expect(saved?.prices[otherId]?.amount).toBe(20));
     expect(saved?.prices[essenceId]?.amount).toBe(123);
     expect(saved?.prices[otherId]?.amount).toBe(20);
     fireEvent.click(result.getByRole("button", { name: "Use source estimate" }));
+    await waitFor(() => expect(saved?.prices[essenceId]?.amount).toBe(16.5));
     expect(saved?.prices[essenceId]?.amount).toBe(16.5);
     expect(decodeCraftingSourceReference(saved?.prices[essenceId]?.cohortId)?.source).toBe(
         "stash-commodity",
@@ -284,8 +402,14 @@ it("shows verified empty resonator history and preserves a manual price until ex
         "fetch",
         vi
             .fn()
-            .mockResolvedValue(
-                new Response(JSON.stringify({ quotes: { [quote.id]: quote }, missing: {} })),
+            .mockImplementation((url, init) =>
+                Promise.resolve(
+                    String(url).endsWith("/bind")
+                        ? bindResponse(init)
+                        : new Response(
+                              JSON.stringify({ quotes: { [quote.id]: quote }, missing: {} }),
+                          ),
+                ),
             ),
     );
     render(
@@ -327,6 +451,7 @@ it("shows verified empty resonator history and preserves a manual price until ex
             .hasAttribute("disabled"),
     ).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
     const saved = onChange.mock.calls[0]![0].prices[quote.id];
     expect(saved.amount).toBe(16.5);
     expect(decodeCraftingSourceReference(saved.cohortId)).toMatchObject({
@@ -346,19 +471,22 @@ it("shows verified empty resonator history and preserves a manual price until ex
 });
 
 it("makes conversion explicit, shows the original ask and keeps manual prices until selection", async () => {
-    const fetcher = vi
-        .fn()
-        .mockImplementation((_url, init) =>
-            Promise.resolve(
-                new Response(
-                    JSON.stringify(
-                        JSON.parse(init.body).conversion
-                            ? { quotes: { [essenceId]: convertedCommodityQuote }, missing: {} }
-                            : { quotes: {}, missing: { [essenceId]: "No chaos asks" } },
-                    ),
-                ),
-            ),
-        );
+    const fetcher = vi.fn().mockImplementation((url, init) =>
+        Promise.resolve(
+            String(url).endsWith("/bind")
+                ? bindResponse(init)
+                : new Response(
+                      JSON.stringify(
+                          JSON.parse(init.body).conversion
+                              ? {
+                                    quotes: { [essenceId]: convertedCommodityQuote },
+                                    missing: {},
+                                }
+                              : { quotes: {}, missing: { [essenceId]: "No chaos asks" } },
+                      ),
+                  ),
+        ),
+    );
     vi.stubGlobal("fetch", fetcher);
     const graph = {
         ...exchangeGraph(),
@@ -399,6 +527,7 @@ it("makes conversion explicit, shows the original ask and keeps manual prices un
     ).toContain("currency=divine");
     expect(onChange).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
     expect(onChange.mock.calls[0]![0].prices[essenceId].amount).toBe(600);
     expect(
         decodeCraftingSourceReference(onChange.mock.calls[0]![0].prices[essenceId].cohortId),

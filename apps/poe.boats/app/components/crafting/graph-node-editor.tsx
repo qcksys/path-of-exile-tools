@@ -21,7 +21,7 @@ import {
 } from "~/lib/crafting-rulesets";
 import { graphCraftInput, simpleCraftCapability } from "~/lib/crafting-smart";
 import { purchaseSourceProfile } from "~/lib/crafting-source-preparation";
-import { decodeCraftingSourceReference } from "~/lib/crafting-sources";
+import { commodityExchangePriority, decodeCraftingSourceReference } from "~/lib/crafting-sources";
 import { craftingItemOptions } from "~/lib/item-presentation";
 import type { CraftingMethod } from "~/schemas/crafting";
 import type { CraftingPrice } from "~/schemas/crafting-economy";
@@ -62,6 +62,7 @@ export function GraphPriceInput({
     fallback?: CraftingPrice | null;
 }) {
     const sourceReference = decodeCraftingSourceReference(value?.cohortId);
+    const priority = commodityExchangePriority(value?.cohortId);
     return (
         <Label className="block space-y-1 text-xs">
             <span className="flex items-center gap-2">
@@ -74,7 +75,7 @@ export function GraphPriceInput({
                 min="0"
                 step="any"
                 placeholder={fallback !== undefined ? "Use shared price" : "Unknown"}
-                value={value?.amount ?? ""}
+                value={priority?.unavailable ? "" : (value?.amount ?? "")}
                 onChange={(event) =>
                     onChange(
                         event.target.value === ""
@@ -89,7 +90,9 @@ export function GraphPriceInput({
                 }
             />
             <span className="block text-muted-foreground">
-                {value?.source === "market" ? (
+                {priority?.unavailable ? (
+                    "Exchange price unavailable · refresh or enter a manual price"
+                ) : value?.source === "market" ? (
                     `Market estimate · ${value.observedAt ? new Date(value.observedAt).toLocaleString() : "unknown observation time"} · ${value.confidence === null ? "unknown confidence" : `${(value.confidence * 100).toFixed(0)}% data confidence`} · edit to override`
                 ) : value ? (
                     "Manual price"
@@ -106,7 +109,12 @@ export function GraphPriceInput({
                     "Unpriced; excluded from a complete cost estimate"
                 )}
             </span>
-            {value?.source === "market" && sourceReference && (
+            {value?.source === "market" && priority && !priority.unavailable && (
+                <span className="block text-muted-foreground">
+                    Captured exchange price · latest completed hour · captured history available
+                </span>
+            )}
+            {value?.source === "market" && sourceReference && !priority && (
                 <span className="block text-muted-foreground">
                     {sourceReference.source === "stash-commodity" ? (
                         <>

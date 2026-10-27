@@ -6,6 +6,11 @@ import {
 import type { TDatabase } from "~/db/client";
 import { findCraftingExchangePrices } from "~/db/queries/crafting-exchange.queries";
 import {
+    exchangeMembershipAt,
+    knownCraftingExchangeItems,
+    loadCraftingExchangeMembership,
+} from "~/db/queries/crafting-exchange-membership.queries";
+import {
     craftingMarketDefinition,
     findCraftingMarketPrices,
 } from "~/db/queries/crafting-market.queries";
@@ -29,6 +34,7 @@ import {
     craftingCommodityIdentity,
     invalidEmptyResonatorSourcePrices,
     liveSourcePrices,
+    markCommodityExchangePrice,
     markVendorPriceUnavailable,
 } from "~/lib/crafting-sources";
 import { craftingVendorUpgrade } from "~/lib/crafting-vendor-upgrades";
@@ -48,6 +54,7 @@ export async function refreshCraftingMarketPrices(
     graph: CraftingGraph,
     engine: CraftingEngine,
     at?: number,
+    membership?: Set<string> | null,
 ) {
     let next = graph;
     const issues: string[] = [];
@@ -162,8 +169,19 @@ export async function refreshCraftingMarketPrices(
             }
         }
     }
+    const sourceBindings = liveSourcePrices(next);
+    const hasCommodities = sourceBindings.some(
+        ({ reference }) => reference.source === "stash-commodity",
+    );
+    const known =
+        hasCommodities && graph.league
+            ? membership === undefined
+                ? await knownCraftingExchangeItems(db, graph.league, at)
+                : membership
+            : new Set<string>();
+    const exchangePriority: string[] = [];
     const sources = new Map<string, ReturnType<typeof liveSourcePrices>>();
-    for (const binding of liveSourcePrices(next)) {
+    for (const binding of sourceBindings) {
         const { reference, id } = binding;
         if (reference.source === "vendor-upgrade") {
             try {
@@ -194,13 +212,23 @@ export async function refreshCraftingMarketPrices(
             reference.currency !== graph.currency ||
             reference.id !== id ||
             (reference.source === "stash-commodity" &&
-                (commodity?.baseType !== reference.baseType ||
+                (reference.realm !== "pc" ||
+                    commodity?.baseType !== reference.baseType ||
                     commodity?.variant !== reference.variant))
         ) {
             if (reference.source === "vendor-upgrade") next = markVendorPriceUnavailable(next, id);
+            if (reference.source === "stash-commodity") next = markCommodityExchangePrice(next, id);
             issues.push(
                 `${id}: the saved source price does not match this input, game, league or currency.`,
             );
+            continue;
+        }
+        if (reference.source === "stash-commodity" && (!known || known.has(id))) {
+            if (known) exchangePriority.push(id);
+            else {
+                next = markCommodityExchangePrice(next, id);
+                issues.push(`${id}: exchange market membership exceeds the safe lookup limit.`);
+            }
             continue;
         }
         const key = JSON.stringify([
@@ -212,6 +240,27 @@ export async function refreshCraftingMarketPrices(
                 : undefined,
         ]);
         sources.set(key, [...(sources.get(key) ?? []), binding]);
+    }
+    for (let offset = 0; offset < exchangePriority.length; offset += 500) {
+        const ids = exchangePriority.slice(offset, offset + 500);
+        const result = await findCraftingExchangePrices(db, {
+            game: graph.game,
+            realm: "pc",
+            league: graph.league!,
+            currency: graph.currency,
+            itemIds: ids,
+            conversion: "two-leg-exchange-v1",
+            at,
+        });
+        for (const id of ids) {
+            const quote = result.quotes[id];
+            if (quote)
+                next = markCommodityExchangePrice(next, id, bindExchangePrice(next, id, quote));
+            else {
+                next = markCommodityExchangePrice(next, id);
+                issues.push(`${id}: ${result.missing[id] ?? "The exchange price is unavailable."}`);
+            }
+        }
     }
     for (const bindings of sources.values()) {
         const reference = bindings[0]!.reference;
@@ -234,6 +283,7 @@ export async function refreshCraftingMarketPrices(
                 at,
             },
             db,
+            known,
         );
         for (const { id } of bindings) {
             const quote = result.quotes[id];
@@ -293,12 +343,26 @@ export async function craftingMarketSnapshots(
                 `${id}: this market price has no supported historical binding. Enter a manual assumption or bind a supported source.`,
         );
     const points = [];
-    for (const at of [...new Set(hours)].sort((a, b) => a - b)) {
+    const orderedHours = [...new Set(hours)].sort((a, b) => a - b);
+    const hasCommodities = liveSourcePrices(graph).some(
+        ({ reference }) => reference.source === "stash-commodity",
+    );
+    const membership =
+        hasCommodities && graph.league && orderedHours.length && !unbound.length
+            ? await loadCraftingExchangeMembership(db, graph.league, orderedHours.at(-1))
+            : undefined;
+    for (const at of orderedHours) {
         if (unbound.length) {
             points.push({ at, graph: null, issues: unbound });
             continue;
         }
-        const refreshed = await refreshCraftingMarketPrices(db, graph, engine, at);
+        const refreshed = await refreshCraftingMarketPrices(
+            db,
+            graph,
+            engine,
+            at,
+            membership === undefined ? undefined : exchangeMembershipAt(membership, at),
+        );
         points.push({
             at,
             graph: refreshed.issues.length ? null : refreshed.graph,

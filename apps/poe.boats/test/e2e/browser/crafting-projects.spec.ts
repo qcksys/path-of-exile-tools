@@ -788,6 +788,24 @@ for (const converted of [false, true]) {
                 ? { exchange: { ...quote.exchange, quote: { ...quote.exchange.quote, hour } } }
                 : {}),
         });
+        let rejectBinding = !converted;
+        await page.route("**/api/v1/crafting/market/sources/bind", (route) => {
+            if (rejectBinding) {
+                rejectBinding = false;
+                return route.fulfill({ status: 400, json: { error: "Use an exchange quote" } });
+            }
+            const request = route.request().postDataJSON();
+            return route.fulfill({
+                json: {
+                    graph: bindCraftingSourcePrice(
+                        craftingGraphSchema.parse(request.graph),
+                        engine,
+                        request.id,
+                        request.quote,
+                    ),
+                },
+            });
+        });
         await page.route("**/api/v1/crafting/market/sources", (route) => {
             expect(route.request().postDataJSON().conversion).toBe(
                 converted ? "exchange-v1" : undefined,
@@ -841,6 +859,13 @@ for (const converted of [false, true]) {
             prices.getByRole("button", { name: "Use source estimates for unpriced inputs" }),
         ).toBeDisabled();
         await prices.getByRole("button", { name: "Use source estimate", exact: true }).click();
+        if (!converted) {
+            await expect(prices.getByRole("alert")).toContainText(
+                "Check the current exchange quote",
+            );
+            await expect(price).toHaveValue("123");
+            await prices.getByRole("button", { name: "Use source estimate", exact: true }).click();
+        }
         await expect(price).toHaveValue(String(quote.amount));
         await expect(prices).toContainText("Captured per-item asking estimate");
         expect(liveSourcePrices((await stored(page)).projects[0]!.graph)[0]?.reference.source).toBe(
