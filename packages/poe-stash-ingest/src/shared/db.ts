@@ -174,6 +174,10 @@ export async function openDb(path = process.env.PS_LOCAL_DB ?? "./data.duckdb"):
         // biome-ignore lint/style/useNamingConvention: DuckDB configuration key.
         memory_limit: process.env.PS_MEMORY_LIMIT ?? "1GB",
         threads: process.env.PS_THREADS ?? "2",
+        ...(process.env.PS_CHECKPOINT_THRESHOLD
+            ? // biome-ignore lint/style/useNamingConvention: DuckDB configuration key.
+              { checkpoint_threshold: process.env.PS_CHECKPOINT_THRESHOLD }
+            : {}),
     });
     const conn = await instance.connect();
     // Pin the session to UTC so TIMESTAMP columns store UTC clock-time and
