@@ -469,10 +469,11 @@ describe("receiver validation and mod extraction", () => {
             mods: ["Anger: Gain #% of Physical Damage as Extra Fire Damage"],
         });
     });
-    it("records a Loreweave's pooled mods without markup or rolls", () => {
+    it("records a PoE 2 Loreweave's pooled mods without markup or rolls", () => {
         const signature = extractModSignature({
             ...item,
             name: "Loreweave",
+            baseType: "Ornate Ringmail",
             explicitMods: [
                 "25% chance to [Intimidate|Intimidate] Enemies for 4 seconds on Hit",
                 "+15% of [Armour] also applies to [Chaos|Chaos] Damage",
@@ -486,6 +487,20 @@ describe("receiver validation and mod extraction", () => {
             ],
         });
         expect(signatureValue(signature)).toBe(signature.mods.join(" / "));
+    });
+    it("leaves PoE 1's fixed-mod Loreweave as one ordinary market", () => {
+        expect(
+            extractModSignature({
+                ...item,
+                name: "Loreweave",
+                baseType: "Elegant Ringmail",
+                explicitMods: [
+                    "Has 6 Sockets",
+                    "+16 to all Attributes",
+                    "Your Maximum Resistances are 78%",
+                ],
+            }),
+        ).toBeNull();
     });
     it("trades every roll of the same Watcher's Eye modifiers as one readable market", () => {
         const eye = (explicitMods) =>

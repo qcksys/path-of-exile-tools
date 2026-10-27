@@ -53,13 +53,26 @@ function auraMod(line: string): string | null {
  * Each gets its own signature kind; a market is one combination of masked mods, so every roll
  * of the same mods trades together. The app reads these kinds as `MOD_POOL_KINDS`.
  */
-export const MOD_POOLS: Record<string, { kind: string; mods: (lines: string[]) => string[] }> = {
+export const MOD_POOLS: Record<
+    string,
+    { kind: string; mods: (lines: string[]) => string[]; bases?: string[] }
+> = {
     "Watcher's Eye": {
         kind: "watchers-eye",
         mods: (lines) => lines.flatMap((line) => auraMod(line) ?? []),
     },
-    // PoE 2: every explicit mod comes from another unique.
-    Loreweave: { kind: "loreweave", mods: (lines) => lines.map(normalise) },
+    // PoE 2's Loreweave draws every explicit mod from other uniques. PoE 1's Loreweave (Elegant
+    // Ringmail) shares the name but has fixed mods, so it stays one ordinary market.
+    Loreweave: {
+        kind: "loreweave",
+        mods: (lines) => lines.map(normalise),
+        bases: [
+            "Ornate Ringmail",
+            "Ancient Mail",
+            "Runemastered Ornate Ringmail",
+            "Runemastered Ancient Mail",
+        ],
+    },
 };
 
 export const MOD_POOL_EXTRACTORS: ModExtractor[] = Object.entries(MOD_POOLS).map(
@@ -71,7 +84,11 @@ export const MOD_POOL_EXTRACTORS: ModExtractor[] = Object.entries(MOD_POOLS).map
                 ? value
                 : createHash("sha256").update(value).digest("hex");
         },
-        matches: (item: Item) => isUniqueItem(item) && item.identified && item.name === name,
+        matches: (item: Item) =>
+            isUniqueItem(item) &&
+            item.identified &&
+            item.name === name &&
+            (!pool.bases || pool.bases.includes(item.baseType)),
         extract(item: Item): ModSignature | null {
             const mods = pool.mods(explicitModLines(item)).sort();
             return mods.length ? { kind: pool.kind, mods } : null;
