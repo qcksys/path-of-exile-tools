@@ -24,6 +24,7 @@ import {
     craftingExchangeHistory,
     findCraftingExchangePrices,
 } from "~/db/queries/crafting-exchange.queries";
+import { knownCraftingExchangeItems } from "~/db/queries/crafting-exchange-membership.queries";
 import {
     craftingMarketHistory,
     findCraftingMarketPrices,
@@ -86,6 +87,7 @@ import {
 import { push } from "../../../../packages/poe-stash-ingest/src/shared/remote/push.ts";
 import {
     commodityExchangeSnapshot,
+    commodityQuote,
     essenceId,
     essenceName,
     unravellingId,
@@ -215,6 +217,113 @@ async function parity(
     expect(envelope.result.structuredContent).toEqual(http);
     return http;
 }
+
+it("refuses a previously issued stash quote for a known exchange item in both HTTP and MCP", async () => {
+    await mysql.insert(tStashCurrencyHourly).values({
+        ...commodityExchangeSnapshot,
+        marketId: `${essenceId}|${chaosId}`,
+        hour: HOUR,
+        volumeTraded: { [essenceId]: 0, [chaosId]: 0 },
+    });
+    const graph = exchangeGraph();
+    const quote = { ...commodityQuote, hour: HOUR };
+    const input = { graph, id: essenceId, quote };
+    const unused = async (): Promise<never> => {
+        throw new Error("Unexpected catalog lookup");
+    };
+    const runtime = async (): Promise<OperationContext> => ({
+        db: mysql as unknown as TDatabase,
+        caller: null,
+        origin: "https://poe.boats",
+        loadCatalog: unused,
+        loadWorkbenchCatalog: unused,
+        loadCraftingRulesets: async () => historyIndex,
+        loadCraftingRevision: retainedRevision,
+    });
+    const response = await api.request(
+        "https://poe.boats/api/v1/crafting/market/sources/bind",
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(input),
+        },
+        { runtime },
+    );
+    expect(response.status).toBe(400);
+    expect(await response.text()).toContain("Use an exchange quote");
+    const rpc = await handleMcpRequest(
+        new Request("https://poe.boats/mcp", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                accept: "application/json, text/event-stream",
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "tools/call",
+                params: { name: "bind_crafting_source_price", arguments: input },
+            }),
+        }),
+        runtime,
+    );
+    const envelope = z.object({ result: CallToolResultSchema }).parse(await rpc.json());
+    expect(envelope.result.isError).toBe(true);
+    expect(JSON.stringify(envelope.result.content)).toContain("Use an exchange quote");
+    const lookup = craftingSourceResultSchema.parse(
+        await parity("crafting/market/sources", "find_crafting_source_prices", {
+            graph,
+            realm: "pc",
+            ids: [essenceId],
+        }),
+    );
+    expect(lookup.quotes[essenceId]).toBeUndefined();
+    expect(lookup.missing[essenceId]).toMatch(/exchange market/);
+});
+
+it.skipIf(process.env.EXCHANGE_MEMBERSHIP_BENCHMARK !== "1")(
+    "uses the primary index to discover markets on a realistic retained history",
+    async () => {
+        await connection.query(
+            `INSERT INTO qsPoeBoats__stash_currency_hourly (realm, league, marketId, hour, volumeTraded)
+        WITH RECURSIVE a(n) AS (SELECT 0 UNION ALL SELECT n + 1 FROM a WHERE n < 999),
+        b(n) AS (SELECT 0 UNION ALL SELECT n + 1 FROM b WHERE n < 129)
+        SELECT 'pc', 'Standard', CONCAT('market-', LPAD(a.n + part.n * 1000, 4, '0'), '|chaos'),
+        ? - b.n * 3600, JSON_OBJECT()
+        FROM a CROSS JOIN (SELECT 0 AS n UNION ALL SELECT 1) AS part CROSS JOIN b
+        WHERE a.n + part.n * 1000 < 1500`,
+            [HOUR],
+        );
+        await connection.query("ANALYZE TABLE qsPoeBoats__stash_currency_hourly");
+        let query = "";
+        let params: unknown[] = [];
+        const measured = drizzle({
+            client: connection,
+            logger: {
+                logQuery: (statement, values) => {
+                    query = statement;
+                    params = values;
+                },
+            },
+        });
+        const started = performance.now();
+        const known = await knownCraftingExchangeItems(
+            measured as unknown as TDatabase,
+            "Standard",
+            HOUR,
+        );
+        const elapsed = performance.now() - started;
+        expect(known?.size).toBe(1501);
+        const [plan] = await connection.query(`EXPLAIN ANALYZE ${query}`, params);
+        const detail = JSON.stringify(plan);
+        expect(detail).toMatch(/index.*group|group.*index/i);
+        expect(detail).toMatch(/PRIMARY/);
+        process.stdout.write(
+            `Exchange membership, 195000 rows: ${elapsed.toFixed(2)} ms; ${detail}\n`,
+        );
+    },
+    120000,
+);
 
 beforeAll(async () => {
     container = await new MySqlContainer("mysql:8.4").withDatabase("ingest_test").start();

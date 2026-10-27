@@ -7,7 +7,7 @@ import { craftingCommoditySignature } from "~/lib/crafting-empty-resonator";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { bindCraftingSourcePrice, craftingCommodityIdentity } from "~/lib/crafting-sources";
 import { craftingVendorUpgradePaths } from "~/lib/crafting-vendor-upgrades";
-import type { CraftingGraph } from "~/schemas/crafting-graph";
+import { type CraftingGraph, craftingGraphSchema } from "~/schemas/crafting-graph";
 import { type CraftingSourceResult, craftingSourceResultSchema } from "~/schemas/crafting-sources";
 import { VendorUpgradePricePicker, VendorUpgradeQuoteDetails } from "./vendor-upgrade-price-picker";
 
@@ -27,6 +27,8 @@ export function SourcePricePicker({
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
     const pending = useRef<AbortController | null>(null);
+    const currentGraph = useRef(graph);
+    currentGraph.current = graph;
     const inputs = entries.filter(
         ([id]) => !id.startsWith("Metadata/Items/") || craftingCommodityIdentity(engine, id),
     );
@@ -91,15 +93,40 @@ export function SourcePricePicker({
             if (!controller.signal.aborted) setBusy(false);
         }
     }
-    function apply(ids: string[]) {
+    async function apply(ids: string[]) {
+        pending.current?.abort();
+        const controller = new AbortController();
+        pending.current = controller;
+        setBusy(true);
+        setError("");
         try {
             let next = graph;
-            for (const id of ids)
-                if (result?.quotes[id])
-                    next = bindCraftingSourcePrice(next, engine, id, result.quotes[id]);
-            onChange(next);
+            for (const id of ids) {
+                const quote = result?.quotes[id];
+                if (!quote) continue;
+                if (quote.source === "stash-commodity") {
+                    const response = await fetch("/api/v1/crafting/market/sources/bind", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        signal: controller.signal,
+                        body: JSON.stringify({ graph: next, id, quote }),
+                    });
+                    if (!response.ok)
+                        throw new Error(
+                            "Cannot apply this asking price. Check the current exchange quote or enter a manual price.",
+                        );
+                    const body: unknown = await response.json();
+                    if (!body || typeof body !== "object" || !("graph" in body))
+                        throw new Error("Invalid source binding response.");
+                    next = craftingGraphSchema.parse(body.graph);
+                } else next = bindCraftingSourcePrice(next, engine, id, quote);
+            }
+            if (!controller.signal.aborted && currentGraph.current === graph) onChange(next);
         } catch (error) {
-            setError(error instanceof Error ? error.message : "Cannot apply source quote.");
+            if (!controller.signal.aborted)
+                setError(error instanceof Error ? error.message : "Cannot apply source quote.");
+        } finally {
+            if (!controller.signal.aborted) setBusy(false);
         }
     }
     return (
@@ -165,9 +192,13 @@ export function SourcePricePicker({
                         <Button
                             size="sm"
                             variant="outline"
-                            disabled={!Object.keys(result.quotes).some((id) => !graph.prices[id])}
+                            disabled={
+                                busy || !Object.keys(result.quotes).some((id) => !graph.prices[id])
+                            }
                             onClick={() =>
-                                apply(Object.keys(result.quotes).filter((id) => !graph.prices[id]))
+                                void apply(
+                                    Object.keys(result.quotes).filter((id) => !graph.prices[id]),
+                                )
                             }
                         >
                             Use source estimates for unpriced inputs
@@ -319,7 +350,11 @@ export function SourcePricePicker({
                                                     </ul>
                                                 </>
                                             )}
-                                            <Button size="sm" onClick={() => apply([id])}>
+                                            <Button
+                                                size="sm"
+                                                disabled={busy}
+                                                onClick={() => void apply([id])}
+                                            >
                                                 Use source estimate
                                             </Button>
                                         </>

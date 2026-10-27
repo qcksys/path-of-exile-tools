@@ -69,7 +69,7 @@ beforeEach(() => {
         frameType INTEGER, identified INTEGER, corrupted INTEGER, foilVariation INTEGER,
         signatureKind TEXT, signatureValue TEXT, listingCount INTEGER, uniqueSellers INTEGER, prices TEXT)`);
     db = drizzle(async (sql, params) => {
-        const statement = sqlite.prepare(sql);
+        const statement = sqlite.prepare(sql.replace(/ force index \(`PRIMARY`\)/i, ""));
         statement.setReturnArrays(true);
         return {
             rows: statement

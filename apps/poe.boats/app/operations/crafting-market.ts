@@ -4,6 +4,7 @@ import {
     craftingExchangeHistory,
     findCraftingExchangePrices,
 } from "~/db/queries/crafting-exchange.queries";
+import { knownCraftingExchangeItems } from "~/db/queries/crafting-exchange-membership.queries";
 import {
     craftingMarketHistory,
     findCraftingMarketPrices,
@@ -52,7 +53,7 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Look up PoE 1 PC captured currency asking prices and poe.ninja beast/temple estimates. Supported fixed-effect currency actions and catalog essences require an exact unique catalog identity and a positive latest captured bucket within 24 completed hours; currencies with stored item, monster or experience payloads are excluded. at selects historical captured hours. Optional exchange-v1 conversion preserves original asks and matching-hour exchange evidence. Explicit vendorUpgrade selects an exact lower-tier essence upgrade or one-step NPC currency purchase, priced from its captured ingredient exchange quote. This ingredient-cost estimate retains the recipe and purchase instructions; it is not a direct output trade. Beast recipes include named components plus a generic Yellow Beast pool using a listing-count-weighted mean of verified species estimates, not a median of listings or a unique-seller count. Saved species-specific estimates require rebinding. poe.ninja has no historical coverage. Confidence is uncalibrated.",
+            "Look up PoE 1 PC captured currency asking prices and poe.ninja beast/temple estimates. Items observed on the exchange at the selected cutoff require exchange quotes instead of stash asks, including when the current exchange hour has no trades. Supported fixed-effect currency actions and catalog essences require an exact unique catalog identity and a positive latest captured bucket within 24 completed hours; currencies with stored item, monster or experience payloads are excluded. at selects historical captured hours. Optional exchange-v1 conversion preserves original asks and matching-hour exchange evidence. Explicit vendorUpgrade selects an exact lower-tier essence upgrade or one-step NPC currency purchase, priced from its captured ingredient exchange quote. This ingredient-cost estimate retains the recipe and purchase instructions; it is not a direct output trade. Beast recipes include named components plus a generic Yellow Beast pool using a listing-count-weighted mean of verified species estimates, not a median of listings or a unique-seller count. Saved species-specific estimates require rebinding. poe.ninja has no historical coverage. Confidence is uncalibrated.",
         input: craftingSourceOptionsSchema.extend({ graph: CraftingGraphContract }),
         output: craftingSourceResultSchema,
         execute: async ({ graph, ...options }, context) =>
@@ -81,6 +82,21 @@ export const craftingMarketOperations = [
         output: z.object({ graph: CraftingGraphContract }),
         execute: async ({ graph, id, quote }, context) => {
             try {
+                if (quote.source === "stash-commodity") {
+                    if (
+                        quote.game !== graph.game ||
+                        quote.league !== graph.league ||
+                        quote.id !== id
+                    )
+                        throw new Error(
+                            "The source quote does not match this input, game or league.",
+                        );
+                    const known = await knownCraftingExchangeItems(context.db, quote.league);
+                    if (!known || known.has(id))
+                        throw new Error(
+                            "Use an exchange quote for this item; a current-hour quote may be unavailable.",
+                        );
+                }
                 return {
                     graph: bindCraftingSourcePrice(
                         graph,

@@ -13,6 +13,7 @@ import { MAP_DEVICE_UNLOCKS } from "~/data/map-device-unlocks";
 import { SCARABS } from "~/data/scarab-data";
 import { createDbConnection } from "~/db/client";
 import * as craftingExchangeQueries from "~/db/queries/crafting-exchange.queries";
+import * as exchangeMembership from "~/db/queries/crafting-exchange-membership.queries";
 import * as craftingMarketQueries from "~/db/queries/crafting-market.queries";
 import * as marketQueries from "~/db/queries/market.queries";
 import { calculateRecipeScenario } from "~/lib/arbitrage";
@@ -1169,6 +1170,9 @@ describe("transport parity", () => {
             "invalid conversion",
         ] as const)("shares captured commodity %s through HTTP and MCP", async (scenario) => {
             const graph = exchangeGraph();
+            const membership = vi
+                .spyOn(exchangeMembership, "knownCraftingExchangeItems")
+                .mockResolvedValue(new Set());
             const prices = { quotes: { [essenceId]: commodityQuote }, missing: {} };
             const lookup = vi
                 .spyOn(craftingSources, "findCraftingSourcePrices")
@@ -1270,6 +1274,7 @@ describe("transport parity", () => {
                 expect(result.structuredContent).toEqual(expected);
             }
             lookup.mockRestore();
+            membership.mockRestore();
         });
     });
 

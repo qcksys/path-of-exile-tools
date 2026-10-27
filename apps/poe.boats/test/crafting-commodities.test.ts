@@ -5,12 +5,14 @@ import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { DB_TABLE_PREFIX } from "~/const";
 import type { TDatabase } from "~/db/client";
 import { findCraftingCommodityPrices } from "~/db/queries/crafting-commodities.queries";
+import { knownCraftingExchangeItems } from "~/db/queries/crafting-exchange-membership.queries";
 import { craftingCommoditySignature, emptyResonator } from "~/lib/crafting-empty-resonator";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import { bindExchangePrice } from "~/lib/crafting-exchange";
 import {
     assertCraftingSourcePrices,
     bindCraftingSourcePrice,
+    commodityExchangePriority,
     craftingCommodityIdentity,
     decodeCraftingSourceReference,
 } from "~/lib/crafting-sources";
@@ -108,7 +110,7 @@ beforeEach(() => {
         realm TEXT, league TEXT, hour INTEGER, marketId TEXT, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT)`);
     db = drizzle(async (sql, params) => {
         statements.push(sql);
-        const statement = sqlite.prepare(sql);
+        const statement = sqlite.prepare(sql.replace(/ force index \(`PRIMARY`\)/i, ""));
         statement.setReturnArrays(true);
         return {
             rows: statement
@@ -126,6 +128,93 @@ beforeEach(() => {
 afterEach(() => {
     sqlite.close();
     vi.useRealTimers();
+});
+
+it("uses exchange membership at each cutoff and preserves the original stash binding through missing prices and recovery", async () => {
+    capture({ hour: hour - 3600 });
+    capture();
+    const manual = { amount: 42, currency: "chaos", source: "manual" as const, confidence: null };
+    const bound = bindCraftingSourcePrice(
+        { ...graph, prices: { [unravellingId]: manual } },
+        engine,
+        essenceId,
+        commodityQuote,
+    );
+    const original = bound.prices[essenceId]!.cohortId;
+    const marketId = `${essenceId}|${chaosId}`;
+    captureExchange({ marketId, volumeTraded: { [essenceId]: 0, [chaosId]: 0 } });
+    const historic = await findCraftingSourcePrices(
+        graph,
+        engine,
+        { realm: "pc", ids: [essenceId], at: hour - 3600 },
+        db,
+    );
+    expect(historic.quotes[essenceId]).toBeDefined();
+    const current = await findCraftingSourcePrices(
+        graph,
+        engine,
+        { realm: "pc", ids: [essenceId] },
+        db,
+    );
+    expect(current.quotes[essenceId]).toBeUndefined();
+    expect(current.missing[essenceId]).toMatch(/exchange market/);
+    const missing = await refreshCraftingMarketPrices(db, bound, engine);
+    expect(missing.issues).toHaveLength(1);
+    expect(commodityExchangePriority(missing.graph.prices[essenceId]?.cohortId)).toMatchObject({
+        original,
+        unavailable: true,
+    });
+    expect(missing.graph.prices[unravellingId]).toEqual(manual);
+    expect(() => assertCraftingSourcePrices(missing.graph)).toThrow(
+        /exchange price is unavailable/,
+    );
+    const past = await craftingMarketSnapshots(db, missing.graph, engine, [hour - 3600]);
+    expect(past.points[0]?.graph?.prices[essenceId]?.amount).toBe(16.5);
+    sqlite
+        .prepare(
+            `UPDATE ${DB_TABLE_PREFIX}stash_currency_hourly SET volumeTraded=? WHERE marketId=?`,
+        )
+        .run(JSON.stringify({ [essenceId]: 10, [chaosId]: 50 }), marketId);
+    const recovered = await refreshCraftingMarketPrices(db, missing.graph, engine);
+    expect(recovered.issues).toEqual([]);
+    expect(recovered.graph.prices[essenceId]?.amount).toBe(5);
+    expect(commodityExchangePriority(recovered.graph.prices[essenceId]?.cohortId)).toMatchObject({
+        original,
+        unavailable: false,
+    });
+    expect(() => assertCraftingSourcePrices(recovered.graph)).not.toThrow();
+    expect(recovered.graph.prices[unravellingId]).toEqual(manual);
+    const unchanged = structuredClone(recovered.graph);
+    statements.length = 0;
+    const prior = await craftingMarketSnapshots(db, recovered.graph, engine, [hour - 3600, hour]);
+    expect(prior.points[0]?.graph?.prices[essenceId]?.amount).toBe(16.5);
+    expect(prior.points[1]?.graph?.prices[essenceId]?.amount).toBe(5);
+    expect(recovered.graph).toEqual(unchanged);
+    expect(statements.filter((sql) => sql.includes("min(`hour`)"))).toHaveLength(1);
+});
+
+it("ignores future-only observations, keeps resonator IDs distinct, and fails closed above the market limit", async () => {
+    captureExchange({ hour: hour + 3600, marketId: `${essenceId}|${chaosId}` });
+    captureExchange({ marketId: `${emptyResonator.ids[0]}|${chaosId}` });
+    const known = await knownCraftingExchangeItems(db, "Standard", hour);
+    expect(known?.has(essenceId)).toBe(false);
+    expect(known?.has(emptyResonator.ids[0])).toBe(true);
+    expect(known?.has(emptyResonator.ids[1])).toBe(false);
+    const insert = sqlite.prepare(
+        `INSERT INTO ${DB_TABLE_PREFIX}stash_currency_hourly VALUES (?,?,?,?,?,?,?)`,
+    );
+    for (let i = 0; i < 5000; i++)
+        insert.run("pc", "Standard", hour, `item-${i}|${chaosId}`, "{}", null, null);
+    expect(await knownCraftingExchangeItems(db, "Standard", hour)).toBeNull();
+    capture();
+    const result = await findCraftingSourcePrices(
+        graph,
+        engine,
+        { realm: "pc", ids: [essenceId] },
+        db,
+    );
+    expect(result.quotes[essenceId]).toBeUndefined();
+    expect(result.missing[essenceId]).toMatch(/safe lookup limit/);
 });
 
 it("verifies all 106 essence identities and refuses duplicated names and other currency variants", () => {
@@ -426,8 +515,9 @@ it.each([
     const options = { ids: [essenceId, ...emptyResonator.ids], realm: "pc" as const };
     const result = await findCraftingSourcePrices(graph, engine, options, db);
     expect(result.missing).toEqual({});
-    expect(statements[0]?.match(/`signatureKind` = \?/g)).toHaveLength(2);
-    expect(statements[0]?.match(/`itemKey` in \(/g)).toHaveLength(2);
+    const commodityQuery = statements.find((statement) => statement.includes("`signatureKind`"));
+    expect(commodityQuery?.match(/`signatureKind` = \?/g)).toHaveLength(2);
+    expect(commodityQuery?.match(/`itemKey` in \(/g)).toHaveLength(2);
     expect(result.quotes[essenceId]).toEqual(commodityQuote);
     for (const id of emptyResonator.ids)
         expect(result.quotes[id]).toEqual({ ...emptyResonatorQuote, id });
