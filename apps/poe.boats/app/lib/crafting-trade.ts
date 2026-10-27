@@ -5,7 +5,12 @@ import {
     type NumericRange,
 } from "@poe-tools/item-query";
 import type { CraftingCatalog } from "~/schemas/crafting";
-import type { CraftingTradePayload, CraftingTradeResult } from "~/schemas/crafting-trade";
+import {
+    type CraftingTradeOptions,
+    type CraftingTradePayload,
+    type CraftingTradeResult,
+    craftingTradeOptionsSchema,
+} from "~/schemas/crafting-trade";
 
 type Metadata = {
     game: string;
@@ -42,13 +47,15 @@ export function buildCraftingTradeSearch(
     input: ItemQuery,
     league: string,
     metadata: Metadata,
+    tradeOptions: CraftingTradeOptions = {},
 ): CraftingTradeResult {
     const query = itemQuerySchema.parse(input);
+    const options = craftingTradeOptionsSchema.parse(tradeOptions);
     if (query.game !== catalog.game || metadata.game !== query.game)
         throw new Error("Trade query and catalog must use the same game.");
     if (!league.trim() || league.length > 100) throw new Error("Choose a trade league.");
     const payload: CraftingTradePayload = {
-        query: { status: { option: "available" }, stats: [], filters: {} },
+        query: { status: { option: options.status }, stats: [], filters: {} },
         sort: { price: "asc" },
     };
     const warnings: CraftingTradeResult["warnings"] = [];
@@ -258,6 +265,14 @@ export function buildCraftingTradeSearch(
             } else addField(entry);
         }
     }
+    const listingFilter = (id: string, option: string) => {
+        const entry = field(id, { option });
+        if (!entry || entry.kind !== "field")
+            throw new Error(`The trade definitions do not offer ${id}=${option}.`);
+        addField(entry);
+    };
+    if (options.listed) listingFilter("indexed", options.listed);
+    if (options.oneListingPerSeller) listingFilter("collapse", "true");
     const path = query.game === "poe1" ? "trade/search" : "trade2/search/poe2";
     return {
         payload,

@@ -147,9 +147,10 @@ export function GraphTradeSearch({
                         Open trade search
                     </a>
                     <p className="text-xs text-muted-foreground">
-                        Check listing prices, then enter a manual price on an acquisition
-                        alternative. Listings are not fetched automatically. Trade definitions
-                        checked {result.metadataDate.slice(0, 10)}.
+                        The search shows instant-buyout listings. Check listing prices, then enter a
+                        manual price on an acquisition alternative, or price every step from Buy-in
+                        prices with the poe.boats extension. Trade definitions checked{" "}
+                        {result.metadataDate.slice(0, 10)}.
                     </p>
                 </>
             )}

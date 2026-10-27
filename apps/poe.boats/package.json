@@ -42,6 +42,7 @@
         "@planetscale/database": "catalog:",
         "@poe-tools/item-query": "workspace:*",
         "@poe-tools/market": "workspace:*",
+        "@poe-tools/trade-bridge": "workspace:*",
         "@qcksys/drizzle-extensions": "catalog:",
         "@qcksys/pino-cloudflare": "catalog:",
         "@react-router/cloudflare": "catalog:",
