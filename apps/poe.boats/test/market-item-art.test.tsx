@@ -26,7 +26,6 @@ function showMarket(
         iconAsset,
         identified: true,
         corrupted: false,
-        foilVariation: -1,
         frameType: 3,
         signatureKind: "",
         signatureValue: "",

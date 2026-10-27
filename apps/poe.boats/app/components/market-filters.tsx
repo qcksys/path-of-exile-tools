@@ -48,7 +48,6 @@ export function MarketFiltersForm({
               itemKey: filters.item,
               identified: filters.identified === "true",
               corrupted: filters.corrupted === "true",
-              foilVariation: filters.foil,
               signatureKind: filters.kind,
               signatureValue: filters.value,
           }
@@ -98,7 +97,6 @@ export function MarketFiltersForm({
                       page: filters.page,
                       identified: filters.identified,
                       corrupted: filters.corrupted,
-                      foil: filters.foil,
                       kind: filters.kind,
                       value: filters.value,
                       mods: filters.mods,

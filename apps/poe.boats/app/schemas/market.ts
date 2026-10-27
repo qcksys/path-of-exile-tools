@@ -59,7 +59,6 @@ export const marketFiltersSchema = z.object({
     item: z.string().max(255).optional(),
     identified: z.enum(["true", "false"]).default("true"),
     corrupted: z.enum(["true", "false"]).default("false"),
-    foil: z.coerce.number().int().min(-1).default(-1),
     kind: z.string().max(32).default(""),
     value: z.string().max(255).default(""),
     /** Watcher's Eye mods every valued item must have, separated by `|`. */
@@ -100,7 +99,6 @@ export function marketLink(
         itemKey: string;
         identified: boolean;
         corrupted: boolean;
-        foilVariation: number;
         signatureKind: string;
         signatureValue: string;
     },
@@ -125,7 +123,6 @@ export function marketLink(
         params.set("category", filters.category);
         params.set("identified", String(item.identified));
         params.set("corrupted", String(item.corrupted));
-        params.set("foil", String(item.foilVariation));
         params.set("kind", item.signatureKind);
         params.set("value", item.signatureValue);
         if (filters.mods) params.set("mods", filters.mods);

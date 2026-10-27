@@ -72,7 +72,6 @@ describe("market browsing", () => {
             itemKey: "Watcher's Eye",
             identified: true,
             corrupted: true,
-            foilVariation: 3,
             signatureKind: "watchers-eye",
             signatureValue: "variant",
         });
@@ -93,10 +92,10 @@ describe("market browsing", () => {
             page: 3,
             identified: "true",
             corrupted: "true",
-            foil: 3,
             kind: "watchers-eye",
             value: "variant",
         });
+        expect(new URL(link, "https://example.invalid").searchParams.has("foil")).toBe(false);
     });
     it.each([
         { days: "100000" },

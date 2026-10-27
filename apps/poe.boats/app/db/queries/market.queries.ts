@@ -57,12 +57,6 @@ import { utcDay } from "./stash-rollups.queries";
 
 const PAGE_SIZE = 50;
 const DIVINE = exchangeCurrencyId("divine")!;
-/** -1 for non-foil rows and 0 for every foil variation, which trade as one market. */
-const foilGroup = sql<number>`least(${market.foilVariation}, 0)`;
-
-function foilMatch(foil: number) {
-    return foil < 0 ? eq(market.foilVariation, -1) : gte(market.foilVariation, 0);
-}
 
 /**
  * A pool unique's mod combinations merge into one market with an empty value where markets are
@@ -85,9 +79,15 @@ function asMarket<Row extends { signatureValue: string; signatureData: unknown }
     return isModPool(kind) && !value ? { ...row, signatureValue: "", signatureData: null } : row;
 }
 
+/** Merges one hour's rows of a market, which spans foil variations, so the result has none. */
+function mergeMarket(rows: TStashUniqueHourlyS[], kind: string, value: string) {
+    const { foilVariation: _, ...row } = mergeMarketRows(rows);
+    return asMarket(row, kind, value);
+}
+
 type MarketRowKey = Pick<
     TStashUniqueHourlyS,
-    "itemKey" | "identified" | "corrupted" | "foilVariation" | "signatureKind" | "signatureValue"
+    "itemKey" | "identified" | "corrupted" | "signatureKind" | "signatureValue"
 >;
 
 function marketRowKey(row: MarketRowKey, hour: number) {
@@ -96,24 +96,20 @@ function marketRowKey(row: MarketRowKey, hour: number) {
         row.itemKey,
         Boolean(row.identified),
         Boolean(row.corrupted),
-        Math.min(row.foilVariation, 0),
         row.signatureKind,
         isModPool(row.signatureKind) ? "" : row.signatureValue,
     ]);
 }
 
-/** One row per hour, merging the foil variations of a foil market (and a pool unique's combinations). */
+/** One row per hour, merging foil and non-foil listings (and a pool unique's combinations). */
 function mergeByHour(rows: TStashUniqueHourlyS[], filters: MarketFilters) {
     const hours = Map.groupBy(rows, (row) => row.hour);
     return [...hours.values()]
-        .map((group) => ({
-            ...asMarket(mergeMarketRows(group), filters.kind, filters.value),
-            foilVariation: filters.foil,
-        }))
+        .map((group) => mergeMarket(group, filters.kind, filters.value))
         .sort((a, b) => a.hour - b.hour);
 }
 
-/** Each listed market's latest-hour row, merged across its foil variations, in list order. */
+/** Each listed market's latest-hour row, merged across foil and non-foil listings, in list order. */
 async function marketLatestRows<
     Market extends MarketRowKey & {
         latestHour: number;
@@ -139,7 +135,6 @@ async function marketLatestRows<
                                 eq(market.itemKey, entry.itemKey),
                                 eq(market.identified, entry.identified),
                                 eq(market.corrupted, entry.corrupted),
-                                foilMatch(entry.foilVariation),
                                 eq(market.signatureKind, entry.signatureKind),
                                 valueMatch(entry.signatureKind, entry.signatureValue),
                             ),
@@ -154,8 +149,7 @@ async function marketLatestRows<
         if (!group) return [];
         return [
             {
-                ...asMarket(mergeMarketRows(group), entry.signatureKind, entry.signatureValue),
-                foilVariation: entry.foilVariation,
+                ...mergeMarket(group, entry.signatureKind, entry.signatureValue),
                 rank: 1,
                 periodSales: entry.periodSales,
                 periodRemovals: entry.periodRemovals,
@@ -223,12 +217,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     const seasons = [...byLeague.values()].sort(
         (a, b) => Number(b.latestHour) - Number(a.latestHour),
     );
-    // Foil variations merge into one market, so any foil variation selects all of them.
-    const filters = {
-        ...input,
-        league: input.league || seasons[0]?.league || "",
-        foil: Math.min(input.foil, 0),
-    };
+    const filters = { ...input, league: input.league || seasons[0]?.league || "" };
     span.setAttributes({
         "market.view": view,
         "market.realm": filters.realm,
@@ -265,14 +254,13 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                               eq(market.itemKey, filters.item),
                               eq(market.identified, filters.identified === "true"),
                               eq(market.corrupted, filters.corrupted === "true"),
-                              foilMatch(filters.foil),
                               eq(market.signatureKind, filters.kind),
                               valueMatch(filters.kind, filters.value),
                           ),
                       )
                       .orderBy(desc(market.hour))
-                      // 90 days of hours for up to 16 merged foil variations.
-                      .limit(2160 * 16),
+                      // 90 days of hours for non-foil plus up to 16 merged foil variations.
+                      .limit(2160 * 17),
               ).then((rows) => mergeByHour(rows, filters))
             : Promise.resolve([]);
     const variantsPromise =
@@ -298,11 +286,10 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         eq(daily.league, filters.league),
         gte(daily.day, windowStart),
     );
-    const dailyFoilGroup = sql<number>`least(${daily.foilVariation}, 0)`;
     const search = filters.q ? `%${filters.q.replace(/[\\%_]/g, "\\$&")}%` : undefined;
     const currencyField = (field: string) =>
         sql`cast(json_unquote(json_extract(${market.prices}, ${`$.${JSON.stringify(filters.currency)}.${field}`})) as decimal(30, 10))`;
-    // A merged foil market orders by its variations' listing-weighted median.
+    // A market merging foil and non-foil rows orders by their listing-weighted median.
     const price = sql`sum(${currencyField("median")} * ${currencyField("count")}) / sum(${currencyField("count")})`;
     const listings = sql`sum(${market.listingCount})`;
     const sellers = sql`sum(${market.uniqueSellers})`;
@@ -327,7 +314,6 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             itemKey: daily.itemKey,
             identified: daily.identified,
             corrupted: daily.corrupted,
-            foilVariation: dailyFoilGroup.mapWith(Number).as("foil_group"),
             signatureKind: daily.signatureKind,
             // Already empty for a mod pool unique's every-combination market.
             signatureValue: daily.signatureValue,
@@ -377,7 +363,6 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             daily.itemKey,
             daily.identified,
             daily.corrupted,
-            dailyFoilGroup,
             daily.signatureKind,
             daily.signatureValue,
         )
@@ -389,20 +374,18 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             filters.order === "name-desc" ? desc(daily.itemKey) : asc(daily.itemKey),
             asc(daily.identified),
             asc(daily.corrupted),
-            asc(dailyFoilGroup),
             asc(daily.signatureKind),
             asc(daily.signatureValue),
         ])
         .$dynamic();
     if (!pageLatestRows) grouped.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
     const page = grouped.as("page");
-    // One row per market: its latest hour's totals across the foil variations it merges.
+    // One row per market: its latest hour's totals across its foil and non-foil rows.
     const marketsQuery = db
         .select({
             itemKey: page.itemKey,
             identified: page.identified,
             corrupted: page.corrupted,
-            foilVariation: page.foilVariation,
             signatureKind: page.signatureKind,
             signatureValue: page.signatureValue,
             latestHour: page.latestHour,
@@ -420,7 +403,6 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 eq(market.itemKey, page.itemKey),
                 eq(market.identified, page.identified),
                 eq(market.corrupted, page.corrupted),
-                eq(foilGroup, page.foilVariation),
                 eq(market.signatureKind, page.signatureKind),
                 eq(valueGroup(market), page.signatureValue),
             ),
@@ -429,7 +411,6 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             page.itemKey,
             page.identified,
             page.corrupted,
-            page.foilVariation,
             page.signatureKind,
             page.signatureValue,
             page.latestHour,
@@ -448,7 +429,6 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             filters.order === "name-desc" ? desc(page.itemKey) : asc(page.itemKey),
             asc(page.identified),
             asc(page.corrupted),
-            asc(page.foilVariation),
             asc(page.signatureKind),
             asc(page.signatureValue),
         )
@@ -591,7 +571,6 @@ async function marketVariants(db: TDatabase, scope: SQL | undefined, item: strin
                 name: max(market.name),
                 identified: market.identified,
                 corrupted: market.corrupted,
-                foilVariation: foilGroup.mapWith(Number),
                 signatureKind: market.signatureKind,
                 signatureValue: valueGroup(market),
                 signatureData: sql<
@@ -605,14 +584,12 @@ async function marketVariants(db: TDatabase, scope: SQL | undefined, item: strin
                 market.itemKey,
                 market.identified,
                 market.corrupted,
-                foilGroup,
                 market.signatureKind,
                 valueGroup(market),
             )
             .orderBy(
                 desc(sql`sum(${market.likelySales})`),
                 asc(market.corrupted),
-                asc(foilGroup),
                 asc(valueGroup(market)),
             )
             .limit(100),
@@ -650,7 +627,6 @@ function modPoolRows(
                     eq(market.itemKey, item),
                     eq(market.identified, true),
                     eq(market.corrupted, filters.corrupted === "true"),
-                    foilMatch(filters.foil),
                     eq(market.signatureKind, filters.kind),
                     or(eq(market.hour, latestHour), gt(market.likelySales, 0)),
                 ),

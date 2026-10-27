@@ -30,7 +30,6 @@ function variantLabel(variant: VariantRow) {
         marketSignatureLabel(variant),
         variant.identified ? "" : "Unidentified",
         variant.corrupted ? "Corrupted" : "",
-        variant.foilVariation >= 0 ? "Foil" : "",
     ].filter(Boolean);
     return parts.length ? parts.join(" · ") : "Standard";
 }
@@ -113,7 +112,6 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
         variant.itemKey === filters.item &&
         String(variant.identified) === filters.identified &&
         String(variant.corrupted) === filters.corrupted &&
-        variant.foilVariation === filters.foil &&
         variant.signatureKind === filters.kind &&
         variant.signatureValue === filters.value;
     const otherVariants = variants.some((variant) => !isCurrent(variant));
@@ -186,7 +184,6 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                             <p className="text-sm text-muted-foreground">
                                 {selected.identified ? "Identified" : "Unidentified"}
                                 {selected.corrupted ? " · Corrupted" : ""}
-                                {selected.foilVariation >= 0 ? " · Foil" : ""}
                                 {marketSignatureLabel(selected)
                                     ? ` · ${marketSignatureLabel(selected)}`
                                     : ""}
