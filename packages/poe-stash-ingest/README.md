@@ -410,7 +410,7 @@ Identified uniques are run through a registry of structured mod-extractors. The 
 | `signature_value` | `Glancing Blows`                                                 | SHA-256 of the sorted mod signature   |
 | `signature_data`  | `{"kind":"forbidden-jewel","allocatedNotable":"Glancing Blows"}` | `{"kind":"watchers-eye","mods":[...]}` |
 
-`(signature_kind, signature_value)` are PK components alongside `(realm, league, hour, item_key, identified, corrupted, foil_variation)`, so each tradable variant gets its own permanent hourly row. `signature_data` is the lossless payload — query into it with MySQL's JSON path operators when you need a specific field.
+`(signature_kind, signature_value)` are PK components alongside `(realm, league, hour, item_key, identified, corrupted, foil_variation, links)`, so each tradable variant gets its own permanent hourly row. `links` is 5 or 6 for a unique's largest linked socket group (poe.ninja's links split), otherwise 0, and combines with any signature. `signature_data` is the lossless payload — query into it with MySQL's JSON path operators when you need a specific field.
 
 Rows with no extracted signature use `signature_kind = ''` and `signature_value = ''` (empty strings, not NULL, so the PK works).
 
@@ -468,7 +468,7 @@ windows. Observed cohort definitions remain stored. See the
 
 | table                    | retention   | one row per                                |
 | ------------------------ | ----------- | ------------------------------------------ |
-| `stash_unique_hourly`    | **forever** | `(realm, league, hour, item_key, identified, corrupted, foil_variation, signature_kind, signature_value)`               |
+| `stash_unique_hourly`    | **forever** | `(realm, league, hour, item_key, identified, corrupted, foil_variation, links, signature_kind, signature_value)`        |
 | `stash_currency_hourly`  | **forever** | `(realm, league, market_id, hour)`                |
 | `stash_basemap_snapshot` | **forever** | `icon_asset` (public unid → name resolver) |
 

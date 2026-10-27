@@ -20,7 +20,7 @@ import { shouldCapture } from "#src/shared/capture.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
 import { queryAll, withTransaction } from "#src/shared/db.ts";
 import { decodeIconAsset } from "#src/shared/icon.ts";
-import { itemKey } from "#src/shared/item-key.ts";
+import { itemKey, itemLinks } from "#src/shared/item-key.ts";
 import { extractModSignature, signatureValue } from "#src/shared/mod-extractors/index.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
 import { configureSource } from "#src/shared/source.ts";
@@ -58,6 +58,7 @@ interface ListingRow {
     rarity: string | null;
     corrupted: boolean;
     foilVariation: number | null;
+    links: number;
     priceAmount: number | null;
     priceCurrency: string | null;
     stackSize: number | null;
@@ -82,6 +83,7 @@ const LISTING_VALUES = `
     value->>'rarity' AS rarity,
     (value->>'corrupted')::BOOLEAN AS corrupted,
     (value->>'foilVariation')::INTEGER AS foil_variation,
+    (value->>'links')::INTEGER AS links,
     (value->>'priceAmount')::DOUBLE AS price_amount,
     value->>'priceCurrency' AS price_currency,
     (value->>'stackSize')::INTEGER AS stack_size,
@@ -112,6 +114,7 @@ function listingRows(change: PublicStashChange, accountName: string, league: str
             rarity: item.rarity ?? null,
             corrupted: item.corrupted ?? false,
             foilVariation: item.foilVariation ?? null,
+            links: itemLinks(item),
             priceAmount: price?.amount ?? null,
             priceCurrency: price?.currency ?? null,
             stackSize: item.stackSize ?? null,
@@ -219,6 +222,7 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
                 rarity = v.rarity,
                 corrupted = v.corrupted,
                 foil_variation = v.foil_variation,
+                links = v.links,
                 price_amount = v.price_amount,
                 price_currency = v.price_currency,
                 stack_size = v.stack_size,
@@ -276,6 +280,7 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
             rarity = l.rarity,
             corrupted = l.corrupted,
             foil_variation = l.foil_variation,
+            links = l.links,
             price_amount = l.price_amount,
             price_currency = l.price_currency,
             stack_size = l.stack_size,

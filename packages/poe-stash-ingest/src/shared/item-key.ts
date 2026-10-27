@@ -23,8 +23,21 @@ export function signatureBreakout(sig: ModSignature): SignatureBreakout {
 }
 
 /**
+ * A unique's linked-socket market, as poe.ninja splits them: 5 or 6 for its largest linked group,
+ * otherwise 0. Non-unique items are always 0.
+ */
+export function itemLinks(item: Item): number {
+    if (!isUniqueItem(item)) return 0;
+    const groups = new Map<number, number>();
+    for (const socket of item.sockets ?? [])
+        groups.set(socket.group, (groups.get(socket.group) ?? 0) + 1);
+    const largest = Math.max(0, ...groups.values());
+    return largest >= 5 ? largest : 0;
+}
+
+/**
  * Canonical *identity* key for a listing — the unique's market name (or
- * baseType for non-uniques). Variant axes (corruption, foil, structured
+ * baseType for non-uniques). Variant axes (corruption, foil, links, structured
  * mod signature) are tracked as separate columns on the row, not stuffed
  * into this string.
  *
