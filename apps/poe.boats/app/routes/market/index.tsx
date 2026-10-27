@@ -1,27 +1,38 @@
-import { type ReactNode, useMemo } from "react";
+import { exchangeCurrencyId } from "@poe-tools/market";
+import { type ReactNode, useMemo, useState } from "react";
 import { Link, redirect, useNavigate } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
 import { DataTable, type DataTableServerState, dataTableColumns } from "~/components/data-table";
 import { ItemArt } from "~/components/item-art";
+import {
+    EXCHANGE_DISPLAYS,
+    type ExchangeDisplay,
+    ExchangeItemName,
+    ExchangePair,
+    ExchangePrice,
+    ExchangeTrend,
+} from "~/components/market-exchange";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
+import { Button } from "~/components/ui/button";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
 import { marketItemArtUrl } from "~/lib/item-presentation";
 import { type MarketBaseRow, marketBaseVariant } from "~/lib/market-bases";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
+import { MARKET_EXCHANGE_DAYS } from "~/lib/market-exchange";
 import {
     MARKET_OUTLIER_FACTOR,
     type MarketListingPrice,
-    marketChaosPrice,
     marketListingPrices,
 } from "~/lib/market-listing-prices";
-import { marketNumber as number } from "~/lib/market-number";
+import { marketCompactNumber as compact, marketNumber as number } from "~/lib/market-number";
 import { marketTableState } from "~/lib/market-table";
 import { marketSignatureLabel } from "~/lib/mod-pools";
 import {
     type MarketFilters,
     marketCategorySchema,
+    marketExchangeLink,
     marketLink,
     parseMarketFilters,
 } from "~/schemas/market";
@@ -60,11 +71,19 @@ type MarketRow = Awaited<ReturnType<typeof getMarketData>>["rows"][number];
 type ExchangeRow = Awaited<ReturnType<typeof getMarketData>>["exchange"][number];
 type Game = "poe1" | "poe2";
 
+const CHAOS = exchangeCurrencyId("chaos")!;
+const DIVINE = exchangeCurrencyId("divine")!;
+
 const column = dataTableColumns<MarketRow>();
 const exchangeColumn = dataTableColumns<ExchangeRow>();
 const baseColumn = dataTableColumns<MarketBaseRow>();
 
-function exchangeColumns(game: Game, divine: number | undefined) {
+function exchangeColumns(
+    filters: MarketFilters,
+    game: Game,
+    divine: number | undefined,
+    display: ExchangeDisplay,
+) {
     return exchangeColumn.columns([
         exchangeColumn.accessor("name", {
             id: "item",
@@ -72,59 +91,93 @@ function exchangeColumns(game: Game, divine: number | undefined) {
             sortDescFirst: false,
             meta: { filter: "text" },
             cell: ({ row: { original: row } }) => (
-                <CurrencyLabel
-                    currency={row.itemId}
-                    label={row.name}
-                    game={game}
-                    className="font-medium"
-                />
+                <Link
+                    to={marketExchangeLink(filters, row.itemId)}
+                    className="font-medium text-primary hover:underline"
+                >
+                    <ExchangeItemName
+                        itemId={row.itemId}
+                        name={row.name}
+                        game={game}
+                        className="gap-3"
+                    />
+                </Link>
             ),
         }),
         exchangeColumn.accessor((row) => row.chaos ?? undefined, {
             id: "price",
-            header: "Exchange price",
-            sortDescFirst: true,
-            sortUndefined: "last",
-            meta: { filter: "range", className: "tabular-nums" },
-            cell: ({ row: { original: row } }) => {
-                if (row.chaos === null) return row.volume ? "No rate" : "No trades in latest hour";
-                const price = marketChaosPrice(row.chaos, divine);
-                return (
-                    <p className="font-semibold">
-                        {number(price.amount)}{" "}
-                        <CurrencyLabel currency={price.currency} game={game} />
-                        {price.equivalent ? (
-                            <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                ≈ {number(price.equivalent.amount)}{" "}
-                                <CurrencyLabel
-                                    currency={price.equivalent.currency}
-                                    game={game}
-                                    iconOnly
-                                />
-                            </span>
-                        ) : null}
-                    </p>
-                );
-            },
-        }),
-        exchangeColumn.accessor("volume", {
-            id: "volume",
-            header: "Traded (latest hour)",
-            sortDescFirst: true,
-            meta: { filter: "range", className: "tabular-nums" },
-            cell: ({ getValue }) => number(getValue()),
-        }),
-        exchangeColumn.accessor((row) => row.hour ?? undefined, {
-            id: "traded",
-            header: "Last traded",
+            header: "Value",
             sortDescFirst: true,
             sortUndefined: "last",
             enableColumnFilter: false,
-            meta: { className: "whitespace-nowrap text-xs text-muted-foreground" },
-            cell: ({ getValue }) => {
-                const hour = getValue();
-                return hour === undefined ? "—" : marketUtc(hour);
+            meta: { className: "tabular-nums" },
+            cell: ({ row: { original: row } }) => {
+                if (row.chaos === null)
+                    return row.hour === null
+                        ? `No trades in ${MARKET_EXCHANGE_DAYS} days`
+                        : "No rate";
+                return (
+                    <>
+                        <p className={row.current ? "font-semibold" : "text-muted-foreground"}>
+                            <ExchangePrice
+                                chaos={row.chaos}
+                                divine={divine}
+                                display={display}
+                                game={game}
+                            />
+                        </p>
+                        {row.current ? null : (
+                            <p className="text-xs text-muted-foreground">
+                                Last traded {row.hour === null ? "—" : marketUtc(row.hour)}
+                            </p>
+                        )}
+                        {row.via && row.via.itemId !== CHAOS ? (
+                            <p className="text-xs text-muted-foreground">
+                                via{" "}
+                                <ExchangeItemName
+                                    itemId={row.via.itemId}
+                                    name={row.via.name}
+                                    game={game}
+                                    className="gap-1"
+                                    artClassName="size-4 rounded-none bg-transparent p-0"
+                                />
+                            </p>
+                        ) : null}
+                    </>
+                );
             },
+        }),
+        exchangeColumn.accessor((row) => row.change ?? undefined, {
+            id: "change",
+            header: `Last ${MARKET_EXCHANGE_DAYS} days`,
+            sortDescFirst: true,
+            sortUndefined: "last",
+            enableColumnFilter: false,
+            cell: ({ row: { original: row } }) => (
+                <ExchangeTrend history={row.history} change={row.change} />
+            ),
+        }),
+        exchangeColumn.accessor((row) => row.volume ?? undefined, {
+            id: "volume",
+            header: "Volume / hour",
+            sortDescFirst: true,
+            sortUndefined: "last",
+            meta: { filter: "range", className: "tabular-nums" },
+            cell: ({ getValue }) => {
+                const volume = getValue();
+                return volume === undefined ? (
+                    "—"
+                ) : (
+                    <>
+                        {compact(volume)} <CurrencyLabel currency="chaos" game={game} iconOnly />
+                    </>
+                );
+            },
+        }),
+        exchangeColumn.display({
+            id: "pair",
+            header: "Most traded",
+            cell: ({ row: { original: row } }) => <ExchangePair row={row} game={game} />,
         }),
     ]);
 }
@@ -132,16 +185,42 @@ function exchangeColumns(game: Game, divine: number | undefined) {
 function ExchangeTable({
     label,
     rows,
+    filters,
     game,
     divine,
 }: {
     label: string;
     rows: ExchangeRow[];
+    filters: MarketFilters;
     game: Game;
     divine: number | undefined;
 }) {
-    const columns = useMemo(() => exchangeColumns(game, divine), [game, divine]);
-    return <DataTable label={label} data={rows} columns={columns} getRowId={(row) => row.itemId} />;
+    const [display, setDisplay] = useState<ExchangeDisplay>("adaptive");
+    const columns = useMemo(
+        () => exchangeColumns(filters, game, divine, display),
+        [filters, game, divine, display],
+    );
+    return (
+        <>
+            <fieldset className="flex flex-wrap items-center gap-2 px-4 pt-3 text-xs text-muted-foreground">
+                <legend className="sr-only">Value display</legend>
+                Show values in
+                {(Object.keys(EXCHANGE_DISPLAYS) as ExchangeDisplay[]).map((option) => (
+                    <Button
+                        key={option}
+                        type="button"
+                        size="xs"
+                        variant={display === option ? "secondary" : "ghost"}
+                        aria-pressed={display === option}
+                        onClick={() => setDisplay(option)}
+                    >
+                        {EXCHANGE_DISPLAYS[option]}
+                    </Button>
+                ))}
+            </fieldset>
+            <DataTable label={label} data={rows} columns={columns} getRowId={(row) => row.itemId} />
+        </>
+    );
 }
 
 function ListingPrice({
@@ -407,6 +486,9 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
     const categories = Object.keys(MARKET_CATEGORIES) as MarketCategory[];
     const game = filters.realm === "poe2" ? "poe2" : "poe1";
     const server = marketTableState(filters, (to) => navigate(to, { preventScrollReset: true }));
+    // Stash prices convert only at the latest hour's divine rate; exchange values may use an earlier day's.
+    const exchangeDivine =
+        chaosRates.divine ?? exchange.find((row) => row.itemId === DIVINE)?.chaos ?? undefined;
     return (
         <>
             <MarketFiltersForm filters={filters} seasons={seasons} />
@@ -455,8 +537,9 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                                 <ExchangeTable
                                     label={`${label} exchange`}
                                     rows={traded}
+                                    filters={filters}
                                     game={game}
-                                    divine={chaosRates.divine}
+                                    divine={exchangeDivine}
                                 />
                             ) : null}
                             {entries.length ? (

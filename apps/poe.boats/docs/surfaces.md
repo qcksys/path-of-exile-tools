@@ -62,6 +62,20 @@ Foulborn mutated modifiers) and links between them, including the same unique's 
 other identification state (unidentified uniques are keyed `unid:<icon>`). Foil and non-foil
 listings of an item trade as one market in the list, variants and history; stored rows keep each
 `foil_variation`, and market rows omit it.
+Items on the currency exchange get their own table in each category, dearest first, and leave
+their stash listings out of the rows. Each row's price is the latest completed hour's chaos rate
+(direct, or through divine, exalted or another traded item in that hour); without one, it is the
+volume-weighted rate of the newest of the last 7 UTC days the item traded, marked as not current
+with its last traded hour. Stash prices never convert at such an earlier divine rate. Rows also
+carry each of those days' chaos price and the change across them, the chaos value traded per hour
+over them, and the pair with the most units of the item traded at its newest rate. The table can
+show values adaptively (divine from one divine up), in chaos or in divine. Each row links to
+`/1/market/exchange/<item ID after Metadata/Items/>` (`get_season_exchange_item`), which shows the
+same row and the item's hourly chaos price and per-pair rates over the list's period, each with the
+hour's lowest to highest traded rate as a shaded range (a converted price scales its pair's range
+by the bridge item's chaos price). The history reads the item's chaos, divine and exalted pairs,
+its eight other most traded pairs and the chaos markets that convert them. List filters stay in
+the query for the way back.
 Uniques whose mods come from a pool (ingest's `MOD_POOLS`: Watcher's Eye's aura mods, PoE 2
 Loreweave's borrowed unique mods) record one market per combination of masked mods, so every roll
 of the same mods trades together; older Watcher's Eye per-roll markets keep their hashed signature
@@ -173,6 +187,7 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | PoE 1 and PoE 2 arbitrage leagues, prices, recipes | `arbitrage/market` | `get_arbitrage_market`; `loadArbitrageMarket` |
 | Arbitrage filters, ranking, buffer, profit/ROI | `arbitrage/calculate` | `calculate_arbitrage`; `findArbitrage` |
 | Manual recipe reference, calculator and trade links | `arbitrage/recipes`, `arbitrage/scenario`, `arbitrage/trade` | `list_vendor_recipes`, `calculate_recipe_scenario`, `build_recipe_trade_url` |
+| Season exchange item price, trend and pair history | `market/exchange-item` | `get_season_exchange_item`; `getMarketExchangeItem`, sharing `marketExchangeRows` with the list's exchange rows and adding the hourly `marketExchangeHistory` over the period (`days`). It reads only the item's markets and the chaos markets of the items it trades against. Unit tests cover latest-hour and earlier-day prices, conversions, trends, volume, pairs and hourly ranges; MySQL tests cover the daily rollup through ingest and the item read; UI tests cover the table, value display and item page; HTTP/MCP parity covers success and an invalid item ID. |
 | Season market search, seasons, paging, variants, history, mod pool values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `modPoolValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_market_daily` rollup and pagination precedes full-row primary-key reads. An item's foil and non-foil listings are one market: list rows, variants and history sum and mix every foil variation's hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), page boundaries, and crafting base cohort rows (latest hour, current revision, category). |
 | Recombinator equipment, modifiers, preparation recipes | `recombinator/catalog`, `bases`, `mods`, `recipes`, `draft` | Catalog, base/mod/recipe filtering, and `parseRecombinatorDraft` |
 | Recombination outcomes, preparation, target odds | `recombinator/calculate`, `target` | `calculateRecombinatorPlan`, `matchesTarget`, `summarizeCounts` |
@@ -252,11 +267,13 @@ Unrelated same-base cohorts cannot consume the 2,000 relevant-candidate allowanc
 item-matching but uncovered cohorts retain their coverage reasons. A genuinely truncated
 result still prevents refresh from silently choosing an older or incomplete price.
 
-Ingest keeps three rollups, each recomputed from the hourly rows it summarises after every
+Ingest keeps four rollups, each recomputed from the hourly rows it summarises after every
 200-row batch, because the ingester re-pushes whole hours with later sale corrections:
 `stash_market_daily` (per listed market per UTC day: sums, newest and newest listed hour, base
-type, rarity and name), `stash_currency_market` (each exchange market's first hour) and
-`stash_hour_coverage` (stored rows per stream, league and hour). The daily rollup stores a mod
+type, rarity and name), `stash_currency_market` (each exchange market's first hour),
+`stash_currency_daily` (per exchange market per UTC day: units of each side traded in the hours
+where both traded, those hours' count and the newest) and `stash_hour_coverage` (stored rows per
+stream, league and hour). The daily rollup stores a mod
 pool unique's combinations (Watcher's Eye, Loreweave) as one market with an empty signature
 value, as the list shows them; they were 78% of a week's daily rows. A category list without
 text search reads the daily rollup through its covering base-type index; other lists read it by
@@ -266,7 +283,9 @@ search no longer matches a pool unique's individual mods (its item page filters 
 nonempty observations, variant identity and period totals otherwise retain their semantics.
 `stash_unique_daily`, the first daily rollup, is superseded and unused until a later migration
 drops it. The exchange lookup reads
-`stash_currency_market`. MySQL plan and result regressions live in
+`stash_currency_market`; exchange trends, volumes, pairs and earlier-day prices read
+`stash_currency_daily`; the latest hour's prices and an exchange item page's history read hourly
+snapshots. MySQL plan and result regressions live in
 `test/e2e/market-query.test.ts` and `test/e2e/crafting-market-performance.test.ts`.
 
 Full server status reads `stash_hour_coverage` and reuses each database/realm/league
@@ -296,7 +315,8 @@ recomputed from its whole day (`refreshStashRollups` in
 `app/db/queries/stash-rollups.queries.ts` builds the same statements). The
 [market daily](../app/db/migrations/20261027135202_market_daily/migration.sql) migration follows
 the same order: apply it before merging, then rerun its backfill from UTC midnight of the
-migration day. New indexes add storage and ingestion write work;
+migration day. So does the [exchange daily](../app/db/migrations/20261027155209_exchange_daily/migration.sql)
+migration, whose backfill groups every stored exchange hour by market and day. New indexes add storage and ingestion write work;
 check live Query Insights after deployment rather than treating local timings as production results.
 
 Equipment lookup exposes per-lookup `Server-Timing` diagnostics through both HTTP and MCP:

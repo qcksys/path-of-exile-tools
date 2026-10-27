@@ -1,10 +1,12 @@
 import { z } from "zod";
-import { getMarketData } from "~/db/queries/market.queries";
+import { getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
 import { sStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
 import { marketBaseRowSchema } from "~/lib/market-bases";
 import { ArbitrageGameSchema, MarketSnapshotSchema, VendorRecipeSchema } from "~/schemas/arbitrage";
 import {
     marketCategorySchema,
+    marketExchangeItemInputSchema,
+    marketExchangeRowSchema,
     marketFiltersSchema,
     mergedMarketPriceSchema,
 } from "~/schemas/market";
@@ -290,18 +292,9 @@ export const operations = [
                 ),
             hasMore: z.boolean(),
             exchange: z
-                .array(
-                    z.object({
-                        itemId: z.string(),
-                        name: z.string(),
-                        category: marketCategorySchema,
-                        chaos: z.number().nullable(),
-                        volume: z.number(),
-                        hour: z.number().nullable(),
-                    }),
-                )
+                .array(marketExchangeRowSchema)
                 .describe(
-                    "Items on the exchange in the last day, priced in chaos at the best rate via chaos, divine or exalted from each market's latest traded hour (null when none traded); their stash listings are left out of rows",
+                    "Items on the exchange, dearest first, priced in chaos; their stash listings are left out of rows. Read one with get_season_exchange_item",
                 ),
             chaosRates: z
                 .record(z.string(), z.number())
@@ -355,6 +348,65 @@ export const operations = [
                 })),
             };
         },
+    }),
+    defineOperation({
+        ...shared,
+        family: "market",
+        path: "/exchange-item",
+        name: "get_season_exchange_item",
+        ui: "/1/market/currency",
+        description:
+            "Read one currency exchange item (an item ID from the season market's `exchange` rows): its current price, 7-day trend, volume and most traded pair as listed, plus its hourly history over the last `days` days through its chaos, divine and exalted pairs and its eight other most traded pairs. An empty league reads the league whose exchange traded most recently.",
+        input: marketExchangeItemInputSchema,
+        output: z.object({
+            realm: z.string(),
+            league: z.string(),
+            latestHour: z.number().describe("The latest completed hour"),
+            historyStart: z.number().describe("The first hour of `history`"),
+            item: marketExchangeRowSchema
+                .nullable()
+                .describe("Null for an item ID outside the game's exchange item catalogue"),
+            divine: z
+                .number()
+                .nullable()
+                .describe("Chaos per Divine Orb, as the list prices it, for display"),
+            history: z.object({
+                chaos: z
+                    .array(
+                        z.object({
+                            hour: z.number(),
+                            chaos: z.number().nullable(),
+                            low: z.number().nullable(),
+                            high: z.number().nullable(),
+                            via: z.string().nullable(),
+                            units: z.number(),
+                        }),
+                    )
+                    .describe(
+                        "Each hour the item traded, oldest first: its volume-weighted chaos price (directly or through `via`), the hour's lowest and highest rates of that pair in chaos (scaled by `via`'s chaos price), and units traded across its pairs",
+                    ),
+                pairs: z
+                    .array(
+                        z.object({
+                            quoteId: z.string(),
+                            name: z.string(),
+                            hours: z.array(
+                                z.object({
+                                    hour: z.number(),
+                                    rate: z.number(),
+                                    low: z.number().nullable(),
+                                    high: z.number().nullable(),
+                                    units: z.number(),
+                                }),
+                            ),
+                        }),
+                    )
+                    .describe(
+                        "Each pair, most traded first: per traded hour, units of the other item per unit (volume-weighted, lowest and highest) and units of this item traded",
+                    ),
+            }),
+        }),
+        execute: (input, context) => getMarketExchangeItem(context.db, input),
     }),
 ];
 

@@ -1,6 +1,7 @@
 import { and, between, eq, inArray, sql } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
+import { tStashCurrencyDaily } from "~/db/schema/stash.currency-daily";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import {
     type TStashCurrencyMarketI,
@@ -101,6 +102,67 @@ export function refreshStashMarketDaily(
         });
 }
 
+/** Recomputes `stash_currency_daily` for every day touching [fromHour, toHour], optionally for some markets only. */
+export function refreshStashCurrencyDaily(
+    db: TDatabase,
+    scope: RollupScope & { fromHour?: number; toHour?: number; marketIds?: string[] },
+) {
+    const hourly = tStashCurrencyHourly;
+    const daily = tStashCurrencyDaily;
+    const day = sql<number>`floor(${hourly.hour} / ${sql.raw(String(DAY))}) * ${sql.raw(String(DAY))}`;
+    // Units traded of the market ID's first (1) or second (-1) item.
+    const side = (index: 1 | -1) =>
+        sql<number>`cast(json_extract(${hourly.volumeTraded}, concat('$."', substring_index(${hourly.marketId}, '|', ${sql.raw(String(index))}), '"')) as unsigned)`;
+    const traded = sql`${side(1)} > 0 and ${side(-1)} > 0`;
+    const hours =
+        scope.fromHour === undefined || scope.toHour === undefined
+            ? undefined
+            : between(hourly.hour, utcDay(scope.fromHour), utcDay(scope.toHour) + DAY - 1);
+    return db
+        .insert(daily)
+        .select(
+            db
+                .select({
+                    realm: hourly.realm,
+                    league: hourly.league,
+                    day: day.as("day"),
+                    marketId: hourly.marketId,
+                    firstVolume:
+                        sql<number>`coalesce(sum(case when ${traded} then ${side(1)} end), 0)`.as(
+                            "firstVolume",
+                        ),
+                    secondVolume:
+                        sql<number>`coalesce(sum(case when ${traded} then ${side(-1)} end), 0)`.as(
+                            "secondVolume",
+                        ),
+                    tradedHours: sql<number>`count(case when ${traded} then 1 end)`.as(
+                        "tradedHours",
+                    ),
+                    latestHour: sql<
+                        number | null
+                    >`max(case when ${traded} then ${hourly.hour} end)`.as("latestHour"),
+                })
+                .from(hourly)
+                .where(
+                    and(
+                        scope.realm === undefined ? undefined : eq(hourly.realm, scope.realm),
+                        scope.league === undefined ? undefined : eq(hourly.league, scope.league),
+                        hours,
+                        scope.marketIds ? inArray(hourly.marketId, scope.marketIds) : undefined,
+                    ),
+                )
+                .groupBy(hourly.realm, hourly.league, day, hourly.marketId),
+        )
+        .onDuplicateKeyUpdate({
+            set: {
+                firstVolume: sql`values(${daily.firstVolume})`,
+                secondVolume: sql`values(${daily.secondVolume})`,
+                tradedHours: sql`values(${daily.tradedHours})`,
+                latestHour: sql`values(${daily.latestHour})`,
+            },
+        });
+}
+
 const COVERAGE_SOURCES = {
     currency: { table: tStashCurrencyHourly, index: "stash_currency_coverage_idx" },
     uniques: { table: tStashUniqueHourly, index: "stash_unique_market_cover_idx" },
@@ -183,6 +245,7 @@ export function refreshStashCurrencyMarkets(db: TDatabase, scope: RollupScope = 
 /** Rebuilds every rollup from the hourly tables, as the migration's backfill does. */
 export async function refreshStashRollups(db: TDatabase, scope: RollupScope = {}) {
     await refreshStashMarketDaily(db, scope);
+    await refreshStashCurrencyDaily(db, scope);
     await refreshStashCurrencyMarkets(db, scope);
     for (const stream of Object.keys(COVERAGE_SOURCES) as StashCoverageStream[])
         await refreshStashHourCoverage(db, stream, scope);
