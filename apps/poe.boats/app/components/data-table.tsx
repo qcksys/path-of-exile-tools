@@ -21,6 +21,7 @@ import {
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
+import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
     Table,
@@ -144,14 +145,16 @@ export function DataTable<TData extends RowData>({
                                         )}
                                     >
                                         {canSort ? (
-                                            <button
+                                            <Button
                                                 type="button"
+                                                variant="ghost"
+                                                size="xs"
                                                 onClick={header.column.getToggleSortingHandler()}
-                                                className="inline-flex items-center gap-1 hover:text-foreground"
+                                                className="-ml-2 font-medium text-muted-foreground"
                                             >
                                                 <table.FlexRender header={header} />
                                                 <SortIcon sorted={sorted} />
-                                            </button>
+                                            </Button>
                                         ) : (
                                             <table.FlexRender header={header} />
                                         )}
