@@ -111,28 +111,28 @@ before switching. Do not use `down --volumes` or clear cursors.
 Image and data retention are separate: this updater deletes neither archives nor Docker
 images. Monitor free space and arrange off-host data backups as described in the runbook.
 
-## Archive volume
+## Data and archive volumes
 
-Each worker writes daily Parquet archives of old rows to `/backups`, mounted from
-`~/poe-ingest/backups/<realm>` (see [Archiving old data](../../packages/poe-stash-ingest/README.md#archiving-old-data)).
-Give that folder its own logical volume so archives cannot fill the root filesystem that
-holds the live databases. On the host, the volume group has unallocated space:
+Each worker keeps its live database in `~/poe-ingest/data/<realm>` and writes daily Parquet
+archives of old rows to `/backups`, mounted from `~/poe-ingest/backups/<realm>` (see
+[Archiving old data](../../packages/poe-stash-ingest/README.md#archiving-old-data)). Give each
+folder its own filesystem so neither can fill the root filesystem. For example:
+
+| Folder | Device | Why |
+| --- | --- | --- |
+| `data` | An SSD volume | DuckDB makes many random reads and writes |
+| `backups` | A hard disk is enough | archives are written once, in order, and rarely read |
+
+The archive disk is mounted with `nofail`, so a failed disk does not stop the host booting:
 
 ```sh
-sudo vgs <vg>
-sudo lvcreate -L 400G -n poe-backups <vg>
-sudo mkfs.ext4 -L poe-backups /dev/<vg>/poe-backups
-mkdir -p ~/poe-ingest/backups
-echo "/dev/<vg>/poe-backups $HOME/poe-ingest/backups ext4 defaults,noatime 0 2" | sudo tee -a /etc/fstab
-sudo systemctl daemon-reload
-sudo mount ~/poe-ingest/backups
-sudo install -d -o 1000 -g 1000 -m 700 ~/poe-ingest/backups/pc ~/poe-ingest/backups/poe2
+UUID=<archive disk UUID> /home/<user>/poe-ingest/backups ext4 defaults,noatime,nofail,x-systemd.device-timeout=15s 0 2
 ```
 
-Create these folders before installing this Compose file; otherwise Docker creates them
-owned by root and the worker reports a failed delivery stage on each archive attempt.
-`PS_ARCHIVE_MAX_GB` (default 100) must stay below the space the live database can use on
-its own filesystem.
+Create `backups/pc` and `backups/poe2` owned by UID 1000 on the mounted disk before installing
+this Compose file; otherwise Docker creates them owned by root and the worker reports a failed
+delivery stage on each archive attempt. `PS_ARCHIVE_MAX_GB` must stay
+below the space the live database can use on its own filesystem.
 
 Run the updater tests on Linux with:
 
