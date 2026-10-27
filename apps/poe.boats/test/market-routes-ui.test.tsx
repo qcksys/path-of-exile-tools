@@ -338,10 +338,13 @@ it("values Watcher's Eye mods and narrows them to items with a required mod", as
             "history",
         ),
     );
+    // The route re-renders after navigation; this file's default 1 s wait flakes under load.
     expect(
-        await screen.findByRole("link", {
-            name: "Remove required mod: Haste: #% increased Movement Speed",
-        }),
+        await screen.findByRole(
+            "link",
+            { name: "Remove required mod: Haste: #% increased Movement Speed" },
+            { timeout: 5000 },
+        ),
     ).toBeTruthy();
 });
 

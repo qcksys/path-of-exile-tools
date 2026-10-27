@@ -10,7 +10,7 @@ import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import { marketItemArtUrl } from "~/lib/item-presentation";
 import { marketNumber as number } from "~/lib/market-number";
-import { marketSignatureLabel } from "~/lib/watchers-eye";
+import { marketSignatureLabel } from "~/lib/mod-pools";
 import { marketLink, parseMarketFilters } from "~/schemas/market";
 import type { Route } from "./+types/item";
 
@@ -187,7 +187,7 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                                 {selected.identified ? "Identified" : "Unidentified"}
                                 {selected.corrupted ? " · Corrupted" : ""}
                                 {selected.foilVariation >= 0 ? " · Foil" : ""}
-                                {selected.signatureKind
+                                {marketSignatureLabel(selected)
                                     ? ` · ${marketSignatureLabel(selected)}`
                                     : ""}
                             </p>

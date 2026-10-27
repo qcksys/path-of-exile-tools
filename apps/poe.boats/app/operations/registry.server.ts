@@ -99,7 +99,7 @@ const watchersEyeModValues = z
     })
     .nullable()
     .describe(
-        "For a Watcher's Eye variant (kind watchers-eye): each mod's value among the item's markets that have every `mods` entry and, if `anyMods` is set, one of those (both |-separated mod IDs). Per mod: listings and cheapest ask in the latest hour, likely sales and their median last ask over the period, in the display currency. `matches` are the cheapest listed matching mod combinations.",
+        "For a variant of a unique whose mods come from a pool (kinds watchers-eye, loreweave): each mod's value among the item's mod combinations that have every `mods` entry and, if `anyMods` is set, one of those (both |-separated mod IDs). Per mod: listings and cheapest ask in the latest hour, likely sales and their median last ask over the period, in the display currency. `matches` are the cheapest listed matching combinations (link one with its `signatureValue`). Lists and variants show such a unique as one market with an empty `value`.",
     );
 
 export const operations = [

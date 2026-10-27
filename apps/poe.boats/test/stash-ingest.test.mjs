@@ -464,7 +464,28 @@ describe("receiver validation and mod extraction", () => {
                     "Gain 15% of Physical Damage as Extra Fire Damage while affected by Anger",
                 ],
             }),
-        ).toMatchObject({ kind: "watchers-eye", mods: [{ aura: "Anger" }] });
+        ).toEqual({
+            kind: "watchers-eye",
+            mods: ["Anger: Gain #% of Physical Damage as Extra Fire Damage"],
+        });
+    });
+    it("records a Loreweave's pooled mods without markup or rolls", () => {
+        const signature = extractModSignature({
+            ...item,
+            name: "Loreweave",
+            explicitMods: [
+                "25% chance to [Intimidate|Intimidate] Enemies for 4 seconds on Hit",
+                "+15% of [Armour] also applies to [Chaos|Chaos] Damage",
+            ],
+        });
+        expect(signature).toEqual({
+            kind: "loreweave",
+            mods: [
+                "#% chance to Intimidate Enemies for # seconds on Hit",
+                "+#% of Armour also applies to Chaos Damage",
+            ],
+        });
+        expect(signatureValue(signature)).toBe(signature.mods.join(" / "));
     });
     it("trades every roll of the same Watcher's Eye modifiers as one readable market", () => {
         const eye = (explicitMods) =>

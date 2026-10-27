@@ -5,14 +5,14 @@ import { DataTable, dataTableColumns } from "~/components/data-table";
 import { marketNumber as number } from "~/lib/market-number";
 import {
     MOD_SEPARATOR,
-    type WatchersEyeMatch,
-    type WatchersEyeModValue,
-    type WatchersEyeModValues,
-} from "~/lib/watchers-eye";
+    type ModPoolMatch,
+    type ModPoolModValue,
+    type ModPoolValues,
+} from "~/lib/mod-pools";
 import { type MarketFilters, marketLink } from "~/schemas/market";
 
-const modColumn = dataTableColumns<WatchersEyeModValue>();
-const matchColumn = dataTableColumns<WatchersEyeMatch>();
+const modColumn = dataTableColumns<ModPoolModValue>();
+const matchColumn = dataTableColumns<ModPoolMatch>();
 const count = { sortDescFirst: true, meta: { filter: "range" } } as const;
 
 function without(mods: string[], mod: string) {
@@ -25,7 +25,7 @@ export function MarketModValues({
     game,
 }: {
     filters: MarketFilters;
-    values: WatchersEyeModValues;
+    values: ModPoolValues;
     game: "poe1" | "poe2";
 }) {
     const { require, anyOf } = values;

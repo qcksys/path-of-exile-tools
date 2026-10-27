@@ -1,36 +1,55 @@
 import { z } from "zod";
 
-export const WATCHERS_EYE_KIND = "watchers-eye";
+/**
+ * Signature kinds of uniques whose mods are drawn from a pool (ingest's `MOD_POOLS`). One market
+ * is one mod combination; the market list shows one row per item, and the item page values each mod.
+ */
+export const MOD_POOL_KINDS = ["watchers-eye", "loreweave"] as const;
 /** Separates mod IDs in the `mods` and `anyMods` market filters. */
 export const MOD_SEPARATOR = "|";
 const MATCH_LIMIT = 20;
 
+export function isModPool(kind: string) {
+    return (MOD_POOL_KINDS as readonly string[]).includes(kind);
+}
+
 const signatureSchema = z.object({
-    kind: z.literal(WATCHERS_EYE_KIND),
-    mods: z.array(z.object({ aura: z.string(), stat: z.string() })).min(1),
+    kind: z.string(),
+    mods: z
+        .array(
+            z.union([
+                z.string(),
+                // Watcher's Eye signatures captured before the generic mod pools.
+                z
+                    .object({ aura: z.string(), stat: z.string() })
+                    .transform((mod) => `${mod.aura}: ${mod.stat}`),
+            ]),
+        )
+        .min(1),
 });
 
 /**
- * A Watcher's Eye's mods as IDs such as `Haste: #% increased Movement Speed`. Rolls are masked,
+ * A pool unique's mods as IDs such as `Haste: #% increased Movement Speed`. Rolls are masked,
  * so signatures captured before ingest masked them still group with newer ones.
  */
-export function watchersEyeMods(signatureData: unknown): string[] | null {
+export function modPoolMods(signatureData: unknown): string[] | null {
     const parsed = signatureSchema.safeParse(signatureData);
-    if (!parsed.success) return null;
-    return parsed.data.mods
-        .map((mod) => `${mod.aura}: ${mod.stat.replace(/\d+(?:\.\d+)?/g, "#")}`)
-        .sort();
+    if (!parsed.success || !isModPool(parsed.data.kind)) return null;
+    return parsed.data.mods.map((mod) => mod.replace(/\d+(?:\.\d+)?/g, "#")).sort();
 }
 
-/** A market's readable variant label, falling back to its signature value. */
+/**
+ * A market's readable variant label: a pool unique's mods (empty for its every-combination
+ * market, whose value is empty), otherwise the signature value.
+ */
 export function marketSignatureLabel(market: {
     signatureKind: string;
     signatureValue: string;
     signatureData?: unknown;
 }) {
-    return market.signatureKind === WATCHERS_EYE_KIND
-        ? (watchersEyeMods(market.signatureData)?.join(" · ") ?? market.signatureValue)
-        : market.signatureValue;
+    if (!isModPool(market.signatureKind)) return market.signatureValue;
+    if (!market.signatureValue) return "";
+    return modPoolMods(market.signatureData)?.join(" · ") ?? market.signatureValue;
 }
 
 export function parseModList(value: string) {
@@ -44,7 +63,7 @@ export function parseModList(value: string) {
  * One market's observation, priced in the display currency: its current listings and cheapest
  * ask, or one hour's likely sales and their median last ask.
  */
-export type WatchersEyeObservation = {
+export type ModPoolObservation = {
     signatureValue: string;
     mods: string[];
     listings: number;
@@ -53,7 +72,7 @@ export type WatchersEyeObservation = {
     salePrice: number | null;
 };
 
-export type WatchersEyeModValue = {
+export type ModPoolModValue = {
     mod: string;
     /** Distinct mod combinations with this mod among the matching items. */
     combinations: number;
@@ -65,7 +84,7 @@ export type WatchersEyeModValue = {
     saleMedian: number | null;
 };
 
-export type WatchersEyeMatch = {
+export type ModPoolMatch = {
     mods: string[];
     signatureValue: string;
     listings: number;
@@ -74,7 +93,7 @@ export type WatchersEyeMatch = {
     saleMedian: number | null;
 };
 
-type Combination = WatchersEyeMatch & { salePrices: { price: number; weight: number }[] };
+type Combination = ModPoolMatch & { salePrices: { price: number; weight: number }[] };
 
 function weightedMedian(values: { price: number; weight: number }[]) {
     const sorted = values.filter((value) => value.weight > 0).sort((a, b) => a.price - b.price);
@@ -88,13 +107,13 @@ function weightedMedian(values: { price: number; weight: number }[]) {
 }
 
 /**
- * Values each Watcher's Eye mod from the items matching the filter: those with every `require`d
+ * Values each mod of a pool unique from the items matching the filter: those with every `require`d
  * mod and, when `anyOf` is set, at least one of those. Each mod's row covers the matching items
  * that also have it, so with `require: [A]` a row for X is the cheapest item with A and X.
  * Observations of one mod combination (several rolls or older signatures) count as one item.
  */
-export function watchersEyeModValues(
-    observations: WatchersEyeObservation[],
+export function modPoolValues(
+    observations: ModPoolObservation[],
     filter: { require: string[]; anyOf: string[] },
 ) {
     const combinations = new Map<string, Combination>();
@@ -134,7 +153,7 @@ export function watchersEyeModValues(
     for (const combination of matching)
         for (const mod of combination.mods)
             byMod.set(mod, [...(byMod.get(mod) ?? []), combination]);
-    const mods: WatchersEyeModValue[] = [...byMod].map(([mod, group]) => {
+    const mods: ModPoolModValue[] = [...byMod].map(([mod, group]) => {
         const cheapest = group.reduce<Combination | null>(
             (best, combination) =>
                 combination.cheapest !== null &&
@@ -174,4 +193,4 @@ export function watchersEyeModValues(
     };
 }
 
-export type WatchersEyeModValues = ReturnType<typeof watchersEyeModValues>;
+export type ModPoolValues = ReturnType<typeof modPoolValues>;
