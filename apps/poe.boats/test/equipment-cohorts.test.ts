@@ -1,6 +1,9 @@
 // biome-ignore-all lint/style/useNamingConvention: Fixtures preserve the public-stash wire format.
 
 import { readFileSync } from "node:fs";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
     compileMarketCohorts,
     marketCohortManifestSchema,
@@ -231,6 +234,26 @@ describe("equipment capture of a whole page", () => {
         expect(await queryAll(db.conn, "SELECT item_id, stash_id FROM ps_equipment_hour")).toEqual([
             { item_id: "one", stash_id: "moved" },
         ]);
+    });
+
+    it("re-observes equipment within the same hour after the database is reopened", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "equipment-reopen-"));
+        const path = join(dir, "market.duckdb");
+        try {
+            await db.close();
+            db = await openDb(path);
+            await capture(stash);
+            await db.close();
+            db = await openDb(path);
+            await capture({ ...stash, items: [{ ...item, note: "~price 25 chaos" }] });
+            expect(
+                await queryAll(db.conn, "SELECT item_id, price_amount FROM ps_equipment_hour"),
+            ).toEqual([{ item_id: "one", price_amount: 25 }]);
+        } finally {
+            await db.close();
+            db = await openDb(":memory:");
+            await rm(dir, { recursive: true, force: true });
+        }
     });
 
     it("applies a stash's repeated changes within one page in order", async () => {
