@@ -4,7 +4,7 @@ import { archivePage } from "#src/ps/capture-archive.ts";
 import { recordCheckpoint } from "#src/ps/checkpoints.ts";
 import { defaultCraftingCapture } from "#src/ps/crafting-capture.ts";
 import {
-    captureEquipment,
+    captureEquipmentPage,
     defaultEquipmentClassifier,
     type EquipmentClassifier,
 } from "#src/ps/equipment.ts";
@@ -12,6 +12,7 @@ import type {
     EquipmentDiagnosticFixture,
     EquipmentDiagnostics,
 } from "#src/ps/equipment-diagnostics.ts";
+import { params, stashRounds } from "#src/ps/rounds.ts";
 import { evaluateSales, recordRemovals } from "#src/ps/sales.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { learnBasemap } from "#src/shared/basemap.ts";
@@ -65,49 +66,39 @@ interface ListingRow {
     rawItem: string;
 }
 
-async function applyStashChange(
-    conn: DuckDBConnection,
-    change: PublicStashChange,
-): Promise<{ inserted: number; updated: number; removed: number }> {
-    if (!change.public) {
-        const removed = await conn.runAndReadAll(
-            `UPDATE ps_listing SET removed_at = current_timestamp
-             WHERE stash_id = $1 AND removed_at IS NULL RETURNING item_id`,
-            [change.id],
-        );
-        await recordRemovals(conn, change.id, true);
-        return { inserted: 0, updated: 0, removed: removed.getRowObjects().length };
-    }
-    if (!change.accountName || !change.league) {
-        return { inserted: 0, updated: 0, removed: 0 };
-    }
-    const accountName = change.accountName;
-    const stashId = change.id;
-    const league = change.league;
+/** `ListingRow` JSON from `json_each`, as `ps_listing` columns. */
+const LISTING_VALUES = `
+    value->>'accountName' AS account_name,
+    value->>'stashId' AS stash_id,
+    value->>'itemId' AS item_id,
+    value->>'league' AS league,
+    value->>'itemKey' AS item_key,
+    value->>'iconAsset' AS icon_asset,
+    (value->>'identified')::BOOLEAN AS identified,
+    (value->>'frameType')::INTEGER AS frame_type,
+    value->>'typeLine' AS type_line,
+    value->>'baseType' AS base_type,
+    value->>'name' AS name,
+    value->>'rarity' AS rarity,
+    (value->>'corrupted')::BOOLEAN AS corrupted,
+    (value->>'foilVariation')::INTEGER AS foil_variation,
+    (value->>'priceAmount')::DOUBLE AS price_amount,
+    value->>'priceCurrency' AS price_currency,
+    (value->>'stackSize')::INTEGER AS stack_size,
+    (value->>'modSignature')::JSON AS mod_signature,
+    (value->>'rawItem')::JSON AS raw_item,
+    value->>'signatureValue' AS signature_value`;
 
-    const existing = await conn
-        .runAndReadAll(
-            `SELECT item_id AS "itemId" FROM ps_listing
-             WHERE account_name = $1 AND stash_id = $2 AND removed_at IS NULL`,
-            [accountName, stashId],
-        )
-        .then((r) => r.getRowObjects() as Array<{ itemId: string }>);
-    const existingIds = new Set(existing.map((r) => r.itemId));
-
+function listingRows(change: PublicStashChange, accountName: string, league: string) {
     const rows: ListingRow[] = [];
-    const currentIds = new Set<string>();
-
     for (const item of change.items) {
-        if (!item.id) continue;
-        currentIds.add(item.id);
-        if (!shouldCapture(item)) continue;
+        if (!item.id || !shouldCapture(item)) continue;
         const iconAsset = decodeIconAsset(item.icon);
         const price = extractListingPrice(item, change.stash);
         const signature = extractModSignature(item);
-
         rows.push({
             accountName,
-            stashId,
+            stashId: change.id,
             itemId: item.id,
             league,
             itemKey: itemKey(item, iconAsset),
@@ -129,93 +120,157 @@ async function applyStashChange(
             rawItem: JSON.stringify(item),
         });
     }
+    return rows;
+}
 
-    await learnBasemap(conn, rows);
-
-    let inserted = 0;
-    let updated = 0;
-
-    for (const row of rows) {
-        if (existingIds.has(row.itemId)) updated++;
-        else inserted++;
+/**
+ * Applies a page's stash changes with a fixed number of set-based statements. DuckDB pays a few
+ * milliseconds per statement, and `ON CONFLICT`/`INSERT OR REPLACE` scan the whole table, so rows
+ * are looked up once through the stash index, then updated by row ID or plainly inserted.
+ */
+export async function applyStashChanges(
+    conn: DuckDBConnection,
+    changes: readonly PublicStashChange[],
+): Promise<{ inserted: number; updated: number; removed: number }> {
+    const totals = { inserted: 0, updated: 0, removed: 0 };
+    for (const round of stashRounds(changes)) {
+        const result = await applyRound(conn, round);
+        totals.inserted += result.inserted;
+        totals.updated += result.updated;
+        totals.removed += result.removed;
     }
+    return totals;
+}
 
-    if (rows.length) {
-        await conn.run(
-            `INSERT INTO ps_listing (
-                account_name, stash_id, item_id, league, item_key, icon_asset,
-                identified, frame_type, type_line, base_type, name, rarity,
-                corrupted, foil_variation, price_amount, price_currency, stack_size,
-                mod_signature, raw_item, signature_value, first_seen_at, last_seen_at, removed_at
-            ) SELECT
-                value->>'accountName',
-                value->>'stashId',
-                value->>'itemId',
-                value->>'league',
-                value->>'itemKey',
-                value->>'iconAsset',
-                (value->>'identified')::BOOLEAN,
-                (value->>'frameType')::INTEGER,
-                value->>'typeLine',
-                value->>'baseType',
-                value->>'name',
-                value->>'rarity',
-                (value->>'corrupted')::BOOLEAN,
-                (value->>'foilVariation')::INTEGER,
-                (value->>'priceAmount')::DOUBLE,
-                value->>'priceCurrency',
-                (value->>'stackSize')::INTEGER,
-                (value->>'modSignature')::JSON,
-                (value->>'rawItem')::JSON,
-                value->>'signatureValue',
-                current_timestamp, current_timestamp, NULL
-            FROM json_each($1::JSON)
-            ON CONFLICT (account_name, stash_id, item_id) DO UPDATE SET
-                league = excluded.league,
-                item_key = excluded.item_key,
-                icon_asset = excluded.icon_asset,
-                identified = excluded.identified,
-                frame_type = excluded.frame_type,
-                type_line = excluded.type_line,
-                base_type = excluded.base_type,
-                name = excluded.name,
-                rarity = excluded.rarity,
-                corrupted = excluded.corrupted,
-                foil_variation = excluded.foil_variation,
-                price_amount = excluded.price_amount,
-                price_currency = excluded.price_currency,
-                stack_size = excluded.stack_size,
-                mod_signature = excluded.mod_signature,
-                signature_value = excluded.signature_value,
-                raw_item = excluded.raw_item,
-                last_seen_at = excluded.last_seen_at,
-                removed_at = NULL`,
-            [JSON.stringify(rows)],
+async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashChange[]) {
+    const stashIds = changes.map((change) => change.id);
+    const known = await queryAll<{
+        rowId: string;
+        accountName: string;
+        stashId: string;
+        itemId: string;
+        active: boolean;
+    }>(
+        conn,
+        `SELECT rowid::VARCHAR AS "rowId", account_name AS "accountName", stash_id AS "stashId",
+            item_id AS "itemId", removed_at IS NULL AS active
+        FROM ps_listing WHERE stash_id IN (${params(stashIds)})`,
+        stashIds,
+    );
+    const byStash = Map.groupBy(known, (row) => row.stashId);
+    const result = { inserted: 0, updated: 0, removed: 0 };
+    const removedRows: string[] = [];
+    const removals: { stashId: string; withdrawn: boolean }[] = [];
+    const updates: (ListingRow & { rowId: string })[] = [];
+    const inserts: ListingRow[] = [];
+    const listed: { stashId: string; accountName: string }[] = [];
+    for (const change of changes) {
+        const rows = byStash.get(change.id) ?? [];
+        if (!change.public) {
+            const gone = rows.filter((row) => row.active);
+            removedRows.push(...gone.map((row) => row.rowId));
+            removals.push({ stashId: change.id, withdrawn: true });
+            result.removed += gone.length;
+            continue;
+        }
+        if (!change.accountName || !change.league) continue;
+        const accountName = change.accountName;
+        const owned = new Map(
+            rows.filter((row) => row.accountName === accountName).map((row) => [row.itemId, row]),
         );
+        const current = new Set(change.items.flatMap((item) => (item.id ? [item.id] : [])));
+        for (const row of listingRows(change, accountName, change.league)) {
+            const existing = owned.get(row.itemId);
+            if (existing?.active) result.updated++;
+            else result.inserted++;
+            if (existing) updates.push({ ...row, rowId: existing.rowId });
+            else inserts.push(row);
+        }
+        const gone = [...owned.values()].filter((row) => row.active && !current.has(row.itemId));
+        if (gone.length) {
+            removedRows.push(...gone.map((row) => row.rowId));
+            removals.push({ stashId: change.id, withdrawn: false });
+            result.removed += gone.length;
+        }
+        listed.push({ stashId: change.id, accountName });
     }
 
-    const goneIds = [...existingIds].filter((id) => !currentIds.has(id));
-    if (goneIds.length > 0) {
-        // DuckDB's parameter binder doesn't accept arrays for IN; build a literal list.
-        const placeholders = goneIds.map((_, i) => `$${i + 3}`).join(",");
+    await learnBasemap(conn, [...updates, ...inserts]);
+    // Removals first: updates may rewrite their rows under new row IDs.
+    if (removedRows.length) {
         await conn.run(
             `UPDATE ps_listing SET removed_at = current_timestamp
-             WHERE account_name = $1 AND stash_id = $2 AND item_id IN (${placeholders})`,
-            [accountName, stashId, ...goneIds],
+            WHERE rowid IN (SELECT value::BIGINT FROM json_each($1::JSON))`,
+            [JSON.stringify(removedRows)],
         );
-        await recordRemovals(conn, stashId, false);
     }
+    if (removals.length) await recordRemovals(conn, removals);
+    if (updates.length) {
+        await conn.run(
+            `UPDATE ps_listing SET
+                league = v.league,
+                item_key = v.item_key,
+                icon_asset = v.icon_asset,
+                identified = v.identified,
+                frame_type = v.frame_type,
+                type_line = v.type_line,
+                base_type = v.base_type,
+                name = v.name,
+                rarity = v.rarity,
+                corrupted = v.corrupted,
+                foil_variation = v.foil_variation,
+                price_amount = v.price_amount,
+                price_currency = v.price_currency,
+                stack_size = v.stack_size,
+                mod_signature = v.mod_signature,
+                signature_value = v.signature_value,
+                raw_item = v.raw_item,
+                last_seen_at = current_timestamp,
+                removed_at = NULL
+            FROM (
+                SELECT (value->>'rowId')::BIGINT AS row_id, ${LISTING_VALUES} FROM json_each($1::JSON)
+            ) v
+            WHERE ps_listing.rowid = v.row_id`,
+            [JSON.stringify(updates)],
+        );
+    }
+    if (inserts.length) {
+        await conn.run(
+            `INSERT INTO ps_listing BY NAME
+            SELECT ${LISTING_VALUES}, current_timestamp AS first_seen_at,
+                current_timestamp AS last_seen_at
+            FROM json_each($1::JSON)`,
+            [JSON.stringify(inserts)],
+        );
+    }
+    if (!listed.length) return result;
 
+    // Active listings were all seen now, so replace their observations within the current hour
+    // instead of merging: zonemaps confine the hour to the newest row groups. Earlier observations
+    // of items removed during this hour stay.
+    const listedIds = listed.map((stash) => stash.stashId);
     await conn.run(
-        `INSERT OR REPLACE INTO ps_listing_hour BY NAME
-         SELECT * EXCLUDE (removed_at, raw_item),
-                epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
-         FROM ps_listing
-         WHERE account_name = $1 AND stash_id = $2 AND removed_at IS NULL`,
-        [accountName, stashId],
+        `CREATE OR REPLACE TEMP TABLE page_listing AS
+        WITH stash AS MATERIALIZED (
+            SELECT * FROM ps_listing WHERE stash_id IN (${params(listedIds, 2)})
+        )
+        SELECT stash.* EXCLUDE (raw_item, removed_at) FROM stash
+        JOIN json_each($1::JSON) j ON stash.stash_id = (j.value->>'stashId')
+            AND stash.account_name = (j.value->>'accountName')
+        WHERE stash.removed_at IS NULL`,
+        [JSON.stringify(listed), ...listedIds],
     );
-
-    return { inserted, updated, removed: goneIds.length };
+    await conn.run(
+        `DELETE FROM ps_listing_hour h USING page_listing l
+        WHERE h.observed_hour = epoch(date_trunc('hour', current_timestamp))::BIGINT
+            AND h.stash_id = l.stash_id AND h.account_name = l.account_name
+            AND h.item_id = l.item_id`,
+    );
+    await conn.run(
+        `INSERT INTO ps_listing_hour BY NAME
+        SELECT *, epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour FROM page_listing`,
+    );
+    return result;
 }
 
 export async function ingestPs(
@@ -283,8 +338,10 @@ export async function ingestPs(
                 "SELECT epoch_ms(current_timestamp) AS millis",
             );
             const observedAt = opts.observedAt ?? new Date(Number(clock!.millis));
-            for (const change of page.stashes) {
-                if (change.public && opts.league && change.league !== opts.league) continue;
+            const changes = page.stashes.filter(
+                (change) => !change.public || !opts.league || change.league === opts.league,
+            );
+            for (const change of changes) {
                 result.stashes++;
                 if (change.public) {
                     result.publicStashes++;
@@ -294,27 +351,27 @@ export async function ingestPs(
                     acc.items += change.items.length;
                     result.leagues.set(lg, acc);
                 }
-                const r = await applyStashChange(conn, change);
-                result.equipmentObserved += await captureEquipment(
-                    conn,
-                    change,
-                    equipment,
-                    observedAt,
-                    opts.equipmentDiagnostics
-                        ? (item, classification) => {
-                              const fixture = opts.equipmentDiagnostics!.collect(
-                                  item,
-                                  classification,
-                                  observedAt,
-                              );
-                              if (fixture) fixtures.push(fixture);
-                          }
-                        : undefined,
-                );
-                result.inserted += r.inserted;
-                result.updated += r.updated;
-                result.removed += r.removed;
             }
+            const r = await applyStashChanges(conn, changes);
+            result.equipmentObserved += await captureEquipmentPage(
+                conn,
+                changes,
+                equipment,
+                observedAt,
+                opts.equipmentDiagnostics
+                    ? (item, classification) => {
+                          const fixture = opts.equipmentDiagnostics!.collect(
+                              item,
+                              classification,
+                              observedAt,
+                          );
+                          if (fixture) fixtures.push(fixture);
+                      }
+                    : undefined,
+            );
+            result.inserted += r.inserted;
+            result.updated += r.updated;
+            result.removed += r.removed;
             await recordCheckpoint(conn, page, {
                 realm,
                 league: opts.league ?? "all",

@@ -9,9 +9,14 @@ import { reclassifyArchivedEquipment } from "#src/ps/equipment-reclassify.ts";
 import { rollupEquipment } from "#src/ps/equipment-rollup.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
 import { rollupPs } from "#src/ps/rollup.ts";
+import { type ArchiveOptions, archiveOldData } from "#src/shared/archive.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { queryAll, TransactionRollbackError } from "#src/shared/db.ts";
 import { configureSource } from "#src/shared/source.ts";
+
+const ARCHIVE_INTERVAL_MS = 3_600_000;
+let archiveCheckedAt = 0;
+let archiveBacklog = false;
 
 function operationFailure(operation: string, error: unknown) {
     return error instanceof TransactionRollbackError
@@ -98,6 +103,7 @@ export async function runPipeline(
         onStatus?: (patch: Partial<IngestStatus>) => Promise<void>;
         currencyFromHour?: number;
         currencyHours?: number;
+        archive?: ArchiveOptions;
     },
 ) {
     await configureSource(conn, REALM ?? "pc", opts.league ?? null);
@@ -214,6 +220,20 @@ export async function runPipeline(
         await failStage("delivery", "Rollup delivery", error);
         return null;
     });
+    // Archive failures report as delivery so workers need no receiver schema change.
+    if (opts.archive && (archiveBacklog || Date.now() - archiveCheckedAt >= ARCHIVE_INTERVAL_MS)) {
+        archiveCheckedAt = Date.now();
+        await archiveOldData(conn, opts.archive).then(
+            (result) => {
+                archiveBacklog = result.days.length > 0;
+                if (archiveBacklog)
+                    console.log(
+                        `archived ${result.days.join(", ")}: ${JSON.stringify(result.rows)}`,
+                    );
+            },
+            (error: unknown) => failStage("delivery", "Archive", error),
+        );
+    }
     await update({
         stage: null,
         failedStages: [...failedStages],

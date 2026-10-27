@@ -273,10 +273,28 @@ failure stops processing before advancing the cursor. Successful processing mark
 in the same transaction as its cursor update. Unprocessed observations remain available for inspection;
 this command set does not automatically rebuild prices from them.
 
-The archive has **no automatic deletion or age cap** and the pricing-table `prune` command never
-touches it. Preserve and back up the whole DuckDB database/WAL. Provision disk capacity and monitor
-growth; storage exhaustion stops capture instead of silently discarding source pages. This retention
-starts when the updated worker is installed; older unrecorded versions cannot be recovered.
+Without `PS_ARCHIVE_DIR` the archive has **no automatic deletion or age cap** and the pricing-table
+`prune` command never touches it. Preserve and back up the whole DuckDB database/WAL. Provision disk
+capacity and monitor growth; storage exhaustion stops capture instead of silently discarding source
+pages. This retention starts when the updated worker is installed; older unrecorded versions cannot
+be recovered.
+
+### Archiving old data
+
+When `PS_ARCHIVE_DIR` is set, `process` checks hourly for whole UTC days to move out of DuckDB, one day
+per check, and keeps going every cycle while a backlog remains. `archive [--days n]` runs the same step
+once. A day leaves once it is older than `PS_ARCHIVE_KEEP_DAYS` (default 30). While the database uses
+more than `PS_ARCHIVE_MAX_GB` (default 100), days down to three days old leave too, oldest first.
+
+Each archived day becomes `<PS_ARCHIVE_DIR>/<YYYY-MM-DD>/<table>-<run>.parquet` (zstd). Every file's
+row count is checked before its rows are deleted. Rows a day still needs stay in DuckDB until a later
+check: unprocessed captured pages, hours whose rollup has not been delivered since their last listing or
+sale change, and equipment hours inside an undelivered 24-hour window. A captured payload leaves with
+the last page that references it. Query archives with DuckDB, for example
+`SELECT * FROM read_parquet('/backups/*/ps_listing_hour-*.parquet')`.
+
+Deleted rows free space inside the database file for reuse; the file itself does not shrink. To
+compact it, stop the worker, `ATTACH` a new file and run `COPY FROM DATABASE old TO new`.
 
 With the worker stopped, `pnpm ps capture-status` reports observation/payload counts, unprocessed
 pages, first/latest capture times, and original/compressed payload bytes. These byte counts exclude
@@ -342,7 +360,7 @@ Browse `/1/market` in the app. Filters separate realm, season and variant. The p
 
 The last asking price must be within 25% of the median of per-seller medians from at least three other sellers in the same season, variant and currency, observed within the last 24 hours. Market evidence is saved at removal time. Currency aliases and fractional bulk prices are normalized; currencies are never implicitly converted.
 
-Same-seller relists match the item ID across stashes, or an equivalent variant with a new ID. They suppress pending sales and retract earlier estimates regardless of the new asking price. Matching a replacement copy can suppress a real sale; this is intentionally conservative. Whole-stash withdrawals, insufficient market samples, unpriced items and out-of-range prices do not count. Partial stack reductions are not treated as item sales. Estimated sale prices are the **last asking prices**, not confirmed transaction prices.
+Same-seller relists match the item ID across stashes, or an equivalent variant with a new ID that first appeared after the removed item was last seen. They suppress pending sales and retract earlier estimates regardless of the new asking price. Matching a replacement copy can suppress a real sale; this is intentionally conservative. Copies the seller already had listed alongside the removed item are not replacements, so selling one of several identical copies still counts. Whole-stash withdrawals, insufficient market samples, unpriced items and out-of-range prices do not count. Partial stack reductions are not treated as item sales. Estimated sale prices are the **last asking prices**, not confirmed transaction prices.
 
 Removal events are retained locally in `ps_sale` for correction. Pruning protects active listings, pending or inferred sale evidence, and affected hourly observations. The row cap is therefore a target and can be exceeded. Monitor local disk usage and preserve this database to retain relisting evidence.
 
