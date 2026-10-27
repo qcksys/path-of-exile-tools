@@ -6,6 +6,7 @@ import { SYSTEM } from "~/const";
 import type { TDatabase } from "~/db/client";
 import { tAuthAccount } from "~/db/schema/auth.account";
 import { tAuthSession } from "~/db/schema/auth.session";
+import { tAuthTwoFactor } from "~/db/schema/auth.two-factor";
 import { tAuthUser } from "~/db/schema/auth.user";
 import { tAuthVerification } from "~/db/schema/auth.verification";
 
@@ -25,6 +26,7 @@ export const authServer = ({ env, db }: { env: CloudflareBindings; db: TDatabase
             schema: {
                 account: tAuthAccount,
                 session: tAuthSession,
+                twoFactor: tAuthTwoFactor,
                 user: tAuthUser,
                 verification: tAuthVerification,
             },
