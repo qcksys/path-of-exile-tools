@@ -22,6 +22,8 @@ import {
 } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
 import { tStashCurrencyHourly as currencyHourly } from "~/db/schema/stash.currency-hourly";
+import { tStashCurrencyMarket as currencyMarket } from "~/db/schema/stash.currency-market";
+import { tStashUniqueDaily as daily } from "~/db/schema/stash.unique-daily";
 import {
     tStashUniqueHourly as market,
     type TStashUniqueHourlyS,
@@ -40,6 +42,7 @@ import {
 } from "~/lib/market-price-merge";
 import type { MarketFilters, MarketOrder } from "~/schemas/market";
 import { type Span, traceQuery, traceSpan } from "~/services/tracing.server";
+import { utcDay } from "./stash-rollups.queries";
 
 const PAGE_SIZE = 50;
 const DIVINE = exchangeCurrencyId("divine")!;
@@ -134,35 +137,40 @@ export function getMarketData(db: TDatabase, input: MarketFilters, view: MarketV
 }
 
 async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketView, span: Span) {
-    // Group by the full index prefix so MySQL can skip between season boundaries.
-    const stashSeasons = await traceQuery(
-        "market.seasons",
-        db
-            .select({
-                league: market.league,
-                firstHour: min(market.hour),
-                latestHour: max(market.hour),
-            })
-            .from(market)
-            .where(eq(market.realm, input.realm))
-            .groupBy(market.realm, market.league)
-            .orderBy(desc(max(market.hour))),
-    );
     const exchangeHour = marketObservationRange().latestHour;
-    const exchangeSeasons = await traceQuery(
-        "market.exchange_seasons",
-        db
-            .select({
-                league: currencyHourly.league,
-                firstHour: min(currencyHourly.hour),
-                latestHour: max(currencyHourly.hour),
-            })
-            .from(currencyHourly)
-            .where(
-                and(eq(currencyHourly.realm, input.realm), lte(currencyHourly.hour, exchangeHour)),
-            )
-            .groupBy(currencyHourly.realm, currencyHourly.league),
-    );
+    const [stashSeasons, exchangeSeasons] = await Promise.all([
+        // Group by the full index prefix so MySQL can skip between season boundaries.
+        traceQuery(
+            "market.seasons",
+            db
+                .select({
+                    league: market.league,
+                    firstHour: min(market.hour),
+                    latestHour: max(market.hour),
+                })
+                .from(market)
+                .where(eq(market.realm, input.realm))
+                .groupBy(market.realm, market.league)
+                .orderBy(desc(max(market.hour))),
+        ),
+        traceQuery(
+            "market.exchange_seasons",
+            db
+                .select({
+                    league: currencyHourly.league,
+                    firstHour: min(currencyHourly.hour),
+                    latestHour: max(currencyHourly.hour),
+                })
+                .from(currencyHourly)
+                .where(
+                    and(
+                        eq(currencyHourly.realm, input.realm),
+                        lte(currencyHourly.hour, exchangeHour),
+                    ),
+                )
+                .groupBy(currencyHourly.realm, currencyHourly.league),
+        ),
+    ]);
     const byLeague = new Map(stashSeasons.map((season) => [season.league, season]));
     for (const season of exchangeSeasons) {
         const existing = byLeague.get(season.league);
@@ -203,18 +211,52 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     });
     const season = seasons.find((entry) => entry.league === filters.league);
     const latestHour = Number(season?.latestHour ?? 0);
-    const cutoff = latestHour - Number(filters.days) * 86400 + 3600;
-    // Items listed on the exchange are priced from it; their stash listings are left out.
+    // Windows start at UTC midnight so lists sum whole days of `stash_unique_daily`.
+    const windowStart = utcDay(latestHour - Number(filters.days) * 86400 + 3600);
+    const scope = and(
+        eq(market.realm, filters.realm),
+        eq(market.league, filters.league),
+        gte(market.hour, windowStart),
+    );
+    const historyPromise =
+        filters.item && view !== "list"
+            ? traceQuery(
+                  "market.history",
+                  db
+                      .select()
+                      .from(market)
+                      .where(
+                          and(
+                              scope,
+                              eq(market.itemKey, filters.item),
+                              eq(market.identified, filters.identified === "true"),
+                              eq(market.corrupted, filters.corrupted === "true"),
+                              foilMatch(filters.foil),
+                              eq(market.signatureKind, filters.kind),
+                              eq(market.signatureValue, filters.value),
+                          ),
+                      )
+                      .orderBy(desc(market.hour))
+                      // 90 days of hours for up to 16 merged foil variations.
+                      .limit(2160 * 16),
+              ).then((rows) => mergeByHour(rows, filters.foil))
+            : Promise.resolve([]);
+    const variantsPromise =
+        filters.item && view !== "list"
+            ? marketVariants(db, scope, filters.item)
+            : Promise.resolve([]);
+    // Items listed on the exchange are priced from it; the rows query leaves out their stash listings.
     const listed =
         season && view !== "history" ? await marketExchangeListed(db, filters, exchangeHour) : [];
     const exchangeNames = [
         ...new Set(listed.flatMap((id) => marketExchangeItem(filters.realm, id)?.name ?? [])),
     ];
-    const scope = and(
-        eq(market.realm, filters.realm),
-        eq(market.league, filters.league),
-        gte(market.hour, cutoff),
+    const days = and(
+        eq(daily.realm, filters.realm),
+        eq(daily.league, filters.league),
+        gte(daily.day, windowStart),
     );
+    const dailyFoilGroup = sql<number>`least(${daily.foilVariation}, 0)`;
     const search = filters.q ? `%${filters.q.replace(/[\\%_]/g, "\\$&")}%` : undefined;
     const currencyField = (field: string) =>
         sql`cast(json_unquote(json_extract(${market.prices}, ${`$.${JSON.stringify(filters.currency)}.${field}`})) as decimal(30, 10))`;
@@ -241,68 +283,67 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     const rarity = { normal: 0, magic: 1, rare: 2, unique: 3 };
     const grouped = db
         .select({
-            itemKey: market.itemKey,
-            identified: market.identified,
-            corrupted: market.corrupted,
-            foilVariation: foilGroup.mapWith(Number).as("foil_group"),
-            signatureKind: market.signatureKind,
-            signatureValue: market.signatureValue,
-            latestHour:
-                sql<number>`coalesce(max(case when ${market.listingCount} > 0 then ${market.hour} end), max(${market.hour}))`
-                    .mapWith(Number)
-                    .as("latest_hour"),
-            periodSales: sql<number>`sum(${market.likelySales})`.mapWith(Number).as("period_sales"),
-            periodRemovals: sql<number>`sum(${market.removedCount})`
+            itemKey: daily.itemKey,
+            identified: daily.identified,
+            corrupted: daily.corrupted,
+            foilVariation: dailyFoilGroup.mapWith(Number).as("foil_group"),
+            signatureKind: daily.signatureKind,
+            signatureValue: daily.signatureValue,
+            latestHour: sql<number>`coalesce(max(${daily.listedHour}), max(${daily.latestHour}))`
+                .mapWith(Number)
+                .as("latest_hour"),
+            periodSales: sql<number>`sum(${daily.likelySales})`.mapWith(Number).as("period_sales"),
+            periodRemovals: sql<number>`sum(${daily.removedCount})`
                 .mapWith(Number)
                 .as("period_removals"),
-            periodPending: sql<number>`sum(${market.pendingCount})`
+            periodPending: sql<number>`sum(${daily.pendingCount})`
                 .mapWith(Number)
                 .as("period_pending"),
         })
-        .from(market, search ? undefined : { forceIndex: "stash_unique_market_cover_idx" })
+        .from(daily)
         .where(
             and(
-                scope,
-                marketCategoryFilter(filters),
-                filters.rarity === "all" ? undefined : eq(market.frameType, rarity[filters.rarity]),
+                days,
+                marketCategoryFilter(filters, daily.baseType),
+                filters.rarity === "all" ? undefined : eq(daily.frameType, rarity[filters.rarity]),
                 filters.identification === "all"
                     ? undefined
-                    : eq(market.identified, filters.identification === "true"),
+                    : eq(daily.identified, filters.identification === "true"),
                 filters.corruption === "all"
                     ? undefined
-                    : eq(market.corrupted, filters.corruption === "true"),
+                    : eq(daily.corrupted, filters.corruption === "true"),
                 exchangeNames.length
-                    ? or(notInArray(market.baseType, exchangeNames), eq(market.frameType, 3))
+                    ? or(notInArray(daily.baseType, exchangeNames), eq(daily.frameType, 3))
                     : undefined,
                 search
                     ? or(
-                          like(market.name, search),
-                          like(market.itemKey, search),
-                          like(market.baseType, search),
-                          like(market.signatureValue, search),
+                          like(daily.name, search),
+                          like(daily.itemKey, search),
+                          like(daily.baseType, search),
+                          like(daily.signatureValue, search),
                       )
                     : undefined,
             ),
         )
         .groupBy(
-            market.itemKey,
-            market.identified,
-            market.corrupted,
-            foilGroup,
-            market.signatureKind,
-            market.signatureValue,
+            daily.itemKey,
+            daily.identified,
+            daily.corrupted,
+            dailyFoilGroup,
+            daily.signatureKind,
+            daily.signatureValue,
         )
         .having(({ periodSales }) =>
             and(...between(periodSales, filters.salesMin, filters.salesMax)),
         )
         .orderBy(({ periodSales, latestHour }) => [
             ...aggregateOrder(filters.order, periodSales, latestHour),
-            filters.order === "name-desc" ? desc(market.itemKey) : asc(market.itemKey),
-            asc(market.identified),
-            asc(market.corrupted),
-            asc(foilGroup),
-            asc(market.signatureKind),
-            asc(market.signatureValue),
+            filters.order === "name-desc" ? desc(daily.itemKey) : asc(daily.itemKey),
+            asc(daily.identified),
+            asc(daily.corrupted),
+            asc(dailyFoilGroup),
+            asc(daily.signatureKind),
+            asc(daily.signatureValue),
         ])
         .$dynamic();
     if (!pageLatestRows) grouped.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
@@ -370,35 +411,8 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             ? Promise.resolve([])
             : traceQuery("market.rows", marketsQuery, {
                   "market.page_latest_rows": pageLatestRows,
-                  "market.force_index": !search,
+                  "market.window_start": windowStart,
               }).then((markets) => marketLatestRows(db, filters, markets));
-    const historyPromise =
-        filters.item && view !== "list"
-            ? traceQuery(
-                  "market.history",
-                  db
-                      .select()
-                      .from(market)
-                      .where(
-                          and(
-                              scope,
-                              eq(market.itemKey, filters.item),
-                              eq(market.identified, filters.identified === "true"),
-                              eq(market.corrupted, filters.corrupted === "true"),
-                              foilMatch(filters.foil),
-                              eq(market.signatureKind, filters.kind),
-                              eq(market.signatureValue, filters.value),
-                          ),
-                      )
-                      .orderBy(desc(market.hour))
-                      // 90 days of hours for up to 16 merged foil variations.
-                      .limit(2160 * 16),
-              ).then((rows) => mergeByHour(rows, filters.foil))
-            : Promise.resolve([]);
-    const variantsPromise =
-        filters.item && view !== "list"
-            ? marketVariants(db, scope, filters.item)
-            : Promise.resolve([]);
     const [rows, history, variants, exchange] = await Promise.all([
         rowsPromise,
         historyPromise,
@@ -516,16 +530,15 @@ async function marketExchangeListed(db: TDatabase, filters: MarketFilters, lates
     const markets = await traceQuery(
         "market.exchange_listed",
         db
-            .select({ marketId: currencyHourly.marketId })
-            .from(currencyHourly, { forceIndex: "PRIMARY" })
+            .select({ marketId: currencyMarket.marketId })
+            .from(currencyMarket)
             .where(
                 and(
-                    eq(currencyHourly.realm, filters.realm),
-                    eq(currencyHourly.league, filters.league),
+                    eq(currencyMarket.realm, filters.realm),
+                    eq(currencyMarket.league, filters.league),
+                    lte(currencyMarket.firstHour, latestHour),
                 ),
-            )
-            .groupBy(currencyHourly.realm, currencyHourly.league, currencyHourly.marketId)
-            .having(sql`min(${currencyHourly.hour}) <= ${latestHour}`),
+            ),
     );
     return [...new Set(markets.flatMap((row) => row.marketId.split("|")))];
 }

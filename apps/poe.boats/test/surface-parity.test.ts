@@ -2906,7 +2906,18 @@ it("shares market categories, search, ordering and filters across HTTP and MCP",
             await (await mcp("tools/call", { name: "get_season_market", arguments: input })).json(),
         );
         expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(expected);
-        expect(query).toHaveBeenLastCalledWith(context.db, expect.objectContaining(input));
+        expect(query).toHaveBeenLastCalledWith(context.db, expect.objectContaining(input), "list");
+        // Item lookups skip the list; the API keeps the all-categories list the web dropped.
+        await api.request(
+            "https://poe.boats/api/v1/market?league=Allflame&item=Headhunter",
+            {},
+            { runtime },
+        );
+        expect(query).toHaveBeenLastCalledWith(
+            context.db,
+            expect.objectContaining({ item: "Headhunter", category: "all" }),
+            "history",
+        );
         const invalid = await api.request(
             "https://poe.boats/api/v1/market?category=invalid",
             {},
@@ -2922,7 +2933,7 @@ it("shares market categories, search, ordering and filters across HTTP and MCP",
             ).json(),
         );
         expect(CallToolResultSchema.parse(invalidRpc.result).isError).toBe(true);
-        expect(query).toHaveBeenCalledTimes(2);
+        expect(query).toHaveBeenCalledTimes(3);
     } finally {
         query.mockRestore();
     }

@@ -9,6 +9,7 @@ import { getMarketData } from "~/db/queries/market.queries";
 import Market from "~/routes/market";
 import MarketIndex, { loader as listLoader } from "~/routes/market/index";
 import MarketItem, { loader as itemLoader } from "~/routes/market/item";
+import { changeControl } from "./control-helpers";
 import { marketFixture } from "./market-fixtures";
 
 vi.mock("~/components/app-header", () => ({ AppHeader: () => null }));
@@ -153,11 +154,13 @@ it("collapses listing currencies costing over three times the most listed one", 
     expect(details.textContent).toContain("6 divine≈ 900 chaosn=1");
 });
 
-it("submits search and filters, resets pagination, and preserves them on category navigation", async () => {
+it("applies search and filters after a pause, resets pagination, and preserves them on category navigation", async () => {
     showMarket();
     const search = await screen.findByRole("searchbox", { name: "Search items" });
+    search.focus();
+    fireEvent.change(search, { target: { value: "Goat" } });
     fireEvent.change(search, { target: { value: "Goathide" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
+    expect(screen.getByLabelText("Current URL").textContent).not.toContain("q=");
     await waitFor(() =>
         expect(getMarketData).toHaveBeenLastCalledWith(
             expect.anything(),
@@ -172,6 +175,24 @@ it("submits search and filters, resets pagination, and preserves them on categor
     );
     await waitFor(() =>
         expect(screen.getByLabelText("Current URL").textContent).toContain("q=Goathide"),
+    );
+    expect(getMarketData).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ q: "Goat" }),
+        "list",
+    );
+    expect(document.activeElement).toBe(search);
+    expect((search as HTMLInputElement).value).toBe("Goathide");
+
+    changeControl(screen.getByRole("combobox", { name: "Rarity" }), {
+        target: { value: "unique" },
+    });
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ q: "Goathide", rarity: "unique", category: "armour" }),
+            "list",
+        ),
     );
     fireEvent.click(
         within(screen.getByRole("navigation", { name: "Market categories" })).getByRole("link", {
@@ -212,6 +233,28 @@ it("redirects category query links to the category path", async () => {
         league: "Allflame",
         order: "listings-desc",
         currency: "chaos",
+    });
+    expect(getMarketData).not.toHaveBeenCalled();
+});
+
+it("redirects the bare market path to the default category, keeping its filters", async () => {
+    const response = await listLoader({
+        request: new Request(
+            "https://example.invalid/1/market?league=Allflame&order=listings-desc&priceMin=5",
+        ),
+        context,
+        params: {},
+        unstable_pattern: "/1/market/:category?",
+        unstable_url: new URL("https://example.invalid/1/market"),
+    });
+    if (!(response instanceof Response)) throw new Error("Expected redirect");
+    expect(response.status).toBe(308);
+    const url = new URL(response.headers.get("Location")!, "https://example.invalid");
+    expect(url.pathname).toBe("/1/market/currency");
+    expect(Object.fromEntries(url.searchParams)).toMatchObject({
+        league: "Allflame",
+        order: "listings-desc",
+        priceMin: "5",
     });
     expect(getMarketData).not.toHaveBeenCalled();
 });
@@ -371,7 +414,7 @@ it("keeps the column filters visible when they match nothing", async () => {
         rows: [],
         hasMore: false,
     }));
-    showMarket("/1/market?league=Allflame&priceMin=999");
+    showMarket("/1/market/armour?league=Allflame&priceMin=999");
     const table = await screen.findByRole("table", { name: "Item markets" });
     expect(within(table).getByRole("status").textContent).toContain(
         "No markets match these filters",

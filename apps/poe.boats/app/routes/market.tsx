@@ -3,7 +3,7 @@ import { Link, Outlet, useParams, useSearchParams } from "react-router";
 import { Button } from "~/components/ui/button";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
 import type { SiteHandle } from "~/routes/layouts/site";
-import { marketFiltersSchema, marketLink } from "~/schemas/market";
+import { MARKET_DEFAULT_CATEGORY, marketFiltersSchema, marketLink } from "~/schemas/market";
 import type { Route } from "./+types/market";
 
 export const meta: Route.MetaFunction = () => [{ title: "Season market · POE.BOATS" }];
@@ -19,18 +19,19 @@ export default function Market() {
         ...(category ? { category } : {}),
     });
     const filters = parsed.success ? parsed.data : marketFiltersSchema.parse({});
+    const current = filters.category === "all" ? MARKET_DEFAULT_CATEGORY : filters.category;
     const categories = Object.entries(MARKET_CATEGORIES) as [
         MarketCategory,
         (typeof MARKET_CATEGORIES)[MarketCategory],
     ][];
     const groups = [...new Set(categories.map(([, category]) => category.group))];
-    const categoryLink = (category: typeof filters.category, label: string) => (
+    const categoryLink = (category: MarketCategory, label: string) => (
         <Link
             key={category}
             to={marketLink({ ...filters, category, page: 1 })}
-            aria-current={filters.category === category ? "page" : undefined}
+            aria-current={current === category ? "page" : undefined}
             onClick={() => setCategoriesOpen(false)}
-            className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${filters.category === category ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+            className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${current === category ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
         >
             {label}
         </Link>
@@ -61,17 +62,13 @@ export default function Market() {
                         aria-controls="market-category-links"
                         onClick={() => setCategoriesOpen(!categoriesOpen)}
                     >
-                        Categories:{" "}
-                        {filters.category === "all"
-                            ? "All items"
-                            : MARKET_CATEGORIES[filters.category].label}
+                        Categories: {MARKET_CATEGORIES[current].label}
                         <span aria-hidden="true">{categoriesOpen ? "−" : "+"}</span>
                     </Button>
                     <div
                         id="market-category-links"
                         className={categoriesOpen ? "block" : "hidden lg:block"}
                     >
-                        {categoryLink("all", "All items")}
                         <div className="grid grid-cols-2 gap-x-3 sm:grid-cols-3 lg:grid-cols-1">
                             {groups.map((group) => (
                                 <div key={group} className="mt-4">
