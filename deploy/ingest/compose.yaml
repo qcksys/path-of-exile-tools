@@ -30,6 +30,8 @@ services:
       PS_ARCHIVE_DIR: /backups
       PS_MEMORY_LIMIT: 10GB
       PS_CHECKPOINT_THRESHOLD: 1GB
+      # Each reclassified hour re-delivers 24 hours of cohort rows; this keeps the pre-#76 pace.
+      PS_RECLASSIFY_PAGES_PER_HOUR: "120"
     volumes:
       - ./data/pc:/data
       - ./backups/pc:/backups

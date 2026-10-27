@@ -70,6 +70,42 @@ it("reclassifies a bounded archive batch on the owning connection after live exc
     }
 });
 
+it("reclassifies only what PS_RECLASSIFY_PAGES_PER_HOUR allows and skips its checkpoint otherwise", async () => {
+    const db = await openDb(":memory:");
+    const client = createClient({ userAgent: "pipeline-test", token: "inert" });
+    fixture.reclassify.mockReset().mockImplementation(async (_conn, { limitPages }) => ({
+        pages: limitPages,
+        hours: 0,
+        completedHours: [],
+        pending: true,
+    }));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const run = vi.spyOn(db.conn, "run");
+    vi.stubEnv("PS_RECLASSIFY_PAGES_PER_HOUR", "120");
+    vi.useFakeTimers({ now: Date.now() + 2 * 3_600_000, toFake: ["Date"] });
+    try {
+        // A full allowance covers one cycle's cap; spending it leaves nothing for the next cycle.
+        await runPipeline(db.conn, client, { pages: 50, league: "Allflame" });
+        expect(fixture.reclassify).toHaveBeenCalledOnce();
+        expect(fixture.reclassify.mock.calls[0]![1].limitPages).toBe(5);
+        run.mockClear();
+        await runPipeline(db.conn, client, { pages: 50, league: "Allflame" });
+        expect(fixture.reclassify).toHaveBeenCalledOnce();
+        expect(run.mock.calls.filter(([sql]) => sql === "CHECKPOINT")).toEqual([]);
+        // 120 pages an hour refill one page every 30 seconds.
+        vi.advanceTimersByTime(60_000);
+        await runPipeline(db.conn, client, { pages: 50, league: "Allflame" });
+        expect(fixture.reclassify).toHaveBeenCalledTimes(2);
+        expect(fixture.reclassify.mock.calls[1]![1].limitPages).toBe(2);
+    } finally {
+        vi.useRealTimers();
+        vi.unstubAllEnvs();
+        run.mockRestore();
+        log.mockRestore();
+        await db.close();
+    }
+});
+
 it("reports projection failure but still attempts pending delivery after exchange succeeds", async () => {
     const db = await openDb(":memory:");
     const client = createClient({ userAgent: "pipeline-test", token: "inert" });
