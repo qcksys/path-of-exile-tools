@@ -126,6 +126,10 @@ CREATE TABLE IF NOT EXISTS ps_equipment_cohort (
     revision VARCHAR NOT NULL, cohort_id VARCHAR NOT NULL, definition JSON NOT NULL,
     PRIMARY KEY (revision, cohort_id)
 );
+-- Definitions each receiver has acknowledged, so restarts do not resend them.
+CREATE TABLE IF NOT EXISTS ps_equipment_cohort_delivered (
+    url VARCHAR NOT NULL, revision VARCHAR NOT NULL, cohort_id VARCHAR NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS icon_basemap (
     icon_asset VARCHAR PRIMARY KEY,

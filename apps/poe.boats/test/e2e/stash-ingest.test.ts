@@ -1127,6 +1127,13 @@ it("reuses only acknowledged equipment definitions for the same connection and r
     vi.stubEnv("POE_BOATS_INGEST_URL", `${baseUrl}/api/stash-ingest?receiver=other`);
     await rollupEquipment(local.conn, { hour: HOUR });
     expect(definitionsSent()).toBe(3);
+    // Delivery is recorded in the database, so a restarted worker does not resend it.
+    expect(
+        await queryAll(
+            local.conn,
+            "SELECT count(DISTINCT url)::INTEGER AS receivers FROM ps_equipment_cohort_delivered",
+        ),
+    ).toEqual([{ receivers: 2 }]);
     const another = await openDb(":memory:");
     try {
         await capture(another.conn);

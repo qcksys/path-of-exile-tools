@@ -95,8 +95,10 @@ export async function upsertStashCohortHourly(
                     lastSeenAt: sql`values(${tStashCohortHourly.lastSeenAt})`,
                 },
             });
-        await refreshCoverage(db, "equipment", batch);
     }
+    // One recount per request: each scans the hour's cohort rows, and a request carries one hour.
+    // A failed request is retried whole, so its hours are recounted then.
+    await refreshCoverage(db, "equipment", rows);
     return rows.length;
 }
 
