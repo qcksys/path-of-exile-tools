@@ -162,7 +162,7 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | PoE 1 and PoE 2 arbitrage leagues, prices, recipes | `arbitrage/market` | `get_arbitrage_market`; `loadArbitrageMarket` |
 | Arbitrage filters, ranking, buffer, profit/ROI | `arbitrage/calculate` | `calculate_arbitrage`; `findArbitrage` |
 | Manual recipe reference, calculator and trade links | `arbitrage/recipes`, `arbitrage/scenario`, `arbitrage/trade` | `list_vendor_recipes`, `calculate_recipe_scenario`, `build_recipe_trade_url` |
-| Season market search, seasons, paging, variants, history, mod pool values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `modPoolValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_unique_daily` rollup and pagination precedes full-row primary-key reads. Every foil variation of an item is one market (`foil` -1 or 0): list rows, variants and history sum and mix the variations' hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), and page boundaries. |
+| Season market search, seasons, paging, variants, history, mod pool values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `modPoolValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_market_daily` rollup and pagination precedes full-row primary-key reads. Every foil variation of an item is one market (`foil` -1 or 0): list rows, variants and history sum and mix the variations' hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), and page boundaries. |
 | Recombinator equipment, modifiers, preparation recipes | `recombinator/catalog`, `bases`, `mods`, `recipes`, `draft` | Catalog, base/mod/recipe filtering, and `parseRecombinatorDraft` |
 | Recombination outcomes, preparation, target odds | `recombinator/calculate`, `target` | `calculateRecombinatorPlan`, `matchesTarget`, `summarizeCounts` |
 | PoE 1 and PoE 2 workbench catalog, calculation, process simulation and item emulation | `crafting/workbench/catalog`, `workbench/calculate`, `workbench/process`, `workbench/emulate` | `get_crafting_workbench_catalog`, `calculate_crafting_workbench`, `emulate_crafting_process`, `emulate_crafting_item`; shared `CraftingWorkbenchCalculation`, `CraftingProcess` and `emulateCraftingItem`. Current workbench catalogs and client-build validation match the browser; retained graph rulesets remain separate. HTTP calculations refuse manual-stop runs and requests above 5,000 trials or 100,000 potential steps. Allflame preview costs remain deferred until selection, reveal choices stay explicit, and paid bench failures retain the changed item and costs. Stateless operations never modify browser drafts. |
@@ -242,13 +242,18 @@ result still prevents refresh from silently choosing an older or incomplete pric
 
 Ingest keeps three rollups, each recomputed from the hourly rows it summarises after every
 200-row batch, because the ingester re-pushes whole hours with later sale corrections:
-`stash_unique_daily` (per variant per UTC day: sums, newest and newest listed hour, base type,
-rarity and name), `stash_currency_market` (each exchange market's first hour) and
-`stash_hour_coverage` (stored rows per stream, league and hour). Market aggregation reads the
-daily rollup by primary-key range, including base-type, rarity and text filters, before
-fetching the selected full hourly rows. A day keeps one name (the greatest), so searching a
-renamed item's older name is best-effort. Latest nonempty observations, variant identity and
-period totals otherwise retain their semantics. The exchange lookup reads
+`stash_market_daily` (per listed market per UTC day: sums, newest and newest listed hour, base
+type, rarity and name), `stash_currency_market` (each exchange market's first hour) and
+`stash_hour_coverage` (stored rows per stream, league and hour). The daily rollup stores a mod
+pool unique's combinations (Watcher's Eye, Loreweave) as one market with an empty signature
+value, as the list shows them; they were 78% of a week's daily rows. A category list without
+text search reads the daily rollup through its covering base-type index; other lists read it by
+primary-key range. Both precede fetching the selected full hourly rows. A day keeps one name
+(the greatest), so searching a renamed item's older name is best-effort, and the list's text
+search no longer matches a pool unique's individual mods (its item page filters them). Latest
+nonempty observations, variant identity and period totals otherwise retain their semantics.
+`stash_unique_daily`, the first daily rollup, is superseded and unused until a later migration
+drops it. The exchange lookup reads
 `stash_currency_market`. MySQL plan and result regressions live in
 `test/e2e/market-query.test.ts` and `test/e2e/crafting-market-performance.test.ts`.
 
@@ -276,7 +281,10 @@ statements with `ON DUPLICATE KEY UPDATE` for hours the previous worker wrote in
 coverage and market statements with `WHERE hour >= <migration hour>`, and the daily statement
 with `WHERE hour >= <UTC midnight of the migration day>`, because each daily row must be
 recomputed from its whole day (`refreshStashRollups` in
-`app/db/queries/stash-rollups.queries.ts` builds the same statements). New indexes add storage and ingestion write work;
+`app/db/queries/stash-rollups.queries.ts` builds the same statements). The
+[market daily](../app/db/migrations/20261027135202_market_daily/migration.sql) migration follows
+the same order: apply it before merging, then rerun its backfill from UTC midnight of the
+migration day. New indexes add storage and ingestion write work;
 check live Query Insights after deployment rather than treating local timings as production results.
 
 Equipment lookup exposes per-lookup `Server-Timing` diagnostics through both HTTP and MCP:

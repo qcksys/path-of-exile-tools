@@ -5,8 +5,8 @@ import { DB_TABLE_PREFIX } from "~/const";
 import { timestampCols } from "~/db/helpers/schema";
 
 /**
- * One row per market variant per UTC day, recomputed from `stash_unique_hourly` whenever an hour
- * of that day is written, so market lists sum days instead of hours. `day` is the day's first hour.
+ * Superseded by `stash_market_daily`, which merges mod pool combinations; nothing reads or writes
+ * this table. Kept so migrations do not drop it before the code that wrote it is retired.
  */
 export const tStashUniqueDaily = mysqlTable(
     `${DB_TABLE_PREFIX}stash_unique_daily`,
