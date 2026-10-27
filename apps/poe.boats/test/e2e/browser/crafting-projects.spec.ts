@@ -1094,7 +1094,12 @@ test("full method editing adds a separately consumed graph input without an inve
         dialog.getByRole("combobox", { name: "Reference item for method options", exact: true }),
         JSON.stringify(["buy", "base"]),
     );
-    await choose(dialog, "Crafting method", "Recombine", "Recombine items");
+    const method = dialog.getByRole("combobox", { name: "Crafting method", exact: true });
+    await method.fill("Recombine");
+    await method.press("ArrowDown");
+    await expect(page.getByRole("option", { name: "Recombine items", exact: true })).toBeVisible();
+    await method.press("Enter");
+    await expect(page.getByRole("listbox")).toHaveCount(0);
     await expect(
         dialog.getByRole("combobox", { name: "Recombination donor", exact: true }),
     ).toHaveCount(0);
