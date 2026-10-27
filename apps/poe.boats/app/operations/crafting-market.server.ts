@@ -10,7 +10,11 @@ import {
     findCraftingMarketPrices,
 } from "~/db/queries/crafting-market.queries";
 import { CraftingEngine } from "~/lib/crafting-engine";
-import { bindExchangePrice, liveExchangePrices } from "~/lib/crafting-exchange";
+import {
+    bindExchangePrice,
+    liveExchangePrices,
+    markExchangePriceUnavailable,
+} from "~/lib/crafting-exchange";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import {
     bindCohortPurchasePrice,
@@ -121,6 +125,7 @@ export async function refreshCraftingMarketPrices(
             binding.reference.itemId !== binding.id ||
             !exchangeRealmMatchesGame(binding.reference.realm, graph.game)
         ) {
+            next = markExchangePriceUnavailable(next, binding.id);
             issues.push(
                 `${binding.id}: the saved exchange price does not match this input, game, league or accounting currency.`,
             );
@@ -148,10 +153,12 @@ export async function refreshCraftingMarketPrices(
         for (const { id } of bindings) {
             const quote = result.quotes[id];
             if (quote) next = bindExchangePrice(next, id, quote);
-            else
+            else {
+                next = markExchangePriceUnavailable(next, id);
                 issues.push(
                     `${id}: ${result.missing[id] ?? "The exchange price is unavailable; enter a manual price."}`,
                 );
+            }
         }
     }
     const sources = new Map<string, ReturnType<typeof liveSourcePrices>>();

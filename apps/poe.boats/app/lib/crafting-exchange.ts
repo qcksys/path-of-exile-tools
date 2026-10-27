@@ -7,13 +7,39 @@ import {
 } from "@poe-tools/market";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 
+const unavailablePrefix = "exchange:unavailable:v1:";
+
+function exchangeReference(value: string | undefined) {
+    return decodeExchangePriceReference(
+        value?.startsWith(unavailablePrefix) ? value.slice(unavailablePrefix.length) : value,
+    );
+}
+
 export function liveExchangePrices(graph: CraftingGraph) {
     return Object.entries(graph.prices).flatMap(([id, price]) => {
-        const reference =
-            price.source === "market" ? decodeExchangePriceReference(price.cohortId) : null;
+        const reference = price.source === "market" ? exchangeReference(price.cohortId) : null;
         return reference ? [{ id, reference }] : [];
     });
 }
+
+export function unavailableExchangePrices(graph: CraftingGraph) {
+    return Object.entries(graph.prices).flatMap(([id, price]) =>
+        price.source === "market" && price.cohortId?.startsWith(unavailablePrefix) ? [id] : [],
+    );
+}
+
+export function markExchangePriceUnavailable(graph: CraftingGraph, id: string): CraftingGraph {
+    const price = graph.prices[id];
+    if (!price?.cohortId || price.cohortId.startsWith(unavailablePrefix)) return graph;
+    return {
+        ...graph,
+        prices: {
+            ...graph.prices,
+            [id]: { ...price, cohortId: `${unavailablePrefix}${price.cohortId}` },
+        },
+    };
+}
+
 export function bindExchangePrice(
     graph: CraftingGraph,
     id: string,

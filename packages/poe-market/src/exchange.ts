@@ -9,7 +9,7 @@ export const exchangePriceReferenceSchema = z.strictObject({
     itemId,
     quoteId: itemId,
     window: z.literal("adaptive-v1").optional(),
-    conversion: z.literal("reference-currency-v1").optional(),
+    conversion: z.enum(["reference-currency-v1", "two-leg-exchange-v1"]).optional(),
 });
 export type ExchangePriceReference = z.infer<typeof exchangePriceReferenceSchema>;
 export const exchangeSnapshotSchema = z.object({

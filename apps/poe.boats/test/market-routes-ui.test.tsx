@@ -114,6 +114,23 @@ it("shows exchange-traded items in their own table priced in chaos and divine", 
     expect(screen.getByText("1 on the exchange · 1 variants")).toBeTruthy();
 });
 
+it("labels an exchange item with no trades in the latest hour", async () => {
+    vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+        const fixture = marketFixture(filters);
+        return {
+            ...fixture,
+            exchange: fixture.exchange.map((row) => ({
+                ...row,
+                chaos: null,
+                volume: 0,
+                hour: null,
+            })),
+        };
+    });
+    showMarket("/1/market?league=Allflame&category=armour");
+    expect(await screen.findByText("No trades in latest hour")).toBeTruthy();
+});
+
 it("collapses listing currencies costing over three times the most listed one", async () => {
     vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
         const fixture = marketFixture(filters);

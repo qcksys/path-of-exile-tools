@@ -1,6 +1,7 @@
 import { expect, it } from "vite-plus/test";
 import { marketBaseCategory } from "~/lib/market-categories";
 import { marketCategory } from "~/lib/market-categories.server";
+import { marketExchangeItem } from "~/lib/market-exchange.server";
 
 it.each([
     ["Goathide Boots", "Boots", "armour"],
@@ -26,4 +27,22 @@ it("uses each game's verified base catalog and retains unknown items", () => {
     expect(marketCategory("sony", "Leather Belt")).toBe("accessories");
     expect(marketCategory("poe2", "Rusted Cuirass")).toBe("armour");
     expect(marketCategory("pc", "Unknown future base")).toBe("other");
+});
+
+it("identifies exchange skill gems without treating equipment as exchange items", () => {
+    expect(marketExchangeItem("poe2", "Metadata/Items/Gems/SupportGemAilithLineage")).toEqual({
+        name: "Ailith's Chimes",
+        category: "gems",
+    });
+    expect(marketExchangeItem("poe2", "Metadata/Items/Gems/SkillGemIceNova")).toEqual({
+        name: "Ice Nova",
+        category: "gems",
+    });
+    expect(marketExchangeItem("poe2", "Metadata/Items/Gems/SkillGemBlasphemy")).toEqual({
+        name: "Blasphemy",
+        category: "gems",
+    });
+    expect(
+        marketExchangeItem("poe2", "Metadata/Items/Armours/BodyArmours/FourBodyStr1"),
+    ).toBeUndefined();
 });

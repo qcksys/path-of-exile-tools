@@ -2,6 +2,7 @@
 import { exchangeCurrencyId } from "@poe-tools/market";
 import { emptyResonator } from "~/lib/crafting-empty-resonator";
 import type { CraftingEngine } from "~/lib/crafting-engine";
+import { unavailableExchangePrices } from "~/lib/crafting-exchange";
 import { craftingNodeCostKey } from "~/lib/crafting-node-prices";
 import { craftingVendorUpgrade, validVendorIngredientQuote } from "~/lib/crafting-vendor-upgrades";
 import { yellowBeastId, yellowBeastPolicy, yellowBeastPool } from "~/lib/crafting-yellow-beasts";
@@ -204,6 +205,11 @@ export function invalidEmptyResonatorSourcePrices(graph: CraftingGraph) {
     });
 }
 export function assertCraftingSourcePrices(graph: CraftingGraph) {
+    const unavailable = unavailableExchangePrices(graph);
+    if (unavailable.length)
+        throw new Error(
+            `${unavailable.join(", ")}: the exchange price is unavailable. Refresh it or enter a manual price before calculating.`,
+        );
     const invalid = invalidEmptyResonatorSourcePrices(graph);
     if (invalid.length)
         throw new Error(

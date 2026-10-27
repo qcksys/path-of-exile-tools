@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { bindExchangePrice } from "../app/lib/crafting-exchange";
+import { bindExchangePrice, markExchangePriceUnavailable } from "../app/lib/crafting-exchange";
 import {
     copyWorkbenchMarketPrices,
     workbenchPriceGraph,
@@ -53,6 +53,11 @@ describe("workbench market price copies", () => {
         expect(input.prices[transmuteId]).toBe(123);
         expect(input.baseCost).toBeUndefined();
         expect(copyWorkbenchMarketPrices(input, bound, "Standard", [])).toEqual(input.prices);
+        const unavailable = markExchangePriceUnavailable(bound, transmuteId);
+        expect(() =>
+            copyWorkbenchMarketPrices(input, unavailable, "Standard", [transmuteId]),
+        ).toThrow("exchange price is unavailable");
+        expect(copyWorkbenchMarketPrices(input, unavailable, "Standard", [])).toEqual(input.prices);
         expect(graph.prices[transmuteId]).toMatchObject({
             amount: 123,
             currency: "chaos",

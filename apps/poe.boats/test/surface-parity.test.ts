@@ -17,7 +17,7 @@ import * as craftingMarketQueries from "~/db/queries/crafting-market.queries";
 import * as marketQueries from "~/db/queries/market.queries";
 import { calculateRecipeScenario } from "~/lib/arbitrage";
 import { CraftingEngine, seededRandom } from "~/lib/crafting-engine";
-import { bindExchangePrice } from "~/lib/crafting-exchange";
+import { bindExchangePrice, markExchangePriceUnavailable } from "~/lib/crafting-exchange";
 import { calculateCraftingGraph } from "~/lib/crafting-graph-simulation";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import { exportCraftingItemText } from "~/lib/crafting-item-text";
@@ -1471,7 +1471,10 @@ describe("transport parity", () => {
                     "refresh_crafting_item_prices",
                     "/market/refresh",
                     { graph: bound },
-                    { graph: bound, issues: [`${transmuteId}: ${message}`] },
+                    {
+                        graph: markExchangePriceUnavailable(bound, transmuteId),
+                        issues: [`${transmuteId}: ${message}`],
+                    },
                 ],
             ] as const) {
                 const response = await api.request(
@@ -1492,6 +1495,34 @@ describe("transport parity", () => {
                 expect(result.isError).not.toBe(true);
                 expect(result.structuredContent, name).toEqual(expected);
             }
+            const unavailableGraph = markExchangePriceUnavailable(bound, transmuteId);
+            const calculation = { graph: unavailableGraph, options: { estimateIterations: 1 } };
+            const calculateResponse = await api.request(
+                "https://poe.boats/api/v1/crafting/graph/calculate",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(calculation),
+                },
+                { runtime },
+            );
+            expect(calculateResponse.status).toBe(400);
+            expect(await calculateResponse.json()).toMatchObject({
+                error: expect.stringContaining("exchange price is unavailable"),
+            });
+            const calculateRpc = RpcSchema.parse(
+                await (
+                    await mcp("tools/call", {
+                        name: "calculate_crafting_graph",
+                        arguments: calculation,
+                    })
+                ).json(),
+            );
+            const calculateResult = CallToolResultSchema.parse(calculateRpc.result);
+            expect(calculateResult.isError).toBe(true);
+            expect(JSON.stringify(calculateResult.content)).toContain(
+                "exchange price is unavailable",
+            );
             const invalid = { graph, id: transmuteId, quote: { ...quote, league: "Other" } };
             expect(
                 (

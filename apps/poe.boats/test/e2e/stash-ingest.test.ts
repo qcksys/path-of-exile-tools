@@ -630,6 +630,107 @@ it("converts captured indirect pairs only with positive matching-hour legs and p
     ).toBe(7.2);
 });
 
+it("uses a bounded same-hour non-reference exchange bridge without changing legacy bindings", async () => {
+    const item = "Metadata/Items/Currency/CurrencyHellscapeUpgradeModTier";
+    const bridge = "Metadata/Items/Currency/CurrencyHellscapeAddModToRare";
+    await mysql.insert(tStashCurrencyHourly).values([
+        {
+            realm: "pc",
+            league: "Standard",
+            hour: HOUR,
+            marketId: `${item}|${bridge}`,
+            volumeTraded: { [item]: 6, [bridge]: 6 },
+        },
+        {
+            realm: "pc",
+            league: "Standard",
+            hour: HOUR,
+            marketId: `${bridge}|${chaosId}`,
+            volumeTraded: { [bridge]: 1, [chaosId]: 320 },
+        },
+        {
+            realm: "pc",
+            league: "Standard",
+            hour: HOUR + 3600,
+            marketId: `${bridge}|${chaosId}`,
+            volumeTraded: { [bridge]: 1, [chaosId]: 400 },
+        },
+    ]);
+    const input = {
+        game: "poe1" as const,
+        realm: "pc" as const,
+        league: "Standard",
+        currency: "chaos",
+        itemIds: [item],
+        at: HOUR,
+    };
+    const db = mysql as unknown as TDatabase;
+    const legacy = await findCraftingExchangePrices(db, {
+        ...input,
+        conversion: "reference-currency-v1",
+    });
+    expect(legacy.quotes[item]).toBeUndefined();
+    const converted = await findCraftingExchangePrices(db, {
+        ...input,
+        conversion: "two-leg-exchange-v1",
+    });
+    expect(converted.quotes[item]).toMatchObject({
+        amount: 320,
+        hour: HOUR,
+        conversion: "two-leg-exchange-v1",
+        legs: [
+            { itemId: item, quoteId: bridge },
+            { itemId: bridge, quoteId: chaosId },
+        ],
+    });
+    const bound = bindExchangePrice(exchangeGraph(), item, converted.quotes[item]!);
+    const refreshed = await refreshCraftingMarketPrices(db, bound, engine, HOUR);
+    expect(refreshed.issues).toEqual([]);
+    expect(refreshed.graph.prices[item]?.amount).toBe(320);
+    const request = { ...input, conversion: "two-leg-exchange-v1" as const };
+    expect(
+        await parity("crafting/market/exchange", "find_crafting_exchange_prices", request),
+    ).toEqual(converted);
+    const next = await findCraftingExchangePrices(db, {
+        ...input,
+        at: HOUR + 3600,
+        conversion: "two-leg-exchange-v1",
+    });
+    expect(next.quotes[item]).toBeUndefined();
+    await mysql.insert(tStashCurrencyHourly).values({
+        realm: "pc",
+        league: "Standard",
+        hour: HOUR,
+        marketId: `${bridge}|${item}`,
+        volumeTraded: { [item]: 6, [bridge]: 3 },
+    });
+    const conflict = await findCraftingExchangePrices(db, request);
+    expect(conflict.quotes[item]).toBeUndefined();
+});
+
+it("fails closed when there are too many same-hour markets to discover conversion paths", async () => {
+    const item = "Metadata/Items/Currency/LimitTest";
+    const rows = Array.from({ length: 5001 }, (_, index) => ({
+        realm: "pc",
+        league: "LimitTest",
+        hour: HOUR,
+        marketId: `${item}|Metadata/Items/Currency/Bridge${index}`,
+    }));
+    for (let offset = 0; offset < rows.length; offset += 500)
+        await mysql.insert(tStashCurrencyHourly).values(rows.slice(offset, offset + 500));
+    const result = await findCraftingExchangePrices(mysql as unknown as TDatabase, {
+        game: "poe1",
+        realm: "pc",
+        league: "LimitTest",
+        currency: "chaos",
+        itemIds: [item],
+        at: HOUR,
+        conversion: "two-leg-exchange-v1",
+    });
+    expect(result.quotes[item]).toBeUndefined();
+    expect(result.missing[item]).toContain("Too many exchange markets");
+});
+
 it("waits for a saved exchange hour to complete without fetching an upstream 404 or advancing its cursor", async () => {
     const hour = Math.floor(Date.now() / 3_600_000) * 3600;
     await setCursor(local.conn, "cxapi", String(hour));
