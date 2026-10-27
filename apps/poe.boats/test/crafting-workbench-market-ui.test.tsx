@@ -283,22 +283,31 @@ it("synchronizes both league controls without copying or changing prices", async
 });
 
 it("copies the explicit vendor ingredient estimate without overwriting prior or subsequent manual prices", async () => {
-    vi.stubGlobal(
-        "fetch",
-        vi
-            .fn()
-            .mockImplementation((url: string) =>
-                Promise.resolve(
-                    new Response(
-                        JSON.stringify(
-                            url.includes("index.json")
-                                ? historyIndex
-                                : { quotes: { [vendorOutputId]: vendorQuote }, missing: {} },
-                        ),
+    const now = Date.now();
+    vi.spyOn(Date, "now").mockReturnValue(now);
+    const quote = {
+        ...vendorQuote,
+        conversion: "two-leg-exchange-v1" as const,
+        ingredient: {
+            ...vendorQuote.ingredient,
+            conversion: "two-leg-exchange-v1" as const,
+            hour: marketObservationRange().latestHour,
+        },
+    };
+    const fetcher = vi
+        .fn()
+        .mockImplementation((url: string, _init?: RequestInit) =>
+            Promise.resolve(
+                new Response(
+                    JSON.stringify(
+                        url.includes("index.json")
+                            ? historyIndex
+                            : { quotes: { [vendorOutputId]: quote }, missing: {} },
                     ),
                 ),
             ),
-    );
+        );
+    vi.stubGlobal("fetch", fetcher);
     const { copied } = mount("poe1", vendorOutputId);
     fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
     fireEvent.change(await screen.findByLabelText("Price lookup league"), {
@@ -311,6 +320,11 @@ it("copies the explicit vendor ingredient estimate without overwriting prior or 
     });
     fireEvent.click(screen.getByRole("button", { name: "Find vendor-upgrade estimate" }));
     await screen.findByRole("button", { name: "Use vendor-upgrade estimate" });
+    const lookup = fetcher.mock.calls.find(([url]) => url === "/api/v1/crafting/market/sources");
+    expect(JSON.parse(String(lookup![1]?.body)).vendorUpgrade).toEqual({
+        inputId: vendorInputId,
+        conversion: "two-leg-exchange-v1",
+    });
     const amount = screen.getByLabelText("Manual input price") as HTMLInputElement;
     expect(amount.value).toBe("123");
     expect(copied).not.toHaveBeenCalled();
