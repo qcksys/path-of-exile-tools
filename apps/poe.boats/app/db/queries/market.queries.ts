@@ -29,6 +29,8 @@ import {
     tStashUniqueHourly as market,
     type TStashUniqueHourlyS,
 } from "~/db/schema/stash.unique-hourly";
+import { rankMarketBases } from "~/lib/market-bases";
+import { isMarketBaseCategory } from "~/lib/market-categories";
 import { marketCategory, marketCategoryFilter } from "~/lib/market-categories.server";
 import { type MarketExchangeRow, marketExchangeRows } from "~/lib/market-exchange";
 import { marketExchangeItem } from "~/lib/market-exchange.server";
@@ -50,6 +52,7 @@ import {
 } from "~/lib/mod-pools";
 import type { MarketFilters, MarketOrder } from "~/schemas/market";
 import { type Span, traceQuery, traceSpan } from "~/services/tracing.server";
+import { marketBaseRows } from "./market-bases.queries";
 import { utcDay } from "./stash-rollups.queries";
 
 const PAGE_SIZE = 50;
@@ -235,7 +238,6 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         "market.days": filters.days,
         "market.page": filters.page,
         "market.currency": filters.currency,
-        "market.rarity": filters.rarity,
         "market.identification": filters.identification,
         "market.corruption": filters.corruption,
         "market.search": Boolean(filters.q),
@@ -281,9 +283,13 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         filters.item && view !== "list" && isModPool(filters.kind)
             ? modPoolRows(db, filters, filters.item, scope, latestHour)
             : Promise.resolve(null);
+    // Crafting base categories list equipment cohorts instead of unique and exchange markets.
+    const baseCategory = isMarketBaseCategory(filters.category);
     // Items listed on the exchange are priced from it; the rows query leaves out their stash listings.
     const listed =
-        season && view !== "history" ? await marketExchangeListed(db, filters, exchangeHour) : [];
+        season && view !== "history" && !baseCategory
+            ? await marketExchangeListed(db, filters, exchangeHour)
+            : [];
     const exchangeNames = [
         ...new Set(listed.flatMap((id) => marketExchangeItem(filters.realm, id)?.name ?? [])),
     ];
@@ -316,7 +322,6 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     ];
     // Ordering or filtering on the latest row's values must happen before pagination.
     const pageLatestRows = Boolean(latestRowOrder) || latestRowFilters.length > 0;
-    const rarity = { normal: 0, magic: 1, rare: 2, unique: 3 };
     const grouped = db
         .select({
             itemKey: daily.itemKey,
@@ -349,7 +354,6 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             and(
                 days,
                 marketCategoryFilter(filters, daily.baseType),
-                filters.rarity === "all" ? undefined : eq(daily.frameType, rarity[filters.rarity]),
                 filters.identification === "all"
                     ? undefined
                     : eq(daily.identified, filters.identification === "true"),
@@ -451,36 +455,62 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         .$dynamic();
     if (pageLatestRows) marketsQuery.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
     const rowsPromise =
-        view === "history"
+        view === "history" || baseCategory
             ? Promise.resolve([])
             : traceQuery("market.rows", marketsQuery, {
                   "market.page_latest_rows": pageLatestRows,
                   "market.window_start": windowStart,
               }).then((markets) => marketLatestRows(db, filters, markets));
-    const [rows, history, variants, exchange, modRows] = await Promise.all([
+    const [rows, baseRows, history, variants, exchange, modRows] = await Promise.all([
         rowsPromise,
+        season && view !== "history" && baseCategory
+            ? marketBaseRows(db, filters, windowStart)
+            : [],
         historyPromise,
         variantsPromise,
         listed.length ? marketExchange(db, filters, exchangeHour, listed) : [],
         modRowsPromise,
     ]);
+    const priced = [...rows, ...baseRows];
     const rates = await marketChaosRates(
         db,
         filters,
-        [...history, ...rows, ...(modRows ?? [])],
+        [
+            ...history,
+            ...priced.map(({ prices }) => ({ prices, salesPrices: null })),
+            ...(modRows ?? []),
+        ],
         [
             ...history.map((row) => row.hour),
-            ...(rows.length ? [latestHour] : []),
+            ...(priced.length ? [latestHour] : []),
             ...(modRows ?? []).map((row) => row.hour),
         ],
     );
     const toChaos = marketDisplayRate(rates, "chaos", latestHour);
-    const listCurrencies = rows.length
-        ? new Set(["divine", ...rows.flatMap((row) => Object.keys(row.prices ?? {}))])
+    const listCurrencies = priced.length
+        ? new Set([
+              "divine",
+              // Base price ranges are in the display currency.
+              ...(baseRows.length ? [filters.currency] : []),
+              ...priced.flatMap((row) => Object.keys(row.prices ?? {})),
+          ])
         : [];
     const exchangeRows = exchangeMatches(exchange, filters);
+    /** Chaos per unit of each listing currency on the page, at the season's latest hour. */
+    const chaosRates = {
+        ...Object.fromEntries(
+            [...listCurrencies].flatMap((currency) => {
+                if (exchangeRows.length && currency === "divine") return [];
+                const rate = toChaos(currency);
+                return rate ? [[currency, rate] as const] : [];
+            }),
+        ),
+        ...(exchangeRows.length ? exchangeDivine(exchange) : {}),
+    };
+    const bases = rankMarketBases(baseRows, filters, chaosRates, PAGE_SIZE);
     span.setAttributes({
         "market.rows": rows.length,
+        "market.base_rows": baseRows.length,
         "market.history_rows": history.length,
         "market.variants": variants.length,
     });
@@ -491,7 +521,9 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         rows: rows
             .slice(0, PAGE_SIZE)
             .map((row) => ({ ...row, category: marketCategory(filters.realm, row.baseType) })),
-        hasMore: rows.length > PAGE_SIZE,
+        /** Crafting base cohorts (normal, magic and rare together) in a crafting base category. */
+        bases: bases.rows,
+        hasMore: rows.length > PAGE_SIZE || bases.hasMore,
         variants,
         /** For a pool unique's variant: each mod's value, in the display currency. */
         modValues:
@@ -519,17 +551,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             ),
         /** Exchange-traded items matching the category and search, on the first page only. */
         exchange: exchangeRows,
-        /** Chaos per unit of each listing currency on the page, at the season's latest hour. */
-        chaosRates: {
-            ...Object.fromEntries(
-                [...listCurrencies].flatMap((currency) => {
-                    if (exchangeRows.length && currency === "divine") return [];
-                    const rate = toChaos(currency);
-                    return rate ? [[currency, rate] as const] : [];
-                }),
-            ),
-            ...(exchangeRows.length ? exchangeDivine(exchange) : {}),
-        },
+        chaosRates,
         history: history.map((row) => {
             const rate = marketDisplayRate(rates, filters.currency, row.hour);
             return {
@@ -696,12 +718,7 @@ function exchangeDivine(rows: MarketExchangeRow[]): Record<string, number> {
 }
 
 function exchangeMatches(rows: MarketExchangeRow[], filters: MarketFilters) {
-    if (
-        filters.page > 1 ||
-        filters.rarity !== "all" ||
-        filters.identification === "false" ||
-        filters.corruption === "true"
-    )
+    if (filters.page > 1 || filters.identification === "false" || filters.corruption === "true")
         return [];
     const search = filters.q.toLowerCase();
     return rows

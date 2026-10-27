@@ -48,6 +48,7 @@ export function marketFixture(
         signatureValue: "",
         signatureData: null,
     };
+    const bases = filters.category === "armour-bases";
     return {
         filters,
         seasons: [season],
@@ -55,7 +56,7 @@ export function marketFixture(
         hasMore: filters.page === 1,
         chaosRates: { chaos: 1, divine: 150 },
         exchange:
-            filters.page === 1
+            filters.page === 1 && !bases
                 ? [
                       {
                           itemId: "Metadata/Items/Currency/CurrencyIdentification",
@@ -67,16 +68,35 @@ export function marketFixture(
                       },
                   ]
                 : [],
-        rows: [
-            {
-                ...row,
-                category: "armour",
-                rank: 1,
-                periodSales: 2,
-                periodRemovals: 2,
-                periodPending: 1,
-            },
-        ],
+        rows: bases
+            ? []
+            : [
+                  {
+                      ...row,
+                      category: "armour",
+                      rank: 1,
+                      periodSales: 2,
+                      periodRemovals: 2,
+                      periodPending: 1,
+                  },
+              ],
+        bases: bases
+            ? [
+                  {
+                      id: "base:titan-plate:86-100:6-link",
+                      baseType: "Titan Plate",
+                      category: "armour-bases",
+                      ilvl: { min: 86, max: 100 },
+                      links: "6",
+                      quality: null,
+                      hour: row.hour,
+                      listingCount: 12,
+                      uniqueSellers: 9,
+                      unknownCount: 0,
+                      prices: { chaos: { count: 12, min: 40, median: 60, max: 90 } },
+                  },
+              ]
+            : [],
         variants: filters.item
             ? [
                   { ...variant, itemKey: filters.item, periodSales: 2 },

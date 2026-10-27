@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import marketBases from "@poe-tools/market/market-bases-poe1.json";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
 import { and, eq, getTableName, sql } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
@@ -12,6 +13,7 @@ import {
     upsertStashUniqueHourly,
 } from "~/db/queries/stash-ingest.queries";
 import { refreshStashRollups, utcDay } from "~/db/queries/stash-rollups.queries";
+import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
@@ -20,6 +22,7 @@ import {
     tStashUniqueHourly as market,
     type TStashUniqueHourlyI,
 } from "~/db/schema/stash.unique-hourly";
+import { marketBasesSchema } from "~/lib/market-bases";
 import { getServerStatus } from "~/operations/server-status.server";
 import { marketFiltersSchema } from "~/schemas/market";
 
@@ -124,8 +127,8 @@ it("fetches full item records by primary key only after selecting the market pag
 
 it.each([
     {},
-    { rarity: "unique" },
-    { category: "accessories", rarity: "unique", identification: "true", corruption: "false" },
+    { identification: "true" },
+    { category: "accessories", identification: "true", corruption: "false" },
 ])("aggregates the period from daily rollups, not hourly rows (filters %j)", async (filters) => {
     statements.length = 0;
     await marketData(
@@ -706,18 +709,11 @@ it("filters categories and variant state before pagination and searches base typ
             baseType: "Goathide Boots",
             corrupted: true,
         }),
-        observation({
-            league: "Categories",
-            itemKey: "Rare boots",
-            baseType: "Goathide Boots",
-            frameType: 2,
-        }),
         observation({ league: "Categories", itemKey: "Unknown", baseType: "Future base" }),
     ]);
     const filters = marketFiltersSchema.parse({
         league: "Categories",
         category: "armour",
-        rarity: "unique",
         identification: "true",
         corruption: "false",
         q: "Goathide",
@@ -1048,12 +1044,6 @@ it("prices exchange-traded items from the exchange and leaves out their stash li
         "list",
     );
     expect(searched.exchange.map((row) => row.name)).toEqual(["Scroll of Wisdom"]);
-    const uniques = await marketData(
-        db as unknown as TDatabase,
-        marketFiltersSchema.parse({ league: "Exchange", rarity: "unique" }),
-        "list",
-    );
-    expect(uniques.exchange).toEqual([]);
 });
 
 it("discovers exchange-only PoE 2 leagues and uses only the latest completed hour", async () => {
@@ -1160,4 +1150,74 @@ it("orders names in both directions and uses the latest observation for recency"
         );
         expect(result.rows.map((row) => row.itemKey)).toEqual(expected);
     }
+});
+
+it("lists each crafting base cohort's latest hour in the period, preferring the current revision", async () => {
+    const { revision } = marketBasesSchema.parse(marketBases);
+    const cohort = (
+        cohortId: string,
+        at: number,
+        listingCount: number,
+        rowRevision = revision,
+    ) => ({
+        realm: "pc",
+        league: "Bases",
+        hour: at,
+        revision: rowRevision,
+        cohortId,
+        listingCount,
+        uniqueSellers: listingCount,
+        unknownCount: 0,
+        prices: {
+            chaos: {
+                count: listingCount,
+                sellers: listingCount,
+                min: 10,
+                median: 10 * listingCount,
+                max: 100,
+                confidence: 0.5,
+            },
+        },
+        confidenceMethod: "asking-sellers-coverage-v1",
+        firstSeenAt: null,
+        lastSeenAt: null,
+    });
+    await db.insert(market).values(observation({ league: "Bases" }));
+    await db
+        .insert(tStashCohortHourly)
+        .values([
+            cohort("base:titan-plate:86-100:6-link", hour - 3600, 1),
+            cohort("base:titan-plate:86-100:6-link", hour, 3),
+            cohort("base:titan-plate:86-100:6-link", hour, 9, "previous-revision"),
+            cohort("base:titan-plate:86-100:any-links:q30", hour - 7200, 2),
+            cohort("base:titan-plate:86-100:1-5-link", hour - 10 * 86400, 5),
+            cohort("base:titan-plate:1-2:any-links", hour, 4),
+            cohort("base:titan-plate:86-100:any-links", hour, 6),
+        ]);
+    const result = await marketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "Bases", category: "armour-bases", currency: "chaos" }),
+        "list",
+    );
+    expect(result.rows).toEqual([]);
+    expect(result.exchange).toEqual([]);
+    expect(
+        result.bases.map((row) => [row.id, row.hour, row.listingCount, row.prices.chaos?.median]),
+    ).toEqual([
+        ["base:titan-plate:86-100:6-link", hour, 3, 30],
+        ["base:titan-plate:86-100:any-links:q30", hour - 7200, 2, 20],
+    ]);
+    const weapons = await marketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "Bases", category: "weapon-bases" }),
+        "list",
+    );
+    expect(weapons.bases).toEqual([]);
+    const unique = await marketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "Bases", category: "accessories" }),
+        "list",
+    );
+    expect(unique.bases).toEqual([]);
+    expect(unique.rows.map((row) => row.itemKey)).toEqual(["Example"]);
 });
