@@ -50,6 +50,7 @@ function showMarket(
         seasons: [],
         season: undefined,
         hasMore: false,
+        variants: [],
         rows: [
             {
                 ...row,
