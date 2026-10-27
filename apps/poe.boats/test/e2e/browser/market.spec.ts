@@ -8,6 +8,12 @@ test("groups categories and applies filtering and price ordering across market p
     const categories = page.getByRole("navigation", { name: "Market categories" });
     await expect(categories.getByRole("heading", { name: "Equipment & gems" })).toBeVisible();
     await categories.getByRole("link", { name: "Armour", exact: true }).click();
+    await expect(page).toHaveURL((url) => url.searchParams.get("category") === "armour");
+    await expect(
+        page
+            .getByRole("region", { name: "Item markets", exact: true })
+            .getByRole("heading", { name: "Armour", level: 2, exact: true }),
+    ).toBeVisible();
     await selectValue(page.getByRole("combobox", { name: "Order by" }), "price-desc");
     await selectValue(page.getByRole("combobox", { name: "Rarity", exact: true }), "unique");
     await selectValue(page.getByRole("combobox", { name: "Identification", exact: true }), "true");
