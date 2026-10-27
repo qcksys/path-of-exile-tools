@@ -49,6 +49,14 @@ function stashPage(phase: number): PublicStashPage {
                               frameType: 2,
                               identified: true,
                               ilvl: 86,
+                              properties: [
+                                  {
+                                      name: "Armour",
+                                      values: [["1200", 1]],
+                                      displayMode: 0,
+                                      type: 16,
+                                  },
+                              ],
                               explicitMods: ["+100 to maximum Life"],
                               sockets: Array.from({ length: 6 }, () => ({ group: 0 })),
                               note: `~price ${phase === 1 ? 20 : 5} chaos`,
