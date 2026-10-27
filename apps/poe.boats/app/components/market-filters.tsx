@@ -1,3 +1,4 @@
+import { exchangeListingCurrencySchema } from "@poe-tools/market";
 import { Form, useNavigation } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
 import { Button } from "~/components/ui/button";
@@ -33,6 +34,10 @@ export function MarketFiltersForm({
           }
         : undefined;
     const href = marketLink(filters, item);
+    const game = filters.realm === "poe2" ? "poe2" : "poe1";
+    const currencies = [
+        ...new Set([...exchangeListingCurrencySchema.options, filters.currency]),
+    ].filter(Boolean);
     const select = (name: keyof MarketFilters, label: string, options: Record<string, string>) => (
         <Label className="grid gap-1.5 text-xs text-muted-foreground">
             {label}
@@ -56,7 +61,6 @@ export function MarketFiltersForm({
             key={href}
             className="space-y-4 rounded-xl border border-border bg-card p-4"
         >
-            <Input type="hidden" name="category" value={filters.category} />
             {MARKET_RANGE_PARAMS.map((param) =>
                 filters[param] === undefined ? null : (
                     <Input key={param} type="hidden" name={param} value={filters[param]} />
@@ -65,6 +69,7 @@ export function MarketFiltersForm({
             {item
                 ? Object.entries({
                       q: filters.q,
+                      category: filters.category,
                       order: filters.order,
                       rarity: filters.rarity,
                       identification: filters.identification,
@@ -97,12 +102,17 @@ export function MarketFiltersForm({
                 })}
                 <Label className="grid gap-1.5 text-xs text-muted-foreground">
                     Price currency
-                    <Input
+                    <FormSelect
                         name="currency"
                         defaultValue={filters.currency}
-                        maxLength={40}
-                        className="w-32 bg-background text-foreground"
-                    />
+                        className="min-w-32 bg-background text-sm text-foreground"
+                    >
+                        {currencies.map((currency) => (
+                            <FormSelectItem key={currency} value={currency}>
+                                <CurrencyLabel currency={currency} game={game} />
+                            </FormSelectItem>
+                        ))}
+                    </FormSelect>
                 </Label>
             </div>
             {!item ? (
@@ -142,10 +152,7 @@ export function MarketFiltersForm({
                 <p className="text-xs text-muted-foreground">
                     Price sorting and filters use{" "}
                     {filters.currency ? (
-                        <CurrencyLabel
-                            currency={filters.currency}
-                            game={filters.realm === "poe2" ? "poe2" : "poe1"}
-                        />
+                        <CurrencyLabel currency={filters.currency} game={game} />
                     ) : (
                         "the selected currency"
                     )}

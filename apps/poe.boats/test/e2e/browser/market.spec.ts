@@ -8,7 +8,7 @@ test("groups categories and applies filtering and price ordering across market p
     const categories = page.getByRole("navigation", { name: "Market categories" });
     await expect(categories.getByRole("heading", { name: "Equipment & gems" })).toBeVisible();
     await categories.getByRole("link", { name: "Armour", exact: true }).click();
-    await expect(page).toHaveURL((url) => url.searchParams.get("category") === "armour");
+    await expect(page).toHaveURL((url) => url.pathname === "/1/market/armour");
     await expect(
         page
             .getByRole("region", { name: "Item markets", exact: true })
@@ -34,6 +34,13 @@ test("groups categories and applies filtering and price ordering across market p
     await categories.getByRole("link", { name: "Weapons", exact: true }).click();
     await expect(page.getByText("No markets match these filters")).toBeVisible();
     await expect(page.getByRole("searchbox", { name: "Search items" })).toHaveValue("Goathide");
+    await expect(page).toHaveURL((url) => url.pathname === "/1/market/weapons");
+    await selectValue(page.getByRole("combobox", { name: "Price currency" }), "chaos");
+    await page.getByRole("button", { name: "Apply filters" }).click();
+    await expect(page).toHaveURL(
+        (url) =>
+            url.pathname === "/1/market/weapons" && url.searchParams.get("currency") === "chaos",
+    );
 });
 
 test("opens nested history, preserves variants and browsing state, and supports back and reload", async ({
@@ -42,6 +49,7 @@ test("opens nested history, preserves variants and browsing state, and supports 
     await page.goto(
         "/1/market?league=Allflame&category=armour&q=Abberath&order=name-asc&identification=true&corruption=false",
     );
+    await expect(page).toHaveURL((url) => url.pathname === "/1/market/armour");
     await page.getByRole("link", { name: "Abberath's Hooves", exact: true }).click();
     await expect(page).toHaveURL(/\/1\/market\/items\/Abberath/);
     await expect(page.getByRole("region", { name: "Item markets", exact: true })).toHaveCount(0);
