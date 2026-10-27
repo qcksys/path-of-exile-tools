@@ -43,7 +43,11 @@ import { bindExchangePrice } from "~/lib/crafting-exchange";
 import { calculateCraftingGraph } from "~/lib/crafting-graph-simulation";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import { bindCohortPurchasePrice, livePurchasePrices } from "~/lib/crafting-market";
-import { bindCraftingSourcePrice, decodeCraftingSourceReference } from "~/lib/crafting-sources";
+import {
+    assertCraftingSourcePrices,
+    bindCraftingSourcePrice,
+    decodeCraftingSourceReference,
+} from "~/lib/crafting-sources";
 import { handleMcpRequest } from "~/mcp/server.server";
 import {
     craftingMarketSnapshots,
@@ -2278,10 +2282,31 @@ it("prices an explicit NPC Augmentation purchase from fresh Transmutation and re
         engine,
         HOUR + 7200,
     );
-    expect(unavailable.graph).toEqual(refreshed.graph);
+    expect({ ...unavailable.graph, prices: refreshed.graph.prices }).toEqual(refreshed.graph);
+    expect(unavailable.graph.prices[vendorCurrencyOutputId]).toMatchObject({
+        amount: 4 * (14 / 3150),
+        currency: "chaos",
+        source: "market",
+        observedAt: new Date((HOUR + 3600) * 1000).toISOString(),
+    });
+    expect(unavailable.graph.prices[vendorCurrencyOutputId]?.cohortId).not.toBe(
+        refreshed.graph.prices[vendorCurrencyOutputId]?.cohortId,
+    );
+    expect(
+        decodeCraftingSourceReference(unavailable.graph.prices[vendorCurrencyOutputId]?.cohortId),
+    ).toEqual(
+        decodeCraftingSourceReference(refreshed.graph.prices[vendorCurrencyOutputId]?.cohortId),
+    );
+    expect(() => assertCraftingSourcePrices(unavailable.graph)).toThrow(
+        "vendor ingredient exchange price is unavailable",
+    );
     expect(unavailable.issues).toEqual([expect.stringContaining(vendorCurrencyOutputId)]);
     expect(
-        await craftingMarketSnapshots(database, bound, engine, [HOUR, HOUR + 3600, HOUR + 7200]),
+        await craftingMarketSnapshots(database, unavailable.graph, engine, [
+            HOUR,
+            HOUR + 3600,
+            HOUR + 7200,
+        ]),
     ).toMatchObject({
         points: [
             {
