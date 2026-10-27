@@ -314,6 +314,40 @@ it("links an identified unique to its unidentified market", async () => {
     );
 });
 
+it("values Watcher's Eye mods and narrows them to items with a required mod", async () => {
+    showMarket(
+        "/1/market/items/Watcher's%20Eye?league=Allflame&category=jewels&kind=watchers-eye&value=x",
+    );
+    const section = await screen.findByRole("region", { name: "Mod values" });
+    const table = within(section).getByRole("table", { name: "Mod values" });
+    expect(within(table).getByText("Haste: #% increased Movement Speed")).toBeTruthy();
+    expect(within(section).getByRole("status").textContent).toContain("Cheapest item: 10");
+    fireEvent.click(
+        within(table).getByRole("link", { name: "Require: Haste: #% increased Movement Speed" }),
+    );
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                item: "Watcher's Eye",
+                kind: "watchers-eye",
+                value: "x",
+                mods: "Haste: #% increased Movement Speed",
+                anyMods: "",
+            }),
+            "history",
+        ),
+    );
+    // The route re-renders after navigation; this file's default 1 s wait flakes under load.
+    expect(
+        await screen.findByRole(
+            "link",
+            { name: "Remove required mod: Haste: #% increased Movement Speed" },
+            { timeout: 5000 },
+        ),
+    ).toBeTruthy();
+});
+
 it("redirects legacy query links while preserving every variant field", async () => {
     const response = await listLoader({
         request: new Request(

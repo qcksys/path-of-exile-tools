@@ -73,6 +73,34 @@ const season = z.object({
     firstHour: z.union([z.string(), z.number()]).nullable(),
     latestHour: z.union([z.string(), z.number()]).nullable(),
 });
+const modPrices = {
+    listings: z.number(),
+    cheapest: z.number().nullable(),
+    sales: z.number(),
+    saleMedian: z.number().nullable(),
+};
+const watchersEyeModValues = z
+    .object({
+        require: z.array(z.string()),
+        anyOf: z.array(z.string()),
+        cheapest: z.number().nullable(),
+        mods: z.array(
+            z.object({
+                mod: z.string(),
+                combinations: z.number(),
+                cheapestValue: z.string().nullable(),
+                ...modPrices,
+            }),
+        ),
+        matchCount: z.number(),
+        matches: z.array(
+            z.object({ mods: z.array(z.string()), signatureValue: z.string(), ...modPrices }),
+        ),
+    })
+    .nullable()
+    .describe(
+        "For a variant of a unique whose mods come from a pool (kinds watchers-eye, loreweave): each mod's value among the item's mod combinations that have every `mods` entry and, if `anyMods` is set, one of those (both |-separated mod IDs). Per mod: listings and cheapest ask in the latest hour, likely sales and their median last ask over the period, in the display currency. `matches` are the cheapest listed matching combinations (link one with its `signatureValue`). Lists and variants show such a unique as one market with an empty `value`.",
+    );
 
 export const operations = [
     serverStatusOperation,
@@ -282,12 +310,14 @@ export const operations = [
                             foilVariation: true,
                             signatureKind: true,
                             signatureValue: true,
+                            signatureData: true,
                         })
                         .extend({ periodSales: z.number() }),
                 )
                 .describe(
                     "The item's markets, plus the same unique's markets in the other identification state (unidentified uniques are keyed unid:<icon>)",
                 ),
+            modValues: watchersEyeModValues,
             history: z.array(
                 marketRow.extend({
                     merged: mergedMarketPriceSchema.nullable(),

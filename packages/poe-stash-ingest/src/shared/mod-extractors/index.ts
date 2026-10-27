@@ -5,13 +5,13 @@ import { forbiddenJewelExtractor } from "#src/shared/mod-extractors/forbidden-je
 import { forbiddenShakoExtractor } from "#src/shared/mod-extractors/forbidden-shako.ts";
 import { foulbornExtractor } from "#src/shared/mod-extractors/foulborn.ts";
 import { impossibleEscapeExtractor } from "#src/shared/mod-extractors/impossible-escape.ts";
+import { MOD_POOL_EXTRACTORS } from "#src/shared/mod-extractors/mod-pools.ts";
 import type { ModExtractor, ModSignature } from "#src/shared/mod-extractors/types.ts";
 import { uniqueModSplitExtractor } from "#src/shared/mod-extractors/unique-mod-splits.ts";
-import { watchersEyeExtractor } from "#src/shared/mod-extractors/watchers-eye.ts";
 
 export const EXTRACTORS: readonly ModExtractor[] = [
     forbiddenJewelExtractor,
-    watchersEyeExtractor,
+    ...MOD_POOL_EXTRACTORS,
     impossibleEscapeExtractor,
     forbiddenShakoExtractor,
     foulbornExtractor,
