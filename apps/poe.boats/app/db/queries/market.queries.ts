@@ -8,7 +8,6 @@ import {
     asc,
     desc,
     eq,
-    getTableColumns,
     gte,
     inArray,
     like,
@@ -37,12 +36,96 @@ import {
     marketGame,
     marketRatePairs,
     mergeMarketPrices,
+    mergeMarketRows,
 } from "~/lib/market-price-merge";
 import type { MarketFilters, MarketOrder } from "~/schemas/market";
 import { type Span, traceQuery, traceSpan } from "~/services/tracing.server";
 
 const PAGE_SIZE = 50;
 const DIVINE = exchangeCurrencyId("divine")!;
+/** -1 for non-foil rows and 0 for every foil variation, which trade as one market. */
+const foilGroup = sql<number>`least(${market.foilVariation}, 0)`;
+
+function foilMatch(foil: number) {
+    return foil < 0 ? eq(market.foilVariation, -1) : gte(market.foilVariation, 0);
+}
+
+type MarketRowKey = Pick<
+    TStashUniqueHourlyS,
+    "itemKey" | "identified" | "corrupted" | "foilVariation" | "signatureKind" | "signatureValue"
+>;
+
+function marketRowKey(row: MarketRowKey, hour: number) {
+    return JSON.stringify([
+        hour,
+        row.itemKey,
+        Boolean(row.identified),
+        Boolean(row.corrupted),
+        Math.min(row.foilVariation, 0),
+        row.signatureKind,
+        row.signatureValue,
+    ]);
+}
+
+/** One row per hour, merging the foil variations of a foil market. */
+function mergeByHour(rows: TStashUniqueHourlyS[], foil: number) {
+    const hours = Map.groupBy(rows, (row) => row.hour);
+    return [...hours.values()]
+        .map((group) => ({ ...mergeMarketRows(group), foilVariation: foil }))
+        .sort((a, b) => a.hour - b.hour);
+}
+
+/** Each listed market's latest-hour row, merged across its foil variations, in list order. */
+async function marketLatestRows<
+    Market extends MarketRowKey & {
+        latestHour: number;
+        periodSales: number;
+        periodRemovals: number;
+        periodPending: number;
+    },
+>(db: TDatabase, filters: MarketFilters, markets: Market[]) {
+    if (!markets.length) return [];
+    const rows = await traceQuery(
+        "market.latest_rows",
+        db
+            .select()
+            .from(market, { forceIndex: "PRIMARY" })
+            .where(
+                and(
+                    eq(market.realm, filters.realm),
+                    eq(market.league, filters.league),
+                    or(
+                        ...markets.map((entry) =>
+                            and(
+                                eq(market.hour, entry.latestHour),
+                                eq(market.itemKey, entry.itemKey),
+                                eq(market.identified, entry.identified),
+                                eq(market.corrupted, entry.corrupted),
+                                foilMatch(entry.foilVariation),
+                                eq(market.signatureKind, entry.signatureKind),
+                                eq(market.signatureValue, entry.signatureValue),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+    );
+    const byMarket = Map.groupBy(rows, (row) => marketRowKey(row, row.hour));
+    return markets.flatMap((entry) => {
+        const group = byMarket.get(marketRowKey(entry, entry.latestHour));
+        if (!group) return [];
+        return [
+            {
+                ...mergeMarketRows(group),
+                foilVariation: entry.foilVariation,
+                rank: 1,
+                periodSales: entry.periodSales,
+                periodRemovals: entry.periodRemovals,
+                periodPending: entry.periodPending,
+            },
+        ];
+    });
+}
 
 type MarketView = "all" | "list" | "history";
 
@@ -97,7 +180,12 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     const seasons = [...byLeague.values()].sort(
         (a, b) => Number(b.latestHour) - Number(a.latestHour),
     );
-    const filters = { ...input, league: input.league || seasons[0]?.league || "" };
+    // Foil variations merge into one market, so any foil variation selects all of them.
+    const filters = {
+        ...input,
+        league: input.league || seasons[0]?.league || "",
+        foil: Math.min(input.foil, 0),
+    };
     span.setAttributes({
         "market.view": view,
         "market.realm": filters.realm,
@@ -128,20 +216,25 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         gte(market.hour, cutoff),
     );
     const search = filters.q ? `%${filters.q.replace(/[\\%_]/g, "\\$&")}%` : undefined;
-    const price = sql`cast(json_unquote(json_extract(${market.prices}, ${`$.${JSON.stringify(filters.currency)}.median`})) as decimal(30, 10))`;
+    const currencyField = (field: string) =>
+        sql`cast(json_unquote(json_extract(${market.prices}, ${`$.${JSON.stringify(filters.currency)}.${field}`})) as decimal(30, 10))`;
+    // A merged foil market orders by its variations' listing-weighted median.
+    const price = sql`sum(${currencyField("median")} * ${currencyField("count")}) / sum(${currencyField("count")})`;
+    const listings = sql`sum(${market.listingCount})`;
+    const sellers = sql`sum(${market.uniqueSellers})`;
     const latestRowOrders: Partial<Record<MarketOrder, SQL>> = {
         "price-asc": asc(price),
         "price-desc": desc(price),
-        "listings-asc": asc(market.listingCount),
-        "listings-desc": desc(market.listingCount),
-        "sellers-asc": asc(market.uniqueSellers),
-        "sellers-desc": desc(market.uniqueSellers),
+        "listings-asc": asc(listings),
+        "listings-desc": desc(listings),
+        "sellers-asc": asc(sellers),
+        "sellers-desc": desc(sellers),
     };
     const latestRowOrder = latestRowOrders[filters.order];
     const latestRowFilters = [
         ...between(price, filters.priceMin, filters.priceMax),
-        ...between(market.listingCount, filters.listingsMin, filters.listingsMax),
-        ...between(market.uniqueSellers, filters.sellersMin, filters.sellersMax),
+        ...between(listings, filters.listingsMin, filters.listingsMax),
+        ...between(sellers, filters.sellersMin, filters.sellersMax),
     ];
     // Ordering or filtering on the latest row's values must happen before pagination.
     const pageLatestRows = Boolean(latestRowOrder) || latestRowFilters.length > 0;
@@ -151,7 +244,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             itemKey: market.itemKey,
             identified: market.identified,
             corrupted: market.corrupted,
-            foilVariation: market.foilVariation,
+            foilVariation: foilGroup.mapWith(Number).as("foil_group"),
             signatureKind: market.signatureKind,
             signatureValue: market.signatureValue,
             latestHour:
@@ -195,7 +288,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             market.itemKey,
             market.identified,
             market.corrupted,
-            market.foilVariation,
+            foilGroup,
             market.signatureKind,
             market.signatureValue,
         )
@@ -207,17 +300,23 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             filters.order === "name-desc" ? desc(market.itemKey) : asc(market.itemKey),
             asc(market.identified),
             asc(market.corrupted),
-            asc(market.foilVariation),
+            asc(foilGroup),
             asc(market.signatureKind),
             asc(market.signatureValue),
         ])
         .$dynamic();
     if (!pageLatestRows) grouped.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
     const page = grouped.as("page");
-    const rowsQuery = db
+    // One row per market: its latest hour's totals across the foil variations it merges.
+    const marketsQuery = db
         .select({
-            ...getTableColumns(market),
-            rank: sql<number>`1`,
+            itemKey: page.itemKey,
+            identified: page.identified,
+            corrupted: page.corrupted,
+            foilVariation: page.foilVariation,
+            signatureKind: page.signatureKind,
+            signatureValue: page.signatureValue,
+            latestHour: page.latestHour,
             periodSales: page.periodSales,
             periodRemovals: page.periodRemovals,
             periodPending: page.periodPending,
@@ -232,12 +331,24 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 eq(market.itemKey, page.itemKey),
                 eq(market.identified, page.identified),
                 eq(market.corrupted, page.corrupted),
-                eq(market.foilVariation, page.foilVariation),
+                eq(foilGroup, page.foilVariation),
                 eq(market.signatureKind, page.signatureKind),
                 eq(market.signatureValue, page.signatureValue),
             ),
         )
-        .where(and(...latestRowFilters))
+        .groupBy(
+            page.itemKey,
+            page.identified,
+            page.corrupted,
+            page.foilVariation,
+            page.signatureKind,
+            page.signatureValue,
+            page.latestHour,
+            page.periodSales,
+            page.periodRemovals,
+            page.periodPending,
+        )
+        .having(and(...latestRowFilters))
         .orderBy(
             ...(latestRowOrder
                 ? [
@@ -253,14 +364,14 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             asc(page.signatureValue),
         )
         .$dynamic();
-    if (pageLatestRows) rowsQuery.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
+    if (pageLatestRows) marketsQuery.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
     const rowsPromise =
         view === "history"
             ? Promise.resolve([])
-            : traceQuery("market.rows", rowsQuery, {
+            : traceQuery("market.rows", marketsQuery, {
                   "market.page_latest_rows": pageLatestRows,
                   "market.force_index": !search,
-              });
+              }).then((markets) => marketLatestRows(db, filters, markets));
     const historyPromise =
         filters.item && view !== "list"
             ? traceQuery(
@@ -274,14 +385,15 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                               eq(market.itemKey, filters.item),
                               eq(market.identified, filters.identified === "true"),
                               eq(market.corrupted, filters.corrupted === "true"),
-                              eq(market.foilVariation, filters.foil),
+                              foilMatch(filters.foil),
                               eq(market.signatureKind, filters.kind),
                               eq(market.signatureValue, filters.value),
                           ),
                       )
-                      .orderBy(asc(market.hour))
-                      .limit(2160),
-              )
+                      .orderBy(desc(market.hour))
+                      // 90 days of hours for up to 16 merged foil variations.
+                      .limit(2160 * 16),
+              ).then((rows) => mergeByHour(rows, filters.foil))
             : Promise.resolve([]);
     const variantsPromise =
         filters.item && view !== "list"
@@ -292,7 +404,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                           itemKey: market.itemKey,
                           identified: market.identified,
                           corrupted: market.corrupted,
-                          foilVariation: market.foilVariation,
+                          foilVariation: foilGroup.mapWith(Number),
                           signatureKind: market.signatureKind,
                           signatureValue: market.signatureValue,
                           periodSales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
@@ -303,14 +415,14 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                           market.itemKey,
                           market.identified,
                           market.corrupted,
-                          market.foilVariation,
+                          foilGroup,
                           market.signatureKind,
                           market.signatureValue,
                       )
                       .orderBy(
                           desc(sql`sum(${market.likelySales})`),
                           asc(market.corrupted),
-                          asc(market.foilVariation),
+                          asc(foilGroup),
                           asc(market.signatureValue),
                       )
                       .limit(100),

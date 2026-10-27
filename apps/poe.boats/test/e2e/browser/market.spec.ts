@@ -57,7 +57,7 @@ test("opens nested history, preserves variants and browsing state, and supports 
         page.getByRole("heading", { name: "Abberath's Hooves", exact: true }),
     ).toBeVisible();
     await page.getByRole("link", { name: "chaos", exact: true }).click();
-    await expect(page.getByLabel("Hourly median asking price in chaos")).toBeVisible();
+    await expect(page.getByLabel("Hourly lowest asking price in chaos")).toBeVisible();
     await selectValue(page.getByRole("combobox", { name: "Period", exact: true }), "30");
     await page.getByRole("button", { name: "Apply filters" }).click();
     await expect(page).toHaveURL(/days=30/);

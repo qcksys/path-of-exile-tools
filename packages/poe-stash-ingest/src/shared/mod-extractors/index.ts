@@ -6,6 +6,7 @@ import { forbiddenShakoExtractor } from "#src/shared/mod-extractors/forbidden-sh
 import { foulbornExtractor } from "#src/shared/mod-extractors/foulborn.ts";
 import { impossibleEscapeExtractor } from "#src/shared/mod-extractors/impossible-escape.ts";
 import type { ModExtractor, ModSignature } from "#src/shared/mod-extractors/types.ts";
+import { uniqueModSplitExtractor } from "#src/shared/mod-extractors/unique-mod-splits.ts";
 import { watchersEyeExtractor } from "#src/shared/mod-extractors/watchers-eye.ts";
 
 export const EXTRACTORS: readonly ModExtractor[] = [
@@ -15,6 +16,7 @@ export const EXTRACTORS: readonly ModExtractor[] = [
     forbiddenShakoExtractor,
     foulbornExtractor,
     emptyResonatorExtractor,
+    uniqueModSplitExtractor,
 ];
 
 export function extractModSignature(item: Item): ModSignature | null {

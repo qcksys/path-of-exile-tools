@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { Item } from "@poe-tools/api-client";
 import { isUniqueItem } from "#src/shared/capture.ts";
 import type { ModExtractor, ModSignature } from "#src/shared/mod-extractors/types.ts";
+import { uniqueModSplit } from "#src/shared/mod-extractors/unique-mod-splits.ts";
 
 // The remote summary table stores `signature_value` as varchar(255).
 const MAX_VALUE_LENGTH = 255;
@@ -24,7 +25,8 @@ function mutatedModLines(item: Item): string[] {
 export const foulbornExtractor: ModExtractor = {
     kind: "foulborn",
     value: (signature) => {
-        const value = (signature.mods as string[]).join(" / ");
+        const mods = (signature.mods as string[]).join(" / ");
+        const value = signature.variant ? `${mods} (${signature.variant})` : mods;
         return value.length <= MAX_VALUE_LENGTH
             ? value
             : createHash("sha256").update(value).digest("hex");
@@ -34,6 +36,9 @@ export const foulbornExtractor: ModExtractor = {
     },
     extract(item: Item): ModSignature | null {
         const mods = mutatedModLines(item);
-        return mods.length ? { kind: "foulborn", mods } : null;
+        if (!mods.length) return null;
+        // Masking hides numbers that split a unique's markets, such as Foulborn Mageblood's flask count.
+        const variant = uniqueModSplit(item);
+        return variant ? { kind: "foulborn", mods, variant } : { kind: "foulborn", mods };
     },
 };
