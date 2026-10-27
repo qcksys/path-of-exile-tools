@@ -15,6 +15,7 @@ import { refreshStashRollups, utcDay } from "~/db/queries/stash-rollups.queries"
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
+import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
 import {
     tStashUniqueHourly as market,
     type TStashUniqueHourlyI,
@@ -134,8 +135,33 @@ it.each([
     const query = rowsStatement();
     const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
     const aggregate = plan.find((row) => row.select_type === "DERIVED");
-    expect(aggregate?.table).toBe("qsPoeBoats__stash_unique_daily");
-    expect(aggregate?.key).toBe("PRIMARY");
+    expect(aggregate?.table).toBe("qsPoeBoats__stash_market_daily");
+});
+
+it("reads one category's daily rows from the base-type index", async () => {
+    await db.insert(market).values(
+        Array.from({ length: 300 }, (_, index) =>
+            observation({
+                league: "Categories",
+                itemKey: `Fossil ${index}`,
+                baseType: index < 3 ? "Leather Belt" : "Jagged Fossil",
+                frameType: index < 3 ? 3 : 5,
+            }),
+        ),
+    );
+    await refreshStashRollups(db as unknown as TDatabase);
+    await db.execute(sql`ANALYZE TABLE ${tStashMarketDaily}`);
+    statements.length = 0;
+    const result = await marketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "Categories", category: "accessories" }),
+    );
+    expect(result.rows.map((row) => row.itemKey)).toEqual(["Fossil 0", "Fossil 1", "Fossil 2"]);
+    const query = rowsStatement();
+    const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
+    const aggregate = plan.find((row) => row.select_type === "DERIVED");
+    expect(aggregate?.key).toBe("stash_market_daily_base_idx");
+    expect(String(aggregate?.Extra)).toMatch(/Using index/);
 });
 
 it.each(["Item", "Leather"])("searches names, item keys and base types (%s)", async (q) => {
@@ -569,6 +595,13 @@ it("lists a mod pool unique once and values its mods on the item page", async ()
         [false, "watchers-eye", "", null, 3, 2],
         [true, "watchers-eye", "", null, 1, 0],
     ]);
+    // The daily rollup already holds one row per market and day, not one per combination.
+    const rolled = await db
+        .select({ day: tStashMarketDaily.day, value: tStashMarketDaily.signatureValue })
+        .from(tStashMarketDaily)
+        .where(eq(tStashMarketDaily.league, "Mods"));
+    expect(rolled).toHaveLength(2);
+    expect(rolled.every((row) => row.value === "")).toBe(true);
 
     const filters = marketFiltersSchema.parse({
         league: "Mods",
