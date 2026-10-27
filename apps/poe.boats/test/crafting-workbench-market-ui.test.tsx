@@ -9,6 +9,7 @@ import { CraftingWorkbench } from "../app/components/crafting/workbench";
 import { WorkbenchMarketPrices } from "../app/components/crafting/workbench-market-prices";
 import { CraftingEngine } from "../app/lib/crafting-engine";
 import { validateRulesetIndex } from "../app/lib/crafting-rulesets";
+import { bindCraftingSourcePrice } from "../app/lib/crafting-sources";
 import { craftingProjectSchema } from "../app/schemas/crafting";
 import index from "../crafting-history/index.json";
 import { byText, changeControl } from "./control-helpers";
@@ -213,22 +214,33 @@ it.each([
     commodityQuote,
     convertedCommodityQuote,
 ])("copies captured essence asks at $amount only after selection and preserves subsequent manual edits", async (quote) => {
-    vi.stubGlobal(
-        "fetch",
-        vi
-            .fn()
-            .mockImplementation((url: string) =>
-                Promise.resolve(
-                    new Response(
-                        JSON.stringify(
-                            url.includes("index.json")
-                                ? historyIndex
-                                : { quotes: { [essenceId]: quote }, missing: {} },
+    const fetcher = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+        if (url === "/api/v1/crafting/market/sources/bind") {
+            const request = JSON.parse(String(init?.body));
+            return Promise.resolve(
+                new Response(
+                    JSON.stringify({
+                        graph: bindCraftingSourcePrice(
+                            request.graph,
+                            engine,
+                            request.id,
+                            request.quote,
                         ),
-                    ),
+                    }),
+                ),
+            );
+        }
+        return Promise.resolve(
+            new Response(
+                JSON.stringify(
+                    url.includes("index.json")
+                        ? historyIndex
+                        : { quotes: { [essenceId]: quote }, missing: {} },
                 ),
             ),
-    );
+        );
+    });
+    vi.stubGlobal("fetch", fetcher);
     mount("poe1", essenceId);
     fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
     fireEvent.change(await screen.findByLabelText("Price lookup league"), {
@@ -251,7 +263,15 @@ it.each([
             .hasAttribute("disabled"),
     ).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
-    expect(amount.value).toBe(String(quote.amount));
+    await waitFor(() => expect(amount.value).toBe(String(quote.amount)));
+    const request = JSON.parse(
+        fetcher.mock.calls.find(([url]) => url === "/api/v1/crafting/market/sources/bind")![1].body,
+    );
+    expect(request).toMatchObject({
+        graph: { game: "poe1", league: "Standard", currency: "chaos" },
+        id: essenceId,
+        quote,
+    });
     fireEvent.change(amount, { target: { value: "7" } });
     fireEvent.change(screen.getByLabelText("Price lookup league"), { target: { value: "Other" } });
     await waitFor(() =>
