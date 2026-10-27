@@ -51,7 +51,11 @@ source models retain their original eligibility, and unknown or incompatible sta
 ## Coverage
 
 Season market browsing uses a parent layout and outlet with separate list and item-history
-routes. Legacy `?item=` bookmarks redirect to `/1/market/items/:item` with all variant axes intact.
+routes. Each category list lives at `/1/market/:category` (`/1/market` is all items); legacy
+`?category=` links redirect there. Legacy `?item=` bookmarks redirect to `/1/market/items/:item`
+with all variant axes intact; item links keep `category` in the query for the way back. The item
+page lists every variant of the item in the period (corruption, foil, and extracted signatures
+such as Foulborn mutated modifiers) and links between them.
 The shared market query applies category, text, rarity, identification, corruption, column ranges
 and ordering before pagination. The list's TanStack Table headers sort through `order` and filter
 through the URL: the item column sets the text search, and range boxes bound the latest row's

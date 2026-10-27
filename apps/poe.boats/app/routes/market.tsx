@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Outlet, useSearchParams } from "react-router";
+import { Link, Outlet, useParams, useSearchParams } from "react-router";
 import { Button } from "~/components/ui/button";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
 import type { SiteHandle } from "~/routes/layouts/site";
@@ -13,7 +13,11 @@ export const handle = { section: "Season market", sectionBadge: "Estimates" } sa
 export default function Market() {
     const [categoriesOpen, setCategoriesOpen] = useState(false);
     const [searchParams] = useSearchParams();
-    const parsed = marketFiltersSchema.safeParse(Object.fromEntries(searchParams));
+    const { category } = useParams();
+    const parsed = marketFiltersSchema.safeParse({
+        ...Object.fromEntries(searchParams),
+        ...(category ? { category } : {}),
+    });
     const filters = parsed.success ? parsed.data : marketFiltersSchema.parse({});
     const categories = Object.entries(MARKET_CATEGORIES) as [
         MarketCategory,

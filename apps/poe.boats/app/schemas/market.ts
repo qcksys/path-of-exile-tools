@@ -107,7 +107,6 @@ export function marketLink(
         q: filters.q,
         currency: filters.currency,
         page: String(filters.page),
-        category: filters.category,
         order: filters.order,
         rarity: filters.rarity,
         identification: filters.identification,
@@ -118,19 +117,26 @@ export function marketLink(
         if (bound !== undefined) params.set(param, String(bound));
     }
     if (item) {
+        // The item path has no category segment, so the query keeps it for links back to the list.
+        params.set("category", filters.category);
         params.set("identified", String(item.identified));
         params.set("corrupted", String(item.corrupted));
         params.set("foil", String(item.foilVariation));
         params.set("kind", item.signatureKind);
         params.set("value", item.signatureValue);
+        return `/1/market/items/${encodeURIComponent(item.itemKey)}?${params}`;
     }
-    return `/1/market${item ? `/items/${encodeURIComponent(item.itemKey)}` : ""}?${params}`;
+    return `/1/market${filters.category === "all" ? "" : `/${filters.category}`}?${params}`;
 }
 
-export function parseMarketFilters(request: Request, item?: string) {
+/** Path parameters take precedence over the same-named search parameters. */
+export function parseMarketFilters(
+    request: Request,
+    params: { item?: string; category?: string } = {},
+) {
     const parsed = marketFiltersSchema.safeParse({
         ...Object.fromEntries(new URL(request.url).searchParams),
-        ...(item === undefined ? {} : { item }),
+        ...Object.fromEntries(Object.entries(params).filter(([, value]) => value !== undefined)),
     });
     if (!parsed.success) throw new Response("Invalid market filters", { status: 400 });
     return parsed.data;
