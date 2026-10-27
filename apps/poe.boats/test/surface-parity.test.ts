@@ -27,7 +27,7 @@ import { FossilOptimizer, fossilOptimizationSchema } from "~/lib/crafting-optimi
 import { craftingPresets, listCraftingPresets, projectFromPreset } from "~/lib/crafting-presets";
 import { rulesetReference } from "~/lib/crafting-rulesets";
 import { CraftingProcess } from "~/lib/crafting-simulation";
-import { bindCraftingSourcePrice } from "~/lib/crafting-sources";
+import { bindCraftingSourcePrice, markVendorPriceUnavailable } from "~/lib/crafting-sources";
 import {
     CraftingWorkbenchCalculation,
     editCraftingStartingItem,
@@ -241,6 +241,70 @@ function cohortPricingFixture(policy: (typeof cohortPolicies)[number]) {
 
 describe("transport parity", () => {
     beforeEach(() => vi.restoreAllMocks());
+
+    it("refuses a vendor price after a failed refresh through HTTP and MCP", async () => {
+        const bound = bindCraftingSourcePrice(
+            exchangeGraph(),
+            fixtureEngine,
+            vendorOutputId,
+            vendorQuote,
+        );
+        const lookup = vi.spyOn(craftingSources, "findCraftingSourcePrices").mockResolvedValue({
+            quotes: {},
+            missing: { [vendorOutputId]: "No current ingredient quote." },
+        });
+        const unavailable = markVendorPriceUnavailable(bound, vendorOutputId);
+        const input = { graph: bound };
+        const expected = {
+            graph: unavailable,
+            issues: [`${vendorOutputId}: No current ingredient quote.`],
+        };
+        const response = await api.request(
+            "https://poe.boats/api/v1/crafting/market/refresh",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
+            },
+            { runtime },
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual(expected);
+        const rpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", { name: "refresh_crafting_item_prices", arguments: input })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(expected);
+        const calculation = { graph: unavailable, options: { estimateIterations: 1 } };
+        const calculated = await api.request(
+            "https://poe.boats/api/v1/crafting/graph/calculate",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(calculation),
+            },
+            { runtime },
+        );
+        expect(calculated.status).toBe(400);
+        expect(await calculated.json()).toMatchObject({
+            error: expect.stringContaining("vendor ingredient exchange price is unavailable"),
+        });
+        const calculateRpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", {
+                    name: "calculate_crafting_graph",
+                    arguments: calculation,
+                })
+            ).json(),
+        );
+        const calculateResult = CallToolResultSchema.parse(calculateRpc.result);
+        expect(calculateResult.isError).toBe(true);
+        expect(JSON.stringify(calculateResult.content)).toContain(
+            "vendor ingredient exchange price is unavailable",
+        );
+        lookup.mockRestore();
+    });
 
     it.each([
         "poe1",

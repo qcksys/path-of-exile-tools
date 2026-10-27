@@ -2,6 +2,7 @@ import {
     convertExchangeQuote,
     type ExchangeQuote,
     exchangeCurrencyId,
+    exchangePriceReferenceSchema,
     exchangeQuoteSchema,
     quoteExchangeSnapshot,
 } from "@poe-tools/market";
@@ -20,7 +21,7 @@ const yellowBeasts = z.literal("listing-count-weighted-mean-v1").optional();
 const conversion = z.literal("exchange-v1").optional();
 export const vendorUpgradeOptionsSchema = z.strictObject({
     inputId: z.string().min(1).max(500),
-    conversion: z.literal("reference-currency-v1").optional(),
+    conversion: exchangePriceReferenceSchema.shape.conversion,
 });
 export const vendorUpgradePathSchema = z.strictObject({
     inputId: z.string().min(1).max(500),

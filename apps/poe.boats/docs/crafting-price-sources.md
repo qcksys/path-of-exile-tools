@@ -222,6 +222,10 @@ lookup operation. The returned `vendor-upgrade` quote and saved binding retain
 the ordered recipe IDs, canonical input/output IDs, quantities, original positive
 exchange quote, observed hour and traded volume. Optional
 `reference-currency-v1` conversion retains both matching-hour exchange legs.
+The picker defaults to `two-leg-exchange-v1`, which also permits another traded
+exchange item as an intermediary. Saved references retain their selected policy;
+each leg still requires a positive quote from the same completed hour. The picker
+discards a quote when that hour changes and rejects a stale server response.
 The resulting amount is ingredient quantity multiplied by its unit quote, not
 a direct market quote for the produced essence. Confidence remains unknown:
 three traded ingredient units do not establish that the nine required units are
@@ -230,8 +234,9 @@ available, and the estimate excludes acquisition gold and time.
 Refresh and historical snapshots keep the selected ingredient and recipe path;
 they do not choose a cheaper ancestor or silently switch to direct captured asks.
 The exchange resolver's cutoff and newer-zero rules still apply. A failed refresh
-keeps the saved amount with an explicit issue, while an unavailable historical
-point remains unknown. Direct essence asking prices remain separately selectable.
+marks the binding unavailable while retaining its saved reference for automatic
+recovery. Browser, HTTP, MCP and workbench calculations refuse the cached amount;
+an unavailable historical point remains unknown. Direct essence asking prices remain separately selectable.
 Manual amounts change only on explicit selection; the standalone workbench copies
 the chosen estimate as a fixed numeric amount using its existing semantics.
 

@@ -1,4 +1,9 @@
-import { convertExchangeQuote, type ExchangeQuote, quoteExchangeSnapshot } from "@poe-tools/market";
+import {
+    convertExchangeQuote,
+    type ExchangeQuote,
+    exchangeCurrencyId,
+    quoteExchangeSnapshot,
+} from "@poe-tools/market";
 import { CURRENCY_VENDOR_RECIPES } from "~/data/currency-vendor-recipes";
 import { VENDOR_RECIPES } from "~/data/vendor-recipes";
 import type { VendorUpgradePath } from "~/schemas/crafting-sources";
@@ -155,8 +160,13 @@ export function validVendorIngredientQuote(quote: ExchangeQuote) {
     let verified = direct(quote);
     if (
         quote.estimator === "cross-rate-v1" &&
-        quote.conversion === "reference-currency-v1" &&
+        (quote.conversion === "reference-currency-v1" ||
+            quote.conversion === "two-leg-exchange-v1") &&
         quote.legs &&
+        (quote.conversion === "two-leg-exchange-v1" ||
+            ["chaos", "divine", "exalted"].some(
+                (currency) => exchangeCurrencyId(currency) === quote.legs![0].quoteId,
+            )) &&
         !quote.window &&
         (quote.windowStart === undefined || quote.windowStart === quote.hour) &&
         quote.low === null &&

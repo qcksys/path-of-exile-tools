@@ -50,7 +50,6 @@ import {
     vendorCurrencyInputId,
     vendorCurrencyOutputId,
     vendorCurrencyQuote,
-    vendorHour,
     vendorInputId,
     vendorOutputId,
     vendorQuote,
@@ -888,10 +887,21 @@ test("currency-only graph exposes an explicit NPC purchase and preserves its ins
         source: "manual",
         confidence: null,
     };
-    let hour = vendorHour;
+    const now = Date.now();
+    await page.clock.setFixedTime(new Date(now));
+    const hour = Math.floor(now / 3_600_000) * 3600 - 3600;
+    let multiplier = 1;
     const currentQuote = () => ({
         ...vendorCurrencyQuote,
-        ingredient: { ...vendorCurrencyQuote.ingredient, hour },
+        conversion: "two-leg-exchange-v1" as const,
+        amount: vendorCurrencyQuote.amount * multiplier,
+        ingredient: {
+            ...vendorCurrencyQuote.ingredient,
+            conversion: "two-leg-exchange-v1" as const,
+            amount: vendorCurrencyQuote.ingredient.amount * multiplier,
+            quoteVolume: vendorCurrencyQuote.ingredient.quoteVolume! * multiplier,
+            hour,
+        },
     });
     await page.route("**/api/v1/crafting/market/exchange", (route) =>
         route.fulfill({
@@ -904,7 +914,10 @@ test("currency-only graph exposes an explicit NPC purchase and preserves its ins
     await page.route("**/api/v1/crafting/market/sources", (route) => {
         const request = route.request().postDataJSON();
         expect(request.ids).toEqual([vendorCurrencyOutputId]);
-        expect(request.vendorUpgrade).toEqual({ inputId: vendorCurrencyInputId });
+        expect(request.vendorUpgrade).toEqual({
+            inputId: vendorCurrencyInputId,
+            conversion: "two-leg-exchange-v1",
+        });
         return route.fulfill({
             json: { quotes: { [vendorCurrencyOutputId]: currentQuote() }, missing: {} },
         });
@@ -914,6 +927,7 @@ test("currency-only graph exposes an explicit NPC purchase and preserves its ins
         expect(liveSourcePrices(current)[0]?.reference).toMatchObject({
             source: "vendor-upgrade",
             path: vendorCurrencyQuote.path,
+            conversion: "two-leg-exchange-v1",
         });
         return route.fulfill({
             json: {
@@ -946,7 +960,7 @@ test("currency-only graph exposes an explicit NPC purchase and preserves its ins
     });
     const instructions = vendorCurrencyQuote.path.steps[0]!.instructions!;
     await expect(vendor.getByText(instructions, { exact: true })).toBeVisible();
-    await expect(vendor.getByRole("checkbox")).not.toBeChecked();
+    await expect(vendor.getByRole("checkbox")).toBeChecked();
     await vendor.getByRole("button", { name: "Find vendor-upgrade estimate", exact: true }).click();
     await expect(vendor).toContainText("4 × Orb of Transmutation");
     await expect(vendor).toContainText("3150 ingredient units traded");
@@ -961,17 +975,18 @@ test("currency-only graph exposes an explicit NPC purchase and preserves its ins
     expect(liveSourcePrices((await stored(page)).projects[0]!.graph)[0]?.reference).toMatchObject({
         source: "vendor-upgrade",
         path: vendorCurrencyQuote.path,
+        conversion: "two-leg-exchange-v1",
     });
-    hour += 3600;
+    multiplier = 2;
     await page.reload();
     await openGraphSettings(page);
     await expect
         .poll(
             async () =>
-                (await stored(page)).projects[0]!.graph.prices[vendorCurrencyOutputId]?.observedAt,
+                (await stored(page)).projects[0]!.graph.prices[vendorCurrencyOutputId]?.amount,
         )
-        .toBe(new Date(hour * 1000).toISOString());
-    await expect(price).toHaveValue(String(vendorCurrencyQuote.amount));
+        .toBe(vendorCurrencyQuote.amount * multiplier);
+    await expect(price).toHaveValue(String(vendorCurrencyQuote.amount * multiplier));
 });
 
 test("explicit vendor upgrade preserves manual prices and refreshes the fixed ingredient path on reopening", async ({
@@ -987,10 +1002,21 @@ test("explicit vendor upgrade preserves manual prices and refreshes the fixed in
         source: "manual",
         confidence: null,
     };
-    let hour = vendorHour;
+    const now = Date.now();
+    await page.clock.setFixedTime(new Date(now));
+    const hour = Math.floor(now / 3_600_000) * 3600 - 3600;
+    let multiplier = 1;
     const currentQuote = () => ({
         ...vendorQuote,
-        ingredient: { ...vendorQuote.ingredient, hour },
+        conversion: "two-leg-exchange-v1" as const,
+        amount: vendorQuote.amount * multiplier,
+        ingredient: {
+            ...vendorQuote.ingredient,
+            conversion: "two-leg-exchange-v1" as const,
+            amount: vendorQuote.ingredient.amount * multiplier,
+            quoteVolume: vendorQuote.ingredient.quoteVolume! * multiplier,
+            hour,
+        },
     });
     await page.route("**/api/v1/crafting/market/sources", (route) => {
         const request = route.request().postDataJSON();
@@ -998,7 +1024,10 @@ test("explicit vendor upgrade preserves manual prices and refreshes the fixed in
             return route.fulfill({
                 json: { quotes: {}, missing: { [vendorOutputId]: "No current output asks" } },
             });
-        expect(request.vendorUpgrade).toEqual({ inputId: vendorInputId });
+        expect(request.vendorUpgrade).toEqual({
+            inputId: vendorInputId,
+            conversion: "two-leg-exchange-v1",
+        });
         return route.fulfill({
             json: { quotes: { [vendorOutputId]: currentQuote() }, missing: {} },
         });
@@ -1008,6 +1037,7 @@ test("explicit vendor upgrade preserves manual prices and refreshes the fixed in
         expect(liveSourcePrices(current)[0]?.reference).toMatchObject({
             source: "vendor-upgrade",
             path: vendorQuote.path,
+            conversion: "two-leg-exchange-v1",
         });
         return route.fulfill({
             json: {
@@ -1036,7 +1066,7 @@ test("explicit vendor upgrade preserves manual prices and refreshes the fixed in
         }),
         vendorInputId,
     );
-    await expect(vendor.getByRole("checkbox")).not.toBeChecked();
+    await expect(vendor.getByRole("checkbox")).toBeChecked();
     await vendor.getByRole("button", { name: "Find vendor-upgrade estimate", exact: true }).click();
     await expect(vendor).toContainText("18 chaos per output · vendor-upgrade ingredient estimate");
     await expect(vendor).toContainText("9 × Weeping Essence of Rage at 2 chaos each");
@@ -1051,16 +1081,15 @@ test("explicit vendor upgrade preserves manual prices and refreshes the fixed in
     expect(liveSourcePrices((await stored(page)).projects[0]!.graph)[0]?.reference).toMatchObject({
         source: "vendor-upgrade",
         path: vendorQuote.path,
+        conversion: "two-leg-exchange-v1",
     });
-    hour += 3600;
+    multiplier = 2;
     await page.reload();
     await openGraphSettings(page);
     await expect
-        .poll(
-            async () => (await stored(page)).projects[0]!.graph.prices[vendorOutputId]?.observedAt,
-        )
-        .toBe(new Date(hour * 1000).toISOString());
-    await expect(price).toHaveValue("18");
+        .poll(async () => (await stored(page)).projects[0]!.graph.prices[vendorOutputId]?.amount)
+        .toBe(vendorQuote.amount * multiplier);
+    await expect(price).toHaveValue(String(vendorQuote.amount * multiplier));
     await price.fill("7");
     expect(liveSourcePrices((await stored(page)).projects[0]!.graph)).toEqual([]);
     await page.reload();
