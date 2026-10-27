@@ -4,6 +4,8 @@ import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories"
 export const marketCategorySchema = z.enum(
     Object.keys(MARKET_CATEGORIES) as [MarketCategory, ...MarketCategory[]],
 );
+/** The web list has no all-items page; `category: "all"` (API and MCP only) links here. */
+export const MARKET_DEFAULT_CATEGORY = "currency" satisfies MarketCategory;
 export const MARKET_ORDERS = {
     sales: "Most likely sales",
     "sales-asc": "Fewest likely sales",
@@ -126,7 +128,7 @@ export function marketLink(
         params.set("value", item.signatureValue);
         return `/1/market/items/${encodeURIComponent(item.itemKey)}?${params}`;
     }
-    return `/1/market${filters.category === "all" ? "" : `/${filters.category}`}?${params}`;
+    return `/1/market/${filters.category === "all" ? MARKET_DEFAULT_CATEGORY : filters.category}?${params}`;
 }
 
 /** Path parameters take precedence over the same-named search parameters. */
