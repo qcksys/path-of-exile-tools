@@ -84,7 +84,7 @@ function exchangeColumns(game: Game, divine: number | undefined) {
             sortUndefined: "last",
             meta: { filter: "range", className: "tabular-nums" },
             cell: ({ row: { original: row } }) => {
-                if (row.chaos === null) return row.volume ? "No rate" : "No trades in 24h";
+                if (row.chaos === null) return row.volume ? "No rate" : "No trades in latest hour";
                 const price = marketChaosPrice(row.chaos, divine);
                 return (
                     <p className="font-semibold">

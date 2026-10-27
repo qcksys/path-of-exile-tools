@@ -1,9 +1,11 @@
 import {
+    type ExchangeSnapshot,
     exchangeCurrencyId,
     exchangeSnapshotSchema,
     exchangeUnitQuote,
     marketObservationRange,
     quoteExchangeConversion,
+    quoteExchangeSnapshot,
     quoteExchangeWindow,
 } from "@poe-tools/market";
 import { and, desc, eq, gte, inArray, lt, lte } from "drizzle-orm";
@@ -71,12 +73,117 @@ export async function findCraftingExchangePrices(
             }
         }
     }
+    let conversionTruncated = false;
+    if (input.conversion === "two-leg-exchange-v1") {
+        const itemIds = Object.keys(result.missing).filter((id) =>
+            id.startsWith("Metadata/Items/"),
+        );
+        if (itemIds.length) {
+            const quoteId = exchangeCurrencyId(input.currency)!;
+            const latest = await db
+                .select(columns)
+                .from(hourly)
+                .where(
+                    and(
+                        eq(hourly.realm, input.realm),
+                        eq(hourly.league, input.league),
+                        eq(hourly.hour, range.latestHour),
+                    ),
+                )
+                .orderBy(hourly.marketId)
+                .limit(5001);
+            onQuery?.(latest.length);
+            if (latest.length > 5000) {
+                conversionTruncated = true;
+                for (const id of itemIds)
+                    result.missing[id] =
+                        "Too many exchange markets to establish a complete conversion path for the selected hour.";
+            } else {
+                const bridges = twoLegExchangeBridges(
+                    latest.map((row) => exchangeSnapshotSchema.parse(row)),
+                    itemIds,
+                    quoteId,
+                );
+                const pairs = new Set<string>();
+                for (const [id, choices] of bridges)
+                    for (const bridge of choices) {
+                        for (const pair of pairIds(id, bridge)) pairs.add(pair);
+                        for (const pair of pairIds(bridge, quoteId)) pairs.add(pair);
+                    }
+                const pairList = [...pairs];
+                const snapshots: ExchangeSnapshot[] = [];
+                const conversionRange = input.window
+                    ? range
+                    : { ...range, earliestHour: range.latestHour };
+                for (let offset = 0; offset < pairList.length; offset += 500)
+                    snapshots.push(
+                        ...(await findExchangeSnapshots(
+                            db,
+                            input,
+                            pairList.slice(offset, offset + 500),
+                            conversionRange,
+                            onQuery,
+                        )),
+                    );
+                for (const [id, choices] of bridges)
+                    for (const bridge of choices) {
+                        const quote = quoteExchangeConversion(
+                            snapshots,
+                            {
+                                realm: input.realm,
+                                league: input.league,
+                                itemId: id,
+                                quoteId,
+                                window: input.window,
+                            },
+                            bridge,
+                            range.latestHour,
+                        );
+                        if (quote) {
+                            result.quotes[id] = quote;
+                            delete result.missing[id];
+                            break;
+                        }
+                    }
+            }
+        }
+    }
     for (const quote of Object.values(result.quotes)) quote.conversion = input.conversion;
     for (const id of Object.keys(result.missing))
-        if (id.startsWith("Metadata/Items/"))
+        if (id.startsWith("Metadata/Items/") && !conversionTruncated)
             result.missing[id] =
-                "No positive direct pair or matching-hour conversion through chaos, divine or exalted is available at the selected completed hour.";
+                input.conversion === "two-leg-exchange-v1"
+                    ? "No positive direct pair or matching-hour two-leg conversion is available at the selected completed hour."
+                    : "No positive direct pair or matching-hour conversion through chaos, divine or exalted is available at the selected completed hour.";
     return result;
+}
+
+export function twoLegExchangeBridges(
+    snapshots: ExchangeSnapshot[],
+    itemIds: string[],
+    quoteId: string,
+) {
+    const wanted = new Set(itemIds);
+    const quoted = new Set<string>();
+    for (const row of snapshots) {
+        const pair = row.marketId.split("|");
+        if (pair.length !== 2 || !pair.includes(quoteId)) continue;
+        const bridge = pair[0] === quoteId ? pair[1]! : pair[0]!;
+        if (bridge !== quoteId && quoteExchangeSnapshot(row, bridge, quoteId)) quoted.add(bridge);
+    }
+    const choices = new Map<string, Set<string>>();
+    for (const row of snapshots) {
+        const pair = row.marketId.split("|");
+        if (pair.length !== 2) continue;
+        for (const [item, bridge] of [pair, [pair[1]!, pair[0]!]] as [string, string][]) {
+            if (!wanted.has(item) || item === bridge || !quoted.has(bridge)) continue;
+            if (!quoteExchangeSnapshot(row, item, bridge)) continue;
+            const existing = choices.get(item) ?? new Set<string>();
+            existing.add(bridge);
+            choices.set(item, existing);
+        }
+    }
+    return new Map([...choices].map(([id, values]) => [id, [...values].sort()]));
 }
 async function findDirectExchangePrices(
     db: TDatabase,

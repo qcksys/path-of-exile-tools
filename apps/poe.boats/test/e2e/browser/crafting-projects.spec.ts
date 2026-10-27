@@ -1,5 +1,10 @@
 import { expect, type Page, test } from "@playwright/test";
-import { cohortPriceCoverage, exchangeCurrencyId, quoteExchangeSnapshot } from "@poe-tools/market";
+import {
+    cohortPriceCoverage,
+    exchangeCurrencyId,
+    marketObservationRange,
+    quoteExchangeSnapshot,
+} from "@poe-tools/market";
 import { CraftingEngine } from "../../../app/lib/crafting-engine";
 import { bindExchangePrice, liveExchangePrices } from "../../../app/lib/crafting-exchange";
 import { projectFromItem } from "../../../app/lib/crafting-graph-authoring";
@@ -559,21 +564,24 @@ for (const game of ["poe1", "poe2"] as const) {
                   };
         const realm = game === "poe2" ? "poe2" : "pc";
         let amount = 2;
-        const currentQuote = (adaptive = false) =>
-            ({
+        const currentQuote = (adaptive = false) => {
+            const hour = marketObservationRange().latestHour;
+            return {
                 ...exchangeQuote,
                 realm,
                 amount,
+                hour,
                 ...(adaptive
                     ? {
                           window: "adaptive-v1" as const,
                           estimator: "adaptive-volume-ratio-v1" as const,
-                          windowStart: exchangeSnapshot.hour - 5 * 3600,
+                          windowStart: hour - 5 * 3600,
                           itemVolume: 120,
                           quoteVolume: 120 * amount,
                       }
                     : {}),
-            }) as const;
+            } as const;
+        };
         await page.route("**/api/v1/crafting/market/exchange", (route) => {
             expect(route.request().postDataJSON()).toMatchObject({
                 game,
@@ -642,7 +650,7 @@ for (const game of ["poe1", "poe2"] as const) {
         );
         await price.fill("7");
         await expect(
-            prices.getByRole("button", { name: "Use estimates for unpriced inputs" }),
+            prices.getByRole("button", { name: "Use exchange estimates for automatic prices" }),
         ).toBeDisabled();
         await expect(price).toHaveValue("7");
         await row.getByRole("button", { name: "Use exchange estimate" }).click();
@@ -1877,7 +1885,12 @@ test("NNN recombination preserves suppression and offers eligible essence prepar
 }) => {
     const graph = nnnGraph();
     graph.league = "Standard";
-    const essenceQuote = { ...exchangeQuote, itemId: rage.id, amount: 0.25 };
+    const essenceQuote = {
+        ...exchangeQuote,
+        itemId: rage.id,
+        amount: 0.25,
+        hour: marketObservationRange().latestHour,
+    };
     await page.route("**/api/v1/crafting/market/exchange", (route) =>
         route.fulfill({
             json: {
@@ -1909,7 +1922,9 @@ test("NNN recombination preserves suppression and offers eligible essence prepar
     const editor = page.getByRole("region", { name: "Selected step editor" });
     await editor.getByText("Currency & essence exchange prices", { exact: true }).click();
     await editor.getByRole("button", { name: "Find exchange prices", exact: true }).click();
-    await editor.getByRole("button", { name: "Use estimates for unpriced inputs" }).click();
+    await editor
+        .getByRole("button", { name: "Use exchange estimates for automatic prices" })
+        .click();
     await expect(
         editor.getByRole("button", { name: /^Use .* Essence of/ }).first(),
     ).toHaveAccessibleName("Use Screaming Essence of Rage");

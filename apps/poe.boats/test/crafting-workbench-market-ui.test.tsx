@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+
+import { marketObservationRange } from "@poe-tools/market";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { MemoryRouter } from "react-router";
@@ -22,6 +24,7 @@ const historyIndex = validateRulesetIndex(index);
 afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
 });
 function mount(game: "poe1" | "poe2" = "poe1", priceId = transmuteId) {
     const copied = vi.fn();
@@ -73,7 +76,13 @@ function mockPrices(realm = "pc") {
                     url.includes("index.json")
                         ? historyIndex
                         : {
-                              quotes: { [transmuteId]: { ...exchangeQuote, realm } },
+                              quotes: {
+                                  [transmuteId]: {
+                                      ...exchangeQuote,
+                                      realm,
+                                      hour: marketObservationRange().latestHour,
+                                  },
+                              },
                               missing: {},
                           },
                 ),
@@ -93,6 +102,18 @@ async function lookup() {
     await screen.findByRole("button", { name: "Use exchange estimate" });
 }
 
+it("does not copy a quote after the exchange hour changes", async () => {
+    const now = vi.spyOn(Date, "now").mockReturnValue((exchangeQuote.hour! + 3600) * 1000 + 60_000);
+    mockPrices();
+    const { copied } = mount();
+    await lookup();
+    now.mockReturnValue((exchangeQuote.hour! + 7200) * 1000 + 60_000);
+    fireEvent.click(screen.getByRole("button", { name: "Use exchange estimate" }));
+    expect(screen.getByRole("alert").textContent).toContain("Look up prices again");
+    expect(copied).not.toHaveBeenCalled();
+    expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("123");
+});
+
 it.each([
     "poe1",
     "poe2",
@@ -103,7 +124,7 @@ it.each([
     expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("123");
     expect(
         screen
-            .getByRole("button", { name: "Use estimates for unpriced inputs" })
+            .getByRole("button", { name: "Use exchange estimates for automatic prices" })
             .hasAttribute("disabled"),
     ).toBe(true);
     const request = JSON.parse(
@@ -114,6 +135,7 @@ it.each([
         realm: game === "poe2" ? "poe2" : "pc",
         currency: "chaos",
         league: "Standard",
+        conversion: "two-leg-exchange-v1",
     });
     fireEvent.click(screen.getByRole("button", { name: "Use exchange estimate" }));
     expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("2");
@@ -387,7 +409,11 @@ it("updates the standalone workbench's editable price after explicit quote selec
                             ? historyIndex
                             : {
                                   quotes: {
-                                      [currency.id]: { ...exchangeQuote, itemId: currency.id },
+                                      [currency.id]: {
+                                          ...exchangeQuote,
+                                          itemId: currency.id,
+                                          hour: marketObservationRange().latestHour,
+                                      },
                                   },
                                   missing: {},
                               },

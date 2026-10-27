@@ -1,9 +1,17 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { createDbConnection } from "~/db/client";
 import * as queries from "~/db/queries/crafting-exchange.queries";
-import { bindExchangePrice, liveExchangePrices } from "~/lib/crafting-exchange";
+import {
+    bindExchangePrice,
+    liveExchangePrices,
+    unavailableExchangePrices,
+} from "~/lib/crafting-exchange";
 import { calculateCraftingGraph } from "~/lib/crafting-graph-simulation";
-import { refreshCraftingMarketPrices } from "~/operations/crafting-market.server";
+import { assertCraftingSourcePrices } from "~/lib/crafting-sources";
+import {
+    craftingMarketSnapshots,
+    refreshCraftingMarketPrices,
+} from "~/operations/crafting-market.server";
 import { craftingExchangeInputSchema } from "~/schemas/crafting-exchange";
 import { exchangeGraph, exchangeQuote, transmuteId } from "./crafting-exchange-fixtures";
 import { catalog, engine } from "./crafting-fixtures";
@@ -115,7 +123,7 @@ describe("crafting exchange bindings", () => {
             }).success,
         ).toBe(false);
     });
-    it("refreshes live estimates in batches, preserves manual values, and retains cached amounts with explicit failures", async () => {
+    it("blocks unavailable estimates while retaining bindings for later refresh", async () => {
         const db = createDbConnection("mysql://test:test@localhost/poe_test");
         const graph = bindExchangePrice(exchangeGraph(), transmuteId, exchangeQuote);
         const lookup = vi.spyOn(queries, "findCraftingExchangePrices").mockResolvedValue({
@@ -134,12 +142,45 @@ describe("crafting exchange bindings", () => {
                 missing: { [transmuteId]: "No positive volume" },
             });
             const missing = await refreshCraftingMarketPrices(db, graph, engine);
-            expect(missing.graph).toEqual(graph);
+            expect(graph.prices[transmuteId]?.amount).toBe(2);
+            expect(missing.graph.prices[transmuteId]?.amount).toBe(2);
             expect(missing.issues[0]).toContain("No positive volume");
-            expect(
-                (await refreshCraftingMarketPrices(db, { ...graph, league: "Other" }, engine))
-                    .issues[0],
-            ).toContain("does not match");
+            expect(unavailableExchangePrices(missing.graph)).toEqual([transmuteId]);
+            expect(liveExchangePrices(missing.graph)).toEqual(liveExchangePrices(graph));
+            expect(() => assertCraftingSourcePrices(missing.graph)).toThrow(
+                "exchange price is unavailable",
+            );
+            expect((await refreshCraftingMarketPrices(db, missing.graph, engine)).graph).toEqual(
+                missing.graph,
+            );
+            const historicalMissing = await craftingMarketSnapshots(db, missing.graph, engine, [
+                exchangeQuote.hour!,
+            ]);
+            expect(historicalMissing.points[0]?.graph).toBeNull();
+            const wrongScope = await refreshCraftingMarketPrices(
+                db,
+                { ...graph, league: "Other" },
+                engine,
+            );
+            expect(wrongScope.issues[0]).toContain("does not match");
+            expect(() => assertCraftingSourcePrices(wrongScope.graph)).toThrow(
+                "exchange price is unavailable",
+            );
+            lookup.mockResolvedValue({
+                quotes: { [transmuteId]: { ...exchangeQuote, amount: 4 } },
+                missing: {},
+            });
+            const recovered = await refreshCraftingMarketPrices(db, missing.graph, engine);
+            expect(recovered.issues).toEqual([]);
+            expect(recovered.graph.prices[transmuteId]?.amount).toBe(4);
+            expect(unavailableExchangePrices(recovered.graph)).toEqual([]);
+            expect(() => assertCraftingSourcePrices(recovered.graph)).not.toThrow();
+            const historical = await craftingMarketSnapshots(db, missing.graph, engine, [
+                exchangeQuote.hour!,
+            ]);
+            expect(historical.points[0]?.issues).toEqual([]);
+            expect(historical.points[0]?.graph?.prices[transmuteId]?.amount).toBe(4);
+            expect(() => assertCraftingSourcePrices(historical.points[0]!.graph!)).not.toThrow();
         } finally {
             lookup.mockRestore();
         }

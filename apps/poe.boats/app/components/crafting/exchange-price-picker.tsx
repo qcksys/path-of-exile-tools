@@ -2,6 +2,7 @@ import {
     adaptiveExchangePolicy,
     type ExchangeQuote,
     exchangeCurrencyId,
+    marketObservationRange,
     quoteExchangeSnapshot,
 } from "@poe-tools/market";
 import { useEffect, useRef, useState } from "react";
@@ -36,12 +37,13 @@ export function ExchangePricePicker({
     );
     const [result, setResult] = useState<CraftingExchangeResult>();
     const [window, setWindow] = useState<"hourly" | "adaptive-v1">("hourly");
-    const [conversion, setConversion] = useState(false);
+    const [conversion, setConversion] = useState(true);
     const [history, setHistory] =
         useState<Array<{ hour: number; amount: number | null; volume: number | null }>>();
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
     const pending = useRef<AbortController | null>(null);
+    const resultHour = useRef<number | undefined>(undefined);
     const quoteId = exchangeCurrencyId(graph.currency);
     const ids = JSON.stringify(entries.map(([id]) => id).toSorted());
     // biome-ignore lint/correctness/useExhaustiveDependencies: Changed market scope or input IDs invalidate pending and displayed results.
@@ -53,10 +55,38 @@ export function ExchangePricePicker({
         setBusy(false);
         return () => pending.current?.abort();
     }, [graph.game, graph.league, graph.currency, realm, ids, window, conversion]);
+    useEffect(() => {
+        if (!result) return;
+        const expire = () => {
+            if (resultHour.current === marketObservationRange().latestHour) return;
+            resultHour.current = undefined;
+            setResult(undefined);
+            setError("A new exchange hour is available. Look up prices again before using them.");
+        };
+        const remaining = 3_600_000 - (Date.now() % 3_600_000) + 1;
+        const timer = globalThis.setTimeout(expire, remaining);
+        globalThis.window.addEventListener("focus", expire);
+        document.addEventListener("visibilitychange", expire);
+        return () => {
+            globalThis.clearTimeout(timer);
+            globalThis.window.removeEventListener("focus", expire);
+            document.removeEventListener("visibilitychange", expire);
+        };
+    }, [result]);
+    function currentResult() {
+        if (resultHour.current === marketObservationRange().latestHour) return true;
+        resultHour.current = undefined;
+        setResult(undefined);
+        setError("A new exchange hour is available. Look up prices again before using them.");
+        return false;
+    }
     async function lookup() {
         pending.current?.abort();
         const controller = new AbortController();
         pending.current = controller;
+        const requestedHour = marketObservationRange().latestHour;
+        resultHour.current = undefined;
+        setResult(undefined);
         setBusy(true);
         setError("");
         try {
@@ -71,7 +101,7 @@ export function ExchangePricePicker({
                     currency: graph.currency,
                     itemIds: entries.map(([id]) => id),
                     window: window === "adaptive-v1" ? window : undefined,
-                    conversion: conversion ? "reference-currency-v1" : undefined,
+                    conversion: conversion ? "two-leg-exchange-v1" : undefined,
                 }),
             });
             if (!response.ok)
@@ -79,7 +109,24 @@ export function ExchangePricePicker({
                     "Exchange prices are unavailable. Manual and saved prices have not changed.",
                 );
             const next = craftingExchangeResultSchema.parse(await response.json());
-            if (!controller.signal.aborted) setResult(next);
+            if (!controller.signal.aborted) {
+                if (requestedHour !== marketObservationRange().latestHour)
+                    throw new Error(
+                        "A new exchange hour is available. Look up prices again before using them.",
+                    );
+                if (
+                    Object.values(next.quotes).some((quote) =>
+                        quote.estimator === "currency-unit-v1"
+                            ? quote.hour !== null || quote.itemId !== quote.quoteId
+                            : quote.hour !== requestedHour,
+                    )
+                )
+                    throw new Error(
+                        "An exchange quote is not from the latest completed hour. Look up prices again.",
+                    );
+                resultHour.current = requestedHour;
+                setResult(next);
+            }
         } catch (error) {
             if (!controller.signal.aborted)
                 setError(error instanceof Error ? error.message : "Exchange lookup failed.");
@@ -142,7 +189,7 @@ export function ExchangePricePicker({
                 </p>
                 <Label className="flex items-center gap-2">
                     <Checkbox checked={conversion} onCheckedChange={setConversion} />
-                    Convert missing direct pairs through chaos, divine or exalted
+                    Convert missing direct pairs through another exchange item
                 </Label>
                 {conversion && (
                     <p className="text-muted-foreground">
@@ -222,12 +269,17 @@ export function ExchangePricePicker({
                         <Button
                             size="sm"
                             variant="outline"
-                            disabled={!Object.keys(result.quotes).some((id) => !graph.prices[id])}
+                            disabled={
+                                !Object.keys(result.quotes).some(
+                                    (id) => graph.prices[id]?.source !== "manual",
+                                )
+                            }
                             onClick={() => {
+                                if (!currentResult()) return;
                                 try {
                                     let next = graph;
                                     for (const [id, quote] of Object.entries(result.quotes))
-                                        if (!graph.prices[id])
+                                        if (graph.prices[id]?.source !== "manual")
                                             next = bindExchangePrice(next, id, quote);
                                     onChange(next);
                                 } catch (error) {
@@ -239,7 +291,7 @@ export function ExchangePricePicker({
                                 }
                             }}
                         >
-                            Use estimates for unpriced inputs
+                            Use exchange estimates for automatic prices
                         </Button>
                     </div>
                 )}
@@ -319,6 +371,7 @@ export function ExchangePricePicker({
                                         <Button
                                             size="sm"
                                             onClick={() => {
+                                                if (!currentResult()) return;
                                                 try {
                                                     onChange(bindExchangePrice(graph, id, quote));
                                                 } catch (error) {

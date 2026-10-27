@@ -5,7 +5,7 @@ import { and, eq, getTableName, sql } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection, type RowDataPacket } from "mysql2/promise";
-import { afterAll, beforeAll, expect, it } from "vite-plus/test";
+import { afterAll, beforeAll, expect, it, vi } from "vite-plus/test";
 import type { TDatabase } from "~/db/client";
 import { getMarketData } from "~/db/queries/market.queries";
 import { upsertStashCurrencyHourly } from "~/db/queries/stash-ingest.queries";
@@ -26,6 +26,8 @@ const statements: Array<{ sql: string; params: unknown[] }> = [];
 const rowsStatement = () => statements.find((query) => query.sql.includes("`latest_hour`"))!;
 
 beforeAll(async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date((hour + 3600) * 1000));
     container = await new MySqlContainer("mysql:8.4").withDatabase("market_query_test").start();
     connection = await createConnection(container.getConnectionUri());
     db = drizzle({
@@ -62,6 +64,7 @@ beforeAll(async () => {
 afterAll(async () => {
     await connection?.end();
     await container?.stop();
+    vi.useRealTimers();
 });
 
 it("discovers season boundaries without scanning every hourly observation", async () => {
@@ -586,11 +589,11 @@ it("keeps item history independent of browsing filters and skips the list query 
     expect(result.variants).toEqual([
         expect.objectContaining({ itemKey: "Item 0", identified: true, corrupted: false }),
     ]);
-    expect(statements).toHaveLength(4);
+    expect(statements).toHaveLength(5);
     expect(statements.filter(({ sql: query }) => /\binner\s+join\b/i.test(query))).toEqual([]);
     expect(
         statements.filter(({ sql: query }) => query.includes(getTableName(tStashCurrencyHourly))),
-    ).toHaveLength(1);
+    ).toHaveLength(2);
 });
 
 it("merges every listing currency into the display currency through same-league chaos rates", async () => {
@@ -658,8 +661,47 @@ it("merges every listing currency into the display currency through same-league 
         marketFiltersSchema.parse({ league: "Merged" }),
         "list",
     );
-    // The list prices its currencies at the season's latest hour; fragment has no exchange rate.
-    expect(list.chaosRates).toEqual({ divine: 150 });
+    // The list does not reuse a previous-hour divine rate for its exchange rows.
+    expect(list.chaosRates).toEqual({});
+});
+
+it("uses the current exchange divine rate for list rows, leaving it absent when untraded", async () => {
+    const chaosId = "Metadata/Items/Currency/CurrencyRerollRare";
+    const divineId = "Metadata/Items/Currency/CurrencyModValues";
+    const snapshot = (at: number, divineVolume: number, chaosVolume: number) => ({
+        realm: "pc",
+        league: "DivineRate",
+        marketId: `${divineId}|${chaosId}`,
+        hour: at,
+        volumeTraded: { [divineId]: divineVolume, [chaosId]: chaosVolume },
+        lowestRatio: null,
+        highestRatio: null,
+        lowestStock: null,
+        highestStock: null,
+    });
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, [
+        snapshot(hour - 3600, 1, 150),
+        snapshot(hour, 1, 200),
+    ]);
+    await db.insert(market).values(
+        observation({
+            league: "DivineRate",
+            prices: { divine: { count: 1, min: 1, median: 1, max: 1 } },
+        }),
+    );
+    const filters = marketFiltersSchema.parse({ league: "DivineRate" });
+    const current = await getMarketData(db as unknown as TDatabase, filters, "list");
+    expect(current.exchange).toEqual(
+        expect.arrayContaining([expect.objectContaining({ name: "Divine Orb", chaos: 200 })]),
+    );
+    expect(current.chaosRates.divine).toBe(200);
+
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, [snapshot(hour, 0, 0)]);
+    const untraded = await getMarketData(db as unknown as TDatabase, filters, "list");
+    expect(untraded.exchange).toEqual(
+        expect.arrayContaining([expect.objectContaining({ name: "Divine Orb", chaos: null })]),
+    );
+    expect(untraded.chaosRates).not.toHaveProperty("divine");
 });
 
 it("prices exchange-traded items from the exchange and leaves out their stash listings", async () => {
@@ -680,7 +722,7 @@ it("prices exchange-traded items from the exchange and leaves out their stash li
     });
     await upsertStashCurrencyHourly(db as unknown as TDatabase, [
         snapshot(`${divineId}|${chaosId}`, hour, { [divineId]: 10, [chaosId]: 2000 }),
-        // The latest traded hour stands in until the pair trades again; untraded hours are skipped.
+        // Previous trades must not price a pair that has no trades in the latest completed hour.
         snapshot(`${wisdomId}|${chaosId}`, hour, { [wisdomId]: 0, [chaosId]: 0 }),
         snapshot(`${wisdomId}|${chaosId}`, hour - 7200, { [wisdomId]: 500, [chaosId]: 1 }),
         snapshot(`${wisdomId}|${chaosId}`, hour - 90000, { [wisdomId]: 1, [chaosId]: 1 }),
@@ -707,14 +749,9 @@ it("prices exchange-traded items from the exchange and leaves out their stash li
     expect(result.rows.map((row) => row.itemKey)).toEqual(["Example"]);
     expect(result.exchange).toEqual([
         expect.objectContaining({ name: "Chaos Orb", category: "currency", chaos: 1 }),
-        expect.objectContaining({
-            name: "Scroll of Wisdom",
-            chaos: 0.002,
-            volume: 500,
-            hour: hour - 7200,
-        }),
         expect.objectContaining({ name: "Divine Orb", chaos: 200, volume: 10 }),
         expect.objectContaining({ name: "Portal Scroll", chaos: null, volume: 0, hour: null }),
+        expect.objectContaining({ name: "Scroll of Wisdom", chaos: null, volume: 0, hour: null }),
     ]);
     const searched = await getMarketData(
         db as unknown as TDatabase,
@@ -728,6 +765,91 @@ it("prices exchange-traded items from the exchange and leaves out their stash li
         "list",
     );
     expect(uniques.exchange).toEqual([]);
+});
+
+it("discovers exchange-only PoE 2 leagues and uses only the latest completed hour", async () => {
+    const chaosId = "Metadata/Items/Currency/CurrencyRerollRare";
+    const divineId = "Metadata/Items/Currency/CurrencyModValues";
+    const exaltedId = "Metadata/Items/Currency/CurrencyAddModToRare";
+    const snapshot = (marketId: string, at: number, volumeTraded: Record<string, number>) => ({
+        realm: "poe2",
+        league: "Forbidden Rites",
+        marketId,
+        hour: at,
+        volumeTraded,
+        lowestRatio: null,
+        highestRatio: null,
+        lowestStock: null,
+        highestStock: null,
+    });
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, [
+        snapshot(`${divineId}|${chaosId}`, hour, { [divineId]: 2, [chaosId]: 20 }),
+        snapshot(`${divineId}|${chaosId}`, hour + 3600, { [divineId]: 1, [chaosId]: 99 }),
+        snapshot(`${exaltedId}|${chaosId}`, hour - 3600, { [exaltedId]: 5, [chaosId]: 10 }),
+        snapshot(`${exaltedId}|${chaosId}`, hour, { [exaltedId]: 0, [chaosId]: 0 }),
+    ]);
+    const result = await getMarketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ realm: "poe2", league: "Forbidden Rites" }),
+        "list",
+    );
+    expect(result.season).toEqual({
+        league: "Forbidden Rites",
+        firstHour: hour - 3600,
+        latestHour: hour,
+    });
+    expect(result.rows).toEqual([]);
+    expect(result.exchange).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({ name: "Divine Orb", chaos: 10, hour }),
+            expect.objectContaining({ name: "Exalted Orb", chaos: null, volume: 0, hour: null }),
+        ]),
+    );
+});
+
+it("retains old exchange identities without treating future-only markets as listed", async () => {
+    const chaosId = "Metadata/Items/Currency/CurrencyRerollRare";
+    const scourId = "Metadata/Items/Currency/CurrencyConvertToNormal";
+    const alchemyId = "Metadata/Items/Currency/CurrencyUpgradeToRare";
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, [
+        {
+            realm: "pc",
+            league: "IdentityLifetime",
+            marketId: `${scourId}|${chaosId}`,
+            hour: hour - 90000,
+            volumeTraded: { [scourId]: 1, [chaosId]: 10 },
+        },
+        {
+            realm: "pc",
+            league: "IdentityLifetime",
+            marketId: `${alchemyId}|${chaosId}`,
+            hour: hour + 3600,
+            volumeTraded: { [alchemyId]: 1, [chaosId]: 5 },
+        },
+    ]);
+    await db.insert(market).values(
+        ["Orb of Scouring", "Orb of Alchemy"].map((name) =>
+            observation({
+                league: "IdentityLifetime",
+                itemKey: name,
+                name: "",
+                baseType: name,
+                frameType: 5,
+            }),
+        ),
+    );
+    const result = await getMarketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "IdentityLifetime" }),
+        "list",
+    );
+    expect(result.rows.map((row) => row.itemKey)).toEqual(["Orb of Alchemy"]);
+    expect(result.exchange).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({ name: "Orb of Scouring", chaos: null, hour: null }),
+        ]),
+    );
+    expect(result.exchange.some((row) => row.name === "Orb of Alchemy")).toBe(false);
 });
 
 it("keeps each exchange market's newest traded hour across separate writes", async () => {

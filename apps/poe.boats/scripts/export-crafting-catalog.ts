@@ -91,12 +91,14 @@ export async function exportCraftingCatalog(directory: string, output: string) {
         `${JSON.stringify(
             Object.fromEntries(
                 Object.entries(bases)
-                    .filter(
-                        ([, base]) =>
-                            base.name &&
-                            MARKET_CATEGORIES[marketBaseCategory(base.name, base.item_class)]
-                                .group !== "Equipment & gems",
-                    )
+                    .filter(([, base]) => {
+                        if (!base.name) return false;
+                        const category = marketBaseCategory(base.name, base.item_class);
+                        return (
+                            category === "gems" ||
+                            MARKET_CATEGORIES[category].group !== "Equipment & gems"
+                        );
+                    })
                     .map(([id, base]) => [id, base.name]),
             ),
         )}\n`,

@@ -1,4 +1,8 @@
-import { exchangeCurrencyId, exchangeSnapshotSchema } from "@poe-tools/market";
+import {
+    exchangeCurrencyId,
+    exchangeSnapshotSchema,
+    marketObservationRange,
+} from "@poe-tools/market";
 import {
     and,
     asc,
@@ -19,7 +23,6 @@ import {
 } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
 import { tStashCurrencyHourly as currencyHourly } from "~/db/schema/stash.currency-hourly";
-import { tStashCurrencyLatest as currencyLatest } from "~/db/schema/stash.currency-latest";
 import {
     tStashUniqueHourly as market,
     type TStashUniqueHourlyS,
@@ -49,7 +52,7 @@ export function getMarketData(db: TDatabase, input: MarketFilters, view: MarketV
 
 async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketView, span: Span) {
     // Group by the full index prefix so MySQL can skip between season boundaries.
-    const seasons = await traceQuery(
+    const stashSeasons = await traceQuery(
         "market.seasons",
         db
             .select({
@@ -61,6 +64,38 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             .where(eq(market.realm, input.realm))
             .groupBy(market.realm, market.league)
             .orderBy(desc(max(market.hour))),
+    );
+    const exchangeHour = marketObservationRange().latestHour;
+    const exchangeSeasons = await traceQuery(
+        "market.exchange_seasons",
+        db
+            .select({
+                league: currencyHourly.league,
+                firstHour: min(currencyHourly.hour),
+                latestHour: max(currencyHourly.hour),
+            })
+            .from(currencyHourly)
+            .where(
+                and(eq(currencyHourly.realm, input.realm), lte(currencyHourly.hour, exchangeHour)),
+            )
+            .groupBy(currencyHourly.realm, currencyHourly.league),
+    );
+    const byLeague = new Map(stashSeasons.map((season) => [season.league, season]));
+    for (const season of exchangeSeasons) {
+        const existing = byLeague.get(season.league);
+        byLeague.set(
+            season.league,
+            existing
+                ? {
+                      league: season.league,
+                      firstHour: Math.min(Number(existing.firstHour), Number(season.firstHour)),
+                      latestHour: Math.max(Number(existing.latestHour), Number(season.latestHour)),
+                  }
+                : season,
+        );
+    }
+    const seasons = [...byLeague.values()].sort(
+        (a, b) => Number(b.latestHour) - Number(a.latestHour),
     );
     const filters = { ...input, league: input.league || seasons[0]?.league || "" };
     span.setAttributes({
@@ -83,7 +118,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     const cutoff = latestHour - Number(filters.days) * 86400 + 3600;
     // Items listed on the exchange are priced from it; their stash listings are left out.
     const listed =
-        season && view !== "history" ? await marketExchangeListed(db, filters, latestHour) : [];
+        season && view !== "history" ? await marketExchangeListed(db, filters, exchangeHour) : [];
     const exchangeNames = [
         ...new Set(listed.flatMap((id) => marketExchangeItem(filters.realm, id)?.name ?? [])),
     ];
@@ -285,7 +320,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         rowsPromise,
         historyPromise,
         variantsPromise,
-        listed.length ? marketExchange(db, filters, latestHour, listed) : [],
+        listed.length ? marketExchange(db, filters, exchangeHour, listed) : [],
     ]);
     const rates = await marketChaosRates(
         db,
@@ -297,6 +332,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     const listCurrencies = rows.length
         ? new Set(["divine", ...rows.flatMap((row) => Object.keys(row.prices ?? {}))])
         : [];
+    const exchangeRows = exchangeMatches(exchange, filters);
     span.setAttributes({
         "market.rows": rows.length,
         "market.history_rows": history.length,
@@ -312,16 +348,17 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         hasMore: rows.length > PAGE_SIZE,
         variants,
         /** Exchange-traded items matching the category and search, on the first page only. */
-        exchange: exchangeMatches(exchange, filters),
+        exchange: exchangeRows,
         /** Chaos per unit of each listing currency on the page, at the season's latest hour. */
         chaosRates: {
-            ...exchangeDivine(exchange),
             ...Object.fromEntries(
                 [...listCurrencies].flatMap((currency) => {
+                    if (exchangeRows.length && currency === "divine") return [];
                     const rate = toChaos(currency);
                     return rate ? [[currency, rate] as const] : [];
                 }),
             ),
+            ...(exchangeRows.length ? exchangeDivine(exchange) : {}),
         },
         history: history.map((row) => {
             const rate = marketDisplayRate(rates, filters.currency, row.hour);
@@ -334,23 +371,21 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     };
 }
 
-function exchangeRange(filters: MarketFilters, latestHour: number) {
-    return and(
-        eq(currencyHourly.realm, filters.realm),
-        eq(currencyHourly.league, filters.league),
-        gte(currencyHourly.hour, latestHour - MARKET_RATE_MAX_AGE),
-        lte(currencyHourly.hour, latestHour),
-    );
-}
-
-/** Items on any exchange market in the day before `latestHour`, read from the primary key alone. */
+/** Items on any retained exchange market observed by `latestHour`. */
 async function marketExchangeListed(db: TDatabase, filters: MarketFilters, latestHour: number) {
     const markets = await traceQuery(
         "market.exchange_listed",
         db
-            .selectDistinct({ marketId: currencyHourly.marketId })
-            .from(currencyHourly)
-            .where(exchangeRange(filters, latestHour)),
+            .select({ marketId: currencyHourly.marketId })
+            .from(currencyHourly, { forceIndex: "PRIMARY" })
+            .where(
+                and(
+                    eq(currencyHourly.realm, filters.realm),
+                    eq(currencyHourly.league, filters.league),
+                ),
+            )
+            .groupBy(currencyHourly.realm, currencyHourly.league, currencyHourly.marketId)
+            .having(sql`min(${currencyHourly.hour}) <= ${latestHour}`),
     );
     return [...new Set(markets.flatMap((row) => row.marketId.split("|")))];
 }
@@ -361,26 +396,24 @@ async function marketExchange(
     latestHour: number,
     listed: string[],
 ) {
-    // Hours with zero volume carry no rate, so each market's newest traded hour is kept apart.
-    // It may be newer than the stash's latest hour when the exchange capture runs ahead.
     const snapshots = await traceQuery(
         "market.exchange",
         db
             .select({
-                realm: currencyLatest.realm,
-                league: currencyLatest.league,
-                marketId: currencyLatest.marketId,
-                hour: currencyLatest.hour,
-                volumeTraded: currencyLatest.volumeTraded,
-                lowestRatio: currencyLatest.lowestRatio,
-                highestRatio: currencyLatest.highestRatio,
+                realm: currencyHourly.realm,
+                league: currencyHourly.league,
+                marketId: currencyHourly.marketId,
+                hour: currencyHourly.hour,
+                volumeTraded: currencyHourly.volumeTraded,
+                lowestRatio: currencyHourly.lowestRatio,
+                highestRatio: currencyHourly.highestRatio,
             })
-            .from(currencyLatest)
+            .from(currencyHourly)
             .where(
                 and(
-                    eq(currencyLatest.realm, filters.realm),
-                    eq(currencyLatest.league, filters.league),
-                    gte(currencyLatest.hour, latestHour - MARKET_RATE_MAX_AGE),
+                    eq(currencyHourly.realm, filters.realm),
+                    eq(currencyHourly.league, filters.league),
+                    eq(currencyHourly.hour, latestHour),
                 ),
             ),
     );
