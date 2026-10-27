@@ -1,4 +1,4 @@
-import { exchangeSnapshotSchema } from "@poe-tools/market";
+import { exchangeCurrencyId, exchangeSnapshotSchema } from "@poe-tools/market";
 import {
     and,
     asc,
@@ -11,6 +11,7 @@ import {
     lte,
     max,
     min,
+    notInArray,
     or,
     type SQL,
     type SQLWrapper,
@@ -18,15 +19,19 @@ import {
 } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
 import { tStashCurrencyHourly as currencyHourly } from "~/db/schema/stash.currency-hourly";
+import { tStashCurrencyLatest as currencyLatest } from "~/db/schema/stash.currency-latest";
 import {
     tStashUniqueHourly as market,
     type TStashUniqueHourlyS,
 } from "~/db/schema/stash.unique-hourly";
 import { marketCategory, marketCategoryFilter } from "~/lib/market-categories.server";
+import { type MarketExchangeRow, marketExchangeRows } from "~/lib/market-exchange";
+import { marketExchangeItem } from "~/lib/market-exchange.server";
 import {
     chaosRatesByHour,
     MARKET_RATE_MAX_AGE,
     marketDisplayRate,
+    marketGame,
     marketRatePairs,
     mergeMarketPrices,
 } from "~/lib/market-price-merge";
@@ -34,6 +39,7 @@ import type { MarketFilters, MarketOrder } from "~/schemas/market";
 import { type Span, traceQuery, traceSpan } from "~/services/tracing.server";
 
 const PAGE_SIZE = 50;
+const DIVINE = exchangeCurrencyId("divine")!;
 
 type MarketView = "all" | "list" | "history";
 
@@ -73,7 +79,14 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         "market.item": Boolean(filters.item),
     });
     const season = seasons.find((entry) => entry.league === filters.league);
-    const cutoff = Number(season?.latestHour ?? 0) - Number(filters.days) * 86400 + 3600;
+    const latestHour = Number(season?.latestHour ?? 0);
+    const cutoff = latestHour - Number(filters.days) * 86400 + 3600;
+    // Items listed on the exchange are priced from it; their stash listings are left out.
+    const listed =
+        season && view !== "history" ? await marketExchangeListed(db, filters, latestHour) : [];
+    const exchangeNames = [
+        ...new Set(listed.flatMap((id) => marketExchangeItem(filters.realm, id)?.name ?? [])),
+    ];
     const scope = and(
         eq(market.realm, filters.realm),
         eq(market.league, filters.league),
@@ -130,6 +143,9 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 filters.corruption === "all"
                     ? undefined
                     : eq(market.corrupted, filters.corruption === "true"),
+                exchangeNames.length
+                    ? or(notInArray(market.baseType, exchangeNames), eq(market.frameType, 3))
+                    : undefined,
                 search
                     ? or(
                           like(market.name, search),
@@ -265,12 +281,22 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                       .limit(100),
               )
             : Promise.resolve([]);
-    const [rows, history, variants] = await Promise.all([
+    const [rows, history, variants, exchange] = await Promise.all([
         rowsPromise,
         historyPromise,
         variantsPromise,
+        listed.length ? marketExchange(db, filters, latestHour, listed) : [],
     ]);
-    const rates = await historyChaosRates(db, filters, history);
+    const rates = await marketChaosRates(
+        db,
+        filters,
+        [...history, ...rows],
+        [...history.map((row) => row.hour), ...(rows.length ? [latestHour] : [])],
+    );
+    const toChaos = marketDisplayRate(rates, "chaos", latestHour);
+    const listCurrencies = rows.length
+        ? new Set(["divine", ...rows.flatMap((row) => Object.keys(row.prices ?? {}))])
+        : [];
     span.setAttributes({
         "market.rows": rows.length,
         "market.history_rows": history.length,
@@ -285,6 +311,18 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             .map((row) => ({ ...row, category: marketCategory(filters.realm, row.baseType) })),
         hasMore: rows.length > PAGE_SIZE,
         variants,
+        /** Exchange-traded items matching the category and search, on the first page only. */
+        exchange: exchangeMatches(exchange, filters),
+        /** Chaos per unit of each listing currency on the page, at the season's latest hour. */
+        chaosRates: {
+            ...exchangeDivine(exchange),
+            ...Object.fromEntries(
+                [...listCurrencies].flatMap((currency) => {
+                    const rate = toChaos(currency);
+                    return rate ? [[currency, rate] as const] : [];
+                }),
+            ),
+        },
         history: history.map((row) => {
             const rate = marketDisplayRate(rates, filters.currency, row.hour);
             return {
@@ -294,6 +332,88 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             };
         }),
     };
+}
+
+function exchangeRange(filters: MarketFilters, latestHour: number) {
+    return and(
+        eq(currencyHourly.realm, filters.realm),
+        eq(currencyHourly.league, filters.league),
+        gte(currencyHourly.hour, latestHour - MARKET_RATE_MAX_AGE),
+        lte(currencyHourly.hour, latestHour),
+    );
+}
+
+/** Items on any exchange market in the day before `latestHour`, read from the primary key alone. */
+async function marketExchangeListed(db: TDatabase, filters: MarketFilters, latestHour: number) {
+    const markets = await traceQuery(
+        "market.exchange_listed",
+        db
+            .selectDistinct({ marketId: currencyHourly.marketId })
+            .from(currencyHourly)
+            .where(exchangeRange(filters, latestHour)),
+    );
+    return [...new Set(markets.flatMap((row) => row.marketId.split("|")))];
+}
+
+async function marketExchange(
+    db: TDatabase,
+    filters: MarketFilters,
+    latestHour: number,
+    listed: string[],
+) {
+    // Hours with zero volume carry no rate, so each market's newest traded hour is kept apart.
+    // It may be newer than the stash's latest hour when the exchange capture runs ahead.
+    const snapshots = await traceQuery(
+        "market.exchange",
+        db
+            .select({
+                realm: currencyLatest.realm,
+                league: currencyLatest.league,
+                marketId: currencyLatest.marketId,
+                hour: currencyLatest.hour,
+                volumeTraded: currencyLatest.volumeTraded,
+                lowestRatio: currencyLatest.lowestRatio,
+                highestRatio: currencyLatest.highestRatio,
+            })
+            .from(currencyLatest)
+            .where(
+                and(
+                    eq(currencyLatest.realm, filters.realm),
+                    eq(currencyLatest.league, filters.league),
+                    gte(currencyLatest.hour, latestHour - MARKET_RATE_MAX_AGE),
+                ),
+            ),
+    );
+    return marketExchangeRows(
+        snapshots.map((row) => exchangeSnapshotSchema.parse(row)),
+        latestHour,
+        (itemId) => marketExchangeItem(filters.realm, itemId),
+        listed,
+    );
+}
+
+// Exchange rows need a divine rate even on pages without stash listings.
+function exchangeDivine(rows: MarketExchangeRow[]): Record<string, number> {
+    const divine = rows.find((row) => row.itemId === DIVINE)?.chaos;
+    return divine ? { divine } : {};
+}
+
+function exchangeMatches(rows: MarketExchangeRow[], filters: MarketFilters) {
+    if (
+        filters.page > 1 ||
+        filters.rarity !== "all" ||
+        filters.identification === "false" ||
+        filters.corruption === "true"
+    )
+        return [];
+    const search = filters.q.toLowerCase();
+    return rows
+        .filter(
+            (row) =>
+                (filters.category === "all" || row.category === filters.category) &&
+                (!search || row.name.toLowerCase().includes(search)),
+        )
+        .sort((a, b) => b.volume - a.volume || a.name.localeCompare(b.name));
 }
 
 function between(column: SQLWrapper, min: number | undefined, max: number | undefined) {
@@ -311,16 +431,18 @@ function aggregateOrder(order: MarketOrder, periodSales: SQLWrapper, latestHour:
     return [];
 }
 
-async function historyChaosRates(
+async function marketChaosRates(
     db: TDatabase,
     filters: MarketFilters,
-    history: TStashUniqueHourlyS[],
+    observations: Pick<TStashUniqueHourlyS, "prices" | "salesPrices">[],
+    hours: number[],
 ) {
-    if (!history.length) return new Map<number, Map<string, number>>();
+    if (!hours.length) return new Map<number, Map<string, number>>();
     const currencies = [
         ...new Set([
             filters.currency,
-            ...history.flatMap((row) => [
+            "divine",
+            ...observations.flatMap((row) => [
                 ...Object.keys(row.prices ?? {}),
                 ...Object.keys(row.salesPrices ?? {}),
             ]),
@@ -343,9 +465,12 @@ async function historyChaosRates(
                 and(
                     eq(currencyHourly.realm, filters.realm),
                     eq(currencyHourly.league, filters.league),
-                    inArray(currencyHourly.marketId, marketRatePairs(currencies)),
-                    gte(currencyHourly.hour, history[0]!.hour - MARKET_RATE_MAX_AGE),
-                    lte(currencyHourly.hour, history.at(-1)!.hour),
+                    inArray(
+                        currencyHourly.marketId,
+                        marketRatePairs(currencies, marketGame(filters.realm)),
+                    ),
+                    gte(currencyHourly.hour, Math.min(...hours) - MARKET_RATE_MAX_AGE),
+                    lte(currencyHourly.hour, Math.max(...hours)),
                 ),
             ),
         { "market.currencies": currencies.length },

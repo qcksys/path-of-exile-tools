@@ -1,43 +1,94 @@
-import { type ExchangeSnapshot, exchangeCurrencyId, quoteExchangeWindow } from "@poe-tools/market";
+import {
+    type ExchangeSnapshot,
+    exchangeCurrencyId,
+    listingCurrencyId,
+    quoteExchangeWindow,
+} from "@poe-tools/market";
 import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
 import type { MergedMarketPrice } from "~/schemas/market";
 
 const CHAOS = exchangeCurrencyId("chaos")!;
 const DIVINE = exchangeCurrencyId("divine")!;
+const EXALTED = exchangeCurrencyId("exalted")!;
 export const MARKET_RATE_MAX_AGE = 86400;
+
+type Game = "poe1" | "poe2";
 
 function pairIds(item: string, quote: string) {
     return [`${item}|${quote}`, `${quote}|${item}`];
 }
 
-/** Exchange market IDs needed to price each listing currency in chaos, directly or via divine. */
-export function marketRatePairs(currencies: string[]) {
-    const ids = new Set(pairIds(DIVINE, CHAOS));
+export function marketGame(realm: string): Game {
+    return realm === "poe2" ? "poe2" : "poe1";
+}
+
+/** Exchange market IDs needed to price each listing currency in chaos, directly or via divine or exalted. */
+export function marketRatePairs(currencies: string[], game: Game) {
+    const ids = new Set([
+        ...pairIds(DIVINE, CHAOS),
+        ...pairIds(EXALTED, CHAOS),
+        ...pairIds(EXALTED, DIVINE),
+    ]);
     for (const currency of currencies) {
-        const id = exchangeCurrencyId(currency);
-        if (!id || id === CHAOS || id === DIVINE) continue;
-        for (const pair of [...pairIds(id, CHAOS), ...pairIds(id, DIVINE)]) ids.add(pair);
+        const id = listingCurrencyId(currency, game);
+        if (!id || id === CHAOS || id === DIVINE || id === EXALTED) continue;
+        for (const quote of [CHAOS, DIVINE, EXALTED])
+            for (const pair of pairIds(id, quote)) ids.add(pair);
     }
     return [...ids];
 }
 
-/** Chaos per unit of each listing currency, keyed by the exchange hour that observed it. */
+function product(...amounts: (number | undefined)[]) {
+    return amounts.every((amount) => amount) ? amounts.reduce((a, b) => a! * b!, 1) : undefined;
+}
+
+/**
+ * Chaos per unit of each listing currency, keyed by the exchange hour that observed it. A
+ * currency takes the cheapest of its chaos pair and its divine or exalted pair bridged to chaos;
+ * divine and exalted fall back to each other when they lack a chaos pair.
+ */
 export function chaosRatesByHour(snapshots: ExchangeSnapshot[], currencies: string[]) {
     const hours = new Map<number, ExchangeSnapshot[]>();
     for (const row of snapshots) hours.set(row.hour, [...(hours.get(row.hour) ?? []), row]);
     const rates = new Map<number, Map<string, number>>();
     for (const [hour, rows] of hours) {
         const { realm, league } = rows[0]!;
-        const quote = (itemId: string, quoteId: string) =>
-            quoteExchangeWindow(rows, { realm, league, itemId, quoteId }, hour)?.amount;
-        const divine = quote(DIVINE, CHAOS);
+        const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+        const pairs = new Map<string, ExchangeSnapshot[]>();
+        for (const row of rows) {
+            const [a, b] = row.marketId.split("|");
+            if (!a || !b) continue;
+            const key = pairKey(a, b);
+            pairs.set(key, [...(pairs.get(key) ?? []), row]);
+        }
+        const quote = (itemId: string, quoteId: string) => {
+            const matching = pairs.get(pairKey(itemId, quoteId));
+            if (!matching) return undefined;
+            return (
+                quoteExchangeWindow(matching, { realm, league, itemId, quoteId }, hour)?.amount ||
+                undefined
+            );
+        };
+        const divineDirect = quote(DIVINE, CHAOS);
+        const exaltedDirect = quote(EXALTED, CHAOS);
+        const divine = divineDirect ?? product(quote(DIVINE, EXALTED), exaltedDirect);
+        const exalted = exaltedDirect ?? product(quote(EXALTED, DIVINE), divineDirect);
         const hourRates = new Map<string, number>();
         for (const currency of currencies) {
-            const id = exchangeCurrencyId(currency);
+            const id = listingCurrencyId(currency, marketGame(realm));
             if (!id || id === CHAOS) continue;
-            const bridged = id === DIVINE ? undefined : quote(id, DIVINE);
-            const rate = quote(id, CHAOS) ?? (bridged && divine ? bridged * divine : undefined);
-            if (rate) hourRates.set(currency, rate);
+            const paths =
+                id === DIVINE
+                    ? [divine]
+                    : id === EXALTED
+                      ? [exalted]
+                      : [
+                            quote(id, CHAOS),
+                            product(quote(id, DIVINE), divine),
+                            product(quote(id, EXALTED), exalted),
+                        ];
+            const quoted = paths.filter((rate): rate is number => rate !== undefined);
+            if (quoted.length) hourRates.set(currency, Math.min(...quoted));
         }
         rates.set(hour, hourRates);
     }

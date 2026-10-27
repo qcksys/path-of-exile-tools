@@ -1,4 +1,4 @@
-import { type ExchangeSnapshot, exchangeCurrencyId } from "@poe-tools/market";
+import { type ExchangeSnapshot, exchangeCurrencyId, listingCurrencyId } from "@poe-tools/market";
 import { describe, expect, it } from "vite-plus/test";
 import {
     chaosRatesByHour,
@@ -11,6 +11,8 @@ const hour = 1_792_836_000;
 const chaos = exchangeCurrencyId("chaos")!;
 const divine = exchangeCurrencyId("divine")!;
 const mirror = exchangeCurrencyId("mirror")!;
+const exalted = exchangeCurrencyId("exalted")!;
+const wisdom = listingCurrencyId("wisdom", "poe1")!;
 
 function snapshot(
     item: string,
@@ -100,17 +102,51 @@ describe("merging listing currencies", () => {
 });
 
 describe("chaos exchange rates", () => {
-    it("requests direct and divine-bridged pairs for each listing currency", () => {
-        expect(marketRatePairs(["chaos", "divine", "mirror", "not-a-currency"]).sort()).toEqual(
+    it("requests chaos, divine and exalted pairs for each listing currency", () => {
+        const pairs = (a: string, b: string) => [`${a}|${b}`, `${b}|${a}`];
+        const bridges = [
+            ...pairs(divine, chaos),
+            ...pairs(exalted, chaos),
+            ...pairs(exalted, divine),
+        ];
+        expect(
+            marketRatePairs(["chaos", "divine", "mirror", "not-a-currency"], "poe1").sort(),
+        ).toEqual(
             [
-                `${chaos}|${divine}`,
-                `${divine}|${chaos}`,
-                `${mirror}|${chaos}`,
-                `${chaos}|${mirror}`,
-                `${mirror}|${divine}`,
-                `${divine}|${mirror}`,
+                ...bridges,
+                ...pairs(mirror, chaos),
+                ...pairs(mirror, divine),
+                ...pairs(mirror, exalted),
             ].sort(),
         );
+        for (const game of ["poe1", "poe2"] as const)
+            expect(marketRatePairs(["wisdom"], game)).toContain(`${wisdom}|${chaos}`);
+    });
+
+    it("takes the cheapest of the direct, divine and exalted paths for trade currencies", () => {
+        const rates = chaosRatesByHour(
+            [
+                snapshot(divine, 10, chaos, 2000),
+                snapshot(exalted, 10, chaos, 50),
+                // 1 wisdom: 0.02 chaos direct, 0.01 chaos via exalted, 0.04 chaos via divine.
+                snapshot(wisdom, 100, chaos, 2),
+                snapshot(wisdom, 500, exalted, 1),
+                snapshot(wisdom, 5000, divine, 1),
+            ],
+            ["wisdom", "divine", "exalted"],
+        ).get(hour)!;
+        expect(rates.get("wisdom")).toBeCloseTo(0.01);
+        expect(rates.get("divine")).toBe(200);
+        expect(rates.get("exalted")).toBe(5);
+    });
+
+    it("bridges divine through exalted when divine has no chaos pair", () => {
+        const rates = chaosRatesByHour(
+            [snapshot(divine, 1, exalted, 100), snapshot(exalted, 10, chaos, 20)],
+            ["divine", "annul"],
+        ).get(hour)!;
+        expect(rates.get("divine")).toBe(200);
+        expect(rates.has("annul")).toBe(false);
     });
 
     it("converts through chaos, bridges via divine and reuses rates up to a day old", () => {
