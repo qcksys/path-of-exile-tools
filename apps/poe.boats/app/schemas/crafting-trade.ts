@@ -7,9 +7,32 @@ const tradeValueSchema = z.object({
     max: z.number().optional(),
     option: z.string().optional(),
 });
+export const craftingTradeStatusSchema = z.enum([
+    "securable",
+    "available",
+    "online",
+    "onlineleague",
+    "any",
+]);
+export const craftingTradeListedSchema = z.enum([
+    "1hour",
+    "3hours",
+    "12hours",
+    "1day",
+    "3days",
+    "1week",
+    "2weeks",
+    "1month",
+    "2months",
+]);
+export const craftingTradeOptionsSchema = z.strictObject({
+    status: craftingTradeStatusSchema.default("securable"),
+    listed: craftingTradeListedSchema.optional(),
+    oneListingPerSeller: z.boolean().default(false),
+});
 export const craftingTradePayloadSchema = z.object({
     query: z.object({
-        status: z.object({ option: z.literal("available") }),
+        status: z.object({ option: craftingTradeStatusSchema }),
         type: z.string().optional(),
         stats: z.array(
             z.object({
@@ -30,6 +53,7 @@ export const craftingTradeInputSchema = z.object({
     query: itemQuerySchema,
     ruleset: craftingRulesetRefSchema,
     league: z.string().trim().min(1).max(100),
+    options: craftingTradeOptionsSchema.prefault({}),
 });
 export const craftingTradeResultSchema = z.object({
     url: z.string(),
@@ -46,3 +70,4 @@ export const craftingTradeResultSchema = z.object({
 });
 export type CraftingTradeResult = z.infer<typeof craftingTradeResultSchema>;
 export type CraftingTradePayload = z.infer<typeof craftingTradePayloadSchema>;
+export type CraftingTradeOptions = z.input<typeof craftingTradeOptionsSchema>;

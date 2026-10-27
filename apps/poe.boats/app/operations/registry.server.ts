@@ -12,6 +12,7 @@ import { ScarabPricesDataSchema } from "~/schemas/scarab";
 import { SharedSetSchema } from "~/schemas/share";
 import { loadArbitrageMarket } from "~/services/arbitrage.server";
 import { calculatorOperations } from "./calculators";
+import { craftingBuyInOperations } from "./crafting-buy-in";
 import { craftingCloudOperations } from "./crafting-cloud";
 import { craftingGraphOperations } from "./crafting-graph";
 import { craftingItemQueryOperations } from "./crafting-item-queries";
@@ -114,6 +115,7 @@ export const operations = [
     ...craftingItemQueryOperations,
     ...craftingMarketOperations,
     ...craftingTradeOperations,
+    ...craftingBuyInOperations,
     ...craftingRulesetOperations,
     ...craftingWorkspaceOperations,
     ...idolPlannerOperations,
