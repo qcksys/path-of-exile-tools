@@ -1,4 +1,5 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
+import { params } from "#src/ps/rounds.ts";
 import { withTransaction } from "#src/shared/db.ts";
 
 export const SALE_POLICY = {
@@ -10,25 +11,42 @@ export const SALE_POLICY = {
     maximumPriceRatio: 1.25,
 } as const;
 
+/** Records the listings these stashes lost in the current transaction as sale candidates. */
 export async function recordRemovals(
     conn: DuckDBConnection,
-    stashId: string,
-    withdrawn: boolean,
+    removals: readonly { stashId: string; withdrawn: boolean }[],
 ): Promise<void> {
-    if (withdrawn) {
+    if (!removals.length) return;
+    const withdrawn = removals.filter((removal) => removal.withdrawn).map((r) => r.stashId);
+    if (withdrawn.length) {
         await conn.run(
-            "UPDATE ps_sale SET status = 'withdrawn', updated_at = current_timestamp WHERE stash_id = $1 AND status = 'pending'",
-            [stashId],
+            `UPDATE ps_sale SET status = 'withdrawn', updated_at = current_timestamp
+            WHERE rowid IN (
+                WITH pending AS MATERIALIZED (
+                    SELECT rowid AS row_id, stash_id FROM ps_sale WHERE status = 'pending'
+                ) SELECT row_id FROM pending WHERE stash_id IN (${params(withdrawn)})
+            )`,
+            withdrawn,
         );
     }
+    const stashIds = removals.map((removal) => removal.stashId);
     await conn.run(
         `INSERT INTO ps_sale BY NAME
-         WITH removed AS MATERIALIZED (
-             SELECT * FROM ps_listing
-             WHERE stash_id = $1 AND removed_at = current_timestamp
+         WITH stash AS MATERIALIZED (
+             SELECT * FROM ps_listing WHERE stash_id IN (${params(stashIds, 2)})
+         ), removed AS MATERIALIZED (
+             -- A stash changed twice in one page repeats its removals; ON CONFLICT would scan
+             -- every sale, while this transaction's own sales sit in the newest row groups.
+             SELECT stash.*, (j.value->>'withdrawn')::BOOLEAN AS withdrawn FROM stash
+             JOIN json_each($1::JSON) j ON stash.stash_id = (j.value->>'stashId')
+             WHERE stash.removed_at = current_timestamp::TIMESTAMP AND NOT EXISTS (
+                 SELECT 1 FROM ps_sale s WHERE s.removed_at = current_timestamp::TIMESTAMP
+                     AND s.stash_id = stash.stash_id AND s.item_id = stash.item_id)
+         ), market AS MATERIALIZED (
+             SELECT * FROM ps_listing WHERE item_key IN (SELECT item_key FROM removed)
          )
-         SELECT l.* EXCLUDE (raw_item),
-            CASE WHEN $2 THEN 'withdrawn'
+         SELECT l.* EXCLUDE (raw_item, withdrawn),
+            CASE WHEN l.withdrawn THEN 'withdrawn'
                 WHEN NOT EXISTS (SELECT 1 FROM pipeline_health WHERE id = 1 AND caught_up
                     AND last_poll_at >= current_timestamp - INTERVAL ${SALE_POLICY.maxPollGapSeconds} SECOND)
                     THEN 'unobserved'
@@ -39,7 +57,7 @@ export async function recordRemovals(
          LEFT JOIN LATERAL (
              SELECT median(seller_price) AS price, count(*) AS sellers FROM (
                  SELECT lower(p.account_name), median(p.price_amount) AS seller_price
-                 FROM ps_listing p
+                 FROM market p
                  WHERE p.league = l.league AND p.item_key = l.item_key
                      AND p.identified = l.identified AND p.corrupted = l.corrupted
                      AND coalesce(p.foil_variation, -1) = coalesce(l.foil_variation, -1)
@@ -51,9 +69,8 @@ export async function recordRemovals(
                      AND p.last_seen_at >= current_timestamp - INTERVAL ${SALE_POLICY.marketWindowSeconds} SECOND
                  GROUP BY lower(p.account_name)
              ) peers
-         ) m ON TRUE
-         ON CONFLICT DO NOTHING`,
-        [stashId, withdrawn],
+         ) m ON TRUE`,
+        [JSON.stringify(removals), ...stashIds],
     );
 }
 
@@ -65,7 +82,8 @@ export async function evaluateSales(
     const timestamp = now.toISOString();
     await withTransaction(conn, async () => {
         // A move to another stash, price change, or changed item ID must not count as a sale.
-        // Matching the same variant with a new ID is deliberately conservative.
+        // Matching the same variant with a new ID is deliberately conservative, but a copy
+        // that was already listed while the sold item was still listed is not its replacement.
         await conn.run(
             `UPDATE ps_sale s SET status = 'relisted', updated_at = $1::TIMESTAMP
             WHERE s.status IN ('pending', 'likely-sold') AND EXISTS (
@@ -79,6 +97,7 @@ export async function evaluateSales(
                         AND p.signature_value = s.signature_value
                         AND coalesce(p.mod_signature->>'kind', '') = coalesce(s.mod_signature->>'kind', '')
                         AND (p.stash_id <> s.stash_id OR p.item_id <> s.item_id)
+                        AND p.first_seen_at > s.last_seen_at
                     ))
                     AND (p.removed_at IS NULL OR p.last_seen_at > s.removed_at)
             )`,

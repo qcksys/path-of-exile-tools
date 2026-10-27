@@ -242,6 +242,29 @@ program
     });
 
 program
+    .command("archive")
+    .description(
+        "Move whole UTC days older than $PS_ARCHIVE_KEEP_DAYS (default 30), or while the database exceeds $PS_ARCHIVE_MAX_GB (default 100), to zstd Parquet files in $PS_ARCHIVE_DIR.",
+    )
+    .option("--days <n>", "most days to archive in this run", positiveInteger, 1)
+    .action(async (opts) => {
+        const { archiveOldData, archiveSettings } = await import("#src/shared/archive.ts");
+        const { openDb } = await import("#src/shared/db.ts");
+        const settings = archiveSettings();
+        if (!settings) throw new Error("Set PS_ARCHIVE_DIR to the archive directory.");
+        const db = await openDb();
+        try {
+            const result = await archiveOldData(db.conn, {
+                ...settings,
+                maxDays: Number(opts.days),
+            });
+            console.log(JSON.stringify(result));
+        } finally {
+            await db.close();
+        }
+    });
+
+program
     .command("process")
     .description("Ingest, evaluate sales, and retry all pending completed hours.")
     .option("-p, --pages <n>", "maximum stash pages per cycle", positiveInteger, 50)
@@ -265,6 +288,8 @@ program
         const db = await openDb();
         const client = createPoeClient();
         const { REALM } = await import("#src/shared/auth.ts");
+        const { archiveSettings } = await import("#src/shared/archive.ts");
+        const archive = archiveSettings();
         const { createStatusReporter } = await import("#src/shared/status.ts");
         const { createEquipmentDiagnosticsLoader } = await import(
             "#src/ps/equipment-diagnostics-request.ts"
@@ -295,6 +320,7 @@ program
                         cursor,
                         currency: opts.currency,
                         currencyHours: Number(opts.currencyHours),
+                        archive,
                         currencyFromHour: (await getCursor(db.conn, "cxapi"))
                             ? undefined
                             : opts.currencyFromHour,

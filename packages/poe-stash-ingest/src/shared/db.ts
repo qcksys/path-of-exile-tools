@@ -27,10 +27,14 @@ CREATE TABLE IF NOT EXISTS ps_listing (
     PRIMARY KEY (account_name, stash_id, item_id)
 );
 
-CREATE INDEX IF NOT EXISTS ps_listing_league_lastseen ON ps_listing(league, last_seen_at);
-CREATE INDEX IF NOT EXISTS ps_listing_league_itemkey ON ps_listing(league, item_key);
+-- DuckDB only index-scans single-column indexes, and an indexed removed_at turns every
+-- removal into a whole-row delete and insert, so these never paid for their memory.
+DROP INDEX IF EXISTS ps_listing_league_lastseen;
+DROP INDEX IF EXISTS ps_listing_league_itemkey;
+DROP INDEX IF EXISTS ps_listing_removed;
 CREATE INDEX IF NOT EXISTS ps_listing_icon ON ps_listing(icon_asset);
-CREATE INDEX IF NOT EXISTS ps_listing_removed ON ps_listing(removed_at);
+CREATE INDEX IF NOT EXISTS ps_listing_stash ON ps_listing(stash_id);
+CREATE INDEX IF NOT EXISTS ps_listing_item_key ON ps_listing(item_key);
 
 ALTER TABLE ps_listing ADD COLUMN IF NOT EXISTS signature_value VARCHAR;
 
@@ -72,6 +76,7 @@ CREATE TABLE IF NOT EXISTS ps_equipment_listing (
     PRIMARY KEY (account_name, item_id)
 );
 CREATE INDEX IF NOT EXISTS ps_equipment_stash ON ps_equipment_listing(stash_id);
+CREATE INDEX IF NOT EXISTS ps_equipment_item ON ps_equipment_listing(item_id);
 CREATE TABLE IF NOT EXISTS ps_equipment_hour AS
     SELECT * EXCLUDE (raw_item, removed_at),
         epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
