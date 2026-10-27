@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { PageError } from "~/components/route-error";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { dbContext } from "~/context";
@@ -48,7 +49,12 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
-    const { sharedSet, prices, shareUrl } = loaderData;
+    // loaderData is undefined when the loader threw and the ErrorBoundary renders.
+    const { sharedSet, prices, shareUrl } = loaderData ?? {
+        sharedSet: null,
+        prices: null,
+        shareUrl: null,
+    };
 
     if (!sharedSet) {
         return [
@@ -89,6 +95,11 @@ export function meta({ loaderData }: Route.MetaArgs) {
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
     ];
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+    const t = useTranslations();
+    return <PageError error={error} section={t("app.idolPlanner")} />;
 }
 
 type LoadState =

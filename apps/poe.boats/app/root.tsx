@@ -1,18 +1,11 @@
 import clsx from "clsx";
 import { type ReactNode, useState } from "react";
 import { I18nextProvider } from "react-i18next";
-import {
-    isRouteErrorResponse,
-    Links,
-    Meta,
-    Outlet,
-    Scripts,
-    ScrollRestoration,
-    useLoaderData,
-} from "react-router";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "react-router";
 import { PreventFlashOnWrongTheme, Theme, ThemeProvider, useTheme } from "remix-themes";
 import type { Route } from "./+types/root";
 import "./app.css";
+import { RouteError } from "~/components/route-error";
 import { Toaster } from "~/components/ui/sonner";
 import { localeContext } from "~/context";
 import { createI18nInstance, DEFAULT_LOCALE, useLocale } from "~/i18n";
@@ -97,31 +90,11 @@ export default function App() {
     return <Outlet />;
 }
 
+// Last resort: renders without the site header, since the header itself may be what failed.
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-    let message = "Oops!";
-    let details = "An unexpected error occurred.";
-    let stack: string | undefined;
-
-    if (isRouteErrorResponse(error)) {
-        message = error.status === 404 ? "404" : "Error";
-        details =
-            error.status === 404
-                ? "The requested page could not be found."
-                : error.statusText || details;
-    } else if (import.meta.env.DEV && error && error instanceof Error) {
-        details = error.message;
-        stack = error.stack;
-    }
-
     return (
         <main className="container mx-auto p-4 pt-16">
-            <h1>{message}</h1>
-            <p>{details}</p>
-            {stack && (
-                <pre className="w-full overflow-x-auto p-4">
-                    <code>{stack}</code>
-                </pre>
-            )}
+            <RouteError error={error} />
         </main>
     );
 }

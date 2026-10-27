@@ -13,6 +13,7 @@ import {
     ExchangeTrend,
 } from "~/components/market-exchange";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
+import { RouteError } from "~/components/route-error";
 import { Button } from "~/components/ui/button";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
@@ -46,6 +47,10 @@ export const meta: Route.MetaFunction = ({ params }) => {
         },
     ];
 };
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+    return <RouteError error={error} />;
+}
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
     if (params.category && !marketCategorySchema.safeParse(params.category).success)
