@@ -53,19 +53,25 @@ test("opens nested history, preserves variants and browsing state, and supports 
     await page.getByRole("link", { name: "Abberath's Hooves", exact: true }).click();
     await expect(page).toHaveURL(/\/1\/market\/items\/Abberath/);
     await expect(page.getByRole("region", { name: "Item markets", exact: true })).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "Abberath's Hooves" })).toBeVisible();
+    await expect(
+        page.getByRole("heading", { name: "Abberath's Hooves", exact: true }),
+    ).toBeVisible();
     await page.getByRole("link", { name: "chaos", exact: true }).click();
     await expect(page.getByLabel("Hourly median asking price in chaos")).toBeVisible();
     await selectValue(page.getByRole("combobox", { name: "Period", exact: true }), "30");
     await page.getByRole("button", { name: "Apply filters" }).click();
     await expect(page).toHaveURL(/days=30/);
     await page.reload();
-    await expect(page.getByRole("heading", { name: "Abberath's Hooves" })).toBeVisible();
+    await expect(
+        page.getByRole("heading", { name: "Abberath's Hooves", exact: true }),
+    ).toBeVisible();
     await page.getByRole("link", { name: /Back to markets/ }).click();
     await expect(page.getByRole("searchbox", { name: "Search items" })).toHaveValue("Abberath");
     await expect(page.getByRole("combobox", { name: "Order by" })).toContainText("Name: A–Z");
     await page.goBack();
-    await expect(page.getByRole("heading", { name: "Abberath's Hooves" })).toBeVisible();
+    await expect(
+        page.getByRole("heading", { name: "Abberath's Hooves", exact: true }),
+    ).toBeVisible();
 });
 
 test("redirects legacy bookmarks and displays a usable mobile history page", async ({
@@ -76,7 +82,9 @@ test("redirects legacy bookmarks and displays a usable mobile history page", asy
         "/1/market?realm=pc&league=Allflame&days=7&q=&currency=chaos&item=Abberath%27s+Hooves&identified=true&corrupted=false&foil=-1&kind=&value=",
     );
     await expect(page).toHaveURL(/\/market\/items\/Abberath/);
-    await expect(page.getByRole("heading", { name: "Abberath's Hooves" })).toBeVisible();
+    await expect(
+        page.getByRole("heading", { name: "Abberath's Hooves", exact: true }),
+    ).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         390,
     );
