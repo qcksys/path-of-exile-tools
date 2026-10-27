@@ -9,9 +9,44 @@ import {
     type TStashCurrencyHourlyI,
     tStashCurrencyHourly,
 } from "~/db/schema/stash.currency-hourly";
+import type { TStashCurrencyMarketI } from "~/db/schema/stash.currency-market";
+import type { StashCoverageStream } from "~/db/schema/stash.hour-coverage";
 import { type TStashUniqueHourlyI, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
+import {
+    refreshStashHourCoverage,
+    refreshStashUniqueDaily,
+    upsertStashCurrencyMarkets,
+    utcDay,
+} from "./stash-rollups.queries";
 
 const UPSERT_CHUNK = 200;
+
+type HourlyKey = { realm?: string; league: string; hour: number };
+
+function byLeague<T extends HourlyKey>(rows: T[]) {
+    const groups = new Map<string, { realm: string; league: string; rows: T[] }>();
+    for (const row of rows) {
+        const realm = row.realm ?? "pc";
+        const key = JSON.stringify([realm, row.league]);
+        const group = groups.get(key) ?? { realm, league: row.league, rows: [] };
+        group.rows.push(row);
+        groups.set(key, group);
+    }
+    return [...groups.values()];
+}
+
+/** Recounts the stored rows of every hour the batch wrote. */
+async function refreshCoverage(
+    db: TDatabase,
+    stream: StashCoverageStream,
+    rows: HourlyKey[],
+    run: (write: () => PromiseLike<unknown>) => PromiseLike<unknown> = (write) => write(),
+) {
+    for (const { realm, league, rows: leagueRows } of byLeague(rows)) {
+        const hours = [...new Set(leagueRows.map((row) => row.hour))];
+        await run(() => refreshStashHourCoverage(db, stream, { realm, league, hours }));
+    }
+}
 
 export async function insertStashCohorts(
     db: TDatabase,
@@ -59,6 +94,7 @@ export async function upsertStashCohortHourly(
                     lastSeenAt: sql`values(${tStashCohortHourly.lastSeenAt})`,
                 },
             });
+        await refreshCoverage(db, "equipment", batch);
     }
     return rows.length;
 }
@@ -98,6 +134,22 @@ export async function upsertStashUniqueHourly(
                     lastSeenAt: sql`values(${tStashUniqueHourly.lastSeenAt})`,
                 },
             });
+        for (const { realm, league, rows: leagueRows } of byLeague(batch)) {
+            const days = new Map<number, Set<string>>();
+            for (const row of leagueRows) {
+                const day = utcDay(row.hour);
+                days.set(day, (days.get(day) ?? new Set()).add(row.itemKey));
+            }
+            for (const [day, itemKeys] of days)
+                await refreshStashUniqueDaily(db, {
+                    realm,
+                    league,
+                    fromHour: day,
+                    toHour: day,
+                    itemKeys: [...itemKeys],
+                });
+        }
+        await refreshCoverage(db, "uniques", batch);
         written += batch.length;
     }
     return written;
@@ -155,6 +207,22 @@ export async function upsertStashCurrencyHourly(
                     },
                 }),
         );
+        // Batches are sorted by market then hour, so each market's first row has its earliest hour.
+        const markets = new Map<string, TStashCurrencyMarketI>();
+        for (const row of batch) {
+            const realm = row.realm ?? "pc";
+            const key = JSON.stringify([realm, row.league, row.marketId]);
+            if (!markets.has(key))
+                markets.set(key, {
+                    realm,
+                    league: row.league,
+                    marketId: row.marketId,
+                    firstHour: row.hour,
+                });
+        }
+        await retryCurrencyDeadlock(() => upsertStashCurrencyMarkets(db, [...markets.values()]));
+        // Concurrent writers (the cron and cxapi) recount the same hours, so retry deadlocks here too.
+        await refreshCoverage(db, "currency", batch, retryCurrencyDeadlock);
         written += batch.length;
     }
     return written;

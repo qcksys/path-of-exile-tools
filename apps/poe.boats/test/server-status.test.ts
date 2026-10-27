@@ -89,13 +89,12 @@ function worker(overrides: Partial<IngestStatus> = {}, receivedAt = now) {
 }
 
 function coverageTables() {
-    for (const stream of ["currency", "unique", "cohort"])
-        sqlite.exec(
-            `CREATE TABLE ${DB_TABLE_PREFIX}stash_${stream}_hourly (realm TEXT, league TEXT, hour INTEGER)`,
-        );
-    sqlite.exec(`INSERT INTO ${DB_TABLE_PREFIX}stash_currency_hourly VALUES
-        ('pc', 'Allflame', 3600), ('pc', 'Allflame', 3600), ('pc', 'Allflame', 10800),
-        ('pc', 'Other', 18000), ('poe2', 'Allflame', 18000)`);
+    sqlite.exec(
+        `CREATE TABLE ${DB_TABLE_PREFIX}stash_hour_coverage (stream TEXT, realm TEXT, league TEXT, hour INTEGER, rowCount INTEGER)`,
+    );
+    sqlite.exec(`INSERT INTO ${DB_TABLE_PREFIX}stash_hour_coverage VALUES
+        ('currency', 'pc', 'Allflame', 3600, 2), ('currency', 'pc', 'Allflame', 10800, 1),
+        ('currency', 'pc', 'Other', 18000, 1), ('currency', 'poe2', 'Allflame', 18000, 1)`);
 }
 
 async function mcp(method: string, params: unknown) {
@@ -162,7 +161,7 @@ it.each([undefined, "full"])("retains full coverage when view is %s", async (vie
         },
     ]);
     expect(reads).toHaveLength(4);
-    expect(reads.filter((sql) => sql.includes("count(distinct"))).toHaveLength(3);
+    expect(reads.filter((sql) => sql.includes("stash_hour_coverage"))).toHaveLength(3);
 });
 
 it("reuses coverage for one minute while checking worker health on every request", async () => {
@@ -174,19 +173,19 @@ it("reuses coverage for one minute while checking worker health on every request
         getServerStatus(db, filters),
     ]);
     expect(simultaneous.coverage).toEqual(first.coverage);
-    expect(reads.filter((query) => query.includes("count(distinct"))).toHaveLength(3);
+    expect(reads.filter((query) => query.includes("stash_hour_coverage"))).toHaveLength(3);
     sqlite.exec(
-        `INSERT INTO ${DB_TABLE_PREFIX}stash_currency_hourly VALUES ('pc', 'Allflame', 14400)`,
+        `INSERT INTO ${DB_TABLE_PREFIX}stash_hour_coverage VALUES ('currency', 'pc', 'Allflame', 14400, 1)`,
     );
     vi.mocked(Date.now).mockReturnValue(now + 59_999);
     expect((await getServerStatus(db, filters)).coverage).toEqual(first.coverage);
     expect(reads.filter((query) => query.includes("ingest_worker"))).toHaveLength(3);
-    expect(reads.filter((query) => query.includes("count(distinct"))).toHaveLength(3);
+    expect(reads.filter((query) => query.includes("stash_hour_coverage"))).toHaveLength(3);
     vi.mocked(Date.now).mockReturnValue(now + 60_001);
     const refreshed = await getServerStatus(db, filters);
     expect(refreshed.coverageCheckedAt).toBe(now + 60_001);
     expect(refreshed.coverage[0]).toMatchObject({ hours: 3, rows: 4, latestHour: 14400 });
-    expect(reads.filter((query) => query.includes("count(distinct"))).toHaveLength(6);
+    expect(reads.filter((query) => query.includes("stash_hour_coverage"))).toHaveLength(6);
 });
 
 it("keeps cached coverage isolated by realm, league and database", async () => {
@@ -196,7 +195,7 @@ it("keeps cached coverage isolated by realm, league and database", async () => {
     expect(other.coverage[0]).toMatchObject({ realm: "poe2", rows: 1 });
     const league = await getServerStatus(db, { realm: "pc", league: "Other" });
     expect(league.coverage[0]).toMatchObject({ league: "Other", rows: 1 });
-    expect(reads.filter((query) => query.includes("count(distinct"))).toHaveLength(9);
+    expect(reads.filter((query) => query.includes("stash_hour_coverage"))).toHaveLength(9);
     const otherDb = drizzle(async () => ({ rows: [] })) as unknown as TDatabase;
     expect((await getServerStatus(otherDb, { realm: "pc", league: "Allflame" })).coverage).toEqual(
         [],
@@ -204,12 +203,8 @@ it("keeps cached coverage isolated by realm, league and database", async () => {
 });
 
 it("retries failed coverage reads instead of caching the rejection", async () => {
-    coverageTables();
-    sqlite.exec(`DROP TABLE ${DB_TABLE_PREFIX}stash_unique_hourly`);
     await expect(getServerStatus(db)).rejects.toThrow("Failed query");
-    sqlite.exec(
-        `CREATE TABLE ${DB_TABLE_PREFIX}stash_unique_hourly (realm TEXT, league TEXT, hour INTEGER)`,
-    );
+    coverageTables();
     expect((await getServerStatus(db)).coverage).toHaveLength(3);
 });
 
@@ -217,7 +212,7 @@ it("expires an unfinished refresh without replacing a newer successful snapshot"
     const pending = Promise.withResolvers<void>();
     let coverageReads = 0;
     const delayedDb = drizzle(async (query) => {
-        if (query.includes("count(distinct")) {
+        if (query.includes("stash_hour_coverage")) {
             coverageReads++;
             if (coverageReads <= 3) await pending.promise;
         }
