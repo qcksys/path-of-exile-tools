@@ -79,6 +79,9 @@ observations from the last 24 completed hours after exchange capture, newest hou
 This lets replayable newer hours proceed before missing older payloads. Missing bodies
 still fail explicitly without advancing their replay progress or marking the hour complete.
 Each cycle reclassifies up to its live page limit, capped at five archived pages.
+Each reclassified hour re-delivers the 24 hours whose windows include it, so with fast cycles set
+`PS_RECLASSIFY_PAGES_PER_HOUR` to cap the receiver's write load; cycles without an allowance skip
+reclassification and its checkpoint.
 Live stash capture also checkpoints between committed pages before fetching the next
 page, releasing accumulated indexes without splitting a page transaction. A failure
 preserves the last committed cursor and leaves the next page unfetched for retry.

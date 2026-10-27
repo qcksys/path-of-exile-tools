@@ -10,9 +10,6 @@ import { queryAll } from "#src/shared/db.ts";
 import { push, requireRemoteEnv } from "#src/shared/remote/push.ts";
 import { assertSourceRealm } from "#src/shared/source.ts";
 
-const deliveredDefinitions = new WeakMap<DuckDBConnection, { url: string; ids: Set<string> }>();
-const MAX_CACHED_DEFINITIONS = 100_000;
-
 export async function equipmentHourly(
     conn: DuckDBConnection,
     hour: number,
@@ -189,34 +186,30 @@ export async function rollupEquipment(
     const hour = opts.hour ?? Math.floor(Date.now() / 3_600_000) * 3600 - 3600;
     const rows = await equipmentHourly(conn, hour, opts.league ?? null, REALM ?? "pc");
     if (rows.length) {
+        const url = opts.dryRun ? "" : requireRemoteEnv().url;
         const definitions = await queryAll<{ definition: string }>(
             conn,
             `SELECT DISTINCT d.definition::VARCHAR AS definition
             FROM ps_equipment_cohort d JOIN ps_equipment_cohort_hour h USING (revision, cohort_id)
-            WHERE h.hour = $1 AND ($2 IS NULL OR h.league = $2)`,
-            [hour, opts.league ?? null],
+            WHERE h.hour = $1 AND ($2 IS NULL OR h.league = $2)
+            AND NOT EXISTS (SELECT 1 FROM ps_equipment_cohort_delivered s
+                WHERE s.url = $3 AND s.revision = d.revision AND s.cohort_id = d.cohort_id)`,
+            [hour, opts.league ?? null, url],
         );
-        const parsed = definitions.map(({ definition }) =>
+        const pending = definitions.map(({ definition }) =>
             marketCohortDefinitionSchema.parse(JSON.parse(definition)),
         );
-        const url = opts.dryRun ? "" : requireRemoteEnv().url;
-        const previous = deliveredDefinitions.get(conn);
-        const delivered = previous?.url === url ? previous : { url, ids: new Set<string>() };
-        const key = (definition: (typeof parsed)[number]) =>
-            JSON.stringify([definition.revision, definition.id]);
-        const pending = parsed.filter((definition) => !delivered.ids.has(key(definition)));
         if (pending.length) {
             await push(
                 { stream: "equipment-definitions", rows: pending },
                 { dryRun: opts.dryRun, onBatch: opts.onBatch },
             );
-            if (!opts.dryRun) {
-                if (delivered.ids.size + pending.length > MAX_CACHED_DEFINITIONS)
-                    delivered.ids.clear();
-                for (const definition of pending.slice(-MAX_CACHED_DEFINITIONS))
-                    delivered.ids.add(key(definition));
-                deliveredDefinitions.set(conn, delivered);
-            }
+            if (!opts.dryRun)
+                await conn.run(
+                    `INSERT INTO ps_equipment_cohort_delivered
+                    SELECT $1, value->>'revision', value->>'id' FROM json_each($2::JSON)`,
+                    [url, JSON.stringify(pending.map(({ revision, id }) => ({ revision, id })))],
+                );
         }
         await push({ stream: "equipment", rows }, { dryRun: opts.dryRun, onBatch: opts.onBatch });
         if (!opts.dryRun)

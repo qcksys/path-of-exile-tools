@@ -15,6 +15,27 @@ import { queryAll, TransactionRollbackError } from "#src/shared/db.ts";
 import { configureSource } from "#src/shared/source.ts";
 
 const ARCHIVE_INTERVAL_MS = 3_600_000;
+// Each reclassified hour re-delivers the 24 hours whose windows include it, so with fast cycles
+// PS_RECLASSIFY_PAGES_PER_HOUR caps the receiver's write load; unset, every cycle reclassifies.
+let reclassifyTokens = 0;
+let reclassifyRefilledAt = Date.now();
+
+function reclassifyAllowance(cycleLimit: number) {
+    const perHour = Number(process.env.PS_RECLASSIFY_PAGES_PER_HOUR);
+    if (!(perHour > 0)) return cycleLimit;
+    const now = Date.now();
+    reclassifyTokens = Math.min(
+        cycleLimit,
+        reclassifyTokens + ((now - reclassifyRefilledAt) * perHour) / 3_600_000,
+    );
+    reclassifyRefilledAt = now;
+    return Math.floor(reclassifyTokens);
+}
+
+function spendReclassifyAllowance(pages: number) {
+    if (Number(process.env.PS_RECLASSIFY_PAGES_PER_HOUR) > 0)
+        reclassifyTokens = Math.max(0, reclassifyTokens - pages);
+}
 let archiveCheckedAt = 0;
 let archiveBacklog = false;
 
@@ -179,22 +200,26 @@ export async function runPipeline(
               });
     if (REALM !== "poe2") {
         await update({ stage: "stash", failedStages: [...failedStages], progressAt: Date.now() });
+        const limitPages = reclassifyAllowance(Math.min(opts.pages, 5));
         // Release capture indexes before replay publication loads its own indexes.
-        const checkpointed = await conn.run("CHECKPOINT").then(
-            () => true,
-            async (error: unknown) => {
-                await failStage("stash", "Capture database checkpoint", error);
-                return false;
-            },
-        );
+        const checkpointed =
+            limitPages > 0 &&
+            (await conn.run("CHECKPOINT").then(
+                () => true,
+                async (error: unknown) => {
+                    await failStage("stash", "Capture database checkpoint", error);
+                    return false;
+                },
+            ));
         if (checkpointed) {
             await reclassifyArchivedEquipment(conn, {
                 realm: REALM ?? "pc",
                 league: opts.league ?? "all",
-                limitPages: Math.min(opts.pages, 5),
+                limitPages,
                 equipmentDiagnostics: opts.equipmentDiagnostics,
             })
                 .then(async (result) => {
+                    spendReclassifyAllowance(result.pages);
                     if (result.pages)
                         console.log(
                             `reclassified ${result.pages} archived equipment pages; completed hours=${result.completedHours.join(",") || "none"}; pending=${result.pending}`,
