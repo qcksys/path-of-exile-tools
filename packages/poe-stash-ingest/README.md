@@ -99,9 +99,9 @@ delivery is not reported as stalled while its receiver is accepting rows.
 ### Temporary equipment diagnostics
 
 To investigate unknown equipment cohort matches without opening the live DuckDB file,
-place `equipment-diagnostics.request.json` beside the worker's `INGEST_STATUS_FILE` before
-its next normal deployment. The processing command reads this optional request once at
-startup. It must name the exact worker realm and league, current cohort IDs, and
+place `equipment-diagnostics.request.json` beside the worker's `INGEST_STATUS_FILE`.
+The processing command reads this optional request before each cycle. It must name the
+exact worker realm and league, current cohort IDs, and
 an expiry no more than 24 hours away:
 
 ```json
@@ -131,15 +131,18 @@ do not explain other hours retroactively.
 Unsupported shapes and unknown active flag names are skipped rather than changed; missing
 diagnostic samples do not establish that the corresponding items are absent from the market.
 
-The collector permits at most 64 verification attempts and 16 saved fixtures per process,
+Each accepted request permits at most 64 verification attempts and 16 saved fixtures,
 with 16 KiB per fixture and 256 KiB total, shared across live and archive sampling and all
-requested cohort types. It stops at expiry; write failures do not stop ingestion. Read only
+requested cohort types. An unchanged request retains its collector and limits across
+cycles; changing to another valid request starts a new collector. It stops at expiry even during a
+cycle; write failures do not stop ingestion. Read only
 this output file for diagnosis
 and remove the request when the investigation ends. No additional database connection,
 cursor reset or credential resolution is needed. This debug facility does not change
 classification or public market APIs.
-Stage the request before a normal deployment; editing it after startup does not reload it.
-Do not restart a worker solely to collect observations.
+Removing the request disables collection at the next cycle boundary. A newly accepted
+request replaces the output when its first fixture is saved; until then, an existing output
+may belong to an earlier request. Do not restart a worker solely to collect observations.
 
 To seed a recent cursor on an empty volume, stop the worker, then run a one-off command with
 the same host credentials (`varlock run` from this package directory):
