@@ -5,6 +5,7 @@ import { CurrencyLabel } from "~/components/currency-label";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { isMarketBaseCategory } from "~/lib/market-categories";
 import {
     MARKET_ORDERS,
     MARKET_RANGE_PARAMS,
@@ -91,7 +92,6 @@ export function MarketFiltersForm({
                       q: filters.q,
                       category: filters.category,
                       order: filters.order,
-                      rarity: filters.rarity,
                       identification: filters.identification,
                       corruption: filters.corruption,
                       page: filters.page,
@@ -157,23 +157,20 @@ export function MarketFiltersForm({
                         />
                     </Label>
                     {select("order", "Order by", MARKET_ORDERS)}
-                    {select("rarity", "Rarity", {
-                        all: "Any rarity",
-                        normal: "Normal",
-                        magic: "Magic",
-                        rare: "Rare",
-                        unique: "Unique",
-                    })}
-                    {select("identification", "Identification", {
-                        all: "Any identification",
-                        true: "Identified",
-                        false: "Unidentified",
-                    })}
-                    {select("corruption", "Corruption", {
-                        all: "Any corruption",
-                        false: "Uncorrupted",
-                        true: "Corrupted",
-                    })}
+                    {isMarketBaseCategory(filters.category)
+                        ? null
+                        : select("identification", "Identification", {
+                              all: "Any identification",
+                              true: "Identified",
+                              false: "Unidentified",
+                          })}
+                    {isMarketBaseCategory(filters.category)
+                        ? null
+                        : select("corruption", "Corruption", {
+                              all: "Any corruption",
+                              false: "Uncorrupted",
+                              true: "Corrupted",
+                          })}
                 </div>
             ) : null}
             <div className="flex flex-wrap items-center justify-between gap-3">

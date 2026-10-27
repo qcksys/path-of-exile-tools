@@ -6,7 +6,9 @@ import { ItemArt } from "~/components/item-art";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
+import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
 import { marketItemArtUrl } from "~/lib/item-presentation";
+import { type MarketBaseRow, marketBaseVariant } from "~/lib/market-bases";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
 import {
     MARKET_OUTLIER_FACTOR,
@@ -60,6 +62,7 @@ type Game = "poe1" | "poe2";
 
 const column = dataTableColumns<MarketRow>();
 const exchangeColumn = dataTableColumns<ExchangeRow>();
+const baseColumn = dataTableColumns<MarketBaseRow>();
 
 function exchangeColumns(game: Game, divine: number | undefined) {
     return exchangeColumn.columns([
@@ -164,6 +167,126 @@ function ListingPrice({
     );
 }
 
+function PriceLines({
+    prices,
+    currency,
+    game,
+    chaosRates,
+}: {
+    prices: Record<string, MarketPriceSummary> | null;
+    currency: string;
+    game: Game;
+    chaosRates: Record<string, number>;
+}) {
+    const listed = marketListingPrices(prices, chaosRates);
+    if (!listed.length) return "Unpriced";
+    const line = (price: MarketListingPrice) => (
+        <ListingPrice
+            key={price.currency}
+            price={price}
+            selected={price.currency === currency}
+            game={game}
+        />
+    );
+    const outliers = listed.filter((price) => price.outlier);
+    return (
+        <>
+            {listed.filter((price) => !price.outlier).map(line)}
+            {outliers.length ? (
+                <details>
+                    <summary className="cursor-pointer text-xs text-muted-foreground">
+                        {outliers.length} over {MARKET_OUTLIER_FACTOR}× the most listed
+                    </summary>
+                    {outliers.map(line)}
+                </details>
+            ) : null}
+        </>
+    );
+}
+
+function baseColumns(filters: MarketFilters, game: Game, chaosRates: Record<string, number>) {
+    return baseColumn.columns([
+        baseColumn.accessor((row) => `${row.baseType} ${marketBaseVariant(row)}`, {
+            id: "item",
+            header: "Base / variant",
+            sortDescFirst: false,
+            meta: { filter: "text" },
+            cell: ({ row: { original: row } }) => (
+                <>
+                    <p className="font-medium">{row.baseType}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{marketBaseVariant(row)}</p>
+                </>
+            ),
+        }),
+        baseColumn.accessor((row) => row.prices[filters.currency]?.median, {
+            id: "price",
+            header: "Median asking price",
+            sortDescFirst: true,
+            meta: { filter: "range", className: "tabular-nums" },
+            cell: ({ row: { original: row } }) => (
+                <PriceLines
+                    prices={row.prices}
+                    currency={filters.currency}
+                    game={game}
+                    chaosRates={chaosRates}
+                />
+            ),
+        }),
+        baseColumn.accessor("listingCount", {
+            id: "listings",
+            header: "Listings",
+            sortDescFirst: true,
+            meta: { filter: "range", className: "tabular-nums" },
+            cell: ({ getValue }) => number(getValue()),
+        }),
+        baseColumn.accessor("uniqueSellers", {
+            id: "sellers",
+            header: "Sellers",
+            sortDescFirst: true,
+            meta: { filter: "range", className: "tabular-nums" },
+            cell: ({ getValue }) => number(getValue()),
+        }),
+        baseColumn.accessor("hour", {
+            id: "observed",
+            header: "Last observed",
+            sortDescFirst: true,
+            enableColumnFilter: false,
+            meta: { className: "whitespace-nowrap text-xs text-muted-foreground" },
+            cell: ({ getValue }) => marketUtc(getValue()),
+        }),
+    ]);
+}
+
+function BaseTable({
+    label,
+    rows,
+    filters,
+    game,
+    chaosRates,
+    server,
+}: {
+    label: string;
+    rows: MarketBaseRow[];
+    filters: MarketFilters;
+    game: Game;
+    chaosRates: Record<string, number>;
+    server: DataTableServerState;
+}) {
+    const columns = useMemo(
+        () => baseColumns(filters, game, chaosRates),
+        [filters, game, chaosRates],
+    );
+    return (
+        <DataTable
+            label={label}
+            data={rows}
+            columns={columns}
+            getRowId={(row) => row.id}
+            server={server}
+        />
+    );
+}
+
 function marketColumns(filters: MarketFilters, game: Game, chaosRates: Record<string, number>) {
     return column.columns([
         column.accessor((row) => row.name || row.itemKey, {
@@ -197,32 +320,14 @@ function marketColumns(filters: MarketFilters, game: Game, chaosRates: Record<st
             header: "Median asking price",
             sortDescFirst: true,
             meta: { filter: "range", className: "tabular-nums" },
-            cell: ({ row: { original: row } }) => {
-                const prices = marketListingPrices(row.prices, chaosRates);
-                if (!prices.length) return "Unpriced";
-                const line = (price: MarketListingPrice) => (
-                    <ListingPrice
-                        key={price.currency}
-                        price={price}
-                        selected={price.currency === filters.currency}
-                        game={game}
-                    />
-                );
-                const outliers = prices.filter((price) => price.outlier);
-                return (
-                    <>
-                        {prices.filter((price) => !price.outlier).map(line)}
-                        {outliers.length ? (
-                            <details>
-                                <summary className="cursor-pointer text-xs text-muted-foreground">
-                                    {outliers.length} over {MARKET_OUTLIER_FACTOR}× the most listed
-                                </summary>
-                                {outliers.map(line)}
-                            </details>
-                        ) : null}
-                    </>
-                );
-            },
+            cell: ({ row: { original: row } }) => (
+                <PriceLines
+                    prices={row.prices}
+                    currency={filters.currency}
+                    game={game}
+                    chaosRates={chaosRates}
+                />
+            ),
         }),
         column.accessor("listingCount", {
             id: "listings",
@@ -297,7 +402,7 @@ function MarketTable({
 }
 
 export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
-    const { filters, seasons, season, rows, hasMore, chaosRates, exchange } = loaderData;
+    const { filters, seasons, season, rows, bases, hasMore, chaosRates, exchange } = loaderData;
     const navigate = useNavigate();
     const categories = Object.keys(MARKET_CATEGORIES) as MarketCategory[];
     const game = filters.realm === "poe2" ? "poe2" : "poe1";
@@ -314,7 +419,8 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                                 : MARKET_CATEGORIES[filters.category].label}
                         </h2>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            {filters.league || "Season"} · {rows.length} variants on this page
+                            {filters.league || "Season"} · {rows.length + bases.length} variants on
+                            this page
                         </p>
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -366,7 +472,36 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                         </section>
                     );
                 })}
-                {!rows.length && (!exchange.length || server.columnFilters.length) ? (
+                {bases.length > 0 && filters.category !== "all" ? (
+                    <section
+                        aria-label={MARKET_CATEGORIES[filters.category].label}
+                        className="overflow-hidden rounded-xl border border-border bg-card"
+                    >
+                        <header className="border-b border-border px-4 py-3">
+                            <h3 className="flex items-center justify-between text-sm font-semibold">
+                                {MARKET_CATEGORIES[filters.category].label}
+                                <span className="text-xs font-normal text-muted-foreground">
+                                    {bases.length} variants
+                                </span>
+                            </h3>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                Normal, magic and rare items together; uncorrupted, unfractured and
+                                uninfluenced. Crafting bases have no likely-sale estimates.
+                            </p>
+                        </header>
+                        <BaseTable
+                            label={`${MARKET_CATEGORIES[filters.category].label} markets`}
+                            rows={bases}
+                            filters={filters}
+                            game={game}
+                            chaosRates={chaosRates}
+                            server={server}
+                        />
+                    </section>
+                ) : null}
+                {!rows.length &&
+                !bases.length &&
+                (!exchange.length || server.columnFilters.length) ? (
                     <div className="overflow-hidden rounded-xl border border-border bg-card">
                         <MarketTable
                             label="Item markets"

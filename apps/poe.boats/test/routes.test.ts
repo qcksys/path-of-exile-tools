@@ -49,6 +49,7 @@ describe("game routes", () => {
         ["/1/crafting/simulate", "routes/crafting/poe1.tsx"],
         ["/2/crafting/projects", "routes/crafting/poe2.tsx"],
         ["/crafting/share/example", "routes/crafting/share.tsx"],
+        ["/extension", "routes/extension.tsx"],
     ])("routes %s to %s", (path, id) => {
         expect(matchRoutes(routes, path)?.at(-1)?.route.id).toBe(id);
     });
@@ -58,6 +59,7 @@ describe("site layout", () => {
     it.each([
         ["/", true],
         ["/changelog", true],
+        ["/extension", true],
         ["/integrations", true],
         ["/server-status", true],
         ["/crafting/share/example", true],

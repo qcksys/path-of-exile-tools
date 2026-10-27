@@ -60,6 +60,41 @@ it("prices a T1 fracture on the exact base and level band without calling every 
     expect(unresolved.unknown.length).toBeGreaterThan(0);
 });
 
+it("tracks ilvl 86 armour bases at 25% and 30% quality only when uncorrupted and unfractured", () => {
+    const armour = (quality?: number) => ({
+        baseType: "Titan Plate",
+        frameType: 2,
+        identified: true,
+        ilvl: 86,
+        sockets: Array.from({ length: 6 }, (_, index) => ({ group: index })),
+        properties: [
+            ...(quality === undefined
+                ? []
+                : [{ name: "Quality", values: [[`+${quality}%`, 1]], displayMode: 0, type: 6 }]),
+            { name: "Armour", values: [["1500", 1]], displayMode: 0, type: 16 },
+        ],
+    });
+    const quality = (item: unknown) =>
+        names(item, "base").filter((name) => name.includes("quality"));
+    expect(quality(armour())).toEqual([]);
+    expect(quality(armour(24))).toEqual([]);
+    expect(quality(armour(28))).toEqual(["Titan Plate, ilvl 86–100, 25%+ quality"]);
+    expect(quality(armour(30))).toEqual([
+        "Titan Plate, ilvl 86–100, 25%+ quality",
+        "Titan Plate, ilvl 86–100, 30%+ quality",
+    ]);
+    expect(quality({ ...armour(30), ilvl: 85 })).toEqual([]);
+    expect(quality({ ...armour(30), corrupted: true })).toEqual([]);
+    expect(quality({ ...armour(30), fractured: true })).toEqual([]);
+    expect(classifier.classify(normalizeApiItem("poe1", "stash", armour())).unknown).toEqual([]);
+    expect(quality({ ...armour(30), baseType: "Exquisite Blade" })).toEqual([]);
+    const linked = (item: unknown) => names(item, "base").filter((name) => name.includes("linked"));
+    expect(linked(armour())).toEqual(["Titan Plate, ilvl 86–100, one to five linked"]);
+    expect(
+        linked({ ...armour(), sockets: Array.from({ length: 6 }, () => ({ group: 0 })) }),
+    ).toEqual(["Titan Plate, ilvl 86–100, six-linked"]);
+});
+
 it("separates isolated Temple suffixes from two-suffix donors and retains broad overlapping groups", () => {
     const mods = [
         "+47% to Cold Resistance",

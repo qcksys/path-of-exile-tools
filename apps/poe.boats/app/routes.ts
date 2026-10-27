@@ -4,6 +4,7 @@ export default [
     layout("routes/layouts/site.tsx", [
         index("routes/home.tsx"),
         route("changelog", "routes/changelog.tsx"),
+        route("extension", "routes/extension.tsx"),
         route("integrations", "routes/integrations.tsx"),
         route("server-status", "routes/server-status.tsx"),
         route("crafting/share/:id", "routes/crafting/share.tsx"),

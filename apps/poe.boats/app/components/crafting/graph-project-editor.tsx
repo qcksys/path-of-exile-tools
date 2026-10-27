@@ -30,6 +30,7 @@ import { craftingMarketRefreshResultSchema } from "~/schemas/crafting-market";
 import type { CraftingRuleset, CraftingRulesetIndex } from "~/schemas/crafting-rulesets";
 import type { CraftingDraft } from "~/schemas/crafting-workspace";
 import { ExchangePricePicker } from "./exchange-price-picker";
+import { GraphBuyIn } from "./graph-buy-in";
 import { GraphCanvas } from "./graph-canvas";
 import { GraphNodeEditor, GraphPriceInput } from "./graph-node-editor";
 import { GraphOutcomeEditor } from "./graph-outcome-editor";
@@ -351,6 +352,7 @@ export function GraphProjectEditor({
                     </Button>
                 )}
             </div>
+            <GraphBuyIn graph={graph} catalog={catalog} onChange={update} />
             <ProcessCostHistory graph={graph} />
             <details className="text-xs text-muted-foreground">
                 <summary className="cursor-pointer">Crafting version</summary>

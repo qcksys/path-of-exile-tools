@@ -209,4 +209,37 @@ describe("crafting trade translation", () => {
             ),
         ).toThrow("empty ilvl range");
     });
+
+    it("searches instant-buyout listings by default in both games", () => {
+        for (const [game, metadata] of [
+            ["poe1", poe1],
+            ["poe2", poe2],
+        ] as const) {
+            const result = buildCraftingTradeSearch(
+                { ...catalog, game },
+                query([], game),
+                "Standard",
+                metadata,
+            );
+            expect(result.payload.query.status).toEqual({ option: "securable" });
+            expect(result.payload.query.filters).toEqual({});
+        }
+    });
+
+    it("adds listing status, listing age and one listing per seller", () => {
+        const result = buildCraftingTradeSearch(
+            catalog,
+            and([{ kind: "range", field: "ilvl", value: { min: 84 } }]),
+            "Standard",
+            poe1,
+            { status: "online", listed: "3days", oneListingPerSeller: true },
+        );
+        expect(result.payload.query.status).toEqual({ option: "online" });
+        expect(result.payload.query.filters).toMatchObject({
+            trade_filters: {
+                filters: { indexed: { option: "3days" }, collapse: { option: "true" } },
+            },
+            misc_filters: { filters: { ilvl: { min: 84 } } },
+        });
+    });
 });

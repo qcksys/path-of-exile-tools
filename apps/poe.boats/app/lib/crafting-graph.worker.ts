@@ -1,4 +1,8 @@
+import { craftingCatalogSchema } from "../schemas/crafting";
 import { craftingGraphSchema } from "../schemas/crafting-graph";
+import { calculateBuyIn } from "./crafting-buy-in";
+import { priceBuyInStage } from "./crafting-buy-in-price";
+import { CraftingEngine } from "./crafting-engine";
 import { loadCraftingRevision } from "./crafting-ruleset-loader";
 import {
     CRAFTING_RULESET_INDEX_URL,
@@ -23,7 +27,8 @@ worker.onmessage = async (event: MessageEvent) => {
     if (event.data.type === "cancel") return;
     try {
         const graph = craftingGraphSchema.parse(event.data.graph);
-        if (event.data.type !== "catalog") assertCraftingSourcePrices(graph);
+        if (event.data.type !== "catalog" && event.data.type !== "buy-in-price")
+            assertCraftingSourcePrices(graph);
         const response = await fetch(CRAFTING_RULESET_INDEX_URL, { cache: "no-cache" });
         if (!response.ok) throw new Error("Crafting revisions are unavailable.");
         const index = validateRulesetIndex(await response.json());
@@ -44,6 +49,26 @@ worker.onmessage = async (event: MessageEvent) => {
         if (current !== job) return;
         if (event.data.type === "catalog") {
             worker.postMessage({ requestId, type: "catalog", catalog });
+            return;
+        }
+        if (event.data.type === "buy-in-price") {
+            const engine = new CraftingEngine(craftingCatalogSchema.parse(catalog));
+            const { stageId, instant, inPerson, rates } = event.data;
+            worker.postMessage({
+                requestId,
+                type: "buy-in-priced",
+                ...priceBuyInStage(engine, graph, stageId, instant, inPerson, rates),
+            });
+            return;
+        }
+        if (event.data.type === "buy-in-compare") {
+            const comparison = await calculateBuyIn(runtime, catalog, graph, {
+                simulation: event.data.options,
+                onProgress: (completed, total) =>
+                    worker.postMessage({ requestId, type: "buy-in-progress", completed, total }),
+                cancelled: () => current !== job,
+            });
+            if (comparison) worker.postMessage({ requestId, type: "buy-in-compared", comparison });
             return;
         }
         const simulation = runtime.createSimulation(catalog, graph, event.data.options);

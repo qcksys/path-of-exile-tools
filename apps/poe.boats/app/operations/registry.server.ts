@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getMarketData } from "~/db/queries/market.queries";
 import { sStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
+import { marketBaseRowSchema } from "~/lib/market-bases";
 import { ArbitrageGameSchema, MarketSnapshotSchema, VendorRecipeSchema } from "~/schemas/arbitrage";
 import {
     marketCategorySchema,
@@ -12,6 +13,7 @@ import { ScarabPricesDataSchema } from "~/schemas/scarab";
 import { SharedSetSchema } from "~/schemas/share";
 import { loadArbitrageMarket } from "~/services/arbitrage.server";
 import { calculatorOperations } from "./calculators";
+import { craftingBuyInOperations } from "./crafting-buy-in";
 import { craftingCloudOperations } from "./crafting-cloud";
 import { craftingGraphOperations } from "./crafting-graph";
 import { craftingItemQueryOperations } from "./crafting-item-queries";
@@ -115,6 +117,7 @@ export const operations = [
     ...craftingItemQueryOperations,
     ...craftingMarketOperations,
     ...craftingTradeOperations,
+    ...craftingBuyInOperations,
     ...craftingRulesetOperations,
     ...craftingWorkspaceOperations,
     ...idolPlannerOperations,
@@ -265,7 +268,7 @@ export const operations = [
         name: "get_season_market",
         ui: "/1/market/currency",
         description:
-            "Read season market rows with the UI's filters and pagination; category `all` lists every category. With an item, returns that item's history and every variant of it in the period instead of rows.",
+            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`) return `bases` instead: normal, magic and rare equipment cohorts by base, item level, links and quality, without likely-sale estimates. With an item, returns that item's history and every variant of it in the period instead of rows.",
         input: marketFiltersSchema,
         output: z.object({
             filters: marketFiltersSchema,
@@ -280,6 +283,11 @@ export const operations = [
                     periodPending: z.number(),
                 }),
             ),
+            bases: z
+                .array(marketBaseRowSchema)
+                .describe(
+                    "Crafting base cohorts at their latest hour in the period, uncorrupted, unfractured, unmirrored, unsynthesised and uninfluenced",
+                ),
             hasMore: z.boolean(),
             exchange: z
                 .array(

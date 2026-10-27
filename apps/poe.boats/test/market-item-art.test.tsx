@@ -52,6 +52,7 @@ function showMarket(
         chaosRates: {},
         exchange: [],
         variants: [],
+        bases: [],
         modValues: null,
         rows: [
             {

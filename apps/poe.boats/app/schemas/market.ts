@@ -54,7 +54,6 @@ export const marketFiltersSchema = z.object({
     page: z.coerce.number().int().min(1).max(10000).default(1),
     category: marketCategorySchema.or(z.literal("all")).default("all"),
     order: z.enum(Object.keys(MARKET_ORDERS) as [MarketOrder, ...MarketOrder[]]).default("sales"),
-    rarity: z.enum(["all", "normal", "magic", "rare", "unique"]).default("all"),
     identification: z.enum(["all", "true", "false"]).default("all"),
     corruption: z.enum(["all", "true", "false"]).default("all"),
     item: z.string().max(255).optional(),
@@ -112,7 +111,6 @@ export function marketLink(
         currency: filters.currency,
         page: String(filters.page),
         order: filters.order,
-        rarity: filters.rarity,
         identification: filters.identification,
         corruption: filters.corruption,
     });

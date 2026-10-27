@@ -11,6 +11,8 @@ import { incursionGloveModifiers } from "../app/lib/crafting-incursion";
 import { modifierTiers } from "../app/lib/crafting-modifier-details";
 import { validateRulesetIndex } from "../app/lib/crafting-rulesets";
 import { rolledModText } from "../app/lib/crafting-text";
+import { MARKET_BASE_MIN_LEVEL, type MarketBase, marketBasesSchema } from "../app/lib/market-bases";
+import { MARKET_BASE_CATEGORIES, marketBaseCategory } from "../app/lib/market-categories";
 import { craftingCatalogSchema } from "../app/schemas/crafting";
 import { craftingPresetCohorts } from "./crafting-preset-cohorts";
 import { writeCapturePolicy } from "./generate-capture-policy";
@@ -62,6 +64,7 @@ const equipment = new Set([
     "Gloves",
     "Quiver",
 ]);
+const armour = new Set(["Helmet", "Body Armour", "Boots", "Gloves", "Shield"]);
 const includedNames = new Set([
     "Grasping Mail",
     "Amethyst Ring",
@@ -118,6 +121,7 @@ const changes = Object.entries(catalog.mods).flatMap(([id, mod]) => [
     ...(mod.maximum_level > 0 ? [mod.maximum_level + 1] : []),
 ]);
 const cohorts: MarketCohort[] = [];
+const marketBases: MarketBase[] = [];
 const generatedNames = new Set<string>();
 for (const [, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0]))) {
     if (generatedNames.has(base.name)) continue;
@@ -136,28 +140,93 @@ for (const [, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0]))) {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
+    const unmodified: ItemCondition[] = (
+        ["corrupted", "mirrored", "fractured", "synthesised", "influenced"] as const
+    ).map((field) => ({ kind: "flag" as const, field, value: false }));
+    const category = MARKET_BASE_CATEGORIES[marketBaseCategory(base.name, base.item_class)];
+    if (!category) throw new Error(`No crafting base market category for ${base.item_class}.`);
+    const sixSockets = base.socketInfo.some((socket) => socket.count === 6);
     for (const band of bands) {
-        for (const sixLinked of base.socketInfo.some((socket) => socket.count === 6)
-            ? [false, true]
-            : [false]) {
-            const filters: ItemCondition[] = [
-                { kind: "base", field: "baseType", values: [base.name] },
-                { kind: "rarity", values: ["Normal", "Magic", "Rare"] },
-                { kind: "range", field: "ilvl", value: band },
-                ...(
-                    ["corrupted", "mirrored", "fractured", "synthesised", "influenced"] as const
-                ).map((field) => ({ kind: "flag" as const, field, value: false })),
-                ...(sixLinked
-                    ? [{ kind: "range" as const, field: "links" as const, value: { min: 6 } }]
-                    : []),
-            ];
+        const listed = band.max >= MARKET_BASE_MIN_LEVEL;
+        for (const links of [
+            "any",
+            ...(sixSockets ? (["6"] as const) : []),
+            ...(sixSockets && listed ? (["1-5"] as const) : []),
+        ] as const) {
+            const id = `base:${slug}:${band.min}-${band.max}:${links === "any" ? "any-links" : `${links}-link`}`;
             cohorts.push({
-                id: `base:${slug}:${band.min}-${band.max}:${sixLinked ? "6-link" : "any-links"}`,
-                name: `${base.name}, ilvl ${band.min}–${band.max}${sixLinked ? ", six-linked" : ""}`,
+                id,
+                name: `${base.name}, ilvl ${band.min}–${band.max}${{ any: "", "6": ", six-linked", "1-5": ", one to five linked" }[links]}`,
                 purpose: "base",
-                query: { format: 1, game: "poe1", groups: [{ type: "and", filters }] },
+                query: {
+                    format: 1,
+                    game: "poe1",
+                    groups: [
+                        {
+                            type: "and",
+                            filters: [
+                                { kind: "base", field: "baseType", values: [base.name] },
+                                { kind: "rarity", values: ["Normal", "Magic", "Rare"] },
+                                { kind: "range", field: "ilvl", value: band },
+                                ...unmodified,
+                                ...(links === "any"
+                                    ? []
+                                    : [
+                                          {
+                                              kind: "range" as const,
+                                              field: "links" as const,
+                                              value: links === "6" ? { min: 6 } : { max: 5 },
+                                          },
+                                      ]),
+                            ],
+                        },
+                    ],
+                },
             });
+            // Six-socket bases list their link split instead of the combined cohort.
+            if (listed && (links !== "any" || !sixSockets))
+                marketBases.push({
+                    id,
+                    baseType: base.name,
+                    category,
+                    ilvl: band,
+                    links: links === "any" ? null : links,
+                    quality: null,
+                });
         }
+    }
+    if (!armour.has(base.item_class)) continue;
+    for (const quality of [25, 30]) {
+        const id = `base:${slug}:86-100:any-links:q${quality}`;
+        cohorts.push({
+            id,
+            name: `${base.name}, ilvl 86–100, ${quality}%+ quality`,
+            purpose: "base",
+            query: {
+                format: 1,
+                game: "poe1",
+                groups: [
+                    {
+                        type: "and",
+                        filters: [
+                            { kind: "base", field: "baseType", values: [base.name] },
+                            { kind: "rarity", values: ["Normal", "Magic", "Rare"] },
+                            { kind: "range", field: "ilvl", value: { min: 86, max: 100 } },
+                            ...unmodified,
+                            { kind: "range", field: "quality", value: { min: quality } },
+                        ],
+                    },
+                ],
+            },
+        });
+        marketBases.push({
+            id,
+            baseType: base.name,
+            category,
+            ilvl: { min: 86, max: 100 },
+            links: null,
+            quality,
+        });
     }
 }
 const curatedIds = new Set<string>();
@@ -425,6 +494,10 @@ await mkdir("../../packages/poe-market/data", { recursive: true });
 await writeFile(
     "../../packages/poe-market/data/cohorts-poe1.json",
     `${JSON.stringify(manifest)}\n`,
+);
+await writeFile(
+    "../../packages/poe-market/data/market-bases-poe1.json",
+    `${JSON.stringify(marketBasesSchema.parse({ revision, bases: marketBases }))}\n`,
 );
 await writeCapturePolicy(catalog);
 console.log(
