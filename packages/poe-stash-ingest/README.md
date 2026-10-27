@@ -399,6 +399,7 @@ Built-in extractors:
 | `watchers-eye` (Watcher's Eye)              | `watchers-eye:<SHA-256>`                         |
 | `impossible-escape`                         | `impossible-escape:Pain Attunement`               |
 | `forbidden-shako`                           | `forbidden-shako:Spell Echo@35`                      |
+| `unique-mod-split` (`UNIQUE_MOD_SPLITS`)    | `unique-mod-split:4 Flasks`                       |
 
 Add new extractors under `src/shared/mod-extractors/` and register them in `index.ts`.
 
