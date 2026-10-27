@@ -23,8 +23,10 @@ it("prices one removal within a bounded budget despite unrelated live listings",
                     CASE WHEN i = 0 THEN current_timestamp ELSE NULL END AS removed_at
                 FROM range(4000) t(i)`);
             await db.conn.run("INSERT INTO pipeline_health VALUES (1, current_timestamp, true)");
-            await recordRemovals(db.conn, "stash-0", false);
-            await recordRemovals(db.conn, "stash-with-no-removals", true);
+            await recordRemovals(db.conn, [
+                { stashId: "stash-0", withdrawn: false },
+                { stashId: "stash-with-no-removals", withdrawn: true },
+            ]);
         });
         expect(
             await queryAll(

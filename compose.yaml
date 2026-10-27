@@ -28,11 +28,15 @@ services:
       INGEST_WORKER_ID: ${INGEST_WORKER_ID:-}
       INGEST_CURRENCY_FROM_HOUR: ${INGEST_CURRENCY_FROM_HOUR:-}
       INGEST_CURRENCY_HOURS: ${INGEST_CURRENCY_HOURS:-1}
+      PS_ARCHIVE_DIR: /backups
+      PS_ARCHIVE_KEEP_DAYS: ${PS_ARCHIVE_KEEP_DAYS:-30}
+      PS_ARCHIVE_MAX_GB: ${PS_ARCHIVE_MAX_GB:-100}
     secrets:
       - poe_client_secret
       - poe_boats_ingest_token
     volumes:
       - market-data:/data
+      - market-backups:/backups
     healthcheck:
       test: [CMD, node, src/container-health.ts]
       interval: 1m
@@ -61,4 +65,5 @@ secrets:
 
 volumes:
   market-data:
+  market-backups:
   replay-data:

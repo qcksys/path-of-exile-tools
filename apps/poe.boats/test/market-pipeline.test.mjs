@@ -112,6 +112,22 @@ describe("sale inference", () => {
         await mature();
         expect((await events())[0].status).toBe("relisted");
     });
+    it("does not treat a copy listed alongside the sold item as its relist", async () => {
+        const copy = { ...item, id: "item-copy" };
+        await ingest([
+            ...[1, 2, 3].map((n) => ({
+                ...stash,
+                id: `stash-${n}`,
+                accountName: `seller-${n}`,
+                items: [{ ...item, id: `item-${n}` }],
+            })),
+            { ...stash, items: [item, copy] },
+        ]);
+        await evaluateSales(db.conn, true);
+        await ingest([{ ...stash, items: [copy] }]);
+        await mature();
+        expect(await events()).toEqual([expect.objectContaining({ status: "likely-sold" })]);
+    });
     it("retracts an earlier estimate after a late same-seller relist", async () => {
         await seed();
         await mature();
@@ -153,6 +169,32 @@ describe("sale inference", () => {
         expect(
             (await queryAll(db.conn, "SELECT eligible_since FROM ps_sale"))[0].eligible_since,
         ).toBeNull();
+    });
+    it("applies a stash's repeated changes within one page in order", async () => {
+        await seed();
+        await ingest([
+            { ...stash, items: [item] },
+            { ...stash, items: [] },
+        ]);
+        expect(
+            await queryAll(
+                db.conn,
+                "SELECT item_id, removed_at IS NULL AS active FROM ps_listing WHERE stash_id = 'stash-0'",
+            ),
+        ).toEqual([{ item_id: "item-0", active: false }]);
+        // Removed, relisted and removed again under one timestamp: still one sale candidate.
+        await ingest([
+            { ...stash, items: [item] },
+            { ...stash, items: [] },
+            { ...stash, items: [item] },
+            { ...stash, items: [] },
+        ]);
+        expect(
+            await queryAll(
+                db.conn,
+                "SELECT count(*)::INTEGER AS n FROM ps_sale GROUP BY removed_at ORDER BY removed_at",
+            ),
+        ).toEqual([{ n: 1 }, { n: 1 }, { n: 1 }]);
     });
     it("does not duplicate a removal when a source page is replayed", async () => {
         await seed();

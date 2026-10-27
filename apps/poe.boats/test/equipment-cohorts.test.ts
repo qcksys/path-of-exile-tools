@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import type { PublicStashChange } from "../../../packages/poe-api-client/src/types";
 import {
     captureEquipment,
+    captureEquipmentPage,
     defaultEquipmentClassifier,
 } from "../../../packages/poe-stash-ingest/src/ps/equipment";
 import { pruneEquipment } from "../../../packages/poe-stash-ingest/src/ps/equipment-prune";
@@ -205,6 +206,40 @@ const capture = (change: PublicStashChange, hour = HOUR) =>
     withTransaction(db.conn, () =>
         captureEquipment(db.conn, change, classifier, new Date(hour * 1000)),
     );
+
+describe("equipment capture of a whole page", () => {
+    const listings = () =>
+        queryAll(
+            db.conn,
+            `SELECT item_id, stash_id, removed_at IS NULL AS active FROM ps_equipment_listing
+            ORDER BY item_id, stash_id`,
+        );
+    const capturePage = (changes: PublicStashChange[]) =>
+        withTransaction(db.conn, () =>
+            captureEquipmentPage(db.conn, changes, classifier, new Date(HOUR * 1000)),
+        );
+
+    it("keeps an item moved between stashes within one page in its later stash", async () => {
+        await capture(stash);
+        expect(
+            await capturePage([
+                { ...stash, items: [] },
+                { ...stash, id: "moved", items: [item] },
+            ]),
+        ).toBe(1);
+        expect(await listings()).toEqual([{ item_id: "one", stash_id: "moved", active: true }]);
+        expect(await queryAll(db.conn, "SELECT item_id, stash_id FROM ps_equipment_hour")).toEqual([
+            { item_id: "one", stash_id: "moved" },
+        ]);
+    });
+
+    it("applies a stash's repeated changes within one page in order", async () => {
+        await capturePage([stash, { ...stash, items: [] }]);
+        expect(await listings()).toEqual([{ item_id: "one", stash_id: "stash", active: false }]);
+        await capturePage([{ ...stash, items: [] }, stash]);
+        expect(await listings()).toEqual([{ item_id: "one", stash_id: "stash", active: true }]);
+    });
+});
 
 describe("equipment capture and hourly history", () => {
     it("prices an indistinguishable Temple family without attributing its listing to an exact ID", async () => {

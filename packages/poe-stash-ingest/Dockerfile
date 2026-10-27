@@ -19,7 +19,7 @@ COPY packages/poe-market/src packages/poe-market/src
 COPY packages/poe-market/data packages/poe-market/data
 COPY packages/poe-stash-ingest/src packages/poe-stash-ingest/src
 COPY packages/poe-stash-ingest/docker.env.schema packages/poe-stash-ingest/.env.schema
-RUN mkdir /data && chown node:node /data
+RUN mkdir /data /backups && chown node:node /data /backups
 USER node
 WORKDIR /workspace/packages/poe-stash-ingest
 ENV NODE_OPTIONS="--conditions=source" VARLOCK_TELEMETRY_DISABLED=1 CI=true
