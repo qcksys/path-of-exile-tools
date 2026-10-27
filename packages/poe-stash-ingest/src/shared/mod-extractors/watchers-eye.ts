@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { Item } from "@poe-tools/api-client";
 import { isUniqueItem } from "#src/shared/capture.ts";
 import { explicitModLines } from "#src/shared/mod-extractors/lines.ts";
@@ -23,15 +24,19 @@ const AURAS = [
     "Zealotry",
 ] as const;
 
+// The remote summary table stores `signature_value` as varchar(255).
+const MAX_VALUE_LENGTH = 255;
+
 /**
- * The aura condition can precede or follow the stat, sometimes across a newline.
+ * The aura condition can precede or follow the stat, sometimes across a newline. Rolls are
+ * masked so every roll of the same modifiers trades as one market.
  */
 function parseLine(line: string): { aura: string; stat: string } | null {
     const text = line.replace(/\s+/g, " ").trim();
     const prefix = text.match(/^While affected by ([A-Za-z ]+?),\s*(.+)$/i);
     const suffix = text.match(/^(.+?) while affected by ([A-Za-z ]+)$/i);
     const aura = (prefix?.[1] ?? suffix?.[2])?.trim();
-    const stat = (prefix?.[2] ?? suffix?.[1])?.trim();
+    const stat = (prefix?.[2] ?? suffix?.[1])?.trim().replace(/\d+(?:\.\d+)?/g, "#");
     if (!aura || !stat) return null;
     if (!AURAS.includes(aura as (typeof AURAS)[number])) return null;
     return { aura, stat };
@@ -39,6 +44,13 @@ function parseLine(line: string): { aura: string; stat: string } | null {
 
 export const watchersEyeExtractor: ModExtractor = {
     kind: "watchers-eye",
+    value: (signature) => {
+        const mods = signature.mods as { aura: string; stat: string }[];
+        const value = mods.map((mod) => `${mod.aura}: ${mod.stat}`).join(" / ");
+        return value.length <= MAX_VALUE_LENGTH
+            ? value
+            : createHash("sha256").update(value).digest("hex");
+    },
     matches(item: Item): boolean {
         return isUniqueItem(item) && item.identified && item.name === "Watcher's Eye";
     },

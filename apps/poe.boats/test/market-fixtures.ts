@@ -1,4 +1,5 @@
 import type { getMarketData } from "~/db/queries/market.queries";
+import { parseModList, WATCHERS_EYE_KIND, watchersEyeModValues } from "~/lib/watchers-eye";
 import { marketFiltersSchema } from "~/schemas/market";
 
 export function marketFixture(
@@ -45,6 +46,7 @@ export function marketFixture(
         foilVariation: -1,
         signatureKind: "",
         signatureValue: "",
+        signatureData: null,
     };
     return {
         filters,
@@ -87,6 +89,29 @@ export function marketFixture(
                   },
               ]
             : [],
+        modValues:
+            filters.kind === WATCHERS_EYE_KIND
+                ? watchersEyeModValues(
+                      [
+                          [
+                              "Haste: #% increased Movement Speed",
+                              "Precision: #% increased Accuracy",
+                          ],
+                          [
+                              "Discipline: #% faster start of Energy Shield Recharge",
+                              "Haste: #% increased Movement Speed",
+                          ],
+                      ].map((mods, index) => ({
+                          signatureValue: mods.join(" / "),
+                          mods,
+                          listings: 2,
+                          ask: 10 + index * 5,
+                          sales: 1,
+                          salePrice: 12 + index * 5,
+                      })),
+                      { require: parseModList(filters.mods), anyOf: parseModList(filters.anyMods) },
+                  )
+                : null,
         history: filters.item
             ? [
                   {

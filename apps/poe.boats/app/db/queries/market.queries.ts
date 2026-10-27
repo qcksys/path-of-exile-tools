@@ -8,6 +8,7 @@ import {
     asc,
     desc,
     eq,
+    gt,
     gte,
     inArray,
     like,
@@ -40,6 +41,12 @@ import {
     mergeMarketPrices,
     mergeMarketRows,
 } from "~/lib/market-price-merge";
+import {
+    parseModList,
+    WATCHERS_EYE_KIND,
+    watchersEyeMods,
+    watchersEyeModValues,
+} from "~/lib/watchers-eye";
 import type { MarketFilters, MarketOrder } from "~/schemas/market";
 import { type Span, traceQuery, traceSpan } from "~/services/tracing.server";
 import { utcDay } from "./stash-rollups.queries";
@@ -245,6 +252,10 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         filters.item && view !== "list"
             ? marketVariants(db, scope, filters.item)
             : Promise.resolve([]);
+    const modRowsPromise =
+        filters.item && view !== "list" && filters.kind === WATCHERS_EYE_KIND
+            ? watchersEyeRows(db, filters, filters.item, scope, latestHour)
+            : Promise.resolve(null);
     // Items listed on the exchange are priced from it; the rows query leaves out their stash listings.
     const listed =
         season && view !== "history" ? await marketExchangeListed(db, filters, exchangeHour) : [];
@@ -413,17 +424,22 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                   "market.page_latest_rows": pageLatestRows,
                   "market.window_start": windowStart,
               }).then((markets) => marketLatestRows(db, filters, markets));
-    const [rows, history, variants, exchange] = await Promise.all([
+    const [rows, history, variants, exchange, modRows] = await Promise.all([
         rowsPromise,
         historyPromise,
         variantsPromise,
         listed.length ? marketExchange(db, filters, exchangeHour, listed) : [],
+        modRowsPromise,
     ]);
     const rates = await marketChaosRates(
         db,
         filters,
-        [...history, ...rows],
-        [...history.map((row) => row.hour), ...(rows.length ? [latestHour] : [])],
+        [...history, ...rows, ...(modRows ?? [])],
+        [
+            ...history.map((row) => row.hour),
+            ...(rows.length ? [latestHour] : []),
+            ...(modRows ?? []).map((row) => row.hour),
+        ],
     );
     const toChaos = marketDisplayRate(rates, "chaos", latestHour);
     const listCurrencies = rows.length
@@ -444,6 +460,30 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             .map((row) => ({ ...row, category: marketCategory(filters.realm, row.baseType) })),
         hasMore: rows.length > PAGE_SIZE,
         variants,
+        /** Per-mod values of a Watcher's Eye variant's item, in the display currency. */
+        modValues:
+            modRows &&
+            watchersEyeModValues(
+                modRows.flatMap((row) => {
+                    const mods = watchersEyeMods(row.signatureData);
+                    if (!mods) return [];
+                    const rate = marketDisplayRate(rates, filters.currency, row.hour);
+                    const current = row.hour === latestHour;
+                    return [
+                        {
+                            signatureValue: row.signatureValue,
+                            mods,
+                            listings: current ? row.listingCount : 0,
+                            ask: current
+                                ? (mergeMarketPrices(row.prices, rate)?.min ?? null)
+                                : null,
+                            sales: row.likelySales,
+                            salePrice: mergeMarketPrices(row.salesPrices, rate)?.median ?? null,
+                        },
+                    ];
+                }),
+                { require: parseModList(filters.mods), anyOf: parseModList(filters.anyMods) },
+            ),
         /** Exchange-traded items matching the category and search, on the first page only. */
         exchange: exchangeRows,
         /** Chaos per unit of each listing currency on the page, at the season's latest hour. */
@@ -499,6 +539,9 @@ async function marketVariants(db: TDatabase, scope: SQL | undefined, item: strin
                 foilVariation: foilGroup.mapWith(Number),
                 signatureKind: market.signatureKind,
                 signatureValue: market.signatureValue,
+                signatureData: sql<
+                    TStashUniqueHourlyS["signatureData"]
+                >`any_value(${market.signatureData})`,
                 periodSales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
             })
             .from(market)
@@ -522,6 +565,41 @@ async function marketVariants(db: TDatabase, scope: SQL | undefined, item: strin
     // Uniques that share art (e.g. replicas) share one unidentified market, named after only one of them.
     return variants.filter(
         (row) => row.itemKey === item || (row.name !== null && names.has(row.name)),
+    );
+}
+
+/** A Watcher's Eye variant's sibling markets: the latest hour's listings and every hour with likely sales. */
+function watchersEyeRows(
+    db: TDatabase,
+    filters: MarketFilters,
+    item: string,
+    scope: SQL | undefined,
+    latestHour: number,
+) {
+    return traceQuery(
+        "market.watchers_eye",
+        db
+            .select({
+                hour: market.hour,
+                signatureValue: market.signatureValue,
+                signatureData: market.signatureData,
+                listingCount: market.listingCount,
+                likelySales: market.likelySales,
+                prices: market.prices,
+                salesPrices: market.salesPrices,
+            })
+            .from(market)
+            .where(
+                and(
+                    scope,
+                    eq(market.itemKey, item),
+                    eq(market.identified, true),
+                    eq(market.corrupted, filters.corrupted === "true"),
+                    foilMatch(filters.foil),
+                    eq(market.signatureKind, WATCHERS_EYE_KIND),
+                    or(eq(market.hour, latestHour), gt(market.likelySales, 0)),
+                ),
+            ),
     );
 }
 

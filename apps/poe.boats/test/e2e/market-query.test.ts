@@ -508,6 +508,101 @@ it("lists a unique's markets in both identification states as variants of each o
     expect(await variants("Replica Eye")).toEqual([["Replica Eye", "Replica Eye", true, false]]);
 });
 
+it("values Watcher's Eye mods from the latest listings and the period's likely sales", async () => {
+    const haste = "Haste: #% increased Movement Speed";
+    const precision = "Precision: #% increased Critical Strike Chance";
+    const discipline = "Discipline: #% faster start of Energy Shield Recharge";
+    const chaos = (median: number) => ({ chaos: { count: 1, min: median, median, max: median } });
+    const eye = (
+        mods: [string, string][],
+        overrides: Partial<TStashUniqueHourlyI> = {},
+    ): TStashUniqueHourlyI =>
+        observation({
+            league: "Mods",
+            itemKey: "Watcher's Eye",
+            name: "Watcher's Eye",
+            baseType: "Prismatic Jewel",
+            signatureKind: "watchers-eye",
+            signatureValue: mods.map(([aura, stat]) => `${aura}: ${stat}`).join(" / "),
+            signatureData: {
+                kind: "watchers-eye",
+                mods: mods.map(([aura, stat]) => ({ aura, stat })),
+            },
+            ...overrides,
+        });
+    await db.insert(market).values([
+        eye(
+            [
+                ["Haste", "#% increased Movement Speed"],
+                ["Precision", "#% increased Critical Strike Chance"],
+            ],
+            { prices: chaos(30) },
+        ),
+        // A roll captured before ingest masked them, under its old hashed signature.
+        eye(
+            [
+                ["Haste", "12% increased Movement Speed"],
+                ["Precision", "40% increased Critical Strike Chance"],
+            ],
+            { signatureValue: "old-hash", prices: chaos(20) },
+        ),
+        eye(
+            [
+                ["Discipline", "#% faster start of Energy Shield Recharge"],
+                ["Haste", "#% increased Movement Speed"],
+            ],
+            { prices: chaos(50) },
+        ),
+        eye(
+            [
+                ["Discipline", "#% faster start of Energy Shield Recharge"],
+                ["Haste", "#% increased Movement Speed"],
+            ],
+            { hour: hour - 3600, listingCount: 0, likelySales: 2, salesPrices: chaos(55) },
+        ),
+        // Earlier listings without sales are not current asks.
+        eye([["Precision", "#% increased Critical Strike Chance"]], {
+            hour: hour - 3600,
+            prices: chaos(1),
+        }),
+        eye([["Haste", "#% increased Movement Speed"]], { corrupted: true, prices: chaos(2) }),
+    ]);
+    const filters = marketFiltersSchema.parse({
+        league: "Mods",
+        item: "Watcher's Eye",
+        kind: "watchers-eye",
+        value: "x",
+        currency: "chaos",
+    });
+    const result = await getMarketData(db as unknown as TDatabase, filters, "history");
+    expect(result.modValues?.cheapest).toBe(20);
+    expect(result.modValues?.mods.map((row) => [row.mod, row.cheapest, row.sales])).toEqual([
+        [discipline, 50, 2],
+        [haste, 20, 2],
+        [precision, 20, 0],
+    ]);
+    expect(result.modValues?.mods[0]?.saleMedian).toBe(55);
+    expect(
+        result.variants.find((variant) => variant.signatureValue === "old-hash")?.signatureData,
+    ).toMatchObject({ kind: "watchers-eye", mods: [{ aura: "Haste" }, { aura: "Precision" }] });
+
+    const narrowed = await getMarketData(
+        db as unknown as TDatabase,
+        { ...filters, mods: discipline },
+        "history",
+    );
+    expect(narrowed.modValues?.matches.map((match) => [match.mods, match.cheapest])).toEqual([
+        [[discipline, haste], 50],
+    ]);
+
+    const other = await getMarketData(
+        db as unknown as TDatabase,
+        { ...filters, kind: "", value: "" },
+        "history",
+    );
+    expect(other.modValues).toBeNull();
+});
+
 it("keeps stable sales ordering and page boundaries when fetching full records", async () => {
     const observations = Array.from({ length: 65 }, (_, index) =>
         observation({

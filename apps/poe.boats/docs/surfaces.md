@@ -56,7 +56,16 @@ routes. Each category list lives at `/1/market/:category`; the web has no all-it
 redirect to their category path. Legacy `?item=` bookmarks redirect to `/1/market/items/:item`
 with all variant axes intact; item links keep `category` in the query for the way back. The item
 page lists every variant of the item in the period (corruption, foil, and extracted signatures
-such as Foulborn mutated modifiers) and links between them.
+such as Foulborn mutated modifiers) and links between them, including the same unique's markets in
+the other identification state (unidentified uniques are keyed `unid:<icon>`).
+Watcher's Eye variants are labelled by their aura mods, read from `signatureData`. Ingest masks
+their rolls, so each mod combination is one market; older per-roll markets keep their hashed
+signature until their listings are seen again. A Watcher's Eye variant's page and the market
+operation's `modValues` value each mod over the item's markets with the same corruption and foil:
+listings and cheapest ask in the latest hour, likely sales and the median last ask before them over
+the period, in the display currency. The `mods` filter (`|`-separated mod IDs) keeps only items with
+every listed mod and `anyMods` items with at least one, so requiring A prices each other mod as
+"cheapest with A and X"; `matches` lists the cheapest listed matching combinations.
 The shared market query applies category, text, rarity, identification, corruption, column ranges
 and ordering before pagination. The list's TanStack Table headers sort through `order` and filter
 through the URL: the item column sets the text search, and range boxes bound the latest row's
@@ -149,7 +158,7 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | PoE 1 and PoE 2 arbitrage leagues, prices, recipes | `arbitrage/market` | `get_arbitrage_market`; `loadArbitrageMarket` |
 | Arbitrage filters, ranking, buffer, profit/ROI | `arbitrage/calculate` | `calculate_arbitrage`; `findArbitrage` |
 | Manual recipe reference, calculator and trade links | `arbitrage/recipes`, `arbitrage/scenario`, `arbitrage/trade` | `list_vendor_recipes`, `calculate_recipe_scenario`, `build_recipe_trade_url` |
-| Season market search, seasons, paging, variants, history | `market` | `get_season_market`; `getMarketData`. Season boundaries use the existing index prefix; variant totals come from the `stash_unique_daily` rollup and pagination precedes full-row primary-key reads. Every foil variation of an item is one market (`foil` -1 or 0): list rows, variants and history sum and mix the variations' hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), and page boundaries. |
+| Season market search, seasons, paging, variants, history, Watcher's Eye mod values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `watchersEyeModValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_unique_daily` rollup and pagination precedes full-row primary-key reads. Every foil variation of an item is one market (`foil` -1 or 0): list rows, variants and history sum and mix the variations' hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), and page boundaries. |
 | Recombinator equipment, modifiers, preparation recipes | `recombinator/catalog`, `bases`, `mods`, `recipes`, `draft` | Catalog, base/mod/recipe filtering, and `parseRecombinatorDraft` |
 | Recombination outcomes, preparation, target odds | `recombinator/calculate`, `target` | `calculateRecombinatorPlan`, `matchesTarget`, `summarizeCounts` |
 | PoE 1 and PoE 2 workbench catalog, calculation, process simulation and item emulation | `crafting/workbench/catalog`, `workbench/calculate`, `workbench/process`, `workbench/emulate` | `get_crafting_workbench_catalog`, `calculate_crafting_workbench`, `emulate_crafting_process`, `emulate_crafting_item`; shared `CraftingWorkbenchCalculation`, `CraftingProcess` and `emulateCraftingItem`. Current workbench catalogs and client-build validation match the browser; retained graph rulesets remain separate. HTTP calculations refuse manual-stop runs and requests above 5,000 trials or 100,000 potential steps. Allflame preview costs remain deferred until selection, reveal choices stay explicit, and paid bench failures retain the changed item and costs. Stateless operations never modify browser drafts. |
