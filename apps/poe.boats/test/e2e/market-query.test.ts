@@ -581,8 +581,14 @@ it("keeps item history independent of browsing filters and skips the list query 
     );
     expect(result.history).toHaveLength(20);
     expect(result.rows).toEqual([]);
-    expect(statements).toHaveLength(3);
-    expect(statements[2]!.sql).toContain(getTableName(tStashCurrencyHourly));
+    expect(result.variants).toEqual([
+        expect.objectContaining({ itemKey: "Item 0", identified: true, corrupted: false }),
+    ]);
+    expect(statements).toHaveLength(4);
+    expect(statements.filter(({ sql: query }) => /\binner\s+join\b/i.test(query))).toEqual([]);
+    expect(
+        statements.filter(({ sql: query }) => query.includes(getTableName(tStashCurrencyHourly))),
+    ).toHaveLength(1);
 });
 
 it("merges every listing currency into the display currency through same-league chaos rates", async () => {
