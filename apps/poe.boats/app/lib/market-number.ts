@@ -1,3 +1,12 @@
+/** Large amounts shortened (1.2K, 3.4M); small ones as `marketNumber`. */
+export function marketCompactNumber(value: number): string {
+    if (Math.abs(value) < 1000) return marketNumber(value);
+    return new Intl.NumberFormat("en", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+    }).format(value);
+}
+
 export function marketNumber(value: number): string {
     return new Intl.NumberFormat("en", {
         ...(value !== 0 && Math.abs(value) < 1

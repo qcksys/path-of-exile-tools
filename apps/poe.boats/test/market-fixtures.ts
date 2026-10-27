@@ -1,6 +1,6 @@
-import type { getMarketData } from "~/db/queries/market.queries";
+import type { getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
 import { isModPool, modPoolValues, parseModList } from "~/lib/mod-pools";
-import { marketFiltersSchema } from "~/schemas/market";
+import { type MarketExchangeItemInput, marketFiltersSchema } from "~/schemas/market";
 
 export function marketFixture(
     input: Record<string, unknown> = {},
@@ -61,8 +61,20 @@ export function marketFixture(
                           name: "Scroll of Wisdom",
                           category: filters.category === "all" ? "currency" : filters.category,
                           chaos: 0.002,
-                          volume: 500,
+                          via: {
+                              itemId: "Metadata/Items/Currency/CurrencyRerollRare",
+                              name: "Chaos Orb",
+                          },
                           hour: row.hour,
+                          current: true,
+                          volume: 1_500,
+                          history: [0.0016, null, null, null, null, null, 0.002],
+                          change: 0.25,
+                          pair: {
+                              quoteId: "Metadata/Items/Currency/CurrencyRerollRare",
+                              name: "Chaos Orb",
+                              rate: 0.002,
+                          },
                       },
                   ]
                 : [],
@@ -146,5 +158,58 @@ export function marketFixture(
                   },
               ]
             : [],
+    };
+}
+
+export function marketExchangeFixture(
+    input: Partial<MarketExchangeItemInput> = {},
+): Awaited<ReturnType<typeof getMarketExchangeItem>> {
+    const chaos = "Metadata/Items/Currency/CurrencyRerollRare";
+    const divine = "Metadata/Items/Currency/CurrencyModValues";
+    const wisdom = "Metadata/Items/Currency/CurrencyIdentification";
+    const hour = 1_792_836_000;
+    const exchange = marketFixture({ league: input.league || "Allflame", category: "currency" })
+        .exchange[0]!;
+    return {
+        realm: input.realm ?? "pc",
+        league: input.league || "Allflame",
+        latestHour: hour,
+        historyStart: hour - 7 * 86400 + 3600,
+        item: input.itemId === wisdom ? exchange : null,
+        divine: 150,
+        history: {
+            chaos: [
+                {
+                    hour: hour - 3600,
+                    chaos: 0.0016,
+                    low: 0.0015,
+                    high: 0.0018,
+                    via: chaos,
+                    units: 2_000,
+                },
+                { hour, chaos: 0.002, low: null, high: null, via: chaos, units: 3_000 },
+            ],
+            pairs: [
+                {
+                    quoteId: chaos,
+                    name: "Chaos Orb",
+                    hours: [
+                        {
+                            hour: hour - 3600,
+                            rate: 0.0016,
+                            low: 0.0015,
+                            high: 0.0018,
+                            units: 1_000,
+                        },
+                        { hour, rate: 0.002, low: null, high: null, units: 2_000 },
+                    ],
+                },
+                {
+                    quoteId: divine,
+                    name: "Divine Orb",
+                    hours: [{ hour, rate: 0.00001333, low: null, high: null, units: 1_000 }],
+                },
+            ],
+        },
     };
 }

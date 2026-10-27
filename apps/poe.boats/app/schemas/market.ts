@@ -93,6 +93,67 @@ export const mergedMarketPriceSchema = z.object({
 });
 export type MergedMarketPrice = z.infer<typeof mergedMarketPriceSchema>;
 
+export const marketExchangeRowSchema = z.object({
+    itemId: z.string(),
+    name: z.string(),
+    category: marketCategorySchema,
+    chaos: z
+        .number()
+        .nullable()
+        .describe(
+            "Chaos per unit from the latest completed hour's trades, or else from the newest of the last 7 UTC days that traded (`current` false); null without a path through chaos, divine, exalted or another traded item",
+        ),
+    via: z
+        .object({ itemId: z.string(), name: z.string() })
+        .nullable()
+        .describe("The item the price was converted through; Chaos Orb for a direct pair"),
+    hour: z
+        .number()
+        .nullable()
+        .describe(
+            "The newest hour the price reflects, or without a price the newest hour the item traded in those days",
+        ),
+    current: z.boolean().describe("The price comes from the latest completed hour"),
+    volume: z
+        .number()
+        .nullable()
+        .describe("Chaos value traded per hour over the last 7 UTC days, at the row's price"),
+    history: z
+        .array(z.number().nullable())
+        .describe("Chaos per unit on each of the last 7 UTC days, oldest first"),
+    change: z
+        .number()
+        .nullable()
+        .describe("Change from the first to the last priced day of `history`, as a fraction"),
+    pair: z
+        .object({ quoteId: z.string(), name: z.string(), rate: z.number() })
+        .nullable()
+        .describe(
+            "The pair with the most units of this item traded in those days, with units of the other item per unit at its newest rate",
+        ),
+});
+
+export const marketExchangeItemInputSchema = marketFiltersSchema
+    .pick({ realm: true, league: true, days: true })
+    .extend({ itemId: z.string().startsWith("Metadata/Items/").max(255) });
+export type MarketExchangeItemInput = z.infer<typeof marketExchangeItemInputSchema>;
+
+const EXCHANGE_ID_PREFIX = "Metadata/Items/";
+
+/** An exchange item's page, keeping the list's filters for the way back. */
+export function marketExchangeLink(filters: MarketFilters, itemId: string) {
+    const [path, query] = marketLink(filters).split("?");
+    const params = new URLSearchParams(query);
+    params.set("category", path!.split("/").at(-1)!);
+    const item = itemId.slice(EXCHANGE_ID_PREFIX.length).split("/").map(encodeURIComponent);
+    return `/1/market/exchange/${item.join("/")}?${params}`;
+}
+
+/** The exchange item ID of an exchange page's path after `/1/market/exchange/`. */
+export function marketExchangeItemId(path: string) {
+    return `${EXCHANGE_ID_PREFIX}${path}`;
+}
+
 export function marketLink(
     filters: MarketFilters,
     item?: {

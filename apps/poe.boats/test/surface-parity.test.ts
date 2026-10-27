@@ -97,7 +97,7 @@ import {
     workbenchProject,
 } from "./crafting-workbench-fixtures";
 import { catalogFixture } from "./fixtures/recombinator-catalog";
-import { marketFixture } from "./market-fixtures";
+import { marketExchangeFixture, marketFixture } from "./market-fixtures";
 
 vi.mock("~/services/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
@@ -2933,6 +2933,53 @@ it("shares market categories, search, ordering and filters across HTTP and MCP",
         );
         expect(CallToolResultSchema.parse(invalidRpc.result).isError).toBe(true);
         expect(query).toHaveBeenCalledTimes(3);
+    } finally {
+        query.mockRestore();
+    }
+});
+
+it("reads an exchange item's price, trend and pair history alike over HTTP and MCP", async () => {
+    const input = {
+        realm: "pc",
+        league: "Allflame",
+        days: "30",
+        itemId: "Metadata/Items/Currency/CurrencyIdentification",
+    } as const;
+    const fixture = marketExchangeFixture(input);
+    const query = vi.spyOn(marketQueries, "getMarketExchangeItem").mockResolvedValue(fixture);
+    try {
+        const response = await api.request(
+            `https://poe.boats/api/v1/market/exchange-item?${new URLSearchParams(input)}`,
+            {},
+            { runtime },
+        );
+        expect(response.status).toBe(200);
+        const expected = JSON.parse(JSON.stringify(fixture));
+        expect(await response.json()).toEqual(expected);
+        const rpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", { name: "get_season_exchange_item", arguments: input })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(expected);
+        expect(query).toHaveBeenLastCalledWith(context.db, input);
+        // Exchange item IDs are game metadata paths; anything else is refused before the query.
+        const invalid = await api.request(
+            "https://poe.boats/api/v1/market/exchange-item?itemId=Chaos%20Orb",
+            {},
+            { runtime },
+        );
+        expect(invalid.status).toBe(400);
+        const invalidRpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", {
+                    name: "get_season_exchange_item",
+                    arguments: { itemId: "Chaos Orb" },
+                })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(invalidRpc.result).isError).toBe(true);
+        expect(query).toHaveBeenCalledTimes(2);
     } finally {
         query.mockRestore();
     }

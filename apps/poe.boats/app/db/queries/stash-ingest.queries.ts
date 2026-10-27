@@ -13,6 +13,7 @@ import type { TStashCurrencyMarketI } from "~/db/schema/stash.currency-market";
 import type { StashCoverageStream } from "~/db/schema/stash.hour-coverage";
 import { type TStashUniqueHourlyI, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import {
+    refreshStashCurrencyDaily,
     refreshStashHourCoverage,
     refreshStashMarketDaily,
     upsertStashCurrencyMarkets,
@@ -221,6 +222,23 @@ export async function upsertStashCurrencyHourly(
                 });
         }
         await retryCurrencyDeadlock(() => upsertStashCurrencyMarkets(db, [...markets.values()]));
+        for (const { realm, league, rows: leagueRows } of byLeague(batch)) {
+            const days = new Map<number, Set<string>>();
+            for (const row of leagueRows) {
+                const day = utcDay(row.hour);
+                days.set(day, (days.get(day) ?? new Set()).add(row.marketId));
+            }
+            for (const [day, marketIds] of days)
+                await retryCurrencyDeadlock(() =>
+                    refreshStashCurrencyDaily(db, {
+                        realm,
+                        league,
+                        fromHour: day,
+                        toHour: day,
+                        marketIds: [...marketIds],
+                    }),
+                );
+        }
         // Concurrent writers (the cron and cxapi) recount the same hours, so retry deadlocks here too.
         await refreshCoverage(db, "currency", batch, retryCurrencyDeadlock);
         written += batch.length;
