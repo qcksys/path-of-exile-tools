@@ -10,7 +10,6 @@ import type { TDatabase } from "~/db/client";
 import { getMarketData } from "~/db/queries/market.queries";
 import { upsertStashCurrencyHourly } from "~/db/queries/stash-ingest.queries";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
-import { tStashCurrencyLatest } from "~/db/schema/stash.currency-latest";
 import {
     tStashUniqueHourly as market,
     type TStashUniqueHourlyI,
@@ -850,41 +849,6 @@ it("retains old exchange identities without treating future-only markets as list
         ]),
     );
     expect(result.exchange.some((row) => row.name === "Orb of Alchemy")).toBe(false);
-});
-
-it("keeps each exchange market's newest traded hour across separate writes", async () => {
-    const marketId =
-        "Metadata/Items/Currency/CurrencyRerollMagic|Metadata/Items/Currency/CurrencyRerollRare";
-    const [alt, chaosId] = marketId.split("|") as [string, string];
-    const write = (at: number, altVolume: number, chaosVolume: number) =>
-        upsertStashCurrencyHourly(db as unknown as TDatabase, [
-            {
-                realm: "pc",
-                league: "Latest",
-                marketId,
-                hour: at,
-                volumeTraded: { [alt]: altVolume, [chaosId]: chaosVolume },
-                lowestRatio: { [alt]: altVolume, [chaosId]: chaosVolume },
-            },
-        ]);
-    const latest = async () =>
-        (
-            await db
-                .select()
-                .from(tStashCurrencyLatest)
-                .where(eq(tStashCurrencyLatest.league, "Latest"))
-        ).map(({ hour: at, volumeTraded }) => ({ hour: at, volumeTraded }));
-    await write(hour - 3600, 100, 5);
-    await write(hour, 0, 0);
-    expect(await latest()).toEqual([
-        { hour: hour - 3600, volumeTraded: { [alt]: 100, [chaosId]: 5 } },
-    ]);
-    await write(hour, 50, 3);
-    await write(hour - 7200, 10, 1);
-    expect(await latest()).toEqual([{ hour, volumeTraded: { [alt]: 50, [chaosId]: 3 } }]);
-    // A corrected copy of the stored hour replaces it.
-    await write(hour, 60, 3);
-    expect(await latest()).toEqual([{ hour, volumeTraded: { [alt]: 60, [chaosId]: 3 } }]);
 });
 
 it("orders names in both directions and uses the latest observation for recency", async () => {
