@@ -271,18 +271,23 @@ export const operations = [
                 .describe(
                     "Chaos per unit of each listing currency on the page, at the season's latest hour",
                 ),
-            variants: z.array(
-                marketRow
-                    .pick({
-                        itemKey: true,
-                        identified: true,
-                        corrupted: true,
-                        foilVariation: true,
-                        signatureKind: true,
-                        signatureValue: true,
-                    })
-                    .extend({ periodSales: z.number() }),
-            ),
+            variants: z
+                .array(
+                    marketRow
+                        .pick({
+                            itemKey: true,
+                            name: true,
+                            identified: true,
+                            corrupted: true,
+                            foilVariation: true,
+                            signatureKind: true,
+                            signatureValue: true,
+                        })
+                        .extend({ periodSales: z.number() }),
+                )
+                .describe(
+                    "The item's markets, plus the same unique's markets in the other identification state (unidentified uniques are keyed unid:<icon>)",
+                ),
             history: z.array(
                 marketRow.extend({
                     merged: mergedMarketPriceSchema.nullable(),

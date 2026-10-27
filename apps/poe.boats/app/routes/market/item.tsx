@@ -108,12 +108,15 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
     const { filters, seasons, history, variants } = loaderData;
     const selected = history.at(-1);
     const isCurrent = (variant: VariantRow) =>
+        variant.itemKey === filters.item &&
         String(variant.identified) === filters.identified &&
         String(variant.corrupted) === filters.corrupted &&
         variant.foilVariation === filters.foil &&
         variant.signatureKind === filters.kind &&
         variant.signatureValue === filters.value;
     const otherVariants = variants.some((variant) => !isCurrent(variant));
+    const itemName =
+        variants.find((variant) => variant.itemKey === filters.item)?.name || filters.item;
     const currencies = [
         ...new Set([filters.currency, ...history.flatMap((row) => Object.keys(row.prices ?? {}))]),
     ].sort();
@@ -133,7 +136,7 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                     className="space-y-2 rounded-xl border border-border bg-card p-4"
                 >
                     <h2 className="text-sm font-semibold">
-                        Variants of {filters.item}{" "}
+                        Variants of {itemName}{" "}
                         <span className="font-normal text-muted-foreground">
                             ({variants.length})
                         </span>
