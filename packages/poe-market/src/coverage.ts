@@ -47,7 +47,12 @@ function influenceReadyTemplate(record: ItemRecord) {
             ? { name: "Pinnacle Tower Shield", ids: ["IncreasedLifeImplicitShield2"] }
             : facts.baseId === "Metadata/Items/Armours/Shields/ShieldInt16"
               ? { name: "Titanium Spirit Shield", ids: [] }
-              : undefined;
+              : facts.baseId === "Metadata/Items/Armours/Shields/ShieldStrE3"
+                ? {
+                      name: "Heat-attuned Tower Shield",
+                      ids: ["ChanceToInflictScorchOnEnemyOnBlockImplicitE1"],
+                  }
+                : undefined;
     return (
         record.game === "poe1" &&
         record.source === "craft" &&

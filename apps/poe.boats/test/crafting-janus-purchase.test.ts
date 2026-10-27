@@ -96,7 +96,7 @@ it.each([
 it("preserves every immediate outcome and the full seeded craft when using Magic Janus", () => {
     const graph = projectFromPreset(
         engine,
-        { ...ruleset, revision: "r15", engine: "crafting-graph-15" },
+        { ...ruleset, revision: "r16", engine: "crafting-graph-16" },
         "rarity-helmet",
     );
     for (const node of graph.nodes)

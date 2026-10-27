@@ -56,7 +56,7 @@ it.each(
 )("charges cleanup once before the existing Transmutation in %s/%s", (preset, id) => {
     const graph = projectFromPreset(
         engine,
-        { ...ruleset, revision: "r15", engine: "crafting-graph-15" },
+        { ...ruleset, revision: "r16", engine: "crafting-graph-16" },
         preset,
     );
     const node = graph.nodes.find((entry) => entry.id === id)!;

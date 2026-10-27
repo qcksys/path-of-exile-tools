@@ -9,7 +9,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r14",
 )!;
-const ruleset = { ...prior, revision: "r15", engine: "crafting-graph-15" };
+const ruleset = { ...prior, revision: "r16", engine: "crafting-graph-16" };
 const transmute = currency("transmute_to_magic").id;
 const regal = currency("upgrade_magic_to_rare").id;
 const shaper = "Metadata/Items/Currency/CurrencyAddModToRareShaper";

@@ -351,9 +351,10 @@ const scourBases = new Set([
     "Metadata/Items/Armours/Helmets/HelmetStr10",
     "Metadata/Items/Armours/Boots/BootsAtlas1",
     "Metadata/Items/Armours/BodyArmours/BodyDex16",
+    "Metadata/Items/Armours/BodyArmours/BodyInt17",
 ]);
 const sourcePreparationModel = {
-    format: 5,
+    format: 6,
     bases: Object.entries(catalog.bases)
         .filter(
             ([id, base]) =>

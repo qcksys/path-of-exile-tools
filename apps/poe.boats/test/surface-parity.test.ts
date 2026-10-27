@@ -411,6 +411,93 @@ describe("transport parity", () => {
     });
 
     it.each([
+        "life-block-shield",
+        "energy-shield-chest",
+    ] as const)("preserves r16 %s extended base sources over HTTP and MCP", async (presetId) => {
+        const ruleset = historyIndex.revisions.find(
+            (entry) => entry.game === "poe1" && entry.revision === "r16",
+        )!;
+        const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId };
+        const expected = projectFromPreset(fixtureEngine, ruleset, presetId);
+        const response = await api.request(
+            "https://poe.boats/api/v1/crafting/graph/from-preset",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
+            },
+            { runtime },
+        );
+        expect(response.status).toBe(200);
+        const http = z.object({ graph: craftingGraphSchema }).parse(await response.json());
+        expect(http.graph).toEqual({ ...expected, id: expect.any(String) });
+        const rpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", {
+                    name: "create_crafting_graph_from_preset",
+                    arguments: input,
+                })
+            ).json(),
+        );
+        const result = CallToolResultSchema.parse(rpc.result);
+        expect(result.isError).not.toBe(true);
+        const tool = z.object({ graph: craftingGraphSchema }).parse(result.structuredContent);
+        expect({ ...tool.graph, id: http.graph.id }).toEqual(http.graph);
+        for (const graph of [http.graph, tool.graph]) {
+            for (const node of graph.nodes)
+                if (node.kind === "acquire")
+                    expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+            const sourceId =
+                presetId === "life-block-shield"
+                    ? "shield-make-heat-influence-base"
+                    : "donor-0-make-base";
+            const source = graph.nodes.find((node) => node.id === sourceId);
+            if (source?.kind !== "acquire") throw new Error("Missing r16 source acquisition.");
+            expect(source.alternatives.map((entry) => entry.id)).toEqual([
+                "buy",
+                "buy-scour",
+                "buy-scour-crafted",
+                "buy-scour-enchanted",
+                "buy-scour-crafted-enchanted",
+            ]);
+            for (const alternative of source.alternatives) {
+                if (alternative.kind !== "purchase") throw new Error("Expected source purchase.");
+                expect(alternative.item).toMatchObject({
+                    rarity: "normal",
+                    influences: [],
+                    mods: [],
+                });
+                if (alternative.id === "buy") {
+                    expect(alternative.sourcePreparation).toEqual(
+                        presetId === "life-block-shield"
+                            ? { kind: "influence-ready-v1" }
+                            : undefined,
+                    );
+                } else {
+                    expect(alternative.sourcePreparation).toEqual({
+                        kind: "scour-v1",
+                        crafted: alternative.id.includes("crafted"),
+                        enchanted: alternative.id.includes("enchanted"),
+                    });
+                }
+            }
+            if (presetId === "life-block-shield") {
+                for (const nodeId of ["block-make-base", "max-res-make-base"]) {
+                    const target = graph.nodes.find((node) => node.id === nodeId);
+                    if (target?.kind !== "acquire") throw new Error("Missing Heat checkpoint.");
+                    expect(target.alternatives).toContainEqual(
+                        expect.objectContaining({
+                            kind: "production",
+                            id: "make-shaper",
+                            nodeId: "shield-make-heat-influence-scour",
+                        }),
+                    );
+                }
+            }
+        }
+    });
+
+    it.each([
         "poe1",
         "poe2",
     ] as const)("publishes the same current %s workbench catalog on both transports", async (game) => {

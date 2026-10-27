@@ -11,7 +11,7 @@ import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 import { nnnBase } from "./crafting-nnn-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r15",
+    (entry) => entry.game === "poe1" && entry.revision === "r16",
 )!;
 
 it("accepts prepared Delve minion boots without putting their modifier in ordinary rolls", () => {

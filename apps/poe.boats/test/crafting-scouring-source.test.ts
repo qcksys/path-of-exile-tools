@@ -28,7 +28,7 @@ const scour = currency("convert_to_normal").id;
 const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
-const ruleset = { ...prior, revision: "r15", engine: "crafting-graph-15" };
+const ruleset = { ...prior, revision: "r16", engine: "crafting-graph-16" };
 const scopes = [
     "Heat-attuned Tower Shield",
     "Pinnacle Tower Shield",

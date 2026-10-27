@@ -26,7 +26,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r15",
+    (entry) => entry.game === "poe1" && entry.revision === "r16",
 )!;
 const cohorts = craftingPresetCohorts(engine, ruleset);
 const manifest = marketCohortManifestSchema.parse(
@@ -277,8 +277,8 @@ it("keeps unsided saved identities separate from regenerated sided definitions",
 });
 
 it("has exact equipment definitions for every preset purchase including canonical base variants", () => {
-    expect(purchases).toHaveLength(125);
-    expect(cohorts).toHaveLength(104);
+    expect(purchases).toHaveLength(134);
+    expect(cohorts).toHaveLength(113);
     const definitions = new Map(manifest.cohorts.map((cohort) => [cohort.id, cohort]));
     for (const cohort of cohorts) expect(definitions.get(cohort.id)).toEqual(cohort);
     for (const { preset, graph: project, node, alternative, item } of purchases) {

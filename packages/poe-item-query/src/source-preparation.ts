@@ -10,7 +10,14 @@ import {
 } from "./schema.ts";
 
 export const sourcePreparationModelSchema = z.strictObject({
-    format: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+    format: z.union([
+        z.literal(1),
+        z.literal(2),
+        z.literal(3),
+        z.literal(4),
+        z.literal(5),
+        z.literal(6),
+    ]),
     bases: z
         .array(
             z.strictObject({
@@ -179,7 +186,12 @@ export function compileSourcePreparation(
         if (policy.kind === "influence-ready-v1") {
             if (model.format < 5) return { status: "unknown" };
             if (
-                (base && !influenceReadyBases.has(base.id)) ||
+                (base &&
+                    !influenceReadyBases.has(base.id) &&
+                    !(
+                        model.format >= 6 &&
+                        base.id === "Metadata/Items/Armours/Shields/ShieldStrE3"
+                    )) ||
                 (rarity !== undefined && rarity !== "Normal") ||
                 Object.values(item.influences ?? {}).some(Boolean) ||
                 item.fractured === true

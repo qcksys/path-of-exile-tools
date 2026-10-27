@@ -38,6 +38,14 @@ enchantment when its paid source preparation removes that enchantment. Numeric o
 text, competing identities, implicit magnitude effects and unsupported state remain uncertain.
 The original captured item and ordinary cohort classification remain unchanged.
 
+Source-preparation model 6 additionally proves clean uninfluenced Heat-attuned Tower Shields
+with their exact native Scorch implicit and includes native-empty Vaal Regalia Scouring sources.
+Crafting revision r16 adds a shared, paid influence route for the Life shield's Heat-attuned
+checkpoints and four paid Vaal Regalia cleanup alternatives for the Triple ES preset. Cleanup
+charges craft removal, enchantment removal and Scouring where applicable; adding influence
+charges Transmutation, Regal, Shaper's Exalted and a final Scouring Orb. Earlier revisions and
+source models retain their original eligibility, and unknown or incompatible state stays unpriced.
+
 `app/operations/registry.server.ts` assembles the feature operation catalogs. HTTP routes, OpenAPI, MCP tool registration, and `/integrations` all read that catalog. A registration points at the function the normal UI uses; it is not an alternative implementation. Pure calculations can run locally in the browser, including the recombinator's Web Worker, without an HTTP round trip.
 
 ## Coverage

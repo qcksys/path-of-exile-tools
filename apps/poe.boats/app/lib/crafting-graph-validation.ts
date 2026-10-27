@@ -12,7 +12,7 @@ import {
     validateSourcePreparationRevision,
 } from "./crafting-source-preparation";
 
-export const CRAFTING_GRAPH_ENGINE = "crafting-graph-15";
+export const CRAFTING_GRAPH_ENGINE = "crafting-graph-16";
 
 export function graphInputCount(catalog: CraftingCatalog, method: CraftingMethod) {
     return method.kind === "recombine" ||
