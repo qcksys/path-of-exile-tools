@@ -293,6 +293,27 @@ it("links between the variants of an item", async () => {
     );
 });
 
+it("links an identified unique to its unidentified market", async () => {
+    showMarket("/1/market/items/Abberath's%20Hooves?league=Allflame&category=armour");
+    const variants = await screen.findByRole("navigation", { name: "Item variants" });
+    expect(within(variants).getByRole("heading").textContent).toContain(
+        "Variants of Abberath's Hooves",
+    );
+    const unidentified = within(variants).getByRole("link", { name: /Unidentified/ });
+    expect(unidentified.getAttribute("aria-current")).toBeNull();
+    fireEvent.click(unidentified);
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                item: "unid:2DItems/Armours/Boots/AbberathsHooves",
+                identified: "false",
+            }),
+            "history",
+        ),
+    );
+});
+
 it("redirects legacy query links while preserving every variant field", async () => {
     const response = await listLoader({
         request: new Request(

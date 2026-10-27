@@ -8,7 +8,7 @@ when the repair does not run.
 | --- | --- | --- |
 | Commits in a worktree run the main checkout's hooks, or none | An absolute `core.hooksPath` written per worktree | `prepare`, plus the `PreToolUse` hook on `git commit` |
 | The session has none of the project's MCP servers | `.mcp.json` is generated and gitignored, and Claude Code reads it once, at session start | [`.worktreeinclude`](../.worktreeinclude); the `SessionStart` hook says so when it did not arrive |
-| A package runs without the main checkout's local env overrides | `.env`, `.env.local` and `.dev.vars` are gitignored | [`.worktreeinclude`](../.worktreeinclude) |
+| A package runs without the main checkout's local env overrides | `.env` and `.env.local` are gitignored | [`.worktreeinclude`](../.worktreeinclude) |
 | Builds, type checks and tests fail with errors that look like source bugs | The worktree has no `node_modules` | By hand: `vp install` |
 
 ## The `core.hooksPath` override
@@ -68,10 +68,11 @@ checkout into each worktree they create, provided the files are also gitignored.
   [`scripts/check-claude-mcp.ts`](../scripts/check-claude-mcp.ts) runs at `SessionStart` and names
   any declared server the file lacks, because a server Claude Code never loaded produces no error.
 - `/.agents/local.json` holds optional MCP credentials the sync reads.
-- `apps/*/.env`, `apps/*/.env.local`, `apps/*/.dev.vars`, `packages/*/.env` and
-  `packages/*/.env.local` are local env overrides. Each package's committed `.env.schema` resolves
-  its credentials from 1Password, but an override file still takes precedence over the schema, so a
-  checkout that points a package elsewhere on purpose keeps doing so in its worktrees.
+- `apps/*/.env`, `apps/*/.env.local`, `packages/*/.env` and `packages/*/.env.local` are local env
+  overrides. Each package's committed `.env.schema` resolves its credentials from 1Password, but an
+  override file still takes precedence over the schema, so a checkout that points a package
+  elsewhere on purpose keeps doing so in its worktrees. `.dev.vars` is not copied: the varlock
+  Cloudflare integration replaces it and stops `react-router typegen` and builds while one exists.
 
 Deployment credentials and local databases (`data.db`, `data.duckdb`) are deliberately left out.
 
