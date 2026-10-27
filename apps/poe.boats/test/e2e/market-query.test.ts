@@ -7,7 +7,11 @@ import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection, type RowDataPacket } from "mysql2/promise";
 import { afterAll, beforeAll, expect, it, vi } from "vite-plus/test";
 import type { TDatabase } from "~/db/client";
-import { getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
+import {
+    getMarketData,
+    getMarketExchangeItem,
+    getPoe2MarketExchange,
+} from "~/db/queries/market.queries";
 import {
     upsertStashCurrencyHourly,
     upsertStashUniqueHourly,
@@ -1012,7 +1016,7 @@ it("uses the current exchange divine rate for list rows, leaving it absent when 
     const filters = marketFiltersSchema.parse({ league: "DivineRate" });
     const current = await marketData(db as unknown as TDatabase, filters, "list");
     expect(current.exchange).toEqual(
-        expect.arrayContaining([expect.objectContaining({ name: "Divine Orb", chaos: 200 })]),
+        expect.arrayContaining([expect.objectContaining({ name: "Divine Orb", price: 200 })]),
     );
     expect(current.chaosRates.divine).toBe(200);
 
@@ -1021,7 +1025,7 @@ it("uses the current exchange divine rate for list rows, leaving it absent when 
     // The exchange row keeps the day's earlier rate, but stash prices do not convert at it.
     expect(untraded.exchange).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ name: "Divine Orb", chaos: 150, current: false }),
+            expect.objectContaining({ name: "Divine Orb", price: 150, current: false }),
         ]),
     );
     expect(untraded.chaosRates).not.toHaveProperty("divine");
@@ -1074,19 +1078,19 @@ it("prices exchange-traded items from the exchange and leaves out their stash li
     expect(result.exchange).toEqual([
         expect.objectContaining({
             name: "Divine Orb",
-            chaos: 200,
+            price: 200,
             current: true,
             volume: expect.closeTo((10 * 200) / 26, 9),
             pair: { quoteId: chaosId, name: "Chaos Orb", rate: 200 },
         }),
-        expect.objectContaining({ name: "Chaos Orb", category: "currency", chaos: 1 }),
+        expect.objectContaining({ name: "Chaos Orb", category: "currency", price: 1 }),
         expect.objectContaining({
             name: "Scroll of Wisdom",
-            chaos: 0.002,
+            price: 0.002,
             current: false,
             hour: hour - 7200,
         }),
-        expect.objectContaining({ name: "Portal Scroll", chaos: null, volume: null, hour: null }),
+        expect.objectContaining({ name: "Portal Scroll", price: null, volume: null, hour: null }),
     ]);
     const searched = await marketData(
         db as unknown as TDatabase,
@@ -1096,10 +1100,12 @@ it("prices exchange-traded items from the exchange and leaves out their stash li
     expect(searched.exchange.map((row) => row.name)).toEqual(["Scroll of Wisdom"]);
 });
 
-it("discovers exchange-only PoE 2 leagues and prices from the latest completed hour first", async () => {
+it("lists exchange-only PoE 2 leagues in exalted, from the latest completed hour first", async () => {
     const chaosId = "Metadata/Items/Currency/CurrencyRerollRare";
     const divineId = "Metadata/Items/Currency/CurrencyModValues";
     const exaltedId = "Metadata/Items/Currency/CurrencyAddModToRare";
+    const runeId = "Metadata/Items/SoulCores/RuneFire";
+    const transmuteId = "Metadata/Items/Currency/CurrencyUpgradeToMagic";
     const snapshot = (marketId: string, at: number, volumeTraded: Record<string, number>) => ({
         realm: "poe2",
         league: "Forbidden Rites",
@@ -1112,33 +1118,88 @@ it("discovers exchange-only PoE 2 leagues and prices from the latest completed h
         highestStock: null,
     });
     await upsertStashCurrencyHourly(db as unknown as TDatabase, [
-        snapshot(`${divineId}|${chaosId}`, hour, { [divineId]: 2, [chaosId]: 20 }),
-        snapshot(`${divineId}|${chaosId}`, hour + 3600, { [divineId]: 1, [chaosId]: 99 }),
-        snapshot(`${exaltedId}|${chaosId}`, hour - 3600, { [exaltedId]: 5, [chaosId]: 10 }),
-        snapshot(`${exaltedId}|${chaosId}`, hour, { [exaltedId]: 0, [chaosId]: 0 }),
+        snapshot(`${divineId}|${exaltedId}`, hour, { [divineId]: 2, [exaltedId]: 800 }),
+        // After the latest completed hour, so unused.
+        snapshot(`${divineId}|${exaltedId}`, hour + 3600, { [divineId]: 1, [exaltedId]: 999 }),
+        snapshot(`${chaosId}|${exaltedId}`, hour - 3600, { [chaosId]: 10, [exaltedId]: 5 }),
+        snapshot(`${chaosId}|${exaltedId}`, hour, { [chaosId]: 0, [exaltedId]: 0 }),
+        // Without an exalted pair, the rune converts through divine.
+        snapshot(`${runeId}|${divineId}`, hour, { [runeId]: 10, [divineId]: 1 }),
+        // Not traded against the rune, so its item page does not read this market.
+        snapshot(`${transmuteId}|${exaltedId}`, hour, { [transmuteId]: 10, [exaltedId]: 1 }),
+        // A private league trading in the same hour, with fewer snapshots.
+        {
+            ...snapshot(`${divineId}|${exaltedId}`, hour, { [divineId]: 1, [exaltedId]: 50 }),
+            league: "Private (PL1)",
+        },
     ]);
-    const result = await marketData(
+    const filters = { league: "", q: "", days: "7", category: "all" } as const;
+    const result = await getPoe2MarketExchange(db as unknown as TDatabase, filters);
+    expect(result.seasons.slice(0, 2)).toEqual([
+        { league: "Forbidden Rites", firstHour: hour - 3600, latestHour: hour },
+        { league: "Private (PL1)", firstHour: hour, latestHour: hour },
+    ]);
+    expect(result.filters.league).toBe("Forbidden Rites");
+    const rites = await getPoe2MarketExchange(db as unknown as TDatabase, {
+        ...filters,
+        league: "Forbidden Rites",
+    });
+    expect(rites).toMatchObject({ unit: "exalted", divine: 400 });
+    // Dearest first.
+    expect(rites.rows).toEqual([
+        expect.objectContaining({ name: "Divine Orb", category: "currency", price: 400, hour }),
+        expect.objectContaining({
+            name: "Desert Rune",
+            category: "runes",
+            price: 40,
+            current: true,
+            via: { itemId: divineId, name: "Divine Orb" },
+        }),
+        expect.objectContaining({ name: "Exalted Orb", price: 1, current: true }),
+        expect.objectContaining({
+            name: "Chaos Orb",
+            price: 0.5,
+            hour: hour - 3600,
+            current: false,
+        }),
+        expect.objectContaining({ itemId: transmuteId, price: 0.1 }),
+    ]);
+    const runes = await getPoe2MarketExchange(db as unknown as TDatabase, {
+        ...filters,
+        league: "Forbidden Rites",
+        category: "runes",
+        q: "desert",
+    });
+    expect(runes.rows.map((row) => row.name)).toEqual(["Desert Rune"]);
+    // The PoE 1 market operation prices a poe2 realm's exchange in exalted too, without chaos rates.
+    const legacy = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ realm: "poe2", league: "Forbidden Rites" }),
         "list",
     );
-    expect(result.season).toEqual({
+    expect(legacy).toMatchObject({ exchangeUnit: "exalted", rows: [], chaosRates: {} });
+    const item = await getMarketExchangeItem(db as unknown as TDatabase, {
+        realm: "poe2",
         league: "Forbidden Rites",
-        firstHour: hour - 3600,
-        latestHour: hour,
+        days: "7",
+        itemId: runeId,
     });
-    expect(result.rows).toEqual([]);
-    expect(result.exchange).toEqual(
-        expect.arrayContaining([
-            expect.objectContaining({ name: "Divine Orb", chaos: 10, hour, current: true }),
-            expect.objectContaining({
-                name: "Exalted Orb",
-                chaos: 2,
-                hour: hour - 3600,
-                current: false,
-            }),
-        ]),
-    );
+    expect(item).toMatchObject({ unit: "exalted", divine: 400, item: { price: 40 } });
+    expect(item.history.prices).toEqual([
+        { hour, price: 40, low: null, high: null, via: divineId, units: 10 },
+    ]);
+    // Divine Orb trades against exalted itself, which must not pull in every exalted market.
+    statements.length = 0;
+    const divineItem = await getMarketExchangeItem(db as unknown as TDatabase, {
+        realm: "poe2",
+        league: "Forbidden Rites",
+        days: "7",
+        itemId: divineId,
+    });
+    expect(divineItem.item).toMatchObject({ price: 400, current: true });
+    expect(
+        statements.filter(({ params }) => params.includes(`${transmuteId}|${exaltedId}`)),
+    ).toEqual([]);
 });
 
 it("retains old exchange identities without treating future-only markets as listed", async () => {
@@ -1182,7 +1243,7 @@ it("retains old exchange identities without treating future-only markets as list
         expect.arrayContaining([
             expect.objectContaining({
                 name: "Orb of Scouring",
-                chaos: 10,
+                price: 10,
                 hour: hour - 90000,
                 current: false,
             }),
@@ -1238,25 +1299,26 @@ it("reads one exchange item's list row and hourly history through every pair", a
         league: "ExchangeItem",
         latestHour: hour,
         historyStart: hour - 7 * 86400 + 3600,
+        unit: "chaos",
         divine: 160,
         item: {
             name: "Tainted Divine Teardrop",
-            chaos: 320,
+            price: 320,
             current: true,
             via: { itemId: taintedId, name: "Tainted Exalted Orb" },
             pair: { quoteId: taintedId, name: "Tainted Exalted Orb", rate: 1 },
         },
         history: {
-            chaos: [
+            prices: [
                 {
                     hour: yesterday,
-                    chaos: 600,
+                    price: 600,
                     low: null,
                     high: null,
                     via: taintedId,
                     units: 6,
                 },
-                { hour, chaos: 320, low: 288, high: 384, via: taintedId, units: 4 },
+                { hour, price: 320, low: 288, high: 384, via: taintedId, units: 4 },
             ],
             pairs: [
                 {

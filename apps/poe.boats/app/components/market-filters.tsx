@@ -107,8 +107,7 @@ export function MarketFiltersForm({
                 : null}
             <div className="flex flex-wrap items-end gap-3">
                 {select("realm", "Realm", {
-                    pc: "PoE 1 · PC",
-                    poe2: "PoE 2",
+                    pc: "PC",
                     xbox: "Xbox",
                     sony: "PlayStation",
                 })}

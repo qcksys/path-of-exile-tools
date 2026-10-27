@@ -80,16 +80,16 @@ it("prices each exchange item from the latest hour's trades", () => {
         describe,
     );
     expect(byName(rows)).toEqual({
-        "Chaos Orb": expect.objectContaining({ chaos: 1, current: true, hour }),
+        "Chaos Orb": expect.objectContaining({ price: 1, current: true, hour }),
         "Divine Orb": expect.objectContaining({
-            chaos: 200,
+            price: 200,
             current: true,
             hour,
             via: { itemId: chaos, name: "Chaos Orb" },
         }),
-        "Exalted Orb": expect.objectContaining({ chaos: 5 }),
+        "Exalted Orb": expect.objectContaining({ price: 5 }),
         "Scroll of Wisdom": expect.objectContaining({
-            chaos: expect.closeTo(0.01, 9),
+            price: expect.closeTo(0.01, 9),
             current: true,
             via: { itemId: exalted, name: "Exalted Orb" },
             // Volume and trend come only from daily totals.
@@ -107,7 +107,7 @@ it("prices an item through another traded item when both legs are in the latest 
         describe,
     );
     expect(rows.find((row) => row.itemId === teardrop)).toMatchObject({
-        chaos: 320,
+        price: 320,
         via: { itemId: taintedExalted, name: "Tainted Exalted Orb" },
         hour,
     });
@@ -122,7 +122,7 @@ it("prices an item through another traded item when both legs are in the latest 
     );
     // It traded in the latest hour, but has no rate.
     expect(missingBridge.find((row) => row.itemId === teardrop)).toMatchObject({
-        chaos: null,
+        price: null,
         hour,
         current: false,
     });
@@ -139,7 +139,7 @@ it("prefers the direct quote over conversion, matching crafting exchange pricing
         hour,
         describe,
     );
-    expect(rows.find((row) => row.itemId === wisdom)?.chaos).toBe(0.02);
+    expect(rows.find((row) => row.itemId === wisdom)?.price).toBe(0.02);
 });
 
 it("falls back to the newest traded day's volume-weighted price when the latest hour has none", () => {
@@ -155,7 +155,7 @@ it("falls back to the newest traded day's volume-weighted price when the latest 
         [wisdom],
     );
     expect(rows.find((row) => row.itemId === wisdom)).toMatchObject({
-        chaos: 0.02,
+        price: 0.02,
         current: false,
         hour: today - DAY + 18000,
         via: { itemId: chaos, name: "Chaos Orb" },
@@ -169,7 +169,7 @@ it("falls back to the newest traded day's volume-weighted price when the latest 
         [wisdom],
     );
     expect(mixed.find((row) => row.itemId === wisdom)).toMatchObject({
-        chaos: null,
+        price: null,
         hour: today - DAY + 3600,
     });
 });
@@ -185,7 +185,7 @@ it("keeps one observation of a pair stored under both orders", () => {
         describe,
     );
     expect(rows.find((row) => row.name === "Divine Orb")).toMatchObject({
-        chaos: 150,
+        price: 150,
         current: true,
         hour,
     });
@@ -223,7 +223,7 @@ it("lists exchange items that did not trade without a price", () => {
         itemId: wisdom,
         name: "Scroll of Wisdom",
         category: "currency",
-        chaos: null,
+        price: null,
         via: null,
         hour: null,
         current: false,
@@ -290,17 +290,17 @@ it("returns an item's hourly chaos price and range through a bridge and each pai
         teardrop,
         describe,
     );
-    expect(history.chaos).toEqual([
+    expect(history.prices).toEqual([
         // Through Tainted Exalted Orb, its pair's range scales by that orb's chaos price.
         {
             hour: hour - 3600,
-            chaos: 600,
+            price: 600,
             low: 540,
             high: 720,
             via: taintedExalted,
             units: 6,
         },
-        { hour, chaos: 400, low: 380, high: 410, via: chaos, units: 5 },
+        { hour, price: 400, low: 380, high: 410, via: chaos, units: 5 },
     ]);
     expect(history.pairs).toEqual([
         {
@@ -316,5 +316,42 @@ it("returns an item's hourly chaos price and range through a bridge and each pai
             name: "Chaos Orb",
             hours: [{ hour, rate: 400, low: 380, high: 410, units: 1 }],
         },
+    ]);
+});
+
+it("prices PoE 2 items in exalted, through divine before chaos when there is no exalted pair", () => {
+    const rows = marketExchangeRows(
+        [
+            snapshot(divine, 1, exalted, 400),
+            snapshot(chaos, 10, exalted, 20),
+            snapshot(wisdom, 100, chaos, 1),
+            snapshot(teardrop, 1, chaos, 50),
+            snapshot(teardrop, 10, divine, 3),
+        ],
+        [],
+        hour,
+        describe,
+        [],
+        0,
+        "exalted",
+    );
+    expect(byName(rows)).toMatchObject({
+        "Exalted Orb": { price: 1, current: true },
+        "Divine Orb": { price: 400, via: { itemId: exalted } },
+        "Chaos Orb": { price: 2, via: { itemId: exalted } },
+        "Scroll of Wisdom": { price: 0.02, via: { itemId: chaos } },
+        "Tainted Divine Teardrop": { price: 120, via: { itemId: divine } },
+    });
+});
+
+it("returns an item's hourly exalted price through a chaos bridge", () => {
+    const history = marketExchangeHistory(
+        [snapshot(chaos, 10, exalted, 20), snapshot(wisdom, 100, chaos, 1)],
+        wisdom,
+        describe,
+        "exalted",
+    );
+    expect(history.prices).toEqual([
+        { hour, price: 0.02, low: null, high: null, via: chaos, units: 100 },
     ]);
 });

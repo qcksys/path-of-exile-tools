@@ -15,6 +15,12 @@ export default function Poe2Home() {
                     Crafting Calculator
                 </Link>
                 <Link
+                    to="/2/market/currency"
+                    className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                    Exchange Prices
+                </Link>
+                <Link
                     to="/2/arbitrage"
                     className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                 >
