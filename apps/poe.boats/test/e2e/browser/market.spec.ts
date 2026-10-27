@@ -5,6 +5,10 @@ test("groups categories and applies filtering and price ordering across market p
     page,
 }, testInfo) => {
     await page.goto("/1/market?league=Allflame");
+    await expect(page).toHaveURL(
+        (url) =>
+            url.pathname === "/1/market/currency" && url.searchParams.get("league") === "Allflame",
+    );
     const categories = page.getByRole("navigation", { name: "Market categories" });
     await expect(categories.getByRole("heading", { name: "Equipment & gems" })).toBeVisible();
     await categories.getByRole("link", { name: "Armour", exact: true }).click();
@@ -95,7 +99,7 @@ test("redirects legacy bookmarks and displays a usable mobile history page", asy
     ).toBeVisible();
     await page.getByRole("link", { name: /Back to markets/ }).click();
     await expect(page.getByRole("region", { name: "Item markets", exact: true })).toBeVisible();
-    const toggle = page.getByRole("button", { name: "Categories: All items" });
+    const toggle = page.getByRole("button", { name: "Categories: Currency" });
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await toggle.click();
     await page

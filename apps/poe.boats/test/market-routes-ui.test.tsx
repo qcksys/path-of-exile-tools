@@ -216,6 +216,28 @@ it("redirects category query links to the category path", async () => {
     expect(getMarketData).not.toHaveBeenCalled();
 });
 
+it("redirects the bare market path to the default category, keeping its filters", async () => {
+    const response = await listLoader({
+        request: new Request(
+            "https://example.invalid/1/market?league=Allflame&order=listings-desc&priceMin=5",
+        ),
+        context,
+        params: {},
+        unstable_pattern: "/1/market/:category?",
+        unstable_url: new URL("https://example.invalid/1/market"),
+    });
+    if (!(response instanceof Response)) throw new Error("Expected redirect");
+    expect(response.status).toBe(308);
+    const url = new URL(response.headers.get("Location")!, "https://example.invalid");
+    expect(url.pathname).toBe("/1/market/currency");
+    expect(Object.fromEntries(url.searchParams)).toMatchObject({
+        league: "Allflame",
+        order: "listings-desc",
+        priceMin: "5",
+    });
+    expect(getMarketData).not.toHaveBeenCalled();
+});
+
 it("rejects unknown category paths", async () => {
     await expect(
         listLoader({
@@ -350,7 +372,7 @@ it("keeps the column filters visible when they match nothing", async () => {
         rows: [],
         hasMore: false,
     }));
-    showMarket("/1/market?league=Allflame&priceMin=999");
+    showMarket("/1/market/armour?league=Allflame&priceMin=999");
     const table = await screen.findByRole("table", { name: "Item markets" });
     expect(within(table).getByRole("status").textContent).toContain(
         "No markets match these filters",

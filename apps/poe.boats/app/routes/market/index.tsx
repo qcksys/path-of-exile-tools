@@ -49,7 +49,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
             }),
             308,
         );
-    if (new URL(request.url).searchParams.has("category"))
+    if (!params.category || new URL(request.url).searchParams.has("category"))
         return redirect(marketLink(filters), 308);
     return getMarketData(context.get(dbContext), filters, "list");
 }
