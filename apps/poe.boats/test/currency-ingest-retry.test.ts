@@ -29,8 +29,8 @@ it("uses the same row and chunk order for overlapping writers without mutating t
     expect(await upsertStashCurrencyHourly(db, reversed)).toBe(401);
     expect(batches).toEqual(first);
     expect(reversed[0]?.marketId).toBe("market:0400");
-    // Three chunks, each writing hourly rows, then market first hours, then hour coverage.
-    expect(first).toHaveLength(9);
+    // Three chunks, each writing hourly rows, then market first hours, daily totals and hour coverage.
+    expect(first).toHaveLength(12);
 });
 
 it.each([
@@ -53,8 +53,8 @@ it.each([
     );
     const assertion = expect(work).resolves.toBe(201);
     await Promise.all([assertion, vi.runAllTimersAsync()]);
-    // Two chunks of three statements, plus one replay of the failed second statement.
-    expect(attempts).toHaveLength(7);
+    // Two chunks of four statements, plus one replay of the failed second statement.
+    expect(attempts).toHaveLength(9);
     expect(attempts[1]).toEqual(attempts[2]);
     expect(attempts[0]).not.toEqual(attempts[1]);
 });

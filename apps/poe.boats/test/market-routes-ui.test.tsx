@@ -5,21 +5,28 @@ import { createRoutesStub, RouterContextProvider, useLoaderData, useLocation } f
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { dbContext } from "~/context";
 import { createDbConnection } from "~/db/client";
-import { getMarketData } from "~/db/queries/market.queries";
+import { getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
 import Market from "~/routes/market";
+import MarketExchangeItem, { loader as exchangeLoader } from "~/routes/market/exchange";
 import MarketIndex, { loader as listLoader } from "~/routes/market/index";
 import MarketItem, { loader as itemLoader } from "~/routes/market/item";
 import { changeControl } from "./control-helpers";
-import { marketFixture } from "./market-fixtures";
+import { marketExchangeFixture, marketFixture } from "./market-fixtures";
 
 vi.mock("~/components/app-header", () => ({ AppHeader: () => null }));
 vi.mock("~/components/app-footer", () => ({ AppFooter: () => null }));
-vi.mock("~/db/queries/market.queries", () => ({ getMarketData: vi.fn() }));
+vi.mock("~/db/queries/market.queries", () => ({
+    getMarketData: vi.fn(),
+    getMarketExchangeItem: vi.fn(),
+}));
 const context = new RouterContextProvider();
 context.set(dbContext, createDbConnection("mysql://user:pass@example.invalid/test"));
 
 beforeEach(() => {
     vi.mocked(getMarketData).mockImplementation(async (_db, filters) => marketFixture(filters));
+    vi.mocked(getMarketExchangeItem).mockImplementation(async (_db, input) =>
+        marketExchangeFixture(input),
+    );
 });
 afterEach(() => {
     cleanup();
@@ -64,6 +71,18 @@ function showMarket(path = "/1/market/armour?league=Allflame&order=name-asc&page
                         }),
                     Component: () => <MarketItem loaderData={useLoaderData()} />,
                 },
+                {
+                    path: "exchange/*",
+                    loader: ({ request, params }) =>
+                        exchangeLoader({
+                            request,
+                            context,
+                            params: { "*": params["*"]! },
+                            unstable_pattern: "/1/market/exchange/*",
+                            unstable_url: new URL(request.url),
+                        }),
+                    Component: () => <MarketExchangeItem loaderData={useLoaderData()} />,
+                },
             ],
         },
     ]);
@@ -106,30 +125,138 @@ it("lists listing currencies cheapest first with their chaos or divine equivalen
     ]);
 });
 
-it("shows exchange-traded items in their own table priced in chaos and divine", async () => {
+function exchangeRow(table: HTMLElement, name: string) {
+    return within(table).getByRole("link", { name }).closest("tr")!;
+}
+
+it("shows exchange-traded items with their value, trend, volume and most traded pair", async () => {
     showMarket("/1/market?league=Allflame&category=armour");
     const table = await screen.findByRole("table", { name: "Unique armour exchange" });
-    const row = within(table).getByText("Scroll of Wisdom").closest("tr")!;
-    expect(row.textContent).toContain("0.002 chaos≈ 0.00001333 divine");
-    expect(row.textContent).toContain("500");
+    const row = exchangeRow(table, "Scroll of Wisdom");
+    const cells = [...row.querySelectorAll("td")].map((cell) => cell.textContent);
+    expect(cells).toEqual([
+        "Scroll of Wisdom",
+        "0.002 chaos≈ 0.00001333 divine",
+        "+25%",
+        "1.5K chaos",
+        "1Chaos Orb⇄for500Scroll of Wisdom",
+    ]);
     expect(screen.getByText("1 on the exchange · 1 variants")).toBeTruthy();
+    expect(
+        within(table).getByRole("link", { name: "Scroll of Wisdom" }).getAttribute("href"),
+    ).toMatch(/^\/1\/market\/exchange\/Currency\/CurrencyIdentification\?.*category=armour/);
 });
 
-it("labels an exchange item with no trades in the latest hour", async () => {
+it("switches exchange values between adaptive, chaos and divine", async () => {
+    vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+        const fixture = marketFixture(filters);
+        return {
+            ...fixture,
+            exchange: fixture.exchange.map((row) => ({ ...row, chaos: 300 })),
+        };
+    });
+    showMarket("/1/market?league=Allflame&category=armour");
+    const table = await screen.findByRole("table", { name: "Unique armour exchange" });
+    const value = () => exchangeRow(table, "Scroll of Wisdom").cells[1]!;
+    expect(value().textContent).toBe("2 divine≈ 300 chaos");
+    fireEvent.click(screen.getByRole("button", { name: "Chaos Orb" }));
+    expect(value().textContent).toBe("300 chaos");
+    fireEvent.click(screen.getByRole("button", { name: "Divine Orb" }));
+    expect(value().textContent).toBe("2 divine");
+    expect(screen.getByRole("button", { name: "Divine Orb" }).getAttribute("aria-pressed")).toBe(
+        "true",
+    );
+});
+
+it("marks an exchange price from an earlier day and names its conversion", async () => {
     vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
         const fixture = marketFixture(filters);
         return {
             ...fixture,
             exchange: fixture.exchange.map((row) => ({
                 ...row,
-                chaos: null,
-                volume: 0,
-                hour: null,
+                current: false,
+                hour: 1_792_810_800,
+                via: { itemId: "Metadata/Items/Currency/CurrencyModValues", name: "Divine Orb" },
             })),
         };
     });
     showMarket("/1/market?league=Allflame&category=armour");
-    expect(await screen.findByText("No trades in latest hour")).toBeTruthy();
+    const table = await screen.findByRole("table", { name: "Unique armour exchange" });
+    const value = exchangeRow(table, "Scroll of Wisdom").cells[1]!;
+    expect(value.textContent).toContain("Last traded 2026-10-24 03:00 UTC");
+    expect(value.textContent).toContain("via Divine Orb");
+    expect(value.querySelector("p")!.className).toContain("text-muted-foreground");
+});
+
+it("labels exchange items without a price by whether they traded", async () => {
+    vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+        const fixture = marketFixture(filters);
+        const row = { ...fixture.exchange[0]!, chaos: null, current: false, volume: null };
+        return {
+            ...fixture,
+            exchange: [
+                { ...row, hour: null, history: Array(7).fill(null), change: null, pair: null },
+                { ...row, itemId: "Metadata/Items/Currency/CurrencyPortal", name: "Portal Scroll" },
+            ],
+        };
+    });
+    showMarket("/1/market?league=Allflame&category=armour");
+    const table = await screen.findByRole("table", { name: "Unique armour exchange" });
+    expect(exchangeRow(table, "Scroll of Wisdom").cells[1]!.textContent).toBe(
+        "No trades in 7 days",
+    );
+    expect(exchangeRow(table, "Portal Scroll").cells[1]!.textContent).toBe("No rate");
+});
+
+it("opens an exchange item's page with its history and returns to the list", async () => {
+    showMarket("/1/market?league=Allflame&category=armour&order=name-asc&days=30");
+    const table = await screen.findByRole("table", { name: "Unique armour exchange" });
+    fireEvent.click(within(table).getByRole("link", { name: "Scroll of Wisdom" }));
+    const page = await screen.findByRole("region", { name: "Exchange item" });
+    expect(within(page).getByRole("heading", { level: 2 }).textContent).toBe("Scroll of Wisdom");
+    // The list's period sets the hourly history's window.
+    expect(getMarketExchangeItem).toHaveBeenLastCalledWith(expect.anything(), {
+        realm: "pc",
+        league: "Allflame",
+        days: "30",
+        itemId: "Metadata/Items/Currency/CurrencyIdentification",
+    });
+    expect(page.textContent).toContain("Traded in the latest hour");
+    expect(
+        within(page).getByRole("heading", { level: 3, name: /Hourly price history/ }).textContent,
+    ).toContain("last 30 days");
+    const pairs = within(page).getByRole("region", { name: "Exchange pairs" });
+    expect(
+        within(pairs)
+            .getAllByRole("row")
+            .map((row) => (row as HTMLTableRowElement).cells[0]!.textContent),
+    ).toEqual(["Traded against", "Chaos Orb", "Divine Orb"]);
+    const history = within(page).getByRole("region", { name: "Price history" });
+    fireEvent.click(
+        within(history).getByRole("button", { name: "Divine Orb per Scroll of Wisdom" }),
+    );
+    expect(
+        within(history)
+            .getByRole("button", { name: "Divine Orb per Scroll of Wisdom" })
+            .getAttribute("aria-pressed"),
+    ).toBe("true");
+    fireEvent.click(within(page).getByRole("link", { name: /Back to markets/ }));
+    await screen.findByRole("region", { name: "Item markets" });
+    expect(screen.getByLabelText("Current URL").textContent).toMatch(/^\/1\/market\/armour\?/);
+    expect(screen.getByLabelText("Current URL").textContent).toContain("order=name-asc");
+});
+
+it("answers 404 for an item outside the exchange catalogue", async () => {
+    await expect(
+        exchangeLoader({
+            request: new Request("https://example.invalid/1/market/exchange/Unknown?league=X"),
+            context,
+            params: { "*": "Unknown" },
+            unstable_pattern: "/1/market/exchange/*",
+            unstable_url: new URL("https://example.invalid/1/market/exchange/Unknown"),
+        }),
+    ).rejects.toMatchObject({ status: 404 });
 });
 
 it("collapses listing currencies costing over three times the most listed one", async () => {

@@ -15,6 +15,7 @@ export default [
             route("market", "routes/market.tsx", [
                 route(":category?", "routes/market/index.tsx"),
                 route("items/:item", "routes/market/item.tsx"),
+                route("exchange/*", "routes/market/exchange.tsx"),
             ]),
         ]),
         ...prefix("2", [

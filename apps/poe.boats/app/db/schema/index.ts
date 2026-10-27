@@ -17,6 +17,7 @@ import { tStashCheckpoint, tStashDailySample } from "~/db/schema/stash.checkpoin
 import { tStashCohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCohortRevisionHour } from "~/db/schema/stash.cohort-revision-hour";
+import { tStashCurrencyDaily } from "~/db/schema/stash.currency-daily";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyLatest } from "~/db/schema/stash.currency-latest";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
@@ -46,6 +47,7 @@ export const schema = {
     tStashUniqueDaily,
     tStashMarketDaily,
     tStashCurrencyHourly,
+    tStashCurrencyDaily,
     tStashCurrencyLatest,
     tStashCurrencyMarket,
     tStashHourCoverage,
