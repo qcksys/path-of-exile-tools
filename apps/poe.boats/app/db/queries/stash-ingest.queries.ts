@@ -1,5 +1,5 @@
 import { type CohortHourly, cohortBaseTypes, type MarketCohortDefinition } from "@poe-tools/market";
-import { and, count, eq, inArray, sql } from "drizzle-orm";
+import { and, count, eq, inArray, type SQLWrapper, sql } from "drizzle-orm";
 import type { TDatabase } from "~/db/client.ts";
 import { tStashBasemapSnapshot } from "~/db/schema/stash.basemap-snapshot";
 import { tStashCohort } from "~/db/schema/stash.cohort";
@@ -9,6 +9,7 @@ import {
     type TStashCurrencyHourlyI,
     tStashCurrencyHourly,
 } from "~/db/schema/stash.currency-hourly";
+import { tStashCurrencyLatest } from "~/db/schema/stash.currency-latest";
 import { type TStashUniqueHourlyI, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 
 const UPSERT_CHUNK = 200;
@@ -157,7 +158,47 @@ export async function upsertStashCurrencyHourly(
         );
         written += batch.length;
     }
+    await upsertStashCurrencyLatest(db, ordered);
     return written;
+}
+
+/** Keeps each market's newest hour with trades; older or untraded hours leave it unchanged. */
+async function upsertStashCurrencyLatest(db: TDatabase, ordered: TStashCurrencyHourlyI[]) {
+    const newest = new Map<string, TStashCurrencyHourlyI>();
+    for (const row of ordered) {
+        const [first] = row.marketId.split("|");
+        if (!first || !((row.volumeTraded?.[first] ?? 0) > 0)) continue;
+        // `ordered` sorts each market's hours ascending, so the last traded hour wins.
+        newest.set(`${row.realm ?? "pc"}\u0000${row.league}\u0000${row.marketId}`, row);
+    }
+    const t = tStashCurrencyLatest;
+    // `hour` takes the greater value, so each column comparison holds before or after it updates.
+    const newer = (column: SQLWrapper) =>
+        sql`if(values(${t.hour}) >= ${t.hour}, values(${column}), ${column})`;
+    for (const batch of chunk([...newest.values()], UPSERT_CHUNK))
+        await retryCurrencyDeadlock(() =>
+            db
+                .insert(t)
+                .values(
+                    batch.map((row) => ({
+                        realm: row.realm,
+                        league: row.league,
+                        marketId: row.marketId,
+                        hour: row.hour,
+                        lowestRatio: row.lowestRatio,
+                        highestRatio: row.highestRatio,
+                        volumeTraded: row.volumeTraded,
+                    })),
+                )
+                .onDuplicateKeyUpdate({
+                    set: {
+                        lowestRatio: newer(t.lowestRatio),
+                        highestRatio: newer(t.highestRatio),
+                        volumeTraded: newer(t.volumeTraded),
+                        hour: sql`greatest(${t.hour}, values(${t.hour}))`,
+                    },
+                }),
+        );
 }
 
 function isDeadlock(error: unknown): boolean {

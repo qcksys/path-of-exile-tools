@@ -50,6 +50,20 @@ export function marketFixture(
         seasons: [season],
         season,
         hasMore: filters.page === 1,
+        chaosRates: { chaos: 1, divine: 150 },
+        exchange:
+            filters.page === 1
+                ? [
+                      {
+                          itemId: "Metadata/Items/Currency/CurrencyIdentification",
+                          name: "Scroll of Wisdom",
+                          category: filters.category === "all" ? "currency" : filters.category,
+                          chaos: 0.002,
+                          volume: 500,
+                          hour: row.hour,
+                      },
+                  ]
+                : [],
         rows: [
             {
                 ...row,

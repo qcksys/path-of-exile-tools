@@ -1,4 +1,5 @@
 import { z } from "zod";
+import tradeListingCurrencies from "../data/listing-currencies.json" with { type: "json" };
 
 const itemId = z.string().startsWith("Metadata/Items/").max(500);
 export const exchangeRealmSchema = z.enum(["pc", "xbox", "sony", "poe2"]);
@@ -105,6 +106,11 @@ export function exchangeCurrencyId(currency: string) {
         : itemId.safeParse(currency).success
           ? currency
           : null;
+}
+/** Exchange item ID for any trade price currency, e.g. `wisdom`, from the game's trade static data. */
+export function listingCurrencyId(currency: string, game: "poe1" | "poe2") {
+    const ids: Record<string, string> = tradeListingCurrencies[game];
+    return Object.hasOwn(ids, currency) ? ids[currency]! : exchangeCurrencyId(currency);
 }
 export function exchangeRealmMatchesGame(
     realm: ExchangePriceReference["realm"],

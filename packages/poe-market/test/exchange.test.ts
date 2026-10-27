@@ -5,6 +5,7 @@ import {
     exchangeCurrencyId,
     exchangeSnapshotSchema,
     exchangeUnitQuote,
+    listingCurrencyId,
     quoteExchangeSnapshot,
 } from "../src/exchange.ts";
 
@@ -75,5 +76,18 @@ describe("currency exchange estimates", () => {
             estimator: "currency-unit-v1",
         });
         expect(() => exchangeUnitQuote(reference)).toThrow("itself");
+    });
+
+    it("maps every trade price currency to its exchange item for both games", () => {
+        const wisdom = "Metadata/Items/Currency/CurrencyIdentification";
+        expect(listingCurrencyId("wisdom", "poe1")).toBe(wisdom);
+        expect(listingCurrencyId("wisdom", "poe2")).toBe(wisdom);
+        expect(listingCurrencyId("whetstone", "poe1")).toBe(
+            "Metadata/Items/Currency/CurrencyWeaponQuality",
+        );
+        expect(listingCurrencyId("chaos", "poe2")).toBe(chaos);
+        expect(listingCurrencyId("greater-chaos-orb", "poe1")).toBeNull();
+        expect(listingCurrencyId(item, "poe2")).toBe(item);
+        expect(listingCurrencyId("toString", "poe1")).toBeNull();
     });
 });
