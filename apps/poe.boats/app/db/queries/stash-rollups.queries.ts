@@ -7,8 +7,9 @@ import {
     tStashCurrencyMarket,
 } from "~/db/schema/stash.currency-market";
 import { type StashCoverageStream, tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
-import { tStashUniqueDaily } from "~/db/schema/stash.unique-daily";
+import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
 import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
+import { MOD_POOL_KINDS } from "~/lib/mod-pools";
 
 // Every rollup is recomputed from the hourly rows it summarises: the ingester re-pushes whole
 // hours (sale corrections, late unid resolutions), so increments would double count.
@@ -21,15 +22,18 @@ export function utcDay(hour: number) {
 
 type RollupScope = { realm?: string; league?: string };
 
-/** Recomputes `stash_unique_daily` for every day touching [fromHour, toHour], optionally for some items only. */
-export function refreshStashUniqueDaily(
+/** Recomputes `stash_market_daily` for every day touching [fromHour, toHour], optionally for some items only. */
+export function refreshStashMarketDaily(
     db: TDatabase,
     scope: RollupScope & { fromHour?: number; toHour?: number; itemKeys?: string[] },
 ) {
     const hourly = tStashUniqueHourly;
-    const daily = tStashUniqueDaily;
-    // A literal divisor keeps the select and group-by expressions identical under ONLY_FULL_GROUP_BY.
+    const daily = tStashMarketDaily;
+    // Literals keep the select and group-by expressions identical under ONLY_FULL_GROUP_BY.
     const day = sql<number>`floor(${hourly.hour} / ${sql.raw(String(DAY))}) * ${sql.raw(String(DAY))}`;
+    const pools = sql.raw(MOD_POOL_KINDS.map((kind) => `'${kind}'`).join(", "));
+    // A mod pool unique's combinations are one market; the item page reads them from the hourly rows.
+    const value = sql<string>`case when ${hourly.signatureKind} in (${pools}) then '' else ${hourly.signatureValue} end`;
     const hours =
         scope.fromHour === undefined || scope.toHour === undefined
             ? undefined
@@ -47,7 +51,7 @@ export function refreshStashUniqueDaily(
                     corrupted: hourly.corrupted,
                     foilVariation: hourly.foilVariation,
                     signatureKind: hourly.signatureKind,
-                    signatureValue: hourly.signatureValue,
+                    signatureValue: value.as("signatureValue"),
                     name: sql<string | null>`max(${hourly.name})`.as("name"),
                     baseType: sql<string>`max(${hourly.baseType})`.as("baseType"),
                     frameType: sql<number>`max(${hourly.frameType})`.as("frameType"),
@@ -80,7 +84,7 @@ export function refreshStashUniqueDaily(
                     hourly.corrupted,
                     hourly.foilVariation,
                     hourly.signatureKind,
-                    hourly.signatureValue,
+                    value,
                 ),
         )
         .onDuplicateKeyUpdate({
@@ -178,7 +182,7 @@ export function refreshStashCurrencyMarkets(db: TDatabase, scope: RollupScope = 
 
 /** Rebuilds every rollup from the hourly tables, as the migration's backfill does. */
 export async function refreshStashRollups(db: TDatabase, scope: RollupScope = {}) {
-    await refreshStashUniqueDaily(db, scope);
+    await refreshStashMarketDaily(db, scope);
     await refreshStashCurrencyMarkets(db, scope);
     for (const stream of Object.keys(COVERAGE_SOURCES) as StashCoverageStream[])
         await refreshStashHourCoverage(db, stream, scope);

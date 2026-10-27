@@ -54,6 +54,7 @@ function showMarket(
         exchange: [],
         variants: [],
         bases: [],
+        modValues: null,
         rows: [
             {
                 ...row,

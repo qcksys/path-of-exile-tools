@@ -6,6 +6,7 @@ import {
 } from "@poe-tools/item-query";
 import { z } from "zod";
 import { craftingItemSchema, craftingMethodSchema, fossilMethodSchema } from "./crafting";
+import { craftingBuyInSchema } from "./crafting-buy-in";
 import { acquisitionChoiceSchema, craftingPriceSchema } from "./crafting-economy";
 import { craftingRulesetRefSchema } from "./crafting-rulesets";
 import { simpleCraftGoalSchema } from "./crafting-smart";
@@ -112,6 +113,8 @@ export const craftingGraphSchema = z.strictObject({
     seed: z.number().int().min(0).max(0xffffffff).default(42),
     iterations: z.number().int().min(1).max(100_000).default(1000),
     maxSteps: z.number().int().min(1).max(1_000_000).default(10_000),
+    /** Trade prices per stage. Retained engines never see this field; see `runtimeGraph`. */
+    buyIn: craftingBuyInSchema.optional(),
 });
 
 export type CraftingGraph = z.infer<typeof craftingGraphSchema>;

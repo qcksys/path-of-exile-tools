@@ -101,6 +101,8 @@ export function MarketFiltersForm({
                       foil: filters.foil,
                       kind: filters.kind,
                       value: filters.value,
+                      mods: filters.mods,
+                      anyMods: filters.anyMods,
                   }).map(([name, value]) => (
                       <Input key={name} type="hidden" name={name} value={value} />
                   ))

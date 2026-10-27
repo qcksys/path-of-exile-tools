@@ -7,6 +7,11 @@ and committed official trade metadata. The graph's output-requirements panel run
 The graph stores the league and manual purchase prices. A requirement, catalog or league change
 invalidates the previous link and terminates pending work.
 
+Searches ask for instant-buyout listings (`status: securable`) unless options choose another
+status. Options can also limit listing age (`indexed`) and collapse listings to one per seller
+(`collapse`). Buy-in prices use `securable` with one listing per seller, and opt-in in-person
+searches use `online` within one week; see [Buy-in prices](#buy-in-prices).
+
 Base names, single supported rarities, the normal/magic/rare union, item levels, flags, socket
 counts and prefix/suffix counts translate to the official fields. The two games' field groups are
 read from their own metadata: PoE 2 uses `type_filters.ilvl` and
@@ -52,8 +57,36 @@ Official sources verified for this implementation:
 - [PoE 2 filter definitions](https://www.pathofexile.com/api/trade2/data/filters)
 - [PoE 2 stat definitions](https://www.pathofexile.com/api/trade2/data/stats)
 
-Equipment prices in PoE 2 remain user-entered after the user inspects the generated trade search.
-There is no automated equipment-listing ingestion, scraping or implied market valuation here.
+Equipment prices in PoE 2 remain user-entered after the user inspects the generated trade search,
+or come from a buy-in pricing run in the user's own browser (below). There is no server-side
+equipment-listing ingestion or scraping.
+
+## Buy-in prices
+
+The project editor's **Buy-in prices** panel prices each visited craft step from trade listings
+and compares buying at that step with crafting to the end. The
+[poe.boats extension](../../poe.boats-extension/README.md) runs the searches as the user's own
+pathofexile.com trade page; poe.boats never makes trade requests and never sees the session.
+
+- `buyInTradeSearches` builds each step's searches from its output query.
+- The page checks each fetched batch with `priceBuyInStage` in the retained-engine worker:
+  listings are written as advanced item text (`tradeItemText`), imported with the project's
+  catalog and matched against the step; a listing counts only if every interpretation matches.
+  Prices are converted to the project currency with the latest exchange quotes.
+- `stageDecision` asks the extension for 10 more listings when none matched (at most 20 per
+  search), or for in-person listings when the project includes them.
+- Instant-buyout listings price a step at the cheapest match with high confidence. In-person
+  listings, used only without an instant-buyout match, drop bait under half the median of the
+  five cheapest; 3 or more matches give medium confidence, otherwise low. No match leaves the
+  price unknown.
+- Prices are saved on the graph's `buyIn` field with a fingerprint of the step query, game,
+  league and currency, so editing any of them retires the price. Prices are fresh for 6 hours
+  and stale after 24; a run skips fresh steps unless the user refreshes all.
+- `calculateBuyIn` calculates the project from scratch and once per priced step with that step
+  replaced by a pinned purchase of the cheapest listing's item, and compares expected cost per
+  successful outcome. Items recovered into skipped steps after a purchase are not credited.
+- `runtimeGraph` removes `buyIn` before a graph reaches a retained engine, whose schema predates
+  the field.
 
 ## Queries from copied items
 

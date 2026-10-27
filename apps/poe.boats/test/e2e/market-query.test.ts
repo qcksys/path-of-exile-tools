@@ -17,6 +17,7 @@ import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
+import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
 import {
     tStashUniqueHourly as market,
     type TStashUniqueHourlyI,
@@ -137,8 +138,33 @@ it.each([
     const query = rowsStatement();
     const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
     const aggregate = plan.find((row) => row.select_type === "DERIVED");
-    expect(aggregate?.table).toBe("qsPoeBoats__stash_unique_daily");
-    expect(aggregate?.key).toBe("PRIMARY");
+    expect(aggregate?.table).toBe("qsPoeBoats__stash_market_daily");
+});
+
+it("reads one category's daily rows from the base-type index", async () => {
+    await db.insert(market).values(
+        Array.from({ length: 300 }, (_, index) =>
+            observation({
+                league: "Categories",
+                itemKey: `Fossil ${index}`,
+                baseType: index < 3 ? "Leather Belt" : "Jagged Fossil",
+                frameType: index < 3 ? 3 : 5,
+            }),
+        ),
+    );
+    await refreshStashRollups(db as unknown as TDatabase);
+    await db.execute(sql`ANALYZE TABLE ${tStashMarketDaily}`);
+    statements.length = 0;
+    const result = await marketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "Categories", category: "accessories" }),
+    );
+    expect(result.rows.map((row) => row.itemKey)).toEqual(["Fossil 0", "Fossil 1", "Fossil 2"]);
+    const query = rowsStatement();
+    const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
+    const aggregate = plan.find((row) => row.select_type === "DERIVED");
+    expect(aggregate?.key).toBe("stash_market_daily_base_idx");
+    expect(String(aggregate?.Extra)).toMatch(/Using index/);
 });
 
 it.each(["Item", "Leather"])("searches names, item keys and base types (%s)", async (q) => {
@@ -509,6 +535,129 @@ it("lists a unique's markets in both identification states as variants of each o
     expect(await variants("Watcher's Eye")).toEqual(both);
     expect(await variants(`unid:${icon}`)).toEqual(both);
     expect(await variants("Replica Eye")).toEqual([["Replica Eye", "Replica Eye", true, false]]);
+});
+
+it("lists a mod pool unique once and values its mods on the item page", async () => {
+    const haste = "Haste: #% increased Movement Speed";
+    const precision = "Precision: #% increased Critical Strike Chance";
+    const discipline = "Discipline: #% faster start of Energy Shield Recharge";
+    const chaos = (median: number) => ({ chaos: { count: 1, min: median, median, max: median } });
+    const eye = (mods: string[], overrides: Partial<TStashUniqueHourlyI> = {}) =>
+        observation({
+            league: "Mods",
+            itemKey: "Watcher's Eye",
+            name: "Watcher's Eye",
+            baseType: "Prismatic Jewel",
+            signatureKind: "watchers-eye",
+            signatureValue: mods.join(" / "),
+            signatureData: { kind: "watchers-eye", mods },
+            ...overrides,
+        });
+    await db.insert(market).values([
+        eye([haste, precision], { prices: chaos(30) }),
+        // A roll captured before ingest masked rolls, under its old hashed signature and shape.
+        eye([], {
+            signatureValue: "old-hash",
+            signatureData: {
+                kind: "watchers-eye",
+                mods: [
+                    { aura: "Haste", stat: "12% increased Movement Speed" },
+                    { aura: "Precision", stat: "40% increased Critical Strike Chance" },
+                ],
+            },
+            prices: chaos(20),
+        }),
+        eye([discipline, haste], { prices: chaos(50) }),
+        eye([discipline, haste], {
+            hour: hour - 3600,
+            listingCount: 0,
+            likelySales: 2,
+            salesPrices: chaos(55),
+        }),
+        // Earlier listings without sales are not current asks.
+        eye([precision], { hour: hour - 3600, prices: chaos(1) }),
+        eye([haste], { corrupted: true, prices: chaos(2) }),
+    ]);
+
+    // The category list shows the item once per corruption state, not once per combination.
+    const list = await marketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "Mods", currency: "chaos" }),
+        "list",
+    );
+    expect(
+        list.rows.map((row) => [
+            row.corrupted,
+            row.signatureKind,
+            row.signatureValue,
+            row.signatureData,
+            row.listingCount,
+            row.periodSales,
+        ]),
+    ).toEqual([
+        [false, "watchers-eye", "", null, 3, 2],
+        [true, "watchers-eye", "", null, 1, 0],
+    ]);
+    // The daily rollup already holds one row per market and day, not one per combination.
+    const rolled = await db
+        .select({ day: tStashMarketDaily.day, value: tStashMarketDaily.signatureValue })
+        .from(tStashMarketDaily)
+        .where(eq(tStashMarketDaily.league, "Mods"));
+    expect(rolled).toHaveLength(2);
+    expect(rolled.every((row) => row.value === "")).toBe(true);
+
+    const filters = marketFiltersSchema.parse({
+        league: "Mods",
+        item: "Watcher's Eye",
+        kind: "watchers-eye",
+        currency: "chaos",
+    });
+    const result = await marketData(db as unknown as TDatabase, filters, "history");
+    expect(
+        result.variants.map((row) => [row.corrupted, row.signatureValue, row.periodSales]),
+    ).toEqual([
+        [false, "", 2],
+        [true, "", 0],
+    ]);
+    expect(
+        result.history.map((row) => [
+            row.hour,
+            row.signatureValue,
+            row.listingCount,
+            row.likelySales,
+        ]),
+    ).toEqual([
+        [hour - 3600, "", 1, 2],
+        [hour, "", 3, 0],
+    ]);
+    expect(result.modValues?.cheapest).toBe(20);
+    expect(result.modValues?.mods.map((row) => [row.mod, row.cheapest, row.sales])).toEqual([
+        [discipline, 50, 2],
+        [haste, 20, 2],
+        [precision, 20, 0],
+    ]);
+    expect(result.modValues?.mods[0]?.saleMedian).toBe(55);
+
+    // One combination's page keeps its own history and still values every mod.
+    const combination = await marketData(
+        db as unknown as TDatabase,
+        { ...filters, value: `${discipline} / ${haste}`, mods: discipline },
+        "history",
+    );
+    expect(combination.history.map((row) => [row.hour, row.listingCount])).toEqual([
+        [hour - 3600, 0],
+        [hour, 1],
+    ]);
+    expect(combination.modValues?.matches.map((match) => [match.mods, match.cheapest])).toEqual([
+        [[discipline, haste], 50],
+    ]);
+
+    const other = await marketData(
+        db as unknown as TDatabase,
+        { ...filters, kind: "", value: "" },
+        "history",
+    );
+    expect(other.modValues).toBeNull();
 });
 
 it("keeps stable sales ordering and page boundaries when fetching full records", async () => {

@@ -56,7 +56,20 @@ routes. Each category list lives at `/1/market/:category`; the web has no all-it
 redirect to their category path. Legacy `?item=` bookmarks redirect to `/1/market/items/:item`
 with all variant axes intact; item links keep `category` in the query for the way back. The item
 page lists every variant of the item in the period (corruption, foil, and extracted signatures
-such as Foulborn mutated modifiers) and links between them.
+such as Foulborn mutated modifiers) and links between them, including the same unique's markets in
+the other identification state (unidentified uniques are keyed `unid:<icon>`).
+Uniques whose mods come from a pool (ingest's `MOD_POOLS`: Watcher's Eye's aura mods, PoE 2
+Loreweave's borrowed unique mods) record one market per combination of masked mods, so every roll
+of the same mods trades together; older Watcher's Eye per-roll markets keep their hashed signature
+until their listings are seen again. The category list and the item's variants merge a pool
+unique's combinations into one market with an empty `value`; its item page shows their merged
+history. Every variant page of a pool unique, and the market operation's `modValues`, value each
+mod over the item's combinations with the same corruption and foil: listings and cheapest ask in
+the latest hour, likely sales and the median last ask before them over the period, in the display
+currency. Mods are labelled from `signatureData`. The `mods` filter (`|`-separated mod IDs) keeps
+only combinations with every listed mod and `anyMods` those with at least one, so requiring A
+prices each other mod as "cheapest with A and X"; `matches` lists the cheapest listed matching
+combinations, which link to their own history.
 Weapon, armour and accessory categories list uniques only. Normal, magic and rare equipment is
 listed under the Crafting bases group (`armour-bases`, `weapon-bases`, `accessory-bases`) from
 `stash_cohort_hourly`: each base cohort the generator writes to
@@ -156,7 +169,7 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | PoE 1 and PoE 2 arbitrage leagues, prices, recipes | `arbitrage/market` | `get_arbitrage_market`; `loadArbitrageMarket` |
 | Arbitrage filters, ranking, buffer, profit/ROI | `arbitrage/calculate` | `calculate_arbitrage`; `findArbitrage` |
 | Manual recipe reference, calculator and trade links | `arbitrage/recipes`, `arbitrage/scenario`, `arbitrage/trade` | `list_vendor_recipes`, `calculate_recipe_scenario`, `build_recipe_trade_url` |
-| Season market search, seasons, paging, variants, history | `market` | `get_season_market`; `getMarketData`. Season boundaries use the existing index prefix; variant totals come from the `stash_unique_daily` rollup and pagination precedes full-row primary-key reads. Every foil variation of an item is one market (`foil` -1 or 0): list rows, variants and history sum and mix the variations' hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), page boundaries, and crafting base cohort rows (latest hour, current revision, category). |
+| Season market search, seasons, paging, variants, history, mod pool values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `modPoolValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_market_daily` rollup and pagination precedes full-row primary-key reads. Every foil variation of an item is one market (`foil` -1 or 0): list rows, variants and history sum and mix the variations' hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), page boundaries, and crafting base cohort rows (latest hour, current revision, category). |
 | Recombinator equipment, modifiers, preparation recipes | `recombinator/catalog`, `bases`, `mods`, `recipes`, `draft` | Catalog, base/mod/recipe filtering, and `parseRecombinatorDraft` |
 | Recombination outcomes, preparation, target odds | `recombinator/calculate`, `target` | `calculateRecombinatorPlan`, `matchesTarget`, `summarizeCounts` |
 | PoE 1 and PoE 2 workbench catalog, calculation, process simulation and item emulation | `crafting/workbench/catalog`, `workbench/calculate`, `workbench/process`, `workbench/emulate` | `get_crafting_workbench_catalog`, `calculate_crafting_workbench`, `emulate_crafting_process`, `emulate_crafting_item`; shared `CraftingWorkbenchCalculation`, `CraftingProcess` and `emulateCraftingItem`. Current workbench catalogs and client-build validation match the browser; retained graph rulesets remain separate. HTTP calculations refuse manual-stop runs and requests above 5,000 trials or 100,000 potential steps. Allflame preview costs remain deferred until selection, reveal choices stay explicit, and paid bench failures retain the changed item and costs. Stateless operations never modify browser drafts. |
@@ -177,7 +190,8 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | Recombination odds in project graphs | `crafting/graph/calculate` | Revision 7 enumerates model outcomes for actual consumed inputs, averages route probabilities across craft attempts and excludes skips. The UI uses these probabilities for step labels and line widths; terminal trial success is labelled after retries. Observed counts remain available separately. Historical engines retain sampled frequencies. Enumeration and graph simulation run in the browser worker and the shared retained runtime for HTTP/MCP. |
 | Shared item-query matching and graph query editing | `crafting/items/match`, `workspace/edit` | `match_crafting_item`; `@poe-tools/item-query` tri-state matcher for API-shaped items and resolved facts. Graph requirements use the same query schemas through workspace updates. |
 | Pasted items to editable graph requirements | `crafting/items/query`, `items/query-from-text` | `create_item_query`, `create_item_queries_from_text`; shared `queryFromItem` and `queriesFromItemText`. The browser verifies and parses the retained catalog in a worker. All valid text interpretations remain available; ambiguous results require explicit selection. Selected known fields become query conditions, with warnings for missing identities, slots and sockets. No execution progress is recorded. |
-| Graph item requirements to PoE 1/PoE 2 trade searches | `crafting/items/trade` | `build_crafting_trade_search`; `buildCraftingTradeSearch` uses official per-game metadata and the chosen catalog. Browser translation runs in a worker; exact, approximate and omitted conditions are explicit. No listings or equipment prices are fetched. See [translation boundaries](crafting-trade.md). |
+| Graph item requirements to PoE 1/PoE 2 trade searches | `crafting/items/trade` | `build_crafting_trade_search`; `buildCraftingTradeSearch` uses official per-game metadata and the chosen catalog. Browser translation runs in a worker; exact, approximate and omitted conditions are explicit. No listings or equipment prices are fetched. Searches default to instant-buyout listings; options set listing status, listing age and one listing per seller. See [translation boundaries](crafting-trade.md). |
+| Buy-in prices per craft step | `crafting/buy-in/stages`, `buy-in/price`, `buy-in/compare` | `list_crafting_buy_in_stages`, `price_crafting_buy_in_stage`, `compare_crafting_buy_in`; shared `buyInTradeSearches`, `priceBuyInStage` and `calculateBuyIn`. The browser runs the same functions in the retained-engine worker. Listings are re-checked against each step with the project's catalog; instant-buyout listings price a step at the cheapest match (high confidence), opt-in in-person listings drop bait under half the median of the five cheapest. Prices are stored on the graph's `buyIn` field, keyed by a fingerprint of the step query, game, league and currency; retained engines never receive that field. The comparison calculates each priced step as a pinned purchase. **Collecting listings is browser-only**: the poe.boats extension runs the trade searches in the user's own browser session (see [the scope](../../../docs/crafting-buy-in-extension.md)); HTTP and MCP callers supply listings themselves, and the server never makes trade requests. Server comparisons accept at most 10 priced steps. |
 | Equipment acquisition prices, live refresh and hourly history | `crafting/market/cohorts`, `market/bind`, `market/refresh`, `market/history` | `find_crafting_item_prices`, `bind_crafting_item_price`, `refresh_crafting_item_prices`, `get_crafting_item_price_history`; shared cohort coverage, `selectCraftingMarketPrice` and binding functions for bases, fractures and donors, including exact definitions for all configured preset purchases. Optional `adaptive-v1` widens below ten sellers to complete 6/24-hour listing windows with at most 10% movement. Optional `exchange-v1` converts another listing currency using the same-hour, same-realm/league exchange quote; converted medians use one hour and retain both sources, with unknown combined confidence. Lookups require an observation in the latest 24 completed hours at the cutoff; history stays raw and hourly. Unknown modifier identities never contribute a price. Sources retain scope and policies through refresh and historical calculation. Browser refresh failures block calculation until resolved or manually overridden. HTTP/MCP callers refresh explicitly before calculating; calculation uses supplied prices. PoE 2 equipment remains manual. |
 | Both-game currency/essence prices and exchange history | `crafting/market/exchange`, `market/exchange/bind`, `market/exchange/history`, `market/refresh` | `find_crafting_exchange_prices`, `bind_crafting_exchange_price`, `get_crafting_exchange_price_history`, `refresh_crafting_item_prices`; shared direct-pair traded-volume estimate and scoped binding. Lookups require a positive observation at the selected completed cutoff hour; an absent, zero-volume or conflicting anchor stays unknown rather than reusing an older quote. Optional `adaptive-v1` widens that positive anchor to complete 6/24-hour windows below 100 input units while hourly estimates vary at most 10%; sums volumes without double-counting inverse pairs. Both conversion legs must be positive at that same cutoff and use the same window; a newer leg is never rolled back to an older common hour. An explicit historical cutoff applies the same rule at that historical hour. Policy survives refresh/history; old references stay hourly. The workbench explicitly copies the same lookup results into fixed chaos amounts. Manual prices survive bulk fill and refresh. Raw hourly history and explicit snapshot binding remain available; confidence is uncalibrated. The separate general-market display-rate fallback described above is unchanged. Scheduled collection captures PC PoE 1/2 independently of the equipment worker. |
 
@@ -236,13 +250,18 @@ result still prevents refresh from silently choosing an older or incomplete pric
 
 Ingest keeps three rollups, each recomputed from the hourly rows it summarises after every
 200-row batch, because the ingester re-pushes whole hours with later sale corrections:
-`stash_unique_daily` (per variant per UTC day: sums, newest and newest listed hour, base type,
-rarity and name), `stash_currency_market` (each exchange market's first hour) and
-`stash_hour_coverage` (stored rows per stream, league and hour). Market aggregation reads the
-daily rollup by primary-key range, including base-type, rarity and text filters, before
-fetching the selected full hourly rows. A day keeps one name (the greatest), so searching a
-renamed item's older name is best-effort. Latest nonempty observations, variant identity and
-period totals otherwise retain their semantics. The exchange lookup reads
+`stash_market_daily` (per listed market per UTC day: sums, newest and newest listed hour, base
+type, rarity and name), `stash_currency_market` (each exchange market's first hour) and
+`stash_hour_coverage` (stored rows per stream, league and hour). The daily rollup stores a mod
+pool unique's combinations (Watcher's Eye, Loreweave) as one market with an empty signature
+value, as the list shows them; they were 78% of a week's daily rows. A category list without
+text search reads the daily rollup through its covering base-type index; other lists read it by
+primary-key range. Both precede fetching the selected full hourly rows. A day keeps one name
+(the greatest), so searching a renamed item's older name is best-effort, and the list's text
+search no longer matches a pool unique's individual mods (its item page filters them). Latest
+nonempty observations, variant identity and period totals otherwise retain their semantics.
+`stash_unique_daily`, the first daily rollup, is superseded and unused until a later migration
+drops it. The exchange lookup reads
 `stash_currency_market`. MySQL plan and result regressions live in
 `test/e2e/market-query.test.ts` and `test/e2e/crafting-market-performance.test.ts`.
 
@@ -270,7 +289,10 @@ statements with `ON DUPLICATE KEY UPDATE` for hours the previous worker wrote in
 coverage and market statements with `WHERE hour >= <migration hour>`, and the daily statement
 with `WHERE hour >= <UTC midnight of the migration day>`, because each daily row must be
 recomputed from its whole day (`refreshStashRollups` in
-`app/db/queries/stash-rollups.queries.ts` builds the same statements). New indexes add storage and ingestion write work;
+`app/db/queries/stash-rollups.queries.ts` builds the same statements). The
+[market daily](../app/db/migrations/20261027135202_market_daily/migration.sql) migration follows
+the same order: apply it before merging, then rerun its backfill from UTC midnight of the
+migration day. New indexes add storage and ingestion write work;
 check live Query Insights after deployment rather than treating local timings as production results.
 
 Equipment lookup exposes per-lookup `Server-Timing` diagnostics through both HTTP and MCP:
