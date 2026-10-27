@@ -216,7 +216,14 @@ gh secret set CLOUDFLARE_API_TOKEN --repo qcksys/path-of-exile-tools
 
 The command prompts for the token. Keep its source value in 1Password; no environment-specific GitHub copies are needed.
 
-The workflow uses the official Vite+ setup action, a frozen pnpm lockfile, and commit-pinned actions. Builds use inert `.env.test` credentials with the selected environment's public hostname. GitHub does not access 1Password, validate deployment credentials, or synchronize app secrets.
+Each deployment applies pending database migrations before deploying the code, using its GitHub environment's `DATABASE_URL` secret. A missing secret or a failed migration stops the deployment. Set each environment's secret to that environment's database, preferably with a database password used only by CI:
+
+```sh
+gh secret set DATABASE_URL --env dev --repo qcksys/path-of-exile-tools
+gh secret set DATABASE_URL --env prod --repo qcksys/path-of-exile-tools
+```
+
+The workflow uses the official Vite+ setup action, a frozen pnpm lockfile, and commit-pinned actions. Builds and migrations use inert `.env.test` credentials with the selected environment's public hostname, apart from that `DATABASE_URL`. GitHub does not access 1Password, validate other deployment credentials, or synchronize app secrets.
 
 Code deployments use [`wrangler deploy --keep-vars`](https://developers.cloudflare.com/workers/wrangler/commands/workers/#deploy) to preserve the worker's existing variables and secrets. The committed Wrangler configuration still defines the environment's public hostname and name.
 
@@ -233,6 +240,6 @@ vp run poe-boats#deploy:prod:cf
 
 These local commands use Varlock to validate and resolve the selected environment, then deploy the app and synchronize its variables and secrets. Run this once for each environment before its first CI deployment, and again when app secrets change. This also installs the Varlock runtime metadata required by the built worker. Keep that metadata with the other worker secrets; CI preserves it.
 
-Add new runtime keys to `.env.schema` before syncing locally. Application credentials and the 1Password token are not stored in GitHub.
+Add new runtime keys to `.env.schema` before syncing locally. Apart from each environment's `DATABASE_URL`, application credentials and the 1Password token are not stored in GitHub.
 
-Database migrations are separate from deployment. Review the migration SQL and target database, select `APP_ENV=dev` or `APP_ENV=prod`, then run `vp run poe-boats#db:migrate` from a machine authenticated to 1Password. CI does not automatically apply database migrations.
+CI applies migrations before each deployment, so a migration runs while the previous code is still live: it must stay compatible with that code (add tables and columns before code reads them; remove them only after code stops using them). Review the migration SQL before merging. To apply migrations by hand, for example before a long backfill, select `APP_ENV=dev` or `APP_ENV=prod` and run `vp run poe-boats#db:migrate` from a machine authenticated to 1Password; CI then finds nothing pending.
