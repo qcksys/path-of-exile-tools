@@ -4,11 +4,13 @@ import { CurrencyLabel } from "~/components/currency-label";
 import { DataTable, dataTableColumns } from "~/components/data-table";
 import { ItemArt } from "~/components/item-art";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
+import { MarketModValues } from "~/components/market-mod-values";
 import { MarketPriceChart } from "~/components/market-price-chart";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import { marketItemArtUrl } from "~/lib/item-presentation";
 import { marketNumber as number } from "~/lib/market-number";
+import { marketSignatureLabel } from "~/lib/mod-pools";
 import { marketLink, parseMarketFilters } from "~/schemas/market";
 import type { Route } from "./+types/item";
 
@@ -25,7 +27,7 @@ type VariantRow = Awaited<ReturnType<typeof getMarketData>>["variants"][number];
 
 function variantLabel(variant: VariantRow) {
     const parts = [
-        variant.signatureValue,
+        marketSignatureLabel(variant),
         variant.identified ? "" : "Unidentified",
         variant.corrupted ? "Corrupted" : "",
         variant.foilVariation >= 0 ? "Foil" : "",
@@ -105,7 +107,7 @@ function HourlyTable({
 }
 
 export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
-    const { filters, seasons, history, variants } = loaderData;
+    const { filters, seasons, history, variants, modValues } = loaderData;
     const selected = history.at(-1);
     const isCurrent = (variant: VariantRow) =>
         variant.itemKey === filters.item &&
@@ -185,7 +187,9 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                                 {selected.identified ? "Identified" : "Unidentified"}
                                 {selected.corrupted ? " · Corrupted" : ""}
                                 {selected.foilVariation >= 0 ? " · Foil" : ""}
-                                {selected.signatureKind ? ` · ${selected.signatureValue}` : ""}
+                                {marketSignatureLabel(selected)
+                                    ? ` · ${marketSignatureLabel(selected)}`
+                                    : ""}
                             </p>
                         </div>
                         <div className="text-right">
@@ -224,6 +228,9 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                 </section>
             ) : filters.item ? (
                 <p role="status">No observations for this variant in the selected period.</p>
+            ) : null}
+            {modValues?.mods.length ? (
+                <MarketModValues filters={filters} values={modValues} game={game} />
             ) : null}
         </>
     );

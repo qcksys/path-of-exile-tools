@@ -63,6 +63,10 @@ export const marketFiltersSchema = z.object({
     foil: z.coerce.number().int().min(-1).default(-1),
     kind: z.string().max(32).default(""),
     value: z.string().max(255).default(""),
+    /** Watcher's Eye mods every valued item must have, separated by `|`. */
+    mods: z.string().max(1000).default(""),
+    /** Watcher's Eye mods of which valued items need at least one, separated by `|`. */
+    anyMods: z.string().max(1000).default(""),
     currency: z.string().max(40).default("divine"),
     ...(Object.fromEntries(MARKET_RANGE_PARAMS.map((param) => [param, rangeBound])) as Record<
         MarketRangeParam,
@@ -126,6 +130,8 @@ export function marketLink(
         params.set("foil", String(item.foilVariation));
         params.set("kind", item.signatureKind);
         params.set("value", item.signatureValue);
+        if (filters.mods) params.set("mods", filters.mods);
+        if (filters.anyMods) params.set("anyMods", filters.anyMods);
         return `/1/market/items/${encodeURIComponent(item.itemKey)}?${params}`;
     }
     return `/1/market/${filters.category === "all" ? MARKET_DEFAULT_CATEGORY : filters.category}?${params}`;

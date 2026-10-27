@@ -11,7 +11,10 @@ import {
 } from "../../../packages/poe-stash-ingest/src/shared/capture.ts";
 import { getCursor } from "../../../packages/poe-stash-ingest/src/shared/cursor.ts";
 import { openDb, queryAll } from "../../../packages/poe-stash-ingest/src/shared/db.ts";
-import { extractModSignature } from "../../../packages/poe-stash-ingest/src/shared/mod-extractors/index.ts";
+import {
+    extractModSignature,
+    signatureValue,
+} from "../../../packages/poe-stash-ingest/src/shared/mod-extractors/index.ts";
 import { push } from "../../../packages/poe-stash-ingest/src/shared/remote/push.ts";
 import { action } from "../app/routes/api.stash-ingest.ts";
 
@@ -461,7 +464,66 @@ describe("receiver validation and mod extraction", () => {
                     "Gain 15% of Physical Damage as Extra Fire Damage while affected by Anger",
                 ],
             }),
-        ).toMatchObject({ kind: "watchers-eye", mods: [{ aura: "Anger" }] });
+        ).toEqual({
+            kind: "watchers-eye",
+            mods: ["Anger: Gain #% of Physical Damage as Extra Fire Damage"],
+        });
+    });
+    it("records a PoE 2 Loreweave's pooled mods without markup or rolls", () => {
+        const signature = extractModSignature({
+            ...item,
+            name: "Loreweave",
+            baseType: "Ornate Ringmail",
+            explicitMods: [
+                "25% chance to [Intimidate|Intimidate] Enemies for 4 seconds on Hit",
+                "+15% of [Armour] also applies to [Chaos|Chaos] Damage",
+            ],
+        });
+        expect(signature).toEqual({
+            kind: "loreweave",
+            mods: [
+                "#% chance to Intimidate Enemies for # seconds on Hit",
+                "+#% of Armour also applies to Chaos Damage",
+            ],
+        });
+        expect(signatureValue(signature)).toBe(signature.mods.join(" / "));
+    });
+    it("leaves PoE 1's fixed-mod Loreweave as one ordinary market", () => {
+        expect(
+            extractModSignature({
+                ...item,
+                name: "Loreweave",
+                baseType: "Elegant Ringmail",
+                explicitMods: [
+                    "Has 6 Sockets",
+                    "+16 to all Attributes",
+                    "Your Maximum Resistances are 78%",
+                ],
+            }),
+        ).toBeNull();
+    });
+    it("trades every roll of the same Watcher's Eye modifiers as one readable market", () => {
+        const eye = (explicitMods) =>
+            extractModSignature({ ...item, name: "Watcher's Eye", explicitMods });
+        const low = eye([
+            "While affected by Haste, 10% increased Movement Speed",
+            "Regenerate 1.5% of Energy Shield per Second while affected by Discipline",
+        ]);
+        const high = eye([
+            "While affected by Haste, 15% increased Movement Speed",
+            "Regenerate 2% of Energy Shield per Second while affected by Discipline",
+        ]);
+        expect(high).toEqual(low);
+        expect(signatureValue(low)).toBe(
+            "Discipline: Regenerate #% of Energy Shield per Second / Haste: #% increased Movement Speed",
+        );
+        const long = eye(
+            ["Anger", "Hatred", "Wrath"].map(
+                (aura) =>
+                    `While affected by ${aura}, ${"Adds 1 to 2 Damage to Attacks and Spells ".repeat(3)}`,
+            ),
+        );
+        expect(signatureValue(long)).toMatch(/^[0-9a-f]{64}$/);
     });
     it("accepts the full signature emitted by a supported three-mod Watcher's Eye", async () => {
         page([

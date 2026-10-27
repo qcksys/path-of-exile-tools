@@ -16,6 +16,7 @@ import {
 } from "~/lib/market-listing-prices";
 import { marketNumber as number } from "~/lib/market-number";
 import { marketTableState } from "~/lib/market-table";
+import { marketSignatureLabel } from "~/lib/mod-pools";
 import {
     type MarketFilters,
     marketCategorySchema,
@@ -188,7 +189,7 @@ function marketColumns(filters: MarketFilters, game: Game, chaosRates: Record<st
                         {row.baseType} · {row.identified ? "Identified" : "Unidentified"}
                         {row.corrupted ? " · Corrupted" : ""}
                         {row.foilVariation >= 0 ? " · Foil" : ""}
-                        {row.signatureKind ? ` · ${row.signatureValue}` : ""}
+                        {marketSignatureLabel(row) ? ` · ${marketSignatureLabel(row)}` : ""}
                     </p>
                 </>
             ),
