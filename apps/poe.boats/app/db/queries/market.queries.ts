@@ -248,9 +248,43 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                       .limit(2160),
               )
             : Promise.resolve([]);
-    const [rows, history, exchange] = await Promise.all([
+    const variantsPromise =
+        filters.item && view !== "list"
+            ? traceQuery(
+                  "market.variants",
+                  db
+                      .select({
+                          itemKey: market.itemKey,
+                          identified: market.identified,
+                          corrupted: market.corrupted,
+                          foilVariation: market.foilVariation,
+                          signatureKind: market.signatureKind,
+                          signatureValue: market.signatureValue,
+                          periodSales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
+                      })
+                      .from(market)
+                      .where(and(scope, eq(market.itemKey, filters.item)))
+                      .groupBy(
+                          market.itemKey,
+                          market.identified,
+                          market.corrupted,
+                          market.foilVariation,
+                          market.signatureKind,
+                          market.signatureValue,
+                      )
+                      .orderBy(
+                          desc(sql`sum(${market.likelySales})`),
+                          asc(market.corrupted),
+                          asc(market.foilVariation),
+                          asc(market.signatureValue),
+                      )
+                      .limit(100),
+              )
+            : Promise.resolve([]);
+    const [rows, history, variants, exchange] = await Promise.all([
         rowsPromise,
         historyPromise,
+        variantsPromise,
         listed.length ? marketExchange(db, filters, latestHour, listed) : [],
     ]);
     const rates = await marketChaosRates(
@@ -266,6 +300,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     span.setAttributes({
         "market.rows": rows.length,
         "market.history_rows": history.length,
+        "market.variants": variants.length,
     });
     return {
         filters,
@@ -275,6 +310,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             .slice(0, PAGE_SIZE)
             .map((row) => ({ ...row, category: marketCategory(filters.realm, row.baseType) })),
         hasMore: rows.length > PAGE_SIZE,
+        variants,
         /** Exchange-traded items matching the category and search, on the first page only. */
         exchange: exchangeMatches(exchange, filters),
         /** Chaos per unit of each listing currency on the page, at the season's latest hour. */

@@ -16,11 +16,27 @@ import {
 } from "~/lib/market-listing-prices";
 import { marketNumber as number } from "~/lib/market-number";
 import { marketTableState } from "~/lib/market-table";
-import { type MarketFilters, marketLink, parseMarketFilters } from "~/schemas/market";
+import {
+    type MarketFilters,
+    marketCategorySchema,
+    marketLink,
+    parseMarketFilters,
+} from "~/schemas/market";
 import type { Route } from "./+types/index";
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-    const filters = parseMarketFilters(request);
+export const meta: Route.MetaFunction = ({ params }) => {
+    const category = marketCategorySchema.safeParse(params.category);
+    return [
+        {
+            title: `${category.success ? `${MARKET_CATEGORIES[category.data].label} · ` : ""}Season market · POE.BOATS`,
+        },
+    ];
+};
+
+export async function loader({ request, context, params }: Route.LoaderArgs) {
+    if (params.category && !marketCategorySchema.safeParse(params.category).success)
+        throw new Response("Unknown market category", { status: 404 });
+    const filters = parseMarketFilters(request, { category: params.category });
     if (filters.item)
         return redirect(
             marketLink(filters, {
@@ -33,6 +49,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
             }),
             308,
         );
+    if (new URL(request.url).searchParams.has("category"))
+        return redirect(marketLink(filters), 308);
     return getMarketData(context.get(dbContext), filters, "list");
 }
 

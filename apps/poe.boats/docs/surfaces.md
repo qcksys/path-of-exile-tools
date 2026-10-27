@@ -51,7 +51,11 @@ source models retain their original eligibility, and unknown or incompatible sta
 ## Coverage
 
 Season market browsing uses a parent layout and outlet with separate list and item-history
-routes. Legacy `?item=` bookmarks redirect to `/1/market/items/:item` with all variant axes intact.
+routes. Each category list lives at `/1/market/:category` (`/1/market` is all items); legacy
+`?category=` links redirect there. Legacy `?item=` bookmarks redirect to `/1/market/items/:item`
+with all variant axes intact; item links keep `category` in the query for the way back. The item
+page lists every variant of the item in the period (corruption, foil, and extracted signatures
+such as Foulborn mutated modifiers) and links between them.
 The shared market query applies category, text, rarity, identification, corruption, column ranges
 and ordering before pagination. The list's TanStack Table headers sort through `order` and filter
 through the URL: the item column sets the text search, and range boxes bound the latest row's
@@ -343,6 +347,19 @@ Optional `exchange-v1` converts only the newest captured bucket using matching-h
 lookup, binding, refresh and snapshots preserve the original asking range and exchange evidence;
 the UI requires explicit selection and labels the conversion. Native quotes take precedence.
 Query, MySQL, HTTP/MCP and browser regressions cover conversion and refusal of older rates.
+
+Prime Chaotic Resonator asks require the forward-captured `empty-resonator-v1` / `reroll:4`
+bucket. The two retained four-socket reroll IDs are accepted only when their catalog metadata
+agrees; quotes and saved references retain explicit emptiness provenance and the selected ID.
+Generic historical resonator buckets remain ineligible. The UI identifies the empty state and
+links its exact variant history. Newest-bucket selection, completed hours, explicit source
+selection and matching-hour conversion apply unchanged; an unpriced newer tagged bucket
+cannot reuse an older price. Missing tagged observations remain unpriced.
+The tagged bucket accepts both legacy frame 5 and modern Currency captures represented by
+frame -1; ordinary commodity buckets still require frame 5. Imported untagged or misbound
+resonator stash references cannot enter browser/API/MCP calculation or be copied into workbench
+prices. Explicit refresh removes those invalid market entries and reports the issue; saved drafts
+remain editable, retained runtimes are unchanged, and explicit manual amounts remain accepted.
 
 The same source lookup, binding and refresh operations support explicitly selected vendor
 ingredient estimates: verified forward essence upgrades and one-step NPC currency purchases.

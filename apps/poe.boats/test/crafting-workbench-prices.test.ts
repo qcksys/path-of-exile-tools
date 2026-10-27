@@ -5,6 +5,7 @@ import {
     workbenchPriceGraph,
 } from "../app/lib/crafting-workbench-prices";
 import { craftingProjectSchema } from "../app/schemas/crafting";
+import { emptyResonatorQuote, legacyResonatorPrice } from "./crafting-commodity-fixtures";
 import { exchangeQuote, transmuteId } from "./crafting-exchange-fixtures";
 import { baseId, engine } from "./crafting-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
@@ -29,6 +30,19 @@ function project() {
 }
 
 describe("workbench market price copies", () => {
+    it("refuses legacy resonator market prices before they become numeric workbench assumptions", () => {
+        const id = emptyResonatorQuote.id;
+        const input = { ...project(), prices: { [id]: 123 } };
+        const graph = workbenchPriceGraph(engine, input, ruleset, "Standard");
+        graph.prices[id] = legacyResonatorPrice();
+        expect(() => copyWorkbenchMarketPrices(input, graph, "Standard", [id])).toThrow(
+            "no verified empty provenance",
+        );
+        expect(copyWorkbenchMarketPrices(input, graph, "Standard", [])).toEqual({ [id]: 123 });
+        graph.prices[id] = { ...graph.prices[id]!, source: "manual" };
+        expect(copyWorkbenchMarketPrices(input, graph, "Standard", [id])).toEqual({ [id]: 123 });
+        expect(input.prices[id]).toBe(123);
+    });
     it("uses shared quote validation and copies only selected amounts without inventing a base cost", () => {
         const input = project();
         const graph = workbenchPriceGraph(engine, input, ruleset, " Standard ");

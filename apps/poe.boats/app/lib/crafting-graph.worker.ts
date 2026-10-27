@@ -9,6 +9,7 @@ import {
     verifyCraftingArtifact,
 } from "./crafting-rulesets";
 import type { HistoricalCraftingRuntime } from "./crafting-runtime";
+import { assertCraftingSourcePrices } from "./crafting-sources";
 
 const worker = self as unknown as {
     onmessage: ((event: MessageEvent) => void) | null;
@@ -22,6 +23,7 @@ worker.onmessage = async (event: MessageEvent) => {
     if (event.data.type === "cancel") return;
     try {
         const graph = craftingGraphSchema.parse(event.data.graph);
+        if (event.data.type !== "catalog") assertCraftingSourcePrices(graph);
         const response = await fetch(CRAFTING_RULESET_INDEX_URL, { cache: "no-cache" });
         if (!response.ok) throw new Error("Crafting revisions are unavailable.");
         const index = validateRulesetIndex(await response.json());

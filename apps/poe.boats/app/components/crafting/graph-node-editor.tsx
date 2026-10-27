@@ -111,6 +111,9 @@ export function GraphPriceInput({
                     {sourceReference.source === "stash-commodity" ? (
                         <>
                             Captured per-item asking estimate
+                            {sourceReference.variant
+                                ? " · verified empty resonator · 4 fossil sockets"
+                                : ""}
                             {sourceReference.exchange && (
                                 <>
                                     {` · converted from ${sourceReference.exchange.amount.toLocaleString(undefined, { maximumSignificantDigits: 6 })} `}

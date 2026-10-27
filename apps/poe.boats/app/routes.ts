@@ -12,7 +12,7 @@ export default [
             route("arbitrage", "routes/arbitrage/poe1.tsx"),
             route("recombinator", "routes/recombinator.tsx"),
             route("market", "routes/market.tsx", [
-                index("routes/market/index.tsx"),
+                route(":category?", "routes/market/index.tsx"),
                 route("items/:item", "routes/market/item.tsx"),
             ]),
         ]),

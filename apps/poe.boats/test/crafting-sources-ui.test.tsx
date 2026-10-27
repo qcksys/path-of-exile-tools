@@ -10,6 +10,7 @@ import { byText, changeControl } from "./control-helpers";
 import {
     commodityQuote,
     convertedCommodityQuote,
+    emptyResonatorQuote,
     essenceId,
     essenceName,
     unravellingId,
@@ -271,6 +272,74 @@ it("shows captured per-item asks and fills only unpriced inputs until explicitly
     expect(decodeCraftingSourceReference(saved?.prices[essenceId]?.cohortId)?.source).toBe(
         "stash-commodity",
     );
+});
+
+it("shows verified empty resonator history and preserves a manual price until explicit selection", async () => {
+    const quote = emptyResonatorQuote;
+    const onChange = vi.fn();
+    vi.stubGlobal(
+        "fetch",
+        vi
+            .fn()
+            .mockResolvedValue(
+                new Response(JSON.stringify({ quotes: { [quote.id]: quote }, missing: {} })),
+            ),
+    );
+    render(
+        <SourcePricePicker
+            graph={{
+                ...exchangeGraph(),
+                prices: {
+                    [quote.id]: {
+                        amount: 123,
+                        currency: "chaos",
+                        source: "manual",
+                        confidence: null,
+                    },
+                },
+            }}
+            engine={engine}
+            entries={[[quote.id, quote.baseType]]}
+            onChange={onChange}
+        />,
+    );
+    fireEvent.click(screen.getByText("Currency asking prices"));
+    fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
+    await screen.findByText("Verified empty resonator · 4 fossil sockets");
+    const link = screen.getByRole("link", { name: "Captured asking-price history" });
+    const params = new URL(link.getAttribute("href")!, "https://poe.boats").searchParams;
+    expect(Object.fromEntries(params)).toEqual({
+        realm: "pc",
+        league: "Standard",
+        q: quote.baseType,
+        item: quote.baseType,
+        currency: "chaos",
+        kind: "empty-resonator-v1",
+        value: "reroll:4",
+    });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(
+        screen
+            .getByRole("button", { name: "Use source estimates for unpriced inputs" })
+            .hasAttribute("disabled"),
+    ).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
+    const saved = onChange.mock.calls[0]![0].prices[quote.id];
+    expect(saved.amount).toBe(16.5);
+    expect(decodeCraftingSourceReference(saved.cohortId)).toMatchObject({
+        id: quote.id,
+        variant: "empty-resonator-v1",
+    });
+    cleanup();
+    render(
+        <GraphPriceInput
+            label="Resonator price"
+            currency="chaos"
+            value={saved}
+            onChange={vi.fn()}
+        />,
+    );
+    expect(screen.getByText(/verified empty resonator · 4 fossil sockets/)).toBeTruthy();
 });
 
 it("makes conversion explicit, shows the original ask and keeps manual prices until selection", async () => {

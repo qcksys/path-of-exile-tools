@@ -236,7 +236,7 @@ export const operations = [
         name: "get_season_market",
         ui: "/1/market",
         description:
-            "Read season market rows and item history with the UI's filters and pagination.",
+            "Read season market rows and item history with the UI's filters and pagination. With an item, also lists every variant of that item in the period.",
         input: marketFiltersSchema,
         output: z.object({
             filters: marketFiltersSchema,
@@ -271,6 +271,18 @@ export const operations = [
                 .describe(
                     "Chaos per unit of each listing currency on the page, at the season's latest hour",
                 ),
+            variants: z.array(
+                marketRow
+                    .pick({
+                        itemKey: true,
+                        identified: true,
+                        corrupted: true,
+                        foilVariation: true,
+                        signatureKind: true,
+                        signatureValue: true,
+                    })
+                    .extend({ periodSales: z.number() }),
+            ),
             history: z.array(
                 marketRow.extend({
                     merged: mergedMarketPriceSchema.nullable(),

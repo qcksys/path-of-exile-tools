@@ -156,6 +156,60 @@ let baseUrl: string;
 let upstreamResponses: Array<{ status?: number; body: unknown }>;
 let receiverStatus: number | undefined;
 
+async function parity(
+    path: string,
+    name: string,
+    input: Record<string, unknown>,
+    method: "POST" | "GET" = "POST",
+): Promise<unknown> {
+    const unused = async (): Promise<never> => {
+        throw new Error("Unexpected unrelated catalog lookup");
+    };
+    const runtime = async (): Promise<OperationContext> => ({
+        db: mysql as unknown as TDatabase,
+        caller: null,
+        origin: "https://poe.boats",
+        loadCatalog: unused,
+        loadWorkbenchCatalog: unused,
+        loadCraftingRulesets: async () => historyIndex,
+        loadCraftingRevision: retainedRevision,
+    });
+    const query = new URLSearchParams(
+        Object.entries(input).map(([key, value]) => [key, String(value)]),
+    );
+    const response = await api.request(
+        `https://poe.boats/api/v1/${path}${method === "GET" ? `?${query}` : ""}`,
+        {
+            method,
+            headers: { "Content-Type": "application/json" },
+            ...(method === "POST" ? { body: JSON.stringify(input) } : {}),
+        },
+        { runtime },
+    );
+    expect(response.status).toBe(200);
+    const http: unknown = await response.json();
+    const rpc = await handleMcpRequest(
+        new Request("https://poe.boats/mcp", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                accept: "application/json, text/event-stream",
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "tools/call",
+                params: { name, arguments: input },
+            }),
+        }),
+        runtime,
+    );
+    const envelope = z.object({ result: CallToolResultSchema }).parse(await rpc.json());
+    expect(envelope.result.isError).not.toBe(true);
+    expect(envelope.result.structuredContent).toEqual(http);
+    return http;
+}
+
 beforeAll(async () => {
     container = await new MySqlContainer("mysql:8.4").withDatabase("ingest_test").start();
     connection = await createConnection(container.getConnectionUri());
@@ -2037,6 +2091,288 @@ it("prices an explicit NPC Augmentation purchase from fresh Transmutation and re
     });
 });
 
+it("captures only proven-empty Prime Chaotic Resonators for versioned source binding, refresh and same-hour conversion", async () => {
+    const id = "Metadata/Items/Delve/DelveStackableSocketableCurrencyReroll4";
+    const name = "Prime Chaotic Resonator";
+    const variant = "empty-resonator-v1";
+    const convertedHour = HOUR + 3600;
+    const unpricedHour = HOUR + 7200;
+    const clock = vi.spyOn(Date, "now").mockReturnValue((HOUR + 3600) * 1000);
+    const client = createClient({ baseUrl, userAgent: "empty-resonator-e2e", token: TOKEN });
+    const resonator = {
+        ...item,
+        icon: "https://web.poecdn.com/image/Art/2DItems/Currency/Delve/Resonator4.png",
+        name: "",
+        typeLine: name,
+        baseType: name,
+        frameType: 5,
+        rarity: "Currency",
+        sockets: Array.from({ length: 4 }, () => ({ group: 0, attr: "DV", sColour: "DV" })),
+    };
+    async function ingestHour(hour: number, notes: [string, string, string], modernOnly = false) {
+        const listings = [
+            ...notes.map((note, index) => ({
+                ...resonator,
+                frameType: modernOnly || index === 2 ? undefined : 5,
+                socketedItems: [],
+                note,
+            })),
+            { ...resonator, socketedItems: [{ ...item }], note: "~price 1 chaos" },
+            { ...resonator, note: "~price 1/2 chaos" },
+            {
+                ...item,
+                name: "",
+                typeLine: essenceName,
+                baseType: essenceName,
+                frameType: 5,
+                rarity: "Currency",
+                note: "~price 15/2 chaos",
+            },
+        ];
+        upstreamResponses.push({
+            body: {
+                next_change_id: `resonator-${hour}`,
+                stashes: listings.map((listing, index) => ({
+                    ...stash,
+                    id: `resonator-stash-${index}`,
+                    accountName: `resonator-seller-${index}`,
+                    items: [{ ...listing, id: `resonator-${index}` }],
+                })),
+            },
+        });
+        await ingestPs(local.conn, client, { pages: 1 });
+        // The native database clock is independent of Date.now; move only the new page's hour.
+        await local.conn.run(
+            `UPDATE ps_listing_hour SET observed_hour = $1,
+                first_seen_at = to_timestamp($2), last_seen_at = to_timestamp($2)
+             WHERE observed_hour > $3`,
+            [hour, hour + 60, unpricedHour],
+        );
+        await rollupPs(local.conn, { hour, league: "Standard" });
+        clock.mockReturnValue((hour + 3600) * 1000);
+    }
+    await ingestHour(HOUR, ["~price 5/2 chaos", "~b/o 9/2 c", "~price 7/2 chaos"]);
+    const rows = await mysql.select().from(tStashUniqueHourly);
+    expect(rows).toHaveLength(3);
+    expect(rows.filter((row) => row.itemKey === name)).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({
+                hour: HOUR,
+                signatureKind: variant,
+                signatureValue: "reroll:4",
+                signatureData: {
+                    kind: variant,
+                    action: "delve_currency_reroll",
+                    sockets: 4,
+                    socketedItems: 0,
+                },
+                listingCount: 3,
+                uniqueSellers: 3,
+                prices: {
+                    chaos: expect.objectContaining({ count: 3, min: 2.5, median: 3.5, max: 4.5 }),
+                },
+            }),
+            expect.objectContaining({
+                hour: HOUR,
+                signatureKind: "",
+                signatureValue: "",
+                signatureData: null,
+                listingCount: 2,
+                uniqueSellers: 2,
+                prices: {
+                    chaos: expect.objectContaining({ count: 2, min: 0.5, median: 0.75, max: 1 }),
+                },
+            }),
+        ]),
+    );
+    expect(rows.find((row) => row.itemKey === essenceName)).toMatchObject({
+        signatureKind: "",
+        signatureValue: "",
+        listingCount: 1,
+        prices: { chaos: { count: 1, median: 7.5 } },
+    });
+    const graph = exchangeGraph();
+    const craft = graph.nodes.find((node) => node.kind === "craft")!;
+    craft.method = {
+        kind: "fossils",
+        ids: catalog.crafting.fossils.slice(0, 4).map((fossil) => fossil.id),
+        resonator: id,
+        logic: "additive",
+    };
+    const lookup = { graph, realm: "pc", ids: [id], conversion: "exchange-v1" };
+    async function sources(at: number, changes: Record<string, unknown> = {}) {
+        return craftingSourceResultSchema.parse(
+            await parity("crafting/market/sources", "find_crafting_source_prices", {
+                ...lookup,
+                at,
+                ...changes,
+            }),
+        );
+    }
+    const result = await sources(HOUR);
+    expect(result.missing).toEqual({});
+    expect(result.quotes[id]).toMatchObject({
+        source: "stash-commodity",
+        variant,
+        hour: HOUR,
+        amount: 3.5,
+        low: 2.5,
+        high: 4.5,
+        samples: 3,
+        listingCount: 3,
+    });
+    const essence = (await sources(HOUR, { ids: [essenceId] })).quotes[essenceId];
+    expect(essence).toMatchObject({
+        amount: 7.5,
+        baseType: essenceName,
+    });
+    expect(essence).not.toHaveProperty("variant");
+    const source = result.quotes[id]!;
+    if (source.source !== "stash-commodity") throw new Error("Expected captured commodity");
+    expect(() =>
+        bindCraftingSourcePrice(graph, engine, id, { ...source, variant: undefined }),
+    ).toThrow();
+    const bound = z.object({ graph: craftingGraphSchema }).parse(
+        await parity("crafting/market/sources/bind", "bind_crafting_source_price", {
+            graph,
+            id,
+            quote: source,
+        }),
+    ).graph;
+    expect(decodeCraftingSourceReference(bound.prices[id]?.cohortId)).toMatchObject({
+        source: "stash-commodity",
+        id,
+        baseType: name,
+        variant,
+        conversion: "exchange-v1",
+    });
+    expect(
+        await parity(
+            "market",
+            "get_season_market",
+            {
+                realm: "pc",
+                league: "Standard",
+                item: name,
+                currency: "chaos",
+            },
+            "GET",
+        ),
+    ).toMatchObject({
+        history: [{ hour: HOUR, signatureKind: "", prices: { chaos: { median: 0.75 } } }],
+    });
+    const legacy = structuredClone(bound);
+    legacy.prices[essenceId] = quote(123);
+    legacy.prices[id]!.cohortId = `stash-commodity:v1:${encodeURIComponent(
+        JSON.stringify({
+            source: "stash-commodity",
+            game: "poe1",
+            realm: "pc",
+            league: "Standard",
+            currency: "chaos",
+            id,
+            baseType: name,
+        }),
+    )}`;
+    expect(decodeCraftingSourceReference(legacy.prices[id]!.cohortId)).toBeNull();
+    const withoutLegacy = structuredClone(legacy);
+    delete withoutLegacy.prices[id];
+    expect(
+        await parity("crafting/market/refresh", "refresh_crafting_item_prices", { graph: legacy }),
+    ).toEqual({
+        graph: withoutLegacy,
+        issues: [expect.stringContaining("no verified empty provenance")],
+    });
+    const manual = structuredClone(legacy);
+    manual.prices[id] = quote(42);
+    expect(
+        await parity("crafting/market/refresh", "refresh_crafting_item_prices", { graph: manual }),
+    ).toEqual({ graph: manual, issues: [] });
+    expect(
+        await parity("crafting/market/snapshots", "get_crafting_price_snapshots", {
+            graph: legacy,
+            hours: [HOUR],
+        }),
+    ).toMatchObject({
+        points: [
+            { graph: null, issues: [expect.stringContaining("no supported historical binding")] },
+        ],
+    });
+
+    await ingestHour(
+        convertedHour,
+        ["~price 2 divine", "~price 2 divine", "~price 2 divine"],
+        true,
+    );
+    expect(
+        (await mysql.select().from(tStashUniqueHourly)).find(
+            (row) =>
+                row.itemKey === name && row.hour === convertedHour && row.signatureKind === variant,
+        ),
+    ).toMatchObject({ frameType: -1, listingCount: 3, prices: { divine: { count: 3 } } });
+    await mysql.insert(tStashCurrencyHourly).values({ ...commodityExchangeSnapshot, hour: HOUR });
+    expect((await sources(convertedHour)).quotes).toEqual({});
+    expect((await sources(convertedHour, { conversion: undefined })).quotes).toEqual({});
+    expect(
+        await parity("crafting/market/refresh", "refresh_crafting_item_prices", { graph: bound }),
+    ).toEqual({
+        graph: bound,
+        issues: [expect.stringContaining("matching-hour exchange conversion")],
+    });
+    await mysql
+        .insert(tStashCurrencyHourly)
+        .values({ ...commodityExchangeSnapshot, hour: convertedHour });
+    expect((await sources(convertedHour)).quotes[id]).toMatchObject({
+        variant,
+        hour: convertedHour,
+        amount: 600,
+        samples: 3,
+        exchange: { currency: "divine", amount: 2, quote: { hour: convertedHour, amount: 300 } },
+    });
+    const refreshed = z.object({ graph: craftingGraphSchema, issues: z.array(z.string()) }).parse(
+        await parity("crafting/market/refresh", "refresh_crafting_item_prices", {
+            graph: bound,
+        }),
+    );
+    expect(refreshed.issues).toEqual([]);
+    expect(refreshed.graph.prices[id]).toMatchObject({
+        amount: 600,
+        observedAt: new Date(convertedHour * 1000).toISOString(),
+    });
+    expect(decodeCraftingSourceReference(refreshed.graph.prices[id]?.cohortId)).toMatchObject({
+        variant,
+        exchange: { quote: { hour: convertedHour } },
+    });
+
+    await ingestHour(unpricedHour, ["~price 0 chaos", "~price 0 chaos", "~price 0 chaos"]);
+    expect(
+        (await mysql.select().from(tStashUniqueHourly)).find(
+            (row) =>
+                row.itemKey === name && row.hour === unpricedHour && row.signatureKind === variant,
+        ),
+    ).toMatchObject({ listingCount: 3, prices: {} });
+    const missing = await sources(unpricedHour);
+    expect(missing.quotes).toEqual({});
+    expect(missing.missing[id]).toContain("No positive");
+    expect(
+        await parity("crafting/market/refresh", "refresh_crafting_item_prices", {
+            graph: refreshed.graph,
+        }),
+    ).toEqual({ graph: refreshed.graph, issues: [expect.stringContaining("No positive")] });
+    expect(
+        await parity("crafting/market/snapshots", "get_crafting_price_snapshots", {
+            graph: refreshed.graph,
+            hours: [HOUR, convertedHour, unpricedHour],
+        }),
+    ).toMatchObject({
+        points: [
+            { at: HOUR, graph: { prices: { [id]: { amount: 3.5 } } }, issues: [] },
+            { at: convertedHour, graph: { prices: { [id]: { amount: 600 } } }, issues: [] },
+            { at: unpricedHour, graph: null, issues: [expect.stringContaining("No positive")] },
+        ],
+    });
+});
+
 it.each([
     { id: essenceId, name: essenceName, kind: "essence" as const },
     { id: unravellingId, name: unravellingName, kind: "currency" as const },
@@ -2103,59 +2439,6 @@ it.each([
             prices: { chaos: { count: 2, min: 2.5, median: 3.5, max: 4.5 } },
         },
     ]);
-    const unused = async (): Promise<never> => {
-        throw new Error("Unexpected unrelated catalog lookup");
-    };
-    const runtime = async (): Promise<OperationContext> => ({
-        db: mysql as unknown as TDatabase,
-        caller: null,
-        origin: "https://poe.boats",
-        loadCatalog: unused,
-        loadWorkbenchCatalog: unused,
-        loadCraftingRulesets: async () => historyIndex,
-        loadCraftingRevision: retainedRevision,
-    });
-    async function parity(
-        path: string,
-        name: string,
-        input: Record<string, unknown>,
-        method: "POST" | "GET" = "POST",
-    ): Promise<unknown> {
-        const query = new URLSearchParams(
-            Object.entries(input).map(([key, value]) => [key, String(value)]),
-        );
-        const response = await api.request(
-            `https://poe.boats/api/v1/${path}${method === "GET" ? `?${query}` : ""}`,
-            {
-                method,
-                headers: { "Content-Type": "application/json" },
-                ...(method === "POST" ? { body: JSON.stringify(input) } : {}),
-            },
-            { runtime },
-        );
-        expect(response.status).toBe(200);
-        const http: unknown = await response.json();
-        const rpc = await handleMcpRequest(
-            new Request("https://poe.boats/mcp", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    accept: "application/json, text/event-stream",
-                },
-                body: JSON.stringify({
-                    jsonrpc: "2.0",
-                    id: 1,
-                    method: "tools/call",
-                    params: { name, arguments: input },
-                }),
-            }),
-            runtime,
-        );
-        const envelope = z.object({ result: CallToolResultSchema }).parse(await rpc.json());
-        expect(envelope.result.isError).not.toBe(true);
-        expect(envelope.result.structuredContent).toEqual(http);
-        return http;
-    }
     const graph = exchangeGraph();
     const craft = graph.nodes.find((node) => node.kind === "craft")!;
     craft.name = `Apply ${essenceName}`;

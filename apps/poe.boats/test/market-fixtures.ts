@@ -38,6 +38,13 @@ export function marketFixture(
         rowDeletedAt: null,
     };
     const season = { league: filters.league, firstHour: row.hour, latestHour: row.hour };
+    const variant = {
+        identified: true,
+        corrupted: false,
+        foilVariation: -1,
+        signatureKind: "",
+        signatureValue: "",
+    };
     return {
         filters,
         seasons: [season],
@@ -67,6 +74,12 @@ export function marketFixture(
                 periodPending: 1,
             },
         ],
+        variants: filters.item
+            ? [
+                  { ...variant, itemKey: filters.item, periodSales: 2 },
+                  { ...variant, itemKey: filters.item, corrupted: true, periodSales: 1 },
+              ]
+            : [],
         history: filters.item
             ? [
                   {

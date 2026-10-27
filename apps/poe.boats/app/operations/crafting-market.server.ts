@@ -23,6 +23,7 @@ import { purchaseSourceProfile } from "~/lib/crafting-source-preparation";
 import {
     bindCraftingSourcePrice,
     craftingCommodityIdentity,
+    invalidEmptyResonatorSourcePrices,
     liveSourcePrices,
 } from "~/lib/crafting-sources";
 import { craftingVendorUpgrade } from "~/lib/crafting-vendor-upgrades";
@@ -45,6 +46,17 @@ export async function refreshCraftingMarketPrices(
 ) {
     let next = graph;
     const issues: string[] = [];
+    const invalid = invalidEmptyResonatorSourcePrices(graph);
+    if (invalid.length) {
+        const prices = { ...graph.prices };
+        for (const id of invalid) {
+            delete prices[id];
+            issues.push(
+                `${id}: the saved resonator price has no verified empty provenance. Select a tagged source or enter a manual price.`,
+            );
+        }
+        next = { ...graph, prices };
+    }
     const adapter = createCraftingItemQuery(engine);
     for (const { node, alternative, reference } of livePurchasePrices(graph)) {
         const sourcePreparation = purchaseSourceProfile(alternative);
@@ -143,7 +155,7 @@ export async function refreshCraftingMarketPrices(
         }
     }
     const sources = new Map<string, ReturnType<typeof liveSourcePrices>>();
-    for (const binding of liveSourcePrices(graph)) {
+    for (const binding of liveSourcePrices(next)) {
         const { reference, id } = binding;
         if (reference.source === "vendor-upgrade") {
             try {
@@ -165,13 +177,16 @@ export async function refreshCraftingMarketPrices(
             );
             continue;
         }
+        const commodity =
+            reference.source === "stash-commodity" ? craftingCommodityIdentity(engine, id) : null;
         if (
             reference.game !== graph.game ||
             reference.league !== graph.league ||
             reference.currency !== graph.currency ||
             reference.id !== id ||
             (reference.source === "stash-commodity" &&
-                craftingCommodityIdentity(engine, id)?.baseType !== reference.baseType)
+                (commodity?.baseType !== reference.baseType ||
+                    commodity?.variant !== reference.variant))
         ) {
             issues.push(
                 `${id}: the saved source price does not match this input, game, league or currency.`,

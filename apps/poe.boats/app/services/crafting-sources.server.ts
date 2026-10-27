@@ -13,6 +13,7 @@ import {
 } from "~/lib/crafting-yellow-beasts";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import {
+    type CommoditySourceIdentity,
     type CraftingSourceOptions,
     type CraftingSourceResult,
     craftingSourceQuoteSchema,
@@ -94,7 +95,7 @@ export async function findCraftingSourcePrices(
 ): Promise<CraftingSourceResult> {
     const result: CraftingSourceResult = { quotes: {}, missing: {} };
     const feeds = new Map<string, Feed | Error>();
-    const commodities: Array<{ id: string; baseType: string }> = [];
+    const commodities: CommoditySourceIdentity[] = [];
     for (const id of new Set(options.ids)) {
         try {
             if (options.realm !== "pc" || graph.game !== "poe1")

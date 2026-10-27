@@ -2,10 +2,14 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { normalizeApiItem } from "@poe-tools/item-query";
 import { compileMarketCohorts, marketCohortManifestSchema } from "@poe-tools/market";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { createClient } from "../../../packages/poe-api-client/src/client";
-import { loadEquipmentDiagnostics } from "../../../packages/poe-stash-ingest/src/ps/equipment-diagnostics-request";
+import {
+    createEquipmentDiagnosticsLoader,
+    loadEquipmentDiagnostics,
+} from "../../../packages/poe-stash-ingest/src/ps/equipment-diagnostics-request";
 import { ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest";
 import { getCursor } from "../../../packages/poe-stash-ingest/src/shared/cursor";
 import { openDb, queryAll } from "../../../packages/poe-stash-ingest/src/shared/db";
@@ -114,6 +118,82 @@ async function request(overrides = {}) {
         }),
     );
 }
+
+it("loads changed requests between cycles without resetting an unchanged collector", async () => {
+    const next = createEquipmentDiagnosticsLoader({
+        statusFile: join(directory, "status.json"),
+        realm: "pc",
+        league: "Allflame",
+        classifier,
+    });
+    expect(await next()).toBeUndefined();
+    await request();
+    const first = await next();
+    expect(first).toBeDefined();
+    expect(await next()).toBe(first);
+    await request({ cohortIds: ["prepared"] });
+    const replacement = await next();
+    expect(replacement).toBeDefined();
+    expect(replacement).not.toBe(first);
+    await rm(join(directory, "equipment-diagnostics.request.json"));
+    expect(await next()).toBeUndefined();
+});
+
+it("does not repeatedly warn about an unchanged invalid request", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const next = createEquipmentDiagnosticsLoader({
+        statusFile: join(directory, "status.json"),
+        realm: "pc",
+        league: "Allflame",
+        classifier,
+    });
+    await request({ cohortIds: ["missing-cohort"] });
+    expect(await next()).toBeUndefined();
+    expect(await next()).toBeUndefined();
+    expect(warn).toHaveBeenCalledTimes(1);
+    await request();
+    expect(await next()).toBeDefined();
+});
+
+it("retains saved-fixture deduplication across cycles for the same request", async () => {
+    const next = createEquipmentDiagnosticsLoader({
+        statusFile: join(directory, "status.json"),
+        realm: "pc",
+        league: "Allflame",
+        classifier,
+    });
+    await request();
+    const collector = (await next())!;
+    const classification = classifier.classify(normalizeApiItem("poe1", "stash", item));
+    const fixture = collector.collect(item, classification, new Date());
+    expect(fixture).not.toBeNull();
+    await collector.flush([fixture!]);
+    expect((await next())!.collect(item, classification, new Date())).toBeNull();
+});
+
+it("preserves the collector after a temporary unreadable request and stops at expiry", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const next = createEquipmentDiagnosticsLoader({
+        statusFile: join(directory, "status.json"),
+        realm: "pc",
+        league: "Allflame",
+        classifier,
+    });
+    const expiresAt = Date.now() + 3_600_000;
+    await request({ expiresAt: new Date(expiresAt).toISOString() });
+    const file = join(directory, "equipment-diagnostics.request.json");
+    const original = await readFile(file, "utf8");
+    const collector = await next();
+    expect(collector).toBeDefined();
+    await writeFile(file, "x".repeat(16_385));
+    expect(await next()).toBeUndefined();
+    expect(warn).toHaveBeenCalledTimes(1);
+    await writeFile(file, original);
+    expect(await next()).toBe(collector);
+    const now = vi.spyOn(Date, "now").mockReturnValue(expiresAt);
+    expect(await next()).toBeUndefined();
+    now.mockRestore();
+});
 
 it("stays disabled without a request, a status path, or a supported specific scope", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
