@@ -22,7 +22,6 @@ const context = new RouterContextProvider();
 context.set(dbContext, createDbConnection("mysql://user:pass@example.invalid/test"));
 
 const hour = 1_792_836_000;
-const exalted = "Metadata/Items/Currency/CurrencyAddModToRare";
 const divine = "Metadata/Items/Currency/CurrencyModValues";
 const rune = "Metadata/Items/SoulCores/RuneFire";
 const season = { league: "Rites", firstHour: hour - 86400, latestHour: hour };
