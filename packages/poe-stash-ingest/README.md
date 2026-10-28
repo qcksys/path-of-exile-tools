@@ -365,7 +365,7 @@ Browse `/1/market` in the app. Filters separate realm, season and variant. The p
 
 ## Likely-sale policy
 
-`src/ps/sales.ts` owns the policy. A removal is eligible only after the stream has already reached its current cursor and has been polled within five minutes. It then needs one hour of continuous caught-up coverage. A backlog or a longer polling gap restarts the grace period.
+`src/ps/sales.ts` owns the policy. A removal is a sale candidate when the stream reached its current cursor within the hour before it; removals seen further behind (initial catch-up or a long outage) are `unobserved`. A candidate is classified at the first poll that reaches the cursor at least an hour after its removal. The stream is a complete, ordered log, so by then any relist within that hour has been seen; backlogs or polling gaps in between do not delay or reset it.
 
 The last asking price must be within 25% of the median of per-seller medians from at least three other sellers in the same season, variant and currency, observed within the last 24 hours. Market evidence is saved at removal time. Currency aliases and fractional bulk prices are normalized; currencies are never implicitly converted.
 

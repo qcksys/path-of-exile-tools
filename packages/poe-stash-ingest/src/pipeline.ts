@@ -79,7 +79,9 @@ export async function flushRollups(
             WHERE r.pushed_at IS NULL OR l.changed_at > r.pushed_at
         ) SELECT * FROM dirty
         WHERE hour < epoch(date_trunc('hour', current_timestamp)) AND ($1 IS NULL OR league = $1)
-        ORDER BY hour, stream, league LIMIT $2`,
+        -- Equipment reclassification re-dirties days of hours; it must not hold back market hours.
+        ORDER BY CASE stream WHEN 'psapi' THEN 0 WHEN 'cxapi' THEN 1 ELSE 2 END, hour, league
+        LIMIT $2`,
         [opts.league ?? null, opts.limit ?? 168],
     ).catch((error: unknown) => {
         throw operationFailure("Pending rollup discovery", error);

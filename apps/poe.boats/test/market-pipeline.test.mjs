@@ -162,16 +162,31 @@ describe("sale inference", () => {
         await mature();
         expect((await events())[0].status).toBe(status);
     });
-    it("resets the grace period after an observation gap or stream backlog", async () => {
+    it("classifies once caught up an hour after the removal, despite backlogs in between", async () => {
         await seed();
         const now = Date.now();
-        await evaluateSales(db.conn, true, new Date(now));
-        await evaluateSales(db.conn, true, new Date(now + 7200000));
+        await evaluateSales(db.conn, false, new Date(now + 1_800_000));
+        await evaluateSales(db.conn, true, new Date(now + 1_800_000));
         expect((await events())[0].status).toBe("pending");
-        await evaluateSales(db.conn, false, new Date(now + 7260000));
-        expect(
-            (await queryAll(db.conn, "SELECT eligible_since FROM ps_sale"))[0].eligible_since,
-        ).toBeNull();
+        await evaluateSales(db.conn, false, new Date(now + 3_000_000));
+        expect((await events())[0].status).toBe("pending");
+        await evaluateSales(db.conn, true, new Date(now + 3_700_000));
+        expect((await events())[0].status).toBe("likely-sold");
+    });
+    it("records a removal as unobserved when the stream was last caught up over an hour ago", async () => {
+        await ingest([
+            ...[1, 2, 3].map((n) => ({
+                ...stash,
+                id: `stash-${n}`,
+                accountName: `seller-${n}`,
+                items: [{ ...item, id: `item-${n}` }],
+            })),
+            stash,
+        ]);
+        await evaluateSales(db.conn, true, new Date(Date.now() - 2 * 3_600_000));
+        await ingest([{ ...stash, items: [] }]);
+        await mature();
+        expect((await events())[0].status).toBe("unobserved");
     });
     it("applies a stash's repeated changes within one page in order", async () => {
         await seed();
@@ -257,6 +272,26 @@ it("filters ingestion by season and refuses to reuse its cursor for another scop
         { league: "Season A" },
     ]);
     await expect(ingest([], { league: "Season B" })).rejects.toThrow("another realm or season");
+});
+
+it("delivers market hours before older re-dirtied equipment hours", async () => {
+    await ingest([stash]);
+    await db.conn.run("UPDATE ps_listing_hour SET observed_hour = observed_hour - 3600");
+    const [{ hour }] = await queryAll(db.conn, "SELECT observed_hour AS hour FROM ps_listing_hour");
+    await db.conn.run(
+        "INSERT INTO ps_equipment_cohort_hour VALUES ('rev', 'Season A', $1, 'cohort', current_timestamp)",
+        [Number(hour) - 3600],
+    );
+    const network = vi
+        .fn()
+        .mockImplementation((_url, request) =>
+            Promise.resolve(Response.json({ written: JSON.parse(request.body).rows.length })),
+        );
+    vi.stubGlobal("fetch", network);
+    expect(await flushRollups(db.conn, { limit: 1 })).toEqual({ hours: 1, rows: 1 });
+    expect(network.mock.calls.map(([, request]) => JSON.parse(request.body).stream)).toEqual([
+        "psapi",
+    ]);
 });
 
 it("retries failed delivery and does not resend unchanged completed hours", async () => {
