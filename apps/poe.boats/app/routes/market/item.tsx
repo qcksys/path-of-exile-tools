@@ -1,11 +1,10 @@
 import { useMemo } from "react";
 import { Link } from "react-router";
-import { CurrencyLabel } from "~/components/currency-label";
 import { DataTable, dataTableColumns } from "~/components/data-table";
 import { ItemArt } from "~/components/item-art";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
+import { MarketHistory, MarketHistoryPrice } from "~/components/market-history";
 import { MarketModValues } from "~/components/market-mod-values";
-import { MarketPriceChart } from "~/components/market-price-chart";
 import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
@@ -58,24 +57,11 @@ function sameMarket(a: VariantRow, b: VariantRow) {
 
 const column = dataTableColumns<HistoryRow>();
 
-function HourlyTable({
-    rows,
-    currency,
-    game,
-}: {
-    rows: HistoryRow[];
-    currency: string;
-    game: "poe1" | "poe2";
-}) {
+function HourlyTable({ rows, game }: { rows: HistoryRow[]; game: "poe1" | "poe2" }) {
     const columns = useMemo(() => {
-        const price = (value: number | undefined) =>
-            value === undefined ? (
-                "—"
-            ) : (
-                <>
-                    {number(value)} <CurrencyLabel currency={currency} game={game} />
-                </>
-            );
+        const price = (value: number | undefined, row: HistoryRow) => (
+            <MarketHistoryPrice value={value} rates={row.priceRates} game={game} />
+        );
         const count = { sortDescFirst: true, meta: { filter: "range" } } as const;
         return column.columns([
             column.accessor((row) => marketUtc(row.hour), {
@@ -89,7 +75,7 @@ function HourlyTable({
                 header: "Median ask",
                 ...count,
                 sortUndefined: "last",
-                cell: ({ getValue }) => price(getValue()),
+                cell: ({ getValue, row }) => price(getValue(), row.original),
             }),
             column.accessor("listingCount", {
                 header: "Listings observed",
@@ -106,7 +92,7 @@ function HourlyTable({
                 header: "Median last ask of likely sales",
                 ...count,
                 sortUndefined: "last",
-                cell: ({ getValue }) => price(getValue()),
+                cell: ({ getValue, row }) => price(getValue(), row.original),
             }),
             column.accessor("pendingCount", {
                 header: "Pending",
@@ -114,7 +100,7 @@ function HourlyTable({
                 cell: ({ getValue }) => number(getValue()),
             }),
         ]);
-    }, [currency, game]);
+    }, [game]);
     return (
         <DataTable
             label="Hourly observations"
@@ -143,9 +129,6 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
     const otherVariants = variants.some((variant) => !isCurrent(variant));
     const itemName =
         variants.find((variant) => variant.itemKey === filters.item)?.name || filters.item;
-    const currencies = [
-        ...new Set([filters.currency, ...history.flatMap((row) => Object.keys(row.prices ?? {}))]),
-    ].sort();
     const periodSales = history.reduce((sum, row) => sum + row.likelySales, 0);
     const game = filters.realm === "poe2" ? "poe2" : "poe1";
     return (
@@ -223,32 +206,13 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                             <p className="text-sm text-muted-foreground">likely sales in period</p>
                         </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <span className="text-muted-foreground">
-                            Show prices from all listing currencies in
-                        </span>
-                        {currencies.map((currency) => (
-                            <Link
-                                key={currency}
-                                to={marketLink({ ...filters, currency }, { ...selected, links })}
-                                aria-current={currency === filters.currency ? "true" : undefined}
-                                className={`rounded-full border px-3 py-1 ${currency === filters.currency ? "border-primary bg-primary/10 text-primary" : "border-border"}`}
-                            >
-                                <CurrencyLabel currency={currency} game={game} />
-                            </Link>
-                        ))}
-                    </div>
-                    <MarketPriceChart points={history} currency={filters.currency} game={game} />
-                    <details>
-                        <summary className="cursor-pointer text-sm">
-                            Hourly observations and inferred sale prices (latest 72 hours with data)
-                        </summary>
-                        <HourlyTable
-                            rows={history.slice(-72).reverse()}
-                            currency={filters.currency}
-                            game={game}
-                        />
-                    </details>
+                    <MarketHistory
+                        points={history}
+                        game={game}
+                        summary="Hourly observations and inferred sale prices (latest 72 hours with data)"
+                    >
+                        <HourlyTable rows={history.slice(-72).reverse()} game={game} />
+                    </MarketHistory>
                 </section>
             ) : filters.item ? (
                 <p role="status">No observations for this variant in the selected period.</p>

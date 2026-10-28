@@ -53,8 +53,10 @@ function showMarket(
         season: undefined,
         hasMore: false,
         chaosRates: {},
+        priceRates: {},
         exchange: [],
         exchangeUnit: "chaos",
+        historyUnit: "chaos",
         variants: [],
         bases: [],
         modValues: null,
@@ -68,7 +70,7 @@ function showMarket(
                 periodPending: 0,
             },
         ],
-        history: [{ ...row, merged: null, mergedSales: null }],
+        history: [{ ...row, merged: null, mergedSales: null, priceRates: { chaos: 1 } }],
     };
     const Routes = createRoutesStub([
         {

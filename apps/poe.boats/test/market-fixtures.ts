@@ -64,6 +64,7 @@ export function marketFixture(
         season,
         hasMore: filters.page === 1,
         chaosRates: { chaos: 1, divine: 150 },
+        priceRates: { chaos: 1, divine: 1 / 150 },
         exchangeUnit: "chaos",
         exchange:
             filters.page === 1 && !bases
@@ -177,9 +178,11 @@ export function marketFixture(
                           max: 3,
                       },
                       mergedSales: null,
+                      priceRates: { chaos: 1, divine: 1 / 150 },
                   },
               ]
             : [],
+        historyUnit: "chaos",
     };
 }
 
@@ -200,6 +203,7 @@ export function marketExchangeFixture(
         item: input.itemId === wisdom ? exchange : null,
         unit: "chaos" as const,
         divine: 150,
+        priceRates: { chaos: 1, divine: 1 / 150 },
         history: {
             prices: [
                 {
@@ -278,6 +282,7 @@ export function marketBaseFixture(
         baseId,
         latestHour: hour,
         base: base ? definition : null,
+        historyUnit: "chaos",
         history: [hour - 3600, hour].map((at, index) => ({
             hour: at,
             listingCount: 10 + index,
@@ -295,8 +300,10 @@ export function marketBaseFixture(
                 p90: 0.5,
                 max: 0.6,
             },
+            priceRates: { chaos: 1, divine: 1 / 150 },
         })),
         variants,
         chaosRates: { chaos: 1, divine: 150 },
+        priceRates: { chaos: 1, divine: 1 / 150 },
     };
 }
