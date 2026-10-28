@@ -13,6 +13,7 @@ import {
     MARKET_CLUSTER_LEVEL_BANDS,
 } from "~/lib/market-bases";
 import {
+    isMarketBaseCategory,
     MARKET_CLUSTER_BASE_CATEGORY,
     marketHasCorruption,
     marketHasIdentification,
