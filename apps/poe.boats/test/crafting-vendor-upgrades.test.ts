@@ -67,7 +67,8 @@ beforeEach(() => {
     sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_unique_hourly (
         realm TEXT, league TEXT, hour INTEGER, itemKey TEXT, baseType TEXT, name TEXT,
         frameType INTEGER, identified INTEGER, corrupted INTEGER, foilVariation INTEGER,
-        signatureKind TEXT, signatureValue TEXT, listingCount INTEGER, uniqueSellers INTEGER, prices TEXT)`);
+        signatureKind TEXT, signatureValue TEXT, listingCount INTEGER, uniqueSellers INTEGER, prices TEXT,
+        tab TEXT)`);
     db = drizzle(async (sql, params) => {
         const statement = sqlite.prepare(sql.replace(/ force index \(`PRIMARY`\)/i, ""));
         statement.setReturnArrays(true);

@@ -11,7 +11,7 @@ import {
     selectCohortPrice,
 } from "@poe-tools/market";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection } from "mysql2/promise";
@@ -44,6 +44,7 @@ import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCohortRevision } from "~/db/schema/stash.cohort-revision";
 import { tStashCohortWindow } from "~/db/schema/stash.cohort-window";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
+import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
 import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { seededRandom } from "~/lib/crafting-engine";
 import { bindExchangePrice } from "~/lib/crafting-exchange";
@@ -91,6 +92,7 @@ import {
     queryAll,
 } from "../../../../packages/poe-stash-ingest/src/shared/db.ts";
 import { push } from "../../../../packages/poe-stash-ingest/src/shared/remote/push.ts";
+import type { UniqueHourlyRow } from "../../../../packages/poe-stash-ingest/src/shared/remote/types.ts";
 import {
     commodityExchangeSnapshot,
     commodityQuote,
@@ -149,7 +151,7 @@ const stash = {
     accountName: "seller-1",
     league: "Standard",
     stash: "Sales",
-    stashType: "PremiumStash",
+    stashType: "TradeStash",
     items: [item],
 };
 const market = {
@@ -2258,6 +2260,65 @@ it("stores hourly exchange deliveries for each game in that game's table", async
     }
 });
 
+it("stores each stash tab kind as its own market, and rows from older ingesters untabbed", async () => {
+    const row = {
+        realm: "pc",
+        league: "Tab split",
+        hour: HOUR,
+        itemKey: "Headhunter",
+        corrupted: false,
+        foilVariation: -1,
+        links: 0,
+        signatureKind: "",
+        signatureValue: "",
+        signatureData: null,
+        iconAsset: null,
+        name: "Headhunter",
+        baseType: "Leather Belt",
+        frameType: 3,
+        identified: true,
+        listingCount: 1,
+        uniqueSellers: 1,
+        likelySales: 1,
+        prices: {},
+        firstSeenAt: "2026-10-24T00:00:00Z",
+        lastSeenAt: "2026-10-24T00:00:00Z",
+    };
+    await push({
+        stream: "psapi",
+        rows: [
+            { ...row, tab: "merchant" },
+            { ...row, tab: "other", likelySales: 2 },
+            // An ingester from before the tab split sends no `tab`.
+            row as UniqueHourlyRow,
+        ],
+    });
+    const hourly = tStashUniqueHourly.poe1;
+    expect(
+        await mysql
+            .select({ tab: hourly.tab, likelySales: hourly.likelySales })
+            .from(hourly)
+            .where(eq(hourly.league, "Tab split"))
+            .orderBy(hourly.tab),
+    ).toEqual([
+        { tab: "", likelySales: 1 },
+        { tab: "merchant", likelySales: 1 },
+        { tab: "other", likelySales: 2 },
+    ]);
+    const daily = tStashMarketDaily.poe1;
+    expect(
+        await mysql
+            .select({ tab: daily.tab, likelySales: daily.likelySales })
+            .from(daily)
+            .where(eq(daily.league, "Tab split"))
+            .orderBy(daily.tab),
+    ).toEqual([
+        { tab: "", likelySales: 1 },
+        { tab: "merchant", likelySales: 1 },
+        { tab: "other", likelySales: 2 },
+    ]);
+});
+
 it("preserves prior-hour prices after updates and unlisting, and retries upstream 503s", async () => {
     const currentHour = Math.floor(Date.now() / 3_600_000) * 3600;
     upstreamResponses.push(
@@ -3046,6 +3107,7 @@ it.each([
         name: "",
         frameType: 5,
         identified: true,
+        tab: "merchant",
         listingCount: 33,
         uniqueSellers: 30,
         prices: { divine: { count: 1, min: 2, median: 2, max: 2 } },

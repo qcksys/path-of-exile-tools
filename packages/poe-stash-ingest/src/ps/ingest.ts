@@ -24,6 +24,7 @@ import { itemKey, itemLinks } from "#src/shared/item-key.ts";
 import { extractModSignature, signatureValue } from "#src/shared/mod-extractors/index.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
 import { configureSource } from "#src/shared/source.ts";
+import { type ListingTab, listingTab } from "#src/shared/stash-tab.ts";
 
 const STREAM = "psapi";
 const PAGE_DELAY_MS = 1200;
@@ -59,6 +60,7 @@ interface ListingRow {
     corrupted: boolean;
     foilVariation: number | null;
     links: number;
+    tab: ListingTab;
     priceAmount: number | null;
     priceCurrency: string | null;
     stackSize: number | null;
@@ -84,6 +86,7 @@ const LISTING_VALUES = `
     (value->>'corrupted')::BOOLEAN AS corrupted,
     (value->>'foilVariation')::INTEGER AS foil_variation,
     (value->>'links')::INTEGER AS links,
+    value->>'tab' AS tab,
     (value->>'priceAmount')::DOUBLE AS price_amount,
     value->>'priceCurrency' AS price_currency,
     (value->>'stackSize')::INTEGER AS stack_size,
@@ -93,6 +96,7 @@ const LISTING_VALUES = `
 
 function listingRows(change: PublicStashChange, accountName: string, league: string) {
     const rows: ListingRow[] = [];
+    const tab = listingTab(change);
     for (const item of change.items) {
         if (!item.id || !shouldCapture(item)) continue;
         const iconAsset = decodeIconAsset(item.icon);
@@ -115,6 +119,7 @@ function listingRows(change: PublicStashChange, accountName: string, league: str
             corrupted: item.corrupted ?? false,
             foilVariation: item.foilVariation ?? null,
             links: itemLinks(item),
+            tab,
             priceAmount: price?.amount ?? null,
             priceCurrency: price?.currency ?? null,
             stackSize: item.stackSize ?? null,
@@ -163,7 +168,7 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
     const byStash = Map.groupBy(known, (row) => row.stashId);
     const result = { inserted: 0, updated: 0, removed: 0 };
     const removedRows: string[] = [];
-    const removals: { stashId: string; withdrawn: boolean }[] = [];
+    const removals: Parameters<typeof recordRemovals>[1][number][] = [];
     const updates: (ListingRow & { rowId: string })[] = [];
     const inserts: ListingRow[] = [];
     const listed: { stashId: string; accountName: string }[] = [];
@@ -192,7 +197,7 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
         const gone = [...owned.values()].filter((row) => row.active && !current.has(row.itemId));
         if (gone.length) {
             removedRows.push(...gone.map((row) => row.rowId));
-            removals.push({ stashId: change.id, withdrawn: false });
+            removals.push({ stashId: change.id, withdrawn: false, tab: listingTab(change) });
             result.removed += gone.length;
         }
         listed.push({ stashId: change.id, accountName });
@@ -223,6 +228,7 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
                 corrupted = v.corrupted,
                 foil_variation = v.foil_variation,
                 links = v.links,
+                tab = v.tab,
                 price_amount = v.price_amount,
                 price_currency = v.price_currency,
                 stack_size = v.stack_size,
@@ -283,6 +289,7 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
             corrupted = l.corrupted,
             foil_variation = l.foil_variation,
             links = l.links,
+            tab = l.tab,
             price_amount = l.price_amount,
             price_currency = l.price_currency,
             stack_size = l.stack_size,

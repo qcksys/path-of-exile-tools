@@ -16,6 +16,7 @@ import { isMarketBaseCategory, MARKET_CLUSTER_BASE_CATEGORY } from "~/lib/market
 import {
     MARKET_ORDERS,
     MARKET_RANGE_PARAMS,
+    MARKET_TABS,
     type MarketFilters,
     marketCorruption,
     marketLink,
@@ -148,6 +149,10 @@ export function MarketFiltersForm({
                     "30": "Last 30 days",
                     "90": "Last 90 days",
                 })}
+                {/* Crafting bases always count merchant tabs only. */}
+                {isMarketBaseCategory(filters.category)
+                    ? null
+                    : select("tab", "Stash tabs", MARKET_TABS)}
                 <Label className="grid gap-1.5 text-xs text-muted-foreground">
                     Price currency
                     <FormSelect

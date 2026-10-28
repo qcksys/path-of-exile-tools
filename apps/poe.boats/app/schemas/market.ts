@@ -70,9 +70,23 @@ const gemBandFilter = (bands: readonly string[], axis: string) =>
             `Skill gem ${axis} bands (${bands.join(", ")}) to include, comma-separated; prefix one with - to exclude it. Set, only gem markets are listed`,
         );
 
+/** The stash tabs whose listings markets show; listings captured before tabs were recorded show only under `all`. */
+export const MARKET_TABS = {
+    merchant: "Merchant tabs",
+    other: "Other tabs",
+    all: "All tabs",
+} as const;
+export type MarketTab = keyof typeof MARKET_TABS;
+
 export const marketFiltersSchema = z.object({
     realm: z.enum(["pc", "poe2", "xbox", "sony"]).default("pc"),
     league: z.string().max(100).default(""),
+    tab: z
+        .enum(Object.keys(MARKET_TABS) as [MarketTab, ...MarketTab[]])
+        .default("merchant")
+        .describe(
+            "Listings from Faustus's merchant tabs (`merchant`, stash type TradeStash), from every other public tab (`other`), or both (`all`, which alone includes listings captured before tabs were recorded). Crafting bases always count merchant tabs only",
+        ),
     q: z.string().max(100).default(""),
     days: z.enum(["7", "30", "90"]).default("7"),
     page: z.coerce.number().int().min(1).max(10000).default(1),
@@ -336,6 +350,7 @@ export function marketLink(
         identification: filters.identification,
         ...(filters.corruption ? { corruption: filters.corruption } : {}),
     });
+    if (filters.tab !== "merchant") params.set("tab", filters.tab);
     for (const param of MARKET_RANGE_PARAMS) {
         const bound = filters[param];
         if (bound !== undefined) params.set(param, String(bound));
