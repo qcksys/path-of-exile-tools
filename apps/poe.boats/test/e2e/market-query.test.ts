@@ -68,6 +68,7 @@ beforeAll(async () => {
                     hour: latestHour - Math.floor(index / 20) * 3600,
                     itemKey: `Item ${index % 20}`,
                     identified: true,
+                    tab: "merchant" as const,
                     baseType: "Leather Belt",
                     frameType: 3,
                     listingCount: 1,
@@ -404,6 +405,7 @@ function observation(overrides: Partial<TStashUniqueHourlyI>): TStashUniqueHourl
         itemKey: "Example",
         name: "Example",
         identified: true,
+        tab: "merchant",
         baseType: "Leather Belt",
         frameType: 3,
         listingCount: 1,
@@ -413,6 +415,62 @@ function observation(overrides: Partial<TStashUniqueHourlyI>): TStashUniqueHourl
         ...overrides,
     };
 }
+
+it("shows merchant tabs by default and merges every tab, including untabbed rows, only under all", async () => {
+    const chaos = (count: number, median: number) => ({
+        chaos: { count, min: median, median, max: median },
+    });
+    await db.insert(market).values([
+        observation({ league: "Tabs", likelySales: 2, listingCount: 3, prices: chaos(3, 10) }),
+        observation({
+            league: "Tabs",
+            tab: "other",
+            likelySales: 5,
+            listingCount: 1,
+            prices: chaos(1, 40),
+        }),
+        observation({
+            league: "Tabs",
+            tab: "",
+            hour: hour - 3600,
+            likelySales: 7,
+            listingCount: 2,
+            prices: chaos(2, 20),
+        }),
+    ]);
+    const read = async (input: Record<string, unknown>) => {
+        const filters = marketFiltersSchema.parse({ league: "Tabs", currency: "chaos", ...input });
+        const list = await marketData(db as unknown as TDatabase, filters, "list");
+        const item = await marketData(
+            db as unknown as TDatabase,
+            { ...filters, item: "Example" },
+            "history",
+        );
+        return {
+            sales: list.rows.map((row) => row.periodSales),
+            listings: list.rows.map((row) => row.listingCount),
+            history: item.history.map((row) => [row.hour, row.listingCount, row.likelySales]),
+        };
+    };
+    expect(await read({})).toEqual({
+        sales: [2],
+        listings: [3],
+        history: [[hour, 3, 2]],
+    });
+    expect(await read({ tab: "other" })).toEqual({
+        sales: [5],
+        listings: [1],
+        history: [[hour, 1, 5]],
+    });
+    expect(await read({ tab: "all" })).toEqual({
+        sales: [14],
+        listings: [4],
+        history: [
+            [hour - 3600, 2, 7],
+            [hour, 4, 7],
+        ],
+    });
+});
 
 it("preserves variant totals, the latest listed observation, and exact item history", async () => {
     const variants = [

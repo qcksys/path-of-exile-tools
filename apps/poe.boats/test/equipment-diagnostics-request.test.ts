@@ -83,7 +83,7 @@ const page = {
             accountName: "private-seller",
             public: true,
             league: "Allflame",
-            stashType: "PremiumStash",
+            stashType: "TradeStash",
             items: [item],
         },
     ],

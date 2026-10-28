@@ -49,6 +49,8 @@ export async function findCraftingCommodityPrices(
             and(
                 eq(hourly.realm, "pc"),
                 eq(hourly.league, graph.league!),
+                // Stash commodity prices, like the market's default, come from merchant tabs only.
+                eq(hourly.tab, "merchant"),
                 or(
                     ...[...groups.values()].map(({ signature, baseTypes }) => {
                         return and(

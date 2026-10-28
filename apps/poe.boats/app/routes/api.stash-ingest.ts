@@ -20,6 +20,7 @@ import {
     upsertStashUniqueHourly,
 } from "~/db/queries/stash-ingest.queries";
 import { sStashCurrencyHourlyI } from "~/db/schema/stash.currency-hourly";
+import { STASH_LISTING_TABS } from "~/db/schema/stash.unique-hourly";
 import { recordIngestStatus } from "~/operations/server-status.server";
 import { logger } from "~/services/logger";
 import type { Route } from "./+types/api.stash-ingest";
@@ -49,6 +50,8 @@ const UNIQUE_ROW_SCHEMA = z.object({
     foilVariation: z.number().int(),
     // Ingesters before the links split omit it.
     links: z.number().int().min(0).max(6).default(0),
+    // Ingesters before the tab split omit it; their rows mix both kinds of tab.
+    tab: z.enum(STASH_LISTING_TABS).default(""),
     signatureKind: z.string().max(32),
     signatureValue: z.string().max(255),
     signatureData: z.record(z.string(), z.unknown()).nullable(),

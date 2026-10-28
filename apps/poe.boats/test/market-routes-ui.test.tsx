@@ -407,6 +407,34 @@ it("searches unique equipment uncorrupted by default and carries only a changed 
     expect(screen.queryByRole("combobox", { name: "Identification" })).toBeNull();
 });
 
+it("shows merchant tabs by default, keeps another tab choice on item links, and hides it for crafting bases", async () => {
+    showMarket("/1/market/armour?league=Allflame");
+    const url = () => screen.getByLabelText("Current URL").textContent;
+    const tabs = await screen.findByRole("combobox", { name: "Stash tabs" });
+    expectControlValue(tabs, "merchant");
+    expect(getMarketData).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({ tab: "merchant" }),
+        "list",
+    );
+    changeControl(tabs, { target: { value: "other" } });
+    await waitFor(() => expect(url()).toContain("tab=other"));
+    expect(getMarketData).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({ tab: "other" }),
+        "list",
+    );
+    fireEvent.click(await screen.findByRole("link", { name: "Abberath's Hooves" }));
+    await screen.findByRole("heading", { name: "Abberath's Hooves" });
+    expect(url()).toContain("tab=other");
+    expectControlValue(screen.getByRole("combobox", { name: "Stash tabs" }), "other");
+
+    cleanup();
+    showMarket("/1/market/armour-bases?league=Allflame");
+    await screen.findByRole("combobox", { name: "Period" });
+    expect(screen.queryByRole("combobox", { name: "Stash tabs" })).toBeNull();
+});
+
 it("redirects category query links to the category path", async () => {
     const response = await listLoader({
         request: new Request(

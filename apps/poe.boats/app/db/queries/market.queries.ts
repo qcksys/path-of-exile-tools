@@ -143,6 +143,11 @@ function linksMatch(market: MarketTable, filters: MarketFilters) {
     return filters.links === undefined ? undefined : eq(market.links, Number(filters.links));
 }
 
+/** One kind of stash tab's rows, or under `all` every row, including those from before tabs were recorded. */
+function tabMatch(table: MarketTable | DailyTable, filters: Pick<MarketFilters, "tab">) {
+    return filters.tab === "all" ? undefined : eq(table.tab, filters.tab);
+}
+
 /** Clears the representative combination from a pool unique's merged every-combination row. */
 function asMarket<Row extends { signatureValue: string; signatureData: unknown }>(
     row: Row,
@@ -154,10 +159,10 @@ function asMarket<Row extends { signatureValue: string; signatureData: unknown }
 
 /**
  * Merges one hour's rows of a market, which spans foil variations (and link counts unless the
- * filters pick one), so the result has neither.
+ * filters pick one, and stash tab kinds under `all`), so the result has none of them.
  */
 function mergeMarket(rows: TStashUniqueHourlyS[], kind: string, value: string) {
-    const { foilVariation: _, links: _links, ...row } = mergeMarketRows(rows);
+    const { foilVariation: _, links: _links, tab: _tab, ...row } = mergeMarketRows(rows);
     return asMarket(row, kind, value);
 }
 
@@ -205,6 +210,7 @@ async function marketLatestRows<
                 and(
                     eq(market.realm, filters.realm),
                     eq(market.league, filters.league),
+                    tabMatch(market, filters),
                     or(
                         ...markets.map((entry) =>
                             and(
@@ -307,6 +313,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         eq(market.realm, filters.realm),
         eq(market.league, filters.league),
         gte(market.hour, windowStart),
+        tabMatch(market, filters),
     );
     const historyPromise =
         filters.item && view !== "list"
@@ -327,8 +334,9 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                           ),
                       )
                       .orderBy(desc(market.hour))
-                      // 90 days of hours for non-foil plus up to 16 merged foil variations, per link count.
-                      .limit(2160 * 17 * 3),
+                      // 90 days of hours for non-foil plus up to 16 merged foil variations, per link
+                      // count and, under `all`, per stash tab kind.
+                      .limit(2160 * 17 * 3 * (filters.tab === "all" ? 3 : 1)),
               ).then((rows) => mergeByHour(rows, filters))
             : Promise.resolve([]);
     const variantsPromise =
@@ -354,6 +362,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         eq(daily.realm, filters.realm),
         eq(daily.league, filters.league),
         gte(daily.day, windowStart),
+        tabMatch(daily, filters),
     );
     const search = filters.q ? `%${filters.q.replace(/[\\%_]/g, "\\$&")}%` : undefined;
     const currencyField = (field: string) =>
@@ -472,6 +481,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 eq(market.realm, filters.realm),
                 eq(market.league, filters.league),
                 eq(market.hour, page.latestHour),
+                tabMatch(market, filters),
                 eq(market.itemKey, page.itemKey),
                 eq(market.identified, page.identified),
                 eq(market.corrupted, page.corrupted),

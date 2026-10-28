@@ -9,6 +9,7 @@ import type {
 import { queryAll, withTransaction } from "#src/shared/db.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
 import { assertSourceRealm } from "#src/shared/source.ts";
+import { listingTab } from "#src/shared/stash-tab.ts";
 
 export async function reclassifyArchivedEquipment(
     conn: DuckDBConnection,
@@ -135,6 +136,8 @@ export async function reclassifyArchivedEquipment(
                 // Withdrawals retain earlier asking observations, as live capture does.
                 if (!stash.public || !stash.accountName || !stash.league) continue;
                 if (opts.league !== "all" && stash.league !== opts.league) continue;
+                // As in live capture, crafting base markets count merchant tabs only.
+                if (listingTab(stash) !== "merchant") continue;
                 for (const item of stash.items) {
                     if (!item.id) continue;
                     const result = classifier.acceptsBase(item.baseType)

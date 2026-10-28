@@ -14,7 +14,8 @@ const db = drizzle({ client: connection });
 await migrate(db, {
     migrationsFolder: fileURLToPath(new URL("../../app/db/migrations", import.meta.url)),
 });
-const row = marketFixture().rows[0]!;
+// The market shows merchant tab listings by default.
+const row = { ...marketFixture().rows[0]!, tab: "merchant" as const };
 await db.insert(market).values([
     row,
     { ...row, identified: false },

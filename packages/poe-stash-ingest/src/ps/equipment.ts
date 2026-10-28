@@ -6,6 +6,7 @@ import { compileMarketCohorts, marketCohortManifestSchema } from "@poe-tools/mar
 import { params, stashRounds } from "#src/ps/rounds.ts";
 import { queryAll } from "#src/shared/db.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
+import { listingTab } from "#src/shared/stash-tab.ts";
 
 export type EquipmentClassifier = ReturnType<typeof compileMarketCohorts>;
 type Item = PublicStashChange["items"][number];
@@ -102,8 +103,10 @@ async function captureRound(
         if (!change.accountName || !change.league) continue;
         const account = change.accountName.toLowerCase();
         const league = change.league;
+        // Crafting base markets count merchant tabs only, so an other tab's equipment leaves them.
+        const items = listingTab(change) === "merchant" ? change.items : [];
         const stashRows: EquipmentRow[] = [];
-        for (const item of change.items) {
+        for (const item of items) {
             if (!item.id || !classifier.acceptsBase(item.baseType)) continue;
             const { matches, unknown } = classifier.classify(
                 normalizeApiItem("poe1", "stash", item),
@@ -124,7 +127,7 @@ async function captureRound(
             });
         }
         captured += stashRows.length;
-        const ids = new Set(change.items.flatMap((item) => (item.id ? [item.id] : [])));
+        const ids = new Set(items.flatMap((item) => (item.id ? [item.id] : [])));
         const capturedIds = new Set(stashRows.map((row) => row.id));
         for (const row of active) {
             if (row.account !== account) continue;
@@ -132,7 +135,7 @@ async function captureRound(
             else if (!capturedIds.has(row.itemId)) {
                 // A changed item which no longer belongs to a captured base must also leave its
                 // old cohorts.
-                const item = change.items.find((candidate) => candidate.id === row.itemId)!;
+                const item = items.find((candidate) => candidate.id === row.itemId)!;
                 stashRows.push({
                     account,
                     stashId: change.id,

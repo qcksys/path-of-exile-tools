@@ -39,6 +39,8 @@ CREATE INDEX IF NOT EXISTS ps_listing_item_key ON ps_listing(item_key);
 ALTER TABLE ps_listing ADD COLUMN IF NOT EXISTS signature_value VARCHAR;
 -- Listings seen before links were recorded count as unlinked until their stash is re-sent.
 ALTER TABLE ps_listing ADD COLUMN IF NOT EXISTS links INTEGER DEFAULT 0;
+-- 'merchant' or 'other' (see listingTab); NULL for listings seen before tabs were recorded.
+ALTER TABLE ps_listing ADD COLUMN IF NOT EXISTS tab VARCHAR;
 
 CREATE TABLE IF NOT EXISTS ps_listing_hour AS
     SELECT * EXCLUDE (removed_at, raw_item),
@@ -50,6 +52,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS ps_listing_hour_pk
 CREATE INDEX IF NOT EXISTS ps_listing_hour_time ON ps_listing_hour(observed_hour, league);
 ALTER TABLE ps_listing_hour ADD COLUMN IF NOT EXISTS signature_value VARCHAR;
 ALTER TABLE ps_listing_hour ADD COLUMN IF NOT EXISTS links INTEGER DEFAULT 0;
+ALTER TABLE ps_listing_hour ADD COLUMN IF NOT EXISTS tab VARCHAR;
 
 CREATE TABLE IF NOT EXISTS ps_sale AS
     SELECT * EXCLUDE (raw_item), 'pending'::VARCHAR AS status,
@@ -60,6 +63,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS ps_sale_pk
     ON ps_sale(league, account_name, stash_id, item_id, removed_at);
 CREATE INDEX IF NOT EXISTS ps_sale_status ON ps_sale(status);
 ALTER TABLE ps_sale ADD COLUMN IF NOT EXISTS links INTEGER DEFAULT 0;
+ALTER TABLE ps_sale ADD COLUMN IF NOT EXISTS tab VARCHAR;
 
 CREATE TABLE IF NOT EXISTS pipeline_health (
     id INTEGER PRIMARY KEY, last_poll_at TIMESTAMP NOT NULL, caught_up BOOLEAN NOT NULL

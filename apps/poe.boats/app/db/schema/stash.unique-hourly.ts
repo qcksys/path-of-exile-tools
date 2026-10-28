@@ -14,6 +14,10 @@ import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
 import { timestampCols } from "~/db/helpers/schema.ts";
 import { type StashGame, stashTableName } from "~/db/helpers/stash-game";
 
+/** The kind of public stash tab a market's listings were in; empty before tabs were recorded. */
+export const STASH_LISTING_TABS = ["merchant", "other", ""] as const;
+export type StashListingTab = (typeof STASH_LISTING_TABS)[number];
+
 /** Listing prices in one currency. Rows ingested before mean and quantiles were added omit them. */
 export type MarketPriceSummary = {
     count: number;
@@ -31,11 +35,15 @@ export type MarketPriceSummary = {
  * Permanent hourly summary of public-stash listings, written by
  * @poe-tools/stash-ingest. One row per *market* per hour, where a market
  * is identified by (league, hour, item_key, corrupted, foil_variation,
- * links, signature_kind, signature_value).
+ * links, tab, signature_kind, signature_value).
  *
  * `links` is 5 or 6 for a unique whose largest linked socket group has that
  * many sockets, as poe.ninja splits them, otherwise 0. Rows ingested before
  * the split are 0 whatever their links.
+ *
+ * `tab` is `merchant` for listings in Faustus's merchant tabs (stash type
+ * `TradeStash`), `other` for every other public tab, and empty for listings
+ * captured before tabs were recorded, which mix both.
  *
  * `item_key` is the unique's market identity:
  *   - `unid:<icon>`     unidentified unique (variant carried by icon_asset)
@@ -69,6 +77,7 @@ function stashUniqueHourly(game: StashGame) {
             corrupted: boolean().notNull().default(false),
             foilVariation: int().notNull().default(-1),
             links: tinyint().notNull().default(0),
+            tab: varchar({ length: 8 }).$type<StashListingTab>().notNull().default(""),
             signatureKind: varchar({ length: 32 }).notNull().default(""),
             signatureValue: varchar({ length: 255 }).notNull().default(""),
 
@@ -102,6 +111,7 @@ function stashUniqueHourly(game: StashGame) {
                     table.corrupted,
                     table.foilVariation,
                     table.links,
+                    table.tab,
                     table.signatureKind,
                     table.signatureValue,
                 ],
