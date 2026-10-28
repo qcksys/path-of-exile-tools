@@ -167,7 +167,6 @@ it("requires the intrinsic preparation profile to price a projected fracture sou
     const reference = {
         realm: "pc" as const,
         league: "Allflame",
-        revision: "source",
         cohortId: cohort.id,
         sourcePreparation: profile,
     };

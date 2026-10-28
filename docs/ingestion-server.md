@@ -107,8 +107,8 @@ cursor merely to make it appear caught up. Listing timestamps are capture times,
 sale dates. Exchange backfill does not recreate weeks of equipment observations.
 
 Workers also deliver cursor/capture-time checkpoints and one compressed response per UTC day.
-The receiver migration adds `stash_checkpoint` and `stash_daily_sample`; apply it and update the
-receiver before upgrading workers. The [capture and diagnostic commands](../packages/poe-stash-ingest/README.md#durable-forward-capture-and-diagnostic-checkpoints)
+The receiver stores them per game in `stash_poe1_checkpoint`/`stash_poe2_checkpoint` and the
+matching `daily_sample` tables; update the receiver before upgrading workers. The [capture and diagnostic commands](../packages/poe-stash-ingest/README.md#durable-forward-capture-and-diagnostic-checkpoints)
 retain selected crafting observations and validate daily samples. Historical cursor restoration and its
 upload endpoints have been removed. Existing observations, samples and summaries are preserved.
 

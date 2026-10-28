@@ -1,5 +1,6 @@
 import { and, between, eq, inArray, sql } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
+import { STASH_GAMES, type StashGame } from "~/db/helpers/stash-game";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCurrencyDaily } from "~/db/schema/stash.currency-daily";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
@@ -21,15 +22,15 @@ export function utcDay(hour: number) {
     return Math.floor(hour / DAY) * DAY;
 }
 
-type RollupScope = { realm?: string; league?: string };
+type RollupScope = { game: StashGame; realm?: string; league?: string };
 
-/** Recomputes `stash_market_daily` for every day touching [fromHour, toHour], optionally for some items only. */
+/** Recomputes the game's market daily rows for every day touching [fromHour, toHour], optionally for some items only. */
 export function refreshStashMarketDaily(
     db: TDatabase,
     scope: RollupScope & { fromHour?: number; toHour?: number; itemKeys?: string[] },
 ) {
-    const hourly = tStashUniqueHourly;
-    const daily = tStashMarketDaily;
+    const hourly = tStashUniqueHourly[scope.game];
+    const daily = tStashMarketDaily[scope.game];
     // Literals keep the select and group-by expressions identical under ONLY_FULL_GROUP_BY.
     const day = sql<number>`floor(${hourly.hour} / ${sql.raw(String(DAY))}) * ${sql.raw(String(DAY))}`;
     const pools = sql.raw(MOD_POOL_KINDS.map((kind) => `'${kind}'`).join(", "));
@@ -102,13 +103,13 @@ export function refreshStashMarketDaily(
         });
 }
 
-/** Recomputes `stash_currency_daily` for every day touching [fromHour, toHour], optionally for some markets only. */
+/** Recomputes the game's currency daily rows for every day touching [fromHour, toHour], optionally for some markets only. */
 export function refreshStashCurrencyDaily(
     db: TDatabase,
     scope: RollupScope & { fromHour?: number; toHour?: number; marketIds?: string[] },
 ) {
-    const hourly = tStashCurrencyHourly;
-    const daily = tStashCurrencyDaily;
+    const hourly = tStashCurrencyHourly[scope.game];
+    const daily = tStashCurrencyDaily[scope.game];
     const day = sql<number>`floor(${hourly.hour} / ${sql.raw(String(DAY))}) * ${sql.raw(String(DAY))}`;
     // Units traded of the market ID's first (1) or second (-1) item.
     const side = (index: 1 | -1) =>
@@ -163,20 +164,30 @@ export function refreshStashCurrencyDaily(
         });
 }
 
-const COVERAGE_SOURCES = {
-    currency: { table: tStashCurrencyHourly, index: "stash_currency_coverage_idx" },
-    uniques: { table: tStashUniqueHourly, index: "stash_unique_market_cover_idx" },
-    equipment: { table: tStashCohortHourly, index: "stash_cohort_coverage_idx" },
-} as const;
+/** The hourly streams each game stores; equipment cohorts are PoE 1 only. */
+export const COVERAGE_STREAMS = {
+    poe1: ["currency", "uniques", "equipment"],
+    poe2: ["currency", "uniques"],
+} as const satisfies Record<StashGame, readonly StashCoverageStream[]>;
 
-/** Recounts `stash_hour_coverage` for a stream's hours (every stored hour when `hours` is omitted). */
+function coverageSource(game: StashGame, stream: StashCoverageStream) {
+    if (stream === "currency")
+        return { table: tStashCurrencyHourly[game], index: "stash_currency_coverage_idx" };
+    if (stream === "uniques")
+        return { table: tStashUniqueHourly[game], index: "stash_unique_market_cover_idx" };
+    if (game !== "poe1") throw new Error("Equipment cohorts are stored for PoE 1 only.");
+    // The primary key leads with the hour.
+    return { table: tStashCohortHourly, index: "PRIMARY" };
+}
+
+/** Recounts the game's hour coverage for a stream's hours (every stored hour when `hours` is omitted). */
 export function refreshStashHourCoverage(
     db: TDatabase,
     stream: StashCoverageStream,
     scope: RollupScope & { hours?: number[] },
 ) {
-    const { table, index } = COVERAGE_SOURCES[stream];
-    const coverage = tStashHourCoverage;
+    const { table, index } = coverageSource(scope.game, stream);
+    const coverage = tStashHourCoverage[scope.game];
     return db
         .insert(coverage)
         .select(
@@ -202,22 +213,26 @@ export function refreshStashHourCoverage(
 }
 
 /** Records each market's earliest hour; an older hour arriving later lowers it. */
-export function upsertStashCurrencyMarkets(db: TDatabase, rows: TStashCurrencyMarketI[]) {
+export function upsertStashCurrencyMarkets(
+    db: TDatabase,
+    game: StashGame,
+    rows: TStashCurrencyMarketI[],
+) {
+    const market = tStashCurrencyMarket[game];
     return db
-        .insert(tStashCurrencyMarket)
+        .insert(market)
         .values(rows)
         .onDuplicateKeyUpdate({
-            set: {
-                firstHour: sql`least(${tStashCurrencyMarket.firstHour}, values(${tStashCurrencyMarket.firstHour}))`,
-            },
+            set: { firstHour: sql`least(${market.firstHour}, values(${market.firstHour}))` },
         });
 }
 
-/** Rebuilds `stash_currency_market` from every stored hour. */
-export function refreshStashCurrencyMarkets(db: TDatabase, scope: RollupScope = {}) {
-    const hourly = tStashCurrencyHourly;
+/** Rebuilds the game's currency markets from every stored hour. */
+export function refreshStashCurrencyMarkets(db: TDatabase, scope: RollupScope) {
+    const hourly = tStashCurrencyHourly[scope.game];
+    const market = tStashCurrencyMarket[scope.game];
     return db
-        .insert(tStashCurrencyMarket)
+        .insert(market)
         .select(
             db
                 .select({
@@ -236,17 +251,21 @@ export function refreshStashCurrencyMarkets(db: TDatabase, scope: RollupScope = 
                 .groupBy(hourly.realm, hourly.league, hourly.marketId),
         )
         .onDuplicateKeyUpdate({
-            set: {
-                firstHour: sql`least(${tStashCurrencyMarket.firstHour}, values(${tStashCurrencyMarket.firstHour}))`,
-            },
+            set: { firstHour: sql`least(${market.firstHour}, values(${market.firstHour}))` },
         });
 }
 
-/** Rebuilds every rollup from the hourly tables, as the migration's backfill does. */
-export async function refreshStashRollups(db: TDatabase, scope: RollupScope = {}) {
-    await refreshStashMarketDaily(db, scope);
-    await refreshStashCurrencyDaily(db, scope);
-    await refreshStashCurrencyMarkets(db, scope);
-    for (const stream of Object.keys(COVERAGE_SOURCES) as StashCoverageStream[])
-        await refreshStashHourCoverage(db, stream, scope);
+/** Rebuilds every rollup from the hourly tables, of one game or of both. */
+export async function refreshStashRollups(
+    db: TDatabase,
+    scope: Omit<RollupScope, "game"> & { game?: StashGame } = {},
+) {
+    for (const game of scope.game ? [scope.game] : STASH_GAMES) {
+        const scoped = { ...scope, game };
+        await refreshStashMarketDaily(db, scoped);
+        await refreshStashCurrencyDaily(db, scoped);
+        await refreshStashCurrencyMarkets(db, scoped);
+        for (const stream of COVERAGE_STREAMS[game])
+            await refreshStashHourCoverage(db, stream, scoped);
+    }
 }

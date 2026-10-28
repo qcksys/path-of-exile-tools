@@ -1,7 +1,7 @@
 import { marketObservationRange } from "@poe-tools/market";
 import { and, eq, sql } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
-import { tStashCurrencyHourly as currencyHourly } from "~/db/schema/stash.currency-hourly";
+import { tStashPoe1CurrencyHourly as currencyHourly } from "~/db/schema/stash.currency-hourly";
 
 export async function loadCraftingExchangeMembership(db: TDatabase, league: string, at?: number) {
     const { latestHour } = marketObservationRange(at);

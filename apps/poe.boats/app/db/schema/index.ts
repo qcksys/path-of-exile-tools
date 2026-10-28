@@ -12,23 +12,38 @@ import { tIdolPlannerSet } from "~/db/schema/idol-planner.set";
 import { tIdolPlannerSharedSet } from "~/db/schema/idol-planner.shared-set";
 import { tIdolPlannerUserPrefs } from "~/db/schema/idol-planner.user-prefs";
 import { tIngestWorker } from "~/db/schema/ingest.worker";
-import { tStashBasemapSnapshot } from "~/db/schema/stash.basemap-snapshot";
-import { tStashCheckpoint, tStashDailySample } from "~/db/schema/stash.checkpoint";
+import {
+    tStashPoe1BasemapSnapshot,
+    tStashPoe2BasemapSnapshot,
+} from "~/db/schema/stash.basemap-snapshot";
+import {
+    tStashPoe1Checkpoint,
+    tStashPoe1DailySample,
+    tStashPoe2Checkpoint,
+    tStashPoe2DailySample,
+} from "~/db/schema/stash.checkpoint";
 import { tStashCohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
-import { tStashCohortRevisionHour } from "~/db/schema/stash.cohort-revision-hour";
-import { tStashCurrencyDaily } from "~/db/schema/stash.currency-daily";
-import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
-import { tStashCurrencyLatest } from "~/db/schema/stash.currency-latest";
-import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
-import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
-import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
-import { tStashUniqueDaily } from "~/db/schema/stash.unique-daily";
-import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
+import { tStashCohortRevision } from "~/db/schema/stash.cohort-revision";
+import { tStashCohortWindow } from "~/db/schema/stash.cohort-window";
+import { tStashPoe1CurrencyDaily, tStashPoe2CurrencyDaily } from "~/db/schema/stash.currency-daily";
+import {
+    tStashPoe1CurrencyHourly,
+    tStashPoe2CurrencyHourly,
+} from "~/db/schema/stash.currency-hourly";
+import {
+    tStashPoe1CurrencyMarket,
+    tStashPoe2CurrencyMarket,
+} from "~/db/schema/stash.currency-market";
+import { tStashPoe1HourCoverage, tStashPoe2HourCoverage } from "~/db/schema/stash.hour-coverage";
+import { tStashPoe1MarketDaily, tStashPoe2MarketDaily } from "~/db/schema/stash.market-daily";
+import { tStashPoe1UniqueHourly, tStashPoe2UniqueHourly } from "~/db/schema/stash.unique-hourly";
 
 export const schema = {
-    tStashCheckpoint,
-    tStashDailySample,
+    tStashPoe1Checkpoint,
+    tStashPoe2Checkpoint,
+    tStashPoe1DailySample,
+    tStashPoe2DailySample,
     tIngestWorker,
     tAuthAccount,
     tAuthSession,
@@ -43,16 +58,22 @@ export const schema = {
     tIdolPlannerUserPrefs,
     tIdolPlannerSharedSet,
     tIdolPlannerPriceCache,
-    tStashUniqueHourly,
-    tStashUniqueDaily,
-    tStashMarketDaily,
-    tStashCurrencyHourly,
-    tStashCurrencyDaily,
-    tStashCurrencyLatest,
-    tStashCurrencyMarket,
-    tStashHourCoverage,
+    tStashPoe1UniqueHourly,
+    tStashPoe2UniqueHourly,
+    tStashPoe1MarketDaily,
+    tStashPoe2MarketDaily,
+    tStashPoe1CurrencyHourly,
+    tStashPoe2CurrencyHourly,
+    tStashPoe1CurrencyDaily,
+    tStashPoe2CurrencyDaily,
+    tStashPoe1CurrencyMarket,
+    tStashPoe2CurrencyMarket,
+    tStashPoe1HourCoverage,
+    tStashPoe2HourCoverage,
     tStashCohortHourly,
-    tStashCohortRevisionHour,
+    tStashCohortRevision,
+    tStashCohortWindow,
     tStashCohort,
-    tStashBasemapSnapshot,
+    tStashPoe1BasemapSnapshot,
+    tStashPoe2BasemapSnapshot,
 };

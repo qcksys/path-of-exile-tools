@@ -38,23 +38,24 @@ beforeEach(() => {
     sqlite.function("JSON_CONTAINS", (values, value) =>
         Number(JSON.parse(String(values)).includes(JSON.parse(String(value)))),
     );
-    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_cohort (
+    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_cohort (
         id TEXT, revision TEXT, catalogHash TEXT, name TEXT, purpose TEXT, query TEXT, baseTypes TEXT,
         baseTypeKey TEXT GENERATED ALWAYS AS (
             CASE WHEN json_array_length(baseTypes) = 1 THEN json_extract(baseTypes, '$[0]') ELSE '' END));
-        CREATE TABLE ${DB_TABLE_PREFIX}stash_cohort_hourly (
-        realm TEXT, league TEXT, hour INTEGER, revision TEXT, cohortId TEXT, listingCount INTEGER,
+        CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_cohort_hourly (
+        realm TEXT, league TEXT, hour INTEGER, cohortId TEXT, revisionSeq INTEGER, listingCount INTEGER,
         uniqueSellers INTEGER, unknownCount INTEGER, prices TEXT, confidenceMethod TEXT, firstSeenAt TEXT, lastSeenAt TEXT);
-        CREATE TABLE ${DB_TABLE_PREFIX}stash_cohort_revision_hour (
-        realm TEXT, league TEXT, hour INTEGER, revision TEXT, PRIMARY KEY (realm, league, hour, revision));
-        CREATE TRIGGER cohort_revision_hour AFTER INSERT ON ${DB_TABLE_PREFIX}stash_cohort_hourly BEGIN
-        INSERT OR IGNORE INTO ${DB_TABLE_PREFIX}stash_cohort_revision_hour
-        VALUES (NEW.realm, NEW.league, NEW.hour, NEW.revision); END;
-        CREATE TABLE ${DB_TABLE_PREFIX}stash_currency_hourly (
+        CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_cohort_revision (seq INTEGER PRIMARY KEY, revision TEXT);
+        CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_cohort_window (
+        realm TEXT, league TEXT, hour INTEGER, cohortId TEXT, revisionSeq INTEGER, windows TEXT);
+        CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_currency_hourly (
         realm TEXT, league TEXT, marketId TEXT, hour INTEGER, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT);`);
+    sqlite
+        .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_cohort_revision VALUES (1, ?)`)
+        .run(marketCandidate.latest.revision);
     const definition = marketCandidate.definition;
     sqlite
-        .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_cohort VALUES (?, ?, ?, ?, ?, ?, ?)`)
+        .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_cohort VALUES (?, ?, ?, ?, ?, ?, ?)`)
         .run(
             definition.id,
             definition.revision,
@@ -95,14 +96,14 @@ function capture(hour: number, currency = "chaos", median = 20) {
     const row = marketCandidate.latest;
     sqlite
         .prepare(
-            `INSERT INTO ${DB_TABLE_PREFIX}stash_cohort_hourly VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_cohort_hourly VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
             row.realm,
             row.league,
             hour,
-            row.revision,
             row.cohortId,
+            1,
             10,
             10,
             0,
@@ -126,7 +127,9 @@ it("returns source quotes only for their matching paid preparation profile", asy
     const { graph, candidate, profile } = sourceMarketFixture();
     const { node, alternative } = sourceMarketPurchase(graph);
     sqlite
-        .prepare(`UPDATE ${DB_TABLE_PREFIX}stash_cohort SET query = ?, baseTypes = ?, purpose = ?`)
+        .prepare(
+            `UPDATE ${DB_TABLE_PREFIX}stash_poe1_cohort SET query = ?, baseTypes = ?, purpose = ?`,
+        )
         .run(
             JSON.stringify(candidate.definition.query),
             JSON.stringify(["Conquest Lamellar"]),
@@ -164,7 +167,9 @@ function exchange(hour: number, realm = "pc", league = "Standard", currency = "d
             : exchangeCurrencyId(currency)!;
     const chaos = exchangeCurrencyId("chaos")!;
     sqlite
-        .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_currency_hourly VALUES (?, ?, ?, ?, ?, ?, ?)`)
+        .prepare(
+            `INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_currency_hourly VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        )
         .run(
             realm,
             league,
@@ -179,13 +184,13 @@ function exchange(hour: number, realm = "pc", league = "Standard", currency = "d
 describe("equipment market lookup", () => {
     it("pages definitions in base/index order without sorting the full definition table", async () => {
         sqlite.exec(
-            `CREATE INDEX definition_base ON ${DB_TABLE_PREFIX}stash_cohort(baseTypeKey,revision,id)`,
+            `CREATE INDEX definition_base ON ${DB_TABLE_PREFIX}stash_poe1_cohort(baseTypeKey,id)`,
         );
         capture(completed);
         const result = await findCraftingMarketPrices(db, input);
         expect(result.candidates).toHaveLength(1);
         const definitionReads = reads.filter(
-            (read) => read.sql.includes("catalogHash") && !read.sql.includes("stash_cohort_hourly"),
+            (read) => read.sql.includes("catalogHash") && !read.sql.includes("cohort_hourly"),
         );
         expect(definitionReads).toHaveLength(1);
         for (const read of definitionReads) {
@@ -194,33 +199,38 @@ describe("equipment market lookup", () => {
             expect(JSON.stringify(plan)).toContain("definition_base");
         }
     });
-    it("reads definitions only from revisions observed in the lookup window", async () => {
+    it("merges retained price windows of the hourly row's revision only", async () => {
         capture(completed);
-        sqlite.exec(`INSERT INTO ${DB_TABLE_PREFIX}stash_cohort
-            SELECT id, 'stale', catalogHash, name, purpose, query, baseTypes FROM ${DB_TABLE_PREFIX}stash_cohort`);
-        sqlite
-            .prepare(
-                `INSERT INTO ${DB_TABLE_PREFIX}stash_cohort_hourly
-                SELECT realm, league, ?, 'stale', cohortId, listingCount, uniqueSellers,
-                unknownCount, prices, confidenceMethod, firstSeenAt, lastSeenAt
-                FROM ${DB_TABLE_PREFIX}stash_cohort_hourly`,
-            )
-            .run(completed - 14 * 86400);
-        const timing = new ServerTiming();
-        const result = await findCraftingMarketPrices(db, input, undefined, timing);
-        expect(result.candidates.map((candidate) => candidate.definition.revision)).toEqual([
-            marketCandidate.definition.revision,
-        ]);
-        const definitionReads = reads.filter(
-            (read) => read.sql.includes("catalogHash") && !read.sql.includes("stash_cohort_hourly"),
+        const windows = (listingCount: number) =>
+            JSON.stringify({
+                chaos: {
+                    "24": {
+                        count: 30,
+                        sellers: 12,
+                        min: 18,
+                        median: 21,
+                        max: 25,
+                        confidence: 0.6,
+                        listingCount,
+                        unknownCount: 0,
+                        hourlyMedianMin: 20,
+                        hourlyMedianMax: 21,
+                    },
+                },
+            });
+        const window = sqlite.prepare(
+            `INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_cohort_window VALUES (?, ?, ?, ?, ?, ?)`,
         );
-        expect(definitionReads).toHaveLength(1);
-        expect(definitionReads[0]?.params).toContain(marketCandidate.definition.revision);
-        expect(definitionReads[0]?.params).not.toContain("stale");
-        // One revision, one definition and one hourly row: the stale definition is never read.
-        expect(timing.toString()).toContain(
-            'equipment_counts;desc="queries=3 rows=3 exchange_rows=0"',
-        );
+        const { realm, league, cohortId } = marketCandidate.latest;
+        window.run(realm, league, completed, cohortId, 1, windows(30));
+        const merged = await findCraftingMarketPrices(db, input);
+        expect(merged.candidates[0]?.latest.prices.chaos?.windows?.["24"]).toMatchObject({
+            median: 21,
+            listingCount: 30,
+        });
+        sqlite.exec(`UPDATE ${DB_TABLE_PREFIX}stash_poe1_cohort_window SET revisionSeq = 2`);
+        const outdated = await findCraftingMarketPrices(db, input);
+        expect(outdated.candidates[0]?.latest.prices.chaos).not.toHaveProperty("windows");
     });
     it("finds a relevant observation after more than 2000 incompatible same-base definitions", async () => {
         capture(completed - 3600, "chaos", 30);
@@ -230,15 +240,15 @@ describe("equipment market lookup", () => {
         if (rarity.kind !== "rarity") throw new Error("Expected rarity filter");
         rarity.values = ["Rare"];
         const definition = sqlite.prepare(
-            `INSERT INTO ${DB_TABLE_PREFIX}stash_cohort
+            `INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_cohort
             SELECT ?, revision, catalogHash, name, purpose, ?, baseTypes
-            FROM ${DB_TABLE_PREFIX}stash_cohort WHERE id = ?`,
+            FROM ${DB_TABLE_PREFIX}stash_poe1_cohort WHERE id = ?`,
         );
         const observation = sqlite.prepare(
-            `INSERT INTO ${DB_TABLE_PREFIX}stash_cohort_hourly
-            SELECT realm, league, hour, revision, ?, listingCount, uniqueSellers, unknownCount,
+            `INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_cohort_hourly
+            SELECT realm, league, hour, ?, revisionSeq, listingCount, uniqueSellers, unknownCount,
             prices, confidenceMethod, firstSeenAt, lastSeenAt
-            FROM ${DB_TABLE_PREFIX}stash_cohort_hourly WHERE cohortId = ? AND hour = ?`,
+            FROM ${DB_TABLE_PREFIX}stash_poe1_cohort_hourly WHERE cohortId = ? AND hour = ?`,
         );
         for (let index = 0; index < 2000; index++) {
             const id = `a:${String(index).padStart(4, "0")}`;
@@ -255,7 +265,7 @@ describe("equipment market lookup", () => {
         });
         sqlite
             .prepare(
-                `UPDATE ${DB_TABLE_PREFIX}stash_cohort_hourly SET prices = '{}'
+                `UPDATE ${DB_TABLE_PREFIX}stash_poe1_cohort_hourly SET prices = '{}'
                 WHERE cohortId = ? AND hour = ?`,
             )
             .run(marketCandidate.definition.id, completed);
@@ -269,41 +279,22 @@ describe("equipment market lookup", () => {
         expect(selectCraftingMarketPrice(correction.candidates[0]!, "chaos")).toBeNull();
     });
 
-    it("keeps matching uncovered generic definitions while excluding incompatible revision pairs", async () => {
+    it("keeps matching uncovered generic definitions", async () => {
         capture(completed - 3600);
         const broad = structuredClone(marketCandidate.definition.query);
         broad.groups[0]!.filters = broad.groups[0]!.filters.filter(
             (filter) => !(filter.kind === "range" && filter.field === "prefixes"),
         );
         sqlite
-            .prepare(`UPDATE ${DB_TABLE_PREFIX}stash_cohort SET query = ?, baseTypes = NULL`)
+            .prepare(`UPDATE ${DB_TABLE_PREFIX}stash_poe1_cohort SET query = ?, baseTypes = NULL`)
             .run(JSON.stringify(broad));
-        const incompatible = structuredClone(broad);
-        const rarity = incompatible.groups[0]!.filters.find((filter) => filter.kind === "rarity")!;
-        if (rarity.kind !== "rarity") throw new Error("Expected rarity filter");
-        rarity.values = ["Rare"];
-        sqlite
-            .prepare(
-                `INSERT INTO ${DB_TABLE_PREFIX}stash_cohort
-                SELECT id, 'incompatible', catalogHash, name, purpose, ?, baseTypes
-                FROM ${DB_TABLE_PREFIX}stash_cohort`,
-            )
-            .run(JSON.stringify(incompatible));
-        sqlite
-            .prepare(
-                `INSERT INTO ${DB_TABLE_PREFIX}stash_cohort_hourly
-                SELECT realm, league, ?, 'incompatible', cohortId, listingCount, uniqueSellers,
-                unknownCount, prices, confidenceMethod, firstSeenAt, lastSeenAt
-                FROM ${DB_TABLE_PREFIX}stash_cohort_hourly`,
-            )
-            .run(completed);
         for (const cohortId of [undefined, marketCandidate.definition.id]) {
             const result = await findCraftingMarketPrices(db, input, cohortId);
             expect(result.truncated).toBe(false);
             expect(result.candidates).toHaveLength(1);
             expect(result.candidates[0]).toMatchObject({
                 covered: false,
-                definition: { revision: marketCandidate.definition.revision },
+                definition: { id: marketCandidate.definition.id },
                 latest: { hour: completed - 3600 },
             });
             expect(result.candidates[0]?.reasons).toContain(
@@ -317,7 +308,7 @@ describe("equipment market lookup", () => {
         const result = await findCraftingMarketPrices(db, input, undefined, timing);
         expect(result).toEqual(await findCraftingMarketPrices(db, input));
         const header = timing.toString();
-        // Without observed revisions the lookup ends before reading any definitions.
+        // Without observations in the window the lookup ends before reading any definitions.
         expect(header).toContain("equipment_db;dur=25.0");
         expect(header).toContain("equipment_parse;dur=0.0");
         expect(header).toContain("equipment_fx;dur=0.0");
@@ -345,7 +336,8 @@ describe("equipment market lookup", () => {
 
     it("records a failed database wait and keeps the original rejection", async () => {
         capture(completed);
-        sqlite.exec(`DROP TABLE ${DB_TABLE_PREFIX}stash_cohort_hourly`);
+        // The observation and definition reads succeed; the latest-row read joins revisions.
+        sqlite.exec(`DROP TABLE ${DB_TABLE_PREFIX}stash_poe1_cohort_revision`);
         const timing = new ServerTiming();
         await expect(findCraftingMarketPrices(db, input, undefined, timing)).rejects.toThrow();
         expect(timing.toString()).toContain("equipment_db;dur=75.0");
@@ -396,7 +388,7 @@ describe("equipment market lookup", () => {
         };
         const update = () =>
             sqlite
-                .prepare(`UPDATE ${DB_TABLE_PREFIX}stash_cohort SET query = ?, baseTypes = ?`)
+                .prepare(`UPDATE ${DB_TABLE_PREFIX}stash_poe1_cohort SET query = ?, baseTypes = ?`)
                 .run(JSON.stringify(query), JSON.stringify(["Two-Toned Boots"]));
         update();
         const legacy = await findCraftingMarketPrices(db, { ...input, item: record });
@@ -468,14 +460,14 @@ describe("equipment market lookup", () => {
         exchange(completed, "pc", "Standard", "chrome");
         const other = "z:chrome";
         sqlite
-            .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_cohort
+            .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_cohort
             SELECT ?, revision, catalogHash, name, purpose, query, baseTypes
-            FROM ${DB_TABLE_PREFIX}stash_cohort`)
+            FROM ${DB_TABLE_PREFIX}stash_poe1_cohort`)
             .run(other);
         sqlite
-            .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_cohort_hourly
-            SELECT realm, league, hour, revision, ?, listingCount, uniqueSellers, unknownCount,
-                ?, confidenceMethod, firstSeenAt, lastSeenAt FROM ${DB_TABLE_PREFIX}stash_cohort_hourly`)
+            .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_cohort_hourly
+            SELECT realm, league, hour, ?, revisionSeq, listingCount, uniqueSellers, unknownCount,
+                ?, confidenceMethod, firstSeenAt, lastSeenAt FROM ${DB_TABLE_PREFIX}stash_poe1_cohort_hourly`)
             .run(other, JSON.stringify({ chrome: marketCandidate.latest.prices.chaos }));
         const result = await findCraftingMarketPrices(db, { ...input, conversion: "exchange-v1" });
         expect(result.candidates.map((candidate) => candidate.exchange?.currency)).toEqual([
@@ -497,7 +489,7 @@ describe("equipment market lookup", () => {
         expect(result.candidates[0]?.exchange).toBeUndefined();
         sqlite
             .prepare(
-                `UPDATE ${DB_TABLE_PREFIX}stash_cohort_hourly SET prices = '{}' WHERE hour = ?`,
+                `UPDATE ${DB_TABLE_PREFIX}stash_poe1_cohort_hourly SET prices = '{}' WHERE hour = ?`,
             )
             .run(completed);
         const correction = await findCraftingMarketPrices(db, {
@@ -529,7 +521,7 @@ describe("equipment market lookup", () => {
         exchange(completed, "pc", "Standard", "chrome");
         sqlite
             .prepare(
-                `UPDATE ${DB_TABLE_PREFIX}stash_currency_hourly SET volumeTraded = ? WHERE hour = ?`,
+                `UPDATE ${DB_TABLE_PREFIX}stash_poe1_currency_hourly SET volumeTraded = ? WHERE hour = ?`,
             )
             .run(
                 JSON.stringify({

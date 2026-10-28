@@ -1315,11 +1315,7 @@ test("equipment prices bind, refresh after reopening, and require an explicit ov
             ? adaptiveMarketCandidate(median)
             : structuredClone(marketCandidate);
         if (!binding.reference.window) candidate.latest.prices.chaos!.median = median;
-        if (median === 25) {
-            candidate.definition.revision = "next-market";
-            candidate.latest.revision = "next-market";
-            candidate.latest.hour += 3600;
-        }
+        if (median === 25) candidate.latest.hour += 3600;
         return route.fulfill({
             json: {
                 graph: bindCohortPurchasePrice(
@@ -1357,9 +1353,9 @@ test("equipment prices bind, refresh after reopening, and require an explicit ov
     const status = page.getByRole("region", { name: "Live market prices" });
     await expect(status).toContainText("Market prices refreshed.");
     await expect(price).toHaveValue("21");
-    expect(livePurchasePrices((await stored(page)).projects[0]!.graph)[0]?.reference).toMatchObject(
-        { realm: "pc", league: "Standard", revision: "test-market", window: "adaptive-v1" },
-    );
+    const bound = livePurchasePrices((await stored(page)).projects[0]!.graph)[0]?.reference;
+    expect(bound).toMatchObject({ realm: "pc", league: "Standard", window: "adaptive-v1" });
+    expect(bound).not.toHaveProperty("revision");
     await openGraphSettings(page);
     await page.getByLabel("Sampled trials", { exact: true }).fill("3");
     const calculate = page.getByRole("button", { name: "Calculate process", exact: true });
@@ -1373,11 +1369,11 @@ test("equipment prices bind, refresh after reopening, and require an explicit ov
     await page.reload();
     await expect(price).toHaveValue("25");
     await expect(editor.getByText("Adaptive equipment:", { exact: false })).toBeVisible();
-    expect(livePurchasePrices((await stored(page)).projects[0]!.graph)[0]?.reference).toMatchObject(
-        {
-            window: "adaptive-v1",
-            revision: "next-market",
-        },
+    const refreshed = livePurchasePrices((await stored(page)).projects[0]!.graph)[0];
+    expect(refreshed?.reference).toMatchObject({ window: "adaptive-v1" });
+    expect(refreshed?.reference).not.toHaveProperty("revision");
+    expect(refreshed?.alternative.price?.observedAt).toBe(
+        new Date((adaptiveMarketCandidate().latest.hour + 3600) * 1000).toISOString(),
     );
     await expect(status).toContainText("Market prices refreshed.");
     unavailable = true;

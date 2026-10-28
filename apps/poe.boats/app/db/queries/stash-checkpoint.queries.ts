@@ -1,13 +1,14 @@
 import type { StashCheckpointQuery, StashCheckpointUpload } from "@poe-tools/market";
 import { and, asc, eq, gt, gte, lt, or, sql } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
-import {
-    tStashCheckpoint as checkpoints,
-    tStashDailySample as samples,
-} from "~/db/schema/stash.checkpoint";
+import { stashGame } from "~/db/helpers/stash-game";
+import { tStashCheckpoint, tStashDailySample } from "~/db/schema/stash.checkpoint";
 
 export async function insertStashCheckpoints(db: TDatabase, rows: StashCheckpointUpload[]) {
     for (const { responseGzip, ...row } of rows) {
+        const game = stashGame(row.realm);
+        const checkpoints = tStashCheckpoint[game];
+        const samples = tStashDailySample[game];
         await db
             .insert(checkpoints)
             .values(row)
@@ -29,6 +30,9 @@ export async function insertStashCheckpoints(db: TDatabase, rows: StashCheckpoin
 }
 
 export async function readStashCheckpoints(db: TDatabase, query: StashCheckpointQuery) {
+    const game = stashGame(query.realm);
+    const checkpoints = tStashCheckpoint[game];
+    const samples = tStashDailySample[game];
     const scope = and(
         eq(checkpoints.realm, query.realm),
         eq(checkpoints.league, query.league),

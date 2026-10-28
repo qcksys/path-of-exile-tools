@@ -5,7 +5,7 @@ import { migrate } from "drizzle-orm/mysql2/migrator";
 import { createConnection } from "mysql2/promise";
 import type { TDatabase } from "../../app/db/client";
 import { refreshStashRollups } from "../../app/db/queries/stash-rollups.queries";
-import { tStashUniqueHourly as market } from "../../app/db/schema/stash.unique-hourly";
+import { tStashPoe1UniqueHourly as market } from "../../app/db/schema/stash.unique-hourly";
 import { marketFixture } from "../market-fixtures";
 
 const container = await new MySqlContainer("mysql:8.4").withDatabase("market_browser_test").start();

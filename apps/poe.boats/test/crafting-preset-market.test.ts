@@ -10,11 +10,7 @@ import {
 import { expect, it } from "vite-plus/test";
 import { compileCraftingCapture } from "../../../packages/poe-stash-ingest/src/ps/crafting-capture";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
-import {
-    bindCohortPurchasePrice,
-    craftingMarketItemIssue,
-    latestCompatibleCohort,
-} from "../app/lib/crafting-market";
+import { bindCohortPurchasePrice, craftingMarketItemIssue } from "../app/lib/crafting-market";
 import { craftingPresets, projectFromPreset } from "../app/lib/crafting-presets";
 import { purchaseSourceProfile } from "../app/lib/crafting-source-preparation";
 import { rolledModText } from "../app/lib/crafting-text";
@@ -245,16 +241,6 @@ it("keeps unsided saved identities separate from regenerated sided definitions",
         definition: { ...marketCandidate.definition, ...cohort, id: oldId, query: oldQuery },
         latest: { ...marketCandidate.latest, cohortId: oldId },
     };
-    const next = {
-        ...marketCandidate,
-        definition: { ...marketCandidate.definition, ...cohort, revision: "new-sided" },
-        latest: {
-            ...marketCandidate.latest,
-            cohortId: cohort.id,
-            revision: "new-sided",
-            hour: marketCandidate.latest.hour + 3600,
-        },
-    };
     const graph = bindCohortPurchasePrice(
         { ...original, league: marketCandidate.latest.league },
         engine,
@@ -263,15 +249,12 @@ it("keeps unsided saved identities separate from regenerated sided definitions",
         previous,
     );
     const saved = structuredClone(graph);
-    expect(latestCompatibleCohort([next], previous.definition)).toBeUndefined();
-    expect(latestCompatibleCohort([next, previous], previous.definition)).toBe(previous);
-    expect(latestCompatibleCohort([next], next.definition)).toBe(next);
     const bound = graph.nodes.find((entry) => entry.id === node.id)!;
     if (bound.kind !== "acquire" || bound.alternatives[0]?.kind !== "purchase")
         throw new Error("Expected saved purchase");
+    // References name the cohort by its query-derived ID, so the sided definition never replaces it.
     expect(decodeCohortPriceReference(bound.alternatives[0].price?.cohortId)).toMatchObject({
         cohortId: oldId,
-        revision: previous.definition.revision,
     });
     expect(graph).toEqual(saved);
 });

@@ -4,7 +4,6 @@ import {
     encodeCohortPriceReference,
     exchangeCurrencyId,
     isDisplayEquivalentCohort,
-    type MarketCohortDefinition,
     sameSourcePreparation,
     selectCohortPrice,
 } from "@poe-tools/market";
@@ -43,28 +42,6 @@ export function selectCraftingMarketPrice(candidate: CraftingMarketCandidate, cu
     const max = source.max * quote.amount;
     if (![min, median, max].every((amount) => Number.isFinite(amount) && amount > 0)) return null;
     return { ...source, min, median, max };
-}
-
-export function latestCompatibleCohort(
-    candidates: CraftingMarketCandidate[],
-    original: MarketCohortDefinition,
-) {
-    return candidates
-        .filter(
-            (candidate) =>
-                candidate.definition.id === original.id &&
-                candidate.definition.purpose === original.purpose &&
-                JSON.stringify(candidate.definition.query) === JSON.stringify(original.query),
-        )
-        .sort(
-            (a, b) =>
-                b.latest.hour - a.latest.hour ||
-                Date.parse(b.latest.lastSeenAt ?? "1970-01-01T00:00:00Z") -
-                    Date.parse(a.latest.lastSeenAt ?? "1970-01-01T00:00:00Z") ||
-                Number(b.definition.revision === original.revision) -
-                    Number(a.definition.revision === original.revision) ||
-                a.definition.revision.localeCompare(b.definition.revision),
-        )[0];
 }
 
 export function craftingMarketItemIssue(engine: CraftingEngine, item: CraftingItem) {
@@ -164,11 +141,7 @@ export function bindCohortPurchasePrice(
                 );
         }
     }
-    if (
-        latest.cohortId !== definition.id ||
-        latest.revision !== definition.revision ||
-        latest.league !== graph.league
-    )
+    if (latest.cohortId !== definition.id || latest.league !== graph.league)
         throw new Error("The price belongs to a different cohort or league.");
     const coverage = cohortPriceCoverage(
         definition,
@@ -190,7 +163,6 @@ export function bindCohortPurchasePrice(
         cohortId: encodeCohortPriceReference({
             realm: latest.realm,
             league: latest.league,
-            revision: latest.revision,
             cohortId: latest.cohortId,
             window: candidate.window,
             assumption: candidate.assumption,

@@ -46,7 +46,7 @@ function capture(
 ) {
     const entry = { ...vendorSnapshot, ...changes };
     sqlite
-        .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_currency_hourly VALUES (?,?,?,?,?,?,?)`)
+        .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_currency_hourly VALUES (?,?,?,?,?,?,?)`)
         .run(
             entry.realm,
             entry.league,
@@ -62,9 +62,9 @@ beforeEach(() => {
     vi.setSystemTime((vendorHour + 9000) * 1000);
     sqlite = new DatabaseSync(":memory:");
     sqlite.exec(
-        `CREATE TABLE ${DB_TABLE_PREFIX}stash_currency_hourly (realm TEXT, league TEXT, hour INTEGER, marketId TEXT, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT)`,
+        `CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_currency_hourly (realm TEXT, league TEXT, hour INTEGER, marketId TEXT, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT)`,
     );
-    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_unique_hourly (
+    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_unique_hourly (
         realm TEXT, league TEXT, hour INTEGER, itemKey TEXT, baseType TEXT, name TEXT,
         frameType INTEGER, identified INTEGER, corrupted INTEGER, foilVariation INTEGER,
         signatureKind TEXT, signatureValue TEXT, listingCount INTEGER, uniqueSellers INTEGER, prices TEXT)`);
@@ -425,7 +425,7 @@ it.each([
     expect(history.points[0]?.graph?.prices[vendorOutputId]?.amount).toBe(18);
     expect(history.points[1]?.graph).toBeNull();
     sqlite
-        .prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_currency_hourly WHERE hour = ?`)
+        .prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_currency_hourly WHERE hour = ?`)
         .run(vendorHour + 3600);
     capture({ hour: vendorHour + 3600 });
     const restored = await refreshCraftingMarketPrices(db, refreshed.graph, engine);

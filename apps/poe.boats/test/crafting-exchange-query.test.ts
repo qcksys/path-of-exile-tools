@@ -33,7 +33,9 @@ function snapshot(from: string, to: string, hour: number, amount = 2, volume = 1
         highestRatio: null,
     };
     sqlite
-        .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_currency_hourly VALUES (?, ?, ?, ?, ?, ?, ?)`)
+        .prepare(
+            `INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_currency_hourly VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        )
         .run(
             row.realm,
             row.league,
@@ -49,7 +51,7 @@ beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(now * 1000);
     sqlite = new DatabaseSync(":memory:");
-    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_currency_hourly (
+    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_currency_hourly (
         realm TEXT, league TEXT, marketId TEXT, hour INTEGER,
         volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT
     )`);

@@ -6,14 +6,14 @@ import { type MarketBase, type MarketBaseRow, marketBasesSchema } from "~/lib/ma
 import type { MarketCategory } from "~/lib/market-categories";
 import { traceQuery } from "~/services/tracing.server";
 
-const { revision, bases } = marketBasesSchema.parse(data);
+const { bases } = marketBasesSchema.parse(data);
 const byId = new Map(bases.map((base) => [base.id, base]));
 
 type BaseScope = { realm: string; league: string };
 type CohortRow = Pick<
     MarketBaseRow,
     "hour" | "listingCount" | "uniqueSellers" | "unknownCount" | "prices"
-> & { cohortId: string; revision: string };
+> & { cohortId: string };
 
 /** A listed crafting base cohort, or undefined for an unknown or unlisted ID. */
 export function marketBase(id: string) {
@@ -38,7 +38,6 @@ export function marketBaseIds(filter: {
 
 const cohortColumns = {
     cohortId: hourly.cohortId,
-    revision: hourly.revision,
     hour: hourly.hour,
     listingCount: hourly.listingCount,
     uniqueSellers: hourly.uniqueSellers,
@@ -46,25 +45,8 @@ const cohortColumns = {
     prices: hourly.prices,
 };
 
-/**
- * One row per cohort and hour. Reclassified hours hold a row per revision; prefer the current
- * one, then the fullest.
- */
-function currentRevisionRows(rows: CohortRow[]) {
-    const chosen = new Map<string, CohortRow>();
-    for (const row of rows) {
-        const key = `${row.cohortId}\0${row.hour}`;
-        const previous = chosen.get(key);
-        const current = row.revision === revision;
-        if (
-            !previous ||
-            (current !== (previous.revision === revision)
-                ? current
-                : row.listingCount > previous.listingCount)
-        )
-            chosen.set(key, row);
-    }
-    return [...chosen.values()].map(({ cohortId, revision: _revision, prices, ...row }) => ({
+function baseRows(rows: CohortRow[]) {
+    return rows.map(({ cohortId, prices, ...row }) => ({
         ...byId.get(cohortId)!,
         ...row,
         prices: Object.fromEntries(
@@ -102,7 +84,7 @@ export async function marketBaseRows(
             )
             .where(where),
     );
-    return currentRevisionRows(rows);
+    return baseRows(rows);
 }
 
 /** A crafting base cohort's hourly rows in the window, oldest first. */
@@ -126,7 +108,7 @@ export async function marketBaseHistory(
                 ),
             ),
     );
-    return currentRevisionRows(rows).sort((a, b) => a.hour - b.hour);
+    return baseRows(rows).sort((a, b) => a.hour - b.hour);
 }
 
 /** The league whose crafting base cohorts were observed most recently, with that hour. */

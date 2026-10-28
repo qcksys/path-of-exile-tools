@@ -122,7 +122,6 @@ export function MarketPricePicker({
                     realm,
                     league,
                     cohortId: candidate.definition.id,
-                    revision: candidate.definition.revision,
                     limit: 168,
                 }),
                 signal: controller.signal,
@@ -257,7 +256,7 @@ export function MarketPricePicker({
                     const quote = selectCraftingMarketPrice(candidate, currency);
                     return (
                         <div
-                            key={`${candidate.definition.revision}:${candidate.definition.id}`}
+                            key={candidate.definition.id}
                             className="space-y-2 rounded bg-muted/30 p-3"
                         >
                             <p className="flex items-center gap-2 font-medium">
