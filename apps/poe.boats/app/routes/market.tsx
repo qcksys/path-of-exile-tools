@@ -2,7 +2,14 @@ import { Outlet, useParams, useSearchParams } from "react-router";
 import { MarketCategoryNav } from "~/components/market-category-nav";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
 import type { SiteHandle } from "~/routes/layouts/site";
-import { MARKET_DEFAULT_CATEGORY, marketFiltersSchema, marketLink } from "~/schemas/market";
+import {
+    MARKET_BASE_FILTERS,
+    MARKET_DEFAULT_CATEGORY,
+    type MarketFilters,
+    marketCorruption,
+    marketFiltersSchema,
+    marketLink,
+} from "~/schemas/market";
 import type { Route } from "./+types/market";
 
 export const meta: Route.MetaFunction = () => [{ title: "Season market · POE.BOATS" }];
@@ -18,6 +25,15 @@ export default function Market() {
     });
     const filters = parsed.success ? parsed.data : marketFiltersSchema.parse({});
     const current = filters.category === "all" ? MARKET_DEFAULT_CATEGORY : filters.category;
+    // A corruption choice other than this category's default carries to the next category.
+    const corruption =
+        filters.corruption === marketCorruption({ category: filters.category })
+            ? undefined
+            : filters.corruption;
+    const unfiltered = Object.fromEntries(MARKET_BASE_FILTERS.map((param) => [param, ""])) as Pick<
+        MarketFilters,
+        (typeof MARKET_BASE_FILTERS)[number]
+    >;
     return (
         <main className="container mx-auto flex-1 space-y-6 px-4 py-8">
             <header>
@@ -36,7 +52,14 @@ export default function Market() {
                     categories={MARKET_CATEGORIES}
                     current={current}
                     link={(category: MarketCategory) =>
-                        marketLink({ ...filters, category, page: 1 })
+                        marketLink({
+                            ...filters,
+                            ...unfiltered,
+                            category,
+                            page: 1,
+                            q: "",
+                            corruption,
+                        })
                     }
                 />
                 <div className="min-w-0 space-y-5">

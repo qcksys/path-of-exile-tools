@@ -8,6 +8,7 @@ import {
     type MarketCohortManifest,
     marketCohortManifestSchema,
     modifierLevelBands,
+    significantLevelBands,
 } from "../src/index.ts";
 
 const manifest = marketCohortManifestSchema.parse({
@@ -494,6 +495,40 @@ describe("market cohorts", () => {
             { min: 20, max: 40 },
             { min: 41, max: 69 },
             { min: 70, max: 100 },
+        ]);
+    });
+    it("merges bands above the floor whose first level unlocks little top-tier weight", () => {
+        const bands = [
+            { min: 1, max: 69 },
+            { min: 70, max: 74 },
+            { min: 75, max: 77 },
+            { min: 78, max: 83 },
+            { min: 84, max: 85 },
+            { min: 86, max: 100 },
+        ];
+        const unlocked = (level: number) => ({ 75: 5, 78: 1, 84: 30, 86: 64 })[level] ?? 0;
+        expect(significantLevelBands(bands, 74, unlocked, 0.1, 2)).toEqual([
+            { min: 1, max: 69 },
+            { min: 70, max: 83 },
+            { min: 84, max: 85 },
+            { min: 86, max: 100 },
+        ]);
+        expect(significantLevelBands(bands, 74, () => 0, 0.1, 2)).toEqual([
+            { min: 1, max: 69 },
+            { min: 70, max: 100 },
+        ]);
+        // With more significant levels than splits, the lower ones merge, however heavy.
+        const even = (level: number) => ({ 75: 40, 78: 30, 84: 15, 86: 15 })[level] ?? 0;
+        expect(significantLevelBands(bands, 74, even, 0.1, 2)).toEqual([
+            { min: 1, max: 69 },
+            { min: 70, max: 83 },
+            { min: 84, max: 85 },
+            { min: 86, max: 100 },
+        ]);
+        expect(significantLevelBands(bands, 74, even, 0.1, 1)).toEqual([
+            { min: 1, max: 69 },
+            { min: 70, max: 85 },
+            { min: 86, max: 100 },
         ]);
     });
     it("discounts asking-price confidence for few sellers, unpriced listings and unknown membership", () => {

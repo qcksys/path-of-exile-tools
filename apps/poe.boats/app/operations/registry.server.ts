@@ -1,13 +1,15 @@
 import { z } from "zod";
 import {
+    getMarketBase,
     getMarketData,
     getMarketExchangeItem,
     getPoe2MarketExchange,
 } from "~/db/queries/market.queries";
 import { sStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
-import { marketBaseRowSchema } from "~/lib/market-bases";
+import { marketBaseRowSchema, marketBaseSchema } from "~/lib/market-bases";
 import { ArbitrageGameSchema, MarketSnapshotSchema, VendorRecipeSchema } from "~/schemas/arbitrage";
 import {
+    marketBaseInputSchema,
     marketCategorySchema,
     marketExchangeItemInputSchema,
     marketExchangeRowSchema,
@@ -283,7 +285,7 @@ export const operations = [
         name: "get_season_market",
         ui: "/1/market/currency",
         description:
-            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`) return `bases` instead: normal, magic and rare equipment cohorts by base, item level, links and quality, without likely-sale estimates. With an item, returns that item's history and every variant of it in the period instead of rows. Rows and an item without `links` merge every link count; `links` (0 for under 5, 5 or 6) reads one linked-socket market of a unique, as poe.ninja splits body armours and two-handed weapons.",
+            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. Without `corruption`, the `weapons`, `armour` and `accessories` categories list uncorrupted markets and the others any corruption; the returned `filters` carry the applied value. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`) return `bases` instead: normal, magic and rare equipment cohorts by base, item level, links and quality, without likely-sale estimates. With an item, returns that item's history and every variant of it in the period instead of rows. Rows and an item without `links` merge every link count; `links` (0 for under 5, 5 or 6) reads one linked-socket market of a unique, as poe.ninja splits body armours and two-handed weapons.",
         input: marketFiltersSchema,
         output: z.object({
             filters: marketFiltersSchema,
@@ -430,6 +432,44 @@ export const operations = [
             }),
         }),
         execute: (input, context) => getMarketExchangeItem(context.db, input),
+    }),
+    defineOperation({
+        ...shared,
+        family: "market",
+        path: "/base",
+        name: "get_season_market_base",
+        ui: "/1/market/armour-bases",
+        description:
+            "Read one crafting base cohort (a `bases` row ID from get_season_market): its hourly listings and asking prices in the display currency over the last `days` days, and every listed cohort of the same base type and Cluster Jewel skill (item level bands, passive counts, link and quality splits) at its latest hour. Equipment lists at most three item level bands from ilvl 74: the two highest levels unlocking at least a tenth of the base's item-level-gated top-tier modifier weight split off. Cluster Jewels use poe.ninja's bands: 1–49, 50–67, 68–74, 75–83 and 84+. An empty league reads the league whose bases were observed most recently.",
+        input: marketBaseInputSchema,
+        output: z.object({
+            realm: z.string(),
+            league: z.string(),
+            days: z.string(),
+            currency: z.string(),
+            baseId: z.string(),
+            latestHour: z.number().describe("The newest observed hour; 0 without data"),
+            base: marketBaseSchema
+                .nullable()
+                .describe("Null for an ID that is not a listed crafting base cohort"),
+            history: z
+                .array(
+                    marketBaseRowSchema
+                        .pick({
+                            hour: true,
+                            listingCount: true,
+                            uniqueSellers: true,
+                            unknownCount: true,
+                        })
+                        .extend({ merged: mergedMarketPriceSchema.nullable() }),
+                )
+                .describe("Each observed hour, oldest first"),
+            variants: z.array(marketBaseRowSchema),
+            chaosRates: z
+                .record(z.string(), z.number())
+                .describe("Chaos per unit of each listing currency, at the latest hour"),
+        }),
+        execute: (input, context) => getMarketBase(context.db, input),
     }),
     defineOperation({
         ...shared,

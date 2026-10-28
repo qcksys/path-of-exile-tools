@@ -106,14 +106,31 @@ only combinations with every listed mod and `anyMods` those with at least one, s
 prices each other mod as "cheapest with A and X"; `matches` lists the cheapest listed matching
 combinations, which link to their own history.
 Weapon, armour and accessory categories list uniques only. Normal, magic and rare equipment is
-listed under the Crafting bases group (`armour-bases`, `weapon-bases`, `accessory-bases`) from
+listed under the Crafting bases group (`armour-bases`, `weapon-bases`, `accessory-bases`,
+`cluster-jewel-bases`) from
 `stash_cohort_hourly`: each base cohort the generator writes to
 `packages/poe-market/data/market-bases-poe1.json` (item level 74 and up, six-socket bases split
 into 1–5 and 6 links, armour also at ilvl 86+ with 25%+ and 30%+ quality) at its latest hour in
-the period, preferring the current manifest revision. Rarities are not split. Base rows have no
-likely-sale estimates; they sort, search and range-filter in memory, with prices compared in chaos.
+the period, preferring the current manifest revision. Rarities are not split. Item level bands
+start where the base's rare modifier pool changes. From ilvl 74 each base lists at most three
+bands: of the levels that unlock at least a tenth of the top-tier (T1) spawn weight the base gains
+above ilvl 74, the two highest split off and lower levels group together
+(`significantLevelBands`), so each base type gets its own breakpoints (Focused Amulet: 74–83, 84,
+85+; Stygian Vise: 74–84, 85, 86+; most weapons 74–81, 82, 83+). `cluster-jewel-bases` lists
+normal, magic and rare Cluster Jewels by size, added small passive skill (the first `Added Small
+Passive Skills grant:` enchantment line, matched by the item query's `enchant` condition), passive
+count and poe.ninja's item level bands (1–49, 50–67, 68–74, 75–83, 84+). Base rows have no
+likely-sale estimates; they sort, search and range-filter in memory, with prices compared in
+chaos, and filter by `baseClass` (item class; a Cluster Jewel's size), `attributes` (required
+attributes, e.g. `str-int`), `ilvl` (the band includes that level), `baseLinks` and `quality`.
+Each base row links to `/1/market/bases/:base` (`get_season_market_base`), the cohort's hourly
+asking prices and listings over the period and every listed cohort of the same base type (and
+Cluster skill) at its latest hour.
 The shared market query applies category, text, identification, corruption, column ranges
-and ordering before pagination. The list's TanStack Table headers sort through `order` and filter
+and ordering before pagination. Without a `corruption` filter, the unique weapon, armour and
+accessory categories list uncorrupted markets and every other category lists any corruption; the
+category links clear the search text and the base filters, and carry a corruption choice only
+when it differs from the current category's default. The list's TanStack Table headers sort through `order` and filter
 through the URL: the item column sets the text search, and range boxes bound the latest row's
 selected-currency median, listings and sellers, and the period's likely sales. The item page's
 hourly table searches, filters and sorts its loaded rows in the browser. Categories use the verified per-game base catalog, grouped like
@@ -206,6 +223,7 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | Manual recipe reference, calculator and trade links | `arbitrage/recipes`, `arbitrage/scenario`, `arbitrage/trade` | `list_vendor_recipes`, `calculate_recipe_scenario`, `build_recipe_trade_url` |
 | PoE 2 exchange market by category | `market/poe2-exchange` | `get_poe2_season_exchange`; `getPoe2MarketExchange`, sharing `marketExchangeRows` (in exalted) and the season, search and ordering of the PoE 1 exchange rows. Unit tests cover exalted pricing and its divine-then-chaos bridges; UI tests cover the category list, value display, item page, redirects and refusals; HTTP/MCP parity covers success and an invalid category. Not yet covered against MySQL. |
 | Season exchange item price, trend and pair history | `market/exchange-item` | `get_season_exchange_item`; `getMarketExchangeItem`, sharing `marketExchangeRows` with the list's exchange rows and adding the hourly `marketExchangeHistory` over the period (`days`). It reads only the item's markets and the chaos markets of the items it trades against. Unit tests cover latest-hour and earlier-day prices, conversions, trends, volume, pairs and hourly ranges; MySQL tests cover the daily rollup through ingest and the item read; UI tests cover the table, value display and item page; HTTP/MCP parity covers success and an invalid item ID. |
+| Season crafting base history and variants | `market/base` | `get_season_market_base`; `getMarketBase`, reading the cohort's hours through `stash_cohort_history_idx` and its base type's listed cohorts with the list's `marketBaseRows`, preferring the current manifest revision per hour. Unit tests cover the base filters, descriptions and generated bands; MySQL tests cover history, variants and revision choice; UI tests cover the list link, base page, variants and the way back; HTTP/MCP parity covers success and an invalid base ID. |
 | Season market search, seasons, paging, variants, history, mod pool values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `modPoolValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_market_daily` rollup and pagination precedes full-row primary-key reads. An item's foil and non-foil listings are one market: list rows, variants and history sum and mix every foil variation's hourly rows. Link counts merge the same way in list rows and in history without `links`; variants list each link count of a market with 5- or 6-link copies after its merged variant. MySQL regressions cover these query plans, variant selection, foil merging, link-count merging and splitting alongside mod splits, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), page boundaries, and crafting base cohort rows (latest hour, current revision, category). |
 | Recombinator equipment, modifiers, preparation recipes | `recombinator/catalog`, `bases`, `mods`, `recipes`, `draft` | Catalog, base/mod/recipe filtering, and `parseRecombinatorDraft` |
 | Recombination outcomes, preparation, target odds | `recombinator/calculate`, `target` | `calculateRecombinatorPlan`, `matchesTarget`, `summarizeCounts` |
