@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Form, redirect, useNavigation, useSubmit } from "react-router";
 import { MarketExchangeTable } from "~/components/market-exchange-table";
 import { marketUtc } from "~/components/market-filters";
+import { RouteError } from "~/components/route-error";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -33,6 +34,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     if (!params.category || new URL(request.url).searchParams.has("category"))
         return redirect(poe2MarketLink(filters), 308);
     return getPoe2MarketExchange(context.get(dbContext), filters);
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+    return <RouteError error={error} />;
 }
 
 const APPLY_DELAY_MS = 400;

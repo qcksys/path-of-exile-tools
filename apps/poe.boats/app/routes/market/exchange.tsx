@@ -1,5 +1,6 @@
 import { redirect } from "react-router";
 import { MarketExchangeItem } from "~/components/market-exchange-item";
+import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketExchangeItem } from "~/db/queries/market.queries";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
@@ -45,6 +46,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     const { item } = data;
     if (!item) throw new Response("Unknown exchange item", { status: 404 });
     return { ...data, item, filters: { ...filters, league: data.league } };
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+    return <RouteError error={error} />;
 }
 
 export default function MarketExchangeItemPage({

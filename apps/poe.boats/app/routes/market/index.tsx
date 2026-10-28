@@ -6,6 +6,7 @@ import { DataTable, type DataTableServerState, dataTableColumns } from "~/compon
 import { ItemArt } from "~/components/item-art";
 import { MarketExchangeTable } from "~/components/market-exchange-table";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
+import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
@@ -38,6 +39,10 @@ export const meta: Route.MetaFunction = ({ params }) => {
         },
     ];
 };
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+    return <RouteError error={error} />;
+}
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
     if (params.category && !marketCategorySchema.safeParse(params.category).success)

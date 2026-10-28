@@ -6,6 +6,7 @@ import { ItemArt } from "~/components/item-art";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
 import { MarketModValues } from "~/components/market-mod-values";
 import { MarketPriceChart } from "~/components/market-price-chart";
+import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import { marketItemArtUrl } from "~/lib/item-presentation";
@@ -22,16 +23,37 @@ export function loader({ request, context, params }: Route.LoaderArgs) {
     );
 }
 
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+    return <RouteError error={error} />;
+}
+
 type HistoryRow = Awaited<ReturnType<typeof getMarketData>>["history"][number];
 type VariantRow = Awaited<ReturnType<typeof getMarketData>>["variants"][number];
 
-function variantLabel(variant: VariantRow) {
+/** Uniques split by linked sockets as poe.ninja does: 5L, 6L and everything under 5 links. */
+function linksLabel(links: number) {
+    return links ? `${links}L` : "0–4L";
+}
+
+/** `linkSplit`: the variant's market also lists its link counts, so a merged variant says so. */
+function variantLabel(variant: VariantRow, linkSplit: boolean) {
     const parts = [
         marketSignatureLabel(variant),
         variant.identified ? "" : "Unidentified",
         variant.corrupted ? "Corrupted" : "",
+        variant.links !== null ? linksLabel(variant.links) : linkSplit ? "Any links" : "",
     ].filter(Boolean);
     return parts.length ? parts.join(" · ") : "Standard";
+}
+
+function sameMarket(a: VariantRow, b: VariantRow) {
+    return (
+        a.itemKey === b.itemKey &&
+        a.identified === b.identified &&
+        a.corrupted === b.corrupted &&
+        a.signatureKind === b.signatureKind &&
+        a.signatureValue === b.signatureValue
+    );
 }
 
 const column = dataTableColumns<HistoryRow>();
@@ -113,7 +135,11 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
         String(variant.identified) === filters.identified &&
         String(variant.corrupted) === filters.corrupted &&
         variant.signatureKind === filters.kind &&
-        variant.signatureValue === filters.value;
+        variant.signatureValue === filters.value &&
+        (variant.links === null ? undefined : String(variant.links)) === filters.links;
+    const linkSplit = (variant: VariantRow) =>
+        variants.some((other) => other.links !== null && sameMarket(other, variant));
+    const links = filters.links === undefined ? null : Number(filters.links);
     const otherVariants = variants.some((variant) => !isCurrent(variant));
     const itemName =
         variants.find((variant) => variant.itemKey === filters.item)?.name || filters.item;
@@ -149,7 +175,7 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                                     aria-current={isCurrent(variant) ? "page" : undefined}
                                     className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 ${isCurrent(variant) ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted"}`}
                                 >
-                                    {variantLabel(variant)}
+                                    {variantLabel(variant, linkSplit(variant))}
                                     <span className="text-xs text-muted-foreground">
                                         {number(variant.periodSales)} sales
                                     </span>
@@ -187,6 +213,7 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                                 {marketSignatureLabel(selected)
                                     ? ` · ${marketSignatureLabel(selected)}`
                                     : ""}
+                                {links !== null ? ` · ${linksLabel(links)}` : ""}
                             </p>
                         </div>
                         <div className="text-right">
@@ -203,7 +230,7 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                         {currencies.map((currency) => (
                             <Link
                                 key={currency}
-                                to={marketLink({ ...filters, currency }, selected)}
+                                to={marketLink({ ...filters, currency }, { ...selected, links })}
                                 aria-current={currency === filters.currency ? "true" : undefined}
                                 className={`rounded-full border px-3 py-1 ${currency === filters.currency ? "border-primary bg-primary/10 text-primary" : "border-border"}`}
                             >

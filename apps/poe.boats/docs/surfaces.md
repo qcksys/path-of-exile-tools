@@ -61,7 +61,14 @@ page lists every variant of the item in the period (corruption and extracted sig
 Foulborn mutated modifiers) and links between them, including the same unique's markets in the
 other identification state (unidentified uniques are keyed `unid:<icon>`). Foil and non-foil
 listings of an item trade as one market in the list, variants and history; stored rows keep each
-`foil_variation`, and market rows omit it.
+`foil_variation`, and market rows omit it. Uniques are also stored by `links`, as poe.ninja splits
+body armours and two-handed weapons: 5 or 6 for the largest linked socket group, otherwise 0. The
+list merges every link count into one row; on the item page, a market with 5- or 6-link copies
+lists its merged variant ("Any links", the default without a `links` filter) and each link count
+("0–4L", "5L", "6L"), which combine with corruption and signature splits (e.g. Atziri's
+Splendour [Armour] 6L). The `links` filter (`0`, `5` or `6`) selects one in history; list and
+history rows omit `links`, and variants carry it (null when merged). Rows ingested before the
+split, and listings whose stash has not been re-sent since, count as 0.
 Items on the currency exchange get their own table in each category, dearest first, and leave
 their stash listings out of the rows. Each row's price is the latest completed hour's chaos rate
 (direct, or through divine, exalted or another traded item in that hour); without one, it is the
@@ -199,7 +206,7 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | Manual recipe reference, calculator and trade links | `arbitrage/recipes`, `arbitrage/scenario`, `arbitrage/trade` | `list_vendor_recipes`, `calculate_recipe_scenario`, `build_recipe_trade_url` |
 | PoE 2 exchange market by category | `market/poe2-exchange` | `get_poe2_season_exchange`; `getPoe2MarketExchange`, sharing `marketExchangeRows` (in exalted) and the season, search and ordering of the PoE 1 exchange rows. Unit tests cover exalted pricing and its divine-then-chaos bridges; UI tests cover the category list, value display, item page, redirects and refusals; HTTP/MCP parity covers success and an invalid category. Not yet covered against MySQL. |
 | Season exchange item price, trend and pair history | `market/exchange-item` | `get_season_exchange_item`; `getMarketExchangeItem`, sharing `marketExchangeRows` with the list's exchange rows and adding the hourly `marketExchangeHistory` over the period (`days`). It reads only the item's markets and the chaos markets of the items it trades against. Unit tests cover latest-hour and earlier-day prices, conversions, trends, volume, pairs and hourly ranges; MySQL tests cover the daily rollup through ingest and the item read; UI tests cover the table, value display and item page; HTTP/MCP parity covers success and an invalid item ID. |
-| Season market search, seasons, paging, variants, history, mod pool values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `modPoolValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_market_daily` rollup and pagination precedes full-row primary-key reads. An item's foil and non-foil listings are one market: list rows, variants and history sum and mix every foil variation's hourly rows. MySQL regressions cover these query plans, variant selection, foil merging, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), page boundaries, and crafting base cohort rows (latest hour, current revision, category). |
+| Season market search, seasons, paging, variants, history, mod pool values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `modPoolValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_market_daily` rollup and pagination precedes full-row primary-key reads. An item's foil and non-foil listings are one market: list rows, variants and history sum and mix every foil variation's hourly rows. Link counts merge the same way in list rows and in history without `links`; variants list each link count of a market with 5- or 6-link copies after its merged variant. MySQL regressions cover these query plans, variant selection, foil merging, link-count merging and splitting alongside mod splits, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), page boundaries, and crafting base cohort rows (latest hour, current revision, category). |
 | Recombinator equipment, modifiers, preparation recipes | `recombinator/catalog`, `bases`, `mods`, `recipes`, `draft` | Catalog, base/mod/recipe filtering, and `parseRecombinatorDraft` |
 | Recombination outcomes, preparation, target odds | `recombinator/calculate`, `target` | `calculateRecombinatorPlan`, `matchesTarget`, `summarizeCounts` |
 | PoE 1 and PoE 2 workbench catalog, calculation, process simulation and item emulation | `crafting/workbench/catalog`, `workbench/calculate`, `workbench/process`, `workbench/emulate` | `get_crafting_workbench_catalog`, `calculate_crafting_workbench`, `emulate_crafting_process`, `emulate_crafting_item`; shared `CraftingWorkbenchCalculation`, `CraftingProcess` and `emulateCraftingItem`. Current workbench catalogs and client-build validation match the browser; retained graph rulesets remain separate. HTTP calculations refuse manual-stop runs and requests above 5,000 trials or 100,000 potential steps. Allflame preview costs remain deferred until selection, reveal choices stay explicit, and paid bench failures retain the changed item and costs. Stateless operations never modify browser drafts. |
@@ -286,7 +293,8 @@ type, rarity and name), `stash_currency_market` (each exchange market's first ho
 where both traded, those hours' count and the newest) and `stash_hour_coverage` (stored rows per
 stream, league and hour). The daily rollup stores a mod
 pool unique's combinations (Watcher's Eye, Loreweave) as one market with an empty signature
-value, as the list shows them; they were 78% of a week's daily rows. A category list without
+value, as the list shows them; they were 78% of a week's daily rows. It has no `links` column:
+the list merges link counts, and the item page reads them from the hourly rows. A category list without
 text search reads the daily rollup through its covering base-type index; other lists read it by
 primary-key range. Both precede fetching the selected full hourly rows. A day keeps one name
 (the greatest), so searching a renamed item's older name is best-effort, and the list's text

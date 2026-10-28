@@ -28,6 +28,8 @@ export interface UniqueHourlyRow {
     corrupted: boolean;
     /** -1 sentinel for "not foil" (column is non-nullable to participate in PK). */
     foilVariation: number;
+    /** 5 or 6 for a unique's largest linked socket group, otherwise 0. */
+    links: number;
     /** Empty string when no extractor matched. */
     signatureKind: string;
     /** Empty string when no extractor matched. */

@@ -13,6 +13,7 @@ import { PlacementControls } from "~/components/idol-planner/placement-controls"
 import { SetTabs } from "~/components/idol-planner/set-tabs";
 import { ShareModal } from "~/components/idol-planner/share-modal";
 import { StatsSummary } from "~/components/idol-planner/stats-summary";
+import { PageError } from "~/components/route-error";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { ClipboardProvider, useClipboard } from "~/context/clipboard-context";
@@ -233,4 +234,9 @@ export default function IdolPlannerHome(_props: Route.ComponentProps) {
             </ScarabPricesProvider>
         </LeagueProvider>
     );
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+    const t = useTranslations();
+    return <PageError error={error} section={t("app.idolPlanner")} />;
 }

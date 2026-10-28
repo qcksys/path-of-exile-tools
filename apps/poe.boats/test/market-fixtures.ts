@@ -45,6 +45,7 @@ export function marketFixture(
         signatureKind: "",
         signatureValue: "",
         signatureData: null,
+        links: null as number | null,
     };
     const bases = filters.category === "armour-bases";
     return {
@@ -108,18 +109,26 @@ export function marketFixture(
                   },
               ]
             : [],
-        variants: filters.item
-            ? [
-                  { ...variant, itemKey: filters.item, periodSales: 2 },
-                  { ...variant, itemKey: filters.item, corrupted: true, periodSales: 1 },
-                  {
+        variants:
+            filters.item === "Loreweave"
+                ? [null, 6, 0].map((links) => ({
                       ...variant,
-                      itemKey: `unid:${row.iconAsset}`,
-                      identified: false,
+                      itemKey: filters.item!,
+                      links,
                       periodSales: 1,
-                  },
-              ]
-            : [],
+                  }))
+                : filters.item
+                  ? [
+                        { ...variant, itemKey: filters.item, periodSales: 2 },
+                        { ...variant, itemKey: filters.item, corrupted: true, periodSales: 1 },
+                        {
+                            ...variant,
+                            itemKey: `unid:${row.iconAsset}`,
+                            identified: false,
+                            periodSales: 1,
+                        },
+                    ]
+                  : [],
         modValues: isModPool(filters.kind)
             ? modPoolValues(
                   [

@@ -87,6 +87,11 @@ function valueMatch(kind: string, value: string) {
     return isModPool(kind) && !value ? undefined : eq(market.signatureValue, value);
 }
 
+/** Without a `links` filter, an item page merges every link count, as the market list does. */
+function linksMatch(filters: MarketFilters) {
+    return filters.links === undefined ? undefined : eq(market.links, Number(filters.links));
+}
+
 /** Clears the representative combination from a pool unique's merged every-combination row. */
 function asMarket<Row extends { signatureValue: string; signatureData: unknown }>(
     row: Row,
@@ -96,9 +101,12 @@ function asMarket<Row extends { signatureValue: string; signatureData: unknown }
     return isModPool(kind) && !value ? { ...row, signatureValue: "", signatureData: null } : row;
 }
 
-/** Merges one hour's rows of a market, which spans foil variations, so the result has none. */
+/**
+ * Merges one hour's rows of a market, which spans foil variations (and link counts unless the
+ * filters pick one), so the result has neither.
+ */
 function mergeMarket(rows: TStashUniqueHourlyS[], kind: string, value: string) {
-    const { foilVariation: _, ...row } = mergeMarketRows(rows);
+    const { foilVariation: _, links: _links, ...row } = mergeMarketRows(rows);
     return asMarket(row, kind, value);
 }
 
@@ -257,11 +265,12 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                               eq(market.corrupted, filters.corrupted === "true"),
                               eq(market.signatureKind, filters.kind),
                               valueMatch(filters.kind, filters.value),
+                              linksMatch(filters),
                           ),
                       )
                       .orderBy(desc(market.hour))
-                      // 90 days of hours for non-foil plus up to 16 merged foil variations.
-                      .limit(2160 * 17),
+                      // 90 days of hours for non-foil plus up to 16 merged foil variations, per link count.
+                      .limit(2160 * 17 * 3),
               ).then((rows) => mergeByHour(rows, filters))
             : Promise.resolve([]);
     const variantsPromise =
@@ -579,6 +588,7 @@ async function marketVariants(db: TDatabase, scope: SQL | undefined, item: strin
                 corrupted: market.corrupted,
                 signatureKind: market.signatureKind,
                 signatureValue: valueGroup(market),
+                links: market.links,
                 signatureData: sql<
                     TStashUniqueHourlyS["signatureData"]
                 >`any_value(${market.signatureData})`,
@@ -592,18 +602,43 @@ async function marketVariants(db: TDatabase, scope: SQL | undefined, item: strin
                 market.corrupted,
                 market.signatureKind,
                 valueGroup(market),
+                market.links,
             )
             .orderBy(
                 desc(sql`sum(${market.likelySales})`),
                 asc(market.corrupted),
                 asc(valueGroup(market)),
+                asc(market.links),
             )
             .limit(100),
     );
     // Uniques that share art (e.g. replicas) share one unidentified market, named after only one of them.
-    return variants
-        .filter((row) => row.itemKey === item || (row.name !== null && names.has(row.name)))
-        .map((row) => asMarket(row, row.signatureKind, row.signatureValue));
+    const markets = Map.groupBy(
+        variants.filter(
+            (row) => row.itemKey === item || (row.name !== null && names.has(row.name)),
+        ),
+        (row) =>
+            JSON.stringify([
+                row.itemKey,
+                row.identified,
+                row.corrupted,
+                row.signatureKind,
+                row.signatureValue,
+            ]),
+    );
+    // Each market first merges its link counts (`links` null, as the list shows it), then lists
+    // them separately when any copy has 5 or 6 links.
+    return [...markets.values()].flatMap((group) => {
+        const merged = {
+            ...group[0]!,
+            links: null,
+            periodSales: group.reduce((sum, row) => sum + row.periodSales, 0),
+        };
+        const linked = group.some((row) => row.links > 0);
+        return [merged, ...(linked ? group : [])].map((row) =>
+            asMarket(row, row.signatureKind, row.signatureValue),
+        );
+    });
 }
 
 /** A pool unique variant's sibling combinations: the latest hour's listings and every hour with likely sales. */
@@ -634,6 +669,7 @@ function modPoolRows(
                     eq(market.identified, true),
                     eq(market.corrupted, filters.corrupted === "true"),
                     eq(market.signatureKind, filters.kind),
+                    linksMatch(filters),
                     or(eq(market.hour, latestHour), gt(market.likelySales, 0)),
                 ),
             ),

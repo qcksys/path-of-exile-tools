@@ -50,6 +50,7 @@ export function MarketFiltersForm({
               corrupted: filters.corrupted === "true",
               signatureKind: filters.kind,
               signatureValue: filters.value,
+              links: filters.links === undefined ? null : Number(filters.links),
           }
         : undefined;
     const href = marketLink(filters, item);
@@ -101,6 +102,8 @@ export function MarketFiltersForm({
                       value: filters.value,
                       mods: filters.mods,
                       anyMods: filters.anyMods,
+                      // An empty `links` would fail validation; omitted, link counts merge.
+                      ...(filters.links ? { links: filters.links } : {}),
                   }).map(([name, value]) => (
                       <Input key={name} type="hidden" name={name} value={value} />
                   ))

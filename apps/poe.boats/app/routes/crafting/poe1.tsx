@@ -1,3 +1,5 @@
+import { PageError } from "~/components/route-error";
+import type { Route } from "./+types/poe1";
 import { CraftingPage } from "./page";
 export function meta() {
     return [
@@ -11,4 +13,7 @@ export function meta() {
 }
 export default function Poe1Crafting() {
     return <CraftingPage game="poe1" />;
+}
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+    return <PageError error={error} section="Crafting" />;
 }

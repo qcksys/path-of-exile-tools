@@ -456,6 +456,39 @@ it("links between the variants of an item", async () => {
     );
 });
 
+it("links a unique's merged market to each of its link counts", async () => {
+    showMarket("/1/market/items/Loreweave?league=Allflame&category=armour");
+    const variants = await screen.findByRole("navigation", { name: "Item variants" });
+    expect(
+        within(variants)
+            .getAllByRole("link")
+            .map((link) => link.textContent?.split("1 sales")[0]),
+    ).toEqual(["Any links", "6L", "0–4L"]);
+    expect(
+        within(variants)
+            .getByRole("link", { name: /Any links/ })
+            .getAttribute("aria-current"),
+    ).toBe("page");
+    fireEvent.click(within(variants).getByRole("link", { name: /6L/ }));
+    await waitFor(
+        () =>
+            expect(getMarketData).toHaveBeenLastCalledWith(
+                expect.anything(),
+                expect.objectContaining({ item: "Loreweave", links: "6" }),
+                "history",
+            ),
+        { timeout: 5000 },
+    );
+    expect(
+        (await screen.findByText(/Identified · 6L/, undefined, { timeout: 5000 })).textContent,
+    ).toBe("Identified · 6L");
+    expect(
+        within(screen.getByRole("navigation", { name: "Item variants" }))
+            .getByRole("link", { name: /6L/ })
+            .getAttribute("aria-current"),
+    ).toBe("page");
+});
+
 it("links an identified unique to its unidentified market", async () => {
     showMarket("/1/market/items/Abberath's%20Hooves?league=Allflame&category=armour");
     const variants = await screen.findByRole("navigation", { name: "Item variants" });

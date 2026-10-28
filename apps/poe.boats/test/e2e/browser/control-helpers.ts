@@ -1,5 +1,16 @@
 import { expect, type Locator } from "@playwright/test";
 
+// A click that sees the card still animating retries with forced page scrolls, which move the
+// trigger out from under the pointer and close a hover-opened card.
+export async function hoverOpen(trigger: Locator) {
+    await trigger.hover();
+    const popup = trigger.page().locator('[data-slot="popover-content"]');
+    await expect(popup).toBeVisible();
+    await popup.evaluate((element) =>
+        Promise.all(element.getAnimations().map((animation) => animation.finished)),
+    );
+}
+
 export async function selectValue(
     control: Locator,
     value: string | { label: string } | { index: number },
