@@ -262,7 +262,9 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
         SELECT stash.* EXCLUDE (raw_item, removed_at) FROM stash
         JOIN json_each($1::JSON) j ON stash.stash_id = (j.value->>'stashId')
             AND stash.account_name = (j.value->>'accountName')
-        WHERE stash.removed_at IS NULL`,
+        -- An item still listed but no longer captured stays active with its old last_seen_at;
+        -- it was not observed now, so its earlier hour stays as it was.
+        WHERE stash.removed_at IS NULL AND stash.last_seen_at = current_timestamp::TIMESTAMP`,
         [JSON.stringify(listed), ...listedIds],
     );
     const sameRow = `h.observed_hour = epoch(date_trunc('hour', current_timestamp))::BIGINT
