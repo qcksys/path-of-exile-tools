@@ -614,6 +614,63 @@ it("merges link counts on the list and splits them on the item page, alongside m
     expect((await item("0")).history.map((row) => row.listingCount)).toEqual([8]);
 });
 
+it("lists gem markets under Skill gems by band and filters them by included and excluded bands", async () => {
+    const gem = (
+        itemKey: string,
+        signatureValue: string,
+        overrides: Partial<TStashUniqueHourlyI> = {},
+    ) =>
+        observation({
+            league: "Gems",
+            itemKey,
+            name: "",
+            baseType: itemKey,
+            frameType: 4,
+            signatureKind: "gem",
+            signatureValue,
+            ...overrides,
+        });
+    await db.insert(market).values([
+        gem("Fireball", "Level 20 · Quality 20%", { listingCount: 5 }),
+        gem("Fireball", "Level 21 · Quality 20%", { corrupted: true, listingCount: 2 }),
+        gem("Fireball", "Level 1–19 · Quality 0–19%", { listingCount: 9 }),
+        gem("Empower Support", "Level 3 · Quality 20%", { listingCount: 4 }),
+        // A transfigured gem whose base type the catalog may not know.
+        gem("Fireball of Fragmentation", "Level 20 · Quality 20%", {
+            baseType: "Fireball of Fragmentation",
+            listingCount: 3,
+        }),
+        observation({ league: "Gems", itemKey: "Kaom's Heart", name: "Kaom's Heart" }),
+    ]);
+    const list = async (filters: Record<string, string>) =>
+        (
+            await marketData(
+                db as unknown as TDatabase,
+                marketFiltersSchema.parse({ league: "Gems", order: "name-asc", ...filters }),
+                "list",
+            )
+        ).rows.map((row) => [row.itemKey, row.signatureValue, row.corrupted, row.category]);
+    expect(await list({ category: "gems" })).toEqual([
+        ["Empower Support", "Level 3 · Quality 20%", false, "gems"],
+        ["Fireball", "Level 1–19 · Quality 0–19%", false, "gems"],
+        ["Fireball", "Level 20 · Quality 20%", false, "gems"],
+        ["Fireball", "Level 21 · Quality 20%", true, "gems"],
+        ["Fireball of Fragmentation", "Level 20 · Quality 20%", false, "gems"],
+    ]);
+    expect(await list({ category: "other" })).toEqual([]);
+    expect(
+        (await list({ category: "gems", gemLevel: "20", gemQuality: "20" })).map(String),
+    ).toEqual([
+        "Empower Support,Level 3 · Quality 20%,false,gems",
+        "Fireball,Level 20 · Quality 20%,false,gems",
+        "Fireball of Fragmentation,Level 20 · Quality 20%,false,gems",
+    ]);
+    expect(
+        await list({ category: "gems", gemLevel: "-21", gemQuality: "-20", corruption: "false" }),
+    ).toEqual([["Fireball", "Level 1–19 · Quality 0–19%", false, "gems"]]);
+    expect(await list({ category: "gems", gemLevel: "-1-19,-20,-21" })).toEqual([]);
+});
+
 it("lists a unique's markets in both identification states as variants of each other", async () => {
     const icon = "2DItems/Jewels/ElderJewel";
     const eye = (overrides: Partial<TStashUniqueHourlyI>) =>

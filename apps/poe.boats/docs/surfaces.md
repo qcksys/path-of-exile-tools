@@ -112,8 +112,18 @@ listed under the Crafting bases group (`armour-bases`, `weapon-bases`, `accessor
 into 1–5 and 6 links, armour also at ilvl 86+ with 25%+ and 30%+ quality) at its latest hour in
 the period, preferring the current manifest revision. Rarities are not split. Base rows have no
 likely-sale estimates; they sort, search and range-filter in memory, with prices compared in chaos.
-The shared market query applies category, text, identification, corruption, column ranges
-and ordering before pagination. The list's TanStack Table headers sort through `order` and filter
+PoE 1 skill gems are captured from public stashes and keyed by `typeLine`, so transfigured gems
+are their own items. Each gem lists one market per level band, quality band and corruption state
+(`signatureKind` `gem`, `signatureValue` like `Level 1–19 · Quality 20%`). Level bands are below,
+at and above the gem's maximum level: 1–19, 20, 21 for normal gems, 1–2, 3, 4 for Empower, Enhance
+and Enlighten, and 1–4, 5, 6 for awakened gems; quality bands are 0–19%, 20% and 21–23%. Gem
+markets belong to Skill gems whatever their base type. The Skill gems list replaces its corruption
+select with tri-state toggles for each level band, each quality band and corruption (include,
+exclude or neither); `gemLevel` and `gemQuality` hold the bands as `20,-21` (band tokens are a
+normal gem's: `1-19`, `20`, `21` and `0-19`, `20`, `21-23`), and links to other categories drop
+them.
+The shared market query applies category, text, identification, corruption, gem bands, column
+ranges and ordering before pagination. The list's TanStack Table headers sort through `order` and filter
 through the URL: the item column sets the text search, and range boxes bound the latest row's
 selected-currency median, listings and sellers, and the period's likely sales. The item page's
 hourly table searches, filters and sorts its loaded rows in the browser. Categories use the verified per-game base catalog, grouped like

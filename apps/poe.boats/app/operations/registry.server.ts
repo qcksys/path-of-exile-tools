@@ -283,7 +283,7 @@ export const operations = [
         name: "get_season_market",
         ui: "/1/market/currency",
         description:
-            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`) return `bases` instead: normal, magic and rare equipment cohorts by base, item level, links and quality, without likely-sale estimates. With an item, returns that item's history and every variant of it in the period instead of rows. Rows and an item without `links` merge every link count; `links` (0 for under 5, 5 or 6) reads one linked-socket market of a unique, as poe.ninja splits body armours and two-handed weapons.",
+            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`) return `bases` instead: normal, magic and rare equipment cohorts by base, item level, links and quality, without likely-sale estimates. With an item, returns that item's history and every variant of it in the period instead of rows. Rows and an item without `links` merge every link count; `links` (0 for under 5, 5 or 6) reads one linked-socket market of a unique, as poe.ninja splits body armours and two-handed weapons. Skill gems (kind `gem`) list one market per gem, level band, quality band and corruption state, with `value` naming the bands (e.g. `Level 20 · Quality 20%`); `gemLevel` and `gemQuality` include or exclude bands.",
         input: marketFiltersSchema,
         output: z.object({
             filters: marketFiltersSchema,

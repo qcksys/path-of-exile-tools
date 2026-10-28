@@ -2,6 +2,7 @@ import { exchangeListingCurrencySchema } from "@poe-tools/market";
 import { useEffect, useRef, useState } from "react";
 import { Form, useNavigation, useSubmit } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
+import { MarketGemFilters } from "~/components/market-gem-filters";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -54,6 +55,7 @@ export function MarketFiltersForm({
           }
         : undefined;
     const href = marketLink(filters, item);
+    const gems = filters.category === "gems";
     const game = filters.realm === "poe2" ? "poe2" : "poe1";
     const currencies = [
         ...new Set([...exchangeListingCurrencySchema.options, filters.currency]),
@@ -95,6 +97,8 @@ export function MarketFiltersForm({
                       order: filters.order,
                       identification: filters.identification,
                       corruption: filters.corruption,
+                      gemLevel: filters.gemLevel,
+                      gemQuality: filters.gemQuality,
                       page: filters.page,
                       identified: filters.identified,
                       corrupted: filters.corrupted,
@@ -166,7 +170,7 @@ export function MarketFiltersForm({
                               true: "Identified",
                               false: "Unidentified",
                           })}
-                    {isMarketBaseCategory(filters.category)
+                    {isMarketBaseCategory(filters.category) || gems
                         ? null
                         : select("corruption", "Corruption", {
                               all: "Any corruption",
@@ -175,6 +179,7 @@ export function MarketFiltersForm({
                           })}
                 </div>
             ) : null}
+            {!item && gems ? <MarketGemFilters filters={filters} onChange={apply} /> : null}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">
                     Price sorting and filters use{" "}

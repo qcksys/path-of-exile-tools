@@ -1,6 +1,7 @@
 import {
     exchangeCurrencyId,
     exchangeSnapshotSchema,
+    gemVariantValues,
     marketObservationRange,
 } from "@poe-tools/market";
 import {
@@ -85,6 +86,15 @@ function valueGroup(table: typeof market) {
 
 function valueMatch(kind: string, value: string) {
     return isModPool(kind) && !value ? undefined : eq(market.signatureValue, value);
+}
+
+/** Gem level and quality band filters list only the gem markets in the bands they allow. */
+function gemFilter(filters: MarketFilters) {
+    const values = gemVariantValues(filters);
+    if (!values) return undefined;
+    return values.length
+        ? and(eq(daily.signatureKind, "gem"), inArray(daily.signatureValue, values))
+        : sql`false`;
 }
 
 /** Without a `links` filter, an item page merges every link count, as the market list does. */
@@ -350,7 +360,8 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         .where(
             and(
                 days,
-                marketCategoryFilter(filters, daily.baseType),
+                marketCategoryFilter(filters, daily.baseType, daily.signatureKind),
+                gemFilter(filters),
                 filters.identification === "all"
                     ? undefined
                     : eq(daily.identified, filters.identification === "true"),
@@ -512,9 +523,10 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         filters,
         seasons,
         season,
-        rows: rows
-            .slice(0, PAGE_SIZE)
-            .map((row) => ({ ...row, category: marketCategory(filters.realm, row.baseType) })),
+        rows: rows.slice(0, PAGE_SIZE).map((row) => ({
+            ...row,
+            category: marketCategory(filters.realm, row.baseType, row.signatureKind),
+        })),
         /** Crafting base cohorts (normal, magic and rare together) in a crafting base category. */
         bases: bases.rows,
         hasMore: rows.length > PAGE_SIZE || bases.hasMore,

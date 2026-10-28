@@ -1,3 +1,4 @@
+import { GEM_LEVEL_BANDS, GEM_QUALITY_BANDS, parseGemBandFilter } from "@poe-tools/market";
 import { z } from "zod";
 import {
     MARKET_CATEGORIES,
@@ -52,6 +53,16 @@ export const MARKET_RANGE_PARAMS = Object.values(MARKET_RANGE_COLUMNS).flat() as
 
 const rangeBound = z.coerce.number().nonnegative().max(1e12).optional();
 
+const gemBandFilter = (bands: readonly string[], axis: string) =>
+    z
+        .string()
+        .max(40)
+        .default("")
+        .refine((value) => parseGemBandFilter(value, bands) !== null, `Unknown gem ${axis} band`)
+        .describe(
+            `Skill gem ${axis} bands (${bands.join(", ")}) to include, comma-separated; prefix one with - to exclude it. Set, only gem markets are listed`,
+        );
+
 export const marketFiltersSchema = z.object({
     realm: z.enum(["pc", "poe2", "xbox", "sony"]).default("pc"),
     league: z.string().max(100).default(""),
@@ -62,6 +73,9 @@ export const marketFiltersSchema = z.object({
     order: z.enum(Object.keys(MARKET_ORDERS) as [MarketOrder, ...MarketOrder[]]).default("sales"),
     identification: z.enum(["all", "true", "false"]).default("all"),
     corruption: z.enum(["all", "true", "false"]).default("all"),
+    /** A normal gem's level bands; for exceptional and awakened gems, below, at and above max level. */
+    gemLevel: gemBandFilter(GEM_LEVEL_BANDS, "level"),
+    gemQuality: gemBandFilter(GEM_QUALITY_BANDS, "quality"),
     item: z.string().max(255).optional(),
     identified: z.enum(["true", "false"]).default("true"),
     corrupted: z.enum(["true", "false"]).default("false"),
@@ -259,6 +273,11 @@ export function marketLink(
     for (const param of MARKET_RANGE_PARAMS) {
         const bound = filters[param];
         if (bound !== undefined) params.set(param, String(bound));
+    }
+    // Gem filters would empty any other category's list.
+    if (filters.category === "gems") {
+        if (filters.gemLevel) params.set("gemLevel", filters.gemLevel);
+        if (filters.gemQuality) params.set("gemQuality", filters.gemQuality);
     }
     if (item) {
         // The item path has no category segment, so the query keeps it for links back to the list.

@@ -718,3 +718,62 @@ it("lists crafting bases apart from uniques without unique-only filters", async 
         "list",
     );
 });
+
+it("filters skill gems by tri-state level, quality and corruption toggles", async () => {
+    showMarket("/1/market/gems?league=Allflame");
+    const level = await screen.findByRole("group", { name: "Gem level" });
+    const quality = screen.getByRole("group", { name: "Gem quality" });
+    expect(screen.queryByRole("combobox", { name: "Corruption" })).toBeNull();
+
+    fireEvent.click(within(level).getByRole("button", { name: "20: any" }));
+    fireEvent.click(within(level).getByRole("button", { name: "21: any" }));
+    fireEvent.click(within(level).getByRole("button", { name: "21: included" }));
+    fireEvent.click(within(quality).getByRole("button", { name: "20%: any" }));
+    fireEvent.click(screen.getByRole("button", { name: "Corrupted: any" }));
+    fireEvent.click(screen.getByRole("button", { name: "Corrupted: included" }));
+    expect(within(level).getByRole("button", { name: "21: excluded" })).toBeTruthy();
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                category: "gems",
+                gemLevel: "20,-21",
+                gemQuality: "20",
+                corruption: "false",
+            }),
+            "list",
+        ),
+    );
+    await waitFor(() =>
+        expect(screen.getByLabelText("Current URL").textContent).toContain("gemLevel=20%2C-21"),
+    );
+
+    fireEvent.click(within(level).getByRole("button", { name: "20: included" }));
+    fireEvent.click(within(level).getByRole("button", { name: "20: excluded" }));
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ gemLevel: "-21" }),
+            "list",
+        ),
+    );
+
+    fireEvent.click(
+        within(screen.getByRole("navigation", { name: "Market categories" })).getByRole("link", {
+            name: "Currency",
+        }),
+    );
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ category: "currency", gemLevel: "", gemQuality: "" }),
+            "list",
+        ),
+    );
+    await waitFor(() =>
+        expect(screen.getByLabelText("Current URL").textContent).toMatch(
+            /^\/1\/market\/currency\?/,
+        ),
+    );
+    expect(screen.getByLabelText("Current URL").textContent).not.toContain("gemLevel");
+});
