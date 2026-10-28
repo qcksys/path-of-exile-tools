@@ -35,7 +35,7 @@ export function CurrencyLabel({
                 <ItemArt
                     src={item.art}
                     name={item.name}
-                    className="size-[1.25em] rounded-none bg-transparent p-0"
+                    className="size-[1.25em] rounded-none border-0 bg-transparent p-0"
                     decorative
                 />
             ) : null}

@@ -308,12 +308,24 @@ export const operations = [
                     periodSales: z.number(),
                     periodRemovals: z.number(),
                     periodPending: z.number(),
+                    recentSales: z.object({
+                        hourly: z
+                            .array(z.number())
+                            .describe(
+                                "Likely sales in each of the 24 hours to the season's latest, oldest first",
+                            ),
+                        daily: z
+                            .array(z.number())
+                            .describe(
+                                "Likely sales on each of the 7 UTC days to the season's latest hour, oldest first",
+                            ),
+                    }),
                 }),
             ),
             bases: z
                 .array(marketBaseRowSchema)
                 .describe(
-                    "Crafting base cohorts at their latest hour in the period, uncorrupted, unfractured, unmirrored, unsynthesised and uninfluenced",
+                    "Crafting base cohorts at their latest hour in the period, uncorrupted, unfractured, unmirrored, unsynthesised, uninfluenced and not intangible",
                 ),
             hasMore: z.boolean(),
             exchange: z

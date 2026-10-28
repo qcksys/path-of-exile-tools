@@ -90,7 +90,8 @@ function implicitSignature(texts: string[]) {
     );
 }
 
-function sourceIntangibility(item: ApiItem): number | null {
+/** The item's Intangibility percentage, 0 when it has none, or null when the fields disagree or are malformed. */
+export function itemIntangibility(item: ApiItem): number | null {
     const field = item.intangibility;
     if (
         field !== undefined &&
@@ -259,7 +260,7 @@ export function compileSourcePreparation(
         )
             return { status: "no-match" };
         if (model.format >= 3) {
-            const intangibility = sourceIntangibility(item);
+            const intangibility = itemIntangibility(item);
             if (intangibility === null) return { status: "unknown" };
             if (intangibility > 0) return { status: "no-match" };
         }

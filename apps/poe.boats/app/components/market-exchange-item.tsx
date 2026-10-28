@@ -174,7 +174,7 @@ export function MarketExchangeItem({
                                                 itemId={entry.quoteId}
                                                 name={entry.name}
                                                 game={game}
-                                                artClassName="size-6 rounded-none bg-transparent p-0"
+                                                artClassName="size-6 rounded-none border-0 bg-transparent p-0"
                                             />
                                         </td>
                                         <td className="py-2 tabular-nums">

@@ -521,6 +521,10 @@ it("preserves variant totals, the latest listed observation, and exact item hist
             periodRemovals: 5,
             periodPending: 7,
             prices: { chaos: { median: 20 } },
+            recentSales: {
+                hourly: [...Array<number>(21).fill(0), 3, 2, 4],
+                daily: [0, 0, 0, 0, 0, 0, 9],
+            },
         });
     expect(result.rows.find((row) => row.itemKey === "Empty")?.hour).toBe(hour);
     expect(result.history.map((row) => row.hour)).toEqual([hour - 7200, hour - 3600, hour]);

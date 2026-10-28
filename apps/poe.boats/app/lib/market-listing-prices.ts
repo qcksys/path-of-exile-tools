@@ -42,6 +42,23 @@ function equivalent(
     return { amount: chaos, currency: "chaos" };
 }
 
+/** The currency with the most listings; on a count tie the dearest, so no tied currency is hidden. */
+export function marketMostListedPrice<Price extends { count: number; chaos?: number }>(
+    prices: Price[],
+) {
+    return prices.reduce<Price | undefined>(
+        (best, entry) =>
+            !best ||
+            entry.count > best.count ||
+            (entry.count === best.count &&
+                (entry.chaos ?? Number.NEGATIVE_INFINITY) >
+                    (best.chaos ?? Number.NEGATIVE_INFINITY))
+                ? entry
+                : best,
+        undefined,
+    );
+}
+
 /**
  * A row's listing currencies, cheapest first by chaos value and then most listed. Chaos is
  * restated in divine, divine in chaos, and other currencies in divine once they are worth at
@@ -57,18 +74,7 @@ export function marketListingPrices(
         const rate = currency === "chaos" ? 1 : chaosRates[currency];
         return { currency, median, count, chaos: rate === undefined ? undefined : median * rate };
     });
-    // On a count tie the dearest currency is the reference, so no tied currency is hidden.
-    const common = entries.reduce<(typeof entries)[number] | undefined>(
-        (best, entry) =>
-            !best ||
-            entry.count > best.count ||
-            (entry.count === best.count &&
-                (entry.chaos ?? Number.NEGATIVE_INFINITY) >
-                    (best.chaos ?? Number.NEGATIVE_INFINITY))
-                ? entry
-                : best,
-        undefined,
-    )?.chaos;
+    const common = marketMostListedPrice(entries)?.chaos;
     return entries
         .map((entry) => ({
             ...entry,

@@ -24,5 +24,6 @@ test-results/
 env.d.ts
 /public/game-data/history/
 /public/game-data/items-*.json
+/public/game-data/market-base-types-*.json
 /public/game-data/market-categories-*.json
 /public/game-data/market-exchange-items-*.json

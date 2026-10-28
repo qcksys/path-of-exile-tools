@@ -244,6 +244,113 @@ async function marketLatestRows<
     });
 }
 
+/** Hours and UTC days of likely sales the market list charts. */
+const RECENT_SALE_HOURS = 24;
+const RECENT_SALE_DAYS = 7;
+
+export type MarketRecentSales = { hourly: number[]; daily: number[] };
+
+/**
+ * Likely sales of each listed market in each of the latest 24 hours and 7 UTC days to
+ * `latestHour`, oldest first, keyed by `marketRowKey(row, 0)`.
+ */
+async function marketRecentSales(
+    db: TDatabase,
+    filters: MarketFilters,
+    markets: MarketRowKey[],
+    latestHour: number,
+) {
+    const sales = new Map<string, MarketRecentSales>();
+    if (!markets.length) return sales;
+    const { market, daily } = marketTables(filters.realm);
+    const itemKeys = [...new Set(markets.map((row) => row.itemKey))];
+    const firstHour = latestHour - (RECENT_SALE_HOURS - 1) * 3600;
+    const firstDay = utcDay(latestHour) - (RECENT_SALE_DAYS - 1) * 86400;
+    const value = valueGroup(market);
+    const [hours, days] = await Promise.all([
+        traceQuery(
+            "market.recent_sales_hourly",
+            db
+                .select({
+                    hour: market.hour,
+                    itemKey: market.itemKey,
+                    identified: market.identified,
+                    corrupted: market.corrupted,
+                    signatureKind: market.signatureKind,
+                    signatureValue: value,
+                    sales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
+                })
+                // (league, item key) followed by the primary key reads only the page's items.
+                .from(market, { forceIndex: "idx_stash_unique_item" })
+                .where(
+                    and(
+                        eq(market.realm, filters.realm),
+                        eq(market.league, filters.league),
+                        inArray(market.itemKey, itemKeys),
+                        gte(market.hour, firstHour),
+                        lte(market.hour, latestHour),
+                        tabMatch(market, filters),
+                    ),
+                )
+                .groupBy(
+                    market.hour,
+                    market.itemKey,
+                    market.identified,
+                    market.corrupted,
+                    market.signatureKind,
+                    value,
+                ),
+        ),
+        traceQuery(
+            "market.recent_sales_daily",
+            db
+                .select({
+                    day: daily.day,
+                    itemKey: daily.itemKey,
+                    identified: daily.identified,
+                    corrupted: daily.corrupted,
+                    signatureKind: daily.signatureKind,
+                    signatureValue: daily.signatureValue,
+                    sales: sql<number>`sum(${daily.likelySales})`.mapWith(Number),
+                })
+                .from(daily)
+                .where(
+                    and(
+                        eq(daily.realm, filters.realm),
+                        eq(daily.league, filters.league),
+                        gte(daily.day, firstDay),
+                        lte(daily.day, latestHour),
+                        inArray(daily.itemKey, itemKeys),
+                        tabMatch(daily, filters),
+                    ),
+                )
+                .groupBy(
+                    daily.day,
+                    daily.itemKey,
+                    daily.identified,
+                    daily.corrupted,
+                    daily.signatureKind,
+                    daily.signatureValue,
+                ),
+        ),
+    ]);
+    const entry = (row: MarketRowKey) => {
+        const key = marketRowKey(row, 0);
+        let found = sales.get(key);
+        if (!found) {
+            found = {
+                hourly: Array(RECENT_SALE_HOURS).fill(0),
+                daily: Array(RECENT_SALE_DAYS).fill(0),
+            };
+            sales.set(key, found);
+        }
+        return found;
+    };
+    for (const row of hours) entry(row).hourly[(row.hour - firstHour) / 3600]! += row.sales;
+    for (const row of days) entry(row).daily[(row.day - firstDay) / 86400]! += row.sales;
+    return sales;
+}
+
 type MarketView = "all" | "list" | "history";
 
 export function getMarketData(db: TDatabase, input: MarketFilters, view: MarketView = "all") {
@@ -524,7 +631,19 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             : traceQuery("market.rows", marketsQuery, {
                   "market.page_latest_rows": pageLatestRows,
                   "market.window_start": windowStart,
-              }).then((markets) => marketLatestRows(db, filters, markets));
+              }).then(async (markets) => {
+                  const [latest, recent] = await Promise.all([
+                      marketLatestRows(db, filters, markets),
+                      marketRecentSales(db, filters, markets, latestHour),
+                  ]);
+                  return latest.map((row) => ({
+                      ...row,
+                      recentSales: recent.get(marketRowKey(row, 0)) ?? {
+                          hourly: Array<number>(RECENT_SALE_HOURS).fill(0),
+                          daily: Array<number>(RECENT_SALE_DAYS).fill(0),
+                      },
+                  }));
+              });
     const [rows, baseRows, history, variants, exchange, modRows] = await Promise.all([
         rowsPromise,
         season && view !== "history" && baseCategory

@@ -247,7 +247,7 @@ export function ExchangePair({
                 name={label}
                 game={game}
                 iconOnly
-                artClassName="size-5 rounded-none bg-transparent p-0"
+                artClassName="size-5 rounded-none border-0 bg-transparent p-0"
             />
         </span>
     );

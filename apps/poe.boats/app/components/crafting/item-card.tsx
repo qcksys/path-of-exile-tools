@@ -261,7 +261,7 @@ export function ItemCard({
                 <ItemArt
                     src={presentation?.art ?? ""}
                     name={base.name}
-                    className="mx-auto mt-3 h-20 w-20 bg-transparent"
+                    className="mx-auto mt-3 h-20 w-20 border-0 bg-transparent"
                 />
                 {chest ? (
                     <details className="mt-2 text-xs text-muted-foreground">
