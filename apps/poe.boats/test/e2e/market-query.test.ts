@@ -7,7 +7,7 @@ import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection, type RowDataPacket } from "mysql2/promise";
 import { afterAll, beforeAll, expect, it, vi } from "vite-plus/test";
 import type { TDatabase } from "~/db/client";
-import { getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
+import { getMarketBase, getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
 import {
     upsertStashCurrencyHourly,
     upsertStashUniqueHourly,
@@ -833,6 +833,18 @@ it("filters categories and variant state before pagination and searches base typ
         ["Abberath's Hooves", "armour"],
     ]);
     expect(result.hasMore).toBe(false);
+    const corruption = async (input: Record<string, string>) => {
+        const { filters, rows } = await marketData(
+            db as unknown as TDatabase,
+            marketFiltersSchema.parse({ league: "Categories", q: "Goathide", ...input }),
+        );
+        return [filters.corruption, rows.map((row) => row.itemKey).sort()];
+    };
+    const uncorrupted = ["Abberath's Hooves", "Unidentified boots"];
+    const every = ["Abberath's Hooves", "Corrupted boots", "Unidentified boots"];
+    expect(await corruption({ category: "armour" })).toEqual(["false", uncorrupted]);
+    expect(await corruption({ category: "armour", corruption: "all" })).toEqual(["all", every]);
+    expect(await corruption({ category: "all" })).toEqual(["all", every]);
     const other = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "Categories", category: "other" }),
@@ -1494,4 +1506,29 @@ it("lists each crafting base cohort's latest hour in the period, preferring the 
     );
     expect(unique.bases).toEqual([]);
     expect(unique.rows.map((row) => row.itemKey)).toEqual(["Example"]);
+    const input = {
+        realm: "pc",
+        league: "Bases",
+        days: "7",
+        currency: "chaos",
+        baseId: "base:titan-plate:86-100:6-link",
+    } as const;
+    const page = await getMarketBase(db as unknown as TDatabase, input);
+    expect(page.latestHour).toBe(hour);
+    expect(page.base?.baseType).toBe("Titan Plate");
+    expect(page.history.map((row) => [row.hour, row.listingCount, row.merged?.median])).toEqual([
+        [hour - 3600, 1, 10],
+        [hour, 3, 30],
+    ]);
+    // The 1–5 link cohort was last seen before the period and the 1–2 band is not listed.
+    expect(page.variants.map((row) => [row.id, row.listingCount])).toEqual([
+        ["base:titan-plate:86-100:any-links:q30", 2],
+        ["base:titan-plate:86-100:6-link", 3],
+    ]);
+    expect(page.chaosRates.chaos).toBe(1);
+    const missing = await getMarketBase(db as unknown as TDatabase, {
+        ...input,
+        baseId: "base:titan-plate:1-2:any-links",
+    });
+    expect([missing.base, missing.history, missing.variants]).toEqual([null, [], []]);
 });

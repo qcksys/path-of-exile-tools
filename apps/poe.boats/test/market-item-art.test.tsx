@@ -45,7 +45,10 @@ function showMarket(
         rowDeletedAt: null,
     };
     const loaderData: Parameters<typeof MarketIndex>[0]["loaderData"] = {
-        filters: marketFiltersSchema.parse({ realm, league: "Standard", item: row.itemKey }),
+        filters: {
+            ...marketFiltersSchema.parse({ realm, league: "Standard", item: row.itemKey }),
+            corruption: "all",
+        },
         seasons: [],
         season: undefined,
         hasMore: false,

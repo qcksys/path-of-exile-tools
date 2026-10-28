@@ -87,6 +87,24 @@ function hasCompleteModifierSide(record: ItemRecord, side: ModifierFact["side"])
     return resolved === count;
 }
 
+/** Each line of the item's enchantments, or null when they are malformed. */
+function enchantLines(mods: unknown): string[] | null {
+    if (mods === undefined) return [];
+    if (!Array.isArray(mods)) return null;
+    const lines: string[] = [];
+    for (const mod of mods) {
+        const text =
+            typeof mod === "string"
+                ? mod
+                : typeof mod === "object" && mod !== null && typeof mod.description === "string"
+                  ? mod.description
+                  : undefined;
+        if (text === undefined) return null;
+        lines.push(...text.split("\n"));
+    }
+    return lines;
+}
+
 export function matchItemCondition(record: ItemRecord, filter: ItemCondition): ItemMatch {
     const { item, facts } = record;
     switch (filter.kind) {
@@ -101,6 +119,11 @@ export function matchItemCondition(record: ItemRecord, filter: ItemCondition): I
             return filter.values.some((value) => item.influences?.[value] === true)
                 ? "match"
                 : "no-match";
+        case "enchant": {
+            const lines = enchantLines(item.enchantMods);
+            if (!lines) return "unknown";
+            return lines.some((line) => filter.values.includes(line)) ? "match" : "no-match";
+        }
         case "flag": {
             let value: boolean | undefined;
             if (filter.field === "destroyed") value = facts.destroyed;

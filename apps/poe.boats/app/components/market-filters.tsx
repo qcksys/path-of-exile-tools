@@ -5,11 +5,18 @@ import { CurrencyLabel } from "~/components/currency-label";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { isMarketBaseCategory } from "~/lib/market-categories";
+import {
+    MARKET_BASE_ATTRIBUTE_SETS,
+    MARKET_BASE_CLASSES,
+    MARKET_BASE_LEVELS,
+    MARKET_CLUSTER_LEVEL_BANDS,
+} from "~/lib/market-bases";
+import { isMarketBaseCategory, MARKET_CLUSTER_BASE_CATEGORY } from "~/lib/market-categories";
 import {
     MARKET_ORDERS,
     MARKET_RANGE_PARAMS,
     type MarketFilters,
+    marketCorruption,
     marketLink,
 } from "~/schemas/market";
 
@@ -19,12 +26,13 @@ export const marketUtc = (hour: number) =>
 const APPLY_DELAY_MS = 400;
 
 export function MarketFiltersForm({
-    filters,
+    filters: input,
     seasons,
 }: {
     filters: MarketFilters;
     seasons: { league: string }[];
 }) {
+    const filters = { ...input, corruption: marketCorruption(input) };
     const navigation = useNavigation();
     const submit = useSubmit();
     const form = useRef<HTMLFormElement>(null);
@@ -54,11 +62,20 @@ export function MarketFiltersForm({
           }
         : undefined;
     const href = marketLink(filters, item);
+    const baseClasses =
+        filters.category in MARKET_BASE_CLASSES
+            ? MARKET_BASE_CLASSES[filters.category as keyof typeof MARKET_BASE_CLASSES]
+            : undefined;
     const game = filters.realm === "poe2" ? "poe2" : "poe1";
     const currencies = [
         ...new Set([...exchangeListingCurrencySchema.options, filters.currency]),
     ].filter(Boolean);
-    const select = (name: keyof MarketFilters, label: string, options: Record<string, string>) => (
+    // Pass entries where values look like integers: objects list integer keys before "".
+    const select = (
+        name: keyof MarketFilters,
+        label: string,
+        options: Record<string, string> | [string, string][],
+    ) => (
         <Label className="grid gap-1.5 text-xs text-muted-foreground">
             {label}
             <FormSelect
@@ -68,11 +85,13 @@ export function MarketFiltersForm({
                 onValueChange={apply}
                 className="min-w-32 bg-background text-sm text-foreground"
             >
-                {Object.entries(options).map(([value, text]) => (
-                    <FormSelectItem key={value} value={value}>
-                        {text}
-                    </FormSelectItem>
-                ))}
+                {(Array.isArray(options) ? options : Object.entries(options)).map(
+                    ([value, text]) => (
+                        <FormSelectItem key={value} value={value}>
+                            {text}
+                        </FormSelectItem>
+                    ),
+                )}
             </FormSelect>
         </Label>
     );
@@ -174,6 +193,47 @@ export function MarketFiltersForm({
                               false: "Uncorrupted",
                               true: "Corrupted",
                           })}
+                </div>
+            ) : null}
+            {!item && baseClasses ? (
+                <div className="flex flex-wrap items-end gap-3">
+                    {select("baseClass", "Type", {
+                        "": "Any type",
+                        ...Object.fromEntries(baseClasses.map((name) => [name, name])),
+                    })}
+                    {filters.category === "armour-bases"
+                        ? select("attributes", "Attributes", {
+                              "": "Any attributes",
+                              ...MARKET_BASE_ATTRIBUTE_SETS,
+                          })
+                        : null}
+                    {select("ilvl", "Item level", [
+                        ["", "Any item level"],
+                        ...(filters.category === MARKET_CLUSTER_BASE_CATEGORY
+                            ? MARKET_CLUSTER_LEVEL_BANDS.map(({ min, max }): [string, string] => [
+                                  String(min),
+                                  max === 100 ? `ilvl ${min}+` : `ilvl ${min}–${max}`,
+                              ])
+                            : MARKET_BASE_LEVELS.map((level): [string, string] => [
+                                  level,
+                                  level === "86" ? "ilvl 86+" : `ilvl ${level}`,
+                              ])),
+                    ])}
+                    {filters.category === "accessory-bases" ||
+                    filters.category === MARKET_CLUSTER_BASE_CATEGORY
+                        ? null
+                        : select("baseLinks", "Links", [
+                              ["", "Any links"],
+                              ["1-5", "1–5 links"],
+                              ["6", "6 links"],
+                          ])}
+                    {filters.category === "armour-bases"
+                        ? select("quality", "Quality", [
+                              ["", "Any quality"],
+                              ["25", "25%+ quality"],
+                              ["30", "30%+ quality"],
+                          ])
+                        : null}
                 </div>
             ) : null}
             <div className="flex flex-wrap items-center justify-between gap-3">

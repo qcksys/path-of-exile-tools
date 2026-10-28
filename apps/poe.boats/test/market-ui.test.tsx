@@ -6,7 +6,12 @@ import { type CostPoint, historyChartOption } from "~/components/crafting/proces
 import { MarketPriceChart, marketPriceChartOption } from "~/components/market-price-chart";
 import { type ChartOption, init } from "~/lib/echarts";
 import { marketNumber } from "~/lib/market-number";
-import { type MergedMarketPrice, marketFiltersSchema, marketLink } from "~/schemas/market";
+import {
+    type MergedMarketPrice,
+    marketCorruption,
+    marketFiltersSchema,
+    marketLink,
+} from "~/schemas/market";
 
 function flat(price: number): MergedMarketPrice {
     return {
@@ -114,6 +119,22 @@ describe("market browsing", () => {
         expect(params(null).has("links")).toBe(false);
         expect(params().has("links")).toBe(false);
         expect(marketFiltersSchema.safeParse({ links: "4" }).success).toBe(false);
+    });
+    it("defaults unique equipment searches to uncorrupted and leaves the URL to an explicit choice", () => {
+        const corruption = (input: Record<string, string>) =>
+            marketCorruption(marketFiltersSchema.parse(input));
+        expect(corruption({ category: "weapons" })).toBe("false");
+        expect(corruption({ category: "armour" })).toBe("false");
+        expect(corruption({ category: "accessories" })).toBe("false");
+        expect(corruption({ category: "armour", corruption: "all" })).toBe("all");
+        expect(corruption({ category: "armour-bases" })).toBe("all");
+        expect(corruption({ category: "currency" })).toBe("all");
+        expect(corruption({})).toBe("all");
+        const params = (input: Record<string, string>) =>
+            new URL(marketLink(marketFiltersSchema.parse(input)), "https://example.invalid")
+                .searchParams;
+        expect(params({ category: "armour" }).has("corruption")).toBe(false);
+        expect(params({ category: "armour", corruption: "all" }).get("corruption")).toBe("all");
     });
     it.each([
         { days: "100000" },

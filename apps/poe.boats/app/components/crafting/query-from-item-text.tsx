@@ -33,6 +33,7 @@ function conditionLabel(condition: ItemCondition, record: ItemRecord) {
     if (condition.kind === "base") return `Base: ${record.item.baseType}`;
     if (condition.kind === "rarity") return `Rarity: ${condition.values.join(" or ")}`;
     if (condition.kind === "influence") return `Influence: ${condition.values.join(" or ")}`;
+    if (condition.kind === "enchant") return `Enchantment: ${condition.values.join(" or ")}`;
     if (condition.kind === "flag") return `${condition.field}: ${condition.value ? "yes" : "no"}`;
     if (condition.kind === "range") {
         const labels = {

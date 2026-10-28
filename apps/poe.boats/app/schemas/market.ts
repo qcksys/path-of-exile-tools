@@ -1,5 +1,15 @@
 import { z } from "zod";
-import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
+import {
+    MARKET_BASE_ATTRIBUTE_SETS,
+    MARKET_BASE_CLASS_NAMES,
+    MARKET_BASE_LEVELS,
+    type MarketBaseAttributeSet,
+} from "~/lib/market-bases";
+import {
+    isMarketUniqueCategory,
+    MARKET_CATEGORIES,
+    type MarketCategory,
+} from "~/lib/market-categories";
 
 export const marketCategorySchema = z.enum(
     Object.keys(MARKET_CATEGORIES) as [MarketCategory, ...MarketCategory[]],
@@ -55,7 +65,8 @@ export const marketFiltersSchema = z.object({
     category: marketCategorySchema.or(z.literal("all")).default("all"),
     order: z.enum(Object.keys(MARKET_ORDERS) as [MarketOrder, ...MarketOrder[]]).default("sales"),
     identification: z.enum(["all", "true", "false"]).default("all"),
-    corruption: z.enum(["all", "true", "false"]).default("all"),
+    /** Omitted, unique equipment categories search uncorrupted markets and others any corruption. */
+    corruption: z.enum(["all", "true", "false"]).optional(),
     item: z.string().max(255).optional(),
     identified: z.enum(["true", "false"]).default("true"),
     corrupted: z.enum(["true", "false"]).default("false"),
@@ -68,6 +79,22 @@ export const marketFiltersSchema = z.object({
     /** Watcher's Eye mods of which valued items need at least one, separated by `|`. */
     anyMods: z.string().max(1000).default(""),
     currency: z.string().max(40).default("divine"),
+    /** Crafting base filters; empty matches every base. */
+    baseClass: z.enum(["", ...MARKET_BASE_CLASS_NAMES]).default(""),
+    attributes: z
+        .enum(["", ...(Object.keys(MARKET_BASE_ATTRIBUTE_SETS) as MarketBaseAttributeSet[])])
+        .default("")
+        .describe("The attributes a crafting base requires, e.g. `str-int`"),
+    ilvl: z
+        // Cluster Jewel bands start at 1, 50, 68, 75 and 84; equipment bands from 74.
+        .enum(["", "1", "50", "68", ...MARKET_BASE_LEVELS])
+        .default("")
+        .describe("Crafting bases whose item level band includes this level"),
+    baseLinks: z.enum(["", "1-5", "6"]).default(""),
+    quality: z
+        .enum(["", "25", "30"])
+        .default("")
+        .describe("Crafting base cohorts split at this minimum quality"),
     ...(Object.fromEntries(MARKET_RANGE_PARAMS.map((param) => [param, rangeBound])) as Record<
         MarketRangeParam,
         typeof rangeBound
@@ -75,6 +102,23 @@ export const marketFiltersSchema = z.object({
 });
 
 export type MarketFilters = z.infer<typeof marketFiltersSchema>;
+
+/** The crafting base category filters, which category navigation clears. */
+export const MARKET_BASE_FILTERS = [
+    "baseClass",
+    "attributes",
+    "ilvl",
+    "baseLinks",
+    "quality",
+] as const satisfies (keyof MarketFilters)[];
+
+/** The corruption a search filters by: its own choice, or its category's default. */
+export function marketCorruption({
+    category,
+    corruption,
+}: Pick<MarketFilters, "category" | "corruption">) {
+    return corruption ?? (isMarketUniqueCategory(category) ? "false" : "all");
+}
 
 /**
  * One hour's asking prices across every listing currency, converted through chaos into the
@@ -140,6 +184,19 @@ export const marketExchangeItemInputSchema = marketFiltersSchema
     .extend({ itemId: z.string().startsWith("Metadata/Items/").max(255) });
 export type MarketExchangeItemInput = z.infer<typeof marketExchangeItemInputSchema>;
 
+export const marketBaseInputSchema = marketFiltersSchema
+    .pick({ realm: true, league: true, days: true, currency: true })
+    .extend({ baseId: z.string().startsWith("base:").max(128) });
+export type MarketBaseInput = z.infer<typeof marketBaseInputSchema>;
+
+/** A crafting base cohort's page, keeping the list's filters for the way back. */
+export function marketBaseLink(filters: MarketFilters, baseId: string) {
+    const [path, query] = marketLink(filters).split("?");
+    const params = new URLSearchParams(query);
+    params.set("category", path!.split("/").at(-1)!);
+    return `/1/market/bases/${encodeURIComponent(baseId)}?${params}`;
+}
+
 const EXCHANGE_ID_PREFIX = "Metadata/Items/";
 
 /** An exchange item's page, keeping the list's filters for the way back. */
@@ -177,12 +234,13 @@ export function marketLink(
         page: String(filters.page),
         order: filters.order,
         identification: filters.identification,
-        corruption: filters.corruption,
+        ...(filters.corruption ? { corruption: filters.corruption } : {}),
     });
     for (const param of MARKET_RANGE_PARAMS) {
         const bound = filters[param];
         if (bound !== undefined) params.set(param, String(bound));
     }
+    for (const param of MARKET_BASE_FILTERS) if (filters[param]) params.set(param, filters[param]);
     if (item) {
         // The item path has no category segment, so the query keeps it for links back to the list.
         params.set("category", filters.category);

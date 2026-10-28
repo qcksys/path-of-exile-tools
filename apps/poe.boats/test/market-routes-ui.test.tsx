@@ -5,17 +5,19 @@ import { createRoutesStub, RouterContextProvider, useLoaderData, useLocation } f
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { dbContext } from "~/context";
 import { createDbConnection } from "~/db/client";
-import { getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
+import { getMarketBase, getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
 import Market from "~/routes/market";
+import MarketBase, { loader as baseLoader } from "~/routes/market/base";
 import MarketExchangeItem, { loader as exchangeLoader } from "~/routes/market/exchange";
 import MarketIndex, { loader as listLoader } from "~/routes/market/index";
 import MarketItem, { loader as itemLoader } from "~/routes/market/item";
-import { changeControl } from "./control-helpers";
-import { marketExchangeFixture, marketFixture } from "./market-fixtures";
+import { changeControl, expectControlValue } from "./control-helpers";
+import { marketBaseFixture, marketExchangeFixture, marketFixture } from "./market-fixtures";
 
 vi.mock("~/components/app-header", () => ({ AppHeader: () => null }));
 vi.mock("~/components/app-footer", () => ({ AppFooter: () => null }));
 vi.mock("~/db/queries/market.queries", () => ({
+    getMarketBase: vi.fn(),
     getMarketData: vi.fn(),
     getMarketExchangeItem: vi.fn(),
 }));
@@ -27,6 +29,7 @@ beforeEach(() => {
     vi.mocked(getMarketExchangeItem).mockImplementation(async (_db, input) =>
         marketExchangeFixture(input),
     );
+    vi.mocked(getMarketBase).mockImplementation(async (_db, input) => marketBaseFixture(input));
 });
 afterEach(() => {
     cleanup();
@@ -82,6 +85,18 @@ function showMarket(path = "/1/market/armour?league=Allflame&order=name-asc&page
                             unstable_url: new URL(request.url),
                         }),
                     Component: () => <MarketExchangeItem loaderData={useLoaderData()} />,
+                },
+                {
+                    path: "bases/:base",
+                    loader: ({ request, params }) =>
+                        baseLoader({
+                            request,
+                            context,
+                            params: { base: params.base! },
+                            unstable_pattern: "/1/market/bases/:base",
+                            unstable_url: new URL(request.url),
+                        }),
+                    Component: () => <MarketBase loaderData={useLoaderData()} />,
                 },
             ],
         },
@@ -281,7 +296,7 @@ it("collapses listing currencies costing over three times the most listed one", 
     expect(details.textContent).toContain("6 divine≈ 900 chaosn=1");
 });
 
-it("applies search and filters after a pause, resets pagination, and preserves them on category navigation", async () => {
+it("applies search and filters after a pause, resets pagination, and keeps filters but not the search on category navigation", async () => {
     showMarket();
     const search = await screen.findByRole("searchbox", { name: "Search items" });
     search.focus();
@@ -321,6 +336,10 @@ it("applies search and filters after a pause, resets pagination, and preserves t
             "list",
         ),
     );
+    // The category links follow the URL, which commits after the loader runs.
+    await waitFor(() =>
+        expect(screen.getByLabelText("Current URL").textContent).toContain("identification=true"),
+    );
     fireEvent.click(
         within(screen.getByRole("navigation", { name: "Market categories" })).getByRole("link", {
             name: "Unique weapons",
@@ -329,7 +348,12 @@ it("applies search and filters after a pause, resets pagination, and preserves t
     await waitFor(() =>
         expect(getMarketData).toHaveBeenLastCalledWith(
             expect.anything(),
-            expect.objectContaining({ q: "Goathide", page: 1, category: "weapons" }),
+            expect.objectContaining({
+                q: "",
+                identification: "true",
+                page: 1,
+                category: "weapons",
+            }),
             "list",
         ),
     );
@@ -339,6 +363,43 @@ it("applies search and filters after a pause, resets pagination, and preserves t
         ).toBe("page"),
     );
     expect(screen.getByLabelText("Current URL").textContent).toMatch(/^\/1\/market\/weapons\?/);
+    await waitFor(() =>
+        expect(
+            (screen.getByRole("searchbox", { name: "Search items" }) as HTMLInputElement).value,
+        ).toBe(""),
+    );
+});
+
+it("searches unique equipment uncorrupted by default and carries only a changed corruption filter", async () => {
+    showMarket("/1/market/armour?league=Allflame");
+    const url = () => screen.getByLabelText("Current URL").textContent;
+    const category = (name: string) =>
+        within(screen.getByRole("navigation", { name: "Market categories" })).getByRole("link", {
+            name,
+        });
+    const categoryHref = (name: string) => category(name).getAttribute("href");
+    expectControlValue(await screen.findByRole("combobox", { name: "Corruption" }), "false");
+    expect(getMarketData).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.not.objectContaining({ corruption: expect.anything() }),
+        "list",
+    );
+    expect(categoryHref("Currency")).not.toContain("corruption=");
+
+    changeControl(screen.getByRole("combobox", { name: "Corruption" }), {
+        target: { value: "true" },
+    });
+    await waitFor(() => expect(url()).toContain("corruption=true"));
+    expect(categoryHref("Unique weapons")).toContain("corruption=true");
+
+    changeControl(screen.getByRole("combobox", { name: "Corruption" }), {
+        target: { value: "false" },
+    });
+    await waitFor(() => expect(url()).toContain("corruption=false"));
+    expect(categoryHref("Currency")).not.toContain("corruption=");
+    fireEvent.click(category("Currency"));
+    await waitFor(() => expect(url()).toMatch(/^\/1\/market\/currency\?/));
+    expectControlValue(await screen.findByRole("combobox", { name: "Corruption" }), "all");
 });
 
 it("redirects category query links to the category path", async () => {
@@ -662,6 +723,82 @@ it("searches, filters and sorts hourly observations in the browser", async () =>
     expect(getMarketData).toHaveBeenCalledTimes(1);
 });
 
+it("opens a crafting base's history and variants and returns to the filtered list", async () => {
+    showMarket("/1/market/armour-bases?league=Allflame&baseClass=Body%20Armour&ilvl=86");
+    const url = () => screen.getByLabelText("Current URL").textContent;
+    const table = await screen.findByRole("table", { name: "Armour bases markets" });
+    expect(within(table).getByText("ilvl 86–100 · 6 links · Body Armour · Str")).toBeTruthy();
+    fireEvent.click(within(table).getByRole("link", { name: "Titan Plate" }));
+    const page = await screen.findByRole("region", { name: "Crafting base" });
+    expect(url()).toMatch(/^\/1\/market\/bases\/base%3Atitan-plate%3A86-100%3A6-link\?/);
+    expect(getMarketBase).toHaveBeenLastCalledWith(expect.anything(), {
+        realm: "pc",
+        league: "Allflame",
+        days: "7",
+        currency: "divine",
+        baseId: "base:titan-plate:86-100:6-link",
+    });
+    expect(within(page).getByRole("heading", { name: "Titan Plate" })).toBeTruthy();
+    expect(within(page).getByText(/11 listings from 8 sellers/)).toBeTruthy();
+    const variants = within(page).getByRole("navigation", { name: "Base variants" });
+    expect(
+        within(variants)
+            .getAllByRole("link")
+            .map((link) => [link.textContent, link.getAttribute("aria-current")]),
+    ).toEqual([
+        ["ilvl 86–100 · 6 links60 chaos · 12 listed", "page"],
+        ["ilvl 86–100 · 1–5 links5 chaos · 12 listed", null],
+    ]);
+    fireEvent.click(within(variants).getByRole("link", { name: /1–5 links/ }));
+    await waitFor(() => expect(url()).toContain("1-5-link"));
+    fireEvent.click(within(page).getByRole("link", { name: /Back to markets/ }));
+    await screen.findByRole("table", { name: "Armour bases markets" });
+    expect(url()).toMatch(/^\/1\/market\/armour-bases\?/);
+    expect(url()).toContain("baseClass=Body+Armour");
+    expect(url()).toContain("ilvl=86");
+    expect(
+        within(screen.getByRole("navigation", { name: "Market categories" }))
+            .getByRole("link", { name: "Accessory bases" })
+            .getAttribute("href"),
+    ).not.toMatch(/baseClass|ilvl/);
+});
+
+it("filters Cluster Jewel bases by size and poe.ninja's item level bands", async () => {
+    showMarket("/1/market/cluster-jewel-bases?league=Allflame");
+    const level = await screen.findByRole("combobox", { name: "Item level" });
+    expect(screen.getByRole("combobox", { name: "Type" })).toBeTruthy();
+    for (const name of ["Links", "Quality", "Attributes", "Corruption"])
+        expect(screen.queryByRole("combobox", { name })).toBeNull();
+    fireEvent.click(level);
+    expect(
+        screen
+            .getAllByRole("option")
+            .map((option) => option.textContent)
+            .slice(1),
+    ).toEqual(["ilvl 1–49", "ilvl 50–67", "ilvl 68–74", "ilvl 75–83", "ilvl 84+"]);
+    fireEvent.keyDown(screen.getByRole("listbox"), { key: "Escape" });
+    changeControl(level, { target: { value: "84" } });
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ category: "cluster-jewel-bases", ilvl: "84" }),
+            "list",
+        ),
+    );
+});
+
+it("answers 404 for an unknown crafting base", async () => {
+    await expect(
+        baseLoader({
+            request: new Request("https://example.invalid/1/market/bases/base%3Amissing"),
+            context,
+            params: { base: "base:missing" },
+            unstable_pattern: "/1/market/bases/:base",
+            unstable_url: new URL("https://example.invalid/1/market/bases/base%3Amissing"),
+        }),
+    ).rejects.toMatchObject({ status: 404 });
+});
+
 it("lists crafting bases apart from uniques without unique-only filters", async () => {
     showMarket("/1/market/armour-bases?league=Allflame");
     const table = await screen.findByRole("table", { name: "Armour bases markets" });
@@ -671,6 +808,18 @@ it("lists crafting bases apart from uniques without unique-only filters", async 
     expect(screen.queryByRole("link", { name: "Abberath's Hooves" })).toBeNull();
     expect(screen.queryByRole("combobox", { name: "Identification" })).toBeNull();
     expect(screen.queryByRole("combobox", { name: "Corruption" })).toBeNull();
+    for (const name of ["Type", "Attributes", "Item level", "Links", "Quality"])
+        expect(screen.getByRole("combobox", { name })).toBeTruthy();
+    changeControl(screen.getByRole("combobox", { name: "Type" }), {
+        target: { value: "Helmet" },
+    });
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ category: "armour-bases", baseClass: "Helmet" }),
+            "list",
+        ),
+    );
     expect(
         within(screen.getByRole("navigation", { name: "Market categories" }))
             .getByRole("link", { name: "Armour bases" })

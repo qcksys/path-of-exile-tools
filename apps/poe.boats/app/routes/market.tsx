@@ -3,7 +3,14 @@ import { Link, Outlet, useParams, useSearchParams } from "react-router";
 import { Button } from "~/components/ui/button";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
 import type { SiteHandle } from "~/routes/layouts/site";
-import { MARKET_DEFAULT_CATEGORY, marketFiltersSchema, marketLink } from "~/schemas/market";
+import {
+    MARKET_BASE_FILTERS,
+    MARKET_DEFAULT_CATEGORY,
+    type MarketFilters,
+    marketCorruption,
+    marketFiltersSchema,
+    marketLink,
+} from "~/schemas/market";
 import type { Route } from "./+types/market";
 
 export const meta: Route.MetaFunction = () => [{ title: "Season market · POE.BOATS" }];
@@ -20,15 +27,24 @@ export default function Market() {
     });
     const filters = parsed.success ? parsed.data : marketFiltersSchema.parse({});
     const current = filters.category === "all" ? MARKET_DEFAULT_CATEGORY : filters.category;
+    // A corruption choice other than this category's default carries to the next category.
+    const corruption =
+        filters.corruption === marketCorruption({ category: filters.category })
+            ? undefined
+            : filters.corruption;
     const categories = Object.entries(MARKET_CATEGORIES) as [
         MarketCategory,
         (typeof MARKET_CATEGORIES)[MarketCategory],
     ][];
     const groups = [...new Set(categories.map(([, category]) => category.group))];
+    const unfiltered = Object.fromEntries(MARKET_BASE_FILTERS.map((param) => [param, ""])) as Pick<
+        MarketFilters,
+        (typeof MARKET_BASE_FILTERS)[number]
+    >;
     const categoryLink = (category: MarketCategory, label: string) => (
         <Link
             key={category}
-            to={marketLink({ ...filters, category, page: 1 })}
+            to={marketLink({ ...filters, ...unfiltered, category, page: 1, q: "", corruption })}
             aria-current={current === category ? "page" : undefined}
             onClick={() => setCategoriesOpen(false)}
             className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${current === category ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
