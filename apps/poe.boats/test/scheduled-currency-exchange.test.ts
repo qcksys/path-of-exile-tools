@@ -174,6 +174,28 @@ describe("scheduled exchange capture", () => {
         ).toHaveLength(6);
     });
 
+    it("stores only markets with one of the game's price currencies outside Ruthless and counts stored hours by them", async () => {
+        const mirror = "Metadata/Items/Currency/CurrencyDuplicate";
+        const fragment = "Metadata/Items/Currency/CurrencyAfflictionShardDelirium";
+        vi.mocked(fetch).mockImplementation(async (request) => {
+            const response: { markets: Record<string, unknown>[] } = await feed(request).json();
+            response.markets.push(
+                { ...response.markets[0], market_id: `${mirror}|${fragment}` },
+                { ...response.markets[0], league: "Ruthless Allflame" },
+            );
+            return Response.json(response);
+        });
+        vi.mocked(countStashCurrencyHour).mockImplementation(async (_, realm, storedHour) =>
+            realm === "pc" && storedHour < hour ? 1 : 0,
+        );
+        await handleScheduled(controller, env);
+        const rows = vi.mocked(upsertStashCurrencyHourly).mock.calls.flatMap(([, batch]) => batch);
+        expect(rows.map((row) => row.marketId)).not.toContain(`${mirror}|${fragment}`);
+        expect(rows.map((row) => row.league)).not.toContain("Ruthless Allflame");
+        // A full stored hour of the tracked market is skipped although the feed had two markets.
+        expect(rows.filter((row) => row.realm === "pc").map((row) => row.hour)).toEqual([hour]);
+    });
+
     it("keeps an empty source hour empty instead of synthesizing observations", async () => {
         vi.mocked(fetch).mockImplementation(async (request) => feed(request, { markets: [] }));
         await handleScheduled(controller, env);

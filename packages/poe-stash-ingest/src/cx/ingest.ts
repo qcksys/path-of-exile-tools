@@ -1,5 +1,6 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import type { PoeApiClient } from "@poe-tools/api-client";
+import { exchangeMarketTracked } from "@poe-tools/market";
 import { REALM } from "#src/shared/auth.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
 import { withTransaction } from "#src/shared/db.ts";
@@ -50,7 +51,9 @@ export async function ingestCx(
         if (id > previousHour()) break;
         const snap = await client.public.currencyExchange({ realm: REALM, id });
         const markets = snap.markets.filter(
-            (market) => !opts.league || market.league === opts.league,
+            (market) =>
+                (!opts.league || market.league === opts.league) &&
+                exchangeMarketTracked(REALM ?? "pc", market.league, market.market_id),
         );
         const leaguesSeen = new Set(markets.map((market) => market.league));
 

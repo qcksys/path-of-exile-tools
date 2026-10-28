@@ -8,6 +8,9 @@ import { openDb, queryAll } from "../../../packages/poe-stash-ingest/src/shared/
 import { push } from "../../../packages/poe-stash-ingest/src/shared/remote/push";
 
 vi.mock("../../../packages/poe-stash-ingest/src/shared/auth.ts", () => ({ REALM: "poe2" }));
+
+const chaos = "Metadata/Items/Currency/CurrencyRerollRare";
+const divine = "Metadata/Items/Currency/CurrencyModValues";
 vi.mock("../../../packages/poe-stash-ingest/src/shared/remote/push.ts", () => ({ push: vi.fn() }));
 vi.mock("../../../packages/poe-stash-ingest/src/ps/equipment-reclassify.ts", () => ({
     reclassifyArchivedEquipment: vi.fn(() => {
@@ -32,7 +35,7 @@ it("processes PoE 2 exchange history without calling the unavailable equipment s
             markets: [
                 {
                     league: "Standard",
-                    market_id: "chaos|divine",
+                    market_id: `${chaos}|${divine}`,
                     lowest_ratio: { chaos: 100, divine: 1 },
                     highest_ratio: { chaos: 110, divine: 1 },
                     volume_traded: { chaos: 1000, divine: 10 },
@@ -55,7 +58,7 @@ it("processes PoE 2 exchange history without calling the unavailable equipment s
                     expect.objectContaining({
                         realm: "poe2",
                         league: "Standard",
-                        marketId: "chaos|divine",
+                        marketId: `${chaos}|${divine}`,
                     }),
                 ],
             },

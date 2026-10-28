@@ -74,7 +74,8 @@ it("prunes old delivered observations while retaining pending, unmapped and rece
 it("rolls back currency rows and the cursor when a later market fails", async () => {
     const market = {
         league: "Standard",
-        market_id: "chaos|divine",
+        market_id:
+            "Metadata/Items/Currency/CurrencyRerollRare|Metadata/Items/Currency/CurrencyModValues",
         lowest_ratio: {},
         highest_ratio: {},
         volume_traded: {},

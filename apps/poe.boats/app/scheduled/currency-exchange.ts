@@ -1,5 +1,9 @@
 // biome-ignore-all lint/style/useNamingConvention: The feed uses GGG's public field names.
-import { exchangeSnapshotSchema, marketObservationRange } from "@poe-tools/market";
+import {
+    exchangeMarketTracked,
+    exchangeSnapshotSchema,
+    marketObservationRange,
+} from "@poe-tools/market";
 import { z } from "zod";
 import type { TDatabase } from "~/db/client";
 import {
@@ -79,13 +83,14 @@ export async function updateCurrencyExchange(db: TDatabase, scheduledTime = Date
                         "Currency exchange did not return the requested hourly digest.",
                     );
                 const identities = new Set<string>();
-                const captured = feed.markets.map((market) => {
+                const captured = feed.markets.flatMap((market) => {
                     const identity = JSON.stringify([market.league, market.market_id]);
                     if (identities.has(identity))
                         throw new Error(
                             "Currency exchange repeated a market in the hourly digest.",
                         );
                     identities.add(identity);
+                    if (!exchangeMarketTracked(realm, market.league, market.market_id)) return [];
                     return {
                         realm,
                         hour,

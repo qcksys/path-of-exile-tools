@@ -1,5 +1,6 @@
 import {
     cohortHourlySchema,
+    exchangeMarketTracked,
     ingestStatusSchema,
     marketCohortDefinitionSchema,
     stashCheckpointQuerySchema,
@@ -149,7 +150,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     } else if (parsed.stream === "psapi") {
         written = await upsertStashUniqueHourly(db, parsed.rows);
     } else if (parsed.stream === "cxapi") {
-        written = await upsertStashCurrencyHourly(db, parsed.rows);
+        written = await upsertStashCurrencyHourly(
+            db,
+            parsed.rows.filter((row) => exchangeMarketTracked(row.realm, row.league, row.marketId)),
+        );
     } else if (parsed.stream === "equipment") {
         written = await upsertStashCohortHourly(db, parsed.rows);
     } else if (parsed.stream === "equipment-definitions") {
