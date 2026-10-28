@@ -19,11 +19,15 @@ export const MARKET_CATEGORIES = {
     delirium: { label: "Delirium orbs", group: "Atlas" },
     invitations: { label: "Invitations", group: "Atlas" },
     memories: { label: "Memories", group: "Atlas" },
+    heist: { label: "Heist", group: "League mechanics" },
+    wombgifts: { label: "Wombgifts", group: "League mechanics" },
+    encounters: { label: "Encounter items", group: "League mechanics" },
     fossils: { label: "Fossils", group: "Crafting" },
     resonators: { label: "Resonators", group: "Crafting" },
     essences: { label: "Essences", group: "Crafting" },
     catalysts: { label: "Catalysts", group: "Crafting" },
     beasts: { label: "Beasts", group: "Crafting" },
+    corpses: { label: "Corpses", group: "Crafting" },
     "armour-bases": { label: "Armour bases", group: "Crafting bases" },
     "weapon-bases": { label: "Weapon bases", group: "Crafting bases" },
     "accessory-bases": { label: "Accessory bases", group: "Crafting bases" },
@@ -107,12 +111,26 @@ export function marketBaseCategory(name: string, itemClass: string): MarketCateg
     if (itemClass === "Tincture") return "tinctures";
     if (itemClass.includes("Relic")) return "relics";
     if (["Map", "Waystone"].includes(itemClass)) return "maps";
-    if (["MapFragment", "UniqueFragment", "Breachstone", "MapKey", "VaultKey"].includes(itemClass))
+    if (
+        [
+            "MapFragment",
+            "UniqueFragment",
+            "Breachstone",
+            "MapKey",
+            "VaultKey",
+            "LabyrinthMapItem",
+        ].includes(itemClass)
+    )
         return "fragments";
     if (itemClass === "DivinationCard") return "cards";
     if (itemClass.startsWith("Incubator")) return "incubators";
     if (itemClass === "MemoryLine") return "memories";
     if (name === "Imprinted Bestiary Orb" || itemClass === "CapturedMonster") return "beasts";
+    if (itemClass === "ItemisedCorpse") return "corpses";
+    if (itemClass.startsWith("Heist")) return "heist";
+    if (itemClass === "BrequelFruit") return "wombgifts";
+    if (["MiscMapItem", "ItemisedSanctum", "ExpeditionLogbook"].includes(itemClass))
+        return "encounters";
     if (itemClass.includes("Currency")) return "currency";
     return "other";
 }
