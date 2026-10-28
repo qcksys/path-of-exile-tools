@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import data from "@poe-tools/market/market-bases-poe1.json";
 import { describe, expect, it } from "vite-plus/test";
 import {
+    MARKET_BASE_ATTRIBUTE_SETS,
     MARKET_BASE_CLASSES,
     type MarketBaseRow,
     marketBaseDescription,
@@ -103,6 +104,11 @@ describe("crafting base market rows", () => {
             }),
             base("necrotic", { baseType: "Necrotic Armour", attributes: ["dex", "int"] }),
             base("q25", { links: null, quality: 25 }),
+            base("garb", {
+                baseType: "Sacrificial Garb",
+                attributes: ["str", "dex", "int"],
+                links: null,
+            }),
         ];
         const matching = (input: Record<string, unknown>) =>
             rankMarketBases(
@@ -118,6 +124,7 @@ describe("crafting base market rows", () => {
         expect(matching({ baseClass: "Helmet" })).toEqual(["hubris"]);
         expect(matching({ attributes: "int" })).toEqual(["hubris", "regalia"]);
         expect(matching({ attributes: "dex-int" })).toEqual(["necrotic"]);
+        expect(matching({ attributes: "str-dex-int" })).toEqual(["garb"]);
         expect(matching({ ilvl: "84" })).toEqual(["titan"]);
         expect(matching({ ilvl: "80" })).toEqual(["regalia"]);
         expect(matching({ baseLinks: "1-5", baseClass: "Body Armour" })).toEqual([
@@ -191,6 +198,14 @@ describe("generated crafting base list", () => {
         expect(find("Titan Plate").attributes).toEqual(["str"]);
         expect(find("Necrotic Armour").attributes).toEqual(["dex", "int"]);
         expect(find("Focused Amulet").attributes).toEqual([]);
+        expect(find("Runic Helm").attributes).toEqual(["str", "dex", "int"]);
+    });
+
+    it("offers an attributes filter option for every attribute set the catalog lists", () => {
+        for (const entry of bases.filter((entry) => entry.attributes.length))
+            expect(Object.keys(MARKET_BASE_ATTRIBUTE_SETS), entry.id).toContain(
+                entry.attributes.join("-"),
+            );
     });
 
     it("groups lower item levels into at most three equipment bands per base", () => {

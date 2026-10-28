@@ -18,6 +18,7 @@ export const MARKET_BASE_ATTRIBUTE_SETS = {
     "str-dex": "Str/Dex",
     "str-int": "Str/Int",
     "dex-int": "Dex/Int",
+    "str-dex-int": "Str/Dex/Int",
 } as const;
 export type MarketBaseAttributeSet = keyof typeof MARKET_BASE_ATTRIBUTE_SETS;
 /** Item classes of each crafting base category. */

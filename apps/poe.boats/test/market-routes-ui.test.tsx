@@ -21,6 +21,18 @@ vi.mock("~/db/queries/market.queries", () => ({
     getMarketData: vi.fn(),
     getMarketExchangeItem: vi.fn(),
 }));
+vi.mock("~/hooks/use-item-presentations", () => ({
+    useItemPresentations: () => ({
+        "Metadata/Items/Armours/BodyArmours/BodyStr15": {
+            name: "Titan Plate",
+            itemClass: "Body Armour",
+            art: "titan-plate.png",
+            dropLevel: 68,
+            requirements: null,
+            implicits: [],
+        },
+    }),
+}));
 const context = new RouterContextProvider();
 context.set(dbContext, createDbConnection("mysql://user:pass@example.invalid/test"));
 
@@ -792,8 +804,12 @@ it("opens a crafting base's history and variants and returns to the filtered lis
     const url = () => screen.getByLabelText("Current URL").textContent;
     const table = await screen.findByRole("table", { name: "Armour bases markets" });
     expect(within(table).getByText("ilvl 86–100 · 6 links · Body Armour · Str")).toBeTruthy();
+    const art = (root: HTMLElement) =>
+        root.querySelector('[data-item-art="Titan Plate"] img')?.getAttribute("src");
+    expect(art(within(table).getByRole("link", { name: "Titan Plate" }))).toBe("titan-plate.png");
     fireEvent.click(within(table).getByRole("link", { name: "Titan Plate" }));
     const page = await screen.findByRole("region", { name: "Crafting base" });
+    expect(art(within(page).getByRole("heading", { name: "Titan Plate" }))).toBe("titan-plate.png");
     expect(url()).toMatch(/^\/1\/market\/bases\/base%3Atitan-plate%3A86-100%3A6-link\?/);
     expect(getMarketBase).toHaveBeenLastCalledWith(expect.anything(), {
         realm: "pc",
@@ -874,6 +890,18 @@ it("lists crafting bases apart from uniques without unique-only filters", async 
     expect(screen.queryByRole("combobox", { name: "Corruption" })).toBeNull();
     for (const name of ["Type", "Attributes", "Item level", "Links", "Quality"])
         expect(screen.getByRole("combobox", { name })).toBeTruthy();
+    fireEvent.click(screen.getByRole("combobox", { name: "Attributes" }));
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+        "Any attributes",
+        "Strength",
+        "Dexterity",
+        "Intelligence",
+        "Str/Dex",
+        "Str/Int",
+        "Dex/Int",
+        "Str/Dex/Int",
+    ]);
+    fireEvent.keyDown(screen.getByRole("listbox"), { key: "Escape" });
     changeControl(screen.getByRole("combobox", { name: "Type" }), {
         target: { value: "Helmet" },
     });
