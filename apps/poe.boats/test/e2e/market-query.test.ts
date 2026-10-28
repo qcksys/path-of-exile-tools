@@ -615,6 +615,135 @@ it("merges link counts on the list and splits them on the item page, alongside m
     expect((await item("0")).history.map((row) => row.listingCount)).toEqual([8]);
 });
 
+it("lists gem markets under Skill gems by band and filters them by included and excluded bands", async () => {
+    const gem = (
+        itemKey: string,
+        signatureValue: string,
+        overrides: Partial<TStashUniqueHourlyI> = {},
+    ) =>
+        observation({
+            league: "Gems",
+            itemKey,
+            name: "",
+            baseType: itemKey,
+            frameType: 4,
+            signatureKind: "gem",
+            signatureValue,
+            ...overrides,
+        });
+    await db.insert(market).values([
+        gem("Fireball", "Level 20 (max) · Quality 20%", { listingCount: 5 }),
+        gem("Fireball", "Level 21 · Quality 20%", { corrupted: true, listingCount: 2 }),
+        gem("Fireball", "Level 1–19 · Quality 0–19%", { listingCount: 9 }),
+        gem("Empower Support", "Level 3 (max) · Quality 20%", { listingCount: 4 }),
+        // An exceptional gem corrupted to level 4, apart from an awakened exceptional gem's max level 4.
+        gem("Greater Multistrike Support", "Level 4 · Quality 20%", { corrupted: true }),
+        gem("Awakened Empower Support", "Level 4 (max) · Quality 20%"),
+        // A transfigured gem whose base type the catalog may not know.
+        gem("Fireball of Fragmentation", "Level 20 (max) · Quality 20%", {
+            baseType: "Fireball of Fragmentation",
+            listingCount: 3,
+        }),
+        observation({ league: "Gems", itemKey: "Kaom's Heart", name: "Kaom's Heart" }),
+    ]);
+    const list = async (filters: Record<string, string>) =>
+        (
+            await marketData(
+                db as unknown as TDatabase,
+                marketFiltersSchema.parse({ league: "Gems", order: "name-asc", ...filters }),
+                "list",
+            )
+        ).rows.map((row) => [row.itemKey, row.signatureValue, row.corrupted, row.category]);
+    expect(await list({ category: "gems" })).toEqual([
+        ["Awakened Empower Support", "Level 4 (max) · Quality 20%", false, "gems"],
+        ["Empower Support", "Level 3 (max) · Quality 20%", false, "gems"],
+        ["Fireball", "Level 1–19 · Quality 0–19%", false, "gems"],
+        ["Fireball", "Level 20 (max) · Quality 20%", false, "gems"],
+        ["Fireball", "Level 21 · Quality 20%", true, "gems"],
+        ["Fireball of Fragmentation", "Level 20 (max) · Quality 20%", false, "gems"],
+        ["Greater Multistrike Support", "Level 4 · Quality 20%", true, "gems"],
+    ]);
+    expect(await list({ category: "other" })).toEqual([]);
+    expect(
+        (await list({ category: "gems", gemLevel: "20", gemQuality: "20" })).map(String),
+    ).toEqual([
+        "Awakened Empower Support,Level 4 (max) · Quality 20%,false,gems",
+        "Empower Support,Level 3 (max) · Quality 20%,false,gems",
+        "Fireball,Level 20 (max) · Quality 20%,false,gems",
+        "Fireball of Fragmentation,Level 20 (max) · Quality 20%,false,gems",
+    ]);
+    expect((await list({ category: "gems", gemLevel: "21" })).map(([key]) => key)).toEqual([
+        "Fireball",
+        "Greater Multistrike Support",
+    ]);
+    expect(
+        await list({ category: "gems", gemLevel: "-21", gemQuality: "-20", corruption: "false" }),
+    ).toEqual([["Fireball", "Level 1–19 · Quality 0–19%", false, "gems"]]);
+    expect(await list({ category: "gems", gemLevel: "-1-19,-20,-21" })).toEqual([]);
+});
+
+it("lists only transfigured or Vaal gems, or only other gems, with their filters", async () => {
+    const gem = (itemKey: string, baseType: string, overrides: Partial<TStashUniqueHourlyI> = {}) =>
+        observation({
+            league: "Transfigured",
+            itemKey,
+            name: "",
+            baseType,
+            frameType: 4,
+            signatureKind: "gem",
+            signatureValue: "Level 20 (max) · Quality 20%",
+            ...overrides,
+        });
+    await db.insert(market).values([
+        gem("Kinetic Bolt", "Kinetic Bolt"),
+        gem("Kinetic Bolt of Fragmentation", "Kinetic Bolt"),
+        gem("Vaal Arc", "Vaal Arc", { corrupted: true }),
+        gem("Vaal Arc (Arc of Surging)", "Vaal Arc", { corrupted: true }),
+        // Named Vaal, but not a Vaal gem.
+        gem("Vaal Sacrifice Support", "Vaal Sacrifice Support"),
+        observation({ league: "Transfigured", itemKey: "Kaom's Heart", name: "Kaom's Heart" }),
+    ]);
+    const keys = async (filters: Record<string, string>, category = "gems") =>
+        (
+            await marketData(
+                db as unknown as TDatabase,
+                marketFiltersSchema.parse({
+                    league: "Transfigured",
+                    order: "name-asc",
+                    category,
+                    ...filters,
+                }),
+                "list",
+            )
+        ).rows.map((row) => row.itemKey);
+    expect(await keys({})).toEqual([
+        "Kinetic Bolt",
+        "Kinetic Bolt of Fragmentation",
+        "Vaal Arc",
+        "Vaal Arc (Arc of Surging)",
+        "Vaal Sacrifice Support",
+    ]);
+    expect(await keys({ gemTransfigured: "true" })).toEqual([
+        "Kinetic Bolt of Fragmentation",
+        "Vaal Arc (Arc of Surging)",
+    ]);
+    expect(await keys({ gemTransfigured: "false" })).toEqual([
+        "Kinetic Bolt",
+        "Vaal Arc",
+        "Vaal Sacrifice Support",
+    ]);
+    expect(await keys({ gemVaal: "true" })).toEqual(["Vaal Arc", "Vaal Arc (Arc of Surging)"]);
+    expect(await keys({ gemVaal: "false", gemTransfigured: "false" })).toEqual([
+        "Kinetic Bolt",
+        "Vaal Sacrifice Support",
+    ]);
+    // Either state lists only gems.
+    expect(await keys({ gemVaal: "true" }, "all")).toEqual([
+        "Vaal Arc",
+        "Vaal Arc (Arc of Surging)",
+    ]);
+});
+
 it("lists a unique's markets in both identification states as variants of each other", async () => {
     const icon = "2DItems/Jewels/ElderJewel";
     const eye = (overrides: Partial<TStashUniqueHourlyI>) =>

@@ -1,3 +1,4 @@
+import { GEM_LEVEL_BANDS, GEM_QUALITY_BANDS, parseGemBandFilter } from "@poe-tools/market";
 import { z } from "zod";
 import {
     MARKET_BASE_ATTRIBUTE_SETS,
@@ -59,6 +60,16 @@ export const MARKET_RANGE_PARAMS = Object.values(MARKET_RANGE_COLUMNS).flat() as
 
 const rangeBound = z.coerce.number().nonnegative().max(1e12).optional();
 
+const gemBandFilter = (bands: readonly string[], axis: string) =>
+    z
+        .string()
+        .max(40)
+        .default("")
+        .refine((value) => parseGemBandFilter(value, bands) !== null, `Unknown gem ${axis} band`)
+        .describe(
+            `Skill gem ${axis} bands (${bands.join(", ")}) to include, comma-separated; prefix one with - to exclude it. Set, only gem markets are listed`,
+        );
+
 export const marketFiltersSchema = z.object({
     realm: z.enum(["pc", "poe2", "xbox", "sony"]).default("pc"),
     league: z.string().max(100).default(""),
@@ -70,6 +81,21 @@ export const marketFiltersSchema = z.object({
     identification: z.enum(["all", "true", "false"]).default("all"),
     /** Omitted, unique equipment categories search uncorrupted markets and others any corruption. */
     corruption: z.enum(["all", "true", "false"]).optional(),
+    /** A normal gem's level bands; for exceptional and awakened gems, below, at and above max level. */
+    gemLevel: gemBandFilter(GEM_LEVEL_BANDS, "level"),
+    gemQuality: gemBandFilter(GEM_QUALITY_BANDS, "quality"),
+    gemTransfigured: z
+        .enum(["all", "true", "false"])
+        .default("all")
+        .describe(
+            "Only transfigured skill gems (true) or only other gems (false); either lists only gem markets",
+        ),
+    gemVaal: z
+        .enum(["all", "true", "false"])
+        .default("all")
+        .describe(
+            "Only Vaal skill gems (true) or only other gems (false); either lists only gem markets",
+        ),
     item: z.string().max(255).optional(),
     identified: z.enum(["true", "false"]).default("true"),
     corrupted: z.enum(["true", "false"]).default("false"),
@@ -313,6 +339,14 @@ export function marketLink(
     for (const param of MARKET_RANGE_PARAMS) {
         const bound = filters[param];
         if (bound !== undefined) params.set(param, String(bound));
+    }
+    // Gem filters would empty any other category's list.
+    if (filters.category === "gems") {
+        if (filters.gemLevel) params.set("gemLevel", filters.gemLevel);
+        if (filters.gemQuality) params.set("gemQuality", filters.gemQuality);
+        if (filters.gemTransfigured !== "all")
+            params.set("gemTransfigured", filters.gemTransfigured);
+        if (filters.gemVaal !== "all") params.set("gemVaal", filters.gemVaal);
     }
     for (const param of MARKET_BASE_FILTERS) if (filters[param]) params.set(param, filters[param]);
     if (item) {
