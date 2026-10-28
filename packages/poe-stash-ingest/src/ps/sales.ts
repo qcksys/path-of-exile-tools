@@ -4,7 +4,6 @@ import { withTransaction } from "#src/shared/db.ts";
 
 export const SALE_POLICY = {
     graceSeconds: 3600,
-    maxPollGapSeconds: 300,
     marketWindowSeconds: 86400,
     minimumSellers: 3,
     minimumPriceRatio: 0.75,
@@ -47,8 +46,10 @@ export async function recordRemovals(
          )
          SELECT l.* EXCLUDE (raw_item, withdrawn),
             CASE WHEN l.withdrawn THEN 'withdrawn'
-                WHEN NOT EXISTS (SELECT 1 FROM pipeline_health WHERE id = 1 AND caught_up
-                    AND last_poll_at >= current_timestamp - INTERVAL ${SALE_POLICY.maxPollGapSeconds} SECOND)
+                -- Far behind the stream (initial catch-up, or a long outage), a removal's time and
+                -- market say little about when or whether it sold.
+                WHEN NOT EXISTS (SELECT 1 FROM pipeline_health WHERE id = 1
+                    AND last_caught_up_at >= current_timestamp::TIMESTAMP - INTERVAL ${SALE_POLICY.graceSeconds} SECOND)
                     THEN 'unobserved'
                 ELSE 'pending' END AS status,
             NULL::TIMESTAMP AS eligible_since, m.price AS market_price,
@@ -106,23 +107,10 @@ export async function evaluateSales(
             [timestamp],
         );
 
-        await conn.run(
-            `UPDATE ps_sale SET eligible_since = NULL
-            WHERE status = 'pending' AND (
-                NOT $2 OR NOT EXISTS (
-                    SELECT 1 FROM pipeline_health WHERE id = 1 AND caught_up
-                        AND last_poll_at >= $1::TIMESTAMP - INTERVAL ${SALE_POLICY.maxPollGapSeconds} SECOND
-                )
-            )`,
-            [timestamp, caughtUp],
-        );
-
+        // The stream is a complete, ordered log: at its head every change up to now has been seen,
+        // including any relist within the grace period after an earlier removal. Lag or gaps in
+        // between do not hide one, so no continuous coverage is required.
         if (caughtUp) {
-            await conn.run(
-                `UPDATE ps_sale SET eligible_since = $1::TIMESTAMP
-                WHERE status = 'pending' AND eligible_since IS NULL`,
-                [timestamp],
-            );
             await conn.run(
                 `UPDATE ps_sale SET status = CASE
                     WHEN market_sellers < ${SALE_POLICY.minimumSellers} OR market_price IS NULL
@@ -132,13 +120,15 @@ export async function evaluateSales(
                     ELSE 'outside-market' END,
                     updated_at = $1::TIMESTAMP
                 WHERE status = 'pending'
-                    AND eligible_since <= $1::TIMESTAMP - INTERVAL ${SALE_POLICY.graceSeconds} SECOND`,
+                    AND removed_at <= $1::TIMESTAMP - INTERVAL ${SALE_POLICY.graceSeconds} SECOND`,
                 [timestamp],
             );
         }
-        await conn.run(`INSERT OR REPLACE INTO pipeline_health VALUES (1, $1::TIMESTAMP, $2)`, [
-            timestamp,
-            caughtUp,
-        ]);
+        await conn.run(
+            `INSERT OR REPLACE INTO pipeline_health SELECT 1, $1::TIMESTAMP, $2,
+                CASE WHEN $2 THEN $1::TIMESTAMP
+                    ELSE (SELECT last_caught_up_at FROM pipeline_health WHERE id = 1) END`,
+            [timestamp, caughtUp],
+        );
     });
 }
