@@ -1,7 +1,7 @@
 import { exchangeCurrencyId, marketObservationRange } from "@poe-tools/market";
 import { and, desc, eq, gte, inArray, lte, or } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
-import { tStashUniqueHourly as hourly } from "~/db/schema/stash.unique-hourly";
+import { tStashPoe1UniqueHourly as hourly } from "~/db/schema/stash.unique-hourly";
 import { craftingCommoditySignature, emptyResonator } from "~/lib/crafting-empty-resonator";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import {

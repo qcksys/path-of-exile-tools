@@ -2,17 +2,21 @@ import type { CohortHourly } from "@poe-tools/market";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { bigint, index, int, json, mysqlTable, primaryKey, varchar } from "drizzle-orm/mysql-core";
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from "drizzle-orm/zod";
-import { DB_TABLE_PREFIX } from "~/const";
-import { timestampCols } from "~/db/helpers/schema";
+import { stashTableName } from "~/db/helpers/stash-game";
 
+/**
+ * One row per PoE 1 equipment cohort and hour, holding the newest catalog revision's
+ * classification (`revisionSeq`, see `stash_poe1_cohort_revision`). `prices` omits the
+ * 6/24-hour windows, which live in `stash_poe1_cohort_window` for recent hours only.
+ */
 export const tStashCohortHourly = mysqlTable(
-    `${DB_TABLE_PREFIX}stash_cohort_hourly`,
+    stashTableName("poe1", "cohort_hourly"),
     {
         realm: varchar({ length: 10 }).notNull(),
         league: varchar({ length: 100 }).notNull(),
         hour: bigint({ mode: "number" }).notNull(),
-        revision: varchar({ length: 100 }).notNull(),
         cohortId: varchar({ length: 128 }).notNull(),
+        revisionSeq: int().notNull(),
         listingCount: int().notNull(),
         uniqueSellers: int().notNull(),
         unknownCount: int().notNull(),
@@ -20,14 +24,11 @@ export const tStashCohortHourly = mysqlTable(
         confidenceMethod: varchar({ length: 40 }).notNull(),
         firstSeenAt: varchar({ length: 32 }),
         lastSeenAt: varchar({ length: 32 }),
-        ...timestampCols,
     },
     (table) => [
-        primaryKey({
-            columns: [table.realm, table.league, table.revision, table.cohortId, table.hour],
-        }),
+        // Hour leads the key, so each delivered hour appends instead of touching pages across the table.
+        primaryKey({ columns: [table.realm, table.league, table.hour, table.cohortId] }),
         index("stash_cohort_history_idx").on(table.realm, table.league, table.cohortId, table.hour),
-        index("stash_cohort_coverage_idx").on(table.realm, table.league, table.hour),
     ],
 );
 export type TStashCohortHourlyS = InferSelectModel<typeof tStashCohortHourly>;

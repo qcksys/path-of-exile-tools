@@ -1,10 +1,13 @@
 import { type CohortHourly, cohortBaseTypes, type MarketCohortDefinition } from "@poe-tools/market";
-import { and, count, eq, inArray, sql } from "drizzle-orm";
+import { and, count, eq, inArray, lt, type SQL, sql } from "drizzle-orm";
+import type { MySqlColumn } from "drizzle-orm/mysql-core";
 import type { TDatabase } from "~/db/client.ts";
+import { type StashGame, stashGame } from "~/db/helpers/stash-game";
 import { tStashBasemapSnapshot } from "~/db/schema/stash.basemap-snapshot";
 import { tStashCohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
-import { tStashCohortRevisionHour } from "~/db/schema/stash.cohort-revision-hour";
+import { tStashCohortRevision } from "~/db/schema/stash.cohort-revision";
+import { type CohortPriceWindows, tStashCohortWindow } from "~/db/schema/stash.cohort-window";
 import {
     type TStashCurrencyHourlyI,
     tStashCurrencyHourly,
@@ -21,19 +24,34 @@ import {
 } from "./stash-rollups.queries";
 
 const UPSERT_CHUNK = 200;
+/** Hours of 6/24-hour cohort price windows kept; equipment prices read the latest 24 completed hours. */
+export const COHORT_WINDOW_RETENTION_HOURS = 48;
 
-type HourlyKey = { realm?: string; league: string; hour: number };
+type HourlyKey = { realm: string; league: string; hour: number };
 
 function byLeague<T extends HourlyKey>(rows: T[]) {
-    const groups = new Map<string, { realm: string; league: string; rows: T[] }>();
+    const groups = new Map<string, { game: StashGame; realm: string; league: string; rows: T[] }>();
     for (const row of rows) {
-        const realm = row.realm ?? "pc";
-        const key = JSON.stringify([realm, row.league]);
-        const group = groups.get(key) ?? { realm, league: row.league, rows: [] };
+        const key = JSON.stringify([row.realm, row.league]);
+        const group = groups.get(key) ?? {
+            game: stashGame(row.realm),
+            realm: row.realm,
+            league: row.league,
+            rows: [],
+        };
         group.rows.push(row);
         groups.set(key, group);
     }
     return [...groups.values()];
+}
+
+function byGame<T extends { realm: string }>(rows: T[]) {
+    const groups = new Map<StashGame, T[]>();
+    for (const row of rows) {
+        const game = stashGame(row.realm);
+        groups.set(game, [...(groups.get(game) ?? []), row]);
+    }
+    return [...groups];
 }
 
 /** Recounts the stored rows of every hour the batch wrote. */
@@ -43,12 +61,13 @@ async function refreshCoverage(
     rows: HourlyKey[],
     run: (write: () => PromiseLike<unknown>) => PromiseLike<unknown> = (write) => write(),
 ) {
-    for (const { realm, league, rows: leagueRows } of byLeague(rows)) {
+    for (const { game, realm, league, rows: leagueRows } of byLeague(rows)) {
         const hours = [...new Set(leagueRows.map((row) => row.hour))];
-        await run(() => refreshStashHourCoverage(db, stream, { realm, league, hours }));
+        await run(() => refreshStashHourCoverage(db, stream, { game, realm, league, hours }));
     }
 }
 
+/** PoE 1 equipment cohort definitions; each replaces the stored definition of its ID. */
 export async function insertStashCohorts(
     db: TDatabase,
     rows: MarketCohortDefinition[],
@@ -57,45 +76,130 @@ export async function insertStashCohorts(
         await db
             .insert(tStashCohort)
             .values(batch.map((row) => ({ ...row, baseTypes: cohortBaseTypes(row) })))
-            .onDuplicateKeyUpdate({ set: { id: sql`${tStashCohort.id}` } });
+            .onDuplicateKeyUpdate({
+                set: {
+                    revision: sql`values(${tStashCohort.revision})`,
+                    catalogHash: sql`values(${tStashCohort.catalogHash})`,
+                    name: sql`values(${tStashCohort.name})`,
+                    purpose: sql`values(${tStashCohort.purpose})`,
+                    query: sql`values(${tStashCohort.query})`,
+                    baseTypes: sql`values(${tStashCohort.baseTypes})`,
+                },
+            });
     return rows.length;
 }
 
+/** Each revision's sequence number, numbering unseen revisions in first-seen order. */
+async function cohortRevisionSeqs(db: TDatabase, revisions: string[]) {
+    const revision = tStashCohortRevision;
+    const read = () =>
+        db
+            .select({ seq: revision.seq, revision: revision.revision })
+            .from(revision)
+            .where(inArray(revision.revision, revisions));
+    let rows = await read();
+    const missing = revisions.filter((value) => !rows.some((row) => row.revision === value));
+    if (missing.length) {
+        await db
+            .insert(revision)
+            .values(missing.map((value) => ({ revision: value })))
+            .onDuplicateKeyUpdate({ set: { revision: sql`${revision.revision}` } });
+        rows = await read();
+    }
+    return new Map(rows.map((row) => [row.revision, row.seq]));
+}
+
+/**
+ * Columns an upsert replaces only when the incoming row's revision is at least as new as the
+ * stored one. `revisionSeq` itself takes the greater value, so the outcome does not depend on the
+ * order MySQL assigns the columns in.
+ */
+function newestRevisionSet<T extends string>(
+    revisionSeq: MySqlColumn,
+    columns: Record<T, MySqlColumn>,
+): Record<T | "revisionSeq", SQL> {
+    const newer = sql`values(${revisionSeq}) >= ${revisionSeq}`;
+    const set = {} as Record<T | "revisionSeq", SQL>;
+    for (const [name, column] of Object.entries(columns) as [T, MySqlColumn][])
+        set[name] = sql`if(${newer}, values(${column}), ${column})`;
+    set.revisionSeq = sql`greatest(${revisionSeq}, values(${revisionSeq}))`;
+    return set;
+}
+
+/** Splits the 6/24-hour windows out of a cohort row's prices. */
+export function splitCohortPriceWindows(prices: CohortHourly["prices"]) {
+    const hourly: CohortHourly["prices"] = {};
+    const windows: CohortPriceWindows = {};
+    for (const [currency, { windows: currencyWindows, ...price }] of Object.entries(prices)) {
+        hourly[currency] = price;
+        if (currencyWindows) windows[currency] = currencyWindows;
+    }
+    return { prices: hourly, windows };
+}
+
+/**
+ * Stores PoE 1 equipment cohort hours. Each cohort hour keeps the newest catalog revision's row;
+ * an older revision delivered later leaves it unchanged.
+ */
 export async function upsertStashCohortHourly(
     db: TDatabase,
     rows: CohortHourly[],
 ): Promise<number> {
-    // Record revisions before their observations: a failed request may over-list a revision, never omit one.
-    const revisionHours = new Map(
-        rows.map(({ realm, league, hour, revision }) => [
-            JSON.stringify([realm, league, hour, revision]),
-            { realm, league, hour, revision },
-        ]),
-    );
-    const orderedRevisionHours = [...revisionHours]
-        .toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-        .map(([, row]) => row);
-    for (const batch of chunk(orderedRevisionHours, UPSERT_CHUNK))
-        await db
-            .insert(tStashCohortRevisionHour)
-            .values(batch)
-            .onDuplicateKeyUpdate({ set: { revision: sql`${tStashCohortRevisionHour.revision}` } });
+    if (rows.length === 0) return 0;
+    const seqs = await cohortRevisionSeqs(db, [...new Set(rows.map((row) => row.revision))]);
+    const windowCutoff =
+        Math.floor(Date.now() / 3_600_000) * 3600 - COHORT_WINDOW_RETENTION_HOURS * 3600;
+    const hourly = tStashCohortHourly;
+    const window = tStashCohortWindow;
     for (const batch of chunk(rows, UPSERT_CHUNK)) {
+        const split = batch.map(({ revision, prices, ...row }) => ({
+            ...row,
+            revisionSeq: seqs.get(revision)!,
+            ...splitCohortPriceWindows(prices),
+        }));
         await db
-            .insert(tStashCohortHourly)
-            .values(batch)
+            .insert(hourly)
+            .values(split.map(({ windows: _windows, ...row }) => row))
             .onDuplicateKeyUpdate({
-                set: {
-                    listingCount: sql`values(${tStashCohortHourly.listingCount})`,
-                    uniqueSellers: sql`values(${tStashCohortHourly.uniqueSellers})`,
-                    unknownCount: sql`values(${tStashCohortHourly.unknownCount})`,
-                    prices: sql`values(${tStashCohortHourly.prices})`,
-                    confidenceMethod: sql`values(${tStashCohortHourly.confidenceMethod})`,
-                    firstSeenAt: sql`values(${tStashCohortHourly.firstSeenAt})`,
-                    lastSeenAt: sql`values(${tStashCohortHourly.lastSeenAt})`,
-                },
+                set: newestRevisionSet(hourly.revisionSeq, {
+                    listingCount: hourly.listingCount,
+                    uniqueSellers: hourly.uniqueSellers,
+                    unknownCount: hourly.unknownCount,
+                    prices: hourly.prices,
+                    confidenceMethod: hourly.confidenceMethod,
+                    firstSeenAt: hourly.firstSeenAt,
+                    lastSeenAt: hourly.lastSeenAt,
+                }),
             });
+        // Every recent row gets a window row, even an empty one, so an outdated window never applies.
+        const recent = split.filter((row) => row.hour >= windowCutoff);
+        if (recent.length)
+            await db
+                .insert(window)
+                .values(
+                    recent.map(({ realm, league, hour, cohortId, revisionSeq, windows }) => ({
+                        realm,
+                        league,
+                        hour,
+                        cohortId,
+                        revisionSeq,
+                        windows,
+                    })),
+                )
+                .onDuplicateKeyUpdate({
+                    set: newestRevisionSet(window.revisionSeq, { windows: window.windows }),
+                });
     }
+    for (const { realm, league } of byLeague(rows))
+        await db
+            .delete(window)
+            .where(
+                and(
+                    eq(window.realm, realm),
+                    eq(window.league, league),
+                    lt(window.hour, windowCutoff),
+                ),
+            );
     // One recount per request: each scans the hour's cohort rows, and a request carries one hour.
     // A failed request is retried whole, so its hours are recounted then.
     await refreshCoverage(db, "equipment", rows);
@@ -114,46 +218,50 @@ export async function upsertStashUniqueHourly(
 ): Promise<number> {
     if (rows.length === 0) return 0;
     let written = 0;
-    for (const batch of chunk(rows, UPSERT_CHUNK)) {
-        await db
-            .insert(tStashUniqueHourly)
-            .values(batch)
-            .onDuplicateKeyUpdate({
-                set: {
-                    iconAsset: sql`values(${tStashUniqueHourly.iconAsset})`,
-                    name: sql`values(${tStashUniqueHourly.name})`,
-                    baseType: sql`values(${tStashUniqueHourly.baseType})`,
-                    frameType: sql`values(${tStashUniqueHourly.frameType})`,
-                    listingCount: sql`values(${tStashUniqueHourly.listingCount})`,
-                    uniqueSellers: sql`values(${tStashUniqueHourly.uniqueSellers})`,
-                    removedCount: sql`values(${tStashUniqueHourly.removedCount})`,
-                    likelySales: sql`values(${tStashUniqueHourly.likelySales})`,
-                    relistedCount: sql`values(${tStashUniqueHourly.relistedCount})`,
-                    pendingCount: sql`values(${tStashUniqueHourly.pendingCount})`,
-                    salesPrices: sql`values(${tStashUniqueHourly.salesPrices})`,
-                    prices: sql`values(${tStashUniqueHourly.prices})`,
-                    signatureData: sql`values(${tStashUniqueHourly.signatureData})`,
-                    firstSeenAt: sql`values(${tStashUniqueHourly.firstSeenAt})`,
-                    lastSeenAt: sql`values(${tStashUniqueHourly.lastSeenAt})`,
-                },
-            });
-        for (const { realm, league, rows: leagueRows } of byLeague(batch)) {
-            const days = new Map<number, Set<string>>();
-            for (const row of leagueRows) {
-                const day = utcDay(row.hour);
-                days.set(day, (days.get(day) ?? new Set()).add(row.itemKey));
-            }
-            for (const [day, itemKeys] of days)
-                await refreshStashMarketDaily(db, {
-                    realm,
-                    league,
-                    fromHour: day,
-                    toHour: day,
-                    itemKeys: [...itemKeys],
+    for (const [game, gameRows] of byGame(rows)) {
+        const table = tStashUniqueHourly[game];
+        for (const batch of chunk(gameRows, UPSERT_CHUNK)) {
+            await db
+                .insert(table)
+                .values(batch)
+                .onDuplicateKeyUpdate({
+                    set: {
+                        iconAsset: sql`values(${table.iconAsset})`,
+                        name: sql`values(${table.name})`,
+                        baseType: sql`values(${table.baseType})`,
+                        frameType: sql`values(${table.frameType})`,
+                        listingCount: sql`values(${table.listingCount})`,
+                        uniqueSellers: sql`values(${table.uniqueSellers})`,
+                        removedCount: sql`values(${table.removedCount})`,
+                        likelySales: sql`values(${table.likelySales})`,
+                        relistedCount: sql`values(${table.relistedCount})`,
+                        pendingCount: sql`values(${table.pendingCount})`,
+                        salesPrices: sql`values(${table.salesPrices})`,
+                        prices: sql`values(${table.prices})`,
+                        signatureData: sql`values(${table.signatureData})`,
+                        firstSeenAt: sql`values(${table.firstSeenAt})`,
+                        lastSeenAt: sql`values(${table.lastSeenAt})`,
+                    },
                 });
+            for (const { realm, league, rows: leagueRows } of byLeague(batch)) {
+                const days = new Map<number, Set<string>>();
+                for (const row of leagueRows) {
+                    const day = utcDay(row.hour);
+                    days.set(day, (days.get(day) ?? new Set()).add(row.itemKey));
+                }
+                for (const [day, itemKeys] of days)
+                    await refreshStashMarketDaily(db, {
+                        game,
+                        realm,
+                        league,
+                        fromHour: day,
+                        toHour: day,
+                        itemKeys: [...itemKeys],
+                    });
+            }
+            await refreshCoverage(db, "uniques", batch);
+            written += batch.length;
         }
-        await refreshCoverage(db, "uniques", batch);
-        written += batch.length;
     }
     return written;
 }
@@ -165,16 +273,11 @@ export async function countStashCurrencyHour(
     leagues: string[],
 ): Promise<number> {
     if (leagues.length === 0) return 0;
+    const table = tStashCurrencyHourly[stashGame(realm)];
     const [row] = await db
         .select({ rows: count() })
-        .from(tStashCurrencyHourly)
-        .where(
-            and(
-                eq(tStashCurrencyHourly.realm, realm),
-                inArray(tStashCurrencyHourly.league, leagues),
-                eq(tStashCurrencyHourly.hour, hour),
-            ),
-        );
+        .from(table)
+        .where(and(eq(table.realm, realm), inArray(table.league, leagues), eq(table.hour, hour)));
     return row?.rows ?? 0;
 }
 
@@ -186,7 +289,7 @@ export async function upsertStashCurrencyHourly(
     let written = 0;
     const ordered = rows.toSorted((a, b) => {
         for (const [left, right] of [
-            [a.realm ?? "pc", b.realm ?? "pc"],
+            [a.realm, b.realm],
             [a.league, b.league],
             [a.marketId, b.marketId],
         ] as const) {
@@ -195,55 +298,60 @@ export async function upsertStashCurrencyHourly(
         }
         return a.hour - b.hour;
     });
-    for (const batch of chunk(ordered, UPSERT_CHUNK)) {
-        await retryCurrencyDeadlock(() =>
-            db
-                .insert(tStashCurrencyHourly)
-                .values(batch)
-                .onDuplicateKeyUpdate({
-                    set: {
-                        lowestRatio: sql`values(${tStashCurrencyHourly.lowestRatio})`,
-                        highestRatio: sql`values(${tStashCurrencyHourly.highestRatio})`,
-                        volumeTraded: sql`values(${tStashCurrencyHourly.volumeTraded})`,
-                        lowestStock: sql`values(${tStashCurrencyHourly.lowestStock})`,
-                        highestStock: sql`values(${tStashCurrencyHourly.highestStock})`,
-                    },
-                }),
-        );
-        // Batches are sorted by market then hour, so each market's first row has its earliest hour.
-        const markets = new Map<string, TStashCurrencyMarketI>();
-        for (const row of batch) {
-            const realm = row.realm ?? "pc";
-            const key = JSON.stringify([realm, row.league, row.marketId]);
-            if (!markets.has(key))
-                markets.set(key, {
-                    realm,
-                    league: row.league,
-                    marketId: row.marketId,
-                    firstHour: row.hour,
-                });
-        }
-        await retryCurrencyDeadlock(() => upsertStashCurrencyMarkets(db, [...markets.values()]));
-        for (const { realm, league, rows: leagueRows } of byLeague(batch)) {
-            const days = new Map<number, Set<string>>();
-            for (const row of leagueRows) {
-                const day = utcDay(row.hour);
-                days.set(day, (days.get(day) ?? new Set()).add(row.marketId));
-            }
-            for (const [day, marketIds] of days)
-                await retryCurrencyDeadlock(() =>
-                    refreshStashCurrencyDaily(db, {
-                        realm,
-                        league,
-                        fromHour: day,
-                        toHour: day,
-                        marketIds: [...marketIds],
+    for (const [game, gameRows] of byGame(ordered)) {
+        const table = tStashCurrencyHourly[game];
+        for (const batch of chunk(gameRows, UPSERT_CHUNK)) {
+            await retryCurrencyDeadlock(() =>
+                db
+                    .insert(table)
+                    .values(batch)
+                    .onDuplicateKeyUpdate({
+                        set: {
+                            lowestRatio: sql`values(${table.lowestRatio})`,
+                            highestRatio: sql`values(${table.highestRatio})`,
+                            volumeTraded: sql`values(${table.volumeTraded})`,
+                            lowestStock: sql`values(${table.lowestStock})`,
+                            highestStock: sql`values(${table.highestStock})`,
+                        },
                     }),
-                );
+            );
+            // Batches are sorted by market then hour, so each market's first row has its earliest hour.
+            const markets = new Map<string, TStashCurrencyMarketI>();
+            for (const row of batch) {
+                const key = JSON.stringify([row.realm, row.league, row.marketId]);
+                if (!markets.has(key))
+                    markets.set(key, {
+                        realm: row.realm,
+                        league: row.league,
+                        marketId: row.marketId,
+                        firstHour: row.hour,
+                    });
+            }
+            await retryCurrencyDeadlock(() =>
+                upsertStashCurrencyMarkets(db, game, [...markets.values()]),
+            );
+            for (const { realm, league, rows: leagueRows } of byLeague(batch)) {
+                const days = new Map<number, Set<string>>();
+                for (const row of leagueRows) {
+                    const day = utcDay(row.hour);
+                    days.set(day, (days.get(day) ?? new Set()).add(row.marketId));
+                }
+                for (const [day, marketIds] of days)
+                    await retryCurrencyDeadlock(() =>
+                        refreshStashCurrencyDaily(db, {
+                            game,
+                            realm,
+                            league,
+                            fromHour: day,
+                            toHour: day,
+                            marketIds: [...marketIds],
+                        }),
+                    );
+            }
+            // Concurrent writers (the cron and cxapi) recount the same hours, so retry deadlocks here too.
+            await refreshCoverage(db, "currency", batch, retryCurrencyDeadlock);
+            written += batch.length;
         }
-        // Concurrent writers (the cron and cxapi) recount the same hours, so retry deadlocks here too.
-        await refreshCoverage(db, "currency", batch, retryCurrencyDeadlock);
-        written += batch.length;
     }
     return written;
 }
@@ -276,19 +384,21 @@ async function retryCurrencyDeadlock(write: () => PromiseLike<unknown>) {
 
 export async function upsertStashBasemapSnapshot(
     db: TDatabase,
+    game: StashGame,
     rows: Array<{ iconAsset: string; name: string; baseType: string; seenCount: number }>,
 ): Promise<number> {
     if (rows.length === 0) return 0;
+    const table = tStashBasemapSnapshot[game];
     let written = 0;
     for (const batch of chunk(rows, UPSERT_CHUNK)) {
         await db
-            .insert(tStashBasemapSnapshot)
+            .insert(table)
             .values(batch)
             .onDuplicateKeyUpdate({
                 set: {
-                    name: sql`values(${tStashBasemapSnapshot.name})`,
-                    baseType: sql`values(${tStashBasemapSnapshot.baseType})`,
-                    seenCount: sql`values(${tStashBasemapSnapshot.seenCount})`,
+                    name: sql`values(${table.name})`,
+                    baseType: sql`values(${table.baseType})`,
+                    seenCount: sql`values(${table.seenCount})`,
                 },
             });
         written += batch.length;

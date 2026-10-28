@@ -1,15 +1,19 @@
 import type { ItemQuery } from "@poe-tools/item-query";
 import { type InferInsertModel, type InferSelectModel, sql } from "drizzle-orm";
-import { index, json, mysqlTable, primaryKey, varchar } from "drizzle-orm/mysql-core";
+import { index, json, mysqlTable, varchar } from "drizzle-orm/mysql-core";
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from "drizzle-orm/zod";
-import { DB_TABLE_PREFIX } from "~/const";
 import { timestampCols } from "~/db/helpers/schema";
+import { stashTableName } from "~/db/helpers/stash-game";
 
+/**
+ * PoE 1 equipment cohort definitions, one per cohort ID. A newer catalog revision's definition
+ * replaces the stored one; `revision` and `catalogHash` record which delivered it.
+ */
 export const tStashCohort = mysqlTable(
-    `${DB_TABLE_PREFIX}stash_cohort`,
+    stashTableName("poe1", "cohort"),
     {
+        id: varchar({ length: 128 }).primaryKey(),
         revision: varchar({ length: 100 }).notNull(),
-        id: varchar({ length: 128 }).notNull(),
         catalogHash: varchar({ length: 64 }).notNull(),
         name: varchar({ length: 300 }).notNull(),
         purpose: varchar({ length: 32 }).notNull(),
@@ -22,10 +26,7 @@ export const tStashCohort = mysqlTable(
         ),
         ...timestampCols,
     },
-    (table) => [
-        primaryKey({ columns: [table.revision, table.id] }),
-        index("stash_cohort_base_page_idx").on(table.baseTypeKey, table.revision, table.id),
-    ],
+    (table) => [index("stash_cohort_base_page_idx").on(table.baseTypeKey, table.id)],
 );
 export type TStashCohortS = InferSelectModel<typeof tStashCohort>;
 export type TStashCohortI = InferInsertModel<typeof tStashCohort>;

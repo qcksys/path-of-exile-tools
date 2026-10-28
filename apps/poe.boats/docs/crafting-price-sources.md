@@ -1,13 +1,14 @@
 # Crafting price sources
 
-Equipment lookups require the `stash_cohort` and `stash_cohort_hourly` migrations,
-including the `baseTypes` column. Apply the existing migrations to the target
-database before deploying code that queries them (`APP_ENV=dev vp run db:migrate`
-from this app). An HTTP 500 here is a deployment failure, not missing market data.
-Lookups read only revisions listed in `stash_cohort_revision_hour`, which ingest
-writes with each equipment batch. Its migration backfills existing observations;
-after deploying, rerun that backfill with `WHERE hour >= <migration hour>` so hours
-written by the previous worker in between are listed.
+Equipment lookups read the PoE 1 cohort tables: `stash_poe1_cohort` (one definition per
+cohort ID), `stash_poe1_cohort_hourly` (one row per cohort and hour, holding the newest
+catalog revision's classification), `stash_poe1_cohort_revision` (revisions numbered in the
+order ingest first saw them) and `stash_poe1_cohort_window` (6/24-hour price windows, kept
+for the latest 48 hours). Apply the migrations to the target database before deploying code
+that queries them (`APP_ENV=dev vp run db:migrate` from this app). An HTTP 500 here is a
+deployment failure, not missing market data. Saved prices name a cohort by realm, league and
+ID only; a reference saved with a catalog revision still decodes, without it. A lookup at a
+historical cutoff older than the window retention prices from single hours only.
 
 The app's existing 15-minute schedule captures the six most recent completed
 exchange hours for PC PoE 1 and PoE 2, across all leagues in each digest. Hours

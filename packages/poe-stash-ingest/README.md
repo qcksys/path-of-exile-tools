@@ -465,13 +465,17 @@ deduplicated observations; source gaps prevent widening and historical correctio
 windows. Observed cohort definitions remain stored. See the
 [equipment cohort policy](../poe-market/README.md) for capture selection and confidence semantics.
 
-## Remote schema (poe.boats — MySQL, prefixed `qsPoeBoats__stash_`)
+## Remote schema (poe.boats — MySQL, prefixed `qsPoeBoats__stash_<game>_`)
 
-| table                    | retention   | one row per                                |
-| ------------------------ | ----------- | ------------------------------------------ |
-| `stash_unique_hourly`    | **forever** | `(realm, league, hour, item_key, identified, corrupted, foil_variation, links, signature_kind, signature_value)`        |
-| `stash_currency_hourly`  | **forever** | `(realm, league, market_id, hour)`                |
-| `stash_basemap_snapshot` | **forever** | `icon_asset` (public unid → name resolver) |
+Each game (`poe1`, `poe2`) has its own tables; the receiver routes rows by realm (`poe2` is PoE 2, the rest PoE 1).
+
+| table                       | retention   | one row per                                |
+| --------------------------- | ----------- | ------------------------------------------ |
+| `unique_hourly`             | **forever** | `(realm, league, hour, item_key, identified, corrupted, foil_variation, links, signature_kind, signature_value)`        |
+| `currency_hourly`           | **forever** | `(realm, league, market_id, hour)`                |
+| `basemap_snapshot`          | **forever** | `icon_asset` (public unid → name resolver) |
+| `cohort_hourly` (PoE 1)     | **forever** | `(realm, league, hour, cohort_id)`, the newest catalog revision's classification |
+| `cohort_window` (PoE 1)     | 48 hours    | `(realm, league, hour, cohort_id)`, the 6/24-hour price windows |
 
 ## Pricing unidentified vs identified
 
@@ -487,7 +491,7 @@ SELECT
     corrupted,
     listing_count,
     JSON_EXTRACT(prices, '$.divine.median') AS median_div
-FROM qsPoeBoats__stash_unique_hourly
+FROM qsPoeBoats__stash_poe1_unique_hourly
 WHERE league = 'Mirage'
     AND hour = ?
     AND item_key = 'Forbidden Flame'

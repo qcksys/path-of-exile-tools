@@ -108,10 +108,10 @@ combinations, which link to their own history.
 Weapon, armour and accessory categories list uniques only. Normal, magic and rare equipment is
 listed under the Crafting bases group (`armour-bases`, `weapon-bases`, `accessory-bases`,
 `cluster-jewel-bases`) from
-`stash_cohort_hourly`: each base cohort the generator writes to
+`stash_poe1_cohort_hourly`: each base cohort the generator writes to
 `packages/poe-market/data/market-bases-poe1.json` (item level 74 and up, six-socket bases split
 into 1–5 and 6 links, armour also at ilvl 86+ with 25%+ and 30%+ quality) at its latest hour in
-the period, preferring the current manifest revision. Rarities are not split. Item level bands
+the period, as the newest catalog revision classified it. Rarities are not split. Item level bands
 start where the base's rare modifier pool changes. From ilvl 74 each base lists at most three
 bands: of the levels that unlock at least a tenth of the top-tier (T1) spawn weight the base gains
 above ilvl 74, the two highest split off and lower levels group together
@@ -322,13 +322,14 @@ Unrelated same-base cohorts cannot consume the 2,000 relevant-candidate allowanc
 item-matching but uncovered cohorts retain their coverage reasons. A genuinely truncated
 result still prevents refresh from silently choosing an older or incomplete price.
 
-Ingest keeps four rollups, each recomputed from the hourly rows it summarises after every
-200-row batch, because the ingester re-pushes whole hours with later sale corrections:
-`stash_market_daily` (per listed market per UTC day: sums, newest and newest listed hour, base
-type, rarity and name), `stash_currency_market` (each exchange market's first hour),
-`stash_currency_daily` (per exchange market per UTC day: units of each side traded in the hours
-where both traded, those hours' count and the newest) and `stash_hour_coverage` (stored rows per
-stream, league and hour). The daily rollup stores a mod
+Every stash table exists once per game (`stash_poe1_*`, `stash_poe2_*`), so their columns and
+indexes can diverge; equipment cohorts are PoE 1 only. Ingest keeps four rollups per game, each
+recomputed from the hourly rows it summarises after every 200-row batch, because the ingester
+re-pushes whole hours with later sale corrections: `market_daily` (per listed market per UTC
+day: sums, newest and newest listed hour, base type, rarity and name), `currency_market` (each
+exchange market's first hour), `currency_daily` (per exchange market per UTC day: units of each
+side traded in the hours where both traded, those hours' count and the newest) and
+`hour_coverage` (stored rows per stream, league and hour). The daily rollup stores a mod
 pool unique's combinations (Watcher's Eye, Loreweave) as one market with an empty signature
 value, as the list shows them; they were 78% of a week's daily rows. It has no `links` column:
 the list merges link counts, and the item page reads them from the hourly rows. A category list without
@@ -337,14 +338,13 @@ primary-key range. Both precede fetching the selected full hourly rows. A day ke
 (the greatest), so searching a renamed item's older name is best-effort, and the list's text
 search no longer matches a pool unique's individual mods (its item page filters them). Latest
 nonempty observations, variant identity and period totals otherwise retain their semantics.
-`stash_unique_daily`, the first daily rollup, is superseded and unused until a later migration
-drops it. The exchange lookup reads
-`stash_currency_market`; exchange trends, volumes, pairs and earlier-day prices read
-`stash_currency_daily`; the latest hour's prices and an exchange item page's history read hourly
+The exchange lookup reads
+`currency_market`; exchange trends, volumes, pairs and earlier-day prices read
+`currency_daily`; the latest hour's prices and an exchange item page's history read hourly
 snapshots. MySQL plan and result regressions live in
 `test/e2e/market-query.test.ts` and `test/e2e/crafting-market-performance.test.ts`.
 
-Full server status reads `stash_hour_coverage` and reuses each database/realm/league
+Full server status reads each game's `hour_coverage` and reuses each database/realm/league
 summary for up to one minute per Worker isolate. Concurrent requests share a pending read;
 failures are evicted. Worker reports and health remain live. `coverageCheckedAt` identifies
 the coverage snapshot through the UI, HTTP and MCP, and is null for `view=workers`.

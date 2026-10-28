@@ -27,14 +27,12 @@ import {
     sql,
 } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
-import { tStashCurrencyDaily as currencyDaily } from "~/db/schema/stash.currency-daily";
-import { tStashCurrencyHourly as currencyHourly } from "~/db/schema/stash.currency-hourly";
-import { tStashCurrencyMarket as currencyMarket } from "~/db/schema/stash.currency-market";
-import { tStashMarketDaily as daily } from "~/db/schema/stash.market-daily";
-import {
-    tStashUniqueHourly as market,
-    type TStashUniqueHourlyS,
-} from "~/db/schema/stash.unique-hourly";
+import { stashGame } from "~/db/helpers/stash-game";
+import { tStashCurrencyDaily } from "~/db/schema/stash.currency-daily";
+import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
+import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
+import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
+import { type TStashUniqueHourlyS, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { rankMarketBases } from "~/lib/market-bases";
 import { isMarketBaseCategory } from "~/lib/market-categories";
 import { marketCategory, marketCategoryFilter } from "~/lib/market-categories.server";
@@ -87,20 +85,34 @@ const CHAOS = exchangeCurrencyId("chaos")!;
 const DIVINE = exchangeCurrencyId("divine")!;
 const EXALTED = exchangeCurrencyId("exalted")!;
 
+/** The realm's game's stash tables. */
+function marketTables(realm: string) {
+    const game = stashGame(realm);
+    return {
+        market: tStashUniqueHourly[game],
+        daily: tStashMarketDaily[game],
+        currencyHourly: tStashCurrencyHourly[game],
+        currencyDaily: tStashCurrencyDaily[game],
+        currencyMarket: tStashCurrencyMarket[game],
+    };
+}
+type MarketTable = ReturnType<typeof marketTables>["market"];
+type DailyTable = ReturnType<typeof marketTables>["daily"];
+
 /**
  * A pool unique's mod combinations merge into one market with an empty value where markets are
  * listed (the market list and the item's variants); the item page values and links the combinations.
  */
-function valueGroup(table: typeof market) {
+function valueGroup(table: MarketTable) {
     return sql<string>`case when ${inArray(table.signatureKind, [...MOD_POOL_KINDS])} then '' else ${table.signatureValue} end`;
 }
 
-function valueMatch(kind: string, value: string) {
+function valueMatch(market: MarketTable, kind: string, value: string) {
     return isModPool(kind) && !value ? undefined : eq(market.signatureValue, value);
 }
 
 /** Gem level and quality band filters list only the gem markets in the bands they allow. */
-function gemFilter(filters: MarketFilters) {
+function gemFilter(daily: DailyTable, filters: MarketFilters) {
     const values = gemVariantValues(filters);
     if (!values) return undefined;
     return values.length
@@ -109,7 +121,11 @@ function gemFilter(filters: MarketFilters) {
 }
 
 /** The transfigured and Vaal filters list only gem markets, among `gems` or the rest. */
-function gemListFilter(state: MarketFilters["gemVaal"], gems: readonly string[]) {
+function gemListFilter(
+    daily: DailyTable,
+    state: MarketFilters["gemVaal"],
+    gems: readonly string[],
+) {
     if (state === "all") return undefined;
     return and(
         eq(daily.signatureKind, "gem"),
@@ -118,7 +134,7 @@ function gemListFilter(state: MarketFilters["gemVaal"], gems: readonly string[])
 }
 
 /** Without a `links` filter, an item page merges every link count, as the market list does. */
-function linksMatch(filters: MarketFilters) {
+function linksMatch(market: MarketTable, filters: MarketFilters) {
     return filters.links === undefined ? undefined : eq(market.links, Number(filters.links));
 }
 
@@ -174,6 +190,7 @@ async function marketLatestRows<
     },
 >(db: TDatabase, filters: MarketFilters, markets: Market[]) {
     if (!markets.length) return [];
+    const { market } = marketTables(filters.realm);
     const rows = await traceQuery(
         "market.latest_rows",
         db
@@ -191,7 +208,7 @@ async function marketLatestRows<
                                 eq(market.identified, entry.identified),
                                 eq(market.corrupted, entry.corrupted),
                                 eq(market.signatureKind, entry.signatureKind),
-                                valueMatch(entry.signatureKind, entry.signatureValue),
+                                valueMatch(market, entry.signatureKind, entry.signatureValue),
                             ),
                         ),
                     ),
@@ -221,6 +238,7 @@ export function getMarketData(db: TDatabase, input: MarketFilters, view: MarketV
 }
 
 async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketView, span: Span) {
+    const { market, daily } = marketTables(input.realm);
     const exchangeHour = marketObservationRange().latestHour;
     const [stashSeasons, exchangeSeasons] = await Promise.all([
         // Group by the full index prefix so MySQL can skip between season boundaries.
@@ -298,8 +316,8 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                               eq(market.identified, filters.identified === "true"),
                               eq(market.corrupted, filters.corrupted === "true"),
                               eq(market.signatureKind, filters.kind),
-                              valueMatch(filters.kind, filters.value),
-                              linksMatch(filters),
+                              valueMatch(market, filters.kind, filters.value),
+                              linksMatch(market, filters),
                           ),
                       )
                       .orderBy(desc(market.hour))
@@ -309,7 +327,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             : Promise.resolve([]);
     const variantsPromise =
         filters.item && view !== "list"
-            ? marketVariants(db, scope, filters.item)
+            ? marketVariants(db, market, scope, filters.item)
             : Promise.resolve([]);
     const modRowsPromise =
         filters.item && view !== "list" && isModPool(filters.kind)
@@ -385,9 +403,9 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             and(
                 days,
                 marketCategoryFilter(filters, daily.baseType, daily.signatureKind),
-                gemFilter(filters),
-                gemListFilter(filters.gemTransfigured, TRANSFIGURED_GEMS),
-                gemListFilter(filters.gemVaal, VAAL_GEMS),
+                gemFilter(daily, filters),
+                gemListFilter(daily, filters.gemTransfigured, TRANSFIGURED_GEMS),
+                gemListFilter(daily, filters.gemVaal, VAAL_GEMS),
                 filters.identification === "all"
                     ? undefined
                     : eq(daily.identified, filters.identification === "true"),
@@ -605,7 +623,12 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
  * An item's markets, plus the markets of the same unique in the other identification state.
  * Unidentified uniques are keyed by their art (`unid:<icon>`) and named from identified copies.
  */
-async function marketVariants(db: TDatabase, scope: SQL | undefined, item: string) {
+async function marketVariants(
+    db: TDatabase,
+    market: MarketTable,
+    scope: SQL | undefined,
+    item: string,
+) {
     const identities = await traceQuery(
         "market.variant_identities",
         db
@@ -692,6 +715,7 @@ function modPoolRows(
     scope: SQL | undefined,
     latestHour: number,
 ) {
+    const { market } = marketTables(filters.realm);
     return traceQuery(
         "market.mod_pool",
         db
@@ -712,7 +736,7 @@ function modPoolRows(
                     eq(market.identified, true),
                     eq(market.corrupted, filters.corrupted === "true"),
                     eq(market.signatureKind, filters.kind),
-                    linksMatch(filters),
+                    linksMatch(market, filters),
                     or(eq(market.hour, latestHour), gt(market.likelySales, 0)),
                 ),
             ),
@@ -727,6 +751,7 @@ const PRIVATE_LEAGUE = "% (PL%)";
  * newest first. Leagues sharing the latest hour put the most snapshots first.
  */
 function marketExchangeSeasons(db: TDatabase, realm: string, latestHour: number) {
+    const { currencyHourly } = marketTables(realm);
     return traceQuery(
         "market.exchange_seasons",
         db
@@ -755,6 +780,7 @@ function exchangeSnapshots(
     [fromHour, toHour]: [number, number],
     marketIds?: string[],
 ) {
+    const { currencyHourly } = marketTables(scope.realm);
     return traceQuery(
         fromHour === toHour ? "market.exchange" : "market.exchange_history",
         db
@@ -788,6 +814,7 @@ function exchangeDaily(
     fromDay: number,
     marketIds?: string[],
 ) {
+    const { currencyDaily } = marketTables(scope.realm);
     return traceQuery(
         "market.exchange_daily",
         db
@@ -1053,6 +1080,7 @@ function marketExchangeMarkets(
     latestHour: number,
     label = "market.exchange_markets",
 ): Promise<ExchangeMarket[]> {
+    const { currencyMarket } = marketTables(scope.realm);
     return traceQuery(
         label,
         db
@@ -1128,6 +1156,7 @@ async function marketChaosRates(
             ]),
         ]),
     ];
+    const { currencyHourly } = marketTables(filters.realm);
     const snapshots = await traceQuery(
         "market.rates",
         db

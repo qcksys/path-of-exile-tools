@@ -10,22 +10,28 @@ import {
 } from "@poe-tools/market";
 import { and, desc, eq, gte, inArray, lt, lte } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
-import { tStashCurrencyHourly as hourly } from "~/db/schema/stash.currency-hourly";
+import { stashGame } from "~/db/helpers/stash-game";
+import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import type {
     CraftingExchangeHistoryInput,
     CraftingExchangeInput,
     CraftingExchangeResult,
 } from "~/schemas/crafting-exchange";
 
-const columns = {
-    realm: hourly.realm,
-    league: hourly.league,
-    marketId: hourly.marketId,
-    hour: hourly.hour,
-    volumeTraded: hourly.volumeTraded,
-    lowestRatio: hourly.lowestRatio,
-    highestRatio: hourly.highestRatio,
-};
+/** The realm's game's exchange snapshots and the columns a quote reads. */
+function exchangeHourly(realm: string) {
+    const hourly = tStashCurrencyHourly[stashGame(realm)];
+    const columns = {
+        realm: hourly.realm,
+        league: hourly.league,
+        marketId: hourly.marketId,
+        hour: hourly.hour,
+        volumeTraded: hourly.volumeTraded,
+        lowestRatio: hourly.lowestRatio,
+        highestRatio: hourly.highestRatio,
+    };
+    return { hourly, columns };
+}
 function pairIds(item: string, quote: string) {
     return [`${item}|${quote}`, `${quote}|${item}`];
 }
@@ -80,6 +86,7 @@ export async function findCraftingExchangePrices(
         );
         if (itemIds.length) {
             const quoteId = exchangeCurrencyId(input.currency)!;
+            const { hourly, columns } = exchangeHourly(input.realm);
             const latest = await db
                 .select(columns)
                 .from(hourly)
@@ -242,6 +249,7 @@ async function findExchangeSnapshots(
     range: ReturnType<typeof marketObservationRange>,
     onQuery?: (rowCount: number) => void,
 ) {
+    const { hourly, columns } = exchangeHourly(input.realm);
     const query = db
         .select(columns)
         .from(hourly)
@@ -265,6 +273,7 @@ async function findExchangeSnapshots(
     }
 }
 export async function craftingExchangeHistory(db: TDatabase, input: CraftingExchangeHistoryInput) {
+    const { hourly, columns } = exchangeHourly(input.realm);
     const rows = await db
         .select(columns)
         .from(hourly)

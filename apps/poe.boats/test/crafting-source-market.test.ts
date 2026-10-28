@@ -106,8 +106,9 @@ describe("intrinsic fractured-source market bindings", () => {
         newer.latest.hour += 3600;
         newer.latest.prices.chaos!.median = 31;
         newer.definition.revision = newer.latest.revision = "new-source-revision";
+        // The lookup returns each cohort once, at its latest hour.
         const lookup = vi.spyOn(marketQueries, "findCraftingMarketPrices").mockResolvedValue({
-            candidates: [candidate, newer],
+            candidates: [newer],
             truncated: false,
             message: null,
         });
@@ -133,10 +134,9 @@ describe("intrinsic fractured-source market bindings", () => {
                 purchase(bound).alternative.sourcePreparation,
             );
             expect(updated.price).toMatchObject({ amount: 31, samples: 10, source: "market" });
-            expect(decodeCohortPriceReference(updated.price!.cohortId)).toMatchObject({
-                revision: "new-source-revision",
-                sourcePreparation: profile,
-            });
+            const reference = decodeCohortPriceReference(updated.price!.cohortId);
+            expect(reference).toMatchObject({ sourcePreparation: profile });
+            expect(reference).not.toHaveProperty("revision");
         } finally {
             lookup.mockRestore();
         }

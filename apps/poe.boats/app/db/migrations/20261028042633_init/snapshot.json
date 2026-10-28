@@ -1,8 +1,8 @@
 {
     "version": "6",
     "dialect": "mysql",
-    "id": "9d36a17c-98a1-4997-bcf5-2fbc99bef45a",
-    "prevIds": ["b06063db-96cb-455f-9412-3901adaa35db"],
+    "id": "4bc06e35-c8a2-4ebc-b84a-923bfaa45557",
+    "prevIds": ["00000000-0000-0000-0000-000000000000"],
     "ddl": [
         {
             "name": "qsPoeBoats__auth_account",
@@ -10,6 +10,10 @@
         },
         {
             "name": "qsPoeBoats__auth_session",
+            "entityType": "tables"
+        },
+        {
+            "name": "qsPoeBoats__auth_two_factor",
             "entityType": "tables"
         },
         {
@@ -57,51 +61,91 @@
             "entityType": "tables"
         },
         {
-            "name": "qsPoeBoats__stash_basemap_snapshot",
+            "name": "qsPoeBoats__stash_poe1_basemap_snapshot",
             "entityType": "tables"
         },
         {
-            "name": "qsPoeBoats__stash_checkpoint",
+            "name": "qsPoeBoats__stash_poe2_basemap_snapshot",
             "entityType": "tables"
         },
         {
-            "name": "qsPoeBoats__stash_daily_sample",
+            "name": "qsPoeBoats__stash_poe1_checkpoint",
             "entityType": "tables"
         },
         {
-            "name": "qsPoeBoats__stash_cohort_hourly",
+            "name": "qsPoeBoats__stash_poe1_daily_sample",
             "entityType": "tables"
         },
         {
-            "name": "qsPoeBoats__stash_cohort_revision_hour",
+            "name": "qsPoeBoats__stash_poe2_checkpoint",
             "entityType": "tables"
         },
         {
-            "name": "qsPoeBoats__stash_cohort",
+            "name": "qsPoeBoats__stash_poe2_daily_sample",
             "entityType": "tables"
         },
         {
-            "name": "qsPoeBoats__stash_currency_hourly",
+            "name": "qsPoeBoats__stash_poe1_cohort_hourly",
             "entityType": "tables"
         },
         {
-            "name": "qsPoeBoats__stash_currency_latest",
+            "name": "qsPoeBoats__stash_poe1_cohort_revision",
             "entityType": "tables"
         },
         {
-            "name": "qsPoeBoats__stash_currency_market",
+            "name": "qsPoeBoats__stash_poe1_cohort_window",
             "entityType": "tables"
         },
         {
-            "name": "qsPoeBoats__stash_hour_coverage",
+            "name": "qsPoeBoats__stash_poe1_cohort",
             "entityType": "tables"
         },
         {
-            "name": "qsPoeBoats__stash_unique_daily",
+            "name": "qsPoeBoats__stash_poe1_currency_daily",
             "entityType": "tables"
         },
         {
-            "name": "qsPoeBoats__stash_unique_hourly",
+            "name": "qsPoeBoats__stash_poe2_currency_daily",
+            "entityType": "tables"
+        },
+        {
+            "name": "qsPoeBoats__stash_poe1_currency_hourly",
+            "entityType": "tables"
+        },
+        {
+            "name": "qsPoeBoats__stash_poe2_currency_hourly",
+            "entityType": "tables"
+        },
+        {
+            "name": "qsPoeBoats__stash_poe1_currency_market",
+            "entityType": "tables"
+        },
+        {
+            "name": "qsPoeBoats__stash_poe2_currency_market",
+            "entityType": "tables"
+        },
+        {
+            "name": "qsPoeBoats__stash_poe1_hour_coverage",
+            "entityType": "tables"
+        },
+        {
+            "name": "qsPoeBoats__stash_poe2_hour_coverage",
+            "entityType": "tables"
+        },
+        {
+            "name": "qsPoeBoats__stash_poe1_market_daily",
+            "entityType": "tables"
+        },
+        {
+            "name": "qsPoeBoats__stash_poe2_market_daily",
+            "entityType": "tables"
+        },
+        {
+            "name": "qsPoeBoats__stash_poe1_unique_hourly",
+            "entityType": "tables"
+        },
+        {
+            "name": "qsPoeBoats__stash_poe2_unique_hourly",
             "entityType": "tables"
         },
         {
@@ -402,6 +446,104 @@
             "table": "qsPoeBoats__auth_session",
             "name": "impersonatedBy",
             "type": "varchar(36)",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__auth_two_factor",
+            "name": "id",
+            "type": "varchar(36)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__auth_two_factor",
+            "name": "secret",
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__auth_two_factor",
+            "name": "backupCodes",
+            "type": "text",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__auth_two_factor",
+            "name": "userId",
+            "type": "varchar(36)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__auth_two_factor",
+            "name": "verified",
+            "type": "boolean",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": "true",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__auth_two_factor",
+            "name": "failedVerificationCount",
+            "type": "int",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": "0",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__auth_two_factor",
+            "name": "lockedUntil",
+            "type": "timestamp(3)",
             "notNull": false,
             "autoIncrement": false,
             "default": null,
@@ -1519,7 +1661,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_basemap_snapshot",
+            "table": "qsPoeBoats__stash_poe1_basemap_snapshot",
             "name": "iconAsset",
             "type": "varchar(255)",
             "notNull": true,
@@ -1533,7 +1675,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_basemap_snapshot",
+            "table": "qsPoeBoats__stash_poe1_basemap_snapshot",
             "name": "name",
             "type": "varchar(100)",
             "notNull": true,
@@ -1547,7 +1689,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_basemap_snapshot",
+            "table": "qsPoeBoats__stash_poe1_basemap_snapshot",
             "name": "baseType",
             "type": "varchar(100)",
             "notNull": true,
@@ -1561,7 +1703,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_basemap_snapshot",
+            "table": "qsPoeBoats__stash_poe1_basemap_snapshot",
             "name": "seenCount",
             "type": "bigint",
             "notNull": true,
@@ -1575,7 +1717,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_basemap_snapshot",
+            "table": "qsPoeBoats__stash_poe1_basemap_snapshot",
             "name": "rowCreatedAt",
             "type": "datetime",
             "notNull": true,
@@ -1589,7 +1731,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_basemap_snapshot",
+            "table": "qsPoeBoats__stash_poe1_basemap_snapshot",
             "name": "rowUpdatedAt",
             "type": "datetime",
             "notNull": true,
@@ -1603,7 +1745,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_basemap_snapshot",
+            "table": "qsPoeBoats__stash_poe1_basemap_snapshot",
             "name": "rowDeletedAt",
             "type": "datetime",
             "notNull": false,
@@ -1617,7 +1759,105 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_checkpoint",
+            "table": "qsPoeBoats__stash_poe2_basemap_snapshot",
+            "name": "iconAsset",
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_basemap_snapshot",
+            "name": "name",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_basemap_snapshot",
+            "name": "baseType",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_basemap_snapshot",
+            "name": "seenCount",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_basemap_snapshot",
+            "name": "rowCreatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_basemap_snapshot",
+            "name": "rowUpdatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": true,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_basemap_snapshot",
+            "name": "rowDeletedAt",
+            "type": "datetime",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_checkpoint",
             "name": "id",
             "type": "varchar(36)",
             "notNull": true,
@@ -1631,7 +1871,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_checkpoint",
+            "table": "qsPoeBoats__stash_poe1_checkpoint",
             "name": "realm",
             "type": "varchar(10)",
             "notNull": true,
@@ -1645,7 +1885,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_checkpoint",
+            "table": "qsPoeBoats__stash_poe1_checkpoint",
             "name": "league",
             "type": "varchar(100)",
             "notNull": true,
@@ -1659,7 +1899,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_checkpoint",
+            "table": "qsPoeBoats__stash_poe1_checkpoint",
             "name": "cursor",
             "type": "varchar(255)",
             "notNull": false,
@@ -1673,7 +1913,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_checkpoint",
+            "table": "qsPoeBoats__stash_poe1_checkpoint",
             "name": "nextCursor",
             "type": "varchar(255)",
             "notNull": true,
@@ -1687,7 +1927,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_checkpoint",
+            "table": "qsPoeBoats__stash_poe1_checkpoint",
             "name": "capturedAt",
             "type": "bigint",
             "notNull": true,
@@ -1701,7 +1941,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_checkpoint",
+            "table": "qsPoeBoats__stash_poe1_checkpoint",
             "name": "responseHash",
             "type": "varchar(64)",
             "notNull": true,
@@ -1715,7 +1955,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_checkpoint",
+            "table": "qsPoeBoats__stash_poe1_checkpoint",
             "name": "stashCount",
             "type": "int",
             "notNull": true,
@@ -1729,7 +1969,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_checkpoint",
+            "table": "qsPoeBoats__stash_poe1_checkpoint",
             "name": "itemCount",
             "type": "int",
             "notNull": true,
@@ -1743,7 +1983,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_checkpoint",
+            "table": "qsPoeBoats__stash_poe1_checkpoint",
             "name": "responseBytes",
             "type": "int",
             "notNull": true,
@@ -1757,7 +1997,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_daily_sample",
+            "table": "qsPoeBoats__stash_poe1_daily_sample",
             "name": "realm",
             "type": "varchar(10)",
             "notNull": true,
@@ -1771,7 +2011,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_daily_sample",
+            "table": "qsPoeBoats__stash_poe1_daily_sample",
             "name": "league",
             "type": "varchar(100)",
             "notNull": true,
@@ -1785,7 +2025,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_daily_sample",
+            "table": "qsPoeBoats__stash_poe1_daily_sample",
             "name": "day",
             "type": "varchar(10)",
             "notNull": true,
@@ -1799,7 +2039,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_daily_sample",
+            "table": "qsPoeBoats__stash_poe1_daily_sample",
             "name": "checkpointId",
             "type": "varchar(36)",
             "notNull": true,
@@ -1813,7 +2053,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_daily_sample",
+            "table": "qsPoeBoats__stash_poe1_daily_sample",
             "name": "responseGzip",
             "type": "longtext",
             "notNull": true,
@@ -1827,7 +2067,21 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe2_checkpoint",
+            "name": "id",
+            "type": "varchar(36)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_checkpoint",
             "name": "realm",
             "type": "varchar(10)",
             "notNull": true,
@@ -1841,7 +2095,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe2_checkpoint",
             "name": "league",
             "type": "varchar(100)",
             "notNull": true,
@@ -1855,7 +2109,203 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe2_checkpoint",
+            "name": "cursor",
+            "type": "varchar(255)",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_checkpoint",
+            "name": "nextCursor",
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_checkpoint",
+            "name": "capturedAt",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_checkpoint",
+            "name": "responseHash",
+            "type": "varchar(64)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_checkpoint",
+            "name": "stashCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_checkpoint",
+            "name": "itemCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_checkpoint",
+            "name": "responseBytes",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_daily_sample",
+            "name": "realm",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_daily_sample",
+            "name": "league",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_daily_sample",
+            "name": "day",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_daily_sample",
+            "name": "checkpointId",
+            "type": "varchar(36)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_daily_sample",
+            "name": "responseGzip",
+            "type": "longtext",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
+            "name": "realm",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
+            "name": "league",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
             "name": "hour",
             "type": "bigint",
             "notNull": true,
@@ -1869,21 +2319,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
-            "name": "revision",
-            "type": "varchar(100)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
             "name": "cohortId",
             "type": "varchar(128)",
             "notNull": true,
@@ -1897,7 +2333,21 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
+            "name": "revisionSeq",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
             "name": "listingCount",
             "type": "int",
             "notNull": true,
@@ -1911,7 +2361,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
             "name": "uniqueSellers",
             "type": "int",
             "notNull": true,
@@ -1925,7 +2375,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
             "name": "unknownCount",
             "type": "int",
             "notNull": true,
@@ -1939,7 +2389,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
             "name": "prices",
             "type": "json",
             "notNull": true,
@@ -1953,7 +2403,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
             "name": "confidenceMethod",
             "type": "varchar(40)",
             "notNull": true,
@@ -1967,7 +2417,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
             "name": "firstSeenAt",
             "type": "varchar(32)",
             "notNull": false,
@@ -1981,7 +2431,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
             "name": "lastSeenAt",
             "type": "varchar(32)",
             "notNull": false,
@@ -1995,7 +2445,35 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe1_cohort_revision",
+            "name": "seq",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": true,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_cohort_revision",
+            "name": "revision",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_cohort_revision",
             "name": "rowCreatedAt",
             "type": "datetime",
             "notNull": true,
@@ -2009,7 +2487,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe1_cohort_revision",
             "name": "rowUpdatedAt",
             "type": "datetime",
             "notNull": true,
@@ -2023,7 +2501,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe1_cohort_revision",
             "name": "rowDeletedAt",
             "type": "datetime",
             "notNull": false,
@@ -2037,7 +2515,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_revision_hour",
+            "table": "qsPoeBoats__stash_poe1_cohort_window",
             "name": "realm",
             "type": "varchar(10)",
             "notNull": true,
@@ -2051,7 +2529,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_revision_hour",
+            "table": "qsPoeBoats__stash_poe1_cohort_window",
             "name": "league",
             "type": "varchar(100)",
             "notNull": true,
@@ -2065,7 +2543,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_revision_hour",
+            "table": "qsPoeBoats__stash_poe1_cohort_window",
             "name": "hour",
             "type": "bigint",
             "notNull": true,
@@ -2079,9 +2557,9 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_revision_hour",
-            "name": "revision",
-            "type": "varchar(100)",
+            "table": "qsPoeBoats__stash_poe1_cohort_window",
+            "name": "cohortId",
+            "type": "varchar(128)",
             "notNull": true,
             "autoIncrement": false,
             "default": null,
@@ -2093,51 +2571,9 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_revision_hour",
-            "name": "rowCreatedAt",
-            "type": "datetime",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "(now())",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_cohort_revision_hour",
-            "name": "rowUpdatedAt",
-            "type": "datetime",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "(now())",
-            "onUpdateNow": true,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_cohort_revision_hour",
-            "name": "rowDeletedAt",
-            "type": "datetime",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_cohort",
-            "name": "revision",
-            "type": "varchar(100)",
+            "table": "qsPoeBoats__stash_poe1_cohort_window",
+            "name": "revisionSeq",
+            "type": "int",
             "notNull": true,
             "autoIncrement": false,
             "default": null,
@@ -2149,7 +2585,21 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort",
+            "table": "qsPoeBoats__stash_poe1_cohort_window",
+            "name": "windows",
+            "type": "json",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_cohort",
             "name": "id",
             "type": "varchar(128)",
             "notNull": true,
@@ -2163,7 +2613,21 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort",
+            "table": "qsPoeBoats__stash_poe1_cohort",
+            "name": "revision",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_cohort",
             "name": "catalogHash",
             "type": "varchar(64)",
             "notNull": true,
@@ -2177,7 +2641,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort",
+            "table": "qsPoeBoats__stash_poe1_cohort",
             "name": "name",
             "type": "varchar(300)",
             "notNull": true,
@@ -2191,7 +2655,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort",
+            "table": "qsPoeBoats__stash_poe1_cohort",
             "name": "purpose",
             "type": "varchar(32)",
             "notNull": true,
@@ -2205,7 +2669,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort",
+            "table": "qsPoeBoats__stash_poe1_cohort",
             "name": "query",
             "type": "json",
             "notNull": true,
@@ -2219,7 +2683,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort",
+            "table": "qsPoeBoats__stash_poe1_cohort",
             "name": "baseTypes",
             "type": "json",
             "notNull": false,
@@ -2233,7 +2697,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort",
+            "table": "qsPoeBoats__stash_poe1_cohort",
             "name": "baseTypeKey",
             "type": "varchar(255)",
             "notNull": false,
@@ -2250,7 +2714,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort",
+            "table": "qsPoeBoats__stash_poe1_cohort",
             "name": "rowCreatedAt",
             "type": "datetime",
             "notNull": true,
@@ -2264,7 +2728,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort",
+            "table": "qsPoeBoats__stash_poe1_cohort",
             "name": "rowUpdatedAt",
             "type": "datetime",
             "notNull": true,
@@ -2278,7 +2742,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_cohort",
+            "table": "qsPoeBoats__stash_poe1_cohort",
             "name": "rowDeletedAt",
             "type": "datetime",
             "notNull": false,
@@ -2292,315 +2756,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "realm",
-            "type": "varchar(10)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "'pc'",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "league",
-            "type": "varchar(100)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "marketId",
-            "type": "varchar(512)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "hour",
-            "type": "bigint",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "lowestRatio",
-            "type": "json",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "highestRatio",
-            "type": "json",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "volumeTraded",
-            "type": "json",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "lowestStock",
-            "type": "json",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "highestStock",
-            "type": "json",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "rowCreatedAt",
-            "type": "datetime",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "(now())",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "rowUpdatedAt",
-            "type": "datetime",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "(now())",
-            "onUpdateNow": true,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "rowDeletedAt",
-            "type": "datetime",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_latest",
-            "name": "realm",
-            "type": "varchar(10)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "'pc'",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_latest",
-            "name": "league",
-            "type": "varchar(100)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_latest",
-            "name": "marketId",
-            "type": "varchar(512)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_latest",
-            "name": "hour",
-            "type": "bigint",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_latest",
-            "name": "lowestRatio",
-            "type": "json",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_latest",
-            "name": "highestRatio",
-            "type": "json",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_latest",
-            "name": "volumeTraded",
-            "type": "json",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_latest",
-            "name": "rowCreatedAt",
-            "type": "datetime",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "(now())",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_latest",
-            "name": "rowUpdatedAt",
-            "type": "datetime",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "(now())",
-            "onUpdateNow": true,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_latest",
-            "name": "rowDeletedAt",
-            "type": "datetime",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_market",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
             "name": "realm",
             "type": "varchar(10)",
             "notNull": true,
@@ -2614,7 +2770,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_currency_market",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
             "name": "league",
             "type": "varchar(100)",
             "notNull": true,
@@ -2628,217 +2784,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_currency_market",
-            "name": "marketId",
-            "type": "varchar(512)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_market",
-            "name": "firstHour",
-            "type": "bigint",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_market",
-            "name": "rowCreatedAt",
-            "type": "datetime",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "(now())",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_market",
-            "name": "rowUpdatedAt",
-            "type": "datetime",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "(now())",
-            "onUpdateNow": true,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_currency_market",
-            "name": "rowDeletedAt",
-            "type": "datetime",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_hour_coverage",
-            "name": "stream",
-            "type": "varchar(16)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_hour_coverage",
-            "name": "realm",
-            "type": "varchar(10)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_hour_coverage",
-            "name": "league",
-            "type": "varchar(100)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_hour_coverage",
-            "name": "hour",
-            "type": "bigint",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_hour_coverage",
-            "name": "rowCount",
-            "type": "int",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_hour_coverage",
-            "name": "rowCreatedAt",
-            "type": "datetime",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "(now())",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_hour_coverage",
-            "name": "rowUpdatedAt",
-            "type": "datetime",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "(now())",
-            "onUpdateNow": true,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_hour_coverage",
-            "name": "rowDeletedAt",
-            "type": "datetime",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "realm",
-            "type": "varchar(10)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "league",
-            "type": "varchar(100)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_daily",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
             "name": "day",
             "type": "bigint",
             "notNull": true,
@@ -2852,9 +2798,9 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "itemKey",
-            "type": "varchar(255)",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
+            "name": "marketId",
+            "type": "varchar(512)",
             "notNull": true,
             "autoIncrement": false,
             "default": null,
@@ -2866,9 +2812,9 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "identified",
-            "type": "boolean",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
+            "name": "firstVolume",
+            "type": "bigint",
             "notNull": true,
             "autoIncrement": false,
             "default": null,
@@ -2880,9 +2826,9 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "corrupted",
-            "type": "boolean",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
+            "name": "secondVolume",
+            "type": "bigint",
             "notNull": true,
             "autoIncrement": false,
             "default": null,
@@ -2894,8 +2840,8 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "foilVariation",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
+            "name": "tradedHours",
             "type": "int",
             "notNull": true,
             "autoIncrement": false,
@@ -2908,135 +2854,9 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "signatureKind",
-            "type": "varchar(32)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "signatureValue",
-            "type": "varchar(255)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "name",
-            "type": "varchar(100)",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "baseType",
-            "type": "varchar(100)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "frameType",
-            "type": "int",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "likelySales",
-            "type": "int",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "removedCount",
-            "type": "int",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "pendingCount",
-            "type": "int",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_daily",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
             "name": "latestHour",
             "type": "bigint",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_daily",
-            "name": "listedHour",
-            "type": "bigint",
             "notNull": false,
             "autoIncrement": false,
             "default": null,
@@ -3048,7 +2868,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_daily",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
             "name": "rowCreatedAt",
             "type": "datetime",
             "notNull": true,
@@ -3062,7 +2882,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_daily",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
             "name": "rowUpdatedAt",
             "type": "datetime",
             "notNull": true,
@@ -3076,7 +2896,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_daily",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
             "name": "rowDeletedAt",
             "type": "datetime",
             "notNull": false,
@@ -3090,12 +2910,12 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
             "name": "realm",
             "type": "varchar(10)",
             "notNull": true,
             "autoIncrement": false,
-            "default": "'pc'",
+            "default": null,
             "onUpdateNow": false,
             "onUpdateNowFsp": null,
             "charSet": null,
@@ -3104,7 +2924,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
             "name": "league",
             "type": "varchar(100)",
             "notNull": true,
@@ -3118,8 +2938,8 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "hour",
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
+            "name": "day",
             "type": "bigint",
             "notNull": true,
             "autoIncrement": false,
@@ -3132,9 +2952,9 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "itemKey",
-            "type": "varchar(255)",
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
+            "name": "marketId",
+            "type": "varchar(512)",
             "notNull": true,
             "autoIncrement": false,
             "default": null,
@@ -3146,9 +2966,9 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "identified",
-            "type": "boolean",
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
+            "name": "firstVolume",
+            "type": "bigint",
             "notNull": true,
             "autoIncrement": false,
             "default": null,
@@ -3160,12 +2980,12 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "corrupted",
-            "type": "boolean",
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
+            "name": "secondVolume",
+            "type": "bigint",
             "notNull": true,
             "autoIncrement": false,
-            "default": "false",
+            "default": null,
             "onUpdateNow": false,
             "onUpdateNowFsp": null,
             "charSet": null,
@@ -3174,12 +2994,12 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "foilVariation",
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
+            "name": "tradedHours",
             "type": "int",
             "notNull": true,
             "autoIncrement": false,
-            "default": "-1",
+            "default": null,
             "onUpdateNow": false,
             "onUpdateNowFsp": null,
             "charSet": null,
@@ -3188,37 +3008,9 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "signatureKind",
-            "type": "varchar(32)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "''",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "signatureValue",
-            "type": "varchar(255)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "''",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "iconAsset",
-            "type": "varchar(255)",
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
+            "name": "latestHour",
+            "type": "bigint",
             "notNull": false,
             "autoIncrement": false,
             "default": null,
@@ -3230,203 +3022,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "name",
-            "type": "varchar(100)",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "baseType",
-            "type": "varchar(100)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "frameType",
-            "type": "int",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "listingCount",
-            "type": "int",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "uniqueSellers",
-            "type": "int",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "removedCount",
-            "type": "int",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "0",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "likelySales",
-            "type": "int",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "0",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "relistedCount",
-            "type": "int",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "0",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "pendingCount",
-            "type": "int",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": "0",
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "salesPrices",
-            "type": "json",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "prices",
-            "type": "json",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "signatureData",
-            "type": "json",
-            "notNull": false,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "firstSeenAt",
-            "type": "varchar(32)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
-            "name": "lastSeenAt",
-            "type": "varchar(32)",
-            "notNull": true,
-            "autoIncrement": false,
-            "default": null,
-            "onUpdateNow": false,
-            "onUpdateNowFsp": null,
-            "charSet": null,
-            "collation": null,
-            "generated": null,
-            "entityType": "columns"
-        },
-        {
-            "table": "qsPoeBoats__stash_unique_hourly",
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
             "name": "rowCreatedAt",
             "type": "datetime",
             "notNull": true,
@@ -3440,7 +3036,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
             "name": "rowUpdatedAt",
             "type": "datetime",
             "notNull": true,
@@ -3454,7 +3050,7 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
             "name": "rowDeletedAt",
             "type": "datetime",
             "notNull": false,
@@ -3468,55 +3064,2179 @@
             "entityType": "columns"
         },
         {
-            "table": "qsPoeBoats__stash_daily_sample",
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
+            "name": "realm",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
+            "name": "league",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
+            "name": "marketId",
+            "type": "varchar(512)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
+            "name": "hour",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
+            "name": "lowestRatio",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
+            "name": "highestRatio",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
+            "name": "volumeTraded",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
+            "name": "lowestStock",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
+            "name": "highestStock",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
+            "name": "rowCreatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
+            "name": "rowUpdatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": true,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
+            "name": "rowDeletedAt",
+            "type": "datetime",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "realm",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "league",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "marketId",
+            "type": "varchar(512)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "hour",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "lowestRatio",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "highestRatio",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "volumeTraded",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "lowestStock",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "highestStock",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "rowCreatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "rowUpdatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": true,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "rowDeletedAt",
+            "type": "datetime",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_market",
+            "name": "realm",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_market",
+            "name": "league",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_market",
+            "name": "marketId",
+            "type": "varchar(512)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_market",
+            "name": "firstHour",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_market",
+            "name": "rowCreatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_market",
+            "name": "rowUpdatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": true,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_market",
+            "name": "rowDeletedAt",
+            "type": "datetime",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_market",
+            "name": "realm",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_market",
+            "name": "league",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_market",
+            "name": "marketId",
+            "type": "varchar(512)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_market",
+            "name": "firstHour",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_market",
+            "name": "rowCreatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_market",
+            "name": "rowUpdatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": true,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_market",
+            "name": "rowDeletedAt",
+            "type": "datetime",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_hour_coverage",
+            "name": "stream",
+            "type": "varchar(16)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_hour_coverage",
+            "name": "realm",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_hour_coverage",
+            "name": "league",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_hour_coverage",
+            "name": "hour",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_hour_coverage",
+            "name": "rowCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_hour_coverage",
+            "name": "rowCreatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_hour_coverage",
+            "name": "rowUpdatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": true,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_hour_coverage",
+            "name": "rowDeletedAt",
+            "type": "datetime",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_hour_coverage",
+            "name": "stream",
+            "type": "varchar(16)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_hour_coverage",
+            "name": "realm",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_hour_coverage",
+            "name": "league",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_hour_coverage",
+            "name": "hour",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_hour_coverage",
+            "name": "rowCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_hour_coverage",
+            "name": "rowCreatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_hour_coverage",
+            "name": "rowUpdatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": true,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_hour_coverage",
+            "name": "rowDeletedAt",
+            "type": "datetime",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "realm",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "league",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "day",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "itemKey",
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "identified",
+            "type": "boolean",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "corrupted",
+            "type": "boolean",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "foilVariation",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "signatureKind",
+            "type": "varchar(32)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "signatureValue",
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "name",
+            "type": "varchar(100)",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "baseType",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "frameType",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "likelySales",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "removedCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "pendingCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "latestHour",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "listedHour",
+            "type": "bigint",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "rowCreatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "rowUpdatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": true,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "rowDeletedAt",
+            "type": "datetime",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "realm",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "league",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "day",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "itemKey",
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "identified",
+            "type": "boolean",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "corrupted",
+            "type": "boolean",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "foilVariation",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "signatureKind",
+            "type": "varchar(32)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "signatureValue",
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "name",
+            "type": "varchar(100)",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "baseType",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "frameType",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "likelySales",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "removedCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "pendingCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "latestHour",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "listedHour",
+            "type": "bigint",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "rowCreatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "rowUpdatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": true,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "rowDeletedAt",
+            "type": "datetime",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "realm",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "league",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "hour",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "itemKey",
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "identified",
+            "type": "boolean",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "corrupted",
+            "type": "boolean",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "false",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "foilVariation",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "-1",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "links",
+            "type": "tinyint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "0",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "signatureKind",
+            "type": "varchar(32)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "''",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "signatureValue",
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "''",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "iconAsset",
+            "type": "varchar(255)",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "name",
+            "type": "varchar(100)",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "baseType",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "frameType",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "listingCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "uniqueSellers",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "removedCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "0",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "likelySales",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "0",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "relistedCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "0",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "pendingCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "0",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "salesPrices",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "prices",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "signatureData",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "firstSeenAt",
+            "type": "varchar(32)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "lastSeenAt",
+            "type": "varchar(32)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "rowCreatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "rowUpdatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": true,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "rowDeletedAt",
+            "type": "datetime",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "realm",
+            "type": "varchar(10)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "league",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "hour",
+            "type": "bigint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "itemKey",
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "identified",
+            "type": "boolean",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "corrupted",
+            "type": "boolean",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "false",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "foilVariation",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "-1",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "links",
+            "type": "tinyint",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "0",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "signatureKind",
+            "type": "varchar(32)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "''",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "signatureValue",
+            "type": "varchar(255)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "''",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "iconAsset",
+            "type": "varchar(255)",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "name",
+            "type": "varchar(100)",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "baseType",
+            "type": "varchar(100)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "frameType",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "listingCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "uniqueSellers",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "removedCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "0",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "likelySales",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "0",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "relistedCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "0",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "pendingCount",
+            "type": "int",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "0",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "salesPrices",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "prices",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "signatureData",
+            "type": "json",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "firstSeenAt",
+            "type": "varchar(32)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "lastSeenAt",
+            "type": "varchar(32)",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "rowCreatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "rowUpdatedAt",
+            "type": "datetime",
+            "notNull": true,
+            "autoIncrement": false,
+            "default": "(now())",
+            "onUpdateNow": true,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "rowDeletedAt",
+            "type": "datetime",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_daily_sample",
             "name": "PRIMARY",
             "columns": ["realm", "league", "day"],
             "entityType": "pks"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe2_daily_sample",
             "name": "PRIMARY",
-            "columns": ["realm", "league", "revision", "cohortId", "hour"],
+            "columns": ["realm", "league", "day"],
             "entityType": "pks"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_revision_hour",
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
             "name": "PRIMARY",
-            "columns": ["realm", "league", "hour", "revision"],
+            "columns": ["realm", "league", "hour", "cohortId"],
             "entityType": "pks"
         },
         {
-            "table": "qsPoeBoats__stash_cohort",
+            "table": "qsPoeBoats__stash_poe1_cohort_window",
             "name": "PRIMARY",
-            "columns": ["revision", "id"],
+            "columns": ["realm", "league", "hour", "cohortId"],
             "entityType": "pks"
         },
         {
-            "table": "qsPoeBoats__stash_currency_hourly",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
+            "name": "PRIMARY",
+            "columns": ["realm", "league", "day", "marketId"],
+            "entityType": "pks"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
+            "name": "PRIMARY",
+            "columns": ["realm", "league", "day", "marketId"],
+            "entityType": "pks"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
             "name": "PRIMARY",
             "columns": ["realm", "league", "marketId", "hour"],
             "entityType": "pks"
         },
         {
-            "table": "qsPoeBoats__stash_currency_latest",
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "PRIMARY",
+            "columns": ["realm", "league", "marketId", "hour"],
+            "entityType": "pks"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_market",
             "name": "PRIMARY",
             "columns": ["realm", "league", "marketId"],
             "entityType": "pks"
         },
         {
-            "table": "qsPoeBoats__stash_currency_market",
+            "table": "qsPoeBoats__stash_poe2_currency_market",
             "name": "PRIMARY",
             "columns": ["realm", "league", "marketId"],
             "entityType": "pks"
         },
         {
-            "table": "qsPoeBoats__stash_hour_coverage",
+            "table": "qsPoeBoats__stash_poe1_hour_coverage",
             "name": "PRIMARY",
             "columns": ["stream", "realm", "league", "hour"],
             "entityType": "pks"
         },
         {
-            "table": "qsPoeBoats__stash_unique_daily",
+            "table": "qsPoeBoats__stash_poe2_hour_coverage",
+            "name": "PRIMARY",
+            "columns": ["stream", "realm", "league", "hour"],
+            "entityType": "pks"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_daily",
             "name": "PRIMARY",
             "columns": [
                 "realm",
@@ -3532,7 +5252,23 @@
             "entityType": "pks"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "PRIMARY",
+            "columns": [
+                "realm",
+                "league",
+                "day",
+                "itemKey",
+                "identified",
+                "corrupted",
+                "foilVariation",
+                "signatureKind",
+                "signatureValue"
+            ],
+            "entityType": "pks"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
             "name": "PRIMARY",
             "columns": [
                 "realm",
@@ -3542,6 +5278,24 @@
                 "identified",
                 "corrupted",
                 "foilVariation",
+                "links",
+                "signatureKind",
+                "signatureValue"
+            ],
+            "entityType": "pks"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "PRIMARY",
+            "columns": [
+                "realm",
+                "league",
+                "hour",
+                "itemKey",
+                "identified",
+                "corrupted",
+                "foilVariation",
+                "links",
                 "signatureKind",
                 "signatureValue"
             ],
@@ -3555,6 +5309,12 @@
         },
         {
             "table": "qsPoeBoats__auth_session",
+            "name": "PRIMARY",
+            "columns": ["id"],
+            "entityType": "pks"
+        },
+        {
+            "table": "qsPoeBoats__auth_two_factor",
             "name": "PRIMARY",
             "columns": ["id"],
             "entityType": "pks"
@@ -3626,13 +5386,37 @@
             "entityType": "pks"
         },
         {
-            "table": "qsPoeBoats__stash_basemap_snapshot",
+            "table": "qsPoeBoats__stash_poe1_basemap_snapshot",
             "name": "PRIMARY",
             "columns": ["iconAsset"],
             "entityType": "pks"
         },
         {
-            "table": "qsPoeBoats__stash_checkpoint",
+            "table": "qsPoeBoats__stash_poe2_basemap_snapshot",
+            "name": "PRIMARY",
+            "columns": ["iconAsset"],
+            "entityType": "pks"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_checkpoint",
+            "name": "PRIMARY",
+            "columns": ["id"],
+            "entityType": "pks"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_checkpoint",
+            "name": "PRIMARY",
+            "columns": ["id"],
+            "entityType": "pks"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_cohort_revision",
+            "name": "PRIMARY",
+            "columns": ["seq"],
+            "entityType": "pks"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_cohort",
             "name": "PRIMARY",
             "columns": ["id"],
             "entityType": "pks"
@@ -3688,6 +5472,38 @@
         {
             "table": "qsPoeBoats__auth_session",
             "name": "session_userId_idx",
+            "columns": [
+                {
+                    "value": "userId",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "entityType": "indexes"
+        },
+        {
+            "table": "qsPoeBoats__auth_two_factor",
+            "name": "twoFactor_secret_idx",
+            "columns": [
+                {
+                    "value": "secret",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "entityType": "indexes"
+        },
+        {
+            "table": "qsPoeBoats__auth_two_factor",
+            "name": "twoFactor_userId_idx",
             "columns": [
                 {
                     "value": "userId",
@@ -3782,7 +5598,7 @@
             "entityType": "indexes"
         },
         {
-            "table": "qsPoeBoats__stash_checkpoint",
+            "table": "qsPoeBoats__stash_poe1_checkpoint",
             "name": "stash_checkpoint_scope_time",
             "columns": [
                 {
@@ -3810,7 +5626,35 @@
             "entityType": "indexes"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
+            "table": "qsPoeBoats__stash_poe2_checkpoint",
+            "name": "stash_checkpoint_scope_time",
+            "columns": [
+                {
+                    "value": "realm",
+                    "isExpression": false
+                },
+                {
+                    "value": "league",
+                    "isExpression": false
+                },
+                {
+                    "value": "capturedAt",
+                    "isExpression": false
+                },
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "entityType": "indexes"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_cohort_hourly",
             "name": "stash_cohort_history_idx",
             "columns": [
                 {
@@ -3838,23 +5682,15 @@
             "entityType": "indexes"
         },
         {
-            "table": "qsPoeBoats__stash_cohort_hourly",
-            "name": "stash_cohort_coverage_idx",
+            "table": "qsPoeBoats__stash_poe1_cohort_revision",
+            "name": "stash_cohort_revision_idx",
             "columns": [
                 {
-                    "value": "realm",
-                    "isExpression": false
-                },
-                {
-                    "value": "league",
-                    "isExpression": false
-                },
-                {
-                    "value": "hour",
+                    "value": "revision",
                     "isExpression": false
                 }
             ],
-            "isUnique": false,
+            "isUnique": true,
             "using": null,
             "algorithm": null,
             "lock": null,
@@ -3862,15 +5698,11 @@
             "entityType": "indexes"
         },
         {
-            "table": "qsPoeBoats__stash_cohort",
+            "table": "qsPoeBoats__stash_poe1_cohort",
             "name": "stash_cohort_base_page_idx",
             "columns": [
                 {
                     "value": "baseTypeKey",
-                    "isExpression": false
-                },
-                {
-                    "value": "revision",
                     "isExpression": false
                 },
                 {
@@ -3886,15 +5718,23 @@
             "entityType": "indexes"
         },
         {
-            "table": "qsPoeBoats__stash_currency_hourly",
-            "name": "idx_stash_cx_league_hour",
+            "table": "qsPoeBoats__stash_poe1_currency_daily",
+            "name": "stash_currency_daily_market_idx",
             "columns": [
+                {
+                    "value": "realm",
+                    "isExpression": false
+                },
                 {
                     "value": "league",
                     "isExpression": false
                 },
                 {
-                    "value": "hour",
+                    "value": "marketId",
+                    "isExpression": false
+                },
+                {
+                    "value": "day",
                     "isExpression": false
                 }
             ],
@@ -3906,7 +5746,35 @@
             "entityType": "indexes"
         },
         {
-            "table": "qsPoeBoats__stash_currency_hourly",
+            "table": "qsPoeBoats__stash_poe2_currency_daily",
+            "name": "stash_currency_daily_market_idx",
+            "columns": [
+                {
+                    "value": "realm",
+                    "isExpression": false
+                },
+                {
+                    "value": "league",
+                    "isExpression": false
+                },
+                {
+                    "value": "marketId",
+                    "isExpression": false
+                },
+                {
+                    "value": "day",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "entityType": "indexes"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_currency_hourly",
             "name": "stash_currency_coverage_idx",
             "columns": [
                 {
@@ -3930,8 +5798,8 @@
             "entityType": "indexes"
         },
         {
-            "table": "qsPoeBoats__stash_currency_latest",
-            "name": "stash_currency_latest_hour_idx",
+            "table": "qsPoeBoats__stash_poe2_currency_hourly",
+            "name": "stash_currency_coverage_idx",
             "columns": [
                 {
                     "value": "realm",
@@ -3954,7 +5822,111 @@
             "entityType": "indexes"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
+            "table": "qsPoeBoats__stash_poe1_market_daily",
+            "name": "stash_market_daily_base_idx",
+            "columns": [
+                {
+                    "value": "realm",
+                    "isExpression": false
+                },
+                {
+                    "value": "league",
+                    "isExpression": false
+                },
+                {
+                    "value": "baseType",
+                    "isExpression": false
+                },
+                {
+                    "value": "day",
+                    "isExpression": false
+                },
+                {
+                    "value": "frameType",
+                    "isExpression": false
+                },
+                {
+                    "value": "likelySales",
+                    "isExpression": false
+                },
+                {
+                    "value": "removedCount",
+                    "isExpression": false
+                },
+                {
+                    "value": "pendingCount",
+                    "isExpression": false
+                },
+                {
+                    "value": "latestHour",
+                    "isExpression": false
+                },
+                {
+                    "value": "listedHour",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "entityType": "indexes"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_daily",
+            "name": "stash_market_daily_base_idx",
+            "columns": [
+                {
+                    "value": "realm",
+                    "isExpression": false
+                },
+                {
+                    "value": "league",
+                    "isExpression": false
+                },
+                {
+                    "value": "baseType",
+                    "isExpression": false
+                },
+                {
+                    "value": "day",
+                    "isExpression": false
+                },
+                {
+                    "value": "frameType",
+                    "isExpression": false
+                },
+                {
+                    "value": "likelySales",
+                    "isExpression": false
+                },
+                {
+                    "value": "removedCount",
+                    "isExpression": false
+                },
+                {
+                    "value": "pendingCount",
+                    "isExpression": false
+                },
+                {
+                    "value": "latestHour",
+                    "isExpression": false
+                },
+                {
+                    "value": "listedHour",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "entityType": "indexes"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
             "name": "idx_stash_unique_league_hour",
             "columns": [
                 {
@@ -3974,7 +5946,7 @@
             "entityType": "indexes"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
             "name": "idx_stash_unique_item",
             "columns": [
                 {
@@ -3994,7 +5966,7 @@
             "entityType": "indexes"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
             "name": "idx_stash_unique_sig",
             "columns": [
                 {
@@ -4014,7 +5986,7 @@
             "entityType": "indexes"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
             "name": "idx_stash_unique_icon",
             "columns": [
                 {
@@ -4030,7 +6002,131 @@
             "entityType": "indexes"
         },
         {
-            "table": "qsPoeBoats__stash_unique_hourly",
+            "table": "qsPoeBoats__stash_poe1_unique_hourly",
+            "name": "stash_unique_market_cover_idx",
+            "columns": [
+                {
+                    "value": "realm",
+                    "isExpression": false
+                },
+                {
+                    "value": "league",
+                    "isExpression": false
+                },
+                {
+                    "value": "hour",
+                    "isExpression": false
+                },
+                {
+                    "value": "listingCount",
+                    "isExpression": false
+                },
+                {
+                    "value": "likelySales",
+                    "isExpression": false
+                },
+                {
+                    "value": "removedCount",
+                    "isExpression": false
+                },
+                {
+                    "value": "pendingCount",
+                    "isExpression": false
+                },
+                {
+                    "value": "baseType",
+                    "isExpression": false
+                },
+                {
+                    "value": "frameType",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "entityType": "indexes"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "idx_stash_unique_league_hour",
+            "columns": [
+                {
+                    "value": "league",
+                    "isExpression": false
+                },
+                {
+                    "value": "hour",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "entityType": "indexes"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "idx_stash_unique_item",
+            "columns": [
+                {
+                    "value": "league",
+                    "isExpression": false
+                },
+                {
+                    "value": "itemKey",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "entityType": "indexes"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "idx_stash_unique_sig",
+            "columns": [
+                {
+                    "value": "signatureKind",
+                    "isExpression": false
+                },
+                {
+                    "value": "signatureValue",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "entityType": "indexes"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
+            "name": "idx_stash_unique_icon",
+            "columns": [
+                {
+                    "value": "iconAsset",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "using": null,
+            "algorithm": null,
+            "lock": null,
+            "nameExplicit": true,
+            "entityType": "indexes"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_unique_hourly",
             "name": "stash_unique_market_cover_idx",
             "columns": [
                 {

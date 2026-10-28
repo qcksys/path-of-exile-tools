@@ -10,10 +10,7 @@ import {
     knownCraftingExchangeItems,
     loadCraftingExchangeMembership,
 } from "~/db/queries/crafting-exchange-membership.queries";
-import {
-    craftingMarketDefinition,
-    findCraftingMarketPrices,
-} from "~/db/queries/crafting-market.queries";
+import { findCraftingMarketPrices } from "~/db/queries/crafting-market.queries";
 import { CraftingEngine } from "~/lib/crafting-engine";
 import {
     bindExchangePrice,
@@ -24,7 +21,6 @@ import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import {
     bindCohortPurchasePrice,
     craftingMarketItemIssue,
-    latestCompatibleCohort,
     livePurchasePrices,
 } from "~/lib/crafting-market";
 import { resolveRuleset } from "~/lib/crafting-rulesets";
@@ -107,16 +103,9 @@ export async function refreshCraftingMarketPrices(
             );
             continue;
         }
-        const sameCohort = result.candidates.filter(
+        const candidate = result.candidates.find(
             (entry) => entry.definition.id === reference.cohortId,
         );
-        const original =
-            sameCohort.find((entry) => entry.definition.revision === reference.revision)
-                ?.definition ??
-            (sameCohort.length
-                ? await craftingMarketDefinition(db, reference.cohortId, reference.revision)
-                : null);
-        const candidate = original ? latestCompatibleCohort(sameCohort, original) : undefined;
         if (!candidate?.covered) {
             issues.push(
                 `${node.name}: ${candidate?.reasons.join(" ") || "The selected cohort has no usable price. Choose another cohort or enter a manual price."}`,

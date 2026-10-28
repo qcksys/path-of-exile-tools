@@ -192,11 +192,8 @@ describe("equipment asking-price conversion", () => {
             newer.covered = false;
             newer.reasons = ["No matching-hour asking price or exchange conversion is available."];
             delete newer.exchange;
-            lookup.mockResolvedValue({
-                candidates: [candidate, newer],
-                truncated: false,
-                message: null,
-            });
+            // The lookup returns each cohort once, at its latest hour.
+            lookup.mockResolvedValue({ candidates: [newer], truncated: false, message: null });
             const missing = await refreshCraftingMarketPrices(db, graph, engine);
             expect(missing.issues).toHaveLength(1);
             expect(missing.graph).toEqual(graph);

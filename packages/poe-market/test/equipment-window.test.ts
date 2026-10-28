@@ -82,8 +82,12 @@ describe("equipment price windows", () => {
     });
     it("retains old hourly references and explicitly saves adaptive policy", () => {
         const { realm, league, revision, cohortId } = fixture();
-        const reference = { realm, league, revision, cohortId };
-        for (const value of [reference, { ...reference, window: "adaptive-v1" as const }])
+        const reference = { realm, league, cohortId };
+        for (const value of [reference, { ...reference, window: "adaptive-v1" as const }]) {
             expect(decodeCohortPriceReference(encodeCohortPriceReference(value))).toEqual(value);
+            // References saved with a catalog revision decode without it.
+            const saved = `cohort:v1:${encodeURIComponent(JSON.stringify({ ...value, revision }))}`;
+            expect(decodeCohortPriceReference(saved)).toEqual(value);
+        }
     });
 });

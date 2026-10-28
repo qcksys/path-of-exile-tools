@@ -89,8 +89,9 @@ describe("paid Scouring market source", () => {
         latest.latest.prices = {};
         latest.covered = false;
         latest.reasons = ["No asking price in the comparison currency."];
+        // The lookup returns each cohort once, at its latest hour.
         const lookup = vi.spyOn(marketQueries, "findCraftingMarketPrices").mockResolvedValue({
-            candidates: [candidate, latest],
+            candidates: [latest],
             truncated: false,
             message: null,
         });
