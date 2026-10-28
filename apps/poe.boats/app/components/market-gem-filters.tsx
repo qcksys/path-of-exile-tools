@@ -111,7 +111,7 @@ function FlagToggle({
     value,
     onChange,
 }: {
-    name: "corruption" | "gemTransfigured";
+    name: "corruption" | "gemTransfigured" | "gemVaal";
     legend: string;
     label: string;
     value: keyof typeof FLAG_STATES;
@@ -139,7 +139,7 @@ function FlagToggle({
     );
 }
 
-/** The skill gem category's level, quality, corruption and transfigured filters. */
+/** The skill gem category's level, quality, corruption, transfigured and Vaal filters. */
 export function MarketGemFilters({
     filters,
     onChange,
@@ -185,6 +185,13 @@ export function MarketGemFilters({
                 legend="Transfigured"
                 label="Transfigured"
                 value={filters.gemTransfigured}
+                onChange={onChange}
+            />
+            <FlagToggle
+                name="gemVaal"
+                legend="Vaal"
+                label="Vaal"
+                value={filters.gemVaal}
                 onChange={onChange}
             />
         </div>

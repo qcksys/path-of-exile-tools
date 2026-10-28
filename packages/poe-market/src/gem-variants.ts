@@ -1,4 +1,4 @@
-import transfiguredGems from "../data/transfigured-gems-poe1.json" with { type: "json" };
+import gemLists from "../data/gems-poe1.json" with { type: "json" };
 
 /**
  * PoE 1 skill gem markets: one per gem, level band, quality band and corruption state. A gem's
@@ -26,12 +26,18 @@ export type GemTier = keyof typeof GEM_TIERS;
 export const GEM_QUALITY_LABELS = ["0–19%", "20%", "21–23%"] as const;
 
 /**
- * Transfigured gems' market keys, from the trade site (`vp run game-data:transfigured-gems`):
+ * Transfigured gems' market keys, from the trade site (`vp run game-data:gems`):
  * `Kinetic Bolt of Fragmentation`, or `Vaal Arc (Arc of Surging)` for a Vaal gem whose skill is
  * transfigured. Regenerate when a league adds transfigured gems.
  */
-export const TRANSFIGURED_GEMS: readonly string[] = Object.keys(transfiguredGems.gems);
+export const TRANSFIGURED_GEMS: readonly string[] = Object.keys(gemLists.transfigured);
 const transfigured = new Set(TRANSFIGURED_GEMS);
+
+/**
+ * Vaal gems' market keys: base items tagged `vaal_gem` in the game data, and their transfigured
+ * forms. Vaal Sacrifice and Vaal Temptation supports are not Vaal gems.
+ */
+export const VAAL_GEMS: readonly string[] = gemLists.vaal;
 
 /**
  * A gem's market key: its type line, which names a transfigured gem apart from its base gem, or

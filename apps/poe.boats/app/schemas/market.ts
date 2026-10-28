@@ -82,6 +82,12 @@ export const marketFiltersSchema = z.object({
         .describe(
             "Only transfigured skill gems (true) or only other gems (false); either lists only gem markets",
         ),
+    gemVaal: z
+        .enum(["all", "true", "false"])
+        .default("all")
+        .describe(
+            "Only Vaal skill gems (true) or only other gems (false); either lists only gem markets",
+        ),
     item: z.string().max(255).optional(),
     identified: z.enum(["true", "false"]).default("true"),
     corrupted: z.enum(["true", "false"]).default("false"),
@@ -286,6 +292,7 @@ export function marketLink(
         if (filters.gemQuality) params.set("gemQuality", filters.gemQuality);
         if (filters.gemTransfigured !== "all")
             params.set("gemTransfigured", filters.gemTransfigured);
+        if (filters.gemVaal !== "all") params.set("gemVaal", filters.gemVaal);
     }
     if (item) {
         // The item path has no category segment, so the query keeps it for links back to the list.

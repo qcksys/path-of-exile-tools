@@ -9,6 +9,7 @@ import {
     gemVariantValues,
     parseGemBandFilter,
     TRANSFIGURED_GEMS,
+    VAAL_GEMS,
 } from "../src/gem-variants.ts";
 
 describe("gem variants", () => {
@@ -131,6 +132,15 @@ describe("transfigured gems", () => {
         expect(TRANSFIGURED_GEMS).toContain("Vaal Arc (Arc of Surging)");
         expect(TRANSFIGURED_GEMS).not.toContain("Kinetic Bolt");
         expect(TRANSFIGURED_GEMS).not.toContain("Vaal Arc");
+    });
+
+    it("lists Vaal gems by their game data tag, with their transfigured forms", () => {
+        expect(VAAL_GEMS).toContain("Vaal Arc");
+        expect(VAAL_GEMS).toContain("Vaal Arc (Arc of Surging)");
+        expect(VAAL_GEMS).not.toContain("Arc");
+        // Named Vaal, but not Vaal gems.
+        expect(VAAL_GEMS).not.toContain("Vaal Sacrifice Support");
+        expect(VAAL_GEMS).not.toContain("Vaal Temptation Support");
     });
 
     it("keys a gem by its type line, and a transfigured Vaal gem by its skill too", () => {

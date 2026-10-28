@@ -100,6 +100,7 @@ export function MarketFiltersForm({
                       gemLevel: filters.gemLevel,
                       gemQuality: filters.gemQuality,
                       gemTransfigured: filters.gemTransfigured,
+                      gemVaal: filters.gemVaal,
                       page: filters.page,
                       identified: filters.identified,
                       corrupted: filters.corrupted,

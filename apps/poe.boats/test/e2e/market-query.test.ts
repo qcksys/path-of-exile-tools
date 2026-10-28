@@ -681,7 +681,7 @@ it("lists gem markets under Skill gems by band and filters them by included and 
     expect(await list({ category: "gems", gemLevel: "-1-19,-20,-21" })).toEqual([]);
 });
 
-it("lists only transfigured gems, or only other gems, with the transfigured filter", async () => {
+it("lists only transfigured or Vaal gems, or only other gems, with their filters", async () => {
     const gem = (itemKey: string, baseType: string, overrides: Partial<TStashUniqueHourlyI> = {}) =>
         observation({
             league: "Transfigured",
@@ -693,16 +693,16 @@ it("lists only transfigured gems, or only other gems, with the transfigured filt
             signatureValue: "Level 20 (max) · Quality 20%",
             ...overrides,
         });
-    await db
-        .insert(market)
-        .values([
-            gem("Kinetic Bolt", "Kinetic Bolt"),
-            gem("Kinetic Bolt of Fragmentation", "Kinetic Bolt"),
-            gem("Vaal Arc", "Vaal Arc", { corrupted: true }),
-            gem("Vaal Arc (Arc of Surging)", "Vaal Arc", { corrupted: true }),
-            observation({ league: "Transfigured", itemKey: "Kaom's Heart", name: "Kaom's Heart" }),
-        ]);
-    const keys = async (gemTransfigured: string, category = "gems") =>
+    await db.insert(market).values([
+        gem("Kinetic Bolt", "Kinetic Bolt"),
+        gem("Kinetic Bolt of Fragmentation", "Kinetic Bolt"),
+        gem("Vaal Arc", "Vaal Arc", { corrupted: true }),
+        gem("Vaal Arc (Arc of Surging)", "Vaal Arc", { corrupted: true }),
+        // Named Vaal, but not a Vaal gem.
+        gem("Vaal Sacrifice Support", "Vaal Sacrifice Support"),
+        observation({ league: "Transfigured", itemKey: "Kaom's Heart", name: "Kaom's Heart" }),
+    ]);
+    const keys = async (filters: Record<string, string>, category = "gems") =>
         (
             await marketData(
                 db as unknown as TDatabase,
@@ -710,24 +710,37 @@ it("lists only transfigured gems, or only other gems, with the transfigured filt
                     league: "Transfigured",
                     order: "name-asc",
                     category,
-                    gemTransfigured,
+                    ...filters,
                 }),
                 "list",
             )
         ).rows.map((row) => row.itemKey);
-    expect(await keys("all")).toEqual([
+    expect(await keys({})).toEqual([
         "Kinetic Bolt",
         "Kinetic Bolt of Fragmentation",
         "Vaal Arc",
         "Vaal Arc (Arc of Surging)",
+        "Vaal Sacrifice Support",
     ]);
-    expect(await keys("true")).toEqual([
+    expect(await keys({ gemTransfigured: "true" })).toEqual([
         "Kinetic Bolt of Fragmentation",
         "Vaal Arc (Arc of Surging)",
     ]);
-    expect(await keys("false")).toEqual(["Kinetic Bolt", "Vaal Arc"]);
+    expect(await keys({ gemTransfigured: "false" })).toEqual([
+        "Kinetic Bolt",
+        "Vaal Arc",
+        "Vaal Sacrifice Support",
+    ]);
+    expect(await keys({ gemVaal: "true" })).toEqual(["Vaal Arc", "Vaal Arc (Arc of Surging)"]);
+    expect(await keys({ gemVaal: "false", gemTransfigured: "false" })).toEqual([
+        "Kinetic Bolt",
+        "Vaal Sacrifice Support",
+    ]);
     // Either state lists only gems.
-    expect(await keys("false", "all")).toEqual(["Kinetic Bolt", "Vaal Arc"]);
+    expect(await keys({ gemVaal: "true" }, "all")).toEqual([
+        "Vaal Arc",
+        "Vaal Arc (Arc of Surging)",
+    ]);
 });
 
 it("lists a unique's markets in both identification states as variants of each other", async () => {

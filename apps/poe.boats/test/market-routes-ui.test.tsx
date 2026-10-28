@@ -732,6 +732,8 @@ it("filters skill gems by tri-state level, quality and corruption toggles", asyn
     fireEvent.click(screen.getByRole("button", { name: "Corrupted: any" }));
     fireEvent.click(screen.getByRole("button", { name: "Corrupted: included" }));
     fireEvent.click(screen.getByRole("button", { name: "Transfigured: any" }));
+    fireEvent.click(screen.getByRole("button", { name: "Vaal: any" }));
+    fireEvent.click(screen.getByRole("button", { name: "Vaal: included" }));
     expect(within(level).getByRole("button", { name: "21: excluded" })).toBeTruthy();
     await waitFor(() =>
         expect(getMarketData).toHaveBeenLastCalledWith(
@@ -742,6 +744,7 @@ it("filters skill gems by tri-state level, quality and corruption toggles", asyn
                 gemQuality: "20",
                 corruption: "false",
                 gemTransfigured: "true",
+                gemVaal: "false",
             }),
             "list",
         ),
@@ -773,6 +776,7 @@ it("filters skill gems by tri-state level, quality and corruption toggles", asyn
                 gemLevel: "",
                 gemQuality: "",
                 gemTransfigured: "all",
+                gemVaal: "all",
             }),
             "list",
         ),
