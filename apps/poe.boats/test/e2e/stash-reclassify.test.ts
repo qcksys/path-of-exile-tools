@@ -77,7 +77,7 @@ const stash: Parameters<typeof captureEquipment>[1] = {
     accountName: "seller",
     league: "Standard",
     stash: "Sales",
-    stashType: "PremiumStash",
+    stashType: "TradeStash",
     items: [item],
 };
 let local: DbHandle;

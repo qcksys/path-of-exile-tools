@@ -20,7 +20,7 @@ function stashPage(phase: number): PublicStashPage {
                       id: `stash-${seller}`,
                       accountName: `seller-${seller}`,
                       public: true,
-                      stashType: "PremiumStash",
+                      stashType: "TradeStash",
                       league,
                       items: [
                           ...Array.from({ length: phase === 1 ? 100 : 80 }, (_, index) => ({

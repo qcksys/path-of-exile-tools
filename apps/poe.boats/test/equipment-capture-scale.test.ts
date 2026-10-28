@@ -24,7 +24,7 @@ it("captures one changed stash within a bounded budget despite unrelated cohort 
                 accountName: "changed-account",
                 league: "Standard",
                 stash: "~price 1 chaos",
-                stashType: "PremiumStash",
+                stashType: "TradeStash",
                 items: [
                     {
                         id: "changed-item",

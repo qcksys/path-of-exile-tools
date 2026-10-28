@@ -411,7 +411,7 @@ Identified uniques are run through a registry of structured mod-extractors. The 
 | `signature_value` | `Glancing Blows`                                                 | SHA-256 of the sorted mod signature   |
 | `signature_data`  | `{"kind":"forbidden-jewel","allocatedNotable":"Glancing Blows"}` | `{"kind":"watchers-eye","mods":[...]}` |
 
-`(signature_kind, signature_value)` are PK components alongside `(realm, league, hour, item_key, identified, corrupted, foil_variation, links)`, so each tradable variant gets its own permanent hourly row. `links` is 5 or 6 for a unique's largest linked socket group (poe.ninja's links split), otherwise 0, and combines with any signature. `signature_data` is the lossless payload — query into it with MySQL's JSON path operators when you need a specific field.
+`(signature_kind, signature_value)` are PK components alongside `(realm, league, hour, item_key, identified, corrupted, foil_variation, links, tab)`, so each tradable variant gets its own permanent hourly row. `links` is 5 or 6 for a unique's largest linked socket group (poe.ninja's links split), otherwise 0, and combines with any signature. `tab` is `merchant` for Faustus's merchant tabs (`stashType` `TradeStash`), `other` for every other public tab, and empty for listings captured before tabs were recorded; sales are compared only with listings in the same kind of tab. Equipment cohorts, live and reclassified from the archive, count merchant tabs only. `signature_data` is the lossless payload — query into it with MySQL's JSON path operators when you need a specific field.
 
 Rows with no extracted signature use `signature_kind = ''` and `signature_value = ''` (empty strings, not NULL, so the PK works).
 
@@ -471,7 +471,7 @@ Each game (`poe1`, `poe2`) has its own tables; the receiver routes rows by realm
 
 | table                       | retention   | one row per                                |
 | --------------------------- | ----------- | ------------------------------------------ |
-| `unique_hourly`             | **forever** | `(realm, league, hour, item_key, identified, corrupted, foil_variation, links, signature_kind, signature_value)`        |
+| `unique_hourly`             | **forever** | `(realm, league, hour, item_key, identified, corrupted, foil_variation, links, tab, signature_kind, signature_value)`   |
 | `currency_hourly`           | **forever** | `(realm, league, market_id, hour)`                |
 | `basemap_snapshot`          | **forever** | `icon_asset` (public unid → name resolver) |
 | `cohort_hourly` (PoE 1)     | **forever** | `(realm, league, hour, cohort_id)`, the newest catalog revision's classification |

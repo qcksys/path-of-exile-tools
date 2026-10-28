@@ -14,6 +14,7 @@ interface AggregateRow {
     corrupted: boolean;
     foilVariation: number;
     links: number;
+    tab: UniqueHourlyRow["tab"];
     signatureKind: string;
     signatureValue: string;
     signatureData: string | null;
@@ -41,7 +42,7 @@ interface AggregateRow {
  *      enriched with the resolved name (basemap join) and a deterministic
  *      `signature_value` projection of `mod_signature` keyed by `kind`.
  *   2. Top-level GROUP BY (league, hour, item_key, corrupted,
- *      foil_variation, links, signature_kind, signature_value) — one row per
+ *      foil_variation, links, tab, signature_kind, signature_value) — one row per
  *      *market* per hour. Variant axes are first-class columns; the JSON
  *      payload is preserved on `signature_data` for ad-hoc field queries.
  *
@@ -66,6 +67,7 @@ WITH observations AS (
         COALESCE(l.corrupted, FALSE) AS corrupted,
         COALESCE(l.foil_variation, -1) AS foil_variation,
         COALESCE(l.links, 0) AS links,
+        COALESCE(l.tab, '') AS tab,
         COALESCE(json_extract_string(l.mod_signature, '$.kind'), '') AS signature_kind,
         COALESCE(l.signature_value, '') AS signature_value,
         l.mod_signature::VARCHAR AS signature_data,
@@ -93,7 +95,7 @@ WITH observations AS (
 ),
 prices AS (
     SELECT
-        league, hour, item_key, corrupted, foil_variation, links,
+        league, hour, item_key, corrupted, foil_variation, links, tab,
         signature_kind, signature_value, price_currency, status,
         COUNT(*) AS price_count,
         MIN(price_amount) AS min,
@@ -106,12 +108,12 @@ prices AS (
         MAX(price_amount) AS max
     FROM windowed
     WHERE price_amount > 0 AND price_currency IS NOT NULL AND status IN ('listing', 'likely-sold')
-    GROUP BY league, hour, item_key, corrupted, foil_variation, links,
+    GROUP BY league, hour, item_key, corrupted, foil_variation, links, tab,
              signature_kind, signature_value, price_currency, status
 ),
 prices_agg AS (
     SELECT
-        league, hour, item_key, corrupted, foil_variation, links,
+        league, hour, item_key, corrupted, foil_variation, links, tab,
         signature_kind, signature_value, status,
         json_group_object(
             price_currency,
@@ -121,7 +123,7 @@ prices_agg AS (
             )
         ) AS prices_json
     FROM prices
-    GROUP BY league, hour, item_key, corrupted, foil_variation, links,
+    GROUP BY league, hour, item_key, corrupted, foil_variation, links, tab,
              signature_kind, signature_value, status
 )
 SELECT
@@ -131,6 +133,7 @@ SELECT
     w.corrupted,
     w.foil_variation AS "foilVariation",
     w.links,
+    w.tab,
     w.signature_kind AS "signatureKind",
     w.signature_value AS "signatureValue",
     ANY_VALUE(w.signature_data) AS "signatureData",
@@ -151,15 +154,15 @@ SELECT
     MAX(w.last_seen_at)::VARCHAR AS "lastSeenAt"
 FROM windowed w
 LEFT JOIN (SELECT * FROM prices_agg WHERE status = 'listing') p USING (
-    league, hour, item_key, corrupted, foil_variation, links,
+    league, hour, item_key, corrupted, foil_variation, links, tab,
     signature_kind, signature_value
 )
 LEFT JOIN (SELECT * FROM prices_agg WHERE status = 'likely-sold') s USING (
-    league, hour, item_key, corrupted, foil_variation, links,
+    league, hour, item_key, corrupted, foil_variation, links, tab,
     signature_kind, signature_value
 )
 GROUP BY
-    w.league, w.hour, w.item_key, w.corrupted, w.foil_variation, w.links,
+    w.league, w.hour, w.item_key, w.corrupted, w.foil_variation, w.links, w.tab,
     w.signature_kind, w.signature_value, p.prices_json, s.prices_json
 ORDER BY w.league, w.item_key, w.signature_kind, w.signature_value
 `;
@@ -191,6 +194,7 @@ export async function rollupPs(
         corrupted: a.corrupted,
         foilVariation: Number(a.foilVariation),
         links: Number(a.links),
+        tab: a.tab,
         signatureKind: a.signatureKind,
         signatureValue: a.signatureValue,
         signatureData: a.signatureData

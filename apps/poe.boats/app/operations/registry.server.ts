@@ -73,8 +73,8 @@ const shared = {
     readOnly: true,
     method: "get",
 } as const;
-// Markets merge foil and non-foil rows, and list rows and history merge or filter link counts,
-// so a market row has neither a foil variation nor links.
+// Markets merge foil and non-foil rows, list rows and history merge or filter link counts, and
+// the `tab` filter picks or merges stash tab kinds, so a market row has none of them.
 const marketRow = sStashUniqueHourlyS
     .omit({
         rowCreatedAt: true,
@@ -82,6 +82,7 @@ const marketRow = sStashUniqueHourlyS
         rowDeletedAt: true,
         foilVariation: true,
         links: true,
+        tab: true,
     })
     .extend({
         rowCreatedAt: z.string(),

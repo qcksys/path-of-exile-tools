@@ -4,6 +4,7 @@
  */
 
 import type { CohortHourly, MarketCohortDefinition } from "@poe-tools/market";
+import type { ListingTab } from "#src/shared/stash-tab.ts";
 
 /** Listing prices in one currency. Rows pushed before mean and quantiles were added omit them. */
 export interface PriceSummary {
@@ -30,6 +31,8 @@ export interface UniqueHourlyRow {
     foilVariation: number;
     /** 5 or 6 for a unique's largest linked socket group, otherwise 0. */
     links: number;
+    /** Merchant (Faustus) or other public tabs; empty for listings seen before tabs were recorded. */
+    tab: ListingTab | "";
     /** Empty string when no extractor matched. */
     signatureKind: string;
     /** Empty string when no extractor matched. */

@@ -68,6 +68,7 @@ const row = {
     listingCount: 25,
     uniqueSellers: 24,
     prices,
+    tab: "merchant",
 };
 function capture(changes: Partial<typeof row> = {}) {
     const entry = { ...row, ...changes };
@@ -105,7 +106,8 @@ beforeEach(() => {
     sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_unique_hourly (
         realm TEXT, league TEXT, hour INTEGER, itemKey TEXT, baseType TEXT, name TEXT,
         frameType INTEGER, identified INTEGER, corrupted INTEGER, foilVariation INTEGER,
-        signatureKind TEXT, signatureValue TEXT, listingCount INTEGER, uniqueSellers INTEGER, prices TEXT)`);
+        signatureKind TEXT, signatureValue TEXT, listingCount INTEGER, uniqueSellers INTEGER, prices TEXT,
+        tab TEXT)`);
     sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_currency_hourly (
         realm TEXT, league TEXT, hour INTEGER, marketId TEXT, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT)`);
     db = drizzle(async (sql, params) => {
@@ -763,6 +765,8 @@ it.each([
     { hour: hour - 24 * 3600 },
     { listingCount: 0 },
     { uniqueSellers: 0 },
+    { tab: "other" },
+    { tab: "" },
 ])("rejects incompatible commodity observation %j", async (changes) => {
     capture(changes);
     const result = await findCraftingCommodityPrices(db, graph, [identity]);
