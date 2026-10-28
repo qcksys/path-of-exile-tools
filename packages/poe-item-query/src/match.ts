@@ -7,6 +7,7 @@ import type {
     ModifierFact,
     NumericRange,
 } from "./schema.ts";
+import { itemIntangibility } from "./source-preparation.ts";
 
 export type ItemMatch = "match" | "no-match" | "unknown";
 
@@ -130,7 +131,11 @@ export function matchItemCondition(record: ItemRecord, filter: ItemCondition): I
             else if (filter.field === "mirrored") value = item.duplicated ?? false;
             else if (filter.field === "influenced")
                 value = Object.values(item.influences ?? {}).some(Boolean);
-            else if (filter.field === "fractured")
+            else if (filter.field === "intangible") {
+                const intangibility = itemIntangibility(item);
+                if (intangibility === null) return "unknown";
+                value = intangibility > 0;
+            } else if (filter.field === "fractured")
                 value =
                     item.fractured === true ||
                     !!item.fracturedMods?.length ||

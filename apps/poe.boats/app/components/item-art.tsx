@@ -21,7 +21,7 @@ export function ItemArt({
             aria-hidden={decorative || undefined}
             data-item-art={name}
             className={cn(
-                "flex size-12 shrink-0 items-center justify-center rounded bg-black/80 p-1",
+                "flex size-12 shrink-0 items-center justify-center rounded border border-border bg-muted/60 p-1",
                 className,
             )}
         >

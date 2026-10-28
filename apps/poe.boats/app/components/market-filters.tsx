@@ -10,11 +10,15 @@ import {
     MARKET_BASE_ATTRIBUTE_SETS,
     MARKET_BASE_CLASSES,
     MARKET_BASE_LEVELS,
+    MARKET_BASE_LINK_CLASSES,
     MARKET_CLUSTER_LEVEL_BANDS,
 } from "~/lib/market-bases";
 import {
     isMarketBaseCategory,
+    isMarketUniqueCategory,
+    MARKET_BASE_CATEGORIES,
     MARKET_CLUSTER_BASE_CATEGORY,
+    type MarketCategory,
     marketHasCorruption,
     marketHasIdentification,
 } from "~/lib/market-categories";
@@ -70,9 +74,14 @@ export function MarketFiltersForm({
         : undefined;
     const href = marketLink(filters, item);
     const gems = filters.category === "gems";
+    // Unique equipment filters by its base's type and attributes, like its crafting bases.
+    const uniques = isMarketUniqueCategory(filters.category);
+    const baseCategory = uniques
+        ? MARKET_BASE_CATEGORIES[filters.category as MarketCategory]!
+        : filters.category;
     const baseClasses =
-        filters.category in MARKET_BASE_CLASSES
-            ? MARKET_BASE_CLASSES[filters.category as keyof typeof MARKET_BASE_CLASSES]
+        baseCategory in MARKET_BASE_CLASSES
+            ? MARKET_BASE_CLASSES[baseCategory as keyof typeof MARKET_BASE_CLASSES]
             : undefined;
     const game = filters.realm === "poe2" ? "poe2" : "poe1";
     const currencies = [
@@ -218,26 +227,32 @@ export function MarketFiltersForm({
                         "": "Any type",
                         ...Object.fromEntries(baseClasses.map((name) => [name, name])),
                     })}
-                    {filters.category === "armour-bases"
+                    {baseCategory === "armour-bases"
                         ? select("attributes", "Attributes", {
                               "": "Any attributes",
                               ...MARKET_BASE_ATTRIBUTE_SETS,
                           })
                         : null}
-                    {select("ilvl", "Item level", [
-                        ["", "Any item level"],
-                        ...(filters.category === MARKET_CLUSTER_BASE_CATEGORY
-                            ? MARKET_CLUSTER_LEVEL_BANDS.map(({ min, max }): [string, string] => [
-                                  String(min),
-                                  max === 100 ? `ilvl ${min}+` : `ilvl ${min}–${max}`,
-                              ])
-                            : MARKET_BASE_LEVELS.map((level): [string, string] => [
-                                  level,
-                                  level === "86" ? "ilvl 86+" : `ilvl ${level}`,
-                              ])),
-                    ])}
-                    {filters.category === "accessory-bases" ||
-                    filters.category === MARKET_CLUSTER_BASE_CATEGORY
+                    {uniques
+                        ? null
+                        : select("ilvl", "Item level", [
+                              ["", "Any item level"],
+                              ...(filters.category === MARKET_CLUSTER_BASE_CATEGORY
+                                  ? MARKET_CLUSTER_LEVEL_BANDS.map(
+                                        ({ min, max }): [string, string] => [
+                                            String(min),
+                                            max === 100 ? `ilvl ${min}+` : `ilvl ${min}–${max}`,
+                                        ],
+                                    )
+                                  : MARKET_BASE_LEVELS.map((level): [string, string] => [
+                                        level,
+                                        level === "86" ? "ilvl 86+" : `ilvl ${level}`,
+                                    ])),
+                          ])}
+                    {uniques ||
+                    filters.category === "accessory-bases" ||
+                    filters.category === MARKET_CLUSTER_BASE_CATEGORY ||
+                    (filters.baseClass && !MARKET_BASE_LINK_CLASSES.includes(filters.baseClass))
                         ? null
                         : select("baseLinks", "Links", [
                               ["", "Any links"],

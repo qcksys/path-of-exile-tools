@@ -3,10 +3,10 @@ import { exchangePrice, useMarketDisplay } from "~/components/market-exchange";
 import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
 import {
     type MarketListingPrice as ListingPrice,
-    MARKET_OUTLIER_FACTOR,
     marketListingPrices,
+    marketMostListedPrice,
 } from "~/lib/market-listing-prices";
-import { marketNumber as number } from "~/lib/market-number";
+import { marketNumber as number, marketPriceNumber as price } from "~/lib/market-number";
 import { MARKET_PRICE_CURRENCIES, type MarketPriceRates } from "~/lib/market-price-currencies";
 
 type Game = "poe1" | "poe2";
@@ -18,94 +18,160 @@ export function marketListingValue(price: ListingPrice, rates: MarketPriceRates,
 }
 
 /**
- * One listing currency's median in the shared value display, noting the listed amount when it
- * is shown in another currency; without an exchange rate, the listed amount alone.
+ * A listing currency's median in the shared value display. Divine equivalents under 0.01 are
+ * left out; without an exchange rate, the listed amount alone.
  */
+function useShownPrice(listing: ListingPrice, rates: MarketPriceRates, game: Game) {
+    const [display] = useMarketDisplay();
+    const value = marketListingValue(listing, rates, game);
+    if (value === undefined)
+        return { amount: listing.median, currency: listing.currency, equivalent: undefined };
+    const shown = exchangePrice(value, rates, display, game);
+    const equivalent =
+        shown.equivalent?.currency === "divine" && shown.equivalent.amount < 0.01
+            ? undefined
+            : shown.equivalent;
+    return { ...shown, equivalent };
+}
+
+function Amount({
+    amount,
+    currency,
+    game,
+    iconOnly = false,
+}: {
+    amount: number;
+    currency: string;
+    game: Game;
+    iconOnly?: boolean;
+}) {
+    return (
+        <>
+            {price(amount)} <CurrencyLabel currency={currency} game={game} iconOnly={iconOnly} />
+        </>
+    );
+}
+
+/** The listed amount when the display shows another currency, and the listing count. */
+function Listed({ listing, shown, game }: { listing: ListingPrice; shown: string; game: Game }) {
+    return (
+        <>
+            {shown === listing.currency ? null : (
+                <>
+                    as {number(listing.median)}{" "}
+                    <CurrencyLabel currency={listing.currency} game={game} iconOnly />
+                    {" · "}
+                </>
+            )}
+            {number(listing.count)} listed
+        </>
+    );
+}
+
+/** One listing currency's median in the shared value display, as an icon-only amount. */
 export function MarketListingPrice({
-    price,
+    price: listing,
     rates,
     game,
-    selected = true,
-    compact = false,
 }: {
     price: ListingPrice;
     rates: MarketPriceRates;
     game: Game;
-    selected?: boolean;
-    /** Leaves out the equivalent, the listed amount and the listing count. */
-    compact?: boolean;
 }) {
-    const [display] = useMarketDisplay();
-    const value = marketListingValue(price, rates, game);
-    const shown =
-        value === undefined
-            ? { amount: price.median, currency: price.currency }
-            : exchangePrice(value, rates, display, game);
-    const amount = (
+    const shown = useShownPrice(listing, rates, game);
+    return <Amount amount={shown.amount} currency={shown.currency} game={game} iconOnly />;
+}
+
+function PrimaryPrice({
+    listing,
+    rates,
+    game,
+}: {
+    listing: ListingPrice;
+    rates: MarketPriceRates;
+    game: Game;
+}) {
+    const shown = useShownPrice(listing, rates, game);
+    return (
         <>
-            {number(shown.amount)}{" "}
-            <CurrencyLabel currency={shown.currency} game={game} iconOnly={compact} />
+            <p className="font-semibold">
+                <Amount amount={shown.amount} currency={shown.currency} game={game} />
+                {shown.equivalent ? (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        ≈{" "}
+                        <Amount
+                            amount={shown.equivalent.amount}
+                            currency={shown.equivalent.currency}
+                            game={game}
+                            iconOnly
+                        />
+                    </span>
+                ) : null}
+            </p>
+            <p className="text-xs text-muted-foreground">
+                <Listed listing={listing} shown={shown.currency} game={game} />
+            </p>
         </>
     );
-    if (compact) return amount;
+}
+
+function OtherPrice({
+    listing,
+    rates,
+    game,
+}: {
+    listing: ListingPrice;
+    rates: MarketPriceRates;
+    game: Game;
+}) {
+    const shown = useShownPrice(listing, rates, game);
     return (
-        <p className={selected ? "font-semibold" : "text-muted-foreground"}>
-            {amount}
-            {shown.equivalent ? (
-                <span className="ml-2 text-xs font-normal text-muted-foreground">
-                    ≈ {number(shown.equivalent.amount)}{" "}
-                    <CurrencyLabel currency={shown.equivalent.currency} game={game} iconOnly />
-                </span>
-            ) : null}
-            {shown.currency === price.currency ? null : (
-                <span className="ml-2 text-xs font-normal text-muted-foreground">
-                    listed as {number(price.median)}{" "}
-                    <CurrencyLabel currency={price.currency} game={game} iconOnly />
-                </span>
-            )}
-            <span className="ml-2 text-xs text-muted-foreground">n={price.count}</span>
+        <p className="text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">
+                <Amount amount={shown.amount} currency={shown.currency} game={game} iconOnly />
+            </span>{" "}
+            <Listed listing={listing} shown={shown.currency} game={game} />
         </p>
     );
 }
 
 /**
- * A market's listing currencies, cheapest first, in the shared value display. Currencies over
- * MARKET_OUTLIER_FACTOR times the most listed fold away; `currency` (the sort currency) is bold.
+ * A market's most listed currency in the shared value display, with every other listing
+ * currency, cheapest first, folded behind "+N more".
  */
 export function MarketListingPrices({
     prices,
-    currency,
     game,
     chaosRates,
     rates,
 }: {
     prices: Record<string, MarketPriceSummary> | null;
-    currency: string;
     game: Game;
     chaosRates: Record<string, number>;
     rates: MarketPriceRates;
 }) {
     const listed = marketListingPrices(prices, chaosRates);
-    if (!listed.length) return "Unpriced";
-    const line = (price: ListingPrice) => (
-        <MarketListingPrice
-            key={price.currency}
-            price={price}
-            rates={rates}
-            game={game}
-            selected={price.currency === currency}
-        />
-    );
-    const outliers = listed.filter((price) => price.outlier);
+    const primary = marketMostListedPrice(listed);
+    if (!primary) return "Unpriced";
+    const others = listed.filter((listing) => listing !== primary);
     return (
         <>
-            {listed.filter((price) => !price.outlier).map(line)}
-            {outliers.length ? (
-                <details>
+            <PrimaryPrice listing={primary} rates={rates} game={game} />
+            {others.length ? (
+                <details className="mt-1">
                     <summary className="cursor-pointer text-xs text-muted-foreground">
-                        {outliers.length} over {MARKET_OUTLIER_FACTOR}× the most listed
+                        +{others.length} more
                     </summary>
-                    {outliers.map(line)}
+                    <div className="mt-1 space-y-0.5">
+                        {others.map((listing) => (
+                            <OtherPrice
+                                key={listing.currency}
+                                listing={listing}
+                                rates={rates}
+                                game={game}
+                            />
+                        ))}
+                    </div>
                 </details>
             ) : null}
         </>

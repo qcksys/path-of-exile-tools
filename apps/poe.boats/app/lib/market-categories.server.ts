@@ -1,6 +1,9 @@
 import { and, eq, inArray, ne, notInArray, or } from "drizzle-orm";
 import type { AnyMySqlColumn } from "drizzle-orm/mysql-core";
+import { marketBaseTypesSchema } from "~/lib/market-bases";
+import { isMarketUniqueCategory } from "~/lib/market-categories";
 import { type MarketFilters, marketCategorySchema } from "~/schemas/market";
+import poe1BaseTypes from "../../public/game-data/market-base-types-poe1.json";
 import poe1 from "../../public/game-data/market-categories-poe1.json";
 import poe2 from "../../public/game-data/market-categories-poe2.json";
 
@@ -35,15 +38,34 @@ export function marketCategory(realm: string, baseType: string, signatureKind = 
     return catalogs[realm === "poe2" ? "poe2" : "poe1"].get(baseType) ?? "other";
 }
 
+const baseTypes = marketBaseTypesSchema.parse(poe1BaseTypes);
+
+/** Unique equipment of a base type (item class) and attribute set, as crafting bases filter. */
+function baseTypeMatch(
+    name: string,
+    { baseClass, attributes }: Pick<MarketFilters, "baseClass" | "attributes">,
+) {
+    if (!baseClass && !attributes) return true;
+    const type = baseTypes[name];
+    return (
+        !!type &&
+        (!baseClass || type.itemClass === baseClass) &&
+        (!attributes || type.attributes === attributes)
+    );
+}
+
 export function marketCategoryFilter(
-    { realm, category }: MarketFilters,
+    filters: MarketFilters,
     baseType: AnyMySqlColumn,
     signatureKind: AnyMySqlColumn,
 ) {
+    const { realm, category } = filters;
     if (category === "all") return undefined;
     const catalog = catalogs[realm === "poe2" ? "poe2" : "poe1"];
+    const unique = isMarketUniqueCategory(category);
     const bases = [...catalog]
         .filter(([, value]) => (category === "other" ? value !== "other" : value === category))
+        .filter(([name]) => !unique || baseTypeMatch(name, filters))
         .map(([name]) => name);
     if (category === "other") return and(notInArray(baseType, bases), ne(signatureKind, GEM_KIND));
     if (category === "gems") return or(inArray(baseType, bases), eq(signatureKind, GEM_KIND));

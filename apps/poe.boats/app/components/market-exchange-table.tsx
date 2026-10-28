@@ -78,7 +78,7 @@ function exchangeColumns(
                                     name={row.via.name}
                                     game={game}
                                     className="gap-1"
-                                    artClassName="size-4 rounded-none bg-transparent p-0"
+                                    artClassName="size-4 rounded-none border-0 bg-transparent p-0"
                                 />
                             </p>
                         ) : null}

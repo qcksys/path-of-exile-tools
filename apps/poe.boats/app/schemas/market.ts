@@ -124,12 +124,17 @@ export const marketFiltersSchema = z.object({
     /** Watcher's Eye mods of which valued items need at least one, separated by `|`. */
     anyMods: z.string().max(1000).default(""),
     currency: z.string().max(40).default("divine"),
-    /** Crafting base filters; empty matches every base. */
-    baseClass: z.enum(["", ...MARKET_BASE_CLASS_NAMES]).default(""),
+    /** Crafting base filters; empty matches every base. Unique equipment also filters by type and attributes. */
+    baseClass: z
+        .enum(["", ...MARKET_BASE_CLASS_NAMES])
+        .default("")
+        .describe("The item class of a crafting base, or of a unique's base type"),
     attributes: z
         .enum(["", ...(Object.keys(MARKET_BASE_ATTRIBUTE_SETS) as MarketBaseAttributeSet[])])
         .default("")
-        .describe("The attributes a crafting base requires, e.g. `str-int`"),
+        .describe(
+            "The attributes a crafting base, or a unique's base type, requires, e.g. `str-int`",
+        ),
     ilvl: z
         // Cluster Jewel bands start at 1, 50, 68, 75 and 84; equipment bands from 74.
         .enum(["", "1", "50", "68", ...MARKET_BASE_LEVELS])

@@ -16,6 +16,11 @@ import { heistEnchantmentKind } from "../app/lib/crafting-heist";
 import { supportedStrongbox } from "../app/lib/crafting-strongboxes";
 import { cleanModText } from "../app/lib/crafting-text";
 import { itemArtUrl, itemPresentationsSchema } from "../app/lib/item-presentation";
+import {
+    MARKET_BASE_ATTRIBUTES,
+    MARKET_BASE_CLASS_NAMES,
+    marketBaseTypesSchema,
+} from "../app/lib/market-bases";
 import { MARKET_CATEGORIES, marketBaseCategory } from "../app/lib/market-categories";
 import {
     type CraftingBase,
@@ -106,6 +111,36 @@ export async function exportCraftingCatalog(directory: string, output: string) {
     await writeFile(
         resolve(dirname(output), `items-${manifest.game}.json`),
         `${JSON.stringify(presentations)}\n`,
+    );
+    // Unique equipment markets filter by their base's type and attributes, as crafting bases do.
+    const classes = new Set<string>(MARKET_BASE_CLASS_NAMES);
+    await writeFile(
+        resolve(dirname(output), `market-base-types-${manifest.game}.json`),
+        `${JSON.stringify(
+            marketBaseTypesSchema.parse(
+                Object.fromEntries(
+                    Object.values(bases)
+                        .filter((base) => base.name && classes.has(base.item_class))
+                        .map((base) => {
+                            const {
+                                strength = 0,
+                                dexterity = 0,
+                                intelligence = 0,
+                            } = base.requirements ?? {};
+                            return [
+                                base.name,
+                                {
+                                    itemClass: base.item_class,
+                                    attributes: MARKET_BASE_ATTRIBUTES.filter(
+                                        (_, index) =>
+                                            [strength, dexterity, intelligence][index]! > 0,
+                                    ).join("-"),
+                                },
+                            ];
+                        }),
+                ),
+            ),
+        )}\n`,
     );
     const crafting = validateCraftingData(
         JSON.parse(craftingBytes.toString()),

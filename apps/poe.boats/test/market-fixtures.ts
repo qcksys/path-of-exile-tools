@@ -101,6 +101,10 @@ export function marketFixture(
                       periodSales: 2,
                       periodRemovals: 2,
                       periodPending: 1,
+                      recentSales: {
+                          hourly: [...Array<number>(22).fill(0), 1, 0],
+                          daily: [0, 0, 0, 0, 0, 1, 1],
+                      },
                   },
               ],
         bases: bases
@@ -111,6 +115,7 @@ export function marketFixture(
                       category: "armour-bases",
                       itemClass: "Body Armour",
                       attributes: ["str"],
+                      level: 73,
                       ilvl: { min: 86, max: 100 },
                       links: "6",
                       quality: null,
@@ -251,6 +256,7 @@ export function marketBaseFixture(
         category: "armour-bases" as const,
         itemClass: "Body Armour" as const,
         attributes: ["str" as const],
+        level: 73,
         ilvl: { min: 86, max: 100 },
         links,
         quality: null,
