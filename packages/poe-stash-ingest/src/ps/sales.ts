@@ -1,6 +1,7 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import { params } from "#src/ps/rounds.ts";
 import { withTransaction } from "#src/shared/db.ts";
+import type { ListingTab } from "#src/shared/stash-tab.ts";
 
 export const SALE_POLICY = {
     graceSeconds: 3600,
@@ -10,10 +11,14 @@ export const SALE_POLICY = {
     maximumPriceRatio: 1.25,
 } as const;
 
-/** Records the listings these stashes lost in the current transaction as sale candidates. */
+/**
+ * Records the listings these stashes lost in the current transaction as sale candidates. A removal
+ * from a public stash gives its `tab`, so listings seen before tabs were recorded take it; a sale
+ * is compared only with listings in the same kind of tab.
+ */
 export async function recordRemovals(
     conn: DuckDBConnection,
-    removals: readonly { stashId: string; withdrawn: boolean }[],
+    removals: readonly { stashId: string; withdrawn: boolean; tab?: ListingTab }[],
 ): Promise<void> {
     if (!removals.length) return;
     const withdrawn = removals.filter((removal) => removal.withdrawn).map((r) => r.stashId);
@@ -36,7 +41,8 @@ export async function recordRemovals(
          ), removed AS MATERIALIZED (
              -- A stash changed twice in one page repeats its removals; ON CONFLICT would scan
              -- every sale, while this transaction's own sales sit in the newest row groups.
-             SELECT stash.*, (j.value->>'withdrawn')::BOOLEAN AS withdrawn FROM stash
+             SELECT stash.* REPLACE (coalesce(stash.tab, j.value->>'tab') AS tab),
+                (j.value->>'withdrawn')::BOOLEAN AS withdrawn FROM stash
              JOIN json_each($1::JSON) j ON stash.stash_id = (j.value->>'stashId')
              WHERE stash.removed_at = current_timestamp::TIMESTAMP AND NOT EXISTS (
                  SELECT 1 FROM ps_sale s WHERE s.removed_at = current_timestamp::TIMESTAMP
@@ -63,6 +69,7 @@ export async function recordRemovals(
                      AND p.identified = l.identified AND p.corrupted = l.corrupted
                      AND coalesce(p.foil_variation, -1) = coalesce(l.foil_variation, -1)
                      AND coalesce(p.links, 0) = coalesce(l.links, 0)
+                     AND coalesce(p.tab, '') = coalesce(l.tab, '')
                      AND p.signature_value = l.signature_value
                      AND coalesce(p.mod_signature->>'kind', '') = coalesce(l.mod_signature->>'kind', '')
                      AND lower(p.account_name) <> lower(l.account_name)

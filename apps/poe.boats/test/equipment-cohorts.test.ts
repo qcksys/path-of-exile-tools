@@ -92,7 +92,7 @@ const stash: PublicStashChange = {
     public: true,
     accountName: "Seller",
     league: "Standard",
-    stashType: "PremiumStash",
+    stashType: "TradeStash",
     items: [item],
 };
 let db: DbHandle;
@@ -254,6 +254,15 @@ describe("equipment capture of a whole page", () => {
             db = await openDb(":memory:");
             await rm(dir, { recursive: true, force: true });
         }
+    });
+
+    it("captures merchant tabs only, so equipment moved to another tab leaves its cohorts", async () => {
+        const premium = { ...stash, id: "premium", stashType: "PremiumStash" };
+        expect(await capturePage([premium])).toBe(0);
+        expect(await listings()).toEqual([]);
+        expect(await capturePage([stash])).toBe(1);
+        expect(await capturePage([{ ...stash, items: [] }, premium])).toBe(0);
+        expect(await listings()).toEqual([{ item_id: "one", stash_id: "stash", active: false }]);
     });
 
     it("applies a stash's repeated changes within one page in order", async () => {

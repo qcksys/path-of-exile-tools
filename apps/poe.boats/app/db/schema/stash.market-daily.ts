@@ -10,12 +10,13 @@ import {
 } from "drizzle-orm/mysql-core";
 import { timestampCols } from "~/db/helpers/schema";
 import { type StashGame, stashTableName } from "~/db/helpers/stash-game";
+import type { StashListingTab } from "~/db/schema/stash.unique-hourly";
 
 /**
- * One row per listed market per UTC day, recomputed from the game's unique hourly table whenever
- * an hour of that day is written, so market lists sum days instead of hours. A mod pool unique's
- * combinations (Watcher's Eye, Loreweave) share one market with an empty `signatureValue`, as the
- * list shows them. `day` is the day's first hour.
+ * One row per listed market and stash tab kind per UTC day, recomputed from the game's unique
+ * hourly table whenever an hour of that day is written, so market lists sum days instead of hours.
+ * A mod pool unique's combinations (Watcher's Eye, Loreweave) share one market with an empty
+ * `signatureValue`, as the list shows them. `day` is the day's first hour.
  */
 function stashMarketDaily(game: StashGame) {
     return mysqlTable(
@@ -28,6 +29,7 @@ function stashMarketDaily(game: StashGame) {
             identified: boolean().notNull(),
             corrupted: boolean().notNull(),
             foilVariation: int().notNull(),
+            tab: varchar({ length: 8 }).$type<StashListingTab>().notNull().default(""),
             signatureKind: varchar({ length: 32 }).notNull(),
             signatureValue: varchar({ length: 255 }).notNull(),
             name: varchar({ length: 100 }),
@@ -52,6 +54,7 @@ function stashMarketDaily(game: StashGame) {
                     table.identified,
                     table.corrupted,
                     table.foilVariation,
+                    table.tab,
                     table.signatureKind,
                     table.signatureValue,
                 ],
