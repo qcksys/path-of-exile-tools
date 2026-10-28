@@ -9,7 +9,6 @@ import {
 import {
     and,
     asc,
-    count,
     desc,
     eq,
     gt,
@@ -25,12 +24,14 @@ import {
     type SQL,
     type SQLWrapper,
     sql,
+    sum,
 } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
 import { stashGame } from "~/db/helpers/stash-game";
 import { tStashCurrencyDaily } from "~/db/schema/stash.currency-daily";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
+import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
 import { type TStashUniqueHourlyS, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { rankMarketBases } from "~/lib/market-bases";
@@ -99,6 +100,7 @@ function marketTables(realm: string) {
         currencyHourly: tStashCurrencyHourly[game],
         currencyDaily: tStashCurrencyDaily[game],
         currencyMarket: tStashCurrencyMarket[game],
+        hourCoverage: tStashHourCoverage[game],
     };
 }
 type MarketTable = ReturnType<typeof marketTables>["market"];
@@ -779,27 +781,29 @@ const PRIVATE_LEAGUE = "% (PL%)";
 /**
  * Each public league with exchange snapshots by `latestHour`, with its first and latest hours,
  * newest first. Leagues sharing the latest hour put the most snapshots first.
+ * Reads the hour coverage rollup: grouping the hourly table scans every snapshot of the realm.
  */
 function marketExchangeSeasons(db: TDatabase, realm: string, latestHour: number) {
-    const { currencyHourly } = marketTables(realm);
+    const { hourCoverage } = marketTables(realm);
     return traceQuery(
         "market.exchange_seasons",
         db
             .select({
-                league: currencyHourly.league,
-                firstHour: min(currencyHourly.hour),
-                latestHour: max(currencyHourly.hour),
+                league: hourCoverage.league,
+                firstHour: min(hourCoverage.hour),
+                latestHour: max(hourCoverage.hour),
             })
-            .from(currencyHourly)
+            .from(hourCoverage)
             .where(
                 and(
-                    eq(currencyHourly.realm, realm),
-                    lte(currencyHourly.hour, latestHour),
-                    notLike(currencyHourly.league, PRIVATE_LEAGUE),
+                    eq(hourCoverage.stream, "currency"),
+                    eq(hourCoverage.realm, realm),
+                    lte(hourCoverage.hour, latestHour),
+                    notLike(hourCoverage.league, PRIVATE_LEAGUE),
                 ),
             )
-            .groupBy(currencyHourly.realm, currencyHourly.league)
-            .orderBy(desc(max(currencyHourly.hour)), desc(count())),
+            .groupBy(hourCoverage.stream, hourCoverage.realm, hourCoverage.league)
+            .orderBy(desc(max(hourCoverage.hour)), desc(sum(hourCoverage.rowCount))),
     );
 }
 

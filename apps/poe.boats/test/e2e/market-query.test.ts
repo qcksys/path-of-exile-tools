@@ -1191,7 +1191,13 @@ it("keeps item history independent of browsing filters and skips the list query 
         statements.filter(({ sql: query }) =>
             query.includes(getTableName(tStashCurrencyHourly.poe1)),
         ),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
+    // Exchange seasons come from the coverage rollup, not a scan of every hourly snapshot.
+    expect(
+        statements.filter(({ sql: query }) =>
+            query.includes(getTableName(tStashHourCoverage.poe1)),
+        ),
+    ).toHaveLength(1);
 });
 
 it("merges every listing currency into chaos through same-league rates, whatever the display currency", async () => {
