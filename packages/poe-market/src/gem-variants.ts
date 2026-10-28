@@ -9,18 +9,25 @@ export type GemLevelBand = (typeof GEM_LEVEL_BANDS)[number];
 export type GemQualityBand = (typeof GEM_QUALITY_BANDS)[number];
 
 export const GEM_TIERS = {
-    normal: { maxLevel: 20, levels: ["1–19", "20", "21"] },
-    exceptional: { maxLevel: 3, levels: ["1–2", "3", "4"] },
-    awakened: { maxLevel: 5, levels: ["1–4", "5", "6"] },
+    normal: { label: "Normal", maxLevel: 20, levels: ["1–19", "20", "21"] },
+    exceptional: { label: "Exceptional", maxLevel: 3, levels: ["1–2", "3", "4"] },
+    /** Awakened Empower, Enhance and Enlighten. */
+    "awakened-exceptional": {
+        label: "Awakened exceptional",
+        maxLevel: 4,
+        levels: ["1–3", "4", "5"],
+    },
+    awakened: { label: "Awakened", maxLevel: 5, levels: ["1–4", "5", "6"] },
 } as const;
 export type GemTier = keyof typeof GEM_TIERS;
 
 export const GEM_QUALITY_LABELS = ["0–19%", "20%", "21–23%"] as const;
-const EXCEPTIONAL = new Set(["Empower Support", "Enlighten Support", "Enhance Support"]);
 
-export function gemTier(name: string): GemTier {
-    if (name.startsWith("Awakened ")) return "awakened";
-    return EXCEPTIONAL.has(name) ? "exceptional" : "normal";
+/** Exceptional gems carry the Exceptional gem tag; awakened gems are named for it. */
+export function gemTier(gem: { name: string; tags: readonly string[] }): GemTier {
+    const exceptional = gem.tags.includes("Exceptional");
+    if (gem.name.startsWith("Awakened ")) return exceptional ? "awakened-exceptional" : "awakened";
+    return exceptional ? "exceptional" : "normal";
 }
 
 function band(value: number, max: number) {
@@ -35,10 +42,15 @@ export function gemQualityBand(quality: number): GemQualityBand {
     return GEM_QUALITY_BANDS[band(quality, 20)];
 }
 
-/** The market's `signatureValue`, e.g. `Level 1–19 · Quality 20%`, or `Level 3 · …` for Empower. */
+/**
+ * The market's `signatureValue`, e.g. `Level 1–19 · Quality 20%`, or `Level 3 (max) · …` for an
+ * exceptional gem. Marking the max band keeps each tier's bands apart: an exceptional gem's
+ * corrupted level 4 is not an awakened exceptional gem's max level 4.
+ */
 export function gemVariantValue(tier: GemTier, level: GemLevelBand, quality: GemQualityBand) {
     const levelLabel = GEM_TIERS[tier].levels[GEM_LEVEL_BANDS.indexOf(level)];
-    return `Level ${levelLabel} · Quality ${GEM_QUALITY_LABELS[GEM_QUALITY_BANDS.indexOf(quality)]}`;
+    const max = level === "20" ? " (max)" : "";
+    return `Level ${levelLabel}${max} · Quality ${GEM_QUALITY_LABELS[GEM_QUALITY_BANDS.indexOf(quality)]}`;
 }
 
 export type GemBandState = "include" | "exclude";

@@ -18,6 +18,12 @@ function propertyNumber(item: Item, name: string) {
     return Number.isSafeInteger(number) ? number : undefined;
 }
 
+/** A gem's tags, from its first property: a valueless line such as `Exceptional, Attack, Support`. */
+function gemTags(item: Item) {
+    const line = item.properties?.[0];
+    return line && !line.values.length ? line.name.split(", ") : [];
+}
+
 /** Skill gems trade by level band and quality band, as well as corruption. */
 export const gemExtractor: ModExtractor = {
     kind: "gem",
@@ -31,7 +37,7 @@ export const gemExtractor: ModExtractor = {
     extract(item) {
         const level = propertyNumber(item, "Level");
         if (level === undefined) return null;
-        const tier = gemTier(item.typeLine);
+        const tier = gemTier({ name: item.typeLine, tags: gemTags(item) });
         return {
             kind: "gem",
             tier,

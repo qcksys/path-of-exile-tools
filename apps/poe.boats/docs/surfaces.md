@@ -114,9 +114,11 @@ the period, preferring the current manifest revision. Rarities are not split. Ba
 likely-sale estimates; they sort, search and range-filter in memory, with prices compared in chaos.
 PoE 1 skill gems are captured from public stashes and keyed by `typeLine`, so transfigured gems
 are their own items. Each gem lists one market per level band, quality band and corruption state
-(`signatureKind` `gem`, `signatureValue` like `Level 1–19 · Quality 20%`). Level bands are below,
-at and above the gem's maximum level: 1–19, 20, 21 for normal gems, 1–2, 3, 4 for Empower, Enhance
-and Enlighten, and 1–4, 5, 6 for awakened gems; quality bands are 0–19%, 20% and 21–23%. Gem
+(`signatureKind` `gem`, `signatureValue` like `Level 20 (max) · Quality 20%`). Level bands are
+below, at and above the gem's maximum level: 1–19, 20, 21 for normal gems, 1–2, 3, 4 for gems with
+the Exceptional gem tag, 1–3, 4, 5 for awakened exceptional gems (Awakened Empower, Enhance and
+Enlighten), and 1–4, 5, 6 for other awakened gems; the max band says `(max)` so the tiers' bands
+never share a value. Quality bands are 0–19%, 20% and 21–23%. Gem
 markets belong to Skill gems whatever their base type. The Skill gems list replaces its corruption
 select with tri-state toggles for each level band, each quality band and corruption (include,
 exclude or neither); `gemLevel` and `gemQuality` hold the bands as `20,-21` (band tokens are a

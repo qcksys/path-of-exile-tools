@@ -22,6 +22,7 @@ function gem(
     level: number,
     quality: number | null,
     overrides: Partial<Item> = {},
+    tags = "Spell, AoE, Fire",
 ): Item {
     return {
         id,
@@ -37,7 +38,7 @@ function gem(
         identified: true,
         frameType: 4,
         properties: [
-            { name: "Spell, AoE, Fire", values: [], displayMode: 0 },
+            { name: tags, values: [], displayMode: 0 },
             {
                 name: "Level",
                 values: [[`${level}${level === 20 ? " (Max)" : ""}`, 0]],
@@ -68,18 +69,46 @@ describe("gem capture", () => {
         expect(shouldCapture(gem("legacy", "Fireball", 1, 0, { rarity: undefined }))).toBe(true);
     });
 
+    const SPELL = "Spell, AoE, Fire";
+    const EXCEPTIONAL = "Exceptional, Support";
     it.each([
-        ["Fireball", 20, 20, "Level 20 · Quality 20%"],
-        ["Fireball", 21, 23, "Level 21 · Quality 21–23%"],
-        ["Fireball", 1, null, "Level 1–19 · Quality 0–19%"],
-        ["Empower Support", 3, 0, "Level 3 · Quality 0–19%"],
-        ["Empower Support", 4, 20, "Level 4 · Quality 20%"],
-        ["Awakened Empower Support", 5, 20, "Level 5 · Quality 20%"],
-        ["Awakened Empower Support", 4, 21, "Level 1–4 · Quality 21–23%"],
-    ] as const)("puts %s at level %i, quality %s in %s", (name, level, quality, value) => {
-        const signature = extractModSignature(gem("g", name, level, quality));
+        ["Fireball", SPELL, 20, 20, "Level 20 (max) · Quality 20%"],
+        ["Fireball", SPELL, 21, 23, "Level 21 · Quality 21–23%"],
+        ["Fireball", SPELL, 1, null, "Level 1–19 · Quality 0–19%"],
+        ["Empower Support", EXCEPTIONAL, 3, 0, "Level 3 (max) · Quality 0–19%"],
+        [
+            "Greater Multistrike Support",
+            `Exceptional, Attack, Melee, Support`,
+            4,
+            20,
+            "Level 4 · Quality 20%",
+        ],
+        ["Awakened Empower Support", EXCEPTIONAL, 4, 20, "Level 4 (max) · Quality 20%"],
+        ["Awakened Empower Support", EXCEPTIONAL, 5, 21, "Level 5 · Quality 21–23%"],
+        [
+            "Awakened Added Fire Damage Support",
+            "Fire, Support",
+            5,
+            20,
+            "Level 5 (max) · Quality 20%",
+        ],
+        [
+            "Awakened Added Fire Damage Support",
+            "Fire, Support",
+            4,
+            21,
+            "Level 1–4 · Quality 21–23%",
+        ],
+    ] as const)("puts %s (%s) at level %i, quality %s in %s", (name, tags, level, quality, value) => {
+        const signature = extractModSignature(gem("g", name, level, quality, {}, tags));
         expect(signature?.kind).toBe("gem");
         expect(signatureValue(signature)).toBe(value);
+    });
+
+    it("reads no tags from a gem whose first property has values", () => {
+        const untagged = gem("g", "Empower Support", 3, 0);
+        untagged.properties = untagged.properties!.slice(1);
+        expect(signatureValue(extractModSignature(untagged))).toBe("Level 1–19 · Quality 0–19%");
     });
 
     it("leaves a gem without a level unsplit", () => {
@@ -160,10 +189,10 @@ describe("gem split in ingest", () => {
                 ])
                 .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
         ).toEqual([
-            ["Fireball of Fragmentation", "Level 20 · Quality 20%", false, 1, 9],
+            ["Fireball of Fragmentation", "Level 20 (max) · Quality 20%", false, 1, 9],
             ["Fireball", "Level 1–19 · Quality 0–19%", false, 1, 1],
-            ["Fireball", "Level 20 · Quality 20%", false, 2, 6],
-            ["Fireball", "Level 20 · Quality 20%", true, 1, 3],
+            ["Fireball", "Level 20 (max) · Quality 20%", false, 2, 6],
+            ["Fireball", "Level 20 (max) · Quality 20%", true, 1, 3],
             ["Fireball", "Level 21 · Quality 20%", true, 1, 40],
         ]);
     });

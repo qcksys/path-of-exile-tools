@@ -631,12 +631,15 @@ it("lists gem markets under Skill gems by band and filters them by included and 
             ...overrides,
         });
     await db.insert(market).values([
-        gem("Fireball", "Level 20 · Quality 20%", { listingCount: 5 }),
+        gem("Fireball", "Level 20 (max) · Quality 20%", { listingCount: 5 }),
         gem("Fireball", "Level 21 · Quality 20%", { corrupted: true, listingCount: 2 }),
         gem("Fireball", "Level 1–19 · Quality 0–19%", { listingCount: 9 }),
-        gem("Empower Support", "Level 3 · Quality 20%", { listingCount: 4 }),
+        gem("Empower Support", "Level 3 (max) · Quality 20%", { listingCount: 4 }),
+        // An exceptional gem corrupted to level 4, apart from an awakened exceptional gem's max level 4.
+        gem("Greater Multistrike Support", "Level 4 · Quality 20%", { corrupted: true }),
+        gem("Awakened Empower Support", "Level 4 (max) · Quality 20%"),
         // A transfigured gem whose base type the catalog may not know.
-        gem("Fireball of Fragmentation", "Level 20 · Quality 20%", {
+        gem("Fireball of Fragmentation", "Level 20 (max) · Quality 20%", {
             baseType: "Fireball of Fragmentation",
             listingCount: 3,
         }),
@@ -651,19 +654,26 @@ it("lists gem markets under Skill gems by band and filters them by included and 
             )
         ).rows.map((row) => [row.itemKey, row.signatureValue, row.corrupted, row.category]);
     expect(await list({ category: "gems" })).toEqual([
-        ["Empower Support", "Level 3 · Quality 20%", false, "gems"],
+        ["Awakened Empower Support", "Level 4 (max) · Quality 20%", false, "gems"],
+        ["Empower Support", "Level 3 (max) · Quality 20%", false, "gems"],
         ["Fireball", "Level 1–19 · Quality 0–19%", false, "gems"],
-        ["Fireball", "Level 20 · Quality 20%", false, "gems"],
+        ["Fireball", "Level 20 (max) · Quality 20%", false, "gems"],
         ["Fireball", "Level 21 · Quality 20%", true, "gems"],
-        ["Fireball of Fragmentation", "Level 20 · Quality 20%", false, "gems"],
+        ["Fireball of Fragmentation", "Level 20 (max) · Quality 20%", false, "gems"],
+        ["Greater Multistrike Support", "Level 4 · Quality 20%", true, "gems"],
     ]);
     expect(await list({ category: "other" })).toEqual([]);
     expect(
         (await list({ category: "gems", gemLevel: "20", gemQuality: "20" })).map(String),
     ).toEqual([
-        "Empower Support,Level 3 · Quality 20%,false,gems",
-        "Fireball,Level 20 · Quality 20%,false,gems",
-        "Fireball of Fragmentation,Level 20 · Quality 20%,false,gems",
+        "Awakened Empower Support,Level 4 (max) · Quality 20%,false,gems",
+        "Empower Support,Level 3 (max) · Quality 20%,false,gems",
+        "Fireball,Level 20 (max) · Quality 20%,false,gems",
+        "Fireball of Fragmentation,Level 20 (max) · Quality 20%,false,gems",
+    ]);
+    expect((await list({ category: "gems", gemLevel: "21" })).map(([key]) => key)).toEqual([
+        "Fireball",
+        "Greater Multistrike Support",
     ]);
     expect(
         await list({ category: "gems", gemLevel: "-21", gemQuality: "-20", corruption: "false" }),

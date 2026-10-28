@@ -150,8 +150,10 @@ export function MarketGemFilters({
                     onChange={onChange}
                 />
                 <p className="text-xs text-muted-foreground">
-                    Exceptional gems: {GEM_TIERS.exceptional.levels.join(", ")} · Awakened:{" "}
-                    {GEM_TIERS.awakened.levels.join(", ")}
+                    {Object.values(GEM_TIERS)
+                        .slice(1)
+                        .map((tier) => `${tier.label}: ${tier.levels.join(", ")}`)
+                        .join(" · ")}
                 </p>
             </div>
             <BandToggles
