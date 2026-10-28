@@ -33,6 +33,32 @@ export const MARKET_CATEGORIES = {
 
 export type MarketCategory = keyof typeof MARKET_CATEGORIES;
 
+/**
+ * PoE 2 exchange categories, one per bulk exchange group of the trade site. Items outside every
+ * group are listed under `other`.
+ */
+export const POE2_EXCHANGE_CATEGORIES = {
+    currency: { label: "Currency", group: "General" },
+    fragments: { label: "Fragments", group: "General" },
+    essences: { label: "Essences", group: "Crafting" },
+    runes: { label: "Runes", group: "Crafting" },
+    "abyssal-bones": { label: "Abyssal bones", group: "Crafting" },
+    vaal: { label: "Vaal", group: "Crafting" },
+    verisium: { label: "Verisium", group: "Crafting" },
+    "uncut-gems": { label: "Uncut gems", group: "Gems" },
+    "lineage-gems": { label: "Lineage support gems", group: "Gems" },
+    ritual: { label: "Ritual", group: "League mechanics" },
+    delirium: { label: "Delirium", group: "League mechanics" },
+    breach: { label: "Breach", group: "League mechanics" },
+    expedition: { label: "Expedition", group: "League mechanics" },
+    other: { label: "Other items", group: "Other" },
+} as const;
+
+export type Poe2ExchangeCategory = keyof typeof POE2_EXCHANGE_CATEGORIES;
+
+/** A category of either game's exchange items. */
+export type MarketExchangeCategory = MarketCategory | Poe2ExchangeCategory;
+
 /** Normal, magic and rare equipment is listed by crafting base cohort, apart from its uniques. */
 export const MARKET_BASE_CATEGORIES: Partial<Record<MarketCategory, MarketCategory>> = {
     weapons: "weapon-bases",

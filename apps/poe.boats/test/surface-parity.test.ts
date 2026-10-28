@@ -3032,3 +3032,61 @@ it("reads a crafting base's history and variants alike over HTTP and MCP", async
         query.mockRestore();
     }
 });
+
+it("reads the PoE 2 exchange market alike over HTTP and MCP", async () => {
+    const input = { league: "Rites", category: "runes", q: "Rune", days: "7" } as const;
+    const exchange = marketFixture({ category: "currency" }).exchange[0]!;
+    const season = { league: "Rites", firstHour: 1_792_749_600, latestHour: 1_792_836_000 };
+    const fixture = {
+        filters: input,
+        seasons: [season],
+        season,
+        unit: "exalted" as const,
+        divine: 400,
+        rows: [
+            {
+                ...exchange,
+                itemId: "Metadata/Items/SoulCores/RuneFire",
+                name: "Desert Rune",
+                category: "runes" as const,
+            },
+        ],
+    };
+    const query = vi.spyOn(marketQueries, "getPoe2MarketExchange").mockResolvedValue(fixture);
+    try {
+        const response = await api.request(
+            `https://poe.boats/api/v1/market/poe2-exchange?${new URLSearchParams(input)}`,
+            {},
+            { runtime },
+        );
+        expect(response.status).toBe(200);
+        const expected = JSON.parse(JSON.stringify(fixture));
+        expect(await response.json()).toEqual(expected);
+        const rpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", { name: "get_poe2_season_exchange", arguments: input })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(expected);
+        expect(query).toHaveBeenLastCalledWith(context.db, input);
+        // PoE 1 categories without a PoE 2 exchange group are refused before the query.
+        const invalid = await api.request(
+            "https://poe.boats/api/v1/market/poe2-exchange?category=weapons",
+            {},
+            { runtime },
+        );
+        expect(invalid.status).toBe(400);
+        const invalidRpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", {
+                    name: "get_poe2_season_exchange",
+                    arguments: { category: "weapons" },
+                })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(invalidRpc.result).isError).toBe(true);
+        expect(query).toHaveBeenCalledTimes(2);
+    } finally {
+        query.mockRestore();
+    }
+});

@@ -1,5 +1,5 @@
 import { type ExchangeSnapshot, exchangeCurrencyId, quoteExchangeWindow } from "@poe-tools/market";
-import type { MarketCategory } from "~/lib/market-categories";
+import type { MarketExchangeCategory } from "~/lib/market-categories";
 
 const CHAOS = exchangeCurrencyId("chaos")!;
 const DIVINE = exchangeCurrencyId("divine")!;
@@ -8,6 +8,17 @@ const DAY = 86400;
 
 /** Days of exchange trades behind the list's trend, volume, most traded pair and stale prices. */
 export const MARKET_EXCHANGE_DAYS = 7;
+
+/** The currency exchange prices are given in: chaos for PoE 1, exalted for PoE 2. */
+export type MarketExchangeUnit = "chaos" | "exalted";
+
+export function marketExchangeUnit(realm: string): MarketExchangeUnit {
+    return realm === "poe2" ? "exalted" : "chaos";
+}
+
+export function marketExchangeUnitId(unit: MarketExchangeUnit) {
+    return unit === "exalted" ? EXALTED : CHAOS;
+}
 
 /** A `stash_currency_daily` row: units of each side traded in the day's hours where both traded. */
 export type MarketExchangeDaily = {
@@ -18,9 +29,9 @@ export type MarketExchangeDaily = {
     latestHour: number | null;
 };
 
-type Describe = (itemId: string) => { name: string; category: MarketCategory } | undefined;
+type Describe = (itemId: string) => { name: string; category: MarketExchangeCategory } | undefined;
 type Quote = (itemId: string, quoteId: string) => number | undefined;
-type ChaosRate = { chaos: number; via: string };
+type AnchorRate = { price: number; via: string };
 
 /** The day's markets with trades, one per pair: a pair stored under both orders keeps its first ID. */
 function tradedDays(daily: MarketExchangeDaily[]) {
@@ -54,34 +65,34 @@ function dailyQuote(pairs: Map<string, MarketExchangeDaily>): Quote {
 }
 
 /**
- * Chaos per unit of every item with a usable path: its own chaos pair, or else a pair with an item
- * that has one (divine first, then exalted, then by ID).
+ * Units of `anchor` per unit of every item with a usable path: its own anchor pair, or else a
+ * pair with an item that has one (divine first, then chaos or exalted, then by ID).
  */
-function chaosRates(pairs: string[][], quote: Quote) {
-    const rates = new Map<string, ChaosRate>();
+function anchorRates(pairs: string[][], quote: Quote, anchor: string) {
+    const rates = new Map<string, AnchorRate>();
     for (const ids of pairs) {
-        const item = ids.find((id) => id !== CHAOS);
-        if (!item || !ids.includes(CHAOS)) continue;
-        const amount = quote(item, CHAOS);
-        if (amount) rates.set(item, { chaos: amount, via: CHAOS });
+        const item = ids.find((id) => id !== anchor);
+        if (!item || !ids.includes(anchor)) continue;
+        const amount = quote(item, anchor);
+        if (amount) rates.set(item, { price: amount, via: anchor });
     }
     const direct = new Map(rates);
     const candidates = new Map<string, string[]>();
     for (const [a, b] of pairs) {
-        if (!a || !b || a === CHAOS || b === CHAOS) continue;
+        if (!a || !b || a === anchor || b === anchor) continue;
         if (direct.has(b)) candidates.set(a, [...(candidates.get(a) ?? []), b]);
         if (direct.has(a)) candidates.set(b, [...(candidates.get(b) ?? []), a]);
     }
-    const priority = (id: string) => (id === DIVINE ? 0 : id === EXALTED ? 1 : 2);
+    const priority = (id: string) => (id === DIVINE ? 0 : id === CHAOS || id === EXALTED ? 1 : 2);
     for (const [item, bridges] of candidates) {
         if (rates.has(item)) continue;
         for (const bridge of bridges.sort(
             (a, b) => priority(a) - priority(b) || (a < b ? -1 : a > b ? 1 : 0),
         )) {
             const amount = quote(item, bridge);
-            const converted = amount && amount * direct.get(bridge)!.chaos;
+            const converted = amount && amount * direct.get(bridge)!.price;
             if (converted && Number.isFinite(converted)) {
-                rates.set(item, { chaos: converted, via: bridge });
+                rates.set(item, { price: converted, via: bridge });
                 break;
             }
         }
@@ -90,10 +101,10 @@ function chaosRates(pairs: string[][], quote: Quote) {
 }
 
 /**
- * Chaos rates from one hour's snapshots, where both orders of a pair must agree, and the items
+ * Anchor rates from one hour's snapshots, where both orders of a pair must agree, and the items
  * of every pair in which both sides traded.
  */
-function hourRates(snapshots: ExchangeSnapshot[], hour: number) {
+function hourRates(snapshots: ExchangeSnapshot[], hour: number, anchor: string) {
     const pairs = new Map<string, ExchangeSnapshot[]>();
     const traded = new Set<string>();
     for (const snapshot of snapshots) {
@@ -115,9 +126,10 @@ function hourRates(snapshots: ExchangeSnapshot[], hour: number) {
     };
     const quote: Quote = (itemId, quoteId) => full(itemId, quoteId)?.amount;
     return {
-        rates: chaosRates(
+        rates: anchorRates(
             [...pairs.keys()].map((key) => key.split("|")),
             quote,
+            anchor,
         ),
         quote,
         full,
@@ -125,15 +137,16 @@ function hourRates(snapshots: ExchangeSnapshot[], hour: number) {
     };
 }
 
-/** Each day's chaos rates from that day's volume-weighted pair prices. */
-function exchangeDailyChaos(daily: MarketExchangeDaily[]) {
-    const result = new Map<number, Map<string, ChaosRate>>();
+/** Each day's anchor rates from that day's volume-weighted pair prices. */
+function exchangeDailyRates(daily: MarketExchangeDaily[], anchor: string) {
+    const result = new Map<number, Map<string, AnchorRate>>();
     for (const [day, pairs] of tradedDays(daily))
         result.set(
             day,
-            chaosRates(
+            anchorRates(
                 [...pairs.keys()].map((key) => key.split("|")),
                 dailyQuote(pairs),
+                anchor,
             ),
         );
     return result;
@@ -142,21 +155,21 @@ function exchangeDailyChaos(daily: MarketExchangeDaily[]) {
 export type MarketExchangeRow = {
     itemId: string;
     name: string;
-    category: MarketCategory;
+    category: MarketExchangeCategory;
     /**
-     * Chaos per unit from the latest hour's trades, or else from the newest of the last
-     * MARKET_EXCHANGE_DAYS days that traded; null without a usable path.
+     * Units of the exchange unit per unit from the latest hour's trades, or else from the newest
+     * of the last MARKET_EXCHANGE_DAYS days that traded; null without a usable path.
      */
-    chaos: number | null;
-    /** The item the price was converted through; chaos for a direct chaos pair. */
+    price: number | null;
+    /** The item the price was converted through; the exchange unit for a direct pair. */
     via: { itemId: string; name: string } | null;
     /** The newest hour the price reflects, or without a price the item's newest traded hour. */
     hour: number | null;
     /** The price comes from the latest hour's trades. */
     current: boolean;
-    /** Chaos value traded per hour over the last MARKET_EXCHANGE_DAYS days. */
+    /** Value traded per hour, in the exchange unit, over the last MARKET_EXCHANGE_DAYS days. */
     volume: number | null;
-    /** Chaos per unit on each of the last MARKET_EXCHANGE_DAYS days, oldest first. */
+    /** Price on each of the last MARKET_EXCHANGE_DAYS days, oldest first. */
     history: (number | null)[];
     /** Change from the first to the last priced day in `history`, as a fraction. */
     change: number | null;
@@ -165,10 +178,10 @@ export type MarketExchangeRow = {
 };
 
 /**
- * One row per `listed` item and per item traded in the latest hour. `snapshots` are the latest
- * hour's markets and `daily` the last MARKET_EXCHANGE_DAYS days of daily totals. Items without
- * trades get a row without a price. Volumes average over the hours since the window's first day,
- * or since `leagueStart` (the league's first exchange hour) when that is later.
+ * One row per `listed` item and per item traded in the latest hour, priced in `unit`. `snapshots`
+ * are the latest hour's markets and `daily` the last MARKET_EXCHANGE_DAYS days of daily totals.
+ * Items without trades get a row without a price. Volumes average over the hours since the
+ * window's first day, or since `leagueStart` (the league's first exchange hour) when that is later.
  */
 export function marketExchangeRows(
     snapshots: ExchangeSnapshot[],
@@ -177,13 +190,16 @@ export function marketExchangeRows(
     describe: Describe,
     listed: string[] = [],
     leagueStart = 0,
+    unit: MarketExchangeUnit = "chaos",
 ): MarketExchangeRow[] {
+    const anchor = marketExchangeUnitId(unit);
     const current = hourRates(
         snapshots.filter((snapshot) => snapshot.hour === latestHour),
         latestHour,
+        anchor,
     );
     const days = tradedDays(daily);
-    const dayRates = exchangeDailyChaos(daily);
+    const dayRates = exchangeDailyRates(daily, anchor);
     const lastDay = Math.floor(latestHour / DAY) * DAY;
     const window = Array.from(
         { length: MARKET_EXCHANGE_DAYS },
@@ -210,20 +226,22 @@ export function marketExchangeRows(
         const item = describe(itemId);
         if (!item) return [];
         const history = window.map((day) =>
-            itemId === CHAOS && days.has(day) ? 1 : (dayRates.get(day)?.get(itemId)?.chaos ?? null),
+            itemId === anchor && days.has(day)
+                ? 1
+                : (dayRates.get(day)?.get(itemId)?.price ?? null),
         );
         const fresh =
-            itemId === CHAOS
-                ? current.traded.has(CHAOS)
-                    ? { chaos: 1, via: CHAOS }
+            itemId === anchor
+                ? current.traded.has(anchor)
+                    ? { price: 1, via: anchor }
                     : undefined
                 : current.rates.get(itemId);
         const staleDay = window.findLast((_, index) => history[index] !== null);
         const stale =
             staleDay === undefined
                 ? undefined
-                : itemId === CHAOS
-                  ? { chaos: 1, via: CHAOS }
+                : itemId === anchor
+                  ? { price: 1, via: anchor }
                   : dayRates.get(staleDay)!.get(itemId)!;
         const price = fresh ?? stale ?? null;
         const priced = history.filter((value) => value !== null);
@@ -234,7 +252,7 @@ export function marketExchangeRows(
             {
                 itemId,
                 ...item,
-                chaos: price?.chaos ?? null,
+                price: price?.price ?? null,
                 via: price
                     ? { itemId: price.via, name: describe(price.via)?.name ?? price.via }
                     : null,
@@ -243,7 +261,7 @@ export function marketExchangeRows(
                         ? latestHour
                         : latestTraded(days, itemId, stale ? [staleDay!] : window.toReversed()),
                 current: Boolean(fresh),
-                volume: price && hours > 0 ? (units * price.chaos) / hours : null,
+                volume: price && hours > 0 ? (units * price.price) / hours : null,
                 history,
                 change: priced.length > 1 ? priced.at(-1)! / priced[0]! - 1 : null,
                 pair:
@@ -305,23 +323,25 @@ export type MarketExchangePairHistory = {
 };
 
 /**
- * An item's hourly history: its chaos price (directly or through another item, whose chaos rate
+ * An item's hourly history: its price in `unit` (directly or through another item, whose own price
  * scales the pair's lowest and highest rates) and units traded per hour, and each pair's hourly
- * rates. `snapshots` hold the item's markets and the chaos markets of the items it trades against.
+ * rates. `snapshots` hold the item's markets and the `unit` markets of the items it trades against.
  */
 export function marketExchangeHistory(
     snapshots: ExchangeSnapshot[],
     itemId: string,
     describe: Describe,
+    unit: MarketExchangeUnit = "chaos",
 ) {
+    const anchor = marketExchangeUnitId(unit);
     const pairs = new Map<string, MarketExchangePairHistory>();
-    const chaos: (Omit<MarketExchangePoint, "rate"> & {
-        chaos: number | null;
+    const prices: (Omit<MarketExchangePoint, "rate"> & {
+        price: number | null;
         via: string | null;
     })[] = [];
     const hours = Map.groupBy(snapshots, (snapshot) => snapshot.hour);
     for (const [hour, rows] of [...hours].sort(([a], [b]) => a - b)) {
-        const { rates, full } = hourRates(rows, hour);
+        const { rates, full } = hourRates(rows, hour, anchor);
         let units = 0;
         for (const key of new Set(
             rows.map((row) => row.marketId.split("|").toSorted().join("|")),
@@ -345,12 +365,12 @@ export function marketExchangeHistory(
             pairs.set(quoteId, pair);
         }
         if (!units) continue;
-        const rate = itemId === CHAOS ? { chaos: 1, via: CHAOS } : rates.get(itemId);
-        const leg = rate && itemId !== CHAOS ? full(itemId, rate.via) : null;
-        const scale = rate?.via === CHAOS ? 1 : rate ? rates.get(rate.via)?.chaos : undefined;
-        chaos.push({
+        const rate = itemId === anchor ? { price: 1, via: anchor } : rates.get(itemId);
+        const leg = rate && itemId !== anchor ? full(itemId, rate.via) : null;
+        const scale = rate?.via === anchor ? 1 : rate ? rates.get(rate.via)?.price : undefined;
+        prices.push({
             hour,
-            chaos: rate?.chaos ?? null,
+            price: rate?.price ?? null,
             low: leg?.low && scale ? leg.low * scale : null,
             high: leg?.high && scale ? leg.high * scale : null,
             via: rate?.via ?? null,
@@ -358,7 +378,7 @@ export function marketExchangeHistory(
         });
     }
     return {
-        chaos,
+        prices,
         pairs: [...pairs.values()].sort(
             (a, b) =>
                 b.hours.reduce((sum, point) => sum + point.units, 0) -

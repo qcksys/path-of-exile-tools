@@ -64,6 +64,7 @@ ALTER TABLE ps_sale ADD COLUMN IF NOT EXISTS links INTEGER DEFAULT 0;
 CREATE TABLE IF NOT EXISTS pipeline_health (
     id INTEGER PRIMARY KEY, last_poll_at TIMESTAMP NOT NULL, caught_up BOOLEAN NOT NULL
 );
+ALTER TABLE pipeline_health ADD COLUMN IF NOT EXISTS last_caught_up_at TIMESTAMP;
 CREATE TABLE IF NOT EXISTS ps_equipment_listing (
     account_name VARCHAR NOT NULL,
     item_id VARCHAR NOT NULL,

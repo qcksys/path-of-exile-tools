@@ -82,7 +82,17 @@ same row and the item's hourly chaos price and per-pair rates over the list's pe
 hour's lowest to highest traded rate as a shaded range (a converted price scales its pair's range
 by the bridge item's chaos price). The history reads the item's chaos, divine and exalted pairs,
 its eight other most traded pairs and the chaos markets that convert them. List filters stay in
-the query for the way back.
+the query for the way back. Exchange rows and history give amounts as `price` in the currency
+named by `unit` (`exchangeUnit` on `get_season_market`).
+The PoE 2 market at `/2/market/:category` (`get_poe2_season_exchange`) lists only the currency
+exchange, since PoE 2 has no public stash data. It prices the same rows in exalted (direct, or
+through divine, chaos or another traded item) and shows values adaptively, in exalted or in
+divine. Its categories are the trade site's PoE 2 bulk exchange groups, generated into
+`app/data/exchange-categories-poe2.json` by `vp run game-data:exchange-categories`; traded items
+outside every group list under Other. Seasons come from the exchange alone and leave out private
+leagues (names ending in ` (PL<id>)`); leagues sharing the latest hour list the most active first. Item pages live at
+`/2/market/exchange/<item ID after Metadata/Items/>` and call `get_season_exchange_item` with realm
+`poe2`. `/1/market` links with realm `poe2` redirect there, searching for their item.
 Uniques whose mods come from a pool (ingest's `MOD_POOLS`: Watcher's Eye's aura mods, PoE 2
 Loreweave's borrowed unique mods) record one market per combination of masked mods, so every roll
 of the same mods trades together; older Watcher's Eye per-roll markets keep their hashed signature
@@ -211,6 +221,7 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | PoE 1 and PoE 2 arbitrage leagues, prices, recipes | `arbitrage/market` | `get_arbitrage_market`; `loadArbitrageMarket` |
 | Arbitrage filters, ranking, buffer, profit/ROI | `arbitrage/calculate` | `calculate_arbitrage`; `findArbitrage` |
 | Manual recipe reference, calculator and trade links | `arbitrage/recipes`, `arbitrage/scenario`, `arbitrage/trade` | `list_vendor_recipes`, `calculate_recipe_scenario`, `build_recipe_trade_url` |
+| PoE 2 exchange market by category | `market/poe2-exchange` | `get_poe2_season_exchange`; `getPoe2MarketExchange`, sharing `marketExchangeRows` (in exalted) and the season, search and ordering of the PoE 1 exchange rows. Unit tests cover exalted pricing and its divine-then-chaos bridges; UI tests cover the category list, value display, item page, redirects and refusals; HTTP/MCP parity covers success and an invalid category. Not yet covered against MySQL. |
 | Season exchange item price, trend and pair history | `market/exchange-item` | `get_season_exchange_item`; `getMarketExchangeItem`, sharing `marketExchangeRows` with the list's exchange rows and adding the hourly `marketExchangeHistory` over the period (`days`). It reads only the item's markets and the chaos markets of the items it trades against. Unit tests cover latest-hour and earlier-day prices, conversions, trends, volume, pairs and hourly ranges; MySQL tests cover the daily rollup through ingest and the item read; UI tests cover the table, value display and item page; HTTP/MCP parity covers success and an invalid item ID. |
 | Season crafting base history and variants | `market/base` | `get_season_market_base`; `getMarketBase`, reading the cohort's hours through `stash_cohort_history_idx` and its base type's listed cohorts with the list's `marketBaseRows`, preferring the current manifest revision per hour. Unit tests cover the base filters, descriptions and generated bands; MySQL tests cover history, variants and revision choice; UI tests cover the list link, base page, variants and the way back; HTTP/MCP parity covers success and an invalid base ID. |
 | Season market search, seasons, paging, variants, history, mod pool values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `modPoolValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_market_daily` rollup and pagination precedes full-row primary-key reads. An item's foil and non-foil listings are one market: list rows, variants and history sum and mix every foil variation's hourly rows. Link counts merge the same way in list rows and in history without `links`; variants list each link count of a market with 5- or 6-link copies after its merged variant. MySQL regressions cover these query plans, variant selection, foil merging, link-count merging and splitting alongside mod splits, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), page boundaries, and crafting base cohort rows (latest hour, current revision, category). |

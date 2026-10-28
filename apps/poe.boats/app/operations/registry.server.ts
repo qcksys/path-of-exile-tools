@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { getMarketBase, getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
+import {
+    getMarketBase,
+    getMarketData,
+    getMarketExchangeItem,
+    getPoe2MarketExchange,
+} from "~/db/queries/market.queries";
 import { sStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
 import { marketBaseRowSchema, marketBaseSchema } from "~/lib/market-bases";
 import { ArbitrageGameSchema, MarketSnapshotSchema, VendorRecipeSchema } from "~/schemas/arbitrage";
@@ -8,8 +13,10 @@ import {
     marketCategorySchema,
     marketExchangeItemInputSchema,
     marketExchangeRowSchema,
+    marketExchangeUnitSchema,
     marketFiltersSchema,
     mergedMarketPriceSchema,
+    poe2MarketFiltersSchema,
 } from "~/schemas/market";
 import { recombinatorCatalogSchema } from "~/schemas/recombinator-catalog";
 import { ScarabPricesDataSchema } from "~/schemas/scarab";
@@ -302,8 +309,9 @@ export const operations = [
             exchange: z
                 .array(marketExchangeRowSchema)
                 .describe(
-                    "Items on the exchange, dearest first, priced in chaos; their stash listings are left out of rows. Read one with get_season_exchange_item",
+                    "Items on the exchange, dearest first, priced in `exchangeUnit`; their stash listings are left out of rows. Read one with get_season_exchange_item",
                 ),
+            exchangeUnit: marketExchangeUnitSchema,
             chaosRates: z
                 .record(z.string(), z.number())
                 .describe(
@@ -372,26 +380,27 @@ export const operations = [
         name: "get_season_exchange_item",
         ui: "/1/market/currency",
         description:
-            "Read one currency exchange item (an item ID from the season market's `exchange` rows): its current price, 7-day trend, volume and most traded pair as listed, plus its hourly history over the last `days` days through its chaos, divine and exalted pairs and its eight other most traded pairs. An empty league reads the league whose exchange traded most recently.",
+            "Read one currency exchange item (an item ID from the season market's `exchange` rows, or the PoE 2 market's `rows` with realm `poe2`): its current price in `unit`, 7-day trend, volume and most traded pair as listed, plus its hourly history over the last `days` days through its chaos, divine and exalted pairs and its eight other most traded pairs. An empty league reads the league whose exchange traded most recently.",
         input: marketExchangeItemInputSchema,
         output: z.object({
             realm: z.string(),
             league: z.string(),
             latestHour: z.number().describe("The latest completed hour"),
             historyStart: z.number().describe("The first hour of `history`"),
+            unit: marketExchangeUnitSchema,
             item: marketExchangeRowSchema
                 .nullable()
                 .describe("Null for an item ID outside the game's exchange item catalogue"),
             divine: z
                 .number()
                 .nullable()
-                .describe("Chaos per Divine Orb, as the list prices it, for display"),
+                .describe("Exchange units per Divine Orb, as the list prices it, for display"),
             history: z.object({
-                chaos: z
+                prices: z
                     .array(
                         z.object({
                             hour: z.number(),
-                            chaos: z.number().nullable(),
+                            price: z.number().nullable(),
                             low: z.number().nullable(),
                             high: z.number().nullable(),
                             via: z.string().nullable(),
@@ -399,7 +408,7 @@ export const operations = [
                         }),
                     )
                     .describe(
-                        "Each hour the item traded, oldest first: its volume-weighted chaos price (directly or through `via`), the hour's lowest and highest rates of that pair in chaos (scaled by `via`'s chaos price), and units traded across its pairs",
+                        "Each hour the item traded, oldest first: its volume-weighted price in the exchange unit (directly or through `via`), the hour's lowest and highest rates of that pair in the exchange unit (scaled by `via`'s price), and units traded across its pairs",
                     ),
                 pairs: z
                     .array(
@@ -461,6 +470,25 @@ export const operations = [
                 .describe("Chaos per unit of each listing currency, at the latest hour"),
         }),
         execute: (input, context) => getMarketBase(context.db, input),
+    }),
+    defineOperation({
+        ...shared,
+        family: "market",
+        path: "/poe2-exchange",
+        name: "get_poe2_season_exchange",
+        ui: "/2/market/currency",
+        description:
+            "Read the PoE 2 season market: every item on the currency exchange in a category (the trade site's bulk exchange groups), priced in exalted, dearest first. Each row has its 7-day trend, volume and most traded pair; read one with get_season_exchange_item and realm `poe2`. An empty league reads the season whose exchange traded most recently.",
+        input: poe2MarketFiltersSchema,
+        output: z.object({
+            filters: poe2MarketFiltersSchema,
+            seasons: z.array(season),
+            season: season.optional(),
+            unit: marketExchangeUnitSchema,
+            divine: z.number().nullable().describe("Exalted per Divine Orb, for display"),
+            rows: z.array(marketExchangeRowSchema),
+        }),
+        execute: (input, context) => getPoe2MarketExchange(context.db, input),
     }),
 ];
 

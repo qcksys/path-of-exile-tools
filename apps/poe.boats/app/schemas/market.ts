@@ -9,6 +9,9 @@ import {
     isMarketUniqueCategory,
     MARKET_CATEGORIES,
     type MarketCategory,
+    type MarketExchangeCategory,
+    POE2_EXCHANGE_CATEGORIES,
+    type Poe2ExchangeCategory,
 } from "~/lib/market-categories";
 
 export const marketCategorySchema = z.enum(
@@ -139,20 +142,36 @@ export const mergedMarketPriceSchema = z.object({
 });
 export type MergedMarketPrice = z.infer<typeof mergedMarketPriceSchema>;
 
+export const poe2ExchangeCategorySchema = z.enum(
+    Object.keys(POE2_EXCHANGE_CATEGORIES) as [Poe2ExchangeCategory, ...Poe2ExchangeCategory[]],
+);
+export const marketExchangeCategorySchema = z.enum([
+    ...new Set<MarketExchangeCategory>([
+        ...marketCategorySchema.options,
+        ...poe2ExchangeCategorySchema.options,
+    ]),
+] as [MarketExchangeCategory, ...MarketExchangeCategory[]]);
+
+export const marketExchangeUnitSchema = z
+    .enum(["chaos", "exalted"])
+    .describe("The currency exchange prices are in: chaos for PoE 1 realms, exalted for poe2");
+
 export const marketExchangeRowSchema = z.object({
     itemId: z.string(),
     name: z.string(),
-    category: marketCategorySchema,
-    chaos: z
+    category: marketExchangeCategorySchema,
+    price: z
         .number()
         .nullable()
         .describe(
-            "Chaos per unit from the latest completed hour's trades, or else from the newest of the last 7 UTC days that traded (`current` false); null without a path through chaos, divine, exalted or another traded item",
+            "Units of the exchange unit per unit from the latest completed hour's trades, or else from the newest of the last 7 UTC days that traded (`current` false); null without a path through chaos, divine, exalted or another traded item",
         ),
     via: z
         .object({ itemId: z.string(), name: z.string() })
         .nullable()
-        .describe("The item the price was converted through; Chaos Orb for a direct pair"),
+        .describe(
+            "The item the price was converted through; the exchange unit itself for a direct pair",
+        ),
     hour: z
         .number()
         .nullable()
@@ -163,10 +182,12 @@ export const marketExchangeRowSchema = z.object({
     volume: z
         .number()
         .nullable()
-        .describe("Chaos value traded per hour over the last 7 UTC days, at the row's price"),
+        .describe(
+            "Value traded per hour, in the exchange unit, over the last 7 UTC days, at the row's price",
+        ),
     history: z
         .array(z.number().nullable())
-        .describe("Chaos per unit on each of the last 7 UTC days, oldest first"),
+        .describe("Price on each of the last 7 UTC days, oldest first"),
     change: z
         .number()
         .nullable()
@@ -199,18 +220,71 @@ export function marketBaseLink(filters: MarketFilters, baseId: string) {
 
 const EXCHANGE_ID_PREFIX = "Metadata/Items/";
 
+/** The path of an exchange item's page in a game's market. */
+function exchangeItemPath(game: 1 | 2, itemId: string) {
+    const item = itemId.slice(EXCHANGE_ID_PREFIX.length).split("/").map(encodeURIComponent);
+    return `/${game}/market/exchange/${item.join("/")}`;
+}
+
 /** An exchange item's page, keeping the list's filters for the way back. */
 export function marketExchangeLink(filters: MarketFilters, itemId: string) {
     const [path, query] = marketLink(filters).split("?");
     const params = new URLSearchParams(query);
     params.set("category", path!.split("/").at(-1)!);
-    const item = itemId.slice(EXCHANGE_ID_PREFIX.length).split("/").map(encodeURIComponent);
-    return `/1/market/exchange/${item.join("/")}?${params}`;
+    return `${exchangeItemPath(1, itemId)}?${params}`;
 }
 
-/** The exchange item ID of an exchange page's path after `/1/market/exchange/`. */
+/** The exchange item ID of an exchange page's path after `/<game>/market/exchange/`. */
 export function marketExchangeItemId(path: string) {
     return `${EXCHANGE_ID_PREFIX}${path}`;
+}
+
+/** The PoE 2 market lists only the currency exchange; there is no PoE 2 stash data. */
+export const POE2_MARKET_DEFAULT_CATEGORY = "currency" satisfies Poe2ExchangeCategory;
+
+export const poe2MarketFiltersSchema = marketFiltersSchema
+    .pick({ league: true, q: true, days: true })
+    .extend({ category: poe2ExchangeCategorySchema.or(z.literal("all")).default("all") });
+export type Poe2MarketFilters = z.infer<typeof poe2MarketFiltersSchema>;
+
+function poe2MarketParams(filters: Poe2MarketFilters) {
+    return new URLSearchParams({ league: filters.league, days: filters.days, q: filters.q });
+}
+
+export function poe2MarketLink(filters: Poe2MarketFilters) {
+    const category = filters.category === "all" ? POE2_MARKET_DEFAULT_CATEGORY : filters.category;
+    return `/2/market/${category}?${poe2MarketParams(filters)}`;
+}
+
+/**
+ * The PoE 2 market page for a `/1/market` URL with realm `poe2`, keeping its season and period
+ * and searching for its item.
+ */
+export function poe2MarketRedirect(filters: MarketFilters) {
+    const category = poe2ExchangeCategorySchema.safeParse(filters.category);
+    return poe2MarketLink({
+        league: filters.league,
+        days: filters.days,
+        q: (filters.item ?? filters.q).slice(0, 100),
+        category: category.success ? category.data : "all",
+    });
+}
+
+/** A PoE 2 exchange item's page, keeping the list's filters for the way back. */
+export function poe2MarketExchangeLink(filters: Poe2MarketFilters, itemId: string) {
+    const params = poe2MarketParams(filters);
+    params.set("category", filters.category);
+    return `${exchangeItemPath(2, itemId)}?${params}`;
+}
+
+/** Path parameters take precedence over the same-named search parameters. */
+export function parsePoe2MarketFilters(request: Request, params: { category?: string } = {}) {
+    const parsed = poe2MarketFiltersSchema.safeParse({
+        ...Object.fromEntries(new URL(request.url).searchParams),
+        ...Object.fromEntries(Object.entries(params).filter(([, value]) => value !== undefined)),
+    });
+    if (!parsed.success) throw new Response("Invalid market filters", { status: 400 });
+    return parsed.data;
 }
 
 export function marketLink(
