@@ -1,5 +1,5 @@
 import { type CohortHourly, cohortBaseTypes, type MarketCohortDefinition } from "@poe-tools/market";
-import { and, count, eq, inArray, lt, type SQL, sql } from "drizzle-orm";
+import { and, count, eq, inArray, lt, lte, type SQL, sql } from "drizzle-orm";
 import type { MySqlColumn } from "drizzle-orm/mysql-core";
 import type { TDatabase } from "~/db/client.ts";
 import { type StashGame, stashGame } from "~/db/helpers/stash-game";
@@ -137,9 +137,31 @@ export function splitCohortPriceWindows(prices: CohortHourly["prices"]) {
     return { prices: hourly, windows };
 }
 
+/** Deletes the given cohort hours of one revision sequence and older. */
+function deleteCohortHours(
+    db: TDatabase,
+    table: typeof tStashCohortHourly | typeof tStashCohortWindow,
+    scope: { realm: string; league: string; revisionSeq: number },
+    keys: Array<{ hour: number; cohortId: string }>,
+) {
+    return db.delete(table).where(
+        and(
+            eq(table.realm, scope.realm),
+            eq(table.league, scope.league),
+            lte(table.revisionSeq, scope.revisionSeq),
+            sql`(${table.hour}, ${table.cohortId}) in (${sql.join(
+                keys.map(({ hour, cohortId }) => sql`(${hour}, ${cohortId})`),
+                sql`, `,
+            )})`,
+        ),
+    );
+}
+
 /**
- * Stores PoE 1 equipment cohort hours. Each cohort hour keeps the newest catalog revision's row;
- * an older revision delivered later leaves it unchanged.
+ * Stores PoE 1 equipment cohort hours that have asking prices. Each cohort hour keeps the newest
+ * catalog revision's row; an older revision delivered later leaves it unchanged. A cohort hour
+ * without prices is not stored, so lookups use the cohort's latest priced hour, and it deletes a
+ * row an earlier delivery of that hour stored.
  */
 export async function upsertStashCohortHourly(
     db: TDatabase,
@@ -152,11 +174,21 @@ export async function upsertStashCohortHourly(
     const hourly = tStashCohortHourly;
     const window = tStashCohortWindow;
     for (const batch of chunk(rows, UPSERT_CHUNK)) {
-        const split = batch.map(({ revision, prices, ...row }) => ({
+        const incoming = batch.map(({ revision, prices, ...row }) => ({
             ...row,
             revisionSeq: seqs.get(revision)!,
             ...splitCohortPriceWindows(prices),
         }));
+        const empty = incoming.filter((row) => Object.keys(row.prices).length === 0);
+        for (const group of Map.groupBy(empty, ({ realm, league, revisionSeq }) =>
+            JSON.stringify([realm, league, revisionSeq]),
+        ).values()) {
+            const scope = group[0]!;
+            await deleteCohortHours(db, hourly, scope, group);
+            await deleteCohortHours(db, window, scope, group);
+        }
+        const split = incoming.filter((row) => Object.keys(row.prices).length > 0);
+        if (!split.length) continue;
         await db
             .insert(hourly)
             .values(split.map(({ windows: _windows, ...row }) => row))

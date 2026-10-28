@@ -80,6 +80,7 @@ beforeAll(async () => {
     await observe([observation("selected", "old", hour - 3600)]);
     await observe([
         observation("selected", "current", hour - 3600),
+        // Unpriced hours are not stored, so "selected" falls back to its previous hour.
         observation("selected", "current", hour, {}),
         observation("unbounded"),
         observation("multi"),
@@ -191,8 +192,8 @@ it("preserves latest rows while reducing unrelated cohort work before aggregatio
         ]),
     ).toEqual([
         ["multi", "current", hour, true],
-        ["selected", "current", hour, false],
         ["unbounded", "current", hour, true],
+        ["selected", "current", hour - 3600, true],
     ]);
     const current = statements.slice();
     expect(actual.candidates.map(({ definition, latest }) => ({ definition, latest }))).toEqual(
@@ -272,12 +273,7 @@ it("preserves exact cohort filtering, the newest revision, historical cutoffs an
             await baseline(request, "selected"),
         );
         expect(result.candidates.map((entry) => entry.definition.id)).toEqual(["selected"]);
-        if (request.at === hour && request.currency === "chaos")
-            expect(result.candidates[0]).toMatchObject({
-                latest: { hour, revision: "current", prices: {} },
-                covered: false,
-            });
-        if (request.at === hour - 3600)
+        if (request.currency === "chaos")
             expect(result.candidates[0]).toMatchObject({
                 latest: { hour: hour - 3600, revision: "current" },
                 covered: true,
@@ -327,13 +323,13 @@ it("keeps ordering and the 2001-row boundary without quadratic history reads", a
     expect(historyReads).toBeLessThan((2002 + distractors * 24 + 10) * 20);
     expect(result.truncated).toBe(true);
     expect(result.candidates).toHaveLength(2000);
-    expect(result.candidates.slice(0, 4).map((entry) => entry.definition.id)).toEqual([
+    // "selected" has no priced row at the newest hour, so it ranks with the older hour.
+    expect(result.candidates.slice(0, 3).map((entry) => entry.definition.id)).toEqual([
         "multi",
-        "selected",
         "unbounded",
         "zz:newest",
     ]);
-    expect(result.candidates.at(-1)?.definition.id).toBe("limit:1995");
+    expect(result.candidates.at(-1)?.definition.id).toBe("limit:1996");
     expect(result.candidates.map(({ definition, latest }) => ({ definition, latest }))).toEqual(
         (await baseline()).slice(0, 2000),
     );
@@ -363,8 +359,8 @@ it("does not spend the observation cap on incompatible definitions or definition
     expect(result.candidates).toHaveLength(1);
     expect(result.candidates[0]).toMatchObject({
         definition: { id: "zz:eligible" },
-        latest: { hour, prices: {} },
-        covered: false,
+        latest: { hour: hour - 3600 },
+        covered: true,
     });
 });
 
@@ -388,7 +384,7 @@ it("retains late primary-key pages at the global tie boundary using database col
     await observe([
         { ...observation("a:late", "zz-last", hour - 3600), league },
         { ...observation("Z:newest-correction", "zz-last", hour - 3600), league },
-        { ...observation("Z:newest-correction", "zz-last", hour, {}), league },
+        { ...observation("Z:newest-correction", "zz-last", hour), league },
     ]);
     statements.length = 0;
     const result = await findCraftingMarketPrices(db as unknown as TDatabase, { ...input, league });
@@ -402,8 +398,7 @@ it("retains late primary-key pages at the global tie boundary using database col
     expect(result.candidates).toHaveLength(2000);
     expect(result.candidates[0]).toMatchObject({
         definition: { id: "Z:newest-correction" },
-        latest: { hour, revision: "zz-last", prices: {} },
-        covered: false,
+        latest: { hour, revision: "zz-last" },
     });
     expect(result.candidates[1]?.definition.id).toBe("a:late");
     expect(result.candidates.map(({ definition, latest }) => ({ definition, latest }))).toEqual(

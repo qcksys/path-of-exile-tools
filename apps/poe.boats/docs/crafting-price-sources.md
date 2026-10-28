@@ -4,7 +4,9 @@ Equipment lookups read the PoE 1 cohort tables: `stash_poe1_cohort` (one definit
 cohort ID), `stash_poe1_cohort_hourly` (one row per cohort and hour, holding the newest
 catalog revision's classification), `stash_poe1_cohort_revision` (revisions numbered in the
 order ingest first saw them) and `stash_poe1_cohort_window` (6/24-hour price windows, kept
-for the latest 48 hours). Apply the migrations to the target database before deploying code
+for the latest 48 hours). Only cohort hours with asking prices are stored: an hour with only
+unconfirmed matches or unpriced listings is skipped, and deletes a row an earlier delivery of that
+hour stored, so a lookup prices each cohort from its latest priced hour in the window. Apply the migrations to the target database before deploying code
 that queries them (`APP_ENV=dev vp run db:migrate` from this app). An HTTP 500 here is a
 deployment failure, not missing market data. Saved prices name a cohort by realm, league and
 ID only; a reference saved with a catalog revision still decodes, without it. A lookup at a
