@@ -34,10 +34,13 @@ test("groups categories and applies filtering and price ordering across market p
     await expect(page).toHaveURL(/q=Goathide/);
     await expect(page).not.toHaveURL(/page=2/);
     await expect(rows.nth(1)).toContainText("Boots 54");
+    // Category links clear the search text.
     await categories.getByRole("link", { name: "Unique weapons", exact: true }).click();
     await expect(page.getByText("No markets match these filters")).toBeVisible();
-    await expect(page.getByRole("searchbox", { name: "Search items" })).toHaveValue("Goathide");
-    await expect(page).toHaveURL((url) => url.pathname === "/1/market/weapons");
+    await expect(page.getByRole("searchbox", { name: "Search items" })).toHaveValue("");
+    await expect(page).toHaveURL(
+        (url) => url.pathname === "/1/market/weapons" && !url.searchParams.get("q"),
+    );
     await selectValue(page.getByRole("combobox", { name: "Price currency" }), "chaos");
     await expect(page).toHaveURL(
         (url) =>

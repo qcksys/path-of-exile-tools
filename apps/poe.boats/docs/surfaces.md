@@ -126,8 +126,27 @@ attributes, e.g. `str-int`), `ilvl` (the band includes that level), `baseLinks` 
 Each base row links to `/1/market/bases/:base` (`get_season_market_base`), the cohort's hourly
 asking prices and listings over the period and every listed cohort of the same base type (and
 Cluster skill) at its latest hour.
-The shared market query applies category, text, identification, corruption, column ranges
-and ordering before pagination. Without a `corruption` filter, the unique weapon, armour and
+PoE 1 skill gems are captured from public stashes and keyed by `typeLine`, so transfigured gems
+are their own items; a Vaal gem whose skill is transfigured is keyed as the trade site names it
+(`Vaal Arc (Arc of Surging)`). `vp run game-data:gems` writes
+`packages/poe-market/data/gems-poe1.json`: transfigured gems from the trade site's item list, and
+Vaal gems from the game data's `vaal_gem` base item tag plus their transfigured forms (Vaal
+Sacrifice and Vaal Temptation supports are not Vaal gems). Regenerate it when a league adds
+transfigured gems. The game files give each gem effect a style (`GemEffects.ItemColor`:
+transfigured X, Y or Trarthan, exceptional, default) but no source such as Heist or the
+Labyrinth, and stash items do not record one. Each gem lists one market per level band, quality band and corruption state
+(`signatureKind` `gem`, `signatureValue` like `Level 20 (max) · Quality 20%`). Level bands are
+below, at and above the gem's maximum level: 1–19, 20, 21 for normal gems, 1–2, 3, 4 for gems with
+the Exceptional gem tag, 1–3, 4, 5 for awakened exceptional gems (Awakened Empower, Enhance and
+Enlighten), and 1–4, 5, 6 for other awakened gems; the max band says `(max)` so the tiers' bands
+never share a value. Quality bands are 0–19%, 20% and 21–23%. Gem
+markets belong to Skill gems whatever their base type. The Skill gems list replaces its corruption
+select with tri-state toggles for each level band, each quality band, corruption, transfigured and
+Vaal (include, exclude or neither; `gemTransfigured` and `gemVaal` are `all`, `true` or `false`); `gemLevel` and `gemQuality` hold the bands as `20,-21` (band tokens are a
+normal gem's: `1-19`, `20`, `21` and `0-19`, `20`, `21-23`), and links to other categories drop
+them.
+The shared market query applies category, text, identification, corruption, gem bands,
+column ranges and ordering before pagination. Without a `corruption` filter, the unique weapon, armour and
 accessory categories list uncorrupted markets and every other category lists any corruption; the
 category links clear the search text and the base filters, and carry a corruption choice only
 when it differs from the current category's default. The list's TanStack Table headers sort through `order` and filter
