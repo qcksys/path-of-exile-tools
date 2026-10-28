@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router";
 import { DataTable, dataTableColumns } from "~/components/data-table";
+import { CatalogItemArt } from "~/components/item-art";
 import { marketUtc } from "~/components/market-filters";
 import { MarketHistory, MarketHistoryPrice } from "~/components/market-history";
 import { MarketListingPrice } from "~/components/market-listing-price";
@@ -102,7 +103,10 @@ export default function MarketBase({ loaderData }: Pick<Route.ComponentProps, "l
                 <Link to={marketLink(filters)} className="text-sm text-muted-foreground underline">
                     ← Back to markets
                 </Link>
-                <h2 className="mt-2 text-2xl font-semibold">{base.baseType}</h2>
+                <h2 className="mt-2 flex items-center gap-3 text-2xl font-semibold">
+                    <CatalogItemArt name={base.baseType} game={game} className="size-16" />
+                    {base.baseType}
+                </h2>
                 <p className="text-sm text-muted-foreground">{marketBaseDetails(base)}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                     Normal, magic and rare items together; uncorrupted, unfractured and
