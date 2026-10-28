@@ -98,26 +98,35 @@ function BandToggles<Band extends string>({
     );
 }
 
-const CORRUPTION_STATES = { true: "include", false: "exclude", all: undefined } as const;
+const FLAG_STATES = { true: "include", false: "exclude", all: undefined } as const;
 
-/** Corruption as one tri-state toggle: included lists corrupted gems only, excluded uncorrupted. */
-function CorruptionToggle({
+/**
+ * A yes/no filter (`all`, `true`, `false`) as one tri-state toggle: included lists only the gems
+ * with the flag, excluded only those without it.
+ */
+function FlagToggle({
+    name,
+    legend,
+    label,
     value,
     onChange,
 }: {
-    value: MarketFilters["corruption"];
+    name: "corruption" | "gemTransfigured";
+    legend: string;
+    label: string;
+    value: keyof typeof FLAG_STATES;
     onChange: () => void;
 }) {
     const [current, setCurrent] = useState(value);
     useEffect(() => setCurrent(value), [value]);
     return (
         <fieldset className="grid gap-1.5">
-            <legend className="mb-1.5 text-xs text-muted-foreground">Corruption</legend>
-            <Input type="hidden" name="corruption" value={current} />
+            <legend className="mb-1.5 text-xs text-muted-foreground">{legend}</legend>
+            <Input type="hidden" name={name} value={current} />
             <div className="flex gap-1.5">
                 <TriStateToggle
-                    label="Corrupted"
-                    state={CORRUPTION_STATES[current]}
+                    label={label}
+                    state={FLAG_STATES[current]}
                     onChange={(state) => {
                         setCurrent(
                             state === "include" ? "true" : state === "exclude" ? "false" : "all",
@@ -130,7 +139,7 @@ function CorruptionToggle({
     );
 }
 
-/** The skill gem category's level, quality and corruption filters. */
+/** The skill gem category's level, quality, corruption and transfigured filters. */
 export function MarketGemFilters({
     filters,
     onChange,
@@ -164,7 +173,20 @@ export function MarketGemFilters({
                 value={filters.gemQuality}
                 onChange={onChange}
             />
-            <CorruptionToggle value={filters.corruption} onChange={onChange} />
+            <FlagToggle
+                name="corruption"
+                legend="Corruption"
+                label="Corrupted"
+                value={filters.corruption}
+                onChange={onChange}
+            />
+            <FlagToggle
+                name="gemTransfigured"
+                legend="Transfigured"
+                label="Transfigured"
+                value={filters.gemTransfigured}
+                onChange={onChange}
+            />
         </div>
     );
 }

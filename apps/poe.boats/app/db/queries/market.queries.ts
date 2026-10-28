@@ -3,6 +3,7 @@ import {
     exchangeSnapshotSchema,
     gemVariantValues,
     marketObservationRange,
+    TRANSFIGURED_GEMS,
 } from "@poe-tools/market";
 import {
     and,
@@ -95,6 +96,17 @@ function gemFilter(filters: MarketFilters) {
     return values.length
         ? and(eq(daily.signatureKind, "gem"), inArray(daily.signatureValue, values))
         : sql`false`;
+}
+
+/** The transfigured filter lists only gem markets, transfigured or not. */
+function transfiguredFilter({ gemTransfigured }: MarketFilters) {
+    if (gemTransfigured === "all") return undefined;
+    return and(
+        eq(daily.signatureKind, "gem"),
+        gemTransfigured === "true"
+            ? inArray(daily.itemKey, [...TRANSFIGURED_GEMS])
+            : notInArray(daily.itemKey, [...TRANSFIGURED_GEMS]),
+    );
 }
 
 /** Without a `links` filter, an item page merges every link count, as the market list does. */
@@ -362,6 +374,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 days,
                 marketCategoryFilter(filters, daily.baseType, daily.signatureKind),
                 gemFilter(filters),
+                transfiguredFilter(filters),
                 filters.identification === "all"
                     ? undefined
                     : eq(daily.identified, filters.identification === "true"),

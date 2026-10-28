@@ -2,11 +2,13 @@ import { describe, expect, it } from "vite-plus/test";
 import {
     formatGemBandFilter,
     gemLevelBand,
+    gemMarketKey,
     gemQualityBand,
     gemTier,
     gemVariantValue,
     gemVariantValues,
     parseGemBandFilter,
+    TRANSFIGURED_GEMS,
 } from "../src/gem-variants.ts";
 
 describe("gem variants", () => {
@@ -120,5 +122,27 @@ describe("gem band filters", () => {
 
     it("allows nothing when every band is excluded", () => {
         expect(gemVariantValues({ gemLevel: "-1-19,-20,-21", gemQuality: "" })).toEqual([]);
+    });
+});
+
+describe("transfigured gems", () => {
+    it("lists transfigured gems and Vaal gems with a transfigured skill", () => {
+        expect(TRANSFIGURED_GEMS).toContain("Kinetic Bolt of Fragmentation");
+        expect(TRANSFIGURED_GEMS).toContain("Vaal Arc (Arc of Surging)");
+        expect(TRANSFIGURED_GEMS).not.toContain("Kinetic Bolt");
+        expect(TRANSFIGURED_GEMS).not.toContain("Vaal Arc");
+    });
+
+    it("keys a gem by its type line, and a transfigured Vaal gem by its skill too", () => {
+        expect(gemMarketKey({ typeLine: "Kinetic Bolt of Fragmentation" })).toBe(
+            "Kinetic Bolt of Fragmentation",
+        );
+        expect(gemMarketKey({ typeLine: "Vaal Arc", hybridName: "Arc of Surging" })).toBe(
+            "Vaal Arc (Arc of Surging)",
+        );
+        expect(gemMarketKey({ typeLine: "Vaal Arc", hybridName: "Arc" })).toBe("Vaal Arc");
+        expect(
+            gemMarketKey({ typeLine: "Vaal Impurity of Fire", hybridName: "Purity of Fire" }),
+        ).toBe("Vaal Impurity of Fire");
     });
 });

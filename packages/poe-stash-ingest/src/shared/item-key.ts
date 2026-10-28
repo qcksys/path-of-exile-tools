@@ -1,4 +1,5 @@
 import type { Item } from "@poe-tools/api-client";
+import { gemMarketKey } from "@poe-tools/market";
 import { isGemItem, isUniqueItem } from "#src/shared/capture.ts";
 import { type ModSignature, signatureValue } from "#src/shared/mod-extractors/index.ts";
 
@@ -46,7 +47,8 @@ export function itemLinks(item: Item): number {
  *                         `unid:${baseType}` when the icon URL can't
  *                         be decoded
  *   - Gem               → `${typeLine}`, which names a transfigured gem
- *                         (e.g. Kinetic Bolt of Fragmentation) apart from its base gem
+ *                         (e.g. Kinetic Bolt of Fragmentation) apart from its base gem;
+ *                         `Vaal Arc (Arc of Surging)` for a transfigured Vaal gem
  *   - Currency / non-unique identified → `${baseType}`
  */
 export function itemKey(item: Item, iconAsset?: string | null): string {
@@ -56,6 +58,7 @@ export function itemKey(item: Item, iconAsset?: string | null): string {
     if (isUniqueItem(item) && item.name) {
         return item.name;
     }
-    if (isGemItem(item)) return item.typeLine;
+    if (isGemItem(item))
+        return gemMarketKey({ typeLine: item.typeLine, hybridName: item.hybrid?.baseTypeName });
     return item.baseType;
 }

@@ -16,6 +16,7 @@
         "game-data:market": "tsx scripts/generate-market-cohorts.ts",
         "game-data:listing-currencies": "tsx scripts/fetch-listing-currencies.ts",
         "game-data:exchange-categories": "tsx scripts/fetch-exchange-categories.ts",
+        "game-data:transfigured-gems": "tsx scripts/fetch-transfigured-gems.ts",
         "test": "vp test run",
         "test:prepare": "vp run game-data:recombinator && vp run game-data:crafting && vp run game-data:history",
         "test:e2e": "vp test run --config vitest.e2e.config.ts",

@@ -113,15 +113,18 @@ into 1–5 and 6 links, armour also at ilvl 86+ with 25%+ and 30%+ quality) at i
 the period, preferring the current manifest revision. Rarities are not split. Base rows have no
 likely-sale estimates; they sort, search and range-filter in memory, with prices compared in chaos.
 PoE 1 skill gems are captured from public stashes and keyed by `typeLine`, so transfigured gems
-are their own items. Each gem lists one market per level band, quality band and corruption state
+are their own items; a Vaal gem whose skill is transfigured is keyed as the trade site names it
+(`Vaal Arc (Arc of Surging)`). The transfigured gem list in
+`packages/poe-market/data/transfigured-gems-poe1.json` comes from the trade site's item list
+(`vp run game-data:transfigured-gems`) and needs regenerating when a league adds some. Each gem lists one market per level band, quality band and corruption state
 (`signatureKind` `gem`, `signatureValue` like `Level 20 (max) · Quality 20%`). Level bands are
 below, at and above the gem's maximum level: 1–19, 20, 21 for normal gems, 1–2, 3, 4 for gems with
 the Exceptional gem tag, 1–3, 4, 5 for awakened exceptional gems (Awakened Empower, Enhance and
 Enlighten), and 1–4, 5, 6 for other awakened gems; the max band says `(max)` so the tiers' bands
 never share a value. Quality bands are 0–19%, 20% and 21–23%. Gem
 markets belong to Skill gems whatever their base type. The Skill gems list replaces its corruption
-select with tri-state toggles for each level band, each quality band and corruption (include,
-exclude or neither); `gemLevel` and `gemQuality` hold the bands as `20,-21` (band tokens are a
+select with tri-state toggles for each level band, each quality band, corruption and transfigured
+(include, exclude or neither; `gemTransfigured` is `all`, `true` or `false`); `gemLevel` and `gemQuality` hold the bands as `20,-21` (band tokens are a
 normal gem's: `1-19`, `20`, `21` and `0-19`, `20`, `21-23`), and links to other categories drop
 them.
 The shared market query applies category, text, identification, corruption, gem bands, column

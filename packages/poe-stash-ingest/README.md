@@ -397,7 +397,7 @@ The source archive uses the broader crafting-input rules above. The unique/curre
 
 - Every **unique** (`frameType=3`) — identified or not. Unidentified ones are keyed by their `iconAsset` so the boss-drop variants can be priced separately even before the text resolves.
 - Every **identified currency-tier** item (`frameType=5` / `6`, or `rarity=Currency`).
-- Every **skill gem** (`frameType=4`, or `rarity=Gem`), keyed by `typeLine` so transfigured gems stay apart from their base gem. The `gem` signature splits each gem by level band (below, at or above its maximum level, which follows the Exceptional tag in the gem's tag line and an `Awakened` name) and quality band (0–19%, 20%, 21–23%); corruption is its own column. Gems are not added to the source archive.
+- Every **skill gem** (`frameType=4`, or `rarity=Gem`), keyed by `typeLine` so transfigured gems stay apart from their base gem (a Vaal gem whose skill is transfigured, per `@poe-tools/market`'s trade-site list, is keyed `Vaal Arc (Arc of Surging)`). The `gem` signature splits each gem by level band (below, at or above its maximum level, which follows the Exceptional tag in the gem's tag line and an `Awakened` name) and quality band (0–19%, 20%, 21–23%); corruption is its own column. Gems are not added to the source archive.
 
 Equipment classifiers populate their own price tables. Other retained crafting candidates need supported classifiers before they can contribute prices.
 

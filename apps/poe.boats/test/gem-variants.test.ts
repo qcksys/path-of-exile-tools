@@ -69,6 +69,16 @@ describe("gem capture", () => {
         expect(shouldCapture(gem("legacy", "Fireball", 1, 0, { rarity: undefined }))).toBe(true);
     });
 
+    it("keys a Vaal gem with a transfigured skill apart from its plain Vaal gem", () => {
+        const vaal = (hybridName: string) =>
+            gem("va", "Vaal Arc", 20, 20, {
+                corrupted: true,
+                hybrid: { isVaalGem: true, baseTypeName: hybridName },
+            });
+        expect(itemKey(vaal("Arc of Surging"))).toBe("Vaal Arc (Arc of Surging)");
+        expect(itemKey(vaal("Arc"))).toBe("Vaal Arc");
+    });
+
     const SPELL = "Spell, AoE, Fire";
     const EXCEPTIONAL = "Exceptional, Support";
     it.each([

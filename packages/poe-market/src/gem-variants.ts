@@ -1,3 +1,5 @@
+import transfiguredGems from "../data/transfigured-gems-poe1.json" with { type: "json" };
+
 /**
  * PoE 1 skill gem markets: one per gem, level band, quality band and corruption state. A gem's
  * level bands are below its maximum level, its maximum, and above it (corrupted); band tokens are
@@ -22,6 +24,24 @@ export const GEM_TIERS = {
 export type GemTier = keyof typeof GEM_TIERS;
 
 export const GEM_QUALITY_LABELS = ["0–19%", "20%", "21–23%"] as const;
+
+/**
+ * Transfigured gems' market keys, from the trade site (`vp run game-data:transfigured-gems`):
+ * `Kinetic Bolt of Fragmentation`, or `Vaal Arc (Arc of Surging)` for a Vaal gem whose skill is
+ * transfigured. Regenerate when a league adds transfigured gems.
+ */
+export const TRANSFIGURED_GEMS: readonly string[] = Object.keys(transfiguredGems.gems);
+const transfigured = new Set(TRANSFIGURED_GEMS);
+
+/**
+ * A gem's market key: its type line, which names a transfigured gem apart from its base gem, or
+ * for a Vaal gem whose skill is transfigured, the type line with that skill as the trade site
+ * names it, since the Vaal gem's type line is its base gem's.
+ */
+export function gemMarketKey(gem: { typeLine: string; hybridName?: string }) {
+    const vaal = gem.hybridName ? `${gem.typeLine} (${gem.hybridName})` : undefined;
+    return vaal && transfigured.has(vaal) ? vaal : gem.typeLine;
+}
 
 /** Exceptional gems carry the Exceptional gem tag; awakened gems are named for it. */
 export function gemTier(gem: { name: string; tags: readonly string[] }): GemTier {
