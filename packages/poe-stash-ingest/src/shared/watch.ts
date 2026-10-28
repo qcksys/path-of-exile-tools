@@ -29,6 +29,7 @@ export function exitAfterRollbackFailure(error: TransactionRollbackError): never
 }
 
 export async function watchCycles(
+    // biome-ignore lint/suspicious/noConfusingVoidType: callers pass cycles that return nothing; `undefined` would reject them.
     cycle: () => Promise<void | { caughtUp: boolean }>,
     options: { signal: AbortSignal; intervalMs?: number; statusFile?: string },
 ) {

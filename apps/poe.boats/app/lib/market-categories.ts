@@ -27,6 +27,7 @@ export const MARKET_CATEGORIES = {
     "armour-bases": { label: "Armour bases", group: "Crafting bases" },
     "weapon-bases": { label: "Weapon bases", group: "Crafting bases" },
     "accessory-bases": { label: "Accessory bases", group: "Crafting bases" },
+    "cluster-jewel-bases": { label: "Cluster jewel bases", group: "Crafting bases" },
     other: { label: "Other items", group: "Other" },
 } as const;
 
@@ -65,8 +66,19 @@ export const MARKET_BASE_CATEGORIES: Partial<Record<MarketCategory, MarketCatego
     accessories: "accessory-bases",
 };
 
+/** Normal, magic and rare Cluster Jewels are listed by size, skill, passive count and item level. */
+export const MARKET_CLUSTER_BASE_CATEGORY = "cluster-jewel-bases" satisfies MarketCategory;
+
 export function isMarketBaseCategory(category: MarketCategory | "all") {
-    return Object.values(MARKET_BASE_CATEGORIES).includes(category as MarketCategory);
+    return (
+        category === MARKET_CLUSTER_BASE_CATEGORY ||
+        Object.values(MARKET_BASE_CATEGORIES).includes(category as MarketCategory)
+    );
+}
+
+/** The categories listing unique equipment, apart from its crafting bases. */
+export function isMarketUniqueCategory(category: MarketCategory | "all") {
+    return category in MARKET_BASE_CATEGORIES;
 }
 
 export function marketBaseCategory(name: string, itemClass: string): MarketCategory {

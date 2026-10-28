@@ -45,6 +45,43 @@ describe("API-shaped item queries", () => {
         ).toBe("no-match");
     });
 
+    it("matches a Cluster Jewel's passive count and skill from its enchantment lines", () => {
+        const cluster = {
+            baseType: "Large Cluster Jewel",
+            ilvl: 84,
+            rarity: "Magic",
+            identified: true,
+            enchantMods: [
+                "Adds 8 Passive Skills",
+                "2 Added Passive Skills are Jewel Sockets",
+                "Added Small Passive Skills grant: Axe Attacks deal 12% increased Damage with Hits and Ailments\nAdded Small Passive Skills grant: Sword Attacks deal 12% increased Damage with Hits and Ailments",
+            ],
+        };
+        const target = query([
+            { kind: "enchant", values: ["Adds 8 Passive Skills"] },
+            {
+                kind: "enchant",
+                values: [
+                    "Added Small Passive Skills grant: Sword Attacks deal 12% increased Damage with Hits and Ailments",
+                ],
+            },
+        ]);
+        expect(matchItem(normalizeApiItem("poe1", "stash", cluster), target)).toBe("match");
+        expect(
+            matchItem(
+                normalizeApiItem("poe1", "stash", {
+                    ...cluster,
+                    enchantMods: ["Adds 9 Passive Skills", ...cluster.enchantMods.slice(1)],
+                }),
+                target,
+            ),
+        ).toBe("no-match");
+        expect(matchItem(normalizeApiItem("poe1", "stash", base), target)).toBe("no-match");
+        expect(
+            matchItem(normalizeApiItem("poe1", "stash", { ...cluster, enchantMods: {} }), target),
+        ).toBe("unknown");
+    });
+
     it("reads base quality from listed properties and leaves it unknown without them", () => {
         const quality = (properties?: unknown[]) =>
             normalizeApiItem("poe1", "stash", properties ? { ...base, properties } : base).facts

@@ -1,11 +1,21 @@
-import type { getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
+import type {
+    getMarketBase,
+    getMarketData,
+    getMarketExchangeItem,
+} from "~/db/queries/market.queries";
 import { isModPool, modPoolValues, parseModList } from "~/lib/mod-pools";
-import { type MarketExchangeItemInput, marketFiltersSchema } from "~/schemas/market";
+import {
+    type MarketBaseInput,
+    type MarketExchangeItemInput,
+    marketCorruption,
+    marketFiltersSchema,
+} from "~/schemas/market";
 
 export function marketFixture(
     input: Record<string, unknown> = {},
 ): Awaited<ReturnType<typeof getMarketData>> {
-    const filters = marketFiltersSchema.parse({ league: "Allflame", ...input });
+    const parsed = marketFiltersSchema.parse({ league: "Allflame", ...input });
+    const filters = { ...parsed, corruption: marketCorruption(parsed) };
     const row = {
         realm: filters.realm,
         league: filters.league,
@@ -98,6 +108,8 @@ export function marketFixture(
                       id: "base:titan-plate:86-100:6-link",
                       baseType: "Titan Plate",
                       category: "armour-bases",
+                      itemClass: "Body Armour",
+                      attributes: ["str"],
                       ilvl: { min: 86, max: 100 },
                       links: "6",
                       quality: null,
@@ -222,5 +234,69 @@ export function marketExchangeFixture(
                 },
             ],
         },
+    };
+}
+
+export function marketBaseFixture(
+    input: Partial<MarketBaseInput> = {},
+): Awaited<ReturnType<typeof getMarketBase>> {
+    const hour = 1_792_836_000;
+    const variant = (id: string, links: "1-5" | "6", median: number) => ({
+        id,
+        baseType: "Titan Plate",
+        category: "armour-bases" as const,
+        itemClass: "Body Armour" as const,
+        attributes: ["str" as const],
+        ilvl: { min: 86, max: 100 },
+        links,
+        quality: null,
+        hour,
+        listingCount: 12,
+        uniqueSellers: 9,
+        unknownCount: 0,
+        prices: { chaos: { count: 12, min: median, median, max: median } },
+    });
+    const variants = [
+        variant("base:titan-plate:86-100:6-link", "6", 60),
+        variant("base:titan-plate:86-100:1-5-link", "1-5", 5),
+    ];
+    const baseId = input.baseId ?? variants[0]!.id;
+    const base = variants.find((entry) => entry.id === baseId);
+    const {
+        hour: _hour,
+        listingCount: _l,
+        uniqueSellers: _u,
+        unknownCount: _n,
+        prices: _p,
+        ...definition
+    } = base ?? variants[0]!;
+    return {
+        realm: input.realm ?? "pc",
+        league: input.league || "Allflame",
+        days: input.days ?? "7",
+        currency: input.currency ?? "divine",
+        baseId,
+        latestHour: hour,
+        base: base ? definition : null,
+        history: [hour - 3600, hour].map((at, index) => ({
+            hour: at,
+            listingCount: 10 + index,
+            uniqueSellers: 8,
+            unknownCount: 0,
+            merged: {
+                count: 10,
+                unconverted: 0,
+                mean: 0.4,
+                min: 0.3,
+                p10: 0.3,
+                p25: 0.35,
+                median: 0.4,
+                p75: 0.45,
+                p90: 0.5,
+                max: 0.6,
+            },
+        })),
+        variants,
+        chaosRates: { chaos: 1, divine: 150 },
     };
 }

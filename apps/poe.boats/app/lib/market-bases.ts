@@ -1,20 +1,102 @@
 import { z } from "zod";
 import type { MarketFilters, MarketOrder } from "../schemas/market";
-import { MARKET_BASE_CATEGORIES, type MarketCategory } from "./market-categories";
+import {
+    MARKET_BASE_CATEGORIES,
+    MARKET_CLUSTER_BASE_CATEGORY,
+    type MarketCategory,
+} from "./market-categories";
 import { marketListingPrices } from "./market-listing-prices";
 
 /** Crafting base cohorts from this item level up are listed on the market. */
 export const MARKET_BASE_MIN_LEVEL = 74;
+export const MARKET_BASE_ATTRIBUTES = ["str", "dex", "int"] as const;
+/** Attribute requirement combinations of armour bases, as the `attributes` filter names them. */
+export const MARKET_BASE_ATTRIBUTE_SETS = {
+    str: "Strength",
+    dex: "Dexterity",
+    int: "Intelligence",
+    "str-dex": "Str/Dex",
+    "str-int": "Str/Int",
+    "dex-int": "Dex/Int",
+} as const;
+export type MarketBaseAttributeSet = keyof typeof MARKET_BASE_ATTRIBUTE_SETS;
+/** Item classes of each crafting base category. */
+export const MARKET_BASE_CLASSES = {
+    "accessory-bases": ["Amulet", "Belt", "Quiver", "Ring"],
+    "armour-bases": ["Body Armour", "Boots", "Gloves", "Helmet", "Shield"],
+    "weapon-bases": [
+        "Bow",
+        "Claw",
+        "Dagger",
+        "One Hand Axe",
+        "One Hand Mace",
+        "One Hand Sword",
+        "Rune Dagger",
+        "Sceptre",
+        "Staff",
+        "Thrusting One Hand Sword",
+        "Two Hand Axe",
+        "Two Hand Mace",
+        "Two Hand Sword",
+        "Wand",
+        "Warstaff",
+    ],
+    [MARKET_CLUSTER_BASE_CATEGORY]: [
+        "Small Cluster Jewel",
+        "Medium Cluster Jewel",
+        "Large Cluster Jewel",
+    ],
+} as const satisfies Partial<Record<MarketCategory, string[]>>;
+type MarketBaseClass = (typeof MARKET_BASE_CLASSES)[keyof typeof MARKET_BASE_CLASSES][number];
+export const MARKET_BASE_CLASS_NAMES = Object.values(MARKET_BASE_CLASSES).flat() as [
+    MarketBaseClass,
+    ...MarketBaseClass[],
+];
+/** Cluster Jewel item level bands, as poe.ninja splits them. */
+export const MARKET_CLUSTER_LEVEL_BANDS = [
+    { min: 1, max: 49 },
+    { min: 50, max: 67 },
+    { min: 68, max: 74 },
+    { min: 75, max: 83 },
+    { min: 84, max: 100 },
+] as const;
+/** Item levels the `ilvl` filter offers equipment: a base matches when its band includes the level. */
+export const MARKET_BASE_LEVELS = [
+    "74",
+    "75",
+    "76",
+    "77",
+    "78",
+    "79",
+    "80",
+    "81",
+    "82",
+    "83",
+    "84",
+    "85",
+    "86",
+] as const;
 
 export const marketBaseSchema = z.strictObject({
     id: z.string().min(1).max(128),
     baseType: z.string().min(1).max(255),
-    category: z.enum(
-        Object.values(MARKET_BASE_CATEGORIES) as [MarketCategory, ...MarketCategory[]],
-    ),
+    category: z.enum([
+        ...(Object.values(MARKET_BASE_CATEGORIES) as MarketCategory[]),
+        MARKET_CLUSTER_BASE_CATEGORY,
+    ]),
+    itemClass: z
+        .enum(MARKET_BASE_CLASS_NAMES)
+        .describe("The item class; a Cluster Jewel's size, e.g. Large Cluster Jewel"),
+    attributes: z
+        .array(z.enum(MARKET_BASE_ATTRIBUTES))
+        .describe("Attributes the base requires: str, dex and int"),
     ilvl: z.strictObject({ min: z.number().int(), max: z.number().int() }),
     links: z.enum(["1-5", "6"]).nullable().describe("Linked sockets; null means any"),
     quality: z.number().int().nullable().describe("Minimum quality; null means any"),
+    cluster: z
+        .strictObject({ skill: z.string().min(1).max(255), passives: z.number().int() })
+        .optional()
+        .describe("A Cluster Jewel's added small passive skill and passive count"),
 });
 export type MarketBase = z.infer<typeof marketBaseSchema>;
 
@@ -65,9 +147,15 @@ export function rankMarketBases(
         (min === undefined && max === undefined) ||
         (value !== undefined && value >= (min ?? -Infinity) && value <= (max ?? Infinity));
     const priced = rows.map((row) => ({ row, chaos: chaosPrice(row, chaosRates) }));
+    const level = Number(filters.ilvl);
     const matching = priced.filter(
         ({ row, chaos }) =>
             variantName(row).toLowerCase().includes(query) &&
+            (!filters.baseClass || row.itemClass === filters.baseClass) &&
+            (!filters.attributes || row.attributes.join("-") === filters.attributes) &&
+            (!filters.ilvl || (row.ilvl.min <= level && level <= row.ilvl.max)) &&
+            (!filters.baseLinks || row.links === filters.baseLinks) &&
+            (!filters.quality || String(row.quality) === filters.quality) &&
             within(
                 chaos !== undefined && display ? chaos / display : undefined,
                 filters.priceMin,
@@ -112,8 +200,27 @@ export function rankMarketBases(
     };
 }
 
-export function marketBaseVariant(base: Pick<MarketBase, "ilvl" | "links" | "quality">) {
+/** The base's item class and the attributes it requires, e.g. "Body Armour · Str/Int". */
+export function marketBaseDescription(base: Pick<MarketBase, "itemClass" | "attributes">) {
+    const attributes = base.attributes
+        .map((attribute) => attribute[0]!.toUpperCase() + attribute.slice(1))
+        .join("/");
+    return attributes ? `${base.itemClass} · ${attributes}` : base.itemClass;
+}
+
+/** The variant and, unless the base type already names it, the item class and attributes. */
+export function marketBaseDetails(base: MarketBase) {
+    const description = marketBaseDescription(base);
+    return description === base.baseType
+        ? marketBaseVariant(base)
+        : `${marketBaseVariant(base)} · ${description}`;
+}
+
+export function marketBaseVariant(
+    base: Pick<MarketBase, "ilvl" | "links" | "quality" | "cluster">,
+) {
     return [
+        ...(base.cluster ? [base.cluster.skill, `${base.cluster.passives} passives`] : []),
         `ilvl ${base.ilvl.min}–${base.ilvl.max}`,
         ...(base.links ? [`${base.links === "6" ? "6" : "1–5"} links`] : []),
         ...(base.quality ? [`${base.quality}%+ quality`] : []),
