@@ -1,9 +1,11 @@
 import { type ExchangeSnapshot, exchangeCurrencyId, listingCurrencyId } from "@poe-tools/market";
 import { describe, expect, it } from "vite-plus/test";
 import type { MarketPriceSummary, TStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
+import { marketPriceText } from "~/lib/market-price-currencies";
 import {
     chaosRatesByHour,
     marketDisplayRate,
+    marketPriceRates,
     marketRatePairs,
     mergeMarketPrices,
     mergeMarketRows,
@@ -16,6 +18,7 @@ const divine = exchangeCurrencyId("divine")!;
 const mirror = exchangeCurrencyId("mirror")!;
 const exalted = exchangeCurrencyId("exalted")!;
 const wisdom = listingCurrencyId("wisdom", "poe1")!;
+const annul = listingCurrencyId("annul", "poe2")!;
 
 function snapshot(
     item: string,
@@ -233,5 +236,59 @@ describe("chaos exchange rates", () => {
         expect(marketDisplayRate(rates, "chaos", hour + 86400)("divine")).toBe(150);
         expect(marketDisplayRate(rates, "chaos", hour + 86400 + 3600)("divine")).toBeUndefined();
         expect(marketDisplayRate(rates, "chaos", hour - 3600)("divine")).toBeUndefined();
+    });
+});
+
+describe("price currencies", () => {
+    it("rates each price currency per unit of the game's first one at that hour", () => {
+        const rates = chaosRatesByHour(
+            [
+                snapshot(divine, 10, chaos, 1000),
+                snapshot(divine, 10, chaos, 2000, hour + 3600),
+                snapshot(exalted, 10, chaos, 50, hour + 3600),
+                snapshot(annul, 1, exalted, 4, hour + 3600),
+            ],
+            ["divine", "exalted", "annul"],
+        );
+        expect(marketPriceRates(rates, "poe1", hour)).toEqual({ chaos: 1, divine: 0.01 });
+        expect(marketPriceRates(rates, "poe1", hour + 3600)).toEqual({ chaos: 1, divine: 0.005 });
+        expect(marketPriceRates(rates, "poe2", hour + 3600)).toEqual({
+            exalted: 1,
+            chaos: 5,
+            annul: 0.25,
+            divine: 0.025,
+        });
+        // Without a divine rate in the past day, only chaos remains.
+        expect(marketPriceRates(rates, "poe1", hour - 3600)).toEqual({ chaos: 1 });
+    });
+
+    it("converts listings at their own hour's rate before merging them", () => {
+        const prices = {
+            chaos: { count: 1, min: 50, median: 50, max: 50 },
+            divine: { count: 1, min: 1, median: 1, max: 1 },
+        };
+        const rates = chaosRatesByHour(
+            [snapshot(divine, 1, chaos, 100), snapshot(divine, 1, chaos, 200, hour + 3600)],
+            ["divine"],
+        );
+        expect(mergeMarketPrices(prices, marketDisplayRate(rates, "chaos", hour))).toMatchObject({
+            count: 2,
+            min: 50,
+            max: 100,
+        });
+        expect(
+            mergeMarketPrices(prices, marketDisplayRate(rates, "chaos", hour + 3600)),
+        ).toMatchObject({ count: 2, min: 50, max: 200 });
+    });
+
+    it("shows an amount in every price currency, as a fraction under one", () => {
+        expect(marketPriceText(5, { chaos: 1, divine: 0.01 }, "poe1")).toBe("5c, 1/20d");
+        expect(marketPriceText(250, { chaos: 1, divine: 0.01 }, "poe1")).toBe("250c, 2.5d");
+        // 1/3 is more than 10% from 0.4, so the decimal stays.
+        expect(marketPriceText(40, { chaos: 1, divine: 0.01 }, "poe1")).toBe("40c, 0.4d");
+        expect(marketPriceText(0.5, { chaos: 1 }, "poe1")).toBe("1/2c");
+        expect(
+            marketPriceText(2, { exalted: 1, chaos: 5, annul: 0.25, divine: 0.025 }, "poe2"),
+        ).toBe("2ex, 10c, 1/2 annul, 1/20d");
     });
 });

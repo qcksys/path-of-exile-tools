@@ -45,11 +45,13 @@ import {
     marketExchangeUnitId,
 } from "~/lib/market-exchange";
 import { marketExchangeItem } from "~/lib/market-exchange.server";
+import { MARKET_PRICE_CURRENCIES } from "~/lib/market-price-currencies";
 import {
     chaosRatesByHour,
     MARKET_RATE_MAX_AGE,
     marketDisplayRate,
     marketGame,
+    marketPriceRates,
     marketRatePairs,
     mergeMarketPrices,
     mergeMarketRows,
@@ -538,6 +540,8 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         ],
     );
     const toChaos = marketDisplayRate(rates, "chaos", latestHour);
+    const game = marketGame(filters.realm);
+    const historyUnit = MARKET_PRICE_CURRENCIES[game][0];
     const listCurrencies = priced.length
         ? new Set([
               "divine",
@@ -608,12 +612,15 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         exchange: exchangeRows,
         exchangeUnit,
         chaosRates,
+        /** The currency `history` prices are in: the game's first price currency. */
+        historyUnit,
         history: history.map((row) => {
-            const rate = marketDisplayRate(rates, filters.currency, row.hour);
+            const rate = marketDisplayRate(rates, historyUnit, row.hour);
             return {
                 ...row,
                 merged: mergeMarketPrices(row.prices, rate),
                 mergedSales: mergeMarketPrices(row.salesPrices, rate),
+                priceRates: marketPriceRates(rates, game, row.hour),
             };
         }),
     };
@@ -1150,6 +1157,7 @@ async function marketChaosRates(
         ...new Set([
             filters.currency,
             "divine",
+            ...MARKET_PRICE_CURRENCIES[marketGame(filters.realm)],
             ...observations.flatMap((row) => [
                 ...Object.keys(row.prices ?? {}),
                 ...Object.keys(row.salesPrices ?? {}),

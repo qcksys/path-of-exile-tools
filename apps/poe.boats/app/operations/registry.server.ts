@@ -285,7 +285,7 @@ export const operations = [
         name: "get_season_market",
         ui: "/1/market/currency",
         description:
-            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. Without `corruption`, the `weapons`, `armour` and `accessories` categories list uncorrupted markets and the others any corruption; the returned `filters` carry the applied value. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`) return `bases` instead: normal, magic and rare equipment cohorts by base, item level, links and quality, without likely-sale estimates. With an item, returns that item's history and every variant of it in the period instead of rows. Rows and an item without `links` merge every link count; `links` (0 for under 5, 5 or 6) reads one linked-socket market of a unique, as poe.ninja splits body armours and two-handed weapons. Skill gems (kind `gem`) list one market per gem, level band, quality band and corruption state, with `value` naming the bands (e.g. `Level 20 (max) · Quality 20%`); `gemLevel` and `gemQuality` include or exclude bands, and `gemTransfigured` and `gemVaal` keep only transfigured or Vaal gems, or only others.",
+            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. Without `corruption`, the `weapons`, `armour` and `accessories` categories list uncorrupted markets and the others any corruption; the returned `filters` carry the applied value. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`) return `bases` instead: normal, magic and rare equipment cohorts by base, item level, links and quality, without likely-sale estimates. With an item, returns that item's history and every variant of it in the period instead of rows; history merges every listing currency at each hour's exchange rate into `historyUnit`, whatever `currency` is.Rows and an item without `links` merge every link count; `links` (0 for under 5, 5 or 6) reads one linked-socket market of a unique, as poe.ninja splits body armours and two-handed weapons. Skill gems (kind `gem`) list one market per gem, level band, quality band and corruption state, with `value` naming the bands (e.g. `Level 20 (max) · Quality 20%`); `gemLevel` and `gemQuality` include or exclude bands, and `gemTransfigured` and `gemVaal` keep only transfigured or Vaal gems, or only others.",
         input: marketFiltersSchema,
         output: z.object({
             filters: marketFiltersSchema,
@@ -343,10 +343,26 @@ export const operations = [
                     "The item's markets, plus the same unique's markets in the other identification state (unidentified uniques are keyed unid:<icon>). A market with 5- or 6-link copies also lists each link count",
                 ),
             modValues: watchersEyeModValues,
+            historyUnit: z
+                .string()
+                .describe(
+                    "The currency `history` merged prices are in: chaos for PoE 1 realms, exalted for poe2",
+                ),
             history: z.array(
                 marketRow.extend({
-                    merged: mergedMarketPriceSchema.nullable(),
-                    mergedSales: mergedMarketPriceSchema.nullable(),
+                    merged: mergedMarketPriceSchema
+                        .nullable()
+                        .describe(
+                            "Asking prices from every listing currency, each converted at this hour's exchange rate into `historyUnit`",
+                        ),
+                    mergedSales: mergedMarketPriceSchema
+                        .nullable()
+                        .describe("Last asks of likely sales, converted like `merged`"),
+                    priceRates: z
+                        .record(z.string(), z.number())
+                        .describe(
+                            "Units of each of the game's price currencies (PoE 1 chaos and divine; PoE 2 exalted, chaos, annul and divine) per `historyUnit` at this hour; currencies without an exchange rate are absent",
+                        ),
                 }),
             ),
         }),

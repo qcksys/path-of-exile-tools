@@ -158,10 +158,14 @@ Price ordering compares only the selected original currency, with missing quotes
 Item history keeps the per-currency hourly summaries (count, min, mean, p10–p90 quantiles, max;
 older rows lack mean and quantiles) and adds `merged`/`mergedSales`: each listing currency
 converted to chaos at read time with that hour's same-league exchange rate (direct, or via divine),
-reusing the latest rate up to 24 hours old, then into the display currency. The merged
+reusing the latest rate up to 24 hours old, then into `historyUnit` (the game's first price
+currency: chaos for PoE 1, exalted for PoE 2), whatever the display currency. The merged
 distribution is the listing-count-weighted mixture of the per-currency quantile curves, so it is
 exact for one currency and an estimate otherwise; listings without a rate are counted as
-`unconverted`. The item chart and table show the merged median and interquartile range.
+`unconverted`. Each hour's `priceRates` give the game's price currencies (PoE 1 chaos and divine;
+PoE 2 exalted, chaos, annul and divine) per `historyUnit` at that hour. The item page has one
+chart, plotted in `historyUnit`, and its tooltips and hourly table show each price in every price
+currency with a rate, e.g. `5c, 1/20d` when 1 divine is 100 chaos.
 The HTTP and MCP market operation exposes the same filters and category assignments, and still
 accepts `category=all` for every category at once. With an `item`, it returns that item's history
 and variants only (`rows` is empty), skipping the list query.

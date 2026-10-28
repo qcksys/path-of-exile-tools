@@ -1136,7 +1136,7 @@ it("keeps item history independent of browsing filters and skips the list query 
     ).toHaveLength(2);
 });
 
-it("merges every listing currency into the display currency through same-league chaos rates", async () => {
+it("merges every listing currency into chaos through same-league rates, whatever the display currency", async () => {
     const chaosId = "Metadata/Items/Currency/CurrencyRerollRare";
     const divineId = "Metadata/Items/Currency/CurrencyModValues";
     await upsertStashCurrencyHourly(
@@ -1187,14 +1187,21 @@ it("merges every listing currency into the display currency through same-league 
         { ...filters, currency: "chaos" },
         "history",
     );
+    expect(inChaos.historyUnit).toBe("chaos");
     expect(inChaos.history.map((row) => row.merged)).toMatchObject([
         { count: 2, unconverted: 4, min: 300, median: 300, max: 300, mean: null },
         // An hour without its own exchange observation reuses the previous hour's rate.
         { count: 1, unconverted: 0, median: 450 },
     ]);
+    expect(inChaos.history.map((row) => row.priceRates)).toEqual([
+        { chaos: 1, divine: 1 / 150 },
+        { chaos: 1, divine: 1 / 150 },
+    ]);
     const inDivine = await marketData(db as unknown as TDatabase, filters, "history");
-    expect(inDivine.history[0]!.merged).toMatchObject({ count: 2, median: 2, max: 2 });
-    expect(inDivine.history[1]!.merged).toMatchObject({ median: 3 });
+    expect(inDivine.historyUnit).toBe("chaos");
+    expect(inDivine.history.map((row) => [row.merged, row.priceRates])).toEqual(
+        inChaos.history.map((row) => [row.merged, row.priceRates]),
+    );
     expect(inDivine.chaosRates).toEqual({});
     const list = await marketData(
         db as unknown as TDatabase,

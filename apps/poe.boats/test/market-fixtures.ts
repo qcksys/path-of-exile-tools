@@ -177,9 +177,11 @@ export function marketFixture(
                           max: 3,
                       },
                       mergedSales: null,
+                      priceRates: { chaos: 1, divine: 1 / 150 },
                   },
               ]
             : [],
+        historyUnit: "chaos",
     };
 }
 

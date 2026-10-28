@@ -5,6 +5,7 @@ import {
     quoteExchangeWindow,
 } from "@poe-tools/market";
 import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
+import { MARKET_PRICE_CURRENCIES } from "~/lib/market-price-currencies";
 import type { MergedMarketPrice } from "~/schemas/market";
 
 const CHAOS = exchangeCurrencyId("chaos")!;
@@ -116,6 +117,24 @@ export function marketDisplayRate(
         const source = chaosRate(rates, currency, hour);
         return source && target ? source / target : undefined;
     };
+}
+
+/**
+ * Units of each of the game's price currencies per unit of its first one at an hour, for
+ * `marketPriceText`; currencies without an exchange rate are left out.
+ */
+export function marketPriceRates(
+    rates: Map<number, Map<string, number>>,
+    game: Game,
+    hour: number,
+): Record<string, number> {
+    const [unit] = MARKET_PRICE_CURRENCIES[game];
+    return Object.fromEntries(
+        MARKET_PRICE_CURRENCIES[game].flatMap((currency) => {
+            const rate = marketDisplayRate(rates, currency, hour)(unit);
+            return rate ? [[currency, rate]] : [];
+        }),
+    );
 }
 
 type Point = { x: number; q: number };

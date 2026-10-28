@@ -3,30 +3,44 @@ import { CurrencyLabel } from "~/components/currency-label";
 import { EChart } from "~/components/echart";
 import type { ChartOption } from "~/lib/echarts";
 import { marketNumber } from "~/lib/market-number";
+import { marketPriceText } from "~/lib/market-price-currencies";
 import type { MergedMarketPrice } from "~/schemas/market";
 
 type Point = {
     hour: number;
     merged: MergedMarketPrice | null;
     mergedSales: MergedMarketPrice | null;
+    /** Each price currency per unit of `currency` at this hour; tooltips then show every one. */
+    priceRates?: Record<string, number>;
 };
-type Row = { at: number; ask: MergedMarketPrice | null; sales: MergedMarketPrice | null };
+type Row = {
+    at: number;
+    ask: MergedMarketPrice | null;
+    sales: MergedMarketPrice | null;
+    rates?: Record<string, number>;
+};
+/** `lead`: the summary's first amount, which names a single currency once. */
+type Format = (value: number, lead?: boolean) => string;
 
 function unconverted(price: MergedMarketPrice) {
     return price.unconverted ? `, ${price.unconverted} without an exchange rate` : "";
 }
 
-function askSummary(price: MergedMarketPrice | null, currency: string) {
+function askSummary(price: MergedMarketPrice | null, format: Format) {
     if (!price) return "No listings";
-    return `${marketNumber(price.min)} ${currency} (lowest of ${price.count} listings, median ${marketNumber(price.median)}${unconverted(price)})`;
+    return `${format(price.min, true)} (lowest of ${price.count} listings, median ${format(price.median)}${unconverted(price)})`;
 }
 
-function saleSummary(price: MergedMarketPrice | null, currency: string) {
+function saleSummary(price: MergedMarketPrice | null, format: Format) {
     if (!price) return "No observations";
-    return `${marketNumber(price.median)} ${currency} (interquartile ${marketNumber(price.p25)}–${marketNumber(price.p75)}, ${price.count} likely sales${unconverted(price)})`;
+    return `${format(price.median, true)} (interquartile ${format(price.p25)}–${format(price.p75)}, ${price.count} likely sales${unconverted(price)})`;
 }
 
-export function marketPriceChartOption(points: Point[], currency: string): ChartOption | null {
+export function marketPriceChartOption(
+    points: Point[],
+    currency: string,
+    game: "poe1" | "poe2" = "poe1",
+): ChartOption | null {
     const rows: Row[] = [];
     let previous = -Infinity;
     for (const point of points) {
@@ -35,8 +49,19 @@ export function marketPriceChartOption(points: Point[], currency: string): Chart
         if (rows.length && point.hour - previous > 3600)
             rows.push({ at: (previous + 3600) * 1000, ask: null, sales: null });
         previous = point.hour;
-        rows.push({ at: point.hour * 1000, ask: point.merged, sales: point.mergedSales });
+        rows.push({
+            at: point.hour * 1000,
+            ask: point.merged,
+            sales: point.mergedSales,
+            rates: point.priceRates,
+        });
     }
+    const format =
+        (row: Row | undefined): Format =>
+        (value, lead) =>
+            row?.rates
+                ? marketPriceText(value, row.rates, game)
+                : `${marketNumber(value)}${lead ? ` ${currency}` : ""}`;
     if (!rows.length) return null;
     // Sales are sparse, so sale prices connect across observed hours without a sale.
     const saleRows = rows.filter((row) => row.sales || !row.ask);
@@ -81,7 +106,10 @@ export function marketPriceChartOption(points: Point[], currency: string): Chart
                 lineStyle: { width: 1.5 },
                 tooltip: {
                     valueFormatter: (_value, dataIndex) =>
-                        saleSummary(saleRows[dataIndex]?.sales ?? null, currency),
+                        saleSummary(
+                            saleRows[dataIndex]?.sales ?? null,
+                            format(saleRows[dataIndex]),
+                        ),
                 },
             },
             {
@@ -92,7 +120,7 @@ export function marketPriceChartOption(points: Point[], currency: string): Chart
                 lineStyle: { width: 2.5 },
                 tooltip: {
                     valueFormatter: (_value, dataIndex) =>
-                        askSummary(rows[dataIndex]?.ask ?? null, currency),
+                        askSummary(rows[dataIndex]?.ask ?? null, format(rows[dataIndex])),
                 },
             },
         ],
@@ -108,7 +136,10 @@ export function MarketPriceChart({
     currency: string;
     game?: "poe1" | "poe2";
 }) {
-    const option = useMemo(() => marketPriceChartOption(points, currency), [points, currency]);
+    const option = useMemo(
+        () => marketPriceChartOption(points, currency, game),
+        [points, currency, game],
+    );
     if (!option)
         return (
             <p className="py-12 text-center text-muted-foreground">

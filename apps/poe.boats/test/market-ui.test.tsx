@@ -243,6 +243,24 @@ describe("market browsing", () => {
             "12 chaos (interquartile 12–12, 1 likely sales)",
         );
     });
+    it("shows each hour's prices in every price currency at that hour's rates", () => {
+        const option = marketPriceChartOption(
+            [
+                { hour: 3600, merged: flat(5), mergedSales: null, priceRates: { chaos: 1 } },
+                {
+                    hour: 7200,
+                    merged: flat(5),
+                    mergedSales: null,
+                    priceRates: { chaos: 1, divine: 0.01 },
+                },
+            ],
+            "chaos",
+        )!;
+        expect(tooltipValue(option, lowestAsk, 5, 0)).toBe("5c (lowest of 1 listings, median 5c)");
+        expect(tooltipValue(option, lowestAsk, 5, 1)).toBe(
+            "5c, 1/20d (lowest of 1 listings, median 5c, 1/20d)",
+        );
+    });
     it("plots historical process costs with gaps for unavailable estimates", () => {
         const point = (at: number, meanCost: number | null): CostPoint => ({
             at,

@@ -118,10 +118,6 @@ it("renders list and detail through the layout outlet and restores browsing stat
         expect.objectContaining({ item: "Abberath's Hooves", page: 2, category: "armour" }),
         "history",
     );
-    fireEvent.click(screen.getByRole("link", { name: "chaos" }));
-    await waitFor(() =>
-        expect(screen.getByLabelText("Current URL").textContent).toContain("currency=chaos"),
-    );
     fireEvent.click(screen.getByRole("link", { name: /Back to markets/ }));
     await screen.findByRole("region", { name: "Item markets" });
     expect(screen.getByLabelText("Current URL").textContent).toMatch(/^\/1\/market\/armour\?/);
@@ -757,6 +753,37 @@ it("searches, filters and sorts hourly observations in the browser", async () =>
     });
     expect(within(table).getByText("No rows match these filters.")).toBeTruthy();
     expect(getMarketData).toHaveBeenCalledTimes(1);
+});
+
+it("shows one merged price history in every price currency at each hour's rate", async () => {
+    vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+        const fixture = marketFixture(filters);
+        const [row] = fixture.history;
+        return {
+            ...fixture,
+            history: (
+                [{ chaos: 1, divine: 1 / 100 }, { chaos: 1 }] as Record<string, number>[]
+            ).map((priceRates, index) => ({
+                ...row!,
+                hour: row!.hour + index * 3600,
+                priceRates,
+            })),
+        };
+    });
+    showMarket("/1/market/items/Abberath's%20Hooves?league=Allflame&currency=divine");
+    const history = await screen.findByRole("region", { name: "Item price history" });
+    expect(within(history).queryByRole("link", { name: "chaos" })).toBeNull();
+    expect(within(history).queryByRole("link", { name: "divine" })).toBeNull();
+    expect(
+        within(history).getAllByRole("img", { name: /Hourly lowest asking price/ }),
+    ).toHaveLength(1);
+    const table = within(history).getByRole("table", { name: "Hourly observations" });
+    const asks = within(table)
+        .getAllByRole("row")
+        .slice(1)
+        .map((tableRow) => within(tableRow).getAllByRole("cell")[1]!.textContent);
+    // The newest hour has no divine rate, so it shows chaos only.
+    expect(asks).toEqual(["2c", "2c, 1/50d"]);
 });
 
 it("opens a crafting base's history and variants and returns to the filtered list", async () => {
