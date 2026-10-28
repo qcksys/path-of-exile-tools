@@ -4,13 +4,21 @@ import { type MarketFilters, marketCategorySchema } from "~/schemas/market";
 import poe1 from "../../public/game-data/market-categories-poe1.json";
 import poe2 from "../../public/game-data/market-categories-poe2.json";
 
+/** Spirit beasts are captured as uniques whose base type is the beast's name, which no base item has. */
+const SPIRIT_BEASTS = [
+    "Craiceann, First of the Deep",
+    "Farrul, First of the Plains",
+    "Fenumus, First of the Night",
+    "Saqawal, First of the Sky",
+];
+
 const catalogs = {
-    poe1: new Map(
-        Object.entries(poe1).map(([name, category]) => [
-            name,
-            marketCategorySchema.parse(category),
-        ]),
-    ),
+    poe1: new Map([
+        ...Object.entries(poe1).map(
+            ([name, category]) => [name, marketCategorySchema.parse(category)] as const,
+        ),
+        ...SPIRIT_BEASTS.map((name) => [name, "beasts"] as const),
+    ]),
     poe2: new Map(
         Object.entries(poe2).map(([name, category]) => [
             name,
