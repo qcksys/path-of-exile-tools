@@ -1194,7 +1194,7 @@ it("keeps item history independent of browsing filters and skips the list query 
     ).toHaveLength(2);
 });
 
-it("merges every listing currency into the display currency through same-league chaos rates", async () => {
+it("merges every listing currency into chaos through same-league rates, whatever the display currency", async () => {
     const chaosId = "Metadata/Items/Currency/CurrencyRerollRare";
     const divineId = "Metadata/Items/Currency/CurrencyModValues";
     await upsertStashCurrencyHourly(
@@ -1245,14 +1245,21 @@ it("merges every listing currency into the display currency through same-league 
         { ...filters, currency: "chaos" },
         "history",
     );
+    expect(inChaos.historyUnit).toBe("chaos");
     expect(inChaos.history.map((row) => row.merged)).toMatchObject([
         { count: 2, unconverted: 4, min: 300, median: 300, max: 300, mean: null },
         // An hour without its own exchange observation reuses the previous hour's rate.
         { count: 1, unconverted: 0, median: 450 },
     ]);
+    expect(inChaos.history.map((row) => row.priceRates)).toEqual([
+        { chaos: 1, divine: 1 / 150 },
+        { chaos: 1, divine: 1 / 150 },
+    ]);
     const inDivine = await marketData(db as unknown as TDatabase, filters, "history");
-    expect(inDivine.history[0]!.merged).toMatchObject({ count: 2, median: 2, max: 2 });
-    expect(inDivine.history[1]!.merged).toMatchObject({ median: 3 });
+    expect(inDivine.historyUnit).toBe("chaos");
+    expect(inDivine.history.map((row) => [row.merged, row.priceRates])).toEqual(
+        inChaos.history.map((row) => [row.merged, row.priceRates]),
+    );
     expect(inDivine.chaosRates).toEqual({});
     const list = await marketData(
         db as unknown as TDatabase,
@@ -1293,6 +1300,7 @@ it("uses the current exchange divine rate for list rows, leaving it absent when 
         expect.arrayContaining([expect.objectContaining({ name: "Divine Orb", price: 200 })]),
     );
     expect(current.chaosRates.divine).toBe(200);
+    expect(current.priceRates).toEqual({ chaos: 1, divine: 1 / 200 });
 
     await upsertStashCurrencyHourly(db as unknown as TDatabase, [snapshot(hour, 0, 0)]);
     const untraded = await marketData(db as unknown as TDatabase, filters, "list");
@@ -1438,6 +1446,8 @@ it("lists exchange-only PoE 2 leagues in exalted, from the latest completed hour
         league: "Forbidden Rites",
     });
     expect(rites).toMatchObject({ unit: "exalted", divine: 400 });
+    // The value display's rates come from the same rows; annul is untraded, so it is absent.
+    expect(rites.priceRates).toEqual({ exalted: 1, chaos: 2, divine: 1 / 400 });
     // Dearest first.
     expect(rites.rows).toEqual([
         expect.objectContaining({ name: "Divine Orb", category: "currency", price: 400, hour }),
@@ -1594,6 +1604,7 @@ it("reads one exchange item's list row and hourly history through every pair", a
         historyStart: hour - 7 * 86400 + 3600,
         unit: "chaos",
         divine: 160,
+        priceRates: { chaos: 1, divine: 1 / 160 },
         item: {
             name: "Tainted Divine Teardrop",
             price: 320,
@@ -1781,6 +1792,14 @@ it("lists each crafting base cohort's latest hour in the period", async () => {
         [hour - 3600, 1, 10],
         [hour, 3, 30],
     ]);
+    // Base history is in the game's exchange unit whatever `currency` is.
+    const inDivine = await getMarketBase(db as unknown as TDatabase, {
+        ...input,
+        currency: "divine",
+    });
+    expect(inDivine.historyUnit).toBe("chaos");
+    expect(inDivine.history.map((row) => row.merged?.median)).toEqual([10, 30]);
+    expect(inDivine.history.every((row) => row.priceRates.chaos === 1)).toBe(true);
     // The 1–5 link cohort was last seen before the period and the 1–2 band is not listed.
     expect(page.variants.map((row) => [row.id, row.listingCount])).toEqual([
         ["base:titan-plate:86-100:any-links:q30", 2],

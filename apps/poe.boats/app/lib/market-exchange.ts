@@ -1,5 +1,11 @@
-import { type ExchangeSnapshot, exchangeCurrencyId, quoteExchangeWindow } from "@poe-tools/market";
+import {
+    type ExchangeSnapshot,
+    exchangeCurrencyId,
+    listingCurrencyId,
+    quoteExchangeWindow,
+} from "@poe-tools/market";
 import type { MarketExchangeCategory } from "~/lib/market-categories";
+import { MARKET_PRICE_CURRENCIES, type MarketPriceRates } from "~/lib/market-price-currencies";
 
 const CHAOS = exchangeCurrencyId("chaos")!;
 const DIVINE = exchangeCurrencyId("divine")!;
@@ -18,6 +24,29 @@ export function marketExchangeUnit(realm: string): MarketExchangeUnit {
 
 export function marketExchangeUnitId(unit: MarketExchangeUnit) {
     return unit === "exalted" ? EXALTED : CHAOS;
+}
+
+/** The exchange item IDs of a game's price currencies. */
+export function marketPriceCurrencyIds(realm: string) {
+    const game = realm === "poe2" ? "poe2" : "poe1";
+    return MARKET_PRICE_CURRENCIES[game].map((currency) => listingCurrencyId(currency, game)!);
+}
+
+/** Each price currency per exchange unit, from exchange rows priced in that unit. */
+export function marketExchangePriceRates(
+    rows: Pick<MarketExchangeRow, "itemId" | "price">[],
+    realm: string,
+): MarketPriceRates {
+    const game = realm === "poe2" ? "poe2" : "poe1";
+    const unit = marketExchangeUnitId(marketExchangeUnit(realm));
+    return Object.fromEntries(
+        MARKET_PRICE_CURRENCIES[game].flatMap((currency) => {
+            const id = listingCurrencyId(currency, game);
+            if (id === unit) return [[currency, 1]];
+            const price = rows.find((row) => row.itemId === id)?.price;
+            return price ? [[currency, 1 / price]] : [];
+        }),
+    );
 }
 
 /** A `stash_currency_daily` row: units of each side traded in the day's hours where both traded. */

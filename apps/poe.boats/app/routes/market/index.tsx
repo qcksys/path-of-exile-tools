@@ -1,24 +1,19 @@
-import { exchangeCurrencyId } from "@poe-tools/market";
 import { type ReactNode, useCallback, useMemo } from "react";
 import { Link, redirect, useNavigate } from "react-router";
-import { CurrencyLabel } from "~/components/currency-label";
 import { DataTable, type DataTableServerState, dataTableColumns } from "~/components/data-table";
 import { ItemArt } from "~/components/item-art";
+import { ExchangeDisplayPicker } from "~/components/market-exchange";
 import { MarketExchangeTable } from "~/components/market-exchange-table";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
+import { MarketListingPrices } from "~/components/market-listing-price";
 import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
-import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
 import { marketItemArtUrl } from "~/lib/item-presentation";
 import { type MarketBaseRow, marketBaseDetails, marketBaseVariant } from "~/lib/market-bases";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
-import {
-    MARKET_OUTLIER_FACTOR,
-    type MarketListingPrice,
-    marketListingPrices,
-} from "~/lib/market-listing-prices";
 import { marketNumber as number } from "~/lib/market-number";
+import type { MarketPriceRates } from "~/lib/market-price-currencies";
 import { marketTableState } from "~/lib/market-table";
 import { marketSignatureLabel } from "~/lib/mod-pools";
 import {
@@ -70,8 +65,6 @@ type MarketRow = Awaited<ReturnType<typeof getMarketData>>["rows"][number];
 type ExchangeRow = Awaited<ReturnType<typeof getMarketData>>["exchange"][number];
 type Game = "poe1" | "poe2";
 
-const DIVINE = exchangeCurrencyId("divine")!;
-
 const column = dataTableColumns<MarketRow>();
 const baseColumn = dataTableColumns<MarketBaseRow>();
 
@@ -80,13 +73,13 @@ function ExchangeTable({
     rows,
     filters,
     game,
-    divine,
+    rates,
 }: {
     label: string;
     rows: ExchangeRow[];
     filters: MarketFilters;
     game: Game;
-    divine: number | undefined;
+    rates: MarketPriceRates;
 }) {
     const itemLink = useCallback(
         (itemId: string) => marketExchangeLink(filters, itemId),
@@ -98,73 +91,15 @@ function ExchangeTable({
             rows={rows}
             game={game}
             unit="chaos"
-            divine={divine}
+            rates={rates}
             itemLink={itemLink}
         />
     );
 }
 
-function ListingPrice({
-    price,
-    selected,
-    game,
-}: {
-    price: MarketListingPrice;
-    selected: boolean;
-    game: Game;
-}) {
-    return (
-        <p className={selected ? "font-semibold" : "text-muted-foreground"}>
-            {number(price.median)} <CurrencyLabel currency={price.currency} game={game} />
-            {price.equivalent ? (
-                <span className="ml-2 text-xs font-normal text-muted-foreground">
-                    ≈ {number(price.equivalent.amount)}{" "}
-                    <CurrencyLabel currency={price.equivalent.currency} game={game} iconOnly />
-                </span>
-            ) : null}
-            <span className="ml-2 text-xs text-muted-foreground">n={price.count}</span>
-        </p>
-    );
-}
+type Prices = { chaosRates: Record<string, number>; rates: MarketPriceRates };
 
-function PriceLines({
-    prices,
-    currency,
-    game,
-    chaosRates,
-}: {
-    prices: Record<string, MarketPriceSummary> | null;
-    currency: string;
-    game: Game;
-    chaosRates: Record<string, number>;
-}) {
-    const listed = marketListingPrices(prices, chaosRates);
-    if (!listed.length) return "Unpriced";
-    const line = (price: MarketListingPrice) => (
-        <ListingPrice
-            key={price.currency}
-            price={price}
-            selected={price.currency === currency}
-            game={game}
-        />
-    );
-    const outliers = listed.filter((price) => price.outlier);
-    return (
-        <>
-            {listed.filter((price) => !price.outlier).map(line)}
-            {outliers.length ? (
-                <details>
-                    <summary className="cursor-pointer text-xs text-muted-foreground">
-                        {outliers.length} over {MARKET_OUTLIER_FACTOR}× the most listed
-                    </summary>
-                    {outliers.map(line)}
-                </details>
-            ) : null}
-        </>
-    );
-}
-
-function baseColumns(filters: MarketFilters, game: Game, chaosRates: Record<string, number>) {
+function baseColumns(filters: MarketFilters, game: Game, { chaosRates, rates }: Prices) {
     return baseColumn.columns([
         baseColumn.accessor((row) => `${row.baseType} ${marketBaseVariant(row)}`, {
             id: "item",
@@ -189,11 +124,12 @@ function baseColumns(filters: MarketFilters, game: Game, chaosRates: Record<stri
             sortDescFirst: true,
             meta: { filter: "range", className: "tabular-nums" },
             cell: ({ row: { original: row } }) => (
-                <PriceLines
+                <MarketListingPrices
                     prices={row.prices}
                     currency={filters.currency}
                     game={game}
                     chaosRates={chaosRates}
+                    rates={rates}
                 />
             ),
         }),
@@ -227,20 +163,17 @@ function BaseTable({
     rows,
     filters,
     game,
-    chaosRates,
+    prices,
     server,
 }: {
     label: string;
     rows: MarketBaseRow[];
     filters: MarketFilters;
     game: Game;
-    chaosRates: Record<string, number>;
+    prices: Prices;
     server: DataTableServerState;
 }) {
-    const columns = useMemo(
-        () => baseColumns(filters, game, chaosRates),
-        [filters, game, chaosRates],
-    );
+    const columns = useMemo(() => baseColumns(filters, game, prices), [filters, game, prices]);
     return (
         <DataTable
             label={label}
@@ -252,7 +185,7 @@ function BaseTable({
     );
 }
 
-function marketColumns(filters: MarketFilters, game: Game, chaosRates: Record<string, number>) {
+function marketColumns(filters: MarketFilters, game: Game, { chaosRates, rates }: Prices) {
     return column.columns([
         column.accessor((row) => row.name || row.itemKey, {
             id: "item",
@@ -286,11 +219,12 @@ function marketColumns(filters: MarketFilters, game: Game, chaosRates: Record<st
             sortDescFirst: true,
             meta: { filter: "range", className: "tabular-nums" },
             cell: ({ row: { original: row } }) => (
-                <PriceLines
+                <MarketListingPrices
                     prices={row.prices}
                     currency={filters.currency}
                     game={game}
                     chaosRates={chaosRates}
+                    rates={rates}
                 />
             ),
         }),
@@ -338,7 +272,7 @@ function MarketTable({
     rows,
     filters,
     game,
-    chaosRates,
+    prices,
     server,
     empty,
 }: {
@@ -346,14 +280,11 @@ function MarketTable({
     rows: MarketRow[];
     filters: MarketFilters;
     game: Game;
-    chaosRates: Record<string, number>;
+    prices: Prices;
     server: DataTableServerState;
     empty?: ReactNode;
 }) {
-    const columns = useMemo(
-        () => marketColumns(filters, game, chaosRates),
-        [filters, game, chaosRates],
-    );
+    const columns = useMemo(() => marketColumns(filters, game, prices), [filters, game, prices]);
     return (
         <DataTable
             label={label}
@@ -367,14 +298,13 @@ function MarketTable({
 }
 
 export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
-    const { filters, seasons, season, rows, bases, hasMore, chaosRates, exchange } = loaderData;
+    const { filters, seasons, season, rows, bases, hasMore, chaosRates, priceRates, exchange } =
+        loaderData;
     const navigate = useNavigate();
     const categories = Object.keys(MARKET_CATEGORIES) as MarketCategory[];
     const game = filters.realm === "poe2" ? "poe2" : "poe1";
     const server = marketTableState(filters, (to) => navigate(to, { preventScrollReset: true }));
-    // Stash prices convert only at the latest hour's divine rate; exchange values may use an earlier day's.
-    const exchangeDivine =
-        chaosRates.divine ?? exchange.find((row) => row.itemId === DIVINE)?.price ?? undefined;
+    const prices = useMemo(() => ({ chaosRates, rates: priceRates }), [chaosRates, priceRates]);
     return (
         <>
             <MarketFiltersForm filters={filters} seasons={seasons} />
@@ -391,11 +321,14 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                             this page
                         </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                        {season?.latestHour
-                            ? `Data through ${marketUtc(Number(season.latestHour))}`
-                            : "Awaiting season data"}
-                    </p>
+                    <div className="grid justify-items-end gap-1">
+                        <p className="text-xs text-muted-foreground">
+                            {season?.latestHour
+                                ? `Data through ${marketUtc(Number(season.latestHour))}`
+                                : "Awaiting season data"}
+                        </p>
+                        <ExchangeDisplayPicker game={game} />
+                    </div>
                 </header>
                 {categories.map((category) => {
                     const entries = rows.filter((row) => row.category === category);
@@ -425,7 +358,7 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                                     rows={traded}
                                     filters={filters}
                                     game={game}
-                                    divine={exchangeDivine}
+                                    rates={priceRates}
                                 />
                             ) : null}
                             {entries.length ? (
@@ -434,7 +367,7 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                                     rows={entries}
                                     filters={filters}
                                     game={game}
-                                    chaosRates={chaosRates}
+                                    prices={prices}
                                     server={server}
                                 />
                             ) : null}
@@ -463,7 +396,7 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                             rows={bases}
                             filters={filters}
                             game={game}
-                            chaosRates={chaosRates}
+                            prices={prices}
                             server={server}
                         />
                     </section>
@@ -477,7 +410,7 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                             rows={[]}
                             filters={filters}
                             game={game}
-                            chaosRates={chaosRates}
+                            prices={prices}
                             server={server}
                             empty={
                                 <div role="status" className="py-6">

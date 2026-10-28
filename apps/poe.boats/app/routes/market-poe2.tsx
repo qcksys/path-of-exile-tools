@@ -1,5 +1,6 @@
 import { Outlet, useParams, useSearchParams } from "react-router";
 import { MarketCategoryNav } from "~/components/market-category-nav";
+import { MarketDisplayProvider } from "~/components/market-exchange";
 import { POE2_EXCHANGE_CATEGORIES, type Poe2ExchangeCategory } from "~/lib/market-categories";
 import type { SiteHandle } from "~/routes/layouts/site";
 import {
@@ -44,7 +45,9 @@ export default function Poe2Market() {
                     }
                 />
                 <div className="min-w-0 space-y-5">
-                    <Outlet />
+                    <MarketDisplayProvider>
+                        <Outlet />
+                    </MarketDisplayProvider>
                 </div>
             </div>
             <details className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">

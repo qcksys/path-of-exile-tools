@@ -12,7 +12,12 @@ import {
     MARKET_BASE_LEVELS,
     MARKET_CLUSTER_LEVEL_BANDS,
 } from "~/lib/market-bases";
-import { isMarketBaseCategory, MARKET_CLUSTER_BASE_CATEGORY } from "~/lib/market-categories";
+import {
+    isMarketBaseCategory,
+    MARKET_CLUSTER_BASE_CATEGORY,
+    marketHasCorruption,
+    marketHasIdentification,
+} from "~/lib/market-categories";
 import {
     MARKET_ORDERS,
     MARKET_RANGE_PARAMS,
@@ -189,14 +194,15 @@ export function MarketFiltersForm({
                         />
                     </Label>
                     {select("order", "Order by", MARKET_ORDERS)}
-                    {isMarketBaseCategory(filters.category)
-                        ? null
-                        : select("identification", "Identification", {
+                    {marketHasIdentification(filters.category)
+                        ? select("identification", "Identification", {
                               all: "Any identification",
                               true: "Identified",
                               false: "Unidentified",
-                          })}
-                    {isMarketBaseCategory(filters.category) || gems
+                          })
+                        : null}
+                    {/* Skill gems choose corruption among their own filters. */}
+                    {!marketHasCorruption(filters.category) || gems
                         ? null
                         : select("corruption", "Corruption", {
                               all: "Any corruption",

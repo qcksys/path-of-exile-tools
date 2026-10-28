@@ -1,60 +1,104 @@
+import { createContext, type ReactNode, useContext, useState } from "react";
 import { CurrencyLabel } from "~/components/currency-label";
 import { ItemArt } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import { useItemPresentations } from "~/hooks/use-item-presentations";
 import { findItemPresentation } from "~/lib/item-presentation";
-import type { MarketExchangeRow, MarketExchangeUnit } from "~/lib/market-exchange";
+import type { MarketExchangeRow } from "~/lib/market-exchange";
 import { marketNumber as number } from "~/lib/market-number";
+import {
+    MARKET_PRICE_CURRENCIES,
+    MARKET_PRICE_CURRENCY_NAMES,
+    type MarketPriceCurrency,
+    type MarketPriceRates,
+} from "~/lib/market-price-currencies";
 import { cn } from "~/lib/utils";
 
 type Game = "poe1" | "poe2";
 
 export const EXCHANGE_UNIT_NAMES = { chaos: "Chaos Orb", exalted: "Exalted Orb" } as const;
 
-/** Adaptive shows divine once an item is worth at least one divine, otherwise the exchange unit. */
-export function exchangeDisplays(unit: MarketExchangeUnit) {
-    return { adaptive: "Adaptive", unit: EXCHANGE_UNIT_NAMES[unit], divine: "Divine Orb" };
+/**
+ * Adaptive shows divine once a value is worth at least one divine, otherwise the exchange unit;
+ * the others show one of the game's price currencies.
+ */
+export function exchangeDisplays(game: Game) {
+    return {
+        adaptive: "Adaptive",
+        ...Object.fromEntries(
+            MARKET_PRICE_CURRENCIES[game].map((currency) => [
+                currency,
+                MARKET_PRICE_CURRENCY_NAMES[currency],
+            ]),
+        ),
+    } as Record<ExchangeDisplay, string>;
 }
-export type ExchangeDisplay = keyof ReturnType<typeof exchangeDisplays>;
+export type ExchangeDisplay = "adaptive" | MarketPriceCurrency;
 
+/** A value in the game's exchange unit, restated in the chosen display currency at `rates`. */
 export function exchangePrice(
     price: number,
-    divine: number | undefined,
+    rates: MarketPriceRates,
     display: ExchangeDisplay,
-    unit: MarketExchangeUnit,
+    game: Game,
 ): {
     amount: number;
     currency: string;
     equivalent?: { amount: number; currency: string };
 } {
-    if (display === "unit" || !divine) return { amount: price, currency: unit };
-    if (display === "divine") return { amount: price / divine, currency: "divine" };
-    if (price >= divine)
+    const [unit] = MARKET_PRICE_CURRENCIES[game];
+    if (display !== "adaptive") {
+        const rate = rates[display];
+        return rate
+            ? { amount: price * rate, currency: display }
+            : { amount: price, currency: unit };
+    }
+    const divine = rates.divine;
+    if (!divine) return { amount: price, currency: unit };
+    if (price * divine >= 1)
         return {
-            amount: price / divine,
+            amount: price * divine,
             currency: "divine",
             equivalent: { amount: price, currency: unit },
         };
     return {
         amount: price,
         currency: unit,
-        equivalent: { amount: price / divine, currency: "divine" },
+        equivalent: { amount: price * divine, currency: "divine" },
     };
 }
 
-/** Buttons choosing how exchange values are shown. */
-export function ExchangeDisplayPicker({
-    unit,
-    display,
-    onChange,
-    className,
-}: {
-    unit: MarketExchangeUnit;
-    display: ExchangeDisplay;
-    onChange: (display: ExchangeDisplay) => void;
-    className?: string;
-}) {
-    const displays = exchangeDisplays(unit);
+/** `exchangePrice` as text, e.g. `1,132.67 divine ≈ 384,214 chaos`, for chart tooltips. */
+export function exchangePriceText(
+    price: number,
+    rates: MarketPriceRates,
+    display: ExchangeDisplay,
+    game: Game,
+) {
+    const { amount, currency, equivalent } = exchangePrice(price, rates, display, game);
+    return `${number(amount)} ${currency}${equivalent ? ` ≈ ${number(equivalent.amount)} ${equivalent.currency}` : ""}`;
+}
+
+const MarketDisplayContext = createContext<
+    [ExchangeDisplay, (display: ExchangeDisplay) => void] | null
+>(null);
+
+/** Shares one value display across a game's market pages, so it persists between list and detail. */
+export function MarketDisplayProvider({ children }: { children: ReactNode }) {
+    const state = useState<ExchangeDisplay>("adaptive");
+    return <MarketDisplayContext.Provider value={state}>{children}</MarketDisplayContext.Provider>;
+}
+
+/** The shared value display, or a local one outside a `MarketDisplayProvider`. */
+export function useMarketDisplay() {
+    const local = useState<ExchangeDisplay>("adaptive");
+    return useContext(MarketDisplayContext) ?? local;
+}
+
+/** Buttons choosing how values are shown, in the game's price currencies. */
+export function ExchangeDisplayPicker({ game, className }: { game: Game; className?: string }) {
+    const [display, onChange] = useMarketDisplay();
+    const displays = exchangeDisplays(game);
     return (
         <fieldset
             className={cn(
@@ -80,20 +124,18 @@ export function ExchangeDisplayPicker({
     );
 }
 
+/** A value in the game's exchange unit, shown in the shared value display. */
 export function ExchangePrice({
     price: value,
-    divine,
-    display,
-    unit,
+    rates,
     game,
 }: {
     price: number;
-    divine: number | undefined;
-    display: ExchangeDisplay;
-    unit: MarketExchangeUnit;
+    rates: MarketPriceRates;
     game: Game;
 }) {
-    const price = exchangePrice(value, divine, display, unit);
+    const [display] = useMarketDisplay();
+    const price = exchangePrice(value, rates, display, game);
     return (
         <>
             {number(price.amount)} <CurrencyLabel currency={price.currency} game={game} />

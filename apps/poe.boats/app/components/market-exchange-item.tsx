@@ -3,7 +3,6 @@ import { Link } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
 import {
     EXCHANGE_UNIT_NAMES,
-    type ExchangeDisplay,
     ExchangeDisplayPicker,
     ExchangeItemName,
     ExchangePair,
@@ -27,7 +26,7 @@ const PRICE_SERIES = "price";
 
 /** An exchange item's summary, hourly price chart and pairs, in either game's exchange unit. */
 export function MarketExchangeItem({
-    data: { item, divine, history, latestHour, unit },
+    data: { item, priceRates, history, latestHour, unit },
     league,
     days,
     game,
@@ -41,7 +40,6 @@ export function MarketExchangeItem({
     categoryLabel: string;
     backTo: string;
 }) {
-    const [display, setDisplay] = useState<ExchangeDisplay>("adaptive");
     const [series, setSeries] = useState(PRICE_SERIES);
     const unitName = EXCHANGE_UNIT_NAMES[unit].replace(/ Orb$/, "");
     const pair = history.pairs.find((entry) => entry.quoteId === series);
@@ -88,13 +86,7 @@ export function MarketExchangeItem({
                             "No rate"
                         )
                     ) : (
-                        <ExchangePrice
-                            price={item.price}
-                            divine={divine ?? undefined}
-                            display={display}
-                            unit={unit}
-                            game={game}
-                        />
+                        <ExchangePrice price={item.price} rates={priceRates} game={game} />
                     ),
                     <>
                         {item.price === null
@@ -125,7 +117,7 @@ export function MarketExchangeItem({
                 )}
                 {summary("Most traded", <ExchangePair row={item} game={game} />)}
             </div>
-            <ExchangeDisplayPicker unit={unit} display={display} onChange={setDisplay} />
+            <ExchangeDisplayPicker game={game} />
             <section aria-label="Price history" className="space-y-3">
                 <h3 className="text-sm font-semibold">
                     Hourly price history{" "}
