@@ -152,7 +152,7 @@ it("switches exchange values between adaptive, chaos and divine", async () => {
         const fixture = marketFixture(filters);
         return {
             ...fixture,
-            exchange: fixture.exchange.map((row) => ({ ...row, chaos: 300 })),
+            exchange: fixture.exchange.map((row) => ({ ...row, price: 300 })),
         };
     });
     showMarket("/1/market?league=Allflame&category=armour");
@@ -192,7 +192,7 @@ it("marks an exchange price from an earlier day and names its conversion", async
 it("labels exchange items without a price by whether they traded", async () => {
     vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
         const fixture = marketFixture(filters);
-        const row = { ...fixture.exchange[0]!, chaos: null, current: false, volume: null };
+        const row = { ...fixture.exchange[0]!, price: null, current: false, volume: null };
         return {
             ...fixture,
             exchange: [
@@ -384,6 +384,42 @@ it("redirects the bare market path to the default category, keeping its filters"
         priceMin: "5",
     });
     expect(getMarketData).not.toHaveBeenCalled();
+});
+
+it("redirects PoE 2 realm links to the PoE 2 market, searching for their item", async () => {
+    const list = await listLoader({
+        request: new Request(
+            "https://example.invalid/1/market?realm=poe2&league=Rites&q=Wisdom&item=Exalted%20Orb",
+        ),
+        context,
+        params: {},
+        unstable_pattern: "/1/market/:category?",
+        unstable_url: new URL("https://example.invalid/1/market"),
+    });
+    if (!(list instanceof Response)) throw new Error("Expected redirect");
+    expect(list.status).toBe(308);
+    const url = new URL(list.headers.get("Location")!, "https://example.invalid");
+    expect(url.pathname).toBe("/2/market/currency");
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+        league: "Rites",
+        days: "7",
+        q: "Exalted Orb",
+    });
+    const item = await exchangeLoader({
+        request: new Request(
+            "https://example.invalid/1/market/exchange/Currency/CurrencyAddModToRare?realm=poe2&league=Rites&category=armour",
+        ),
+        context,
+        params: { "*": "Currency/CurrencyAddModToRare" },
+        unstable_pattern: "/1/market/exchange/*",
+        unstable_url: new URL("https://example.invalid/1/market/exchange/x"),
+    });
+    if (!(item instanceof Response)) throw new Error("Expected redirect");
+    expect(item.headers.get("Location")).toMatch(
+        /^\/2\/market\/exchange\/Currency\/CurrencyAddModToRare\?league=Rites&.*category=all/,
+    );
+    expect(getMarketData).not.toHaveBeenCalled();
+    expect(getMarketExchangeItem).not.toHaveBeenCalled();
 });
 
 it("rejects unknown category paths", async () => {

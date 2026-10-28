@@ -54,6 +54,7 @@ export function marketFixture(
         season,
         hasMore: filters.page === 1,
         chaosRates: { chaos: 1, divine: 150 },
+        exchangeUnit: "chaos",
         exchange:
             filters.page === 1 && !bases
                 ? [
@@ -61,7 +62,7 @@ export function marketFixture(
                           itemId: "Metadata/Items/Currency/CurrencyIdentification",
                           name: "Scroll of Wisdom",
                           category: filters.category === "all" ? "currency" : filters.category,
-                          chaos: 0.002,
+                          price: 0.002,
                           via: {
                               itemId: "Metadata/Items/Currency/CurrencyRerollRare",
                               name: "Chaos Orb",
@@ -185,18 +186,19 @@ export function marketExchangeFixture(
         latestHour: hour,
         historyStart: hour - 7 * 86400 + 3600,
         item: input.itemId === wisdom ? exchange : null,
+        unit: "chaos" as const,
         divine: 150,
         history: {
-            chaos: [
+            prices: [
                 {
                     hour: hour - 3600,
-                    chaos: 0.0016,
+                    price: 0.0016,
                     low: 0.0015,
                     high: 0.0018,
                     via: chaos,
                     units: 2_000,
                 },
-                { hour, chaos: 0.002, low: null, high: null, via: chaos, units: 3_000 },
+                { hour, price: 0.002, low: null, high: null, via: chaos, units: 3_000 },
             ],
             pairs: [
                 {

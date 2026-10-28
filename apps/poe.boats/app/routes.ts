@@ -21,6 +21,10 @@ export default [
         ...prefix("2", [
             index("routes/poe2-home.tsx"),
             route("arbitrage", "routes/arbitrage/poe2.tsx"),
+            route("market", "routes/market-poe2.tsx", [
+                route(":category?", "routes/market/poe2.tsx"),
+                route("exchange/*", "routes/market/poe2-exchange.tsx"),
+            ]),
         ]),
     ]),
     route("login", "routes/login.tsx"),

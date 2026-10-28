@@ -1,40 +1,103 @@
 import { CurrencyLabel } from "~/components/currency-label";
 import { ItemArt } from "~/components/item-art";
+import { Button } from "~/components/ui/button";
 import { useItemPresentations } from "~/hooks/use-item-presentations";
 import { findItemPresentation } from "~/lib/item-presentation";
-import type { MarketExchangeRow } from "~/lib/market-exchange";
-import { marketChaosPrice } from "~/lib/market-listing-prices";
+import type { MarketExchangeRow, MarketExchangeUnit } from "~/lib/market-exchange";
 import { marketNumber as number } from "~/lib/market-number";
 import { cn } from "~/lib/utils";
 
 type Game = "poe1" | "poe2";
 
-/** Adaptive shows divine once an item is worth at least one divine, otherwise chaos. */
-export const EXCHANGE_DISPLAYS = { adaptive: "Adaptive", chaos: "Chaos Orb", divine: "Divine Orb" };
-export type ExchangeDisplay = keyof typeof EXCHANGE_DISPLAYS;
+export const EXCHANGE_UNIT_NAMES = { chaos: "Chaos Orb", exalted: "Exalted Orb" } as const;
 
-export function exchangePrice(chaos: number, divine: number | undefined, display: ExchangeDisplay) {
-    if (display === "chaos" || !divine) return { amount: chaos, currency: "chaos" as const };
-    if (display === "divine") return { amount: chaos / divine, currency: "divine" as const };
-    return marketChaosPrice(chaos, divine);
+/** Adaptive shows divine once an item is worth at least one divine, otherwise the exchange unit. */
+export function exchangeDisplays(unit: MarketExchangeUnit) {
+    return { adaptive: "Adaptive", unit: EXCHANGE_UNIT_NAMES[unit], divine: "Divine Orb" };
+}
+export type ExchangeDisplay = keyof ReturnType<typeof exchangeDisplays>;
+
+export function exchangePrice(
+    price: number,
+    divine: number | undefined,
+    display: ExchangeDisplay,
+    unit: MarketExchangeUnit,
+): {
+    amount: number;
+    currency: string;
+    equivalent?: { amount: number; currency: string };
+} {
+    if (display === "unit" || !divine) return { amount: price, currency: unit };
+    if (display === "divine") return { amount: price / divine, currency: "divine" };
+    if (price >= divine)
+        return {
+            amount: price / divine,
+            currency: "divine",
+            equivalent: { amount: price, currency: unit },
+        };
+    return {
+        amount: price,
+        currency: unit,
+        equivalent: { amount: price / divine, currency: "divine" },
+    };
+}
+
+/** Buttons choosing how exchange values are shown. */
+export function ExchangeDisplayPicker({
+    unit,
+    display,
+    onChange,
+    className,
+}: {
+    unit: MarketExchangeUnit;
+    display: ExchangeDisplay;
+    onChange: (display: ExchangeDisplay) => void;
+    className?: string;
+}) {
+    const displays = exchangeDisplays(unit);
+    return (
+        <fieldset
+            className={cn(
+                "flex flex-wrap items-center gap-2 text-xs text-muted-foreground",
+                className,
+            )}
+        >
+            <legend className="sr-only">Value display</legend>
+            Show values in
+            {(Object.keys(displays) as ExchangeDisplay[]).map((option) => (
+                <Button
+                    key={option}
+                    type="button"
+                    size="xs"
+                    variant={display === option ? "secondary" : "ghost"}
+                    aria-pressed={display === option}
+                    onClick={() => onChange(option)}
+                >
+                    {displays[option]}
+                </Button>
+            ))}
+        </fieldset>
+    );
 }
 
 export function ExchangePrice({
-    chaos,
+    price: value,
     divine,
     display,
+    unit,
     game,
 }: {
-    chaos: number;
+    price: number;
     divine: number | undefined;
     display: ExchangeDisplay;
+    unit: MarketExchangeUnit;
     game: Game;
 }) {
-    const price = exchangePrice(chaos, divine, display);
+    const price = exchangePrice(value, divine, display, unit);
     return (
         <>
             {number(price.amount)} <CurrencyLabel currency={price.currency} game={game} />
-            {"equivalent" in price && price.equivalent ? (
+            {price.equivalent ? (
                 <span className="ml-2 text-xs font-normal text-muted-foreground">
                     ≈ {number(price.equivalent.amount)}{" "}
                     <CurrencyLabel currency={price.equivalent.currency} game={game} iconOnly />
@@ -73,7 +136,7 @@ export function exchangeChange(change: number) {
     return `${change > 0 ? "+" : ""}${Math.round(change * 100)}%`;
 }
 
-/** A 7-day sparkline of daily chaos prices and the change across it. */
+/** A 7-day sparkline of daily prices and the change across it. */
 export function ExchangeTrend({
     history,
     change,
