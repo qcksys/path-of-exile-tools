@@ -1,10 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
 import { DataTable, dataTableColumns } from "~/components/data-table";
 import {
-    type ExchangeDisplay,
-    ExchangeDisplayPicker,
     ExchangeItemName,
     ExchangePair,
     ExchangePrice,
@@ -18,6 +16,7 @@ import {
     marketExchangeUnitId,
 } from "~/lib/market-exchange";
 import { marketCompactNumber as compact } from "~/lib/market-number";
+import type { MarketPriceRates } from "~/lib/market-price-currencies";
 
 type Game = "poe1" | "poe2";
 
@@ -26,8 +25,7 @@ const column = dataTableColumns<MarketExchangeRow>();
 function exchangeColumns(
     game: Game,
     unit: MarketExchangeUnit,
-    divine: number | undefined,
-    display: ExchangeDisplay,
+    rates: MarketPriceRates,
     itemLink: (itemId: string) => string,
 ) {
     return column.columns([
@@ -65,13 +63,7 @@ function exchangeColumns(
                 return (
                     <>
                         <p className={row.current ? "font-semibold" : "text-muted-foreground"}>
-                            <ExchangePrice
-                                price={row.price}
-                                divine={divine}
-                                display={display}
-                                unit={unit}
-                                game={game}
-                            />
+                            <ExchangePrice price={row.price} rates={rates} game={game} />
                         </p>
                         {row.current ? null : (
                             <p className="text-xs text-muted-foreground">
@@ -129,37 +121,28 @@ function exchangeColumns(
     ]);
 }
 
-/** Exchange items with their value, trend, volume and most traded pair. */
+/**
+ * Exchange items with their value (in the shared value display, see ExchangeDisplayPicker),
+ * trend, volume and most traded pair.
+ */
 export function MarketExchangeTable({
     label,
     rows,
     game,
     unit,
-    divine,
+    rates,
     itemLink,
 }: {
     label: string;
     rows: MarketExchangeRow[];
     game: Game;
     unit: MarketExchangeUnit;
-    /** Exchange units per Divine Orb. */
-    divine: number | undefined;
+    rates: MarketPriceRates;
     itemLink: (itemId: string) => string;
 }) {
-    const [display, setDisplay] = useState<ExchangeDisplay>("adaptive");
     const columns = useMemo(
-        () => exchangeColumns(game, unit, divine, display, itemLink),
-        [game, unit, divine, display, itemLink],
+        () => exchangeColumns(game, unit, rates, itemLink),
+        [game, unit, rates, itemLink],
     );
-    return (
-        <>
-            <ExchangeDisplayPicker
-                unit={unit}
-                display={display}
-                onChange={setDisplay}
-                className="px-4 pt-3"
-            />
-            <DataTable label={label} data={rows} columns={columns} getRowId={(row) => row.itemId} />
-        </>
-    );
+    return <DataTable label={label} data={rows} columns={columns} getRowId={(row) => row.itemId} />;
 }

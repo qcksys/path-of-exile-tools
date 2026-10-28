@@ -1,7 +1,7 @@
 import { type ExchangeSnapshot, exchangeCurrencyId, listingCurrencyId } from "@poe-tools/market";
 import { describe, expect, it } from "vite-plus/test";
 import type { MarketPriceSummary, TStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
-import { marketPriceText } from "~/lib/market-price-currencies";
+import { marketExchangePriceRates } from "~/lib/market-exchange";
 import {
     chaosRatesByHour,
     marketDisplayRate,
@@ -281,14 +281,18 @@ describe("price currencies", () => {
         ).toMatchObject({ count: 2, min: 50, max: 200 });
     });
 
-    it("shows an amount in every price currency, as a fraction under one", () => {
-        expect(marketPriceText(5, { chaos: 1, divine: 0.01 }, "poe1")).toBe("5c, 1/20d");
-        expect(marketPriceText(250, { chaos: 1, divine: 0.01 }, "poe1")).toBe("250c, 2.5d");
-        // 1/3 is more than 10% from 0.4, so the decimal stays.
-        expect(marketPriceText(40, { chaos: 1, divine: 0.01 }, "poe1")).toBe("40c, 0.4d");
-        expect(marketPriceText(0.5, { chaos: 1 }, "poe1")).toBe("1/2c");
+    it("rates price currencies from exchange rows priced in the game's unit", () => {
+        const annulPoe2 = listingCurrencyId("annul", "poe2")!;
         expect(
-            marketPriceText(2, { exalted: 1, chaos: 5, annul: 0.25, divine: 0.025 }, "poe2"),
-        ).toBe("2ex, 10c, 1/2 annul, 1/20d");
+            marketExchangePriceRates(
+                [
+                    { itemId: divine, price: 400 },
+                    { itemId: chaos, price: 0.25 },
+                    { itemId: annulPoe2, price: null },
+                ],
+                "poe2",
+            ),
+        ).toEqual({ exalted: 1, chaos: 4, divine: 1 / 400 });
+        expect(marketExchangePriceRates([], "pc")).toEqual({ chaos: 1 });
     });
 });

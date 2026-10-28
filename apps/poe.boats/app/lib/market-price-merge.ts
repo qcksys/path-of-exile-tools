@@ -120,8 +120,8 @@ export function marketDisplayRate(
 }
 
 /**
- * Units of each of the game's price currencies per unit of its first one at an hour, for
- * `marketPriceText`; currencies without an exchange rate are left out.
+ * Units of each of the game's price currencies per unit of its first one at an hour, for the
+ * value display; currencies without an exchange rate are left out.
  */
 export function marketPriceRates(
     rates: Map<number, Map<string, number>>,

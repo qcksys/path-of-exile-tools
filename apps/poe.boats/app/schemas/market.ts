@@ -11,6 +11,8 @@ import {
     MARKET_CATEGORIES,
     type MarketCategory,
     type MarketExchangeCategory,
+    marketHasCorruption,
+    marketHasIdentification,
     POE2_EXCHANGE_CATEGORIES,
     type Poe2ExchangeCategory,
 } from "~/lib/market-categories";
@@ -141,12 +143,24 @@ export const MARKET_BASE_FILTERS = [
     "quality",
 ] as const satisfies (keyof MarketFilters)[];
 
-/** The corruption a search filters by: its own choice, or its category's default. */
+/**
+ * The corruption a search filters by: its own choice, or its category's default. Categories
+ * whose markets do not split by corruption match any.
+ */
 export function marketCorruption({
     category,
     corruption,
 }: Pick<MarketFilters, "category" | "corruption">) {
+    if (!marketHasCorruption(category)) return "all";
     return corruption ?? (isMarketUniqueCategory(category) ? "false" : "all");
+}
+
+/** The identification a search filters by; categories that do not split by it match any. */
+export function marketIdentification({
+    category,
+    identification,
+}: Pick<MarketFilters, "category" | "identification">) {
+    return marketHasIdentification(category) ? identification : "all";
 }
 
 /**

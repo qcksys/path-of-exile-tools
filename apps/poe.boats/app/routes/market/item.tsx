@@ -3,14 +3,13 @@ import { Link } from "react-router";
 import { DataTable, dataTableColumns } from "~/components/data-table";
 import { ItemArt } from "~/components/item-art";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
+import { MarketHistory, MarketHistoryPrice } from "~/components/market-history";
 import { MarketModValues } from "~/components/market-mod-values";
-import { MarketPriceChart } from "~/components/market-price-chart";
 import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import { marketItemArtUrl } from "~/lib/item-presentation";
 import { marketNumber as number } from "~/lib/market-number";
-import { marketPriceText } from "~/lib/market-price-currencies";
 import { marketSignatureLabel } from "~/lib/mod-pools";
 import { marketLink, parseMarketFilters } from "~/schemas/market";
 import type { Route } from "./+types/item";
@@ -60,8 +59,9 @@ const column = dataTableColumns<HistoryRow>();
 
 function HourlyTable({ rows, game }: { rows: HistoryRow[]; game: "poe1" | "poe2" }) {
     const columns = useMemo(() => {
-        const price = (value: number | undefined, row: HistoryRow) =>
-            value === undefined ? "—" : marketPriceText(value, row.priceRates, game);
+        const price = (value: number | undefined, row: HistoryRow) => (
+            <MarketHistoryPrice value={value} rates={row.priceRates} game={game} />
+        );
         const count = { sortDescFirst: true, meta: { filter: "range" } } as const;
         return column.columns([
             column.accessor((row) => marketUtc(row.hour), {
@@ -114,7 +114,7 @@ function HourlyTable({ rows, game }: { rows: HistoryRow[]; game: "poe1" | "poe2"
 }
 
 export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
-    const { filters, seasons, history, historyUnit, variants, modValues } = loaderData;
+    const { filters, seasons, history, variants, modValues } = loaderData;
     const selected = history.at(-1);
     const isCurrent = (variant: VariantRow) =>
         variant.itemKey === filters.item &&
@@ -206,17 +206,13 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                             <p className="text-sm text-muted-foreground">likely sales in period</p>
                         </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                        Prices from every listing currency, each converted at its hour's currency
-                        exchange rate.
-                    </p>
-                    <MarketPriceChart points={history} currency={historyUnit} game={game} />
-                    <details>
-                        <summary className="cursor-pointer text-sm">
-                            Hourly observations and inferred sale prices (latest 72 hours with data)
-                        </summary>
+                    <MarketHistory
+                        points={history}
+                        game={game}
+                        summary="Hourly observations and inferred sale prices (latest 72 hours with data)"
+                    >
                         <HourlyTable rows={history.slice(-72).reverse()} game={game} />
-                    </details>
+                    </MarketHistory>
                 </section>
             ) : filters.item ? (
                 <p role="status">No observations for this variant in the selected period.</p>

@@ -3,13 +3,16 @@ import type { TooltipComponentOption } from "echarts/components";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vite-plus/test";
 import { type CostPoint, historyChartOption } from "~/components/crafting/process-cost-history";
+import { exchangeDisplays, exchangePriceText } from "~/components/market-exchange";
 import { MarketPriceChart, marketPriceChartOption } from "~/components/market-price-chart";
 import { type ChartOption, init } from "~/lib/echarts";
 import { marketNumber } from "~/lib/market-number";
+import type { MarketPriceRates } from "~/lib/market-price-currencies";
 import {
     type MergedMarketPrice,
     marketCorruption,
     marketFiltersSchema,
+    marketIdentification,
     marketLink,
 } from "~/schemas/market";
 
@@ -26,6 +29,15 @@ function flat(price: number): MergedMarketPrice {
         p90: price,
         max: price,
     };
+}
+
+function point(
+    hour: number,
+    merged: MergedMarketPrice | null,
+    mergedSales: MergedMarketPrice | null = null,
+    priceRates: MarketPriceRates = { chaos: 1 },
+) {
+    return { hour, merged, mergedSales, priceRates };
 }
 
 function renderSvg(option: ChartOption) {
@@ -136,6 +148,18 @@ describe("market browsing", () => {
         expect(params({ category: "armour" }).has("corruption")).toBe(false);
         expect(params({ category: "armour", corruption: "all" }).get("corruption")).toBe("all");
     });
+    it("ignores identification and corruption in categories whose markets do not split by them", () => {
+        const applied = (input: Record<string, string>) => {
+            const filters = marketFiltersSchema.parse(input);
+            return [marketIdentification(filters), marketCorruption(filters)];
+        };
+        const split = { identification: "false", corruption: "true" };
+        expect(applied({ category: "jewels", ...split })).toEqual(["false", "true"]);
+        expect(applied({ category: "maps", ...split })).toEqual(["false", "true"]);
+        expect(applied({ category: "gems", ...split })).toEqual(["all", "true"]);
+        for (const category of ["currency", "cards", "scarabs", "armour-bases"])
+            expect(applied({ category, ...split })).toEqual(["all", "all"]);
+    });
     it.each([
         { days: "100000" },
         { page: "NaN" },
@@ -148,29 +172,21 @@ describe("market browsing", () => {
         expect(marketFiltersSchema.safeParse(input).success).toBe(false);
     });
     it("shows unconvertible currency data without inventing a zero price", () => {
-        const points = [{ hour: 3600, merged: null, mergedSales: null }];
-        const markup = renderToStaticMarkup(<MarketPriceChart points={points} currency="divine" />);
+        const points = [point(3600, null)];
+        const markup = renderToStaticMarkup(<MarketPriceChart points={points} game="poe1" />);
         expect(markup).toContain("No asking prices");
         expect(markup).not.toContain('role="img"');
-        expect(marketPriceChartOption(points, "divine")).toBeNull();
+        expect(marketPriceChartOption(points, "poe1")).toBeNull();
     });
     it("gives a constant price history a nonzero chart range", () => {
-        const option = marketPriceChartOption(
-            [{ hour: 3600, merged: flat(10), mergedSales: null }],
-            "divine",
-        )!;
+        const option = marketPriceChartOption([point(3600, flat(10))], "poe1")!;
         expect(new Set(axisLabels(renderSvg(option))).size).toBeGreaterThan(1);
     });
     it("plots the lowest ask without connecting hours with no observations", () => {
         const ask = (min: number) => ({ ...flat(min * 2), min });
         const option = marketPriceChartOption(
-            [
-                { hour: 3600, merged: ask(10), mergedSales: null },
-                { hour: 7200, merged: ask(15), mergedSales: null },
-                { hour: 10800, merged: null, mergedSales: null },
-                { hour: 14400, merged: ask(20), mergedSales: null },
-            ],
-            "divine",
+            [point(3600, ask(10)), point(7200, ask(15)), point(10800, null), point(14400, ask(20))],
+            "poe1",
         )!;
         expect(series(option, lowestAsk).data).toEqual([
             [3600_000, 10],
@@ -181,27 +197,19 @@ describe("market browsing", () => {
         const line = renderSvg(option).match(/<path d="([^"]*)"[^>]*stroke-width="2.5"/)![1]!;
         expect(line.match(/M/g)).toHaveLength(2);
         expect(tooltipValue(option, lowestAsk, 15, 1)).toBe(
-            "15 divine (lowest of 1 listings, median 30)",
+            "15 chaos (lowest of 1 listings, median 30 chaos)",
         );
         expect(tooltipValue(option, lowestAsk, null, 2)).toBe("No listings");
         expect(
-            renderToStaticMarkup(
-                <MarketPriceChart
-                    points={[{ hour: 3600, merged: flat(10), mergedSales: null }]}
-                    currency="divine"
-                />,
-            ),
-        ).toContain("Hourly lowest asking price in divine");
+            renderToStaticMarkup(<MarketPriceChart points={[point(3600, flat(10))]} game="poe1" />),
+        ).toContain("Hourly lowest asking price in chaos");
     });
     it("shades the likely-sale interquartile range, ignoring outlying asks", () => {
         const outlier = { ...flat(4), p75: 300_000, p90: 300_000, max: 300_000 };
         const sale = { ...flat(10), p25: 5, p75: 15 };
         const option = marketPriceChartOption(
-            [
-                { hour: 3600, merged: outlier, mergedSales: { ...sale, unconverted: 2 } },
-                { hour: 7200, merged: outlier, mergedSales: sale },
-            ],
-            "chaos",
+            [point(3600, outlier, { ...sale, unconverted: 2 }), point(7200, outlier, sale)],
+            "poe1",
         )!;
         expect(series(option, 0).data).toEqual([
             [3600_000, 5],
@@ -220,18 +228,18 @@ describe("market browsing", () => {
         expect(Math.max(...labels)).toBeGreaterThanOrEqual(15);
         expect(Math.max(...labels)).toBeLessThan(100);
         expect(tooltipValue(option, saleMedian, 10, 0)).toBe(
-            "10 chaos (interquartile 5–15, 1 likely sales, 2 without an exchange rate)",
+            "10 chaos (interquartile 5 chaos–15 chaos, 1 likely sales, 2 without an exchange rate)",
         );
     });
     it("connects sale prices across listed hours without a sale but not across gaps", () => {
         const option = marketPriceChartOption(
             [
-                { hour: 3600, merged: flat(1), mergedSales: flat(10) },
-                { hour: 7200, merged: flat(1), mergedSales: null },
-                { hour: 10800, merged: flat(1), mergedSales: flat(12) },
-                { hour: 18000, merged: flat(1), mergedSales: flat(14) },
+                point(3600, flat(1), flat(10)),
+                point(7200, flat(1)),
+                point(10800, flat(1), flat(12)),
+                point(18000, flat(1), flat(14)),
             ],
-            "chaos",
+            "poe1",
         )!;
         expect(series(option, saleMedian).data).toEqual([
             [3600_000, 10],
@@ -240,26 +248,63 @@ describe("market browsing", () => {
             [18000_000, 14],
         ]);
         expect(tooltipValue(option, saleMedian, 12, 1)).toBe(
-            "12 chaos (interquartile 12–12, 1 likely sales)",
+            "12 chaos (interquartile 12 chaos–12 chaos, 1 likely sales)",
         );
     });
-    it("shows each hour's prices in every price currency at that hour's rates", () => {
-        const option = marketPriceChartOption(
-            [
-                { hour: 3600, merged: flat(5), mergedSales: null, priceRates: { chaos: 1 } },
-                {
-                    hour: 7200,
-                    merged: flat(5),
-                    mergedSales: null,
-                    priceRates: { chaos: 1, divine: 0.01 },
-                },
-            ],
-            "chaos",
-        )!;
-        expect(tooltipValue(option, lowestAsk, 5, 0)).toBe("5c (lowest of 1 listings, median 5c)");
-        expect(tooltipValue(option, lowestAsk, 5, 1)).toBe(
-            "5c, 1/20d (lowest of 1 listings, median 5c, 1/20d)",
+    it("shows each hour's prices in the value display at that hour's rates", () => {
+        const points = [
+            point(3600, flat(5), null, { chaos: 1 }),
+            point(7200, flat(500), null, { chaos: 1, divine: 0.01 }),
+            point(10800, flat(5), null, { chaos: 1, divine: 0.005 }),
+        ];
+        const adaptive = marketPriceChartOption(points, "poe1")!;
+        expect(series(adaptive, lowestAsk).data).toEqual([
+            [3600_000, 5],
+            [7200_000, 500],
+            [10800_000, 5],
+        ]);
+        expect(tooltipValue(adaptive, lowestAsk, 5, 0)).toBe(
+            "5 chaos (lowest of 1 listings, median 5 chaos)",
         );
+        expect(tooltipValue(adaptive, lowestAsk, 5, 1)).toBe(
+            "5 divine ≈ 500 chaos (lowest of 1 listings, median 5 divine ≈ 500 chaos)",
+        );
+        expect(tooltipValue(adaptive, lowestAsk, 5, 2)).toBe(
+            "5 chaos ≈ 0.025 divine (lowest of 1 listings, median 5 chaos ≈ 0.025 divine)",
+        );
+        // In divine, each hour converts at its own rate; an hour without one leaves a gap.
+        const divine = marketPriceChartOption(points, "poe1", "divine")!;
+        expect(series(divine, lowestAsk)).toMatchObject({
+            name: "Lowest ask (divine)",
+            data: [
+                [3600_000, null],
+                [7200_000, 5],
+                [10800_000, 0.025],
+            ],
+        });
+        expect(tooltipValue(divine, lowestAsk, 0.025, 2)).toBe(
+            "0.025 divine (lowest of 1 listings, median 0.025 divine)",
+        );
+    });
+    it("restates exchange-unit values in each game's price currencies", () => {
+        const poe2 = { exalted: 1, chaos: 4, annul: 0.05, divine: 0.0025 };
+        expect(exchangeDisplays("poe1")).toEqual({
+            adaptive: "Adaptive",
+            chaos: "Chaos Orb",
+            divine: "Divine Orb",
+        });
+        expect(Object.values(exchangeDisplays("poe2"))).toEqual([
+            "Adaptive",
+            "Exalted Orb",
+            "Chaos Orb",
+            "Orb of Annulment",
+            "Divine Orb",
+        ]);
+        expect(exchangePriceText(40, poe2, "annul", "poe2")).toBe("2 annul");
+        expect(exchangePriceText(40, poe2, "chaos", "poe2")).toBe("160 chaos");
+        expect(exchangePriceText(800, poe2, "adaptive", "poe2")).toBe("2 divine ≈ 800 exalted");
+        // A currency without a rate falls back to the exchange unit.
+        expect(exchangePriceText(40, { exalted: 1 }, "annul", "poe2")).toBe("40 exalted");
     });
     it("plots historical process costs with gaps for unavailable estimates", () => {
         const point = (at: number, meanCost: number | null): CostPoint => ({

@@ -75,8 +75,8 @@ their stash listings out of the rows. Each row's price is the latest completed h
 volume-weighted rate of the newest of the last 7 UTC days the item traded, marked as not current
 with its last traded hour. Stash prices never convert at such an earlier divine rate. Rows also
 carry each of those days' chaos price and the change across them, the chaos value traded per hour
-over them, and the pair with the most units of the item traded at its newest rate. The table can
-show values adaptively (divine from one divine up), in chaos or in divine. Each row links to
+over them, and the pair with the most units of the item traded at its newest rate. Values follow
+the shared value display (adaptively, in chaos or in divine). Each row links to
 `/1/market/exchange/<item ID after Metadata/Items/>` (`get_season_exchange_item`), which shows the
 same row and the item's hourly chaos price and per-pair rates over the list's period, each with the
 hour's lowest to highest traded rate as a shaded range (a converted price scales its pair's range
@@ -86,8 +86,8 @@ the query for the way back. Exchange rows and history give amounts as `price` in
 named by `unit` (`exchangeUnit` on `get_season_market`).
 The PoE 2 market at `/2/market/:category` (`get_poe2_season_exchange`) lists only the currency
 exchange, since PoE 2 has no public stash data. It prices the same rows in exalted (direct, or
-through divine, chaos or another traded item) and shows values adaptively, in exalted or in
-divine. Its categories are the trade site's PoE 2 bulk exchange groups, generated into
+through divine, chaos or another traded item) and shows values adaptively or in exalted, chaos,
+annul or divine. Its categories are the trade site's PoE 2 bulk exchange groups, generated into
 `app/data/exchange-categories-poe2.json` by `vp run game-data:exchange-categories`; traded items
 outside every group list under Other. Seasons come from the exchange alone and leave out private
 leagues (names ending in ` (PL<id>)`); leagues sharing the latest hour list the most active first. Item pages live at
@@ -149,7 +149,10 @@ The shared market query applies category, text, identification, corruption, gem 
 column ranges and ordering before pagination. Without a `corruption` filter, the unique weapon, armour and
 accessory categories list uncorrupted markets and every other category lists any corruption; the
 category links clear the search text and the base filters, and carry a corruption choice only
-when it differs from the current category's default. The list's TanStack Table headers sort through `order` and filter
+when it differs from the current category's default. Identification and corruption apply only to
+categories whose markets split by them (`marketHasIdentification`/`marketHasCorruption`: unique
+equipment, flasks, jewels, tinctures, relics, maps, Other items and `all`, plus skill gems for
+corruption); elsewhere the filter is hidden and the query and returned `filters` use `all`. The list's TanStack Table headers sort through `order` and filter
 through the URL: the item column sets the text search, and range boxes bound the latest row's
 selected-currency median, listings and sellers, and the period's likely sales. The item page's
 hourly table searches, filters and sorts its loaded rows in the browser. Categories use the verified per-game base catalog, grouped like
@@ -163,9 +166,19 @@ currency: chaos for PoE 1, exalted for PoE 2), whatever the display currency. Th
 distribution is the listing-count-weighted mixture of the per-currency quantile curves, so it is
 exact for one currency and an estimate otherwise; listings without a rate are counted as
 `unconverted`. Each hour's `priceRates` give the game's price currencies (PoE 1 chaos and divine;
-PoE 2 exalted, chaos, annul and divine) per `historyUnit` at that hour. The item page has one
-chart, plotted in `historyUnit`, and its tooltips and hourly table show each price in every price
-currency with a rate, e.g. `5c, 1/20d` when 1 divine is 100 chaos.
+PoE 2 exalted, chaos, annul and divine) per `historyUnit` at that hour. Crafting base history
+(`get_season_market_base`) merges the same way into `historyUnit` with per-hour `priceRates`.
+Every market page shares one value display (`ExchangeDisplayPicker` and `ExchangePrice` in
+`app/components/market-exchange.tsx`): Adaptive (divine from one divine up, otherwise the
+exchange unit, with the other as `≈`) or one of the game's price currencies, e.g.
+`1,132.67 divine ≈ 384,214 chaos`. The choice is held by `MarketDisplayProvider` in each game's
+market layout, so it carries between that game's list, item, base and exchange pages and stays
+separate for `/1` and `/2`. Exchange rows, stash listing prices (each listing currency's median
+converted through chaos, noting the listed amount when shown in another currency), the item and
+base history charts (plotted in the chosen currency at each hour's rate) and hourly tables all use
+it. Its rates are `priceRates` on `get_season_market` (stash rates at the season's latest hour,
+else the exchange's), `get_season_market_base`, `get_season_exchange_item` and
+`get_poe2_season_exchange` (from the exchange rows' prices).
 The HTTP and MCP market operation exposes the same filters and category assignments, and still
 accepts `category=all` for every category at once. With an `item`, it returns that item's history
 and variants only (`rows` is empty), skipping the list query.
@@ -246,8 +259,8 @@ the Magic purchase must have its own quote, and no rarity conversion is charged.
 | Manual recipe reference, calculator and trade links | `arbitrage/recipes`, `arbitrage/scenario`, `arbitrage/trade` | `list_vendor_recipes`, `calculate_recipe_scenario`, `build_recipe_trade_url` |
 | PoE 2 exchange market by category | `market/poe2-exchange` | `get_poe2_season_exchange`; `getPoe2MarketExchange`, sharing `marketExchangeRows` (in exalted) and the season, search and ordering of the PoE 1 exchange rows. Unit tests cover exalted pricing and its divine-then-chaos bridges; UI tests cover the category list, value display, item page, redirects and refusals; HTTP/MCP parity covers success and an invalid category. Not yet covered against MySQL. |
 | Season exchange item price, trend and pair history | `market/exchange-item` | `get_season_exchange_item`; `getMarketExchangeItem`, sharing `marketExchangeRows` with the list's exchange rows and adding the hourly `marketExchangeHistory` over the period (`days`). It reads only the item's markets and the chaos markets of the items it trades against. Unit tests cover latest-hour and earlier-day prices, conversions, trends, volume, pairs and hourly ranges; MySQL tests cover the daily rollup through ingest and the item read; UI tests cover the table, value display and item page; HTTP/MCP parity covers success and an invalid item ID. |
-| Season crafting base history and variants | `market/base` | `get_season_market_base`; `getMarketBase`, reading the cohort's hours through `stash_cohort_history_idx` and its base type's listed cohorts with the list's `marketBaseRows`, preferring the current manifest revision per hour. Unit tests cover the base filters, descriptions and generated bands; MySQL tests cover history, variants and revision choice; UI tests cover the list link, base page, variants and the way back; HTTP/MCP parity covers success and an invalid base ID. |
-| Season market search, seasons, paging, variants, history, mod pool values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `modPoolValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_market_daily` rollup and pagination precedes full-row primary-key reads. An item's foil and non-foil listings are one market: list rows, variants and history sum and mix every foil variation's hourly rows. Link counts merge the same way in list rows and in history without `links`; variants list each link count of a market with 5- or 6-link copies after its merged variant. MySQL regressions cover these query plans, variant selection, foil merging, link-count merging and splitting alongside mod splits, search, column ranges and orders, history, merged-currency history, list currency rates, exchange-priced items (left out of the stash rows), page boundaries, and crafting base cohort rows (latest hour, current revision, category). |
+| Season crafting base history and variants | `market/base` | `get_season_market_base`; `getMarketBase`, reading the cohort's hours through `stash_cohort_history_idx` and its base type's listed cohorts with the list's `marketBaseRows`, preferring the current manifest revision per hour. Unit tests cover the base filters, descriptions and generated bands; MySQL tests cover history (merged into `historyUnit` whatever `currency` is), variants and revision choice; UI tests cover the list link, base page, variants and the way back; HTTP/MCP parity covers success and an invalid base ID. |
+| Season market search, seasons, paging, variants, history, mod pool values | `market` | `get_season_market`; `getMarketData`, with mod values from the shared `modPoolValues`. Season boundaries use the existing index prefix; variant totals come from the `stash_market_daily` rollup and pagination precedes full-row primary-key reads. An item's foil and non-foil listings are one market: list rows, variants and history sum and mix every foil variation's hourly rows. Link counts merge the same way in list rows and in history without `links`; variants list each link count of a market with 5- or 6-link copies after its merged variant. MySQL regressions cover these query plans, variant selection, foil merging, link-count merging and splitting alongside mod splits, search, column ranges and orders, history, merged-currency history in `historyUnit` with per-hour `priceRates`, list currency and value display rates, exchange-priced items (left out of the stash rows), page boundaries, and crafting base cohort rows (latest hour, current revision, category). Unit tests cover the per-category identification and corruption filters, the value display in both games' price currencies, and the chart in each display; UI tests cover the shared value display on list rows, the item page's one merged chart and table, and the display carrying back to the list. |
 | Recombinator equipment, modifiers, preparation recipes | `recombinator/catalog`, `bases`, `mods`, `recipes`, `draft` | Catalog, base/mod/recipe filtering, and `parseRecombinatorDraft` |
 | Recombination outcomes, preparation, target odds | `recombinator/calculate`, `target` | `calculateRecombinatorPlan`, `matchesTarget`, `summarizeCounts` |
 | PoE 1 and PoE 2 workbench catalog, calculation, process simulation and item emulation | `crafting/workbench/catalog`, `workbench/calculate`, `workbench/process`, `workbench/emulate` | `get_crafting_workbench_catalog`, `calculate_crafting_workbench`, `emulate_crafting_process`, `emulate_crafting_item`; shared `CraftingWorkbenchCalculation`, `CraftingProcess` and `emulateCraftingItem`. Current workbench catalogs and client-build validation match the browser; retained graph rulesets remain separate. HTTP calculations refuse manual-stop runs and requests above 5,000 trials or 100,000 potential steps. Allflame preview costs remain deferred until selection, reveal choices stay explicit, and paid bench failures retain the changed item and costs. Stateless operations never modify browser drafts. |

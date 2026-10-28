@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Form, redirect, useNavigation, useSubmit } from "react-router";
+import { ExchangeDisplayPicker } from "~/components/market-exchange";
 import { MarketExchangeTable } from "~/components/market-exchange-table";
 import { marketUtc } from "~/components/market-filters";
 import { RouteError } from "~/components/route-error";
@@ -116,7 +117,7 @@ function Poe2MarketFiltersForm({
 }
 
 export default function Poe2MarketIndex({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
-    const { filters, seasons, season, rows, unit, divine } = loaderData;
+    const { filters, seasons, season, rows, unit, priceRates } = loaderData;
     const category = filters.category === "all" ? null : POE2_EXCHANGE_CATEGORIES[filters.category];
     const itemLink = useCallback(
         (itemId: string) => poe2MarketExchangeLink(filters, itemId),
@@ -136,11 +137,14 @@ export default function Poe2MarketIndex({ loaderData }: Pick<Route.ComponentProp
                             {filters.league || "Season"} · {rows.length} on the exchange
                         </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                        {season
-                            ? `Data through ${marketUtc(season.latestHour)}`
-                            : "Awaiting season data"}
-                    </p>
+                    <div className="grid justify-items-end gap-1">
+                        <p className="text-xs text-muted-foreground">
+                            {season
+                                ? `Data through ${marketUtc(season.latestHour)}`
+                                : "Awaiting season data"}
+                        </p>
+                        <ExchangeDisplayPicker game="poe2" />
+                    </div>
                 </header>
                 {rows.length ? (
                     <MarketExchangeTable
@@ -148,7 +152,7 @@ export default function Poe2MarketIndex({ loaderData }: Pick<Route.ComponentProp
                         rows={rows}
                         game="poe2"
                         unit={unit}
-                        divine={divine ?? undefined}
+                        rates={priceRates}
                         itemLink={itemLink}
                     />
                 ) : (

@@ -76,6 +76,33 @@ export function isMarketBaseCategory(category: MarketCategory | "all") {
     );
 }
 
+/**
+ * Categories whose markets split by identification: unique equipment, jewels and maps, and the
+ * category-less lists. Elsewhere (stackable items, gems, crafting bases) the filter is hidden and
+ * every identification state matches.
+ */
+const IDENTIFICATION_CATEGORIES = new Set<MarketCategory | "all">([
+    "all",
+    "weapons",
+    "armour",
+    "accessories",
+    "flasks",
+    "jewels",
+    "tinctures",
+    "relics",
+    "maps",
+    "other",
+]);
+
+export function marketHasIdentification(category: MarketCategory | "all") {
+    return IDENTIFICATION_CATEGORIES.has(category);
+}
+
+/** Categories whose markets split by corruption: those split by identification, and skill gems. */
+export function marketHasCorruption(category: MarketCategory | "all") {
+    return category === "gems" || IDENTIFICATION_CATEGORIES.has(category);
+}
+
 /** The categories listing unique equipment, apart from its crafting bases. */
 export function isMarketUniqueCategory(category: MarketCategory | "all") {
     return category in MARKET_BASE_CATEGORIES;

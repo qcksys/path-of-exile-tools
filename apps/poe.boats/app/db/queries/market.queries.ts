@@ -40,9 +40,11 @@ import {
     MARKET_EXCHANGE_DAYS,
     type MarketExchangeRow,
     marketExchangeHistory,
+    marketExchangePriceRates,
     marketExchangeRows,
     marketExchangeUnit,
     marketExchangeUnitId,
+    marketPriceCurrencyIds,
 } from "~/lib/market-exchange";
 import { marketExchangeItem } from "~/lib/market-exchange.server";
 import { MARKET_PRICE_CURRENCIES } from "~/lib/market-price-currencies";
@@ -69,6 +71,7 @@ import {
     type MarketFilters,
     type MarketOrder,
     marketCorruption,
+    marketIdentification,
     type Poe2MarketFilters,
 } from "~/schemas/market";
 import { type Span, traceQuery, traceSpan } from "~/services/tracing.server";
@@ -280,6 +283,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         ...input,
         league: input.league || seasons[0]?.league || "",
         corruption: marketCorruption(input),
+        identification: marketIdentification(input),
     };
     span.setAttributes({
         "market.view": view,
@@ -565,6 +569,14 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         ),
         ...(exchangeChaos ? exchangeDivine(exchange) : {}),
     };
+    /** Each price currency per exchange unit for the value display: stash rates, else the exchange's. */
+    const priceRates = {
+        ...marketExchangePriceRates(
+            exchange.filter((row) => row.current),
+            filters.realm,
+        ),
+        ...(priced.length ? marketPriceRates(rates, game, latestHour) : {}),
+    };
     const bases = rankMarketBases(baseRows, filters, chaosRates, PAGE_SIZE);
     span.setAttributes({
         "market.rows": rows.length,
@@ -612,6 +624,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         exchange: exchangeRows,
         exchangeUnit,
         chaosRates,
+        priceRates,
         /** The currency `history` prices are in: the game's first price currency. */
         historyUnit,
         history: history.map((row) => {
@@ -882,10 +895,18 @@ function exchangeDivine(rows: MarketExchangeRow[]): Record<string, number> {
 /** Pairs whose hourly history an exchange item page reads, besides its chaos, divine and exalted pairs. */
 const EXCHANGE_HISTORY_PAIRS = 8;
 
-/** Markets of `itemId` and the `anchor` markets of the items it trades against (and divine's). */
-function exchangeItemMarkets(markets: string[][], itemId: string, anchor: string) {
+/**
+ * Markets of `itemId` and the `anchor` markets of the items it trades against (and of the
+ * `priced` currencies, which the page values are shown in).
+ */
+function exchangeItemMarkets(
+    markets: string[][],
+    itemId: string,
+    anchor: string,
+    priced: string[],
+) {
     const counterparts = new Set(markets.flatMap((ids) => (ids.includes(itemId) ? ids : [])));
-    counterparts.add(DIVINE);
+    for (const id of priced) counterparts.add(id);
     return markets
         .filter(
             (ids) =>
@@ -911,7 +932,8 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
         const describe = (itemId: string) => marketExchangeItem(input.realm, itemId);
         const listed = league ? await marketExchangeMarkets(db, scope, latestHour) : [];
         const markets = listed.map((row) => row.marketId.split("|"));
-        const marketIds = exchangeItemMarkets(markets, input.itemId, anchor);
+        const priced = marketPriceCurrencyIds(input.realm);
+        const marketIds = exchangeItemMarkets(markets, input.itemId, anchor, priced);
         const historyStart = latestHour - Number(input.days) * 86400 + 3600;
         const [snapshots, days] = marketIds.length
             ? await Promise.all([
@@ -930,7 +952,7 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
             past.filter((row) => row.day >= exchangeWindowStart(latestHour)),
             latestHour,
             describe,
-            [input.itemId, DIVINE],
+            [...new Set([input.itemId, ...priced])],
             Math.min(...listed.map((row) => row.firstHour)),
             unit,
         );
@@ -957,6 +979,7 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
             [...kept, ...markets.filter((ids) => !ids.includes(input.itemId))],
             input.itemId,
             anchor,
+            priced,
         );
         const history = historyIds.length
             ? await exchangeSnapshots(db, scope, [historyStart, latestHour], historyIds)
@@ -970,6 +993,7 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
             unit,
             item: described ? (rows.find((row) => row.itemId === input.itemId) ?? null) : null,
             divine: rows.find((row) => row.itemId === DIVINE)?.price ?? null,
+            priceRates: marketExchangePriceRates(rows, input.realm),
             history: marketExchangeHistory(history, input.itemId, describe, unit),
         };
     });
@@ -1006,13 +1030,14 @@ export function getPoe2MarketExchange(db: TDatabase, input: Poe2MarketFilters) {
             season,
             unit: marketExchangeUnit(realm),
             divine: rows.find((row) => row.itemId === DIVINE)?.price ?? null,
+            priceRates: marketExchangePriceRates(rows, realm),
             rows: matches,
         };
     });
 }
 
 /**
- * A crafting base cohort's hourly asking prices over the period, in the display currency, and
+ * A crafting base cohort's hourly asking prices over the period, in the game's exchange unit, and
  * the latest hour of every listed cohort of the same base type.
  */
 export function getMarketBase(db: TDatabase, input: MarketBaseInput) {
@@ -1046,11 +1071,14 @@ export function getMarketBase(db: TDatabase, input: MarketBaseInput) {
             input.currency,
             ...variants.flatMap((row) => Object.keys(row.prices)),
         ]);
+        const game = marketGame(input.realm);
+        const historyUnit = MARKET_PRICE_CURRENCIES[game][0];
         return {
             ...input,
             league,
             latestHour,
             base,
+            historyUnit,
             history: history.map((row) => ({
                 hour: row.hour,
                 listingCount: row.listingCount,
@@ -1058,8 +1086,9 @@ export function getMarketBase(db: TDatabase, input: MarketBaseInput) {
                 unknownCount: row.unknownCount,
                 merged: mergeMarketPrices(
                     row.prices,
-                    marketDisplayRate(rates, input.currency, row.hour),
+                    marketDisplayRate(rates, historyUnit, row.hour),
                 ),
+                priceRates: marketPriceRates(rates, game, row.hour),
             })),
             variants: variants.sort(
                 (a, b) =>
@@ -1074,6 +1103,7 @@ export function getMarketBase(db: TDatabase, input: MarketBaseInput) {
                     return rate ? [[currency, rate] as const] : [];
                 }),
             ),
+            priceRates: marketPriceRates(rates, game, latestHour),
         };
     });
 }

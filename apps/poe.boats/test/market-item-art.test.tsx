@@ -53,6 +53,7 @@ function showMarket(
         season: undefined,
         hasMore: false,
         chaosRates: {},
+        priceRates: {},
         exchange: [],
         exchangeUnit: "chaos",
         historyUnit: "chaos",
