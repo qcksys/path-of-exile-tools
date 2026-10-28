@@ -206,6 +206,30 @@ describe("sale inference", () => {
     });
 });
 
+it("leaves the earlier hour of a listing still in the stash but no longer captured", async () => {
+    await ingest([stash]);
+    // Captured yesterday; the item is still listed but now falls outside the capture policy.
+    await db.conn.run(`INSERT INTO ps_listing BY NAME
+        SELECT * REPLACE ('stale' AS item_id,
+            last_seen_at - INTERVAL 1 DAY AS last_seen_at, first_seen_at - INTERVAL 1 DAY AS first_seen_at)
+        FROM ps_listing WHERE item_id = 'item-0'`);
+    await db.conn.run(`INSERT INTO ps_listing_hour BY NAME
+        SELECT * EXCLUDE (removed_at, raw_item), epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
+        FROM ps_listing WHERE item_id = 'stale'`);
+    const magic = { ...item, id: "stale", frameType: 1, rarity: "Magic", name: "" };
+    await ingest([{ ...stash, items: [item, magic] }]);
+    expect(
+        await queryAll(
+            db.conn,
+            `SELECT item_id, observed_hour = epoch(date_trunc('hour', current_timestamp))::BIGINT AS current_hour
+            FROM ps_listing_hour ORDER BY item_id`,
+        ),
+    ).toEqual([
+        { item_id: "item-0", current_hour: true },
+        { item_id: "stale", current_hour: false },
+    ]);
+});
+
 it("re-observes a stash within the same hour after the database is reopened", async () => {
     // Index entries loaded from disk reject a key deleted and reinserted in one transaction.
     const dir = await mkdtemp(join(tmpdir(), "ingest-reopen-"));
