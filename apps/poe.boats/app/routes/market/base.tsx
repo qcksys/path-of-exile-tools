@@ -109,8 +109,8 @@ export default function MarketBase({ loaderData }: Pick<Route.ComponentProps, "l
                 </h2>
                 <p className="text-sm text-muted-foreground">{marketBaseDetails(base)}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                    Normal, magic and rare items together; uncorrupted, unfractured and
-                    uninfluenced.
+                    Normal, magic and rare items together; uncorrupted, unfractured, uninfluenced
+                    and not intangible.
                 </p>
             </div>
             {variants.length > 1 ? (
@@ -142,7 +142,6 @@ export default function MarketBase({ loaderData }: Pick<Route.ComponentProps, "l
                                                         price={price}
                                                         rates={priceRates}
                                                         game={game}
-                                                        compact
                                                     />
                                                     {" · "}
                                                 </>

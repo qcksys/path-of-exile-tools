@@ -173,19 +173,23 @@ for (const [, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0]))) {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
     const unmodified: ItemCondition[] = (
-        ["corrupted", "mirrored", "fractured", "synthesised", "influenced"] as const
+        ["corrupted", "mirrored", "fractured", "synthesised", "influenced", "intangible"] as const
     ).map((field) => ({ kind: "flag" as const, field, value: false }));
     const category = MARKET_BASE_CATEGORIES[marketBaseCategory(base.name, base.item_class)];
     if (!category) throw new Error(`No crafting base market category for ${base.item_class}.`);
-    const { strength = 0, dexterity = 0, intelligence = 0 } = base.requirements ?? {};
+    const { strength = 0, dexterity = 0, intelligence = 0, level = 0 } = base.requirements ?? {};
     const identity = {
         // `marketBasesSchema` rejects a class outside `MARKET_BASE_CLASSES` when the file is written.
         itemClass: base.item_class as MarketBase["itemClass"],
         attributes: MARKET_BASE_ATTRIBUTES.filter(
             (_, index) => [strength, dexterity, intelligence][index]! > 0,
         ),
+        level,
     };
-    const sixSockets = base.socketInfo.some((socket) => socket.count === 6);
+    // One-handed weapons, shields, helmets, gloves and boots list six sockets at an unreachable level.
+    const sixSockets = base.socketInfo.some(
+        (socket) => socket.count === 6 && socket.weight > 0 && socket.level <= 100,
+    );
     for (const band of bands) {
         const listed = band.max >= MARKET_BASE_MIN_LEVEL;
         for (const links of [
@@ -306,6 +310,7 @@ for (const rule of Object.values(clusters.bases)) {
                                             "fractured",
                                             "synthesised",
                                             "influenced",
+                                            "intangible",
                                         ] as const
                                     ).map((field) => ({
                                         kind: "flag" as const,
@@ -331,6 +336,7 @@ for (const rule of Object.values(clusters.bases)) {
                     category: MARKET_CLUSTER_BASE_CATEGORY,
                     itemClass: baseType as MarketBase["itemClass"],
                     attributes: [],
+                    level: null,
                     ilvl: { ...band },
                     links: null,
                     quality: null,

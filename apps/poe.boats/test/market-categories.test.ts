@@ -1,7 +1,9 @@
+import { MySqlDialect, mysqlTable, varchar } from "drizzle-orm/mysql-core";
 import { expect, it } from "vite-plus/test";
 import { marketBaseCategory } from "~/lib/market-categories";
-import { marketCategory } from "~/lib/market-categories.server";
+import { marketCategory, marketCategoryFilter } from "~/lib/market-categories.server";
 import { marketExchangeItem } from "~/lib/market-exchange.server";
+import { marketFiltersSchema } from "~/schemas/market";
 
 it.each([
     ["Goathide Boots", "Boots", "armour"],
@@ -37,6 +39,29 @@ it("uses each game's verified base catalog and retains unknown items", () => {
     expect(marketCategory("sony", "Leather Belt")).toBe("accessories");
     expect(marketCategory("poe2", "Rusted Cuirass")).toBe("armour");
     expect(marketCategory("pc", "Unknown future base")).toBe("other");
+});
+
+it("filters unique equipment by its base type's item class and attributes", () => {
+    const table = mysqlTable("markets", {
+        baseType: varchar({ length: 255 }),
+        signatureKind: varchar({ length: 32 }),
+    });
+    const bases = (filters: Record<string, string>) =>
+        new MySqlDialect().sqlToQuery(
+            marketCategoryFilter(
+                marketFiltersSchema.parse({ realm: "pc", ...filters }),
+                table.baseType,
+                table.signatureKind,
+            )!,
+        ).params;
+    const axes = bases({ category: "weapons", baseClass: "Two Hand Axe" });
+    expect(axes).toContain("Vaal Axe");
+    expect(axes).not.toContain("Spine Bow");
+    const robes = bases({ category: "armour", baseClass: "Body Armour", attributes: "int" });
+    expect(robes).toContain("Simple Robe");
+    expect(robes).not.toContain("Astral Plate");
+    expect(robes).not.toContain("Goathide Boots");
+    expect(bases({ category: "armour" })).toContain("Goathide Boots");
 });
 
 it("lists spirit beasts, whose base type is the beast's name, under beasts", () => {

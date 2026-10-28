@@ -198,6 +198,7 @@ export const itemConditionSchema = z.discriminatedUnion("kind", [
             "sanctified",
             "influenced",
             "destroyed",
+            "intangible",
         ]),
         value: z.boolean(),
     }),

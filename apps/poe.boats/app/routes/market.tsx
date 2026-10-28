@@ -1,5 +1,5 @@
 import { Outlet, useParams, useSearchParams } from "react-router";
-import { MarketCategoryNav } from "~/components/market-category-nav";
+import { MarketCategoryNav, MarketPageContent } from "~/components/market-category-nav";
 import { MarketDisplayProvider } from "~/components/market-exchange";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
 import type { SiteHandle } from "~/routes/layouts/site";
@@ -62,12 +62,13 @@ export default function Market() {
                             corruption,
                         })
                     }
+                    game="poe1"
                 />
-                <div className="min-w-0 space-y-5">
+                <MarketPageContent prefix="/1/market">
                     <MarketDisplayProvider>
                         <Outlet />
                     </MarketDisplayProvider>
-                </div>
+                </MarketPageContent>
             </div>
             <details className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
                 <summary className="cursor-pointer font-medium text-foreground">

@@ -1,5 +1,5 @@
 import { Outlet, useParams, useSearchParams } from "react-router";
-import { MarketCategoryNav } from "~/components/market-category-nav";
+import { MarketCategoryNav, MarketPageContent } from "~/components/market-category-nav";
 import { MarketDisplayProvider } from "~/components/market-exchange";
 import { POE2_EXCHANGE_CATEGORIES, type Poe2ExchangeCategory } from "~/lib/market-categories";
 import type { SiteHandle } from "~/routes/layouts/site";
@@ -43,12 +43,13 @@ export default function Poe2Market() {
                     link={(category: Poe2ExchangeCategory) =>
                         poe2MarketLink({ ...filters, category })
                     }
+                    game="poe2"
                 />
-                <div className="min-w-0 space-y-5">
+                <MarketPageContent prefix="/2/market">
                     <MarketDisplayProvider>
                         <Outlet />
                     </MarketDisplayProvider>
-                </div>
+                </MarketPageContent>
             </div>
             <details className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
                 <summary className="cursor-pointer font-medium text-foreground">

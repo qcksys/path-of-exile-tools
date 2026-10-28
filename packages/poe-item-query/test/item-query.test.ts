@@ -45,6 +45,22 @@ describe("API-shaped item queries", () => {
         ).toBe("no-match");
     });
 
+    it("reads intangibility from the field or the listed property", () => {
+        const target = query([{ kind: "flag", field: "intangible", value: false }]);
+        const record = (item: Record<string, unknown>) =>
+            normalizeApiItem("poe1", "stash", { ...base, ...item });
+        const property = (value: string) => ({
+            properties: [{ name: "Intangibility", type: 110, values: [[value, 0]] }],
+        });
+        expect(matchItem(record({}), target)).toBe("match");
+        expect(matchItem(record({ intangibility: 0 }), target)).toBe("match");
+        expect(matchItem(record({ intangibility: 84 }), target)).toBe("no-match");
+        expect(matchItem(record(property("12%")), target)).toBe("no-match");
+        expect(matchItem(record({ intangibility: 12, ...property("40%") }), target)).toBe(
+            "unknown",
+        );
+    });
+
     it("matches a Cluster Jewel's passive count and skill from its enchantment lines", () => {
         const cluster = {
             baseType: "Large Cluster Jewel",

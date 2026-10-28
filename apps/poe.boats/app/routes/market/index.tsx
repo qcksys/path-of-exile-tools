@@ -6,6 +6,7 @@ import { ExchangeDisplayPicker } from "~/components/market-exchange";
 import { MarketExchangeTable } from "~/components/market-exchange-table";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
 import { MarketListingPrices } from "~/components/market-listing-price";
+import { MarketRecentSales } from "~/components/market-recent-sales";
 import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
@@ -107,16 +108,20 @@ function baseColumns(filters: MarketFilters, game: Game, { chaosRates, rates }: 
             sortDescFirst: false,
             meta: { filter: "text" },
             cell: ({ row: { original: row } }) => (
-                <>
-                    <Link
-                        to={marketBaseLink(filters, row.id)}
-                        className="flex items-center gap-3 font-medium text-primary hover:underline"
-                    >
-                        <CatalogItemArt name={row.baseType} game={game} className="size-12" />
-                        {row.baseType}
-                    </Link>
-                    <p className="mt-1 text-xs text-muted-foreground">{marketBaseDetails(row)}</p>
-                </>
+                <div className="flex items-center gap-3">
+                    <CatalogItemArt name={row.baseType} game={game} className="size-16" />
+                    <div className="min-w-0">
+                        <Link
+                            to={marketBaseLink(filters, row.id)}
+                            className="font-medium text-primary hover:underline"
+                        >
+                            {row.baseType}
+                        </Link>
+                        <p className="mt-1 max-w-md break-words text-xs text-muted-foreground">
+                            {marketBaseDetails(row)}
+                        </p>
+                    </div>
+                </div>
             ),
         }),
         baseColumn.accessor((row) => row.prices[filters.currency]?.median, {
@@ -127,7 +132,6 @@ function baseColumns(filters: MarketFilters, game: Game, { chaosRates, rates }: 
             cell: ({ row: { original: row } }) => (
                 <MarketListingPrices
                     prices={row.prices}
-                    currency={filters.currency}
                     game={game}
                     chaosRates={chaosRates}
                     rates={rates}
@@ -194,24 +198,27 @@ function marketColumns(filters: MarketFilters, game: Game, { chaosRates, rates }
             sortDescFirst: false,
             meta: { filter: "text" },
             cell: ({ row: { original: row } }) => (
-                <>
-                    <Link
-                        to={marketLink(filters, row)}
-                        className="flex items-center gap-3 font-medium text-primary hover:underline"
-                    >
-                        <ItemArt
-                            src={marketItemArtUrl(row.iconAsset, game)}
-                            name={row.name || row.baseType}
-                            decorative
-                        />
-                        {row.name || row.itemKey}
-                    </Link>
-                    <p className="mt-1 max-w-md break-words text-xs text-muted-foreground">
-                        {row.baseType} · {row.identified ? "Identified" : "Unidentified"}
-                        {row.corrupted ? " · Corrupted" : ""}
-                        {marketSignatureLabel(row) ? ` · ${marketSignatureLabel(row)}` : ""}
-                    </p>
-                </>
+                <div className="flex items-center gap-3">
+                    <ItemArt
+                        src={marketItemArtUrl(row.iconAsset, game)}
+                        name={row.name || row.baseType}
+                        className="size-16"
+                        decorative
+                    />
+                    <div className="min-w-0">
+                        <Link
+                            to={marketLink(filters, row)}
+                            className="font-medium text-primary hover:underline"
+                        >
+                            {row.name || row.itemKey}
+                        </Link>
+                        <p className="mt-1 max-w-md break-words text-xs text-muted-foreground">
+                            {row.baseType} · {row.identified ? "Identified" : "Unidentified"}
+                            {row.corrupted ? " · Corrupted" : ""}
+                            {marketSignatureLabel(row) ? ` · ${marketSignatureLabel(row)}` : ""}
+                        </p>
+                    </div>
+                </div>
             ),
         }),
         column.accessor((row) => row.prices?.[filters.currency]?.median, {
@@ -222,7 +229,6 @@ function marketColumns(filters: MarketFilters, game: Game, { chaosRates, rates }
             cell: ({ row: { original: row } }) => (
                 <MarketListingPrices
                     prices={row.prices}
-                    currency={filters.currency}
                     game={game}
                     chaosRates={chaosRates}
                     rates={rates}
@@ -250,8 +256,9 @@ function marketColumns(filters: MarketFilters, game: Game, { chaosRates, rates }
             meta: { filter: "range", className: "tabular-nums" },
             cell: ({ row: { original: row } }) => (
                 <>
-                    <span className="font-semibold">{number(row.periodSales)}</span>
-                    <p className="text-xs text-muted-foreground">
+                    <MarketRecentSales sales={row.recentSales} />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        {number(row.periodSales)} in {filters.days} days ·{" "}
                         {number(row.periodPending)} pending
                     </p>
                 </>
@@ -388,8 +395,9 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                                 </span>
                             </h3>
                             <p className="mt-1 text-xs text-muted-foreground">
-                                Normal, magic and rare items together; uncorrupted, unfractured and
-                                uninfluenced. Crafting bases have no likely-sale estimates.
+                                Normal, magic and rare items together; uncorrupted, unfractured,
+                                uninfluenced and not intangible. Crafting bases have no likely-sale
+                                estimates.
                             </p>
                         </header>
                         <BaseTable

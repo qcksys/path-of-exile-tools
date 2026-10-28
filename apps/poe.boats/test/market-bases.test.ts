@@ -4,6 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
     MARKET_BASE_ATTRIBUTE_SETS,
     MARKET_BASE_CLASSES,
+    MARKET_BASE_LINK_CLASSES,
     type MarketBaseRow,
     marketBaseDescription,
     marketBaseDetails,
@@ -22,6 +23,7 @@ function base(id: string, overrides: Partial<MarketBaseRow> = {}): MarketBaseRow
         category: "armour-bases",
         itemClass: "Body Armour",
         attributes: ["str"],
+        level: 68,
         ilvl: { min: 86, max: 100 },
         links: "1-5",
         quality: null,
@@ -140,11 +142,14 @@ describe("crafting base market rows", () => {
     it("describes each variant by item level, links and quality", () => {
         expect(marketBaseVariant(rows[0]!)).toBe("ilvl 86–100 · 1–5 links");
         expect(marketBaseVariant(rows[3]!)).toBe("ilvl 86–100 · 30%+ quality");
-        expect(marketBaseDescription(rows[0]!)).toBe("Body Armour · Str");
+        expect(marketBaseDescription(rows[0]!)).toBe("Body Armour · Str · Level 68");
         expect(marketBaseDescription({ itemClass: "Ring", attributes: [] })).toBe("Ring");
         expect(marketBaseDescription({ itemClass: "Helmet", attributes: ["dex", "int"] })).toBe(
             "Helmet · Dex/Int",
         );
+        expect(
+            marketBaseDescription({ itemClass: "Two Hand Axe", attributes: ["str"], level: 64 }),
+        ).toBe("Two Hand Axe · Str · Level 64");
     });
 });
 
@@ -179,6 +184,10 @@ describe("generated crafting base list", () => {
                 .filter((entry) => entry.baseType === "Onyx Amulet")
                 .every((entry) => entry.links === null && entry.quality === null),
         ).toBe(true);
+        // Other equipment cannot reach six sockets, so its links are not split.
+        expect(
+            new Set(bases.filter((entry) => entry.links).map((entry) => entry.itemClass)),
+        ).toEqual(new Set(MARKET_BASE_LINK_CLASSES));
         expect(new Set(bases.map((entry) => entry.category))).toEqual(
             new Set(["armour-bases", "weapon-bases", "accessory-bases", "cluster-jewel-bases"]),
         );
@@ -199,6 +208,8 @@ describe("generated crafting base list", () => {
         expect(find("Necrotic Armour").attributes).toEqual(["dex", "int"]);
         expect(find("Focused Amulet").attributes).toEqual([]);
         expect(find("Runic Helm").attributes).toEqual(["str", "dex", "int"]);
+        expect(find("Titan Plate").level).toBe(73);
+        expect(find("Large Cluster Jewel").level).toBeNull();
     });
 
     it("offers an attributes filter option for every attribute set the catalog lists", () => {

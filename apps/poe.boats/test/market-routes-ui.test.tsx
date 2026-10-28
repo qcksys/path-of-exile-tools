@@ -139,19 +139,17 @@ it("renders list and detail through the layout outlet and restores browsing stat
     expect(screen.queryByRole("region", { name: "Item price history" })).toBeNull();
 });
 
-it("lists listing currencies cheapest first with their chaos or divine equivalent", async () => {
+it("shows the most listed currency and folds the others behind +N more", async () => {
     showMarket();
-    const cell = (await screen.findByText("n=4")).closest("td")!;
-    expect([...cell.querySelectorAll("p")].map((price) => price.textContent)).toEqual([
-        "15 chaos≈ 0.1 divinen=4",
-        "2 divine≈ 300 chaosn=5",
-    ]);
+    const cell = (await screen.findByText("5 listed")).closest("td")!;
+    const lines = () => [...cell.querySelectorAll("p")].map((price) => price.textContent);
+    expect(lines()).toEqual(["2 divine≈ 300 chaos", "5 listed", "15 chaos 4 listed"]);
+    const details = cell.querySelector("details")!;
+    expect(details.open).toBe(false);
+    expect(details.querySelector("summary")!.textContent).toBe("+1 more");
     // Stash listings follow the same value display as exchange items, noting the listed amount.
     fireEvent.click(screen.getByRole("button", { name: "Chaos Orb" }));
-    expect([...cell.querySelectorAll("p")].map((price) => price.textContent)).toEqual([
-        "15 chaosn=4",
-        "300 chaoslisted as 2 divinen=5",
-    ]);
+    expect(lines()).toEqual(["300 chaos", "as 2 divine · 5 listed", "15 chaos 4 listed"]);
 });
 
 function exchangeRow(table: HTMLElement, name: string) {
@@ -288,26 +286,34 @@ it("answers 404 for an item outside the exchange catalogue", async () => {
     ).rejects.toMatchObject({ status: 404 });
 });
 
-it("collapses listing currencies costing over three times the most listed one", async () => {
+it("rounds prices to two places, leaving out divine equivalents under 0.01", async () => {
     vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
         const fixture = marketFixture(filters);
         return {
             ...fixture,
+            chaosRates: { ...fixture.chaosRates, alch: 0.04965 },
             rows: fixture.rows.map((row) => ({
                 ...row,
                 prices: {
                     chaos: { count: 32, min: 1, median: 1, max: 1 },
+                    alch: { count: 1, min: 1, median: 1, max: 1 },
                     divine: { count: 1, min: 6, median: 6, max: 6 },
                 },
             })),
         };
     });
     showMarket();
-    const cell = (await screen.findByText("n=32")).closest("td")!;
-    const details = cell.querySelector("details")!;
-    expect(details.open).toBe(false);
-    expect(details.querySelector("summary")!.textContent).toBe("1 over 3× the most listed");
-    expect(details.textContent).toContain("6 divine≈ 900 chaosn=1");
+    const cell = (await screen.findByText("32 listed")).closest("td")!;
+    expect([...cell.querySelectorAll("p")].map((price) => price.textContent)).toEqual([
+        "1 chaos",
+        "32 listed",
+        // Currencies cheaper than chaos show in chaos; fractions of a divine below 0.01 say so.
+        "0.05 chaos as 1 alch · 1 listed",
+        "6 divine 1 listed",
+    ]);
+    expect(cell.querySelector("summary")!.textContent).toBe("+2 more");
+    fireEvent.click(screen.getByRole("button", { name: "Divine Orb" }));
+    expect(cell.querySelector("p")!.textContent).toBe("< 0.01 divine");
 });
 
 it("applies search and filters after a pause, resets pagination, and keeps filters but not the search on category navigation", async () => {
@@ -853,10 +859,14 @@ it("opens a crafting base's history and variants and returns to the filtered lis
     showMarket("/1/market/armour-bases?league=Allflame&baseClass=Body%20Armour&ilvl=86");
     const url = () => screen.getByLabelText("Current URL").textContent;
     const table = await screen.findByRole("table", { name: "Armour bases markets" });
-    expect(within(table).getByText("ilvl 86–100 · 6 links · Body Armour · Str")).toBeTruthy();
+    expect(
+        within(table).getByText("ilvl 86–100 · 6 links · Body Armour · Str · Level 73"),
+    ).toBeTruthy();
     const art = (root: HTMLElement) =>
         root.querySelector('[data-item-art="Titan Plate"] img')?.getAttribute("src");
-    expect(art(within(table).getByRole("link", { name: "Titan Plate" }))).toBe("titan-plate.png");
+    expect(art(within(table).getByRole("link", { name: "Titan Plate" }).closest("td")!)).toBe(
+        "titan-plate.png",
+    );
     fireEvent.click(within(table).getByRole("link", { name: "Titan Plate" }));
     const page = await screen.findByRole("region", { name: "Crafting base" });
     expect(art(within(page).getByRole("heading", { name: "Titan Plate" }))).toBe("titan-plate.png");
@@ -972,6 +982,66 @@ it("lists crafting bases apart from uniques without unique-only filters", async 
         expect.objectContaining({ category: "armour-bases" }),
         "list",
     );
+});
+
+it("filters unique equipment by its base's type and attributes, without base-only filters", async () => {
+    showMarket("/1/market/armour?league=Allflame");
+    await screen.findByRole("table", { name: "Unique armour markets" });
+    for (const name of ["Type", "Attributes"])
+        expect(screen.getByRole("combobox", { name })).toBeTruthy();
+    for (const name of ["Item level", "Links", "Quality"])
+        expect(screen.queryByRole("combobox", { name })).toBeNull();
+    changeControl(screen.getByRole("combobox", { name: "Type" }), {
+        target: { value: "Body Armour" },
+    });
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ category: "armour", baseClass: "Body Armour" }),
+            "list",
+        ),
+    );
+});
+
+it("charts a market's likely sales in the latest 6 hours, day and week", async () => {
+    showMarket();
+    const row = (await screen.findByRole("link", { name: "Abberath's Hooves" })).closest("tr")!;
+    const sales = row.querySelector("dl")!;
+    expect(
+        [...sales.querySelectorAll("dt")].map((term) => [
+            term.textContent,
+            term.nextElementSibling!.textContent,
+        ]),
+    ).toEqual([
+        ["6h", "1"],
+        ["1d", "1"],
+        ["7d", "2"],
+    ]);
+    expect(row.textContent).toContain("2 in 7 days · 1 pending");
+});
+
+it("marks the category being loaded until its page arrives", async () => {
+    showMarket();
+    await screen.findByRole("table", { name: "Unique armour markets" });
+    let resolve: () => void = () => {};
+    vi.mocked(getMarketData).mockImplementation(
+        (_db, filters) =>
+            new Promise((done) => {
+                resolve = () => done(marketFixture(filters));
+            }),
+    );
+    const nav = screen.getByRole("navigation", { name: "Market categories" });
+    const link = within(nav).getByRole("link", { name: "Fragments" });
+    fireEvent.click(link);
+    await waitFor(() => expect(link.getAttribute("aria-busy")).toBe("true"));
+    expect(within(link).getByLabelText("Loading")).toBeTruthy();
+    expect(link.className).toContain("text-primary");
+    expect(
+        within(nav).getByRole("link", { name: "Unique armour" }).getAttribute("aria-current"),
+    ).toBe("page");
+    resolve();
+    await waitFor(() => expect(link.getAttribute("aria-current")).toBe("page"));
+    expect(link.getAttribute("aria-busy")).toBeNull();
 });
 
 it("filters skill gems by tri-state level, quality and corruption toggles", async () => {

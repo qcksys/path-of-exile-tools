@@ -49,10 +49,31 @@ export const MARKET_BASE_CLASSES = {
     ],
 } as const satisfies Partial<Record<MarketCategory, string[]>>;
 type MarketBaseClass = (typeof MARKET_BASE_CLASSES)[keyof typeof MARKET_BASE_CLASSES][number];
+/** Item classes that can have six sockets, whose crafting bases split by links. */
+export const MARKET_BASE_LINK_CLASSES: readonly MarketBaseClass[] = [
+    "Body Armour",
+    "Bow",
+    "Staff",
+    "Warstaff",
+    "Two Hand Axe",
+    "Two Hand Mace",
+    "Two Hand Sword",
+];
 export const MARKET_BASE_CLASS_NAMES = Object.values(MARKET_BASE_CLASSES).flat() as [
     MarketBaseClass,
     ...MarketBaseClass[],
 ];
+/** Each equipment base type's item class and attribute set ("" for none), by base type name. */
+export const marketBaseTypesSchema = z.record(
+    z.string(),
+    z.strictObject({
+        itemClass: z.enum(MARKET_BASE_CLASS_NAMES),
+        attributes: z.enum([
+            "",
+            ...(Object.keys(MARKET_BASE_ATTRIBUTE_SETS) as MarketBaseAttributeSet[]),
+        ]),
+    }),
+);
 /** Cluster Jewel item level bands, as poe.ninja splits them. */
 export const MARKET_CLUSTER_LEVEL_BANDS = [
     { min: 1, max: 49 },
@@ -91,6 +112,7 @@ export const marketBaseSchema = z.strictObject({
     attributes: z
         .array(z.enum(MARKET_BASE_ATTRIBUTES))
         .describe("Attributes the base requires: str, dex and int"),
+    level: z.number().int().nullable().describe("Character level required; null for jewels"),
     ilvl: z.strictObject({ min: z.number().int(), max: z.number().int() }),
     links: z.enum(["1-5", "6"]).nullable().describe("Linked sockets; null means any"),
     quality: z.number().int().nullable().describe("Minimum quality; null means any"),
@@ -201,12 +223,19 @@ export function rankMarketBases(
     };
 }
 
-/** The base's item class and the attributes it requires, e.g. "Body Armour · Str/Int". */
-export function marketBaseDescription(base: Pick<MarketBase, "itemClass" | "attributes">) {
+/**
+ * The base's item class, the attributes it requires and its level requirement, e.g.
+ * "Body Armour · Str/Int · Level 68".
+ */
+export function marketBaseDescription(
+    base: Pick<MarketBase, "itemClass" | "attributes"> & Partial<Pick<MarketBase, "level">>,
+) {
     const attributes = base.attributes
         .map((attribute) => attribute[0]!.toUpperCase() + attribute.slice(1))
         .join("/");
-    return attributes ? `${base.itemClass} · ${attributes}` : base.itemClass;
+    return [base.itemClass, attributes, base.level ? `Level ${base.level}` : ""]
+        .filter(Boolean)
+        .join(" · ");
 }
 
 /** The variant and, unless the base type already names it, the item class and attributes. */

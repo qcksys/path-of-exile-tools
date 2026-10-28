@@ -68,6 +68,7 @@ function showMarket(
                 periodSales: 2,
                 periodRemovals: 2,
                 periodPending: 0,
+                recentSales: { hourly: Array<number>(24).fill(0), daily: Array<number>(7).fill(0) },
             },
         ],
         history: [{ ...row, merged: null, mergedSales: null, priceRates: { chaos: 1 } }],
