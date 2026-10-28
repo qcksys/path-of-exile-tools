@@ -51,6 +51,7 @@ function showMarket(
         hasMore: false,
         chaosRates: {},
         exchange: [],
+        exchangeUnit: "chaos",
         variants: [],
         bases: [],
         modValues: null,

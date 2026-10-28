@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { Link, Outlet, useParams, useSearchParams } from "react-router";
-import { Button } from "~/components/ui/button";
+import { Outlet, useParams, useSearchParams } from "react-router";
+import { MarketCategoryNav } from "~/components/market-category-nav";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
 import type { SiteHandle } from "~/routes/layouts/site";
 import { MARKET_DEFAULT_CATEGORY, marketFiltersSchema, marketLink } from "~/schemas/market";
@@ -11,7 +10,6 @@ export const meta: Route.MetaFunction = () => [{ title: "Season market · POE.BO
 export const handle = { section: "Season market", sectionBadge: "Estimates" } satisfies SiteHandle;
 
 export default function Market() {
-    const [categoriesOpen, setCategoriesOpen] = useState(false);
     const [searchParams] = useSearchParams();
     const { category } = useParams();
     const parsed = marketFiltersSchema.safeParse({
@@ -20,22 +18,6 @@ export default function Market() {
     });
     const filters = parsed.success ? parsed.data : marketFiltersSchema.parse({});
     const current = filters.category === "all" ? MARKET_DEFAULT_CATEGORY : filters.category;
-    const categories = Object.entries(MARKET_CATEGORIES) as [
-        MarketCategory,
-        (typeof MARKET_CATEGORIES)[MarketCategory],
-    ][];
-    const groups = [...new Set(categories.map(([, category]) => category.group))];
-    const categoryLink = (category: MarketCategory, label: string) => (
-        <Link
-            key={category}
-            to={marketLink({ ...filters, category, page: 1 })}
-            aria-current={current === category ? "page" : undefined}
-            onClick={() => setCategoriesOpen(false)}
-            className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${current === category ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-        >
-            {label}
-        </Link>
-    );
     return (
         <main className="container mx-auto flex-1 space-y-6 px-4 py-8">
             <header>
@@ -50,39 +32,13 @@ export default function Market() {
                 </p>
             </header>
             <div className="grid items-start gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
-                <nav
-                    aria-label="Market categories"
-                    className="rounded-xl border border-border bg-card p-3"
-                >
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        className="w-full justify-between lg:hidden"
-                        aria-expanded={categoriesOpen}
-                        aria-controls="market-category-links"
-                        onClick={() => setCategoriesOpen(!categoriesOpen)}
-                    >
-                        Categories: {MARKET_CATEGORIES[current].label}
-                        <span aria-hidden="true">{categoriesOpen ? "−" : "+"}</span>
-                    </Button>
-                    <div
-                        id="market-category-links"
-                        className={categoriesOpen ? "block" : "hidden lg:block"}
-                    >
-                        <div className="grid grid-cols-2 gap-x-3 sm:grid-cols-3 lg:grid-cols-1">
-                            {groups.map((group) => (
-                                <div key={group} className="mt-4">
-                                    <h2 className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                        {group}
-                                    </h2>
-                                    {categories
-                                        .filter(([, category]) => category.group === group)
-                                        .map(([id, category]) => categoryLink(id, category.label))}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </nav>
+                <MarketCategoryNav
+                    categories={MARKET_CATEGORIES}
+                    current={current}
+                    link={(category: MarketCategory) =>
+                        marketLink({ ...filters, category, page: 1 })
+                    }
+                />
                 <div className="min-w-0 space-y-5">
                     <Outlet />
                 </div>
