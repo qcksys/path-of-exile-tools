@@ -3,6 +3,7 @@ import {
     decodeExchangePriceReference,
     encodeExchangePriceReference,
     exchangeCurrencyId,
+    exchangeMarketTracked,
     exchangeSnapshotSchema,
     exchangeUnitQuote,
     listingCurrencyId,
@@ -89,5 +90,31 @@ describe("currency exchange estimates", () => {
         expect(listingCurrencyId("greater-chaos-orb", "poe1")).toBeNull();
         expect(listingCurrencyId(item, "poe2")).toBe(item);
         expect(listingCurrencyId("toString", "poe1")).toBeNull();
+    });
+    it("tracks only markets with one of the game's price currencies", () => {
+        const id = (currency: string, game: "poe1" | "poe2") => listingCurrencyId(currency, game)!;
+        const mirror = id("mirror", "poe1");
+        const fragmentedDelirium = "Metadata/Items/Currency/CurrencyAfflictionShardDelirium";
+        const tracked = (realm: string, marketId: string) =>
+            exchangeMarketTracked(realm, "Allflame", marketId);
+        expect(tracked("pc", `${mirror}|${id("divine", "poe1")}`)).toBe(true);
+        expect(tracked("pc", `${id("chaos", "poe1")}|${item}`)).toBe(true);
+        expect(tracked("pc", `${mirror}|${fragmentedDelirium}`)).toBe(false);
+        // Exalted and annulment price PoE 2 only.
+        expect(tracked("pc", `${item}|${id("exalted", "poe1")}`)).toBe(false);
+        expect(tracked("xbox", `${item}|${id("annul", "poe1")}`)).toBe(false);
+        for (const currency of ["exalted", "chaos", "annul", "divine"])
+            expect(tracked("poe2", `${item}|${id(currency, "poe2")}`)).toBe(true);
+        expect(tracked("poe2", `${item}|${mirror}`)).toBe(false);
+    });
+    it("tracks no market of a Ruthless league", () => {
+        const pair = `${item}|${chaos}`;
+        for (const league of [
+            "Ruthless Allflame",
+            "HC Ruthless Allflame",
+            "Ruthless Limey Whelps (PL87210)",
+        ])
+            expect(exchangeMarketTracked("pc", league, pair)).toBe(false);
+        expect(exchangeMarketTracked("pc", "Hardcore Allflame", pair)).toBe(true);
     });
 });

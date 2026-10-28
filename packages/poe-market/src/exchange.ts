@@ -112,6 +112,24 @@ export function listingCurrencyId(currency: string, game: "poe1" | "poe2") {
     const ids: Record<string, string> = tradeListingCurrencies[game];
     return Object.hasOwn(ids, currency) ? ids[currency]! : exchangeCurrencyId(currency);
 }
+const exchangePriceCurrencies = {
+    poe1: new Set(["chaos", "divine"].map((currency) => listingCurrencyId(currency, "poe1"))),
+    poe2: new Set(
+        ["exalted", "chaos", "annul", "divine"].map((currency) =>
+            listingCurrencyId(currency, "poe2"),
+        ),
+    ),
+};
+/**
+ * Whether an exchange market is stored: one of its items must be a currency the realm's game is
+ * priced in. Other pairs, such as one Mirror for one Fragmented Delirium Orb, are dropped, and so
+ * is every Ruthless league, whose economy runs on currencies outside that set.
+ */
+export function exchangeMarketTracked(realm: string, league: string, marketId: string) {
+    if (/\bruthless\b/i.test(league)) return false;
+    const currencies = exchangePriceCurrencies[realm === "poe2" ? "poe2" : "poe1"];
+    return marketId.split("|").some((id) => currencies.has(id));
+}
 export function exchangeRealmMatchesGame(
     realm: ExchangePriceReference["realm"],
     game: "poe1" | "poe2",

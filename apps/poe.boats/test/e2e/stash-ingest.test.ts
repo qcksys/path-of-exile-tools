@@ -129,8 +129,9 @@ import {
 
 const HOUR = 1_790_899_200;
 const TOKEN = "inert-e2e-ingest-token";
+// Chaos first, so the `${MARKET_ID}-${index}` variants stay markets with a price currency.
 const MARKET_ID =
-    "Metadata/Items/DivinationCards/DivinationCardTheMetalsmithsGift|Metadata/Items/DivinationCards/DivinationCardTheEnlightened";
+    "Metadata/Items/Currency/CurrencyRerollRare|Metadata/Items/DivinationCards/DivinationCardTheMetalsmithsGift";
 const item = {
     id: "item-1",
     verified: true,
