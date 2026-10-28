@@ -89,6 +89,15 @@ const marketRow = sStashUniqueHourlyS
         rowUpdatedAt: z.string(),
         rowDeletedAt: z.string().nullable(),
     });
+const priceRates = (when: string) =>
+    z
+        .record(z.string(), z.number())
+        .describe(
+            `Units of each of the game's price currencies (PoE 1 chaos and divine; PoE 2 exalted, chaos, annul and divine) per exchange unit ${when}, for the value display; currencies without an exchange rate are absent`,
+        );
+const historyUnit = z
+    .string()
+    .describe("The currency `history` prices are in: chaos for PoE 1 realms, exalted for poe2");
 const season = z.object({
     league: z.string(),
     firstHour: z.union([z.string(), z.number()]).nullable(),
@@ -286,7 +295,7 @@ export const operations = [
         name: "get_season_market",
         ui: "/1/market/currency",
         description:
-            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. Without `corruption`, the `weapons`, `armour` and `accessories` categories list uncorrupted markets and the others any corruption; the returned `filters` carry the applied value. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`) return `bases` instead: normal, magic and rare equipment cohorts by base, item level, links and quality, without likely-sale estimates. With an item, returns that item's history and every variant of it in the period instead of rows. Rows and an item without `links` merge every link count; `links` (0 for under 5, 5 or 6) reads one linked-socket market of a unique, as poe.ninja splits body armours and two-handed weapons. Skill gems (kind `gem`) list one market per gem, level band, quality band and corruption state, with `value` naming the bands (e.g. `Level 20 (max) · Quality 20%`); `gemLevel` and `gemQuality` include or exclude bands, and `gemTransfigured` and `gemVaal` keep only transfigured or Vaal gems, or only others.",
+            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. Without `corruption`, the `weapons`, `armour` and `accessories` categories list uncorrupted markets and the others any corruption; the returned `filters` carry the applied value. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`) return `bases` instead: normal, magic and rare equipment cohorts by base, item level, links and quality, without likely-sale estimates. With an item, returns that item's history and every variant of it in the period instead of rows; history merges every listing currency at each hour's exchange rate into `historyUnit`, whatever `currency` is.Rows and an item without `links` merge every link count; `links` (0 for under 5, 5 or 6) reads one linked-socket market of a unique, as poe.ninja splits body armours and two-handed weapons. Skill gems (kind `gem`) list one market per gem, level band, quality band and corruption state, with `value` naming the bands (e.g. `Level 20 (max) · Quality 20%`); `gemLevel` and `gemQuality` include or exclude bands, and `gemTransfigured` and `gemVaal` keep only transfigured or Vaal gems, or only others.",
         input: marketFiltersSchema,
         output: z.object({
             filters: marketFiltersSchema,
@@ -344,10 +353,19 @@ export const operations = [
                     "The item's markets, plus the same unique's markets in the other identification state (unidentified uniques are keyed unid:<icon>). A market with 5- or 6-link copies also lists each link count",
                 ),
             modValues: watchersEyeModValues,
+            priceRates: priceRates("at the season's latest hour"),
+            historyUnit,
             history: z.array(
                 marketRow.extend({
-                    merged: mergedMarketPriceSchema.nullable(),
-                    mergedSales: mergedMarketPriceSchema.nullable(),
+                    merged: mergedMarketPriceSchema
+                        .nullable()
+                        .describe(
+                            "Asking prices from every listing currency, each converted at this hour's exchange rate into `historyUnit`",
+                        ),
+                    mergedSales: mergedMarketPriceSchema
+                        .nullable()
+                        .describe("Last asks of likely sales, converted like `merged`"),
+                    priceRates: priceRates("at this hour"),
                 }),
             ),
         }),
@@ -396,6 +414,7 @@ export const operations = [
                 .number()
                 .nullable()
                 .describe("Exchange units per Divine Orb, as the list prices it, for display"),
+            priceRates: priceRates("as the list prices them"),
             history: z.object({
                 prices: z
                     .array(
@@ -441,7 +460,7 @@ export const operations = [
         name: "get_season_market_base",
         ui: "/1/market/armour-bases",
         description:
-            "Read one crafting base cohort (a `bases` row ID from get_season_market): its hourly listings and asking prices in the display currency over the last `days` days, and every listed cohort of the same base type and Cluster Jewel skill (item level bands, passive counts, link and quality splits) at its latest hour. Equipment lists at most three item level bands from ilvl 74: the two highest levels unlocking at least a tenth of the base's item-level-gated top-tier modifier weight split off. Cluster Jewels use poe.ninja's bands: 1–49, 50–67, 68–74, 75–83 and 84+. An empty league reads the league whose bases were observed most recently.",
+            "Read one crafting base cohort (a `bases` row ID from get_season_market): its hourly listings and asking prices over the last `days` days (every listing currency merged at each hour's exchange rate into `historyUnit`), and every listed cohort of the same base type and Cluster Jewel skill (item level bands, passive counts, link and quality splits) at its latest hour. Equipment lists at most three item level bands from ilvl 74: the two highest levels unlocking at least a tenth of the base's item-level-gated top-tier modifier weight split off. Cluster Jewels use poe.ninja's bands: 1–49, 50–67, 68–74, 75–83 and 84+. An empty league reads the league whose bases were observed most recently.",
         input: marketBaseInputSchema,
         output: z.object({
             realm: z.string(),
@@ -453,6 +472,7 @@ export const operations = [
             base: marketBaseSchema
                 .nullable()
                 .describe("Null for an ID that is not a listed crafting base cohort"),
+            historyUnit,
             history: z
                 .array(
                     marketBaseRowSchema
@@ -462,13 +482,21 @@ export const operations = [
                             uniqueSellers: true,
                             unknownCount: true,
                         })
-                        .extend({ merged: mergedMarketPriceSchema.nullable() }),
+                        .extend({
+                            merged: mergedMarketPriceSchema
+                                .nullable()
+                                .describe(
+                                    "Asking prices from every listing currency, each converted at this hour's exchange rate into `historyUnit`",
+                                ),
+                            priceRates: priceRates("at this hour"),
+                        }),
                 )
                 .describe("Each observed hour, oldest first"),
             variants: z.array(marketBaseRowSchema),
             chaosRates: z
                 .record(z.string(), z.number())
                 .describe("Chaos per unit of each listing currency, at the latest hour"),
+            priceRates: priceRates("at the latest hour"),
         }),
         execute: (input, context) => getMarketBase(context.db, input),
     }),
@@ -487,6 +515,7 @@ export const operations = [
             season: season.optional(),
             unit: marketExchangeUnitSchema,
             divine: z.number().nullable().describe("Exalted per Divine Orb, for display"),
+            priceRates: priceRates("as the rows price them"),
             rows: z.array(marketExchangeRowSchema),
         }),
         execute: (input, context) => getPoe2MarketExchange(context.db, input),

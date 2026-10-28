@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { Link } from "react-router";
-import { CurrencyLabel } from "~/components/currency-label";
 import { DataTable, dataTableColumns } from "~/components/data-table";
 import { CatalogItemArt } from "~/components/item-art";
 import { marketUtc } from "~/components/market-filters";
-import { MarketPriceChart } from "~/components/market-price-chart";
+import { MarketHistory, MarketHistoryPrice } from "~/components/market-history";
+import { MarketListingPrice } from "~/components/market-listing-price";
 import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketBase } from "~/db/queries/market.queries";
@@ -42,15 +42,7 @@ type HistoryRow = Route.ComponentProps["loaderData"]["history"][number];
 
 const column = dataTableColumns<HistoryRow>();
 
-function HourlyTable({
-    rows,
-    currency,
-    game,
-}: {
-    rows: HistoryRow[];
-    currency: string;
-    game: "poe1" | "poe2";
-}) {
+function HourlyTable({ rows, game }: { rows: HistoryRow[]; game: "poe1" | "poe2" }) {
     const columns = useMemo(() => {
         const count = { sortDescFirst: true, meta: { filter: "range" } } as const;
         return column.columns([
@@ -65,16 +57,13 @@ function HourlyTable({
                 header: "Median ask",
                 ...count,
                 sortUndefined: "last",
-                cell: ({ getValue }) => {
-                    const value = getValue();
-                    return value === undefined ? (
-                        "—"
-                    ) : (
-                        <>
-                            {number(value)} <CurrencyLabel currency={currency} game={game} />
-                        </>
-                    );
-                },
+                cell: ({ getValue, row }) => (
+                    <MarketHistoryPrice
+                        value={getValue()}
+                        rates={row.original.priceRates}
+                        game={game}
+                    />
+                ),
             }),
             column.accessor("listingCount", {
                 header: "Listings observed",
@@ -87,7 +76,7 @@ function HourlyTable({
                 cell: ({ getValue }) => number(getValue()),
             }),
         ]);
-    }, [currency, game]);
+    }, [game]);
     return (
         <DataTable
             label="Hourly observations"
@@ -101,7 +90,7 @@ function HourlyTable({
 }
 
 export default function MarketBase({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
-    const { filters, base, history, variants, chaosRates } = loaderData;
+    const { filters, base, history, variants, chaosRates, priceRates } = loaderData;
     const game = filters.realm === "poe2" ? "poe2" : "poe1";
     const latest = history.at(-1);
     const points = history.map((row) => ({ ...row, mergedSales: null }));
@@ -149,11 +138,11 @@ export default function MarketBase({ loaderData }: Pick<Route.ComponentProps, "l
                                         <span className="text-xs text-muted-foreground">
                                             {price ? (
                                                 <>
-                                                    {number(price.median)}{" "}
-                                                    <CurrencyLabel
-                                                        currency={price.currency}
+                                                    <MarketListingPrice
+                                                        price={price}
+                                                        rates={priceRates}
                                                         game={game}
-                                                        iconOnly
+                                                        compact
                                                     />
                                                     {" · "}
                                                 </>
@@ -173,17 +162,13 @@ export default function MarketBase({ loaderData }: Pick<Route.ComponentProps, "l
                         {number(latest.listingCount)} listings from {number(latest.uniqueSellers)}{" "}
                         sellers at {marketUtc(latest.hour)}
                     </p>
-                    <MarketPriceChart points={points} currency={filters.currency} game={game} />
-                    <details>
-                        <summary className="cursor-pointer text-sm">
-                            Hourly observations (latest 72 hours with data)
-                        </summary>
-                        <HourlyTable
-                            rows={history.slice(-72).reverse()}
-                            currency={filters.currency}
-                            game={game}
-                        />
-                    </details>
+                    <MarketHistory
+                        points={points}
+                        game={game}
+                        summary="Hourly observations (latest 72 hours with data)"
+                    >
+                        <HourlyTable rows={history.slice(-72).reverse()} game={game} />
+                    </MarketHistory>
                 </section>
             ) : (
                 <p role="status">No observations for this base in the selected period.</p>

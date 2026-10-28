@@ -48,6 +48,7 @@ function exchangeFixture(filters: Poe2MarketFilters) {
         season,
         unit: "exalted" as const,
         divine: 400,
+        priceRates: { exalted: 1, chaos: 4, annul: 1 / 20, divine: 1 / 400 },
         rows: filters.category === "runes" ? [runeRow] : [],
     };
 }
@@ -64,6 +65,7 @@ beforeEach(() => {
         unit: "exalted",
         item: input.itemId === rune ? runeRow : null,
         divine: 400,
+        priceRates: { exalted: 1, chaos: 4, annul: 1 / 20, divine: 1 / 400 },
         history: {
             prices: [{ hour, price: 800, low: 760, high: 840, via: divine, units: 30 }],
             pairs: [
@@ -125,7 +127,7 @@ function showMarket(path: string) {
     return render(<Routes initialEntries={[path]} />);
 }
 
-it("lists a category's exchange items valued in exalted, with divine and exalted displays", async () => {
+it("lists a category's exchange items valued in exalted, in every PoE 2 price currency", async () => {
     showMarket("/2/market/runes?league=Rites");
     const table = await screen.findByRole("table", { name: "Runes exchange" });
     const row = within(table).getByRole("link", { name: "Desert Rune" }).closest("tr")!;
@@ -134,7 +136,10 @@ it("lists a category's exchange items valued in exalted, with divine and exalted
     expect(row.cells[1]!.textContent).toContain("via Divine Orb");
     fireEvent.click(screen.getByRole("button", { name: "Exalted Orb" }));
     expect(value()).toBe("800 exalted");
-    expect(screen.queryByRole("button", { name: "Chaos Orb" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Chaos Orb" }));
+    expect(value()).toBe("3,200 chaos");
+    fireEvent.click(screen.getByRole("button", { name: "Orb of Annulment" }));
+    expect(value()).toBe("40 annul");
     expect(screen.getByRole("link", { name: "Runes" }).getAttribute("aria-current")).toBe("page");
     expect(getPoe2MarketExchange).toHaveBeenLastCalledWith(expect.anything(), {
         league: "Rites",

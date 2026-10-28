@@ -58,7 +58,8 @@ const stash = {
 };
 const market = {
     league: "Standard",
-    market_id: "chaos|divine",
+    market_id:
+        "Metadata/Items/Currency/CurrencyRerollRare|Metadata/Items/Currency/CurrencyModValues",
     lowest_ratio: { chaos: 100, divine: 1 },
     highest_ratio: { chaos: 110, divine: 1 },
     volume_traded: { chaos: 1000, divine: 10 },
@@ -383,6 +384,25 @@ describe("currency ingestion and delivery", () => {
         expect(Number(rows[0]?.observed_hour)).toBe(hour - 3600);
         expect(await getCursor(db.conn, "cxapi")).toBe(String(hour));
     });
+    it("stores only markets with one of the game's price currencies", async () => {
+        network.mockResolvedValueOnce(
+            Response.json({
+                next_change_id: hour,
+                markets: [
+                    market,
+                    {
+                        ...market,
+                        market_id:
+                            "Metadata/Items/Currency/CurrencyDuplicate|Metadata/Items/Currency/CurrencyAfflictionShardDelirium",
+                    },
+                ],
+            }),
+        );
+        await ingestCx(db.conn, client, { fromHour: hour - 3600, catchUp: false });
+        expect(await queryAll(db.conn, "SELECT market_id FROM cx_market_hour")).toEqual([
+            { market_id: market.market_id },
+        ]);
+    });
     it("sends a real DuckDB rollup accepted by the receiver", async () => {
         page();
         await ingestPs(db.conn, client, { pages: 1 });
@@ -401,7 +421,7 @@ describe("currency ingestion and delivery", () => {
     });
     it("delivers market IDs observed in the public currency-exchange feed", async () => {
         const liveMarketId =
-            "Metadata/Items/DivinationCards/DivinationCardTheMetalsmithsGift|Metadata/Items/DivinationCards/DivinationCardTheEnlightened";
+            "Metadata/Items/DivinationCards/DivinationCardTheMetalsmithsGift|Metadata/Items/Currency/CurrencyRerollRare";
         network.mockResolvedValueOnce(
             Response.json({
                 next_change_id: hour,

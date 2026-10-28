@@ -1,5 +1,6 @@
 import { Outlet, useParams, useSearchParams } from "react-router";
 import { MarketCategoryNav } from "~/components/market-category-nav";
+import { MarketDisplayProvider } from "~/components/market-exchange";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
 import type { SiteHandle } from "~/routes/layouts/site";
 import {
@@ -63,7 +64,9 @@ export default function Market() {
                     }
                 />
                 <div className="min-w-0 space-y-5">
-                    <Outlet />
+                    <MarketDisplayProvider>
+                        <Outlet />
+                    </MarketDisplayProvider>
                 </div>
             </div>
             <details className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
@@ -75,7 +78,8 @@ export default function Market() {
                     least one hour of continuous caught-up observation, have no matching relist by
                     the same seller, and be priced within 25% of the median from at least three
                     other recent sellers. Whole-stash withdrawals are excluded. Later relists can
-                    retract estimates. Prices remain in their original currency. Listing counts are
+                    retract estimates. Prices are shown in the chosen value display, converted at
+                    the currency exchange rate, and note their listed currency. Listing counts are
                     observations, not total market supply.
                 </p>
             </details>

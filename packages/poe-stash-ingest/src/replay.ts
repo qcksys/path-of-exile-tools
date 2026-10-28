@@ -93,7 +93,8 @@ export async function replayFixtures() {
                         markets: [
                             {
                                 league,
-                                market_id: "chaos|divine",
+                                market_id:
+                                    "Metadata/Items/Currency/CurrencyRerollRare|Metadata/Items/Currency/CurrencyModValues",
                                 volume_traded: { chaos: 2000, divine: 10 },
                                 lowest_stock: { chaos: 100, divine: 1 },
                                 highest_stock: { chaos: 1000, divine: 5 },

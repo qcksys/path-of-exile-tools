@@ -3039,6 +3039,7 @@ it("reads the PoE 2 exchange market alike over HTTP and MCP", async () => {
         season,
         unit: "exalted" as const,
         divine: 400,
+        priceRates: { exalted: 1, divine: 1 / 400 },
         rows: [
             {
                 ...exchange,

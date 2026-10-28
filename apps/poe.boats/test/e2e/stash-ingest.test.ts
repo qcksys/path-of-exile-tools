@@ -129,8 +129,9 @@ import {
 
 const HOUR = 1_790_899_200;
 const TOKEN = "inert-e2e-ingest-token";
+// Chaos first, so the `${MARKET_ID}-${index}` variants stay markets with a price currency.
 const MARKET_ID =
-    "Metadata/Items/DivinationCards/DivinationCardTheMetalsmithsGift|Metadata/Items/DivinationCards/DivinationCardTheEnlightened";
+    "Metadata/Items/Currency/CurrencyRerollRare|Metadata/Items/DivinationCards/DivinationCardTheMetalsmithsGift";
 const item = {
     id: "item-1",
     verified: true,
@@ -1903,7 +1904,10 @@ it("delivers inferred sales through HTTP and exposes season-isolated price histo
         likelySales: 1,
         prices: { divine: { count: 4, median: 10, mean: 10, p10: 10, p90: 10 } },
         salesPrices: { divine: { median: 10 } },
-        merged: { count: 4, unconverted: 0, mean: 10, median: 10 },
+        // History merges into chaos, and this league has no divine exchange rate to convert at.
+        merged: null,
+        mergedSales: null,
+        priceRates: { chaos: 1 },
     });
     expect((await getMarketData(database, { ...filters, league: "Other Season" })).rows).toEqual(
         [],

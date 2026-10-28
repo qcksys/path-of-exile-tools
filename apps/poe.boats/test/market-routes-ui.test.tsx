@@ -130,10 +130,6 @@ it("renders list and detail through the layout outlet and restores browsing stat
         expect.objectContaining({ item: "Abberath's Hooves", page: 2, category: "armour" }),
         "history",
     );
-    fireEvent.click(screen.getByRole("link", { name: "chaos" }));
-    await waitFor(() =>
-        expect(screen.getByLabelText("Current URL").textContent).toContain("currency=chaos"),
-    );
     fireEvent.click(screen.getByRole("link", { name: /Back to markets/ }));
     await screen.findByRole("region", { name: "Item markets" });
     expect(screen.getByLabelText("Current URL").textContent).toMatch(/^\/1\/market\/armour\?/);
@@ -149,6 +145,12 @@ it("lists listing currencies cheapest first with their chaos or divine equivalen
     expect([...cell.querySelectorAll("p")].map((price) => price.textContent)).toEqual([
         "15 chaos≈ 0.1 divinen=4",
         "2 divine≈ 300 chaosn=5",
+    ]);
+    // Stash listings follow the same value display as exchange items, noting the listed amount.
+    fireEvent.click(screen.getByRole("button", { name: "Chaos Orb" }));
+    expect([...cell.querySelectorAll("p")].map((price) => price.textContent)).toEqual([
+        "15 chaosn=4",
+        "300 chaoslisted as 2 divinen=5",
     ]);
 });
 
@@ -411,7 +413,10 @@ it("searches unique equipment uncorrupted by default and carries only a changed 
     expect(categoryHref("Currency")).not.toContain("corruption=");
     fireEvent.click(category("Currency"));
     await waitFor(() => expect(url()).toMatch(/^\/1\/market\/currency\?/));
-    expectControlValue(await screen.findByRole("combobox", { name: "Corruption" }), "all");
+    // Currency markets do not split by identification or corruption, so neither filter shows.
+    await screen.findByRole("combobox", { name: "Order by" });
+    expect(screen.queryByRole("combobox", { name: "Corruption" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Identification" })).toBeNull();
 });
 
 it("shows merchant tabs by default, keeps another tab choice on item links, and hides it for crafting bases", async () => {
@@ -797,6 +802,51 @@ it("searches, filters and sorts hourly observations in the browser", async () =>
     });
     expect(within(table).getByText("No rows match these filters.")).toBeTruthy();
     expect(getMarketData).toHaveBeenCalledTimes(1);
+});
+
+it("shows one merged price history in the value display at each hour's rate", async () => {
+    vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+        const fixture = marketFixture(filters);
+        const [row] = fixture.history;
+        if (!row) return fixture;
+        return {
+            ...fixture,
+            history: (
+                [{ chaos: 1, divine: 1 / 100 }, { chaos: 1 }] as Record<string, number>[]
+            ).map((priceRates, index) => ({
+                ...row!,
+                hour: row!.hour + index * 3600,
+                priceRates,
+            })),
+        };
+    });
+    showMarket("/1/market/items/Abberath's%20Hooves?league=Allflame&currency=divine");
+    const history = await screen.findByRole("region", { name: "Item price history" });
+    expect(within(history).queryByRole("link", { name: "chaos" })).toBeNull();
+    expect(within(history).queryByRole("link", { name: "divine" })).toBeNull();
+    expect(
+        within(history).getAllByRole("img", { name: /Hourly lowest asking price/ }),
+    ).toHaveLength(1);
+    const table = within(history).getByRole("table", { name: "Hourly observations" });
+    const asks = () =>
+        within(table)
+            .getAllByRole("row")
+            .slice(1)
+            .map((tableRow) => within(tableRow).getAllByRole("cell")[1]!.textContent);
+    // The newest hour has no divine rate, so it shows chaos only.
+    expect(asks()).toEqual(["2 chaos", "2 chaos≈ 0.02 divine"]);
+    fireEvent.click(within(history).getByRole("button", { name: "Divine Orb" }));
+    expect(asks()).toEqual(["2 chaos", "0.02 divine"]);
+    expect(
+        within(history).getByRole("img", { name: /Hourly lowest asking price in divine/ }),
+    ).toBeTruthy();
+
+    // The value display carries from the item page back to the list.
+    fireEvent.click(screen.getByRole("link", { name: /Back to markets/ }));
+    await screen.findByRole("region", { name: "Item markets" });
+    expect(screen.getByRole("button", { name: "Divine Orb" }).getAttribute("aria-pressed")).toBe(
+        "true",
+    );
 });
 
 it("opens a crafting base's history and variants and returns to the filtered list", async () => {
