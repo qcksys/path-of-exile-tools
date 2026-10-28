@@ -5,11 +5,13 @@ import { fileURLToPath } from "node:url";
 import { CallToolResultSchema } from "@modelcontextprotocol/sdk/types.js";
 import { itemQuerySchema, normalizeApiItem } from "@poe-tools/item-query";
 import {
+    type CohortHourly,
     compileMarketCohorts,
     encodeCohortPriceReference,
     selectCohortPrice,
 } from "@poe-tools/market";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
+import { sql } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection } from "mysql2/promise";
@@ -103,7 +105,7 @@ import {
     exchangeSnapshot,
     transmuteId,
 } from "../crafting-exchange-fixtures";
-import { catalog, currency, engine } from "../crafting-fixtures";
+import { baseId, catalog, currency, engine } from "../crafting-fixtures";
 import { quote } from "../crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "../crafting-history-fixtures";
 import {
@@ -1057,6 +1059,79 @@ it("keeps each cohort hour's newest revision and merges its recent windows into 
     ]);
 });
 
+it("stores only priced cohort hours and falls back to the latest priced hour", async () => {
+    const db = mysql as unknown as TDatabase;
+    const { hour, cohortId } = marketCandidate.latest;
+    vi.spyOn(Date, "now").mockReturnValue((hour + 3600) * 1000);
+    const row = (
+        revision: string,
+        median: number | null,
+        at = hour,
+        id = cohortId,
+    ): CohortHourly => {
+        const latest = adaptiveMarketCandidate(median ?? 20).latest;
+        return {
+            ...latest,
+            revision,
+            hour: at,
+            cohortId: id,
+            ...(median === null
+                ? { listingCount: 0, uniqueSellers: 0, unknownCount: 12, prices: {} }
+                : { prices: { chaos: { ...latest.prices.chaos!, median } } }),
+        };
+    };
+    const stored = () =>
+        mysql
+            .select({
+                hour: tStashCohortHourly.hour,
+                cohortId: tStashCohortHourly.cohortId,
+                median: sql<number>`json_extract(${tStashCohortHourly.prices}, '$.chaos.median')`,
+            })
+            .from(tStashCohortHourly)
+            .orderBy(tStashCohortHourly.hour, tStashCohortHourly.cohortId);
+    await upsertStashCohortHourly(db, [
+        row("first", 20, hour - 3600),
+        row("first", 25),
+        // Unknown-only matches never create a row.
+        row("first", null, hour, "unknown-only"),
+    ]);
+    expect(await stored()).toEqual([
+        { hour: hour - 3600, cohortId, median: 20 },
+        { hour, cohortId, median: 25 },
+    ]);
+    // A later delivery of the hour without prices deletes the earlier row and its windows.
+    await upsertStashCohortHourly(db, [row("first", null)]);
+    expect(await stored()).toEqual([{ hour: hour - 3600, cohortId, median: 20 }]);
+    expect(
+        await mysql
+            .select({ hour: tStashCohortWindow.hour, cohortId: tStashCohortWindow.cohortId })
+            .from(tStashCohortWindow),
+    ).toEqual([{ hour: hour - 3600, cohortId }]);
+    await mysql.insert(tStashCohort).values(marketCandidate.definition);
+    const lookup = await findCraftingMarketPrices(
+        db,
+        {
+            item: createCraftingItemQuery(engine).record(engine.createItem(baseId, 86)),
+            requirements: { format: 1, game: "poe1", groups: [] },
+            realm: "pc",
+            league: "Standard",
+            currency: "chaos",
+            at: hour,
+        },
+        cohortId,
+    );
+    expect(lookup.candidates.map(({ covered, latest }) => [latest.hour, covered])).toEqual([
+        [hour - 3600, true],
+    ]);
+    // An older revision's unpriced delivery leaves a newer revision's row.
+    await upsertStashCohortHourly(db, [row("second", 30)]);
+    await upsertStashCohortHourly(db, [row("first", null)]);
+    expect(await stored()).toEqual([
+        { hour: hour - 3600, cohortId, median: 20 },
+        { hour, cohortId, median: 30 },
+    ]);
+});
+
 it("refreshes a saved cohort to its newest revision and recovers earlier prices without rewriting history", async () => {
     const current = structuredClone(marketCandidate);
     current.definition.revision = "next-market";
@@ -1405,8 +1480,9 @@ it("replays broad equipment prices through capture, retry and history without pr
         await rollupEquipment(local.conn, { hour: HOUR + offset, league: "Standard" });
         await rollupEquipment(local.conn, { hour: HOUR + offset, league: "Standard" });
     }
+    // Donor cohorts saw only unknown matches, so their unpriced hours are not stored.
     const rows = await mysql.select().from(tStashCohortHourly);
-    expect(rows).toHaveLength(12);
+    expect(rows).toHaveLength(4);
     const definitions = await mysql.select().from(tStashCohort);
     expect(definitions).toHaveLength(6);
     expect(
@@ -1416,11 +1492,7 @@ it("replays broad equipment prices through capture, retry and history without pr
         ),
     ).toBe(true);
     const baseRows = rows.filter((row) => row.cohortId.startsWith("base:"));
-    const donorRows = rows.filter((row) => row.cohortId.startsWith("donor:"));
     expect(baseRows).toHaveLength(4);
-    expect(donorRows).toHaveLength(8);
-    for (const row of donorRows)
-        expect(row).toMatchObject({ listingCount: 0, unknownCount: 1000, prices: {} });
     for (const row of baseRows)
         expect(row).toMatchObject({
             realm: "pc",
@@ -1548,7 +1620,7 @@ it("replays broad equipment prices through capture, retry and history without pr
     expect(await queryAll(local.conn, "SELECT count(*)::INTEGER AS n FROM ps_listing")).toEqual([
         { n: 0 },
     ]);
-    // Correcting a past hour must resend an empty cohort rather than leave its old remote price.
+    // Correcting a past hour to no matching listings must remove its old remote price.
     upstreamResponses.push({
         body: {
             next_change_id: "correction",
@@ -1568,22 +1640,19 @@ it("replays broad equipment prices through capture, retry and history without pr
     await ingestPs(local.conn, client, { pages: 1, observedAt: new Date(HOUR * 1000) });
     await flushRollups(local.conn, { league: "Standard" });
     const corrected = await mysql.select().from(tStashCohortHourly);
-    expect(corrected.filter((row) => row.hour === HOUR)).toHaveLength(6);
+    expect(corrected.filter((row) => row.hour === HOUR)).toEqual([]);
+    expect(corrected).toHaveLength(2);
     expect(
-        corrected
-            .filter((row) => row.hour === HOUR)
-            .every((row) => row.listingCount === 0 && Object.keys(row.prices).length === 0),
+        corrected.every(
+            (row) => row.cohortId.startsWith("base:") && row.prices.chaos?.median === 5,
+        ),
     ).toBe(true);
+    // The corrected hour no longer prices the cohort, so its history keeps only the later hour.
     expect(
-        corrected
-            .filter((row) => row.hour !== HOUR && row.cohortId.startsWith("base:"))
-            .every((row) => row.prices.chaos?.median === 5),
-    ).toBe(true);
-    expect(
-        corrected
-            .filter((row) => row.hour !== HOUR && row.cohortId.startsWith("donor:"))
-            .every((row) => row.unknownCount === 1000 && Object.keys(row.prices).length === 0),
-    ).toBe(true);
+        (await craftingMarketHistory(database, { ...historyInput, limit: 10 })).history.map(
+            (row) => row.hour,
+        ),
+    ).toEqual([HOUR + 21 * 24 * 3600]);
 }, 60_000);
 
 it("prices fractured and isolated donor acquisitions from source observations stored in MySQL", async () => {

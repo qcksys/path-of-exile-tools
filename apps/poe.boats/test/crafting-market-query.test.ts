@@ -263,20 +263,20 @@ describe("equipment market lookup", () => {
             definition: { id: marketCandidate.definition.id },
             latest: { hour: completed, prices: { chaos: { median: 20 } } },
         });
+        // Ingest deletes an hour that loses its prices, so the lookup falls back to the hour before.
         sqlite
             .prepare(
-                `UPDATE ${DB_TABLE_PREFIX}stash_poe1_cohort_hourly SET prices = '{}'
-                WHERE cohortId = ? AND hour = ?`,
+                `DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_cohort_hourly WHERE cohortId = ? AND hour = ?`,
             )
             .run(marketCandidate.definition.id, completed);
         const correction = await findCraftingMarketPrices(db, input);
         expect(correction.truncated).toBe(false);
         expect(correction.candidates).toHaveLength(1);
         expect(correction.candidates[0]).toMatchObject({
-            covered: false,
-            latest: { hour: completed, prices: {} },
+            covered: true,
+            latest: { hour: completed - 3600, prices: { chaos: { median: 30 } } },
         });
-        expect(selectCraftingMarketPrice(correction.candidates[0]!, "chaos")).toBeNull();
+        expect(selectCraftingMarketPrice(correction.candidates[0]!, "chaos")?.median).toBe(30);
     });
 
     it("keeps matching uncovered generic definitions", async () => {
@@ -480,7 +480,7 @@ describe("equipment market lookup", () => {
             ),
         ).toEqual([2000, 2000]);
     });
-    it("does not convert unknown tokens or replace a newest unpriced correction", async () => {
+    it("does not convert unknown tokens or another hour's rate after the newest hour is removed", async () => {
         capture(completed - 3600, "chrome");
         capture(completed, "unsupported-token");
         exchange(completed, "pc", "Standard", "chrome");
@@ -488,17 +488,16 @@ describe("equipment market lookup", () => {
         expect(result.candidates[0]).toMatchObject({ covered: false, latest: { hour: completed } });
         expect(result.candidates[0]?.exchange).toBeUndefined();
         sqlite
-            .prepare(
-                `UPDATE ${DB_TABLE_PREFIX}stash_poe1_cohort_hourly SET prices = '{}' WHERE hour = ?`,
-            )
+            .prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_cohort_hourly WHERE hour = ?`)
             .run(completed);
+        // The earlier chrome ask has no exchange rate at its own hour, so it stays unconverted.
         const correction = await findCraftingMarketPrices(db, {
             ...input,
             conversion: "exchange-v1",
         });
         expect(correction.candidates[0]).toMatchObject({
             covered: false,
-            latest: { hour: completed, prices: {} },
+            latest: { hour: completed - 3600, prices: { chrome: { median: 20 } } },
         });
         expect(correction.candidates[0]?.exchange).toBeUndefined();
     });

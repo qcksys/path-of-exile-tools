@@ -5,8 +5,9 @@ import { createInsertSchema, createSelectSchema, createUpdateSchema } from "driz
 import { stashTableName } from "~/db/helpers/stash-game";
 
 /**
- * One row per PoE 1 equipment cohort and hour, holding the newest catalog revision's
- * classification (`revisionSeq`, see `stash_poe1_cohort_revision`). `prices` omits the
+ * One row per PoE 1 equipment cohort and hour with asking prices, holding the newest catalog
+ * revision's classification (`revisionSeq`, see `stash_poe1_cohort_revision`). Hours without
+ * prices are not stored, so readers use each cohort's latest priced hour. `prices` omits the
  * 6/24-hour windows, which live in `stash_poe1_cohort_window` for recent hours only.
  */
 export const tStashCohortHourly = mysqlTable(
