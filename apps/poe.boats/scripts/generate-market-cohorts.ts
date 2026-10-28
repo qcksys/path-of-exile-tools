@@ -5,14 +5,25 @@ import {
     type MarketCohort,
     marketCohortManifestSchema,
     modifierLevelBands,
+    significantLevelBands,
 } from "@poe-tools/market";
 import { CraftingEngine } from "../app/lib/crafting-engine";
 import { incursionGloveModifiers } from "../app/lib/crafting-incursion";
 import { modifierTiers } from "../app/lib/crafting-modifier-details";
 import { validateRulesetIndex } from "../app/lib/crafting-rulesets";
-import { rolledModText } from "../app/lib/crafting-text";
-import { MARKET_BASE_MIN_LEVEL, type MarketBase, marketBasesSchema } from "../app/lib/market-bases";
-import { MARKET_BASE_CATEGORIES, marketBaseCategory } from "../app/lib/market-categories";
+import { cleanModText, rolledModText } from "../app/lib/crafting-text";
+import {
+    MARKET_BASE_ATTRIBUTES,
+    MARKET_BASE_MIN_LEVEL,
+    MARKET_CLUSTER_LEVEL_BANDS,
+    type MarketBase,
+    marketBasesSchema,
+} from "../app/lib/market-bases";
+import {
+    MARKET_BASE_CATEGORIES,
+    MARKET_CLUSTER_BASE_CATEGORY,
+    marketBaseCategory,
+} from "../app/lib/market-categories";
 import { craftingCatalogSchema } from "../app/schemas/crafting";
 import { craftingPresetCohorts } from "./crafting-preset-cohorts";
 import { writeCapturePolicy } from "./generate-capture-policy";
@@ -129,12 +140,33 @@ for (const [, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0]))) {
     const variants = [...selected]
         .filter(([, variant]) => variant.name === base.name)
         .map(([id]) => id);
-    const bands = modifierLevelBands(changes, (level) =>
+    const pool = (level: number) =>
         variants.flatMap((id) =>
             engine
                 .pool({ ...engine.createItem(id, level), rarity: "rare" })
                 .map((mod) => ({ ...mod, id: `${id}:${mod.id}` })),
+        );
+    const topTiers = new Set(
+        variants.flatMap((id) =>
+            [...modifierTiers(engine, id)].flatMap(([mod, tier]) =>
+                tier === 1 ? [`${id}:${mod}`] : [],
+            ),
         ),
+    );
+    const unlocked = (level: number) => {
+        const previous = new Set(pool(level - 1).map((mod) => mod.id));
+        return pool(level)
+            .filter((mod) => topTiers.has(mod.id) && !previous.has(mod.id))
+            .reduce((sum, mod) => sum + mod.weight, 0);
+    };
+    // At most three listed bands: the two highest levels that each unlock at least a tenth of the
+    // base's gated top-tier weight split off, and lower levels group together.
+    const bands = significantLevelBands(
+        modifierLevelBands(changes, pool),
+        MARKET_BASE_MIN_LEVEL,
+        unlocked,
+        0.1,
+        2,
     );
     const slug = base.name
         .toLowerCase()
@@ -145,6 +177,14 @@ for (const [, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0]))) {
     ).map((field) => ({ kind: "flag" as const, field, value: false }));
     const category = MARKET_BASE_CATEGORIES[marketBaseCategory(base.name, base.item_class)];
     if (!category) throw new Error(`No crafting base market category for ${base.item_class}.`);
+    const { strength = 0, dexterity = 0, intelligence = 0 } = base.requirements ?? {};
+    const identity = {
+        // `marketBasesSchema` rejects a class outside `MARKET_BASE_CLASSES` when the file is written.
+        itemClass: base.item_class as MarketBase["itemClass"],
+        attributes: MARKET_BASE_ATTRIBUTES.filter(
+            (_, index) => [strength, dexterity, intelligence][index]! > 0,
+        ),
+    };
     const sixSockets = base.socketInfo.some((socket) => socket.count === 6);
     for (const band of bands) {
         const listed = band.max >= MARKET_BASE_MIN_LEVEL;
@@ -189,6 +229,7 @@ for (const [, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0]))) {
                     id,
                     baseType: base.name,
                     category,
+                    ...identity,
                     ilvl: band,
                     links: links === "any" ? null : links,
                     quality: null,
@@ -223,10 +264,79 @@ for (const [, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0]))) {
             id,
             baseType: base.name,
             category,
+            ...identity,
             ilvl: { min: 86, max: 100 },
             links: null,
             quality,
         });
+    }
+}
+// Cluster Jewels split by size, skill, passive count and poe.ninja's item level bands.
+const clusters = catalog.crafting.clusterJewels;
+if (!clusters) throw new Error("Cluster Jewel bases require extracted Cluster Jewel data.");
+for (const rule of Object.values(clusters.bases)) {
+    const baseType = `${rule.size} Cluster Jewel`;
+    const skills = Object.entries(clusters.skills).filter(([, skill]) => skill.size === rule.size);
+    const firstLines = new Set(skills.map(([, skill]) => cleanModText(skill.text!).split("\n")[0]));
+    if (firstLines.size !== skills.length)
+        throw new Error(`${baseType} skills must differ in their first line.`);
+    for (const [skillId, skill] of skills) {
+        const lines = cleanModText(skill.text!).split("\n");
+        for (let passives = rule.minNodes; passives <= rule.maxNodes; passives++)
+            for (const band of MARKET_CLUSTER_LEVEL_BANDS) {
+                const id = `base:${baseType.toLowerCase().replaceAll(" ", "-")}:${skillId}:${passives}-passives:${band.min}-${band.max}`;
+                cohorts.push({
+                    id,
+                    name: `${baseType}, ${skill.name}, ${passives} passives, ilvl ${band.min}–${band.max}`,
+                    purpose: "base",
+                    query: {
+                        format: 1,
+                        game: "poe1",
+                        groups: [
+                            {
+                                type: "and",
+                                filters: [
+                                    { kind: "base", field: "baseType", values: [baseType] },
+                                    { kind: "rarity", values: ["Normal", "Magic", "Rare"] },
+                                    { kind: "range", field: "ilvl", value: { ...band } },
+                                    ...(
+                                        [
+                                            "corrupted",
+                                            "mirrored",
+                                            "fractured",
+                                            "synthesised",
+                                            "influenced",
+                                        ] as const
+                                    ).map((field) => ({
+                                        kind: "flag" as const,
+                                        field,
+                                        value: false,
+                                    })),
+                                    {
+                                        kind: "enchant",
+                                        values: [`Adds ${passives} Passive Skills`],
+                                    },
+                                    {
+                                        kind: "enchant",
+                                        values: [`Added Small Passive Skills grant: ${lines[0]}`],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                });
+                marketBases.push({
+                    id,
+                    baseType,
+                    category: MARKET_CLUSTER_BASE_CATEGORY,
+                    itemClass: baseType as MarketBase["itemClass"],
+                    attributes: [],
+                    ilvl: { ...band },
+                    links: null,
+                    quality: null,
+                    cluster: { skill: lines.join(", "), passives },
+                });
+            }
     }
 }
 const curatedIds = new Set<string>();

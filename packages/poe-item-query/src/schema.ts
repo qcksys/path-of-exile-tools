@@ -202,6 +202,11 @@ export const itemConditionSchema = z.discriminatedUnion("kind", [
         value: z.boolean(),
     }),
     z.strictObject({ kind: z.literal("influence"), values: z.array(id).min(1).max(10) }),
+    /** An enchantment line equal to one of `values`, e.g. a Cluster Jewel's passive count or skill. */
+    z.strictObject({
+        kind: z.literal("enchant"),
+        values: z.array(z.string().min(1).max(500)).min(1).max(100),
+    }),
     z.strictObject({
         kind: z.literal("mod"),
         ids: z.array(id).min(1).max(100).optional(),

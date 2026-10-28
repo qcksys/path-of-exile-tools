@@ -63,14 +63,23 @@ import {
     modPoolValues,
     parseModList,
 } from "~/lib/mod-pools";
-import type {
-    MarketExchangeItemInput,
-    MarketFilters,
-    MarketOrder,
-    Poe2MarketFilters,
+import {
+    type MarketBaseInput,
+    type MarketExchangeItemInput,
+    type MarketFilters,
+    type MarketOrder,
+    marketCorruption,
+    type Poe2MarketFilters,
 } from "~/schemas/market";
 import { type Span, traceQuery, traceSpan } from "~/services/tracing.server";
-import { marketBaseRows } from "./market-bases.queries";
+import {
+    baseSeasonLatestHour,
+    latestBaseSeason,
+    marketBase,
+    marketBaseHistory,
+    marketBaseIds,
+    marketBaseRows,
+} from "./market-bases.queries";
 import { utcDay } from "./stash-rollups.queries";
 
 const PAGE_SIZE = 50;
@@ -247,7 +256,11 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     const seasons = [...byLeague.values()].sort(
         (a, b) => Number(b.latestHour) - Number(a.latestHour),
     );
-    const filters = { ...input, league: input.league || seasons[0]?.league || "" };
+    const filters = {
+        ...input,
+        league: input.league || seasons[0]?.league || "",
+        corruption: marketCorruption(input),
+    };
     span.setAttributes({
         "market.view": view,
         "market.realm": filters.realm,
@@ -479,7 +492,12 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     const [rows, baseRows, history, variants, exchange, modRows] = await Promise.all([
         rowsPromise,
         season && view !== "history" && baseCategory
-            ? marketBaseRows(db, filters, windowStart)
+            ? marketBaseRows(
+                  db,
+                  filters,
+                  windowStart,
+                  marketBaseIds({ category: filters.category }),
+              )
             : [],
         historyPromise,
         variantsPromise,
@@ -959,6 +977,73 @@ export function getPoe2MarketExchange(db: TDatabase, input: Poe2MarketFilters) {
     });
 }
 
+/**
+ * A crafting base cohort's hourly asking prices over the period, in the display currency, and
+ * the latest hour of every listed cohort of the same base type.
+ */
+export function getMarketBase(db: TDatabase, input: MarketBaseInput) {
+    return traceSpan("market.base", async () => {
+        const base = marketBase(input.baseId) ?? null;
+        const season = input.league
+            ? { league: input.league, latestHour: await baseSeasonLatestHour(db, input) }
+            : await latestBaseSeason(db, input.realm);
+        const league = season?.league ?? "";
+        const latestHour = season?.latestHour ?? 0;
+        const filters = { realm: input.realm, league, currency: input.currency };
+        const windowStart = utcDay(latestHour - Number(input.days) * 86400 + 3600);
+        const [history, variants] =
+            base && latestHour
+                ? await Promise.all([
+                      marketBaseHistory(db, filters, windowStart, base.id),
+                      marketBaseRows(db, filters, windowStart, marketBaseIds({ variantsOf: base })),
+                  ])
+                : [[], []];
+        const rates = await marketChaosRates(
+            db,
+            filters,
+            [...history, ...variants].map(({ prices }) => ({ prices, salesPrices: null })),
+            history.length || variants.length
+                ? [...history.map((row) => row.hour), latestHour]
+                : [],
+        );
+        const toChaos = marketDisplayRate(rates, "chaos", latestHour);
+        const currencies = new Set([
+            "divine",
+            input.currency,
+            ...variants.flatMap((row) => Object.keys(row.prices)),
+        ]);
+        return {
+            ...input,
+            league,
+            latestHour,
+            base,
+            history: history.map((row) => ({
+                hour: row.hour,
+                listingCount: row.listingCount,
+                uniqueSellers: row.uniqueSellers,
+                unknownCount: row.unknownCount,
+                merged: mergeMarketPrices(
+                    row.prices,
+                    marketDisplayRate(rates, input.currency, row.hour),
+                ),
+            })),
+            variants: variants.sort(
+                (a, b) =>
+                    a.ilvl.min - b.ilvl.min ||
+                    (a.links ?? "").localeCompare(b.links ?? "") ||
+                    (a.quality ?? 0) - (b.quality ?? 0),
+            ),
+            /** Chaos per unit of each listing currency on the page, at the latest hour. */
+            chaosRates: Object.fromEntries(
+                [...currencies].flatMap((currency) => {
+                    const rate = toChaos(currency);
+                    return rate ? [[currency, rate] as const] : [];
+                }),
+            ),
+        };
+    });
+}
+
 type ExchangeMarket = { marketId: string; firstHour: number };
 
 /** Every exchange market of a league observed by `latestHour`, with its first hour. */
@@ -1028,7 +1113,7 @@ function aggregateOrder(order: MarketOrder, periodSales: SQLWrapper, latestHour:
 
 async function marketChaosRates(
     db: TDatabase,
-    filters: MarketFilters,
+    filters: Pick<MarketFilters, "realm" | "league" | "currency">,
     observations: Pick<TStashUniqueHourlyS, "prices" | "salesPrices">[],
     hours: number[],
 ) {

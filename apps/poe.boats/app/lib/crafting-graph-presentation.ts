@@ -16,6 +16,8 @@ export function graphConditionText(engine: CraftingEngine, filter: ItemCondition
             return `Rarity: ${filter.values.join(" or ")}`;
         case "influence":
             return `Influence: ${filter.values.join(" or ")}`;
+        case "enchant":
+            return `Enchantment: ${filter.values.join(" or ")}`;
         case "range":
             return `${filter.field}: ${rangeText(filter.value)}`;
         case "flag":

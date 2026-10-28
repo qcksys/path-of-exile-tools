@@ -11,7 +11,7 @@ import { CheckIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import type { MarketFilters } from "~/schemas/market";
+import { type MarketFilters, marketCorruption } from "~/schemas/market";
 
 type ToggleState = GemBandState | undefined;
 
@@ -177,7 +177,7 @@ export function MarketGemFilters({
                 name="corruption"
                 legend="Corruption"
                 label="Corrupted"
-                value={filters.corruption}
+                value={marketCorruption(filters)}
                 onChange={onChange}
             />
             <FlagToggle

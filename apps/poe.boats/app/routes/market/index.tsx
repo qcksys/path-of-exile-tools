@@ -11,7 +11,7 @@ import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
 import { marketItemArtUrl } from "~/lib/item-presentation";
-import { type MarketBaseRow, marketBaseVariant } from "~/lib/market-bases";
+import { type MarketBaseRow, marketBaseDetails, marketBaseVariant } from "~/lib/market-bases";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
 import {
     MARKET_OUTLIER_FACTOR,
@@ -23,6 +23,7 @@ import { marketTableState } from "~/lib/market-table";
 import { marketSignatureLabel } from "~/lib/mod-pools";
 import {
     type MarketFilters,
+    marketBaseLink,
     marketCategorySchema,
     marketExchangeLink,
     marketLink,
@@ -172,8 +173,13 @@ function baseColumns(filters: MarketFilters, game: Game, chaosRates: Record<stri
             meta: { filter: "text" },
             cell: ({ row: { original: row } }) => (
                 <>
-                    <p className="font-medium">{row.baseType}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{marketBaseVariant(row)}</p>
+                    <Link
+                        to={marketBaseLink(filters, row.id)}
+                        className="font-medium text-primary hover:underline"
+                    >
+                        {row.baseType}
+                    </Link>
+                    <p className="mt-1 text-xs text-muted-foreground">{marketBaseDetails(row)}</p>
                 </>
             ),
         }),
