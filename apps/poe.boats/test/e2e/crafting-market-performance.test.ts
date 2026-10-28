@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { marketObservationRange } from "@poe-tools/market";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
-import { and, desc, eq, getTableColumns, gte, isNull, lte, max, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, max, or, sql } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection, type RowDataPacket } from "mysql2/promise";
@@ -12,6 +12,7 @@ import { findCraftingMarketPrices } from "~/db/queries/crafting-market.queries";
 import { upsertStashCohortHourly } from "~/db/queries/stash-ingest.queries";
 import { tStashCohort as cohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly as hourly } from "~/db/schema/stash.cohort-hourly";
+import { tStashCohortRevision as revisions } from "~/db/schema/stash.cohort-revision";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import type { CraftingMarketInput } from "~/schemas/crafting-market";
 import { baseId, engine } from "../crafting-fixtures";
@@ -44,13 +45,13 @@ function observation(
 ) {
     return { ...marketCandidate.latest, cohortId, revision, hour: at, prices };
 }
-// Observations go through the ingest writer so the revision-hour table matches production.
+// Observations go through the ingest writer so revisions are numbered as in production.
 function observe(rows: Array<ReturnType<typeof observation>>) {
     return upsertStashCohortHourly(db as unknown as TDatabase, rows);
 }
 function definitionRead() {
     return statements.find(
-        (entry) => entry.sql.includes("catalogHash") && !entry.sql.includes("stash_cohort_hourly"),
+        (entry) => entry.sql.includes("catalogHash") && !entry.sql.includes("cohort_hourly"),
     )!;
 }
 
@@ -70,19 +71,19 @@ beforeAll(async () => {
     await db
         .insert(cohort)
         .values([
-            definition("selected", "old"),
             definition("selected"),
             definition("unbounded", "current", null),
             definition("multi", "current", ["Other", "Plate Vest"]),
-            definition("selected", "other-base", ["Other"]),
+            definition("other-base", "current", ["Other"]),
         ]);
+    // The older revision is numbered first, so the current revision's row replaces it.
+    await observe([observation("selected", "old", hour - 3600)]);
     await observe([
-        observation("selected", "old", hour - 3600),
         observation("selected", "current", hour - 3600),
         observation("selected", "current", hour, {}),
         observation("unbounded"),
         observation("multi"),
-        observation("selected", "other-base"),
+        observation("other-base"),
         { ...observation("selected", "current", hour), league: "Other" },
         { ...observation("selected", "current", hour), realm: "sony" },
         observation("selected", "current", hour + 3600),
@@ -125,21 +126,26 @@ function baseline(request = input, cohortId?: string) {
         sql`JSON_CONTAINS(${cohort.baseTypes}, ${JSON.stringify(request.item.item.baseType)})`,
     );
     const latest = db
-        .select({
-            revision: hourly.revision,
-            cohortId: hourly.cohortId,
-            hour: max(hourly.hour).as("latest_hour"),
-        })
+        .select({ cohortId: hourly.cohortId, hour: max(hourly.hour).as("latest_hour") })
         .from(hourly)
         .where(scope)
-        .groupBy(hourly.revision, hourly.cohortId)
+        .groupBy(hourly.cohortId)
         .as("latest");
-    const {
-        rowCreatedAt: _created,
-        rowUpdatedAt: _updated,
-        rowDeletedAt: _deleted,
-        ...summary
-    } = getTableColumns(hourly);
+    // Fixture hours are older than the window retention, so no windows apply.
+    const summary = {
+        realm: hourly.realm,
+        league: hourly.league,
+        hour: hourly.hour,
+        revision: revisions.revision,
+        cohortId: hourly.cohortId,
+        listingCount: hourly.listingCount,
+        uniqueSellers: hourly.uniqueSellers,
+        unknownCount: hourly.unknownCount,
+        prices: hourly.prices,
+        confidenceMethod: hourly.confidenceMethod,
+        firstSeenAt: hourly.firstSeenAt,
+        lastSeenAt: hourly.lastSeenAt,
+    };
     return db
         .select({
             definition: {
@@ -153,20 +159,11 @@ function baseline(request = input, cohortId?: string) {
             latest: summary,
         })
         .from(hourly)
-        .innerJoin(
-            latest,
-            and(
-                eq(hourly.revision, latest.revision),
-                eq(hourly.cohortId, latest.cohortId),
-                eq(hourly.hour, latest.hour),
-            ),
-        )
-        .innerJoin(
-            cohort,
-            and(eq(cohort.revision, hourly.revision), eq(cohort.id, hourly.cohortId)),
-        )
+        .innerJoin(latest, and(eq(hourly.cohortId, latest.cohortId), eq(hourly.hour, latest.hour)))
+        .innerJoin(revisions, eq(revisions.seq, hourly.revisionSeq))
+        .innerJoin(cohort, eq(cohort.id, hourly.cohortId))
         .where(and(scope, bases))
-        .orderBy(desc(hourly.hour), cohort.id, cohort.revision)
+        .orderBy(desc(hourly.hour), cohort.id)
         .limit(2001);
 }
 
@@ -196,7 +193,6 @@ it("preserves latest rows while reducing unrelated cohort work before aggregatio
         ["multi", "current", hour, true],
         ["selected", "current", hour, false],
         ["unbounded", "current", hour, true],
-        ["selected", "old", hour - 3600, true],
     ]);
     const current = statements.slice();
     expect(actual.candidates.map(({ definition, latest }) => ({ definition, latest }))).toEqual(
@@ -221,7 +217,7 @@ it("preserves latest rows while reducing unrelated cohort work before aggregatio
                         sql`JSON_CONTAINS(${cohort.baseTypes}, ${JSON.stringify(input.item.item.baseType)})`,
                     ),
                 )
-                .orderBy(cohort.revision, cohort.id)
+                .orderBy(cohort.id)
                 .limit(500)
                 .toSQL(),
         );
@@ -258,7 +254,7 @@ it("preserves latest rows while reducing unrelated cohort work before aggregatio
     }
 }, 60_000);
 
-it("preserves exact cohort filtering, all revisions, historical cutoffs and latest unpriced buckets", async () => {
+it("preserves exact cohort filtering, the newest revision, historical cutoffs and latest unpriced buckets", async () => {
     for (const request of [
         input,
         { ...input, at: hour - 3600 },
@@ -275,28 +271,17 @@ it("preserves exact cohort filtering, all revisions, historical cutoffs and late
         expect(result.candidates.map(({ definition, latest }) => ({ definition, latest }))).toEqual(
             await baseline(request, "selected"),
         );
-        expect(result.candidates.map((entry) => entry.definition.id)).toEqual([
-            "selected",
-            "selected",
-        ]);
-        if (request.at === hour && request.currency === "chaos") {
+        expect(result.candidates.map((entry) => entry.definition.id)).toEqual(["selected"]);
+        if (request.at === hour && request.currency === "chaos")
             expect(result.candidates[0]).toMatchObject({
-                definition: { revision: "current" },
-                latest: { hour, prices: {} },
+                latest: { hour, revision: "current", prices: {} },
                 covered: false,
             });
-            expect(result.candidates[1]).toMatchObject({
-                definition: { revision: "old" },
-                latest: { hour: hour - 3600 },
+        if (request.at === hour - 3600)
+            expect(result.candidates[0]).toMatchObject({
+                latest: { hour: hour - 3600, revision: "current" },
                 covered: true,
             });
-        }
-        if (request.at === hour - 3600)
-            expect(
-                result.candidates.every(
-                    (entry) => entry.covered && entry.latest.hour === hour - 3600,
-                ),
-            ).toBe(true);
         if (request.currency === "divine")
             expect(result.candidates.every((entry) => !entry.covered)).toBe(true);
     }
@@ -368,31 +353,18 @@ it("does not spend the observation cap on incompatible definitions or definition
         await db.insert(cohort).values(definitions);
         await observe(definitions.map(({ id }) => ({ ...observation(id), league })));
     }
-    await db
-        .insert(cohort)
-        .values([
-            definition("zz:eligible", "old"),
-            definition("zz:eligible", "current"),
-            { ...definition("zz:eligible", "incompatible"), query: incompatible },
-        ]);
+    await db.insert(cohort).values(definition("zz:eligible"));
     await observe([
-        { ...observation("zz:eligible", "old", hour - 3600), league },
         { ...observation("zz:eligible", "current", hour - 3600), league },
         { ...observation("zz:eligible", "current", hour, {}), league },
-        { ...observation("zz:eligible", "incompatible"), league },
     ]);
     const result = await findCraftingMarketPrices(db as unknown as TDatabase, { ...input, league });
     expect(result.truncated).toBe(false);
-    expect(result.candidates).toHaveLength(2);
+    expect(result.candidates).toHaveLength(1);
     expect(result.candidates[0]).toMatchObject({
-        definition: { id: "zz:eligible", revision: "current" },
+        definition: { id: "zz:eligible" },
         latest: { hour, prices: {} },
         covered: false,
-    });
-    expect(result.candidates[1]).toMatchObject({
-        definition: { id: "zz:eligible", revision: "old" },
-        latest: { hour: hour - 3600 },
-        covered: true,
     });
 });
 
@@ -421,14 +393,16 @@ it("retains late primary-key pages at the global tie boundary using database col
     statements.length = 0;
     const result = await findCraftingMarketPrices(db as unknown as TDatabase, { ...input, league });
     const production = statements.slice();
-    const identityReads = production.filter((query) => query.sql.includes(") in ("));
-    expect(Math.max(...identityReads.map((query) => query.params.length))).toBeGreaterThan(4001);
-    expect(identityReads.every((query) => query.params.length <= 5003)).toBe(true);
+    const identityReads = production.filter(
+        (query) => query.sql.includes("`id` in (") && !query.sql.includes("cohort_hourly"),
+    );
+    expect(Math.max(...identityReads.map((query) => query.params.length))).toBeGreaterThan(2001);
+    expect(identityReads.every((query) => query.params.length <= 2502)).toBe(true);
     expect(result.truncated).toBe(true);
     expect(result.candidates).toHaveLength(2000);
     expect(result.candidates[0]).toMatchObject({
-        definition: { id: "Z:newest-correction", revision: "zz-last" },
-        latest: { hour, prices: {} },
+        definition: { id: "Z:newest-correction" },
+        latest: { hour, revision: "zz-last", prices: {} },
         covered: false,
     });
     expect(result.candidates[1]?.definition.id).toBe("a:late");
@@ -436,7 +410,7 @@ it("retains late primary-key pages at the global tie boundary using database col
         (await baseline({ ...input, league })).slice(0, 2000),
     );
     const definitionReads = production.filter(
-        (entry) => entry.sql.includes("catalogHash") && !entry.sql.includes("stash_cohort_hourly"),
+        (entry) => entry.sql.includes("catalogHash") && !entry.sql.includes("cohort_hourly"),
     );
     expect(definitionReads.length).toBeGreaterThan(4);
     for (const query of [definitionReads[0]!, definitionReads[1]!]) {
@@ -449,47 +423,7 @@ it("retains late primary-key pages at the global tie boundary using database col
     }
 });
 
-it("skips same-base definitions from revisions without observations in the window", async () => {
-    const league = "Stale revision fixture";
-    for (let start = 0; start < 500; start += 250) {
-        const definitions = Array.from({ length: 250 }, (_, offset) =>
-            definition(`stale:${String(start + offset).padStart(4, "0")}`, "aa-stale"),
-        );
-        await db.insert(cohort).values(definitions);
-        await observe(
-            definitions.map(({ id, revision }) => ({
-                ...observation(id, revision, hour - 3 * 86400),
-                league,
-            })),
-        );
-    }
-    await db.insert(cohort).values(definition("live", "zz-live"));
-    await observe([{ ...observation("live", "zz-live"), league }]);
-    const request = { ...input, league };
-    statements.length = 0;
-    const result = await findCraftingMarketPrices(db as unknown as TDatabase, request);
-    expect(result.candidates.map(({ definition, latest }) => ({ definition, latest }))).toEqual(
-        await baseline(request),
-    );
-    expect(result.candidates.map((entry) => entry.definition.id)).toEqual(["live"]);
-    const query = definitionRead();
-    expect(query.params).toContain("zz-live");
-    expect(query.params).not.toContain("aa-stale");
-    const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
-    expect(plan[0]?.key).toBe("stash_cohort_base_page_idx");
-    expect(String(plan[0]?.Extra)).not.toContain("filesort");
-    const [before] = await connection.query<RowDataPacket[]>(
-        "SHOW SESSION STATUS LIKE 'Handler_read_next'",
-    );
-    const [rows] = await connection.query<RowDataPacket[]>(query.sql, query.params);
-    const [after] = await connection.query<RowDataPacket[]>(
-        "SHOW SESSION STATUS LIKE 'Handler_read_next'",
-    );
-    expect(rows).toHaveLength(1);
-    expect(Number(after[0]?.Value) - Number(before[0]?.Value)).toBeLessThan(10);
-});
-
-it("reads no definitions when no revision has observations in the window", async () => {
+it("reads no definitions when the window has no observations", async () => {
     statements.length = 0;
     const result = await findCraftingMarketPrices(db as unknown as TDatabase, {
         ...input,
@@ -498,5 +432,5 @@ it("reads no definitions when no revision has observations in the window", async
     expect(result).toMatchObject({ candidates: [], truncated: false });
     expect(result.message).toContain("24 completed hours");
     expect(statements).toHaveLength(1);
-    expect(statements[0]?.sql).toContain("stash_cohort_revision_hour");
+    expect(statements[0]?.sql).toContain("stash_poe1_cohort_hourly");
 });

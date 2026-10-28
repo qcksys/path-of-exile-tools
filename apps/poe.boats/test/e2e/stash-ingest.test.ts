@@ -10,7 +10,6 @@ import {
     selectCohortPrice,
 } from "@poe-tools/market";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
-import { sql } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection } from "mysql2/promise";
@@ -20,6 +19,7 @@ import { z } from "zod";
 import { api } from "~/api/router.server";
 import { dbContext, envContext } from "~/context";
 import type { TDatabase } from "~/db/client";
+import { STASH_GAMES } from "~/db/helpers/stash-game";
 import {
     craftingExchangeHistory,
     findCraftingExchangePrices,
@@ -31,6 +31,7 @@ import {
 } from "~/db/queries/crafting-market.queries";
 import { getMarketData } from "~/db/queries/market.queries";
 import {
+    COHORT_WINDOW_RETENTION_HOURS,
     upsertStashCohortHourly,
     upsertStashCurrencyHourly,
 } from "~/db/queries/stash-ingest.queries";
@@ -38,9 +39,9 @@ import { tIngestWorker } from "~/db/schema/ingest.worker";
 import { tStashCheckpoint, tStashDailySample } from "~/db/schema/stash.checkpoint";
 import { tStashCohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
-import { tStashCohortRevisionHour } from "~/db/schema/stash.cohort-revision-hour";
+import { tStashCohortRevision } from "~/db/schema/stash.cohort-revision";
+import { tStashCohortWindow } from "~/db/schema/stash.cohort-window";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
-import { tStashCurrencyLatest } from "~/db/schema/stash.currency-latest";
 import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { seededRandom } from "~/lib/crafting-engine";
 import { bindExchangePrice } from "~/lib/crafting-exchange";
@@ -106,6 +107,7 @@ import { catalog, currency, engine } from "../crafting-fixtures";
 import { quote } from "../crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "../crafting-history-fixtures";
 import {
+    adaptiveMarketCandidate,
     donorFamilyMarketFixture,
     marketCandidate,
     marketGraph,
@@ -222,7 +224,7 @@ async function parity(
 }
 
 it("refuses a previously issued stash quote for a known exchange item in both HTTP and MCP", async () => {
-    await mysql.insert(tStashCurrencyHourly).values({
+    await mysql.insert(tStashCurrencyHourly.poe1).values({
         ...commodityExchangeSnapshot,
         marketId: `${essenceId}|${chaosId}`,
         hour: HOUR,
@@ -288,7 +290,7 @@ it.skipIf(process.env.EXCHANGE_MEMBERSHIP_BENCHMARK !== "1")(
     "uses the primary index to discover markets on a realistic retained history",
     async () => {
         await connection.query(
-            `INSERT INTO qsPoeBoats__stash_currency_hourly (realm, league, marketId, hour, volumeTraded)
+            `INSERT INTO qsPoeBoats__stash_poe1_currency_hourly (realm, league, marketId, hour, volumeTraded)
         WITH RECURSIVE a(n) AS (SELECT 0 UNION ALL SELECT n + 1 FROM a WHERE n < 999),
         b(n) AS (SELECT 0 UNION ALL SELECT n + 1 FROM b WHERE n < 129)
         SELECT 'pc', 'Standard', CONCAT('market-', LPAD(a.n + part.n * 1000, 4, '0'), '|chaos'),
@@ -297,7 +299,7 @@ it.skipIf(process.env.EXCHANGE_MEMBERSHIP_BENCHMARK !== "1")(
         WHERE a.n + part.n * 1000 < 1500`,
             [HOUR],
         );
-        await connection.query("ANALYZE TABLE qsPoeBoats__stash_currency_hourly");
+        await connection.query("ANALYZE TABLE qsPoeBoats__stash_poe1_currency_hourly");
         let query = "";
         let params: unknown[] = [];
         const measured = drizzle({
@@ -385,13 +387,16 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-    await mysql.delete(tStashDailySample);
-    await mysql.delete(tStashCheckpoint);
+    for (const game of STASH_GAMES) {
+        await mysql.delete(tStashDailySample[game]);
+        await mysql.delete(tStashCheckpoint[game]);
+        await mysql.delete(tStashCurrencyHourly[game]);
+        await mysql.delete(tStashUniqueHourly[game]);
+    }
     await mysql.delete(tIngestWorker);
-    await mysql.delete(tStashCurrencyHourly);
-    await mysql.delete(tStashUniqueHourly);
     await mysql.delete(tStashCohortHourly);
-    await mysql.delete(tStashCohortRevisionHour);
+    await mysql.delete(tStashCohortWindow);
+    await mysql.delete(tStashCohortRevision);
     await mysql.delete(tStashCohort);
     local = await openDb(":memory:");
     upstreamResponses = [];
@@ -434,12 +439,12 @@ it("durably retries immutable cursor metadata and one daily sample, with authent
     expect(await queryAll(local.conn, "SELECT id FROM ps_checkpoint WHERE delivered")).toEqual([]);
     receiverStatus = undefined;
     expect(await flushCheckpoints(local.conn)).toBe(2);
-    const original = await mysql.select().from(tStashDailySample);
+    const original = await mysql.select().from(tStashDailySample.poe1);
     expect(original).toHaveLength(1);
     await local.conn.run("UPDATE ps_checkpoint SET delivered = FALSE");
     expect(await flushCheckpoints(local.conn)).toBe(2);
-    expect(await mysql.select().from(tStashDailySample)).toEqual(original);
-    expect(await mysql.select().from(tStashCheckpoint)).toHaveLength(2);
+    expect(await mysql.select().from(tStashDailySample.poe1)).toEqual(original);
+    expect(await mysql.select().from(tStashCheckpoint.poe1)).toHaveLength(2);
     const query = {
         kind: "checkpoints" as const,
         realm: "pc" as const,
@@ -465,7 +470,7 @@ it("durably retries immutable cursor metadata and one daily sample, with authent
         status: "changed",
         fetchedStashes: 0,
     });
-    expect(await mysql.select().from(tStashUniqueHourly)).toEqual([]);
+    expect(await mysql.select().from(tStashUniqueHourly.poe1)).toEqual([]);
 });
 
 it("probes selected-field hashes across pages without modifying capture or market history", async () => {
@@ -482,8 +487,8 @@ it("probes selected-field hashes across pages without modifying capture or marke
         scope,
     );
     await flushCheckpoints(local.conn);
-    const checkpoints = await mysql.select().from(tStashCheckpoint);
-    const samples = await mysql.select().from(tStashDailySample);
+    const checkpoints = await mysql.select().from(tStashCheckpoint.poe1);
+    const samples = await mysql.select().from(tStashDailySample.poe1);
     const query = {
         kind: "sample" as const,
         realm: "pc" as const,
@@ -527,9 +532,9 @@ it("probes selected-field hashes across pages without modifying capture or marke
         sourceError: { status: 400 },
         pages: [],
     });
-    expect(await mysql.select().from(tStashCheckpoint)).toEqual(checkpoints);
-    expect(await mysql.select().from(tStashDailySample)).toEqual(samples);
-    expect(await mysql.select().from(tStashUniqueHourly)).toEqual([]);
+    expect(await mysql.select().from(tStashCheckpoint.poe1)).toEqual(checkpoints);
+    expect(await mysql.select().from(tStashDailySample.poe1)).toEqual(samples);
+    expect(await mysql.select().from(tStashUniqueHourly.poe1)).toEqual([]);
     expect(await queryAll(local.conn, "SELECT * FROM ps_listing")).toEqual([]);
     expect(await getCursor(local.conn, "psapi")).toBeUndefined();
 });
@@ -544,7 +549,7 @@ it.each([
         body: JSON.stringify({ stream, rows: [] }),
     });
     expect(response.status).toBe(400);
-    expect(await mysql.select().from(tStashUniqueHourly)).toEqual([]);
+    expect(await mysql.select().from(tStashUniqueHourly.poe1)).toEqual([]);
     expect(await mysql.select().from(tStashCohortHourly)).toEqual([]);
 });
 
@@ -557,7 +562,7 @@ it.each([
     await expect(ingestPs(local.conn, client, { pages: 1 })).rejects.toThrow("retired");
     await expect(rollupPs(local.conn, { hour: HOUR })).rejects.toThrow("retired");
     await expect(rollupEquipment(local.conn, { hour: HOUR })).rejects.toThrow("retired");
-    expect(await mysql.select().from(tStashUniqueHourly)).toEqual([]);
+    expect(await mysql.select().from(tStashUniqueHourly.poe1)).toEqual([]);
     expect(await mysql.select().from(tStashCohortHourly)).toEqual([]);
 });
 
@@ -677,7 +682,7 @@ it("accepts authenticated worker heartbeats and exposes real coverage through HT
 it("converts captured indirect pairs only with positive matching-hour legs and preserves historical scope", async () => {
     const divine = "Metadata/Items/Currency/CurrencyModValues";
     const db = mysql as unknown as TDatabase;
-    await mysql.insert(tStashCurrencyHourly).values([
+    await mysql.insert(tStashCurrencyHourly.poe1).values([
         {
             realm: "pc",
             league: "Standard",
@@ -751,7 +756,7 @@ it("converts captured indirect pairs only with positive matching-hour legs and p
 it("uses a bounded same-hour non-reference exchange bridge without changing legacy bindings", async () => {
     const item = "Metadata/Items/Currency/CurrencyHellscapeUpgradeModTier";
     const bridge = "Metadata/Items/Currency/CurrencyHellscapeAddModToRare";
-    await mysql.insert(tStashCurrencyHourly).values([
+    await mysql.insert(tStashCurrencyHourly.poe1).values([
         {
             realm: "pc",
             league: "Standard",
@@ -815,7 +820,7 @@ it("uses a bounded same-hour non-reference exchange bridge without changing lega
         conversion: "two-leg-exchange-v1",
     });
     expect(next.quotes[item]).toBeUndefined();
-    await mysql.insert(tStashCurrencyHourly).values({
+    await mysql.insert(tStashCurrencyHourly.poe1).values({
         realm: "pc",
         league: "Standard",
         hour: HOUR,
@@ -835,7 +840,7 @@ it("fails closed when there are too many same-hour markets to discover conversio
         marketId: `${item}|Metadata/Items/Currency/Bridge${index}`,
     }));
     for (let offset = 0; offset < rows.length; offset += 500)
-        await mysql.insert(tStashCurrencyHourly).values(rows.slice(offset, offset + 500));
+        await mysql.insert(tStashCurrencyHourly.poe1).values(rows.slice(offset, offset + 500));
     const result = await findCraftingExchangePrices(mysql as unknown as TDatabase, {
         game: "poe1",
         realm: "pc",
@@ -851,7 +856,7 @@ it("fails closed when there are too many same-hour markets to discover conversio
 
 it("shares explicit vendor ingredient two-leg conversion across HTTP and MCP", async () => {
     const bridge = "Metadata/Items/Currency/CurrencyHellscapeAddModToRare";
-    await mysql.insert(tStashCurrencyHourly).values([
+    await mysql.insert(tStashCurrencyHourly.poe1).values([
         {
             realm: "pc",
             league: "Standard",
@@ -935,8 +940,8 @@ it("waits for a saved exchange hour to complete without fetching an upstream 404
     expect(await queryAll(local.conn, "SELECT * FROM cx_market_hour")).toEqual([]);
 });
 
-it("records each observed equipment revision hour once across batches and repeated pushes", async () => {
-    // 450 rows span three upsert batches but only four distinct revision hours.
+it("numbers equipment revisions in first-seen order across batches and repeated pushes", async () => {
+    // 450 rows span three upsert batches but only two revisions.
     const rows = Array.from({ length: 450 }, (_, index) => ({
         ...marketCandidate.latest,
         cohortId: `cohort:${String(index).padStart(3, "0")}`,
@@ -954,26 +959,105 @@ it("records each observed equipment revision hour once across batches and repeat
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({ stream: "equipment", written: 450 });
     }
-    const recorded = await mysql
-        .select({
-            realm: tStashCohortRevisionHour.realm,
-            league: tStashCohortRevisionHour.league,
-            hour: tStashCohortRevisionHour.hour,
-            revision: tStashCohortRevisionHour.revision,
-        })
-        .from(tStashCohortRevisionHour)
-        .orderBy(tStashCohortRevisionHour.hour, tStashCohortRevisionHour.revision);
-    const { realm, league, hour } = marketCandidate.latest;
-    expect(recorded).toEqual([
-        { realm, league, hour, revision: "even-revision" },
-        { realm, league, hour, revision: "odd-revision" },
-        { realm, league, hour: hour + 3600, revision: "even-revision" },
-        { realm, league, hour: hour + 3600, revision: "odd-revision" },
-    ]);
-    expect(await mysql.select().from(tStashCohortHourly)).toHaveLength(450);
+    const revisions = await mysql
+        .select({ seq: tStashCohortRevision.seq, revision: tStashCohortRevision.revision })
+        .from(tStashCohortRevision)
+        .orderBy(tStashCohortRevision.seq);
+    expect(revisions.map((row) => row.revision)).toEqual(["even-revision", "odd-revision"]);
+    const seqs = new Map(revisions.map((row) => [row.revision, row.seq]));
+    const stored = await mysql.select().from(tStashCohortHourly);
+    expect(stored).toHaveLength(450);
+    for (const row of stored)
+        expect(row.revisionSeq).toBe(
+            seqs.get(Number(row.cohortId.slice(-3)) % 2 ? "odd-revision" : "even-revision"),
+        );
 });
 
-it("refreshes across compatible persisted revisions and recovers earlier prices without rewriting history", async () => {
+it("keeps each cohort hour's newest revision and merges its recent windows into history", async () => {
+    const db = mysql as unknown as TDatabase;
+    const { hour, cohortId } = marketCandidate.latest;
+    const clock = vi.spyOn(Date, "now").mockReturnValue((hour + 3600) * 1000);
+    const row = (revision: string, median: number, at = hour, id = cohortId) => {
+        const latest = adaptiveMarketCandidate(median).latest;
+        latest.prices.chaos!.median = median;
+        return { ...latest, revision, hour: at, cohortId: id };
+    };
+    const { windows: _windows, ...unwindowed } = row("first", 20).prices.chaos!;
+    // Older than the retained window hours, so only the hourly row is stored.
+    const expired = {
+        ...row("first", 20, hour - COHORT_WINDOW_RETENTION_HOURS * 3600),
+        prices: { chaos: unwindowed },
+    };
+    await upsertStashCohortHourly(db, [
+        row("first", 20),
+        row("first", 20, hour, "other-cohort"),
+        { ...expired, prices: row("first", 20).prices },
+    ]);
+    await upsertStashCohortHourly(db, [row("second", 30)]);
+    // An older revision delivered later leaves the newer row and its windows unchanged.
+    await upsertStashCohortHourly(db, [row("first", 40)]);
+    const seqs = new Map(
+        (await mysql.select().from(tStashCohortRevision)).map((value) => [
+            value.revision,
+            value.seq,
+        ]),
+    );
+    expect(seqs.get("first")!).toBeLessThan(seqs.get("second")!);
+    const stored = await mysql
+        .select()
+        .from(tStashCohortHourly)
+        .orderBy(tStashCohortHourly.hour, tStashCohortHourly.cohortId);
+    expect(stored).toMatchObject([
+        { hour: expired.hour, cohortId, revisionSeq: seqs.get("first") },
+        { hour, cohortId, revisionSeq: seqs.get("second"), prices: { chaos: { median: 30 } } },
+        { hour, cohortId: "other-cohort", revisionSeq: seqs.get("first") },
+    ]);
+    expect(stored.every((value) => value.prices.chaos!.windows === undefined)).toBe(true);
+    const windows = await mysql
+        .select()
+        .from(tStashCohortWindow)
+        .orderBy(tStashCohortWindow.cohortId);
+    expect(windows).toEqual([
+        {
+            realm: "pc",
+            league: "Standard",
+            hour,
+            cohortId,
+            revisionSeq: seqs.get("second"),
+            windows: { chaos: row("second", 30).prices.chaos!.windows },
+        },
+        {
+            realm: "pc",
+            league: "Standard",
+            hour,
+            cohortId: "other-cohort",
+            revisionSeq: seqs.get("first"),
+            windows: { chaos: row("first", 20).prices.chaos!.windows },
+        },
+    ]);
+    const historyInput = { realm: "pc" as const, league: "Standard", cohortId, limit: 10 };
+    expect((await craftingMarketHistory(db, historyInput)).history).toEqual([
+        row("second", 30),
+        expired,
+    ]);
+    // Once the hour leaves the retained range, the next delivery deletes its windows.
+    clock.mockReturnValue((hour + (COHORT_WINDOW_RETENTION_HOURS + 2) * 3600) * 1000);
+    const later = hour + COHORT_WINDOW_RETENTION_HOURS * 3600;
+    await upsertStashCohortHourly(db, [row("second", 35, later)]);
+    expect(
+        await mysql
+            .select({ hour: tStashCohortWindow.hour, cohortId: tStashCohortWindow.cohortId })
+            .from(tStashCohortWindow),
+    ).toEqual([{ hour: later, cohortId }]);
+    const { windows: _secondWindows, ...secondUnwindowed } = row("second", 30).prices.chaos!;
+    expect((await craftingMarketHistory(db, historyInput)).history).toEqual([
+        row("second", 35, later),
+        { ...row("second", 30), prices: { chaos: secondUnwindowed } },
+        expired,
+    ]);
+});
+
+it("refreshes a saved cohort to its newest revision and recovers earlier prices without rewriting history", async () => {
     const current = structuredClone(marketCandidate);
     current.definition.revision = "next-market";
     current.definition.catalogHash = "b".repeat(64);
@@ -981,32 +1065,36 @@ it("refreshes across compatible persisted revisions and recovers earlier prices 
     current.latest.hour += 3600;
     current.latest.prices.chaos!.median = 27;
     vi.spyOn(Date, "now").mockReturnValue((current.latest.hour + 3600) * 1000);
-    await mysql.insert(tStashCohort).values([marketCandidate.definition, current.definition]);
+    // One definition per cohort ID: the newer revision's definition replaces the older one.
+    await mysql.insert(tStashCohort).values(current.definition);
     const db = mysql as unknown as TDatabase;
     await upsertStashCohortHourly(db, [marketCandidate.latest, current.latest]);
     const graph = bindCohortPurchasePrice(marketGraph(), engine, "base", "buy", marketCandidate);
     const node = graph.nodes[0]!;
     if (node.kind !== "acquire") throw new Error("Fixture");
+    const purchase = node.alternatives[0];
+    if (purchase?.kind !== "purchase" || purchase.price?.source !== "market")
+        throw new Error("Fixture");
     node.choice = { mode: "pinned", alternativeId: "buy" };
     const refreshed = await refreshCraftingMarketPrices(db, graph, engine);
     expect(refreshed.issues).toEqual([]);
     expect(livePurchasePrices(refreshed.graph)[0]).toMatchObject({
-        reference: { revision: "next-market" },
+        reference: { cohortId: marketCandidate.definition.id },
         alternative: { price: { amount: 27 } },
         node: { choice: node.choice },
     });
+    expect(livePurchasePrices(refreshed.graph)[0]!.reference).not.toHaveProperty("revision");
     const snapshots = await craftingMarketSnapshots(db, refreshed.graph, engine, [
         marketCandidate.latest.hour,
         current.latest.hour,
     ]);
-    for (const [index, revision, amount] of [
-        [0, "test-market", 20],
-        [1, "next-market", 27],
+    for (const [index, amount] of [
+        [0, 20],
+        [1, 27],
     ] as const) {
         const point = snapshots.points[index]!;
         expect(point.issues).toEqual([]);
         expect(livePurchasePrices(point.graph!)[0]).toMatchObject({
-            reference: { revision },
             alternative: { price: { amount } },
         });
         expect(point.graph!.ruleset).toEqual(graph.ruleset);
@@ -1020,12 +1108,21 @@ it("refreshes across compatible persisted revisions and recovers earlier prices 
     const history = await craftingMarketHistory(db, {
         realm: "pc",
         league: "Standard",
-        revision: "test-market",
         cohortId: marketCandidate.definition.id,
         limit: 10,
     });
-    expect(history.history).toEqual([marketCandidate.latest]);
-    expect(livePurchasePrices(graph)[0]?.reference.revision).toBe("test-market");
+    expect(history.history).toEqual([current.latest, marketCandidate.latest]);
+    // A reference saved while cohorts were scoped by revision still refreshes by cohort ID.
+    const reference = livePurchasePrices(graph)[0]!.reference;
+    purchase.price.cohortId = `cohort:v1:${encodeURIComponent(
+        JSON.stringify({ ...reference, revision: "test-market" }),
+    )}`;
+    expect(livePurchasePrices(graph)[0]!.reference).toEqual(reference);
+    const legacy = await refreshCraftingMarketPrices(db, graph, engine);
+    expect(legacy.issues).toEqual([]);
+    expect(livePurchasePrices(legacy.graph)[0]).toMatchObject({
+        alternative: { price: { amount: 27 } },
+    });
 });
 
 it("offers stored donor-family quotes only under an explicit representative assumption", async () => {
@@ -1145,6 +1242,8 @@ it("reuses only acknowledged equipment definitions for the same connection and r
 });
 
 it("persists deduplicated equipment windows while retaining hourly history and historical cutoffs", async () => {
+    // Windows are kept only for recent hours, so the captured hours must be recent.
+    vi.spyOn(Date, "now").mockReturnValue((HOUR + 6 * 3600) * 1000);
     const client = createClient({ baseUrl, userAgent: "window-e2e", token: TOKEN });
     const equipment = {
         ...item,
@@ -1241,7 +1340,6 @@ it("persists deduplicated equipment windows while retaining hourly history and h
     const history = await craftingMarketHistory(database, {
         realm: "pc",
         league: "Standard",
-        revision: candidate.definition.revision,
         cohortId: candidate.definition.id,
         limit: 10,
     });
@@ -1332,7 +1430,7 @@ it("replays broad equipment prices through capture, retry and history without pr
             unknownCount: 0,
             prices: { chaos: { count: 1000, median: row.hour === HOUR ? 20 : 5, confidence: 0.5 } },
         });
-    expect(await mysql.select().from(tStashUniqueHourly)).toEqual([]);
+    expect(await mysql.select().from(tStashUniqueHourly.poe1)).toEqual([]);
     const lookupInput = {
         item: normalizeApiItem("poe1", "stash", { ...equipment, explicitMods: [] }),
         requirements: itemQuerySchema.parse({ game: "poe1" }),
@@ -1418,7 +1516,6 @@ it("replays broad equipment prices through capture, retry and history without pr
         cohortId: encodeCohortPriceReference({
             realm: "pc",
             league: "Standard",
-            revision: chosen.definition.revision,
             cohortId: chosen.definition.id,
         }),
     };
@@ -1436,7 +1533,6 @@ it("replays broad equipment prices through capture, retry and history without pr
     const historyInput = {
         realm: "pc" as const,
         league: "Standard",
-        revision: chosen.definition.revision,
         cohortId: chosen.definition.id,
         limit: 1,
     };
@@ -1757,7 +1853,8 @@ it("delivers inferred sales through HTTP and exposes season-isolated price histo
 });
 
 it("updates a seeded currency market with a long ID through HTTP to MySQL", async () => {
-    await mysql.insert(tStashCurrencyHourly).values({
+    await mysql.insert(tStashCurrencyHourly.poe1).values({
+        realm: "pc",
         league: "Standard",
         marketId: MARKET_ID,
         hour: HOUR,
@@ -1768,7 +1865,7 @@ it("updates a seeded currency market with a long ID through HTTP to MySQL", asyn
     await ingestCx(local.conn, client, { fromHour: HOUR, catchUp: false });
     await rollupCx(local.conn, { hour: HOUR });
     await rollupCx(local.conn, { hour: HOUR });
-    const rows = await mysql.select().from(tStashCurrencyHourly);
+    const rows = await mysql.select().from(tStashCurrencyHourly.poe1);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
         league: "Standard",
@@ -2065,8 +2162,7 @@ it.each([
     }
 });
 
-it("accepts hourly exchange deliveries for both games without the latest-traded table", async () => {
-    await mysql.execute(sql`drop table ${tStashCurrencyLatest}`);
+it("stores hourly exchange deliveries for each game in that game's table", async () => {
     const rows = [
         { realm: "pc" as const, league: "Allflame" },
         { realm: "poe2" as const, league: "Forbidden Rites" },
@@ -2082,13 +2178,15 @@ it("accepts hourly exchange deliveries for both games without the latest-traded 
         highestStock: {},
     }));
     await push({ stream: "cxapi", rows });
-    const stored = await mysql
-        .select({ realm: tStashCurrencyHourly.realm, league: tStashCurrencyHourly.league })
-        .from(tStashCurrencyHourly);
-    expect(stored).toHaveLength(2);
-    expect(stored).toEqual(
-        expect.arrayContaining(rows.map(({ realm, league }) => ({ realm, league }))),
-    );
+    for (const [game, realm, league] of [
+        ["poe1", "pc", "Allflame"],
+        ["poe2", "poe2", "Forbidden Rites"],
+    ] as const) {
+        const table = tStashCurrencyHourly[game];
+        expect(
+            await mysql.select({ realm: table.realm, league: table.league }).from(table),
+        ).toEqual([{ realm, league }]);
+    }
 });
 
 it("preserves prior-hour prices after updates and unlisting, and retries upstream 503s", async () => {
@@ -2136,7 +2234,7 @@ it("preserves prior-hour prices after updates and unlisting, and retries upstrea
     await rollupPs(local.conn, { hour: HOUR });
     await rollupPs(local.conn, { hour: currentHour });
     await rollupPs(local.conn, { hour: HOUR });
-    const rows = await mysql.select().from(tStashUniqueHourly);
+    const rows = await mysql.select().from(tStashUniqueHourly.poe1);
     expect(rows).toHaveLength(2);
     expect(rows.find((row) => row.hour === HOUR)).toMatchObject({
         listingCount: 2,
@@ -2173,7 +2271,7 @@ it("rolls back a failed page and replays it without duplicate observations", asy
     upstreamResponses.push({ body: { next_change_id: "page-2", stashes: [stash] } });
     await ingestPs(local.conn, client, { pages: 1 });
     await rollupPs(local.conn, { hour: Math.floor(Date.now() / 3_600_000) * 3600 });
-    const rows = await mysql.select().from(tStashUniqueHourly);
+    const rows = await mysql.select().from(tStashUniqueHourly.poe1);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ listingCount: 1, uniqueSellers: 1 });
 });
@@ -2188,11 +2286,11 @@ it("records delivery only after a successful receiver write", async () => {
     receiverStatus = 503;
     await expect(rollupCx(local.conn, { hour: HOUR })).rejects.toThrow("503");
     expect(await queryAll(local.conn, "SELECT * FROM rollup_state")).toEqual([]);
-    expect(await mysql.select().from(tStashCurrencyHourly)).toEqual([]);
+    expect(await mysql.select().from(tStashCurrencyHourly.poe1)).toEqual([]);
     receiverStatus = undefined;
     await rollupCx(local.conn, { hour: HOUR });
     expect(await queryAll(local.conn, "SELECT * FROM rollup_state")).toHaveLength(1);
-    expect(await mysql.select().from(tStashCurrencyHourly)).toHaveLength(1);
+    expect(await mysql.select().from(tStashCurrencyHourly.poe1)).toHaveLength(1);
 });
 
 it("stores a three-mod Watcher's Eye and groups equivalent mod orders", async () => {
@@ -2226,7 +2324,7 @@ it("stores a three-mod Watcher's Eye and groups equivalent mod orders", async ()
         { pages: 1 },
     );
     await rollupPs(local.conn, { hour: Math.floor(Date.now() / 3_600_000) * 3600 });
-    const rows = await mysql.select().from(tStashUniqueHourly);
+    const rows = await mysql.select().from(tStashUniqueHourly.poe1);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
         listingCount: 2,
@@ -2314,7 +2412,7 @@ it("captures and prices the correct Two-Toned Boots variant while excluding othe
 it("prices an explicit NPC Augmentation purchase from fresh Transmutation and refuses stale ingredient fallback", async () => {
     const database = mysql as unknown as TDatabase;
     const graph = exchangeGraph();
-    await mysql.insert(tStashCurrencyHourly).values([
+    await mysql.insert(tStashCurrencyHourly.poe1).values([
         { ...vendorCurrencySnapshot, hour: HOUR },
         {
             ...vendorCurrencySnapshot,
@@ -2362,7 +2460,7 @@ it("prices an explicit NPC Augmentation purchase from fresh Transmutation and re
         path: vendorCurrencyQuote.path,
         ingredient: { hour: HOUR, itemId: vendorCurrencyInputId },
     });
-    await mysql.insert(tStashCurrencyHourly).values([
+    await mysql.insert(tStashCurrencyHourly.poe1).values([
         {
             ...vendorCurrencySnapshot,
             hour: HOUR + 3600,
@@ -2387,7 +2485,7 @@ it("prices an explicit NPC Augmentation purchase from fresh Transmutation and re
         path: vendorCurrencyQuote.path,
         ingredient: { hour: HOUR + 3600, itemId: vendorCurrencyInputId },
     });
-    await mysql.insert(tStashCurrencyHourly).values([
+    await mysql.insert(tStashCurrencyHourly.poe1).values([
         {
             ...vendorCurrencySnapshot,
             hour: HOUR + 7200,
@@ -2502,7 +2600,7 @@ it("captures only proven-empty Prime Chaotic Resonators for versioned source bin
         clock.mockReturnValue((hour + 3600) * 1000);
     }
     await ingestHour(HOUR, ["~price 5/2 chaos", "~b/o 9/2 c", "~price 7/2 chaos"]);
-    const rows = await mysql.select().from(tStashUniqueHourly);
+    const rows = await mysql.select().from(tStashUniqueHourly.poe1);
     expect(rows).toHaveLength(3);
     expect(rows.filter((row) => row.itemKey === name)).toEqual(
         expect.arrayContaining([
@@ -2655,12 +2753,14 @@ it("captures only proven-empty Prime Chaotic Resonators for versioned source bin
         true,
     );
     expect(
-        (await mysql.select().from(tStashUniqueHourly)).find(
+        (await mysql.select().from(tStashUniqueHourly.poe1)).find(
             (row) =>
                 row.itemKey === name && row.hour === convertedHour && row.signatureKind === variant,
         ),
     ).toMatchObject({ frameType: -1, listingCount: 3, prices: { divine: { count: 3 } } });
-    await mysql.insert(tStashCurrencyHourly).values({ ...commodityExchangeSnapshot, hour: HOUR });
+    await mysql
+        .insert(tStashCurrencyHourly.poe1)
+        .values({ ...commodityExchangeSnapshot, hour: HOUR });
     expect((await sources(convertedHour)).quotes).toEqual({});
     expect((await sources(convertedHour, { conversion: undefined })).quotes).toEqual({});
     expect(
@@ -2670,7 +2770,7 @@ it("captures only proven-empty Prime Chaotic Resonators for versioned source bin
         issues: [expect.stringContaining("matching-hour exchange conversion")],
     });
     await mysql
-        .insert(tStashCurrencyHourly)
+        .insert(tStashCurrencyHourly.poe1)
         .values({ ...commodityExchangeSnapshot, hour: convertedHour });
     expect((await sources(convertedHour)).quotes[id]).toMatchObject({
         variant,
@@ -2696,7 +2796,7 @@ it("captures only proven-empty Prime Chaotic Resonators for versioned source bin
 
     await ingestHour(unpricedHour, ["~price 0 chaos", "~price 0 chaos", "~price 0 chaos"]);
     expect(
-        (await mysql.select().from(tStashUniqueHourly)).find(
+        (await mysql.select().from(tStashUniqueHourly.poe1)).find(
             (row) =>
                 row.itemKey === name && row.hour === unpricedHour && row.signatureKind === variant,
         ),
@@ -2776,7 +2876,7 @@ it.each([
         await rollupPs(local.conn, { hour, league: "Standard" });
     }
     await ingestHour(HOUR);
-    expect(await mysql.select().from(tStashUniqueHourly)).toMatchObject([
+    expect(await mysql.select().from(tStashUniqueHourly.poe1)).toMatchObject([
         {
             realm: "pc",
             league: "Standard",
@@ -2868,7 +2968,7 @@ it.each([
         ],
     });
     const convertedHour = HOUR + 7200;
-    await mysql.insert(tStashUniqueHourly).values({
+    await mysql.insert(tStashUniqueHourly.poe1).values({
         realm: "pc",
         league: "Standard",
         hour: convertedHour,
@@ -2884,7 +2984,7 @@ it.each([
         lastSeenAt: new Date(convertedHour * 1000).toISOString(),
     });
     await mysql
-        .insert(tStashCurrencyHourly)
+        .insert(tStashCurrencyHourly.poe1)
         .values({ ...commodityExchangeSnapshot, hour: convertedHour });
     const current = { ...lookup, at: convertedHour };
     expect(
@@ -2930,9 +3030,9 @@ it.each([
             { graph: { prices: { [essenceId]: { amount: 600 } } }, issues: [] },
         ],
     });
-    await mysql.delete(tStashCurrencyHourly);
+    await mysql.delete(tStashCurrencyHourly.poe1);
     await mysql
-        .insert(tStashCurrencyHourly)
+        .insert(tStashCurrencyHourly.poe1)
         .values({ ...commodityExchangeSnapshot, hour: convertedHour - 3600 });
     expect(
         craftingSourceResultSchema.parse(
@@ -2943,7 +3043,7 @@ it.each([
         ).quotes,
     ).toEqual({});
 
-    await mysql.insert(tStashCurrencyHourly).values({ ...vendorSnapshot, hour: HOUR });
+    await mysql.insert(tStashCurrencyHourly.poe1).values({ ...vendorSnapshot, hour: HOUR });
     const vendorLookup = {
         graph,
         realm: "pc",
@@ -2969,7 +3069,7 @@ it.each([
     ).graph;
     expect(vendorBound.prices[vendorOutputId]).toMatchObject({ amount: 18, confidence: null });
     expect(vendorBound.prices[vendorOutputId]).not.toHaveProperty("samples");
-    await mysql.insert(tStashCurrencyHourly).values({
+    await mysql.insert(tStashCurrencyHourly.poe1).values({
         ...vendorSnapshot,
         hour: HOUR + 3600,
         volumeTraded: { [vendorInputId]: 0, [chaosId]: 0 },

@@ -172,7 +172,6 @@ it("requires exact profile agreement and a Normal native-only template for cover
     const reference = {
         realm: "pc" as const,
         league: "Allflame",
-        revision: manifest.revision,
         cohortId: cohort.id,
         sourcePreparation: profile,
     };

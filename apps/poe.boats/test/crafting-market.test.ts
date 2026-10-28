@@ -4,11 +4,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { createDbConnection } from "../app/db/client";
 import * as marketQueries from "../app/db/queries/crafting-market.queries";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
-import {
-    bindCohortPurchasePrice,
-    latestCompatibleCohort,
-    livePurchasePrices,
-} from "../app/lib/crafting-market";
+import { bindCohortPurchasePrice, livePurchasePrices } from "../app/lib/crafting-market";
 import {
     craftingMarketSnapshots,
     refreshCraftingMarketPrices,
@@ -149,7 +145,7 @@ describe("crafting market price bindings", () => {
         expect(livePurchasePrices(graph)).toEqual([]);
     });
 
-    it("uses a retained definition to recover older observations after a live revision change", async () => {
+    it("binds the saved cohort's observations at a historical snapshot hour", async () => {
         const db = createDbConnection("mysql://test:test@localhost/poe_test");
         const { graph, candidate: original } = donorFamilyMarketFixture();
         original.assumption = "display-equivalent-v1";
@@ -162,28 +158,25 @@ describe("crafting market price bindings", () => {
         const lookup = vi
             .spyOn(marketQueries, "findCraftingMarketPrices")
             .mockResolvedValue({ candidates: [original], truncated: false, message: null });
-        const definition = vi
-            .spyOn(marketQueries, "craftingMarketDefinition")
-            .mockResolvedValue(current.definition);
         try {
             const snapshots = await craftingMarketSnapshots(db, bound, engine, [
                 original.latest.hour,
             ]);
             expect(snapshots.points[0]?.issues).toEqual([]);
-            expect(livePurchasePrices(snapshots.points[0]!.graph!)[0]).toMatchObject({
-                reference: { revision: "test-market", assumption: "display-equivalent-v1" },
+            const [binding] = livePurchasePrices(snapshots.points[0]!.graph!);
+            expect(binding).toMatchObject({
+                reference: { assumption: "display-equivalent-v1" },
                 alternative: { price: { amount: 20 } },
             });
-            expect(definition).toHaveBeenCalledWith(db, original.definition.id, "current");
+            expect(binding?.reference).not.toHaveProperty("revision");
             expect(lookup.mock.calls[0]?.[2]).toBe(original.definition.id);
             expect(livePurchasePrices(bound)[0]?.alternative.price?.amount).toBe(27);
             expect(snapshots.points[0]!.graph!.ruleset).toEqual(bound.ruleset);
         } finally {
             lookup.mockRestore();
-            definition.mockRestore();
         }
     });
-    it("does not cross incompatible definitions or substitute an older usable price for a newer empty one", async () => {
+    it("keeps the saved price when the cohort is missing, empty or truncated", async () => {
         const db = createDbConnection("mysql://test:test@localhost/poe_test");
         const graph = bindCohortPurchasePrice(
             marketGraph(),
@@ -193,39 +186,19 @@ describe("crafting market price bindings", () => {
             marketCandidate,
         );
         const candidate = structuredClone(marketCandidate);
-        candidate.definition.revision = "next";
-        candidate.latest.revision = "next";
         candidate.latest.hour += 3600;
         const lookup = vi.spyOn(marketQueries, "findCraftingMarketPrices");
-        const definition = vi
-            .spyOn(marketQueries, "craftingMarketDefinition")
-            .mockResolvedValue(marketCandidate.definition);
         try {
-            for (const change of [
-                "purpose",
-                "query",
-                "missing-definition",
-                "empty-price",
-                "truncated",
-            ] as const) {
+            for (const change of ["missing", "empty-price", "truncated"] as const) {
                 const next = structuredClone(candidate);
-                if (change === "purpose") next.definition.purpose = "transfer-donor";
-                if (change === "query")
-                    next.definition.query.groups[0]!.filters.push({
-                        kind: "range",
-                        field: "ilvl",
-                        value: { min: 84 },
-                    });
+                if (change === "missing") next.definition.id = "another-cohort";
                 if (change === "empty-price") {
                     next.latest.prices = {};
                     next.covered = false;
                     next.reasons = ["No asking price in chaos is available."];
                 }
-                definition.mockResolvedValue(
-                    change === "missing-definition" ? null : marketCandidate.definition,
-                );
                 lookup.mockResolvedValue({
-                    candidates: change === "empty-price" ? [marketCandidate, next] : [next],
+                    candidates: [next],
                     truncated: change === "truncated",
                     message: null,
                 });
@@ -235,26 +208,9 @@ describe("crafting market price bindings", () => {
             }
         } finally {
             lookup.mockRestore();
-            definition.mockRestore();
         }
     });
-    it("orders compatible observations by hour, source time and then the saved revision", () => {
-        const candidate = structuredClone(marketCandidate);
-        candidate.definition.revision = "next";
-        candidate.latest.revision = "next";
-        expect(
-            latestCompatibleCohort([candidate, marketCandidate], marketCandidate.definition),
-        ).toBe(marketCandidate);
-        candidate.latest.lastSeenAt = "2026-10-01T00:30:00Z";
-        expect(
-            latestCompatibleCohort([marketCandidate, candidate], marketCandidate.definition),
-        ).toBe(candidate);
-        candidate.latest.hour -= 3600;
-        expect(
-            latestCompatibleCohort([candidate, marketCandidate], marketCandidate.definition),
-        ).toBe(marketCandidate);
-    });
-    it("refreshes a saved purchase from a newer compatible cohort revision", async () => {
+    it("refreshes a saved purchase from the cohort's latest hour", async () => {
         const db = createDbConnection("mysql://test:test@localhost/poe_test");
         const original = adaptiveMarketCandidate();
         const candidate = adaptiveMarketCandidate(27);
@@ -263,22 +219,40 @@ describe("crafting market price bindings", () => {
         candidate.latest.hour += 3600;
         const graph = bindCohortPurchasePrice(marketGraph(), engine, "base", "buy", original);
         const lookup = vi.spyOn(marketQueries, "findCraftingMarketPrices").mockResolvedValue({
-            candidates: [original, candidate],
+            candidates: [candidate],
             truncated: false,
             message: null,
         });
         try {
             const refreshed = await refreshCraftingMarketPrices(db, graph, engine);
             expect(refreshed.issues).toEqual([]);
-            expect(livePurchasePrices(refreshed.graph)[0]).toMatchObject({
-                reference: { revision: "next-market", window: "adaptive-v1" },
+            const [binding] = livePurchasePrices(refreshed.graph);
+            expect(binding).toMatchObject({
+                reference: { cohortId: candidate.definition.id, window: "adaptive-v1" },
                 alternative: { price: { amount: 27 } },
             });
+            expect(binding?.reference).not.toHaveProperty("revision");
             expect(refreshed.graph.ruleset).toEqual(graph.ruleset);
-            expect(livePurchasePrices(graph)[0]?.reference.revision).toBe("test-market");
         } finally {
             lookup.mockRestore();
         }
+    });
+    it("drops the catalog revision of a reference saved before cohorts lost it", () => {
+        const reference = decodeCohortPriceReference(
+            `cohort:v1:${encodeURIComponent(
+                JSON.stringify({
+                    realm: "pc",
+                    league: "Standard",
+                    revision: "test-market",
+                    cohortId: marketCandidate.definition.id,
+                }),
+            )}`,
+        );
+        expect(reference).toEqual({
+            realm: "pc",
+            league: "Standard",
+            cohortId: marketCandidate.definition.id,
+        });
     });
     it("requires and retains the representative assumption through refresh and historical snapshots", async () => {
         const { graph, candidate } = donorFamilyMarketFixture();
@@ -499,9 +473,9 @@ describe("crafting market price bindings", () => {
         expect(binding?.reference).toMatchObject({
             realm: "pc",
             league: "Standard",
-            revision: "test-market",
             cohortId: marketCandidate.definition.id,
         });
+        expect(binding?.reference).not.toHaveProperty("revision");
         expect(binding?.alternative.price).toMatchObject({
             amount: 20,
             source: "market",

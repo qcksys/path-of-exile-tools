@@ -1,1 +1,0 @@
-ALTER TABLE `qsPoeBoats__stash_currency_hourly` MODIFY COLUMN `marketId` varchar(512) NOT NULL;

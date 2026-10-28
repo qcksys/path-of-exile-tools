@@ -1,2 +1,0 @@
-ALTER TABLE `qsPoeBoats__stash_cohort` ADD `baseTypeKey` varchar(255) GENERATED ALWAYS AS (case when json_length(baseTypes) = 1 then json_unquote(json_extract(baseTypes, '$[0]')) else '' end) VIRTUAL;--> statement-breakpoint
-CREATE INDEX `stash_cohort_base_page_idx` ON `qsPoeBoats__stash_cohort` (`baseTypeKey`,`revision`,`id`);

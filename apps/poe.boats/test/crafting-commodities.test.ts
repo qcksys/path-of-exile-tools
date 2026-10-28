@@ -73,7 +73,7 @@ function capture(changes: Partial<typeof row> = {}) {
     const entry = { ...row, ...changes };
     sqlite
         .prepare(
-            `INSERT INTO ${DB_TABLE_PREFIX}stash_unique_hourly VALUES (${Object.keys(entry)
+            `INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_unique_hourly VALUES (${Object.keys(entry)
                 .map(() => "?")
                 .join(",")})`,
         )
@@ -86,7 +86,7 @@ function capture(changes: Partial<typeof row> = {}) {
 function captureExchange(changes: Partial<typeof commodityExchangeSnapshot> = {}) {
     const entry = { ...commodityExchangeSnapshot, ...changes };
     sqlite
-        .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_currency_hourly VALUES (?,?,?,?,?,?,?)`)
+        .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_currency_hourly VALUES (?,?,?,?,?,?,?)`)
         .run(
             entry.realm,
             entry.league,
@@ -102,11 +102,11 @@ beforeEach(() => {
     vi.setSystemTime((hour + 5400) * 1000);
     statements = [];
     sqlite = new DatabaseSync(":memory:");
-    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_unique_hourly (
+    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_unique_hourly (
         realm TEXT, league TEXT, hour INTEGER, itemKey TEXT, baseType TEXT, name TEXT,
         frameType INTEGER, identified INTEGER, corrupted INTEGER, foilVariation INTEGER,
         signatureKind TEXT, signatureValue TEXT, listingCount INTEGER, uniqueSellers INTEGER, prices TEXT)`);
-    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_currency_hourly (
+    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_currency_hourly (
         realm TEXT, league TEXT, hour INTEGER, marketId TEXT, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT)`);
     db = drizzle(async (sql, params) => {
         statements.push(sql);
@@ -172,7 +172,7 @@ it("uses exchange membership at each cutoff and preserves the original stash bin
     expect(past.points[0]?.graph?.prices[essenceId]?.amount).toBe(16.5);
     sqlite
         .prepare(
-            `UPDATE ${DB_TABLE_PREFIX}stash_currency_hourly SET volumeTraded=? WHERE marketId=?`,
+            `UPDATE ${DB_TABLE_PREFIX}stash_poe1_currency_hourly SET volumeTraded=? WHERE marketId=?`,
         )
         .run(JSON.stringify({ [essenceId]: 10, [chaosId]: 50 }), marketId);
     const recovered = await refreshCraftingMarketPrices(db, missing.graph, engine);
@@ -201,7 +201,7 @@ it("ignores future-only observations, keeps resonator IDs distinct, and fails cl
     expect(known?.has(emptyResonator.ids[0])).toBe(true);
     expect(known?.has(emptyResonator.ids[1])).toBe(false);
     const insert = sqlite.prepare(
-        `INSERT INTO ${DB_TABLE_PREFIX}stash_currency_hourly VALUES (?,?,?,?,?,?,?)`,
+        `INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_currency_hourly VALUES (?,?,?,?,?,?,?)`,
     );
     for (let i = 0; i < 5000; i++)
         insert.run("pc", "Standard", hour, `item-${i}|${chaosId}`, "{}", null, null);
@@ -543,7 +543,7 @@ it.each([
     expect(snapshots.points.map((point) => point.graph?.prices[id]?.amount)).toEqual([8, 16.5]);
     sqlite
         .prepare(
-            `DELETE FROM ${DB_TABLE_PREFIX}stash_unique_hourly WHERE hour=? AND itemKey=? AND signatureKind=?`,
+            `DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_unique_hourly WHERE hour=? AND itemKey=? AND signatureKind=?`,
         )
         .run(hour, emptyResonator.baseType, emptyResonator.variant);
     capture({ ...taggedRow, prices: {} });
@@ -624,7 +624,7 @@ it("selects and refreshes the latest Fundamental Fossil ask without using an old
             (point) => point.graph?.prices[fossilId]?.amount,
         ),
     ).toEqual([50, 19]);
-    sqlite.prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_unique_hourly WHERE hour=?`).run(hour);
+    sqlite.prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_unique_hourly WHERE hour=?`).run(hour);
     capture({ ...fossilRow, prices: {} });
     expect((await findCraftingSourcePrices(graph, engine, options, db)).quotes).toEqual({});
 });
@@ -734,7 +734,7 @@ it("selects and refreshes exact Unravelling asks without exchange fallback or ma
     expect(
         (await findCraftingSourcePrices(graph, engine, { ...options, realm: "poe2" }, db)).quotes,
     ).toEqual({});
-    sqlite.prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_unique_hourly WHERE hour=?`).run(hour);
+    sqlite.prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_unique_hourly WHERE hour=?`).run(hour);
     capture({ ...currencyRow, prices: {} });
     captureExchange();
     expect((await findCraftingSourcePrices(graph, engine, options, db)).quotes).toEqual({});
@@ -778,7 +778,9 @@ it("does not hide a newer empty or malformed price behind an older positive quot
         { chaos: { count: 2, min: 30, median: 16.5, max: 3 } },
     ];
     for (const prices of distributions) {
-        sqlite.prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_unique_hourly WHERE hour=?`).run(hour);
+        sqlite
+            .prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_unique_hourly WHERE hour=?`)
+            .run(hour);
         capture({ prices });
         expect((await findCraftingCommodityPrices(db, graph, [identity])).quotes).toEqual({});
     }
@@ -805,7 +807,7 @@ it("refreshes a new observation hour with the same amount and prices historical 
     expect(snapshots.points.map((point) => point.graph?.prices[essenceId]?.amount ?? null)).toEqual(
         [null, 5.5, 16.5],
     );
-    sqlite.exec(`DELETE FROM ${DB_TABLE_PREFIX}stash_unique_hourly`);
+    sqlite.exec(`DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_unique_hourly`);
     const missing = await refreshCraftingMarketPrices(db, refreshed.graph, engine);
     expect(missing.graph).toBe(refreshed.graph);
     expect(missing.issues).toHaveLength(1);
@@ -884,7 +886,7 @@ it("requires conversion opt-in, keeps native policy, and refreshes using the new
     expect(history.points.map((point) => point.graph?.prices[essenceId]?.amount)).toEqual([
         16.5, 600,
     ]);
-    sqlite.exec(`DELETE FROM ${DB_TABLE_PREFIX}stash_currency_hourly`);
+    sqlite.exec(`DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_currency_hourly`);
     const missing = await refreshCraftingMarketPrices(db, refreshed.graph, engine);
     expect(missing.graph).toBe(refreshed.graph);
     expect(missing.issues).toHaveLength(1);
@@ -963,7 +965,7 @@ it("does not convert a malformed requested-currency bucket or fall back beyond t
     expect((await findCraftingSourcePrices(graph, engine, convertedOptions, db)).quotes).toEqual(
         {},
     );
-    sqlite.prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_unique_hourly WHERE hour=?`).run(hour);
+    sqlite.prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_unique_hourly WHERE hour=?`).run(hour);
     capture({ prices: {} });
     expect((await findCraftingSourcePrices(graph, engine, convertedOptions, db)).quotes).toEqual(
         {},

@@ -1724,7 +1724,6 @@ describe("transport parity", () => {
                 {
                     realm: "pc",
                     league: "Standard",
-                    revision: candidate.definition.revision,
                     cohortId: candidate.definition.id,
                 },
                 history,
@@ -1900,7 +1899,7 @@ describe("transport parity", () => {
         }
     });
 
-    it("shares revision-following refresh and incompatible-definition refusals through HTTP and MCP", async () => {
+    it("shares cohort refresh and unusable-cohort refusals through HTTP and MCP", async () => {
         const graph = bindCohortPurchasePrice(
             marketGraph(),
             fixtureEngine,
@@ -1914,11 +1913,8 @@ describe("transport parity", () => {
         candidate.latest.hour += 3600;
         candidate.latest.prices.chaos!.median = 27;
         const lookup = vi.spyOn(craftingMarketQueries, "findCraftingMarketPrices");
-        vi.spyOn(craftingMarketQueries, "craftingMarketDefinition").mockResolvedValue(
-            marketCandidate.definition,
-        );
         for (const compatible of [true, false]) {
-            candidate.definition.purpose = compatible ? "base" : "transfer-donor";
+            candidate.covered = compatible;
             lookup.mockResolvedValue({ candidates: [candidate], truncated: false, message: null });
             const response = await api.request(
                 "https://poe.boats/api/v1/crafting/market/refresh",

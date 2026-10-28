@@ -11,7 +11,6 @@ import {
     and,
     desc,
     eq,
-    getTableColumns,
     gt,
     gte,
     inArray,
@@ -20,12 +19,17 @@ import {
     lte,
     max,
     or,
+    type SQL,
     sql,
 } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
 import { tStashCohort as cohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly as hourly } from "~/db/schema/stash.cohort-hourly";
-import { tStashCohortRevisionHour as revisionHour } from "~/db/schema/stash.cohort-revision-hour";
+import { tStashCohortRevision as revisions } from "~/db/schema/stash.cohort-revision";
+import {
+    type CohortPriceWindows,
+    tStashCohortWindow as window,
+} from "~/db/schema/stash.cohort-window";
 import { selectCraftingMarketPrice } from "~/lib/crafting-market";
 import type {
     CraftingMarketCandidate,
@@ -36,7 +40,6 @@ import type {
 import type { ServerTiming } from "~/services/server-timing.server";
 import { findCraftingExchangePrices } from "./crafting-exchange.queries";
 
-const hourColumns = getTableColumns(hourly);
 const definitionColumns = {
     id: cohort.id,
     revision: cohort.revision,
@@ -45,22 +48,50 @@ const definitionColumns = {
     purpose: cohort.purpose,
     query: cohort.query,
 };
-const {
-    rowCreatedAt: _created,
-    rowUpdatedAt: _updated,
-    rowDeletedAt: _deleted,
-    ...summaryColumns
-} = hourColumns;
+const summaryColumns = {
+    realm: hourly.realm,
+    league: hourly.league,
+    hour: hourly.hour,
+    revision: revisions.revision,
+    cohortId: hourly.cohortId,
+    listingCount: hourly.listingCount,
+    uniqueSellers: hourly.uniqueSellers,
+    unknownCount: hourly.unknownCount,
+    prices: hourly.prices,
+    confidenceMethod: hourly.confidenceMethod,
+    firstSeenAt: hourly.firstSeenAt,
+    lastSeenAt: hourly.lastSeenAt,
+    windows: window.windows,
+};
+// Windows count only while they belong to the hourly row's revision.
+const summaryJoins = {
+    revision: eq(revisions.seq, hourly.revisionSeq),
+    window: and(
+        eq(window.realm, hourly.realm),
+        eq(window.league, hourly.league),
+        eq(window.hour, hourly.hour),
+        eq(window.cohortId, hourly.cohortId),
+        eq(window.revisionSeq, hourly.revisionSeq),
+    ) as SQL,
+};
 const noCoverageMessage =
     "No captured cohort covers this item in the latest 24 completed hours at this cutoff. Enter a manual price or check trade.";
 
-export async function craftingMarketDefinition(db: TDatabase, id: string, revision: string) {
-    const [row] = await db
-        .select(definitionColumns)
-        .from(cohort)
-        .where(and(eq(cohort.id, id), eq(cohort.revision, revision)))
-        .limit(1);
-    return row ? marketCohortDefinitionSchema.parse(row) : null;
+/** A stored cohort hour with its price windows, if they are still kept, merged back in. */
+function cohortSummary({
+    windows,
+    ...row
+}: {
+    windows: CohortPriceWindows | null;
+    prices: Record<string, object>;
+}) {
+    const prices = Object.fromEntries(
+        Object.entries(row.prices).map(([currency, price]) => [
+            currency,
+            windows?.[currency] ? { ...price, windows: windows[currency] } : price,
+        ]),
+    );
+    return cohortHourlySchema.parse({ ...row, prices });
 }
 
 export async function findCraftingMarketPrices(
@@ -102,24 +133,22 @@ export async function findCraftingMarketPrices(
             lte(hourly.hour, range.latestHour),
             cohortId === undefined ? undefined : eq(hourly.cohortId, cohortId),
         );
-        // Definitions from revisions without observations in the window cannot produce a candidate.
-        const revisions = (
-            await read(
-                db
-                    .selectDistinct({ revision: revisionHour.revision })
-                    .from(revisionHour)
-                    .where(
-                        and(
-                            eq(revisionHour.realm, input.realm),
-                            eq(revisionHour.league, input.league),
-                            gte(revisionHour.hour, range.earliestHour),
-                            lte(revisionHour.hour, range.latestHour),
-                        ),
+        // Without observations in the window no definition can produce a candidate.
+        const [observed] = await read(
+            db
+                .select({ hour: hourly.hour })
+                .from(hourly)
+                .where(
+                    and(
+                        eq(hourly.realm, input.realm),
+                        eq(hourly.league, input.league),
+                        gte(hourly.hour, range.earliestHour),
+                        lte(hourly.hour, range.latestHour),
                     ),
-            )
-        ).map(({ revision }) => revision);
-        if (!revisions.length)
-            return { candidates: [], truncated: false, message: noCoverageMessage };
+                )
+                .limit(1),
+        );
+        if (!observed) return { candidates: [], truncated: false, message: noCoverageMessage };
         const bases = or(
             isNull(cohort.baseTypes),
             sql`JSON_CONTAINS(${cohort.baseTypes}, ${JSON.stringify(input.item.item.baseType)})`,
@@ -127,30 +156,25 @@ export async function findCraftingMarketPrices(
         const latestHour = db
             .select({ hour: max(hourly.hour) })
             .from(hourly)
-            .where(
-                and(scope, eq(hourly.revision, cohort.revision), eq(hourly.cohortId, cohort.id)),
-            );
+            .where(and(scope, eq(hourly.cohortId, cohort.id)));
         let ranked: CraftingMarketCandidate[] = [];
-        const identity = (value: { id: string; revision: string }) =>
-            JSON.stringify([value.revision, value.id]);
+        const identity = (value: { id: string }) => value.id;
         async function orderIdentities(candidates: CraftingMarketCandidate[], limit: number) {
             return read(
                 db
-                    .select({ id: cohort.id, revision: cohort.revision })
+                    .select({ id: cohort.id })
                     .from(cohort)
                     .where(
-                        sql`(${cohort.revision}, ${cohort.id}) in (${sql.join(
-                            candidates.map(
-                                ({ definition }) => sql`(${definition.revision}, ${definition.id})`,
-                            ),
-                            sql`, `,
-                        )})`,
+                        inArray(
+                            cohort.id,
+                            candidates.map(({ definition }) => definition.id),
+                        ),
                     )
-                    .orderBy(cohort.id, cohort.revision)
+                    .orderBy(cohort.id)
                     .limit(limit),
             );
         }
-        let cursor: { id: string; revision: string; baseTypeKey: string | null } | undefined;
+        let cursor: { id: string; baseTypeKey: string | null } | undefined;
         while (true) {
             const definitions = await read(
                 db
@@ -160,26 +184,19 @@ export async function findCraftingMarketPrices(
                         and(
                             bases,
                             inArray(cohort.baseTypeKey, ["", input.item.item.baseType]),
-                            inArray(cohort.revision, revisions),
                             cohortId === undefined ? undefined : eq(cohort.id, cohortId),
                             cursor
                                 ? or(
                                       gt(cohort.baseTypeKey, cursor.baseTypeKey!),
                                       and(
                                           eq(cohort.baseTypeKey, cursor.baseTypeKey!),
-                                          or(
-                                              gt(cohort.revision, cursor.revision),
-                                              and(
-                                                  eq(cohort.revision, cursor.revision),
-                                                  gt(cohort.id, cursor.id),
-                                              ),
-                                          ),
+                                          gt(cohort.id, cursor.id),
                                       ),
                                   )
                                 : undefined,
                         ),
                     )
-                    .orderBy(cohort.baseTypeKey, cohort.revision, cohort.id)
+                    .orderBy(cohort.baseTypeKey, cohort.id)
                     .limit(500),
             );
             const parseStarted = performance.now();
@@ -220,53 +237,36 @@ export async function findCraftingMarketPrices(
                 // Match definitions before reading their latest buckets; unrelated histories must not consume the result limit.
                 const latest = db
                     .select({
-                        revision: cohort.revision,
                         cohortId: cohort.id,
                         hour: sql<number>`(${latestHour})`.as("latest_hour"),
                     })
                     .from(cohort)
                     .where(
-                        or(
-                            ...matching.map(({ definition }) =>
-                                and(
-                                    eq(cohort.id, definition.id),
-                                    eq(cohort.revision, definition.revision),
-                                ),
-                            ),
+                        inArray(
+                            cohort.id,
+                            matching.map(({ definition }) => definition.id),
                         ),
                     )
                     .as("latest");
                 const rows = await read(
                     db
-                        .select({
-                            definitionId: latest.cohortId,
-                            definitionRevision: latest.revision,
-                            summary: summaryColumns,
-                        })
+                        .select({ summary: summaryColumns })
                         .from(hourly)
                         .innerJoin(
                             latest,
-                            and(
-                                eq(hourly.revision, latest.revision),
-                                eq(hourly.cohortId, latest.cohortId),
-                                eq(hourly.hour, latest.hour),
-                            ),
+                            and(eq(hourly.cohortId, latest.cohortId), eq(hourly.hour, latest.hour)),
                         )
+                        .innerJoin(revisions, summaryJoins.revision)
+                        .leftJoin(window, summaryJoins.window)
                         .where(scope),
                 );
                 const summaryStarted = performance.now();
-                const byPair = new Map(
-                    matching.map((candidate) => [
-                        JSON.stringify([candidate.definition.revision, candidate.definition.id]),
-                        candidate,
-                    ]),
+                const byId = new Map(
+                    matching.map((candidate) => [candidate.definition.id, candidate]),
                 );
                 for (const row of rows) {
-                    const latest = cohortHourlySchema.parse(row.summary);
-                    const candidate = byPair.get(
-                        JSON.stringify([row.definitionRevision, row.definitionId]),
-                    )!;
-                    ranked.push({ ...candidate, latest });
+                    const latest = cohortSummary(row.summary);
+                    ranked.push({ ...byId.get(latest.cohortId)!, latest });
                 }
                 ranked.sort((a, b) => b.latest.hour - a.latest.hour);
                 parseMs += performance.now() - summaryStarted;
@@ -391,18 +391,19 @@ export async function findCraftingMarketPrices(
 export async function craftingMarketHistory(db: TDatabase, input: CraftingMarketHistoryInput) {
     const rows = await db
         .select(summaryColumns)
-        .from(hourly)
+        .from(hourly, { forceIndex: "stash_cohort_history_idx" })
+        .innerJoin(revisions, summaryJoins.revision)
+        .leftJoin(window, summaryJoins.window)
         .where(
             and(
                 eq(hourly.realm, input.realm),
                 eq(hourly.league, input.league),
-                eq(hourly.revision, input.revision),
                 eq(hourly.cohortId, input.cohortId),
                 input.before === undefined ? undefined : lt(hourly.hour, input.before),
             ),
         )
         .orderBy(desc(hourly.hour))
         .limit(input.limit + 1);
-    const history = rows.slice(0, input.limit).map((row) => cohortHourlySchema.parse(row));
+    const history = rows.slice(0, input.limit).map(cohortSummary);
     return { history, nextBefore: rows.length > input.limit ? history.at(-1)!.hour : null };
 }

@@ -89,12 +89,16 @@ function worker(overrides: Partial<IngestStatus> = {}, receivedAt = now) {
 }
 
 function coverageTables() {
-    sqlite.exec(
-        `CREATE TABLE ${DB_TABLE_PREFIX}stash_hour_coverage (stream TEXT, realm TEXT, league TEXT, hour INTEGER, rowCount INTEGER)`,
-    );
-    sqlite.exec(`INSERT INTO ${DB_TABLE_PREFIX}stash_hour_coverage VALUES
+    for (const game of ["poe1", "poe2"])
+        sqlite.exec(
+            `CREATE TABLE ${DB_TABLE_PREFIX}stash_${game}_hour_coverage (stream TEXT, realm TEXT, league TEXT, hour INTEGER, rowCount INTEGER)`,
+        );
+    sqlite.exec(`INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_hour_coverage VALUES
         ('currency', 'pc', 'Allflame', 3600, 2), ('currency', 'pc', 'Allflame', 10800, 1),
-        ('currency', 'pc', 'Other', 18000, 1), ('currency', 'poe2', 'Allflame', 18000, 1)`);
+        ('currency', 'pc', 'Other', 18000, 1)`);
+    sqlite.exec(
+        `INSERT INTO ${DB_TABLE_PREFIX}stash_poe2_hour_coverage VALUES ('currency', 'poe2', 'Allflame', 18000, 1)`,
+    );
 }
 
 async function mcp(method: string, params: unknown) {
@@ -161,7 +165,7 @@ it.each([undefined, "full"])("retains full coverage when view is %s", async (vie
         },
     ]);
     expect(reads).toHaveLength(4);
-    expect(reads.filter((sql) => sql.includes("stash_hour_coverage"))).toHaveLength(3);
+    expect(reads.filter((sql) => sql.includes("hour_coverage"))).toHaveLength(3);
 });
 
 it("reuses coverage for one minute while checking worker health on every request", async () => {
@@ -173,19 +177,19 @@ it("reuses coverage for one minute while checking worker health on every request
         getServerStatus(db, filters),
     ]);
     expect(simultaneous.coverage).toEqual(first.coverage);
-    expect(reads.filter((query) => query.includes("stash_hour_coverage"))).toHaveLength(3);
+    expect(reads.filter((query) => query.includes("hour_coverage"))).toHaveLength(3);
     sqlite.exec(
-        `INSERT INTO ${DB_TABLE_PREFIX}stash_hour_coverage VALUES ('currency', 'pc', 'Allflame', 14400, 1)`,
+        `INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_hour_coverage VALUES ('currency', 'pc', 'Allflame', 14400, 1)`,
     );
     vi.mocked(Date.now).mockReturnValue(now + 59_999);
     expect((await getServerStatus(db, filters)).coverage).toEqual(first.coverage);
     expect(reads.filter((query) => query.includes("ingest_worker"))).toHaveLength(3);
-    expect(reads.filter((query) => query.includes("stash_hour_coverage"))).toHaveLength(3);
+    expect(reads.filter((query) => query.includes("hour_coverage"))).toHaveLength(3);
     vi.mocked(Date.now).mockReturnValue(now + 60_001);
     const refreshed = await getServerStatus(db, filters);
     expect(refreshed.coverageCheckedAt).toBe(now + 60_001);
     expect(refreshed.coverage[0]).toMatchObject({ hours: 3, rows: 4, latestHour: 14400 });
-    expect(reads.filter((query) => query.includes("stash_hour_coverage"))).toHaveLength(6);
+    expect(reads.filter((query) => query.includes("hour_coverage"))).toHaveLength(6);
 });
 
 it("keeps cached coverage isolated by realm, league and database", async () => {
@@ -195,7 +199,8 @@ it("keeps cached coverage isolated by realm, league and database", async () => {
     expect(other.coverage[0]).toMatchObject({ realm: "poe2", rows: 1 });
     const league = await getServerStatus(db, { realm: "pc", league: "Other" });
     expect(league.coverage[0]).toMatchObject({ league: "Other", rows: 1 });
-    expect(reads.filter((query) => query.includes("stash_hour_coverage"))).toHaveLength(9);
+    // PoE 1 reads three streams and PoE 2, which has no equipment cohorts, two.
+    expect(reads.filter((query) => query.includes("hour_coverage"))).toHaveLength(8);
     const otherDb = drizzle(async () => ({ rows: [] })) as unknown as TDatabase;
     expect((await getServerStatus(otherDb, { realm: "pc", league: "Allflame" })).coverage).toEqual(
         [],
@@ -212,26 +217,27 @@ it("expires an unfinished refresh without replacing a newer successful snapshot"
     const pending = Promise.withResolvers<void>();
     let coverageReads = 0;
     const delayedDb = drizzle(async (query) => {
-        if (query.includes("stash_hour_coverage")) {
+        if (query.includes("hour_coverage")) {
             coverageReads++;
-            if (coverageReads <= 3) await pending.promise;
+            if (coverageReads <= 5) await pending.promise;
         }
         return { rows: [] };
     }) as unknown as TDatabase;
     const first = getServerStatus(delayedDb);
     let second: ReturnType<typeof getServerStatus> | undefined;
     try {
-        await expect.poll(() => coverageReads).toBe(3);
+        // Five streams across both games.
+        await expect.poll(() => coverageReads).toBe(5);
         vi.mocked(Date.now).mockReturnValue(now + 60_001);
         second = getServerStatus(delayedDb);
-        await expect.poll(() => coverageReads, { timeout: 500 }).toBe(6);
+        await expect.poll(() => coverageReads, { timeout: 500 }).toBe(10);
         await second;
     } finally {
         pending.resolve();
         await Promise.all([first, second]);
     }
     expect((await getServerStatus(delayedDb)).coverageCheckedAt).toBe(now + 60_001);
-    expect(coverageReads).toBe(6);
+    expect(coverageReads).toBe(10);
 });
 
 it.each([undefined, "full", "workers"])("shares view %s through HTTP and MCP", async (view) => {

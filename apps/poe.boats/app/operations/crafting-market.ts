@@ -247,7 +247,7 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Refresh bound equipment purchases, exchange costs, captured currency asks, explicit vendor-upgrade ingredients and supported beast/temple estimates using their saved source scope and policies. Equipment follows compatible revisions with the same cohort ID, purpose and exact query. Preserves manual prices and crafting rules. Returns issues when compatibility cannot be established or a source is unavailable; cached unresolved prices must not be treated as current.",
+            "Refresh bound equipment purchases, exchange costs, captured currency asks, explicit vendor-upgrade ingredients and supported beast/temple estimates using their saved source scope and policies. Equipment follows the saved cohort ID. Preserves manual prices and crafting rules. Returns issues when compatibility cannot be established or a source is unavailable; cached unresolved prices must not be treated as current.",
         input: z.object({ graph: CraftingGraphContract }),
         output: craftingMarketRefreshResultSchema.extend({ graph: CraftingGraphContract }),
         execute: async ({ graph }, context) =>
@@ -281,7 +281,7 @@ export const craftingMarketOperations = [
         access: "public",
         readOnly: true,
         description:
-            "Read permanent, realm/league/revision-scoped hourly cohort asking-price history, including zero-price corrections, seller counts and confidence. Pages backwards without merging overlapping cohorts or currencies.",
+            "Read permanent, realm/league-scoped hourly cohort asking-price history, including zero-price corrections, seller counts and confidence. Each hour holds the newest classification of the cohort. Pages backwards without merging overlapping cohorts or currencies.",
         input: craftingMarketHistoryInputSchema,
         output: craftingMarketHistoryResultSchema,
         execute: (input, context) => craftingMarketHistory(context.db, input),

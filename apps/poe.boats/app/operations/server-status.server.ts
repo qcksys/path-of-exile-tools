@@ -7,11 +7,10 @@ import {
 import { and, count, eq, max, min, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { TDatabase } from "~/db/client";
+import { STASH_GAMES, stashGame } from "~/db/helpers/stash-game";
+import { COVERAGE_STREAMS } from "~/db/queries/stash-rollups.queries";
 import { tIngestWorker } from "~/db/schema/ingest.worker";
-import {
-    tStashHourCoverage as coverage,
-    STASH_COVERAGE_STREAMS,
-} from "~/db/schema/stash.hour-coverage";
+import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 
 export const serverStatusFilters = ingestStatusSchema
     .pick({ realm: true, league: true })
@@ -76,32 +75,35 @@ async function storedCoverage(db: TDatabase, filters: z.infer<typeof serverStatu
         checkedAt,
         expiresAt: checkedAt + 60_000,
         value: Promise.all(
-            STASH_COVERAGE_STREAMS.map(async (stream) => {
-                const rows = await db
-                    .select({
-                        realm: coverage.realm,
-                        league: coverage.league,
-                        firstHour: min(coverage.hour),
-                        latestHour: max(coverage.hour),
-                        hours: count(),
-                        rows: sql<number>`sum(${coverage.rowCount})`.mapWith(Number),
-                    })
-                    .from(coverage)
-                    .where(
-                        and(
-                            eq(coverage.stream, stream),
-                            filters.realm ? eq(coverage.realm, filters.realm) : undefined,
-                            filters.league ? eq(coverage.league, filters.league) : undefined,
-                        ),
-                    )
-                    .groupBy(coverage.realm, coverage.league);
-                return rows.map((row) => ({
-                    ...row,
-                    stream,
-                    firstHour: Number(row.firstHour),
-                    latestHour: Number(row.latestHour),
-                }));
-            }),
+            (filters.realm ? [stashGame(filters.realm)] : STASH_GAMES).flatMap((game) =>
+                COVERAGE_STREAMS[game].map(async (stream) => {
+                    const coverage = tStashHourCoverage[game];
+                    const rows = await db
+                        .select({
+                            realm: coverage.realm,
+                            league: coverage.league,
+                            firstHour: min(coverage.hour),
+                            latestHour: max(coverage.hour),
+                            hours: count(),
+                            rows: sql<number>`sum(${coverage.rowCount})`.mapWith(Number),
+                        })
+                        .from(coverage)
+                        .where(
+                            and(
+                                eq(coverage.stream, stream),
+                                filters.realm ? eq(coverage.realm, filters.realm) : undefined,
+                                filters.league ? eq(coverage.league, filters.league) : undefined,
+                            ),
+                        )
+                        .groupBy(coverage.realm, coverage.league);
+                    return rows.map((row) => ({
+                        ...row,
+                        stream,
+                        firstHour: Number(row.firstHour),
+                        latestHour: Number(row.latestHour),
+                    }));
+                }),
+            ),
         ).then((rows) => rows.flat()),
     };
     if (cache.size >= 100) cache.delete(cache.keys().next().value!);

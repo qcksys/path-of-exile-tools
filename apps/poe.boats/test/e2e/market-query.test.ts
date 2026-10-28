@@ -1,5 +1,4 @@
 import { fileURLToPath } from "node:url";
-import marketBases from "@poe-tools/market/market-bases-poe1.json";
 import { MySqlContainer, type StartedMySqlContainer } from "@testcontainers/mysql";
 import { and, eq, getTableName, sql } from "drizzle-orm";
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
@@ -7,6 +6,7 @@ import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection, type RowDataPacket } from "mysql2/promise";
 import { afterAll, beforeAll, expect, it, vi } from "vite-plus/test";
 import type { TDatabase } from "~/db/client";
+import { stashGame } from "~/db/helpers/stash-game";
 import {
     getMarketBase,
     getMarketData,
@@ -24,15 +24,12 @@ import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
-import {
-    tStashUniqueHourly as market,
-    type TStashUniqueHourlyI,
-} from "~/db/schema/stash.unique-hourly";
-import { marketBasesSchema } from "~/lib/market-bases";
+import { type TStashUniqueHourlyI, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { getServerStatus } from "~/operations/server-status.server";
 import { marketFiltersSchema } from "~/schemas/market";
 
 const hour = 1_792_836_000;
+const market = tStashUniqueHourly.poe1;
 let container: StartedMySqlContainer;
 let connection: Connection;
 let db: MySql2Database;
@@ -64,7 +61,7 @@ beforeAll(async () => {
             ["Current", hour],
             ["Previous", hour - 86400],
         ] as const)
-            await db.insert(market).values(
+            await db.insert(tStashUniqueHourly[stashGame(realm)]).values(
                 Array.from({ length: 400 }, (_, index) => ({
                     realm,
                     league,
@@ -144,7 +141,7 @@ it.each([
     const query = rowsStatement();
     const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
     const aggregate = plan.find((row) => row.select_type === "DERIVED");
-    expect(aggregate?.table).toBe("qsPoeBoats__stash_market_daily");
+    expect(aggregate?.table).toBe("qsPoeBoats__stash_poe1_market_daily");
 });
 
 it("reads one category's daily rows from the base-type index", async () => {
@@ -159,7 +156,7 @@ it("reads one category's daily rows from the base-type index", async () => {
         ),
     );
     await refreshStashRollups(db as unknown as TDatabase);
-    await db.execute(sql`ANALYZE TABLE ${tStashMarketDaily}`);
+    await db.execute(sql`ANALYZE TABLE ${tStashMarketDaily.poe1}`);
     statements.length = 0;
     const result = await marketData(
         db as unknown as TDatabase,
@@ -190,9 +187,12 @@ it("reads status coverage from hourly rollups without scanning hourly tables", a
             (row) => row.stream === "uniques" && row.realm === "pc" && row.league === "Current",
         ),
     ).toMatchObject({ firstHour: hour - 19 * 3600, latestHour: hour, hours: 20, rows: 400 });
-    expect(statements.filter((query) => query.sql.includes("stash_hour_coverage"))).toHaveLength(3);
+    // PoE 1 covers currency, uniques and equipment; PoE 2 has no equipment cohorts.
     expect(
-        statements.some((query) => /stash_(unique|currency|cohort)_hourly/.test(query.sql)),
+        statements.filter((query) => /stash_poe[12]_hour_coverage/.test(query.sql)),
+    ).toHaveLength(5);
+    expect(
+        statements.some((query) => /stash_poe[12]_(unique|currency|cohort)_hourly/.test(query.sql)),
     ).toBe(false);
 });
 
@@ -217,8 +217,8 @@ it("commits overlapping currency batches from separate connections without losin
         }
         const stored = await db
             .select()
-            .from(tStashCurrencyHourly)
-            .where(eq(tStashCurrencyHourly.league, "Concurrent"));
+            .from(tStashCurrencyHourly.poe1)
+            .where(eq(tStashCurrencyHourly.poe1.league, "Concurrent"));
         expect(stored).toHaveLength(401);
         expect(
             stored.every((row) => row.volumeTraded?.chaos === 0 && row.lowestRatio?.chaos === 1),
@@ -243,7 +243,7 @@ it("recovers an actual MySQL deadlock victim by replaying its autocommitted batc
     try {
         await blocker.beginTransaction();
         await blocker.query(
-            "SELECT marketId FROM qsPoeBoats__stash_currency_hourly WHERE realm = 'pc' AND league = 'Deadlock' AND marketId >= 'pair:0001' FOR UPDATE",
+            "SELECT marketId FROM qsPoeBoats__stash_poe1_currency_hourly WHERE realm = 'pc' AND league = 'Deadlock' AND marketId >= 'pair:0001' FOR UPDATE",
         );
         writer = upsertStashCurrencyHourly(
             db as unknown as TDatabase,
@@ -259,17 +259,17 @@ it("recovers an actual MySQL deadlock victim by replaying its autocommitted batc
             })
             .toBeGreaterThan(0);
         await blocker.query(
-            "UPDATE qsPoeBoats__stash_currency_hourly SET volumeTraded = JSON_OBJECT('chaos', 2) WHERE realm = 'pc' AND league = 'Deadlock' AND marketId = 'pair:0000'",
+            "UPDATE qsPoeBoats__stash_poe1_currency_hourly SET volumeTraded = JSON_OBJECT('chaos', 2) WHERE realm = 'pc' AND league = 'Deadlock' AND marketId = 'pair:0000'",
         );
         await blocker.commit();
         expect(await writer).toBe(2);
         const stored = await db
             .select()
-            .from(tStashCurrencyHourly)
+            .from(tStashCurrencyHourly.poe1)
             .where(
                 and(
-                    eq(tStashCurrencyHourly.league, "Deadlock"),
-                    eq(tStashCurrencyHourly.marketId, "pair:0000"),
+                    eq(tStashCurrencyHourly.poe1.league, "Deadlock"),
+                    eq(tStashCurrencyHourly.poe1.marketId, "pair:0000"),
                 ),
             );
         expect(stored[0]?.volumeTraded).toEqual({ chaos: 0 });
@@ -319,27 +319,29 @@ it("keeps daily rollups, exchange markets and coverage current through the inges
     ]);
     expect((await read({})).rows).toMatchObject([{ periodSales: 5 }]);
 
+    const exchange = (marketId: string, at: number, volumeTraded: Record<string, number>) => ({
+        realm: "pc",
+        league: "Ingested",
+        marketId,
+        hour: at,
+        volumeTraded,
+    });
     await upsertStashCurrencyHourly(db as unknown as TDatabase, [
-        { league: "Ingested", marketId: "chaos|divine", hour, volumeTraded: { chaos: 1 } },
+        exchange("chaos|divine", hour, { chaos: 1 }),
     ]);
     await upsertStashCurrencyHourly(db as unknown as TDatabase, [
-        {
-            league: "Ingested",
-            marketId: "chaos|divine",
-            hour: hour - 7200,
-            volumeTraded: { chaos: 1 },
-        },
-        { league: "Ingested", marketId: "chaos|divine", hour, volumeTraded: { chaos: 2 } },
+        exchange("chaos|divine", hour - 7200, { chaos: 1 }),
+        exchange("chaos|divine", hour, { chaos: 2 }),
     ]);
     const markets = await db
         .select()
-        .from(tStashCurrencyMarket)
-        .where(eq(tStashCurrencyMarket.league, "Ingested"));
+        .from(tStashCurrencyMarket.poe1)
+        .where(eq(tStashCurrencyMarket.poe1.league, "Ingested"));
     expect(markets).toMatchObject([{ marketId: "chaos|divine", firstHour: hour - 7200 }]);
     const coverage = await db
         .select()
-        .from(tStashHourCoverage)
-        .where(eq(tStashHourCoverage.league, "Ingested"));
+        .from(tStashHourCoverage.poe1)
+        .where(eq(tStashHourCoverage.poe1.league, "Ingested"));
     expect(
         coverage
             .map(({ stream, hour, rowCount }) => ({ stream, hour, rowCount }))
@@ -353,21 +355,16 @@ it("keeps daily rollups, exchange markets and coverage current through the inges
 
     // Daily exchange totals sum only hours where both sides traded; a re-pushed hour replaces its share.
     await upsertStashCurrencyHourly(db as unknown as TDatabase, [
-        {
-            league: "Ingested",
-            marketId: "alpha|beta",
-            hour: hour - 3600,
-            volumeTraded: { alpha: 2, beta: 6 },
-        },
-        { league: "Ingested", marketId: "alpha|beta", hour, volumeTraded: { alpha: 1, beta: 0 } },
+        exchange("alpha|beta", hour - 3600, { alpha: 2, beta: 6 }),
+        exchange("alpha|beta", hour, { alpha: 1, beta: 0 }),
     ]);
     await upsertStashCurrencyHourly(db as unknown as TDatabase, [
-        { league: "Ingested", marketId: "alpha|beta", hour, volumeTraded: { alpha: 1, beta: 4 } },
+        exchange("alpha|beta", hour, { alpha: 1, beta: 4 }),
     ]);
     const totals = await db
         .select()
-        .from(tStashCurrencyDaily)
-        .where(eq(tStashCurrencyDaily.league, "Ingested"));
+        .from(tStashCurrencyDaily.poe1)
+        .where(eq(tStashCurrencyDaily.poe1.league, "Ingested"));
     expect(
         totals
             .map(({ marketId, day, firstVolume, secondVolume, tradedHours, latestHour }) => ({
@@ -447,7 +444,7 @@ it("preserves variant totals, the latest listed observation, and exact item hist
     await db
         .insert(market)
         .values([
-            observation({ realm: "poe2", likelySales: 100 }),
+            observation({ realm: "xbox", likelySales: 100 }),
             observation({ league: "Other", likelySales: 100 }),
             observation({ hour: utcDay(hour - 7 * 86400 + 3600) - 3600, likelySales: 100 }),
             observation({ itemKey: "Empty", hour: hour - 3600, listingCount: 0 }),
@@ -844,9 +841,9 @@ it("lists a mod pool unique once and values its mods on the item page", async ()
     ]);
     // The daily rollup already holds one row per market and day, not one per combination.
     const rolled = await db
-        .select({ day: tStashMarketDaily.day, value: tStashMarketDaily.signatureValue })
-        .from(tStashMarketDaily)
-        .where(eq(tStashMarketDaily.league, "Mods"));
+        .select({ day: tStashMarketDaily.poe1.day, value: tStashMarketDaily.poe1.signatureValue })
+        .from(tStashMarketDaily.poe1)
+        .where(eq(tStashMarketDaily.poe1.league, "Mods"));
     expect(rolled).toHaveLength(2);
     expect(rolled.every((row) => row.value === "")).toBe(true);
 
@@ -1133,7 +1130,9 @@ it("keeps item history independent of browsing filters and skips the list query 
     expect(statements).toHaveLength(6);
     expect(statements.filter(({ sql: query }) => /\binner\s+join\b/i.test(query))).toEqual([]);
     expect(
-        statements.filter(({ sql: query }) => query.includes(getTableName(tStashCurrencyHourly))),
+        statements.filter(({ sql: query }) =>
+            query.includes(getTableName(tStashCurrencyHourly.poe1)),
+        ),
     ).toHaveLength(2);
 });
 
@@ -1649,18 +1648,12 @@ it("orders names in both directions and uses the latest observation for recency"
     }
 });
 
-it("lists each crafting base cohort's latest hour in the period, preferring the current revision", async () => {
-    const { revision } = marketBasesSchema.parse(marketBases);
-    const cohort = (
-        cohortId: string,
-        at: number,
-        listingCount: number,
-        rowRevision = revision,
-    ) => ({
+it("lists each crafting base cohort's latest hour in the period", async () => {
+    const cohort = (cohortId: string, at: number, listingCount: number) => ({
         realm: "pc",
         league: "Bases",
         hour: at,
-        revision: rowRevision,
+        revisionSeq: 1,
         cohortId,
         listingCount,
         uniqueSellers: listingCount,
@@ -1685,7 +1678,6 @@ it("lists each crafting base cohort's latest hour in the period, preferring the 
         .values([
             cohort("base:titan-plate:86-100:6-link", hour - 3600, 1),
             cohort("base:titan-plate:86-100:6-link", hour, 3),
-            cohort("base:titan-plate:86-100:6-link", hour, 9, "previous-revision"),
             cohort("base:titan-plate:86-100:any-links:q30", hour - 7200, 2),
             cohort("base:titan-plate:86-100:1-5-link", hour - 10 * 86400, 5),
             cohort("base:titan-plate:1-2:any-links", hour, 4),
