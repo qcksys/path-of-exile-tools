@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useMemo } from "react";
 import { Link, redirect, useNavigate } from "react-router";
 import { DataTable, type DataTableServerState, dataTableColumns } from "~/components/data-table";
-import { ItemArt } from "~/components/item-art";
+import { CatalogItemArt, ItemArt } from "~/components/item-art";
 import { ExchangeDisplayPicker } from "~/components/market-exchange";
 import { MarketExchangeTable } from "~/components/market-exchange-table";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
@@ -110,8 +110,9 @@ function baseColumns(filters: MarketFilters, game: Game, { chaosRates, rates }: 
                 <>
                     <Link
                         to={marketBaseLink(filters, row.id)}
-                        className="font-medium text-primary hover:underline"
+                        className="flex items-center gap-3 font-medium text-primary hover:underline"
                     >
+                        <CatalogItemArt name={row.baseType} game={game} className="size-12" />
                         {row.baseType}
                     </Link>
                     <p className="mt-1 text-xs text-muted-foreground">{marketBaseDetails(row)}</p>

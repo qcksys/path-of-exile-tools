@@ -131,7 +131,7 @@ Passive Skills grant:` enchantment line, matched by the item query's `enchant` c
 count and poe.ninja's item level bands (1–49, 50–67, 68–74, 75–83, 84+). Base rows have no
 likely-sale estimates; they sort, search and range-filter in memory, with prices compared in
 chaos, and filter by `baseClass` (item class; a Cluster Jewel's size), `attributes` (required
-attributes, e.g. `str-int`), `ilvl` (the band includes that level), `baseLinks` and `quality`.
+attributes, e.g. `str-int` or `str-dex-int`), `ilvl` (the band includes that level), `baseLinks` and `quality`.
 Each base row links to `/1/market/bases/:base` (`get_season_market_base`), the cohort's hourly
 asking prices and listings over the period and every listed cohort of the same base type (and
 Cluster skill) at its latest hour.
