@@ -44,6 +44,7 @@ import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCohortRevision } from "~/db/schema/stash.cohort-revision";
 import { tStashCohortWindow } from "~/db/schema/stash.cohort-window";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
+import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
 import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { seededRandom } from "~/lib/crafting-engine";
@@ -397,6 +398,8 @@ beforeEach(async () => {
         await mysql.delete(tStashCheckpoint[game]);
         await mysql.delete(tStashCurrencyHourly[game]);
         await mysql.delete(tStashUniqueHourly[game]);
+        // Market seasons read coverage, so it must not outlive the hourly rows it counts.
+        await mysql.delete(tStashHourCoverage[game]);
     }
     await mysql.delete(tIngestWorker);
     await mysql.delete(tStashCohortHourly);
