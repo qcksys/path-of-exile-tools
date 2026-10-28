@@ -17,6 +17,7 @@ import {
     max,
     min,
     notInArray,
+    notLike,
     or,
     type SQL,
     type SQLWrapper,
@@ -639,9 +640,12 @@ function modPoolRows(
     );
 }
 
+/** Private league names end in their league ID, e.g. `Chiba league (PL87141)`. */
+const PRIVATE_LEAGUE = "% (PL%)";
+
 /**
- * Each league with exchange snapshots by `latestHour`, with its first and latest hours, newest
- * first. Leagues sharing the latest hour (PoE 2 private leagues) put the most snapshots first.
+ * Each public league with exchange snapshots by `latestHour`, with its first and latest hours,
+ * newest first. Leagues sharing the latest hour put the most snapshots first.
  */
 function marketExchangeSeasons(db: TDatabase, realm: string, latestHour: number) {
     return traceQuery(
@@ -653,7 +657,13 @@ function marketExchangeSeasons(db: TDatabase, realm: string, latestHour: number)
                 latestHour: max(currencyHourly.hour),
             })
             .from(currencyHourly)
-            .where(and(eq(currencyHourly.realm, realm), lte(currencyHourly.hour, latestHour)))
+            .where(
+                and(
+                    eq(currencyHourly.realm, realm),
+                    lte(currencyHourly.hour, latestHour),
+                    notLike(currencyHourly.league, PRIVATE_LEAGUE),
+                ),
+            )
             .groupBy(currencyHourly.realm, currencyHourly.league)
             .orderBy(desc(max(currencyHourly.hour)), desc(count())),
     );

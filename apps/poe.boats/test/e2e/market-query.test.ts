@@ -1127,19 +1127,38 @@ it("lists exchange-only PoE 2 leagues in exalted, from the latest completed hour
         snapshot(`${runeId}|${divineId}`, hour, { [runeId]: 10, [divineId]: 1 }),
         // Not traded against the rune, so its item page does not read this market.
         snapshot(`${transmuteId}|${exaltedId}`, hour, { [transmuteId]: 10, [exaltedId]: 1 }),
-        // A private league trading in the same hour, with fewer snapshots.
+        // A public league trading in the same hour, with fewer snapshots.
         {
             ...snapshot(`${divineId}|${exaltedId}`, hour, { [divineId]: 1, [exaltedId]: 50 }),
-            league: "Private (PL1)",
+            league: "Standard",
         },
+        // A private league with the most snapshots, which is never listed.
+        ...[
+            hour - 7200,
+            hour - 3600,
+            hour,
+            hour - 10800,
+            hour - 14400,
+            hour - 18000,
+            hour - 21600,
+        ].map((at) => ({
+            ...snapshot(`${divineId}|${exaltedId}`, at, { [divineId]: 1, [exaltedId]: 50 }),
+            league: "Chiba league (PL87141)",
+        })),
     ]);
     const filters = { league: "", q: "", days: "7", category: "all" } as const;
     const result = await getPoe2MarketExchange(db as unknown as TDatabase, filters);
     expect(result.seasons.slice(0, 2)).toEqual([
         { league: "Forbidden Rites", firstHour: hour - 3600, latestHour: hour },
-        { league: "Private (PL1)", firstHour: hour, latestHour: hour },
+        { league: "Standard", firstHour: hour, latestHour: hour },
     ]);
+    expect(result.seasons.some((season) => season.league.endsWith("(PL87141)"))).toBe(false);
     expect(result.filters.league).toBe("Forbidden Rites");
+    const privateLeague = await getPoe2MarketExchange(db as unknown as TDatabase, {
+        ...filters,
+        league: "Chiba league (PL87141)",
+    });
+    expect(privateLeague).toMatchObject({ season: undefined, rows: [] });
     const rites = await getPoe2MarketExchange(db as unknown as TDatabase, {
         ...filters,
         league: "Forbidden Rites",

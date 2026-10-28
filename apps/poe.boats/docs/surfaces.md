@@ -82,7 +82,8 @@ exchange, since PoE 2 has no public stash data. It prices the same rows in exalt
 through divine, chaos or another traded item) and shows values adaptively, in exalted or in
 divine. Its categories are the trade site's PoE 2 bulk exchange groups, generated into
 `app/data/exchange-categories-poe2.json` by `vp run game-data:exchange-categories`; traded items
-outside every group list under Other. Seasons come from the exchange alone. Item pages live at
+outside every group list under Other. Seasons come from the exchange alone and leave out private
+leagues (names ending in ` (PL<id>)`); leagues sharing the latest hour list the most active first. Item pages live at
 `/2/market/exchange/<item ID after Metadata/Items/>` and call `get_season_exchange_item` with realm
 `poe2`. `/1/market` links with realm `poe2` redirect there, searching for their item.
 Uniques whose mods come from a pool (ingest's `MOD_POOLS`: Watcher's Eye's aura mods, PoE 2
