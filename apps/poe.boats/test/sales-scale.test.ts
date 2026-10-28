@@ -22,7 +22,9 @@ it("prices one removal within a bounded budget despite unrelated live listings",
                     current_timestamp AS first_seen_at, current_timestamp AS last_seen_at,
                     CASE WHEN i = 0 THEN current_timestamp ELSE NULL END AS removed_at
                 FROM range(4000) t(i)`);
-            await db.conn.run("INSERT INTO pipeline_health VALUES (1, current_timestamp, true)");
+            await db.conn.run(
+                "INSERT INTO pipeline_health VALUES (1, current_timestamp, true, current_timestamp)",
+            );
             await recordRemovals(db.conn, [
                 { stashId: "stash-0", withdrawn: false },
                 { stashId: "stash-with-no-removals", withdrawn: true },
