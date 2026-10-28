@@ -30,17 +30,18 @@ it("uses each game's verified base catalog and retains unknown items", () => {
 });
 
 it("identifies exchange skill gems without treating equipment as exchange items", () => {
+    // PoE 2 categories follow the trade site's exchange groups, which list only lineage gems.
     expect(marketExchangeItem("poe2", "Metadata/Items/Gems/SupportGemAilithLineage")).toEqual({
         name: "Ailith's Chimes",
-        category: "gems",
+        category: "lineage-gems",
     });
     expect(marketExchangeItem("poe2", "Metadata/Items/Gems/SkillGemIceNova")).toEqual({
         name: "Ice Nova",
-        category: "gems",
+        category: "other",
     });
     expect(marketExchangeItem("poe2", "Metadata/Items/Gems/SkillGemBlasphemy")).toEqual({
         name: "Blasphemy",
-        category: "gems",
+        category: "other",
     });
     expect(
         marketExchangeItem("poe2", "Metadata/Items/Armours/BodyArmours/FourBodyStr1"),
