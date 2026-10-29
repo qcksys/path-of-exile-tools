@@ -3,6 +3,7 @@ import {
     exchangeSnapshotSchema,
     gemVariantValues,
     mapVariantValues,
+    marketLeagueTracked,
     marketObservationRange,
     TRANSFIGURED_GEMS,
     VAAL_GEMS,
@@ -20,7 +21,6 @@ import {
     max,
     min,
     notInArray,
-    notLike,
     or,
     type SQL,
     type SQLWrapper,
@@ -223,7 +223,7 @@ async function marketLatestRows<
         "market.latest_rows",
         db
             .select()
-            .from(market, { forceIndex: "PRIMARY" })
+            .from(market)
             .where(
                 and(
                     eq(market.realm, filters.realm),
@@ -296,8 +296,8 @@ async function marketRecentSales(
                     signatureValue: value,
                     sales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
                 })
-                // (league, item key) followed by the primary key reads only the page's items.
-                .from(market, { forceIndex: "idx_stash_unique_item" })
+                // The view finds the page's markets by (realm, league, item key), then their hours.
+                .from(market)
                 .where(
                     and(
                         eq(market.realm, filters.realm),
@@ -830,8 +830,7 @@ async function marketVariants(
                 periodSales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
                 latestHour: sql<number>`max(${market.hour})`.mapWith(Number),
             })
-            // Without the hint MySQL can pick the primary key and scan every item in the window.
-            .from(market, { forceIndex: "idx_stash_unique_item" })
+            .from(market)
             .where(and(scope, inArray(market.itemKey, [...new Set([item, ...counterparts])])))
             .groupBy(
                 market.itemKey,
@@ -905,7 +904,7 @@ function marketVariantLatestRows(
         "market.variant_latest_rows",
         db
             .select()
-            .from(market, { forceIndex: "PRIMARY" })
+            .from(market)
             .where(
                 and(
                     scope,
@@ -963,14 +962,15 @@ function modPoolRows(
     );
 }
 
-/** Private league names end in their league ID, e.g. `Chiba league (PL87141)`. */
-const PRIVATE_LEAGUE = "% (PL%)";
-
-/** Seasons with leagues the league API still lists first, keeping each group's order. */
+/**
+ * Seasons of leagues with market features, those the league API still lists first, keeping each
+ * group's order.
+ */
 function activeFirst<T extends { league: string }>(seasons: T[], ended: Set<string>) {
+    const tracked = seasons.filter((season) => marketLeagueTracked(season.league));
     return [
-        ...seasons.filter((season) => !ended.has(season.league)),
-        ...seasons.filter((season) => ended.has(season.league)),
+        ...tracked.filter((season) => !ended.has(season.league)),
+        ...tracked.filter((season) => ended.has(season.league)),
     ];
 }
 
@@ -1005,7 +1005,7 @@ async function activeExchangeSeasons(db: TDatabase, realm: string, latestHour: n
 }
 
 /**
- * Each public league with exchange snapshots by `latestHour`, with its first and latest hours,
+ * Each league with exchange snapshots by `latestHour`, with its first and latest hours,
  * newest first. Leagues sharing the latest hour put the most snapshots first.
  * Reads the hour coverage rollup: grouping the hourly table scans every snapshot of the realm.
  */
@@ -1025,7 +1025,6 @@ function marketExchangeSeasons(db: TDatabase, realm: string, latestHour: number)
                     eq(hourCoverage.stream, "currency"),
                     eq(hourCoverage.realm, realm),
                     lte(hourCoverage.hour, latestHour),
-                    notLike(hourCoverage.league, PRIVATE_LEAGUE),
                 ),
             )
             .groupBy(hourCoverage.stream, hourCoverage.realm, hourCoverage.league)

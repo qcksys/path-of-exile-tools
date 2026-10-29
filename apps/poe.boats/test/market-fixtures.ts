@@ -44,9 +44,6 @@ export function marketFixture(
         salesPrices: null,
         firstSeenAt: "2026-10-24T00:00:00Z",
         lastSeenAt: "2026-10-24T01:00:00Z",
-        rowCreatedAt: new Date("2026-10-24T00:00:00Z"),
-        rowUpdatedAt: new Date("2026-10-24T00:00:00Z"),
-        rowDeletedAt: null,
     };
     const season = { league: filters.league, firstHour: row.hour, latestHour: row.hour };
     const variant = {

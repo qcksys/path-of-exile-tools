@@ -6,7 +6,7 @@ import { migrate } from "drizzle-orm/mysql2/migrator";
 import { type Connection, createConnection, type RowDataPacket } from "mysql2/promise";
 import { afterAll, beforeAll, expect, it, vi } from "vite-plus/test";
 import type { TDatabase } from "~/db/client";
-import { stashGame } from "~/db/helpers/stash-game";
+import { stashGame, stashTableName } from "~/db/helpers/stash-game";
 import { findCraftingRecipeListings } from "~/db/queries/crafting-recipes.queries";
 import {
     getMarketBase,
@@ -20,6 +20,7 @@ import {
     upsertStashCurrencyHourly,
     upsertStashUniqueHourly,
 } from "~/db/queries/stash-ingest.queries";
+import { writeStashUniqueHourly } from "~/db/queries/stash-market.queries";
 import { refreshStashRollups, utcDay } from "~/db/queries/stash-rollups.queries";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCurrencyDaily } from "~/db/schema/stash.currency-daily";
@@ -27,18 +28,29 @@ import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
-import { type TStashUniqueHourlyI, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
+import {
+    type TStashUniqueHourlyI,
+    tStashMarket,
+    tStashMarketHour,
+} from "~/db/schema/stash.unique-hourly";
 import { marketExchangeItemId } from "~/lib/market-exchange.server";
 import { getServerStatus } from "~/operations/server-status.server";
 import { marketFiltersSchema } from "~/schemas/market";
 
 const hour = 1_792_836_000;
-const market = tStashUniqueHourly.poe1;
+const uniqueHourly = stashTableName("poe1", "unique_hourly");
+const marketHours = getTableName(tStashMarketHour.poe1);
 let container: StartedMySqlContainer;
 let connection: Connection;
 let db: MySql2Database;
 const statements: Array<{ sql: string; params: unknown[] }> = [];
 const rowsStatement = () => statements.find((query) => query.sql.includes("`latest_hour`"))!;
+
+/** Stores market hours, as ingest does, without refreshing the rollups that read them. */
+async function insertMarket(rows: TStashUniqueHourlyI | TStashUniqueHourlyI[]) {
+    for (const [game, gameRows] of Map.groupBy([rows].flat(), (row) => stashGame(row.realm)))
+        await writeStashUniqueHourly(db as unknown as TDatabase, game, gameRows);
+}
 
 /** Seeds write hourly rows directly, so rebuild the rollups ingest keeps before reading. */
 async function marketData(...args: Parameters<typeof getMarketData>) {
@@ -65,7 +77,7 @@ beforeAll(async () => {
             ["Current", hour],
             ["Previous", hour - 86400],
         ] as const)
-            await db.insert(tStashUniqueHourly[stashGame(realm)]).values(
+            await insertMarket(
                 Array.from({ length: 400 }, (_, index) => ({
                     realm,
                     league,
@@ -81,7 +93,7 @@ beforeAll(async () => {
                     lastSeenAt: "2026-10-24T00:00:00Z",
                 })),
             );
-    await db.execute(sql`ANALYZE TABLE ${market}`);
+    await db.execute(sql`ANALYZE TABLE ${tStashMarket.poe1}, ${tStashMarketHour.poe1}`);
     statements.length = 0;
 });
 
@@ -110,7 +122,7 @@ it("discovers season boundaries without scanning every hourly observation", asyn
     expect(seasonQueries).toHaveLength(1);
     expect(
         statements.filter(
-            ({ sql: query }) => query.includes(getTableName(market)) && /\bmin\(/i.test(query),
+            ({ sql: query }) => query.includes(uniqueHourly) && /\bmin\(/i.test(query),
         ),
     ).toEqual([]);
 });
@@ -125,20 +137,20 @@ it("fetches full item records by primary key only after selecting the market pag
     expect(result.rows.every((row) => row.hour === hour && row.rank === 1)).toBe(true);
     const query = rowsStatement();
     const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
-    // A market's foil and non-foil rows share a primary key prefix, so each market joins its latest hour's rows.
-    expect(
-        plan.some((row) => row.type === "ref" && row.key === "PRIMARY" && Number(row.rows) === 1),
-    ).toBe(true);
-    const records = statements.find((entry) =>
-        entry.sql.includes(`\`${getTableName(market)}\` FORCE INDEX (\`PRIMARY\`)`),
+    // Each listed market joins only its latest hour's row by the market hours' primary key.
+    expect(plan).toContainEqual(
+        expect.objectContaining({ table: marketHours, type: "eq_ref", key: "PRIMARY" }),
+    );
+    const records = statements.find(
+        (entry) => entry.sql.startsWith("select `realm`") && entry.sql.includes(uniqueHourly),
     )!;
     const [recordPlan] = await connection.query<RowDataPacket[]>(
         `EXPLAIN ${records.sql}`,
         records.params,
     );
-    expect(recordPlan).toEqual([
-        expect.objectContaining({ type: "range", key: "PRIMARY", rows: 20 }),
-    ]);
+    expect(recordPlan).toContainEqual(
+        expect.objectContaining({ table: marketHours, type: "eq_ref", key: "PRIMARY" }),
+    );
 });
 
 it.each([
@@ -158,7 +170,7 @@ it.each([
 });
 
 it("reads one category's daily rows from the base-type index", async () => {
-    await db.insert(market).values(
+    await insertMarket(
         Array.from({ length: 300 }, (_, index) =>
             observation({
                 league: "Categories",
@@ -296,13 +308,11 @@ it("recovers an actual MySQL deadlock victim by replaying its autocommitted batc
 
 it("starts list windows at UTC midnight of the window's first day", async () => {
     const firstDay = utcDay(hour - 7 * 86400 + 3600);
-    await db
-        .insert(market)
-        .values([
-            observation({ league: "Window", hour: firstDay - 3600, likelySales: 10 }),
-            observation({ league: "Window", hour: firstDay + 3600, likelySales: 3 }),
-            observation({ league: "Window", hour, likelySales: 1 }),
-        ]);
+    await insertMarket([
+        observation({ league: "Window", hour: firstDay - 3600, likelySales: 10 }),
+        observation({ league: "Window", hour: firstDay + 3600, likelySales: 3 }),
+        observation({ league: "Window", hour, likelySales: 1 }),
+    ]);
     const result = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "Window" }),
@@ -434,7 +444,7 @@ it("rolls up each item day once per ingest request, after every chunk is stored"
     expect(daily.every((row) => Number(row.sales) === 2)).toBe(true);
 });
 
-it("reads an item's variants from the item key index", async () => {
+it("reads an item's variants through each market's hours", async () => {
     statements.length = 0;
     await getMarketData(
         db as unknown as TDatabase,
@@ -443,7 +453,9 @@ it("reads an item's variants from the item key index", async () => {
     );
     const query = statements.find((entry) => entry.sql.includes("any_value("))!;
     const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
-    expect(plan[0]?.key).toBe("idx_stash_unique_item");
+    expect(plan).toContainEqual(
+        expect.objectContaining({ table: marketHours, key: "stash_market_hour_market_idx" }),
+    );
 });
 
 function observation(overrides: Partial<TStashUniqueHourlyI>): TStashUniqueHourlyI {
@@ -469,7 +481,7 @@ it("shows merchant tabs by default and merges every tab, including untabbed rows
     const chaos = (count: number, median: number) => ({
         chaos: { count, min: median, median, max: median },
     });
-    await db.insert(market).values([
+    await insertMarket([
         observation({ league: "Tabs", likelySales: 2, listingCount: 3, prices: chaos(3, 10) }),
         observation({
             league: "Tabs",
@@ -529,7 +541,7 @@ it("preserves variant totals, the latest listed observation, and exact item hist
         { signatureKind: "watchers-eye" },
         { signatureValue: "alternate" },
     ];
-    await db.insert(market).values(
+    await insertMarket(
         variants.flatMap((variant) => [
             observation({
                 ...variant,
@@ -548,15 +560,13 @@ it("preserves variant totals, the latest listed observation, and exact item hist
             observation({ ...variant, listingCount: 0, likelySales: 4 }),
         ]),
     );
-    await db
-        .insert(market)
-        .values([
-            observation({ realm: "xbox", likelySales: 100 }),
-            observation({ league: "Other", likelySales: 100 }),
-            observation({ hour: utcDay(hour - 7 * 86400 + 3600) - 3600, likelySales: 100 }),
-            observation({ itemKey: "Empty", hour: hour - 3600, listingCount: 0 }),
-            observation({ itemKey: "Empty", listingCount: 0 }),
-        ]);
+    await insertMarket([
+        observation({ realm: "xbox", likelySales: 100 }),
+        observation({ league: "Other", likelySales: 100 }),
+        observation({ hour: utcDay(hour - 7 * 86400 + 3600) - 3600, likelySales: 100 }),
+        observation({ itemKey: "Empty", hour: hour - 3600, listingCount: 0 }),
+        observation({ itemKey: "Empty", listingCount: 0 }),
+    ]);
     const filters = marketFiltersSchema.parse({ league: "Variants", item: "Example" });
     const result = await marketData(db as unknown as TDatabase, filters);
     expect(result.rows).toHaveLength(6);
@@ -577,11 +587,14 @@ it("preserves variant totals, the latest listed observation, and exact item hist
         });
     expect(result.rows.find((row) => row.itemKey === "Empty")?.hour).toBe(hour);
     expect(result.history.map((row) => row.hour)).toEqual([hour - 7200, hour - 3600, hour]);
-    // Daily rollups keep one name per day (the greatest), so a match reports the whole window.
-    const searched = await marketData(db as unknown as TDatabase, { ...filters, q: "Older" });
-    expect(searched.rows).toHaveLength(5);
-    expect(searched.rows.every((row) => row.hour === hour - 3600 && row.periodSales === 9)).toBe(
-        true,
+    // A market keeps its latest name, so search matches it over the whole window.
+    const searched = (
+        await marketData(db as unknown as TDatabase, { ...filters, q: "Example" })
+    ).rows.filter((row) => row.itemKey === "Example");
+    expect(searched).toHaveLength(5);
+    expect(searched.every((row) => row.hour === hour - 3600 && row.periodSales === 9)).toBe(true);
+    expect((await marketData(db as unknown as TDatabase, { ...filters, q: "Older" })).rows).toEqual(
+        [],
     );
 });
 
@@ -591,16 +604,14 @@ it("merges foil and non-foil listings into one market for the list, variants and
     const chaos = (count: number, median: number) => ({
         chaos: { count, min: median, median, max: median },
     });
-    await db
-        .insert(market)
-        .values([
-            foil(-1, { listingCount: 9, likelySales: 1, prices: chaos(9, 5) }),
-            foil(-1, { corrupted: true, listingCount: 1, prices: chaos(1, 6) }),
-            foil(2, { hour: hour - 3600, listingCount: 2, likelySales: 3, prices: chaos(2, 40) }),
-            foil(2, { listingCount: 1, uniqueSellers: 1, likelySales: 1, prices: chaos(1, 100) }),
-            foil(7, { listingCount: 3, uniqueSellers: 2, likelySales: 2, prices: chaos(3, 20) }),
-            foil(7, { corrupted: true, listingCount: 4, likelySales: 5, prices: chaos(4, 30) }),
-        ]);
+    await insertMarket([
+        foil(-1, { listingCount: 9, likelySales: 1, prices: chaos(9, 5) }),
+        foil(-1, { corrupted: true, listingCount: 1, prices: chaos(1, 6) }),
+        foil(2, { hour: hour - 3600, listingCount: 2, likelySales: 3, prices: chaos(2, 40) }),
+        foil(2, { listingCount: 1, uniqueSellers: 1, likelySales: 1, prices: chaos(1, 100) }),
+        foil(7, { listingCount: 3, uniqueSellers: 2, likelySales: 2, prices: chaos(3, 20) }),
+        foil(7, { corrupted: true, listingCount: 4, likelySales: 5, prices: chaos(4, 30) }),
+    ]);
     const filters = marketFiltersSchema.parse({ league: "Foils", currency: "chaos" });
     const list = await marketData(db as unknown as TDatabase, filters, "list");
     expect(list.rows.map((row) => [row.corrupted, row.listingCount, row.hour])).toEqual([
@@ -663,7 +674,7 @@ it("merges link counts on the list and splits them on the item page, alongside m
     const chaos = (count: number, median: number) => ({
         chaos: { count, min: median, median, max: median },
     });
-    await db.insert(market).values([
+    await insertMarket([
         armour(0, { listingCount: 8, likelySales: 1, prices: chaos(8, 50) }),
         armour(5, { listingCount: 3, likelySales: 2, prices: chaos(3, 80) }),
         armour(6, {
@@ -739,7 +750,7 @@ it("lists gem markets under Skill gems by band and filters them by included and 
             signatureValue,
             ...overrides,
         });
-    await db.insert(market).values([
+    await insertMarket([
         gem("Fireball", "Level 20 (max) · Quality 20%", { listingCount: 5 }),
         gem("Fireball", "Level 21 · Quality 20%", { corrupted: true, listingCount: 2 }),
         gem("Fireball", "Level 1–19 · Quality 0–19%", { listingCount: 9 }),
@@ -806,19 +817,17 @@ it("lists map markets under Maps by variant and filters them by included and exc
             signatureValue,
             ...overrides,
         });
-    await db
-        .insert(market)
-        .values([
-            map("Map (Tier 16)", "8 mods · Quantity 100–119% · Delirium 0%", { corrupted: true }),
-            map("Map (Tier 16)", "8 mods · Quantity 120–139% · Delirium 40%", { corrupted: true }),
-            map("Map (Tier 16)", "1–6 mods · Quantity 60–79% · Delirium 0%"),
-            map("Map (Tier 16)", "Unidentified · Delirium 0%", { identified: false }),
-            map("Nightmare Map", "1–6 mods · Quantity 80–99% · Delirium 20%"),
-            map("Map (Tier 14)", "8 mods · Delirium 0%", { corrupted: true }),
-            map("Map (Tier 14)", "1–6 mods · Delirium 0% · Elder Guardian"),
-            map("Map (Tier 14)", "1–6 mods · Delirium 0% · Memory"),
-            observation({ league: "Maps", itemKey: "Kaom's Heart", name: "Kaom's Heart" }),
-        ]);
+    await insertMarket([
+        map("Map (Tier 16)", "8 mods · Quantity 100–119% · Delirium 0%", { corrupted: true }),
+        map("Map (Tier 16)", "8 mods · Quantity 120–139% · Delirium 40%", { corrupted: true }),
+        map("Map (Tier 16)", "1–6 mods · Quantity 60–79% · Delirium 0%"),
+        map("Map (Tier 16)", "Unidentified · Delirium 0%", { identified: false }),
+        map("Nightmare Map", "1–6 mods · Quantity 80–99% · Delirium 20%"),
+        map("Map (Tier 14)", "8 mods · Delirium 0%", { corrupted: true }),
+        map("Map (Tier 14)", "1–6 mods · Delirium 0% · Elder Guardian"),
+        map("Map (Tier 14)", "1–6 mods · Delirium 0% · Memory"),
+        observation({ league: "Maps", itemKey: "Kaom's Heart", name: "Kaom's Heart" }),
+    ]);
     const list = async (filters: Record<string, string>) =>
         (
             await marketData(
@@ -878,7 +887,7 @@ it("lists only transfigured or Vaal gems, or only other gems, with their filters
             signatureValue: "Level 20 (max) · Quality 20%",
             ...overrides,
         });
-    await db.insert(market).values([
+    await insertMarket([
         gem("Kinetic Bolt", "Kinetic Bolt"),
         gem("Kinetic Bolt of Fragmentation", "Kinetic Bolt"),
         gem("Vaal Arc", "Vaal Arc", { corrupted: true }),
@@ -939,7 +948,7 @@ it("lists a unique's markets in both identification states as variants of each o
             baseType: "Prismatic Jewel",
             ...overrides,
         });
-    await db.insert(market).values([
+    await insertMarket([
         eye({ signatureKind: "watchers-eye", signatureValue: "Haste", likelySales: 3 }),
         eye({ itemKey: `unid:${icon}`, identified: false, likelySales: 2 }),
         eye({ itemKey: `unid:${icon}`, identified: false, corrupted: true, likelySales: 1 }),
@@ -981,7 +990,7 @@ it("lists every variant of an item with more than a hundred", async () => {
             ...overrides,
         });
     const notables = Array.from({ length: 120 }, (_, index) => `Notable ${index + 100}`);
-    await db.insert(market).values([
+    await insertMarket([
         flesh("Best Seller", { likelySales: 3 }),
         ...notables.map((notable) => flesh(notable)),
         flesh("Zealot", { links: 6, listingCount: 2, prices: chaos(2, 50) }),
@@ -1024,15 +1033,13 @@ it("lists Forbidden jewels in their own category, apart from other jewels", asyn
         overrides: Partial<TStashUniqueHourlyI> = {},
     ) => observation({ league: "Forbidden", itemKey, name: itemKey, baseType, ...overrides });
     const notable = { signatureKind: "forbidden-jewel", signatureValue: "Pious Path" };
-    await db
-        .insert(market)
-        .values([
-            jewel("Forbidden Flame", "Crimson Jewel", notable),
-            jewel("Forbidden Flesh", "Cobalt Jewel", notable),
-            jewel("Forbidden Flesh", "Cobalt Jewel", { ...notable, corrupted: true }),
-            jewel("Watcher's Eye", "Prismatic Jewel"),
-            jewel("Unnamed", "Cobalt Jewel", { name: null }),
-        ]);
+    await insertMarket([
+        jewel("Forbidden Flame", "Crimson Jewel", notable),
+        jewel("Forbidden Flesh", "Cobalt Jewel", notable),
+        jewel("Forbidden Flesh", "Cobalt Jewel", { ...notable, corrupted: true }),
+        jewel("Watcher's Eye", "Prismatic Jewel"),
+        jewel("Unnamed", "Cobalt Jewel", { name: null }),
+    ]);
     const list = async (category: string) =>
         (
             await marketData(
@@ -1069,7 +1076,7 @@ it("lists a mod pool unique once and values its mods on the item page", async ()
             signatureData: { kind: "watchers-eye", mods },
             ...overrides,
         });
-    await db.insert(market).values([
+    await insertMarket([
         eye([haste, precision], { prices: chaos(30) }),
         // A roll captured before ingest masked rolls, under its old hashed signature and shape.
         eye([], {
@@ -1184,7 +1191,7 @@ it("keeps stable sales ordering and page boundaries when fetching full records",
             likelySales: index % 3,
         }),
     );
-    await db.insert(market).values(observations);
+    await insertMarket(observations);
     const expected = [...observations].sort(
         (a, b) =>
             Number(b.likelySales) - Number(a.likelySales) || a.itemKey.localeCompare(b.itemKey),
@@ -1203,7 +1210,7 @@ it("keeps stable sales ordering and page boundaries when fetching full records",
 });
 
 it("filters categories and variant state before pagination and searches base types", async () => {
-    await db.insert(market).values([
+    await insertMarket([
         ...Array.from({ length: 60 }, (_, index) =>
             observation({ league: "Categories", itemKey: `Belt ${index}`, likelySales: 100 }),
         ),
@@ -1259,7 +1266,7 @@ it("filters categories and variant state before pagination and searches base typ
 });
 
 it("sorts the latest asking price in the selected currency across page boundaries, with missing prices last", async () => {
-    await db.insert(market).values([
+    await insertMarket([
         ...Array.from({ length: 55 }, (_, index) =>
             observation({
                 league: "Prices",
@@ -1314,7 +1321,7 @@ it("sorts the latest asking price in the selected currency across page boundarie
 });
 
 it("filters and orders by table column ranges before pagination", async () => {
-    await db.insert(market).values([
+    await insertMarket([
         ...Array.from({ length: 60 }, (_, index) => {
             const itemKey = `Item ${String(index).padStart(2, "0")}`;
             return [
@@ -1438,7 +1445,7 @@ it("merges every listing currency into chaos through same-league rates, whatever
             highestStock: null,
         })),
     );
-    await db.insert(market).values([
+    await insertMarket([
         observation({
             league: "Merged",
             hour: hour - 3600,
@@ -1516,7 +1523,7 @@ it("uses the current exchange divine rate for list rows, leaving it absent when 
         snapshot(hour - 3600, 1, 150),
         snapshot(hour, 1, 200),
     ]);
-    await db.insert(market).values(
+    await insertMarket(
         observation({
             league: "DivineRate",
             prices: { divine: { count: 1, min: 1, median: 1, max: 1 } },
@@ -1566,7 +1573,7 @@ it("prices exchange-traded items from the exchange and leaves out their stash li
         // Listed but untraded items still come from the exchange, without a price.
         snapshot(`${portalId}|${chaosId}`, hour, { [portalId]: 0, [chaosId]: 0 }),
     ]);
-    await db.insert(market).values([
+    await insertMarket([
         observation({ league: "Exchange", itemKey: "Example" }),
         ...["Scroll of Wisdom", "Portal Scroll"].map((name) =>
             observation({
@@ -1758,7 +1765,7 @@ it("retains old exchange identities without treating future-only markets as list
             volumeTraded: { [alchemyId]: 1, [chaosId]: 5 },
         },
     ]);
-    await db.insert(market).values(
+    await insertMarket(
         ["Orb of Scouring", "Orb of Alchemy"].map((name) =>
             observation({
                 league: "IdentityLifetime",
@@ -1930,13 +1937,11 @@ it("limits Divine Orb's history to its anchor and most traded pairs", async () =
 });
 
 it("orders names in both directions and uses the latest observation for recency", async () => {
-    await db
-        .insert(market)
-        .values([
-            observation({ league: "Ordering", itemKey: "Alpha", hour: hour - 3600 }),
-            observation({ league: "Ordering", itemKey: "Beta", hour: hour - 7200 }),
-            observation({ league: "Ordering", itemKey: "Gamma", hour }),
-        ]);
+    await insertMarket([
+        observation({ league: "Ordering", itemKey: "Alpha", hour: hour - 3600 }),
+        observation({ league: "Ordering", itemKey: "Beta", hour: hour - 7200 }),
+        observation({ league: "Ordering", itemKey: "Gamma", hour }),
+    ]);
     for (const [order, expected] of [
         ["name-asc", ["Alpha", "Beta", "Gamma"]],
         ["name-desc", ["Gamma", "Beta", "Alpha"]],
@@ -1974,7 +1979,7 @@ it("lists each crafting base cohort's latest hour in the period", async () => {
         firstSeenAt: null,
         lastSeenAt: null,
     });
-    await db.insert(market).values(observation({ league: "Bases" }));
+    await insertMarket(observation({ league: "Bases" }));
     await db
         .insert(tStashCohortHourly)
         .values([
@@ -2116,7 +2121,7 @@ it("reads each beast and temple market's latest merchant ask, converting other c
             listingCount: 5,
             ...overrides,
         });
-    await db.insert(market).values([
+    await insertMarket([
         beast({ prices: ask("chaos", 2) }),
         beast({ hour: hour - 3600, prices: ask("chaos", 9) }),
         beast({ tab: "", hour: hour, foilVariation: 1, prices: ask("chaos", 1) }),
@@ -2227,4 +2232,59 @@ it("lists yellow beast species as one Yellow Beast market, beside red beasts", a
         { itemKey: "Cave Beast" },
     ]);
     expect(Object.fromEntries(listings)).toMatchObject({ "Cave Beast": { listingCount: 3 } });
+});
+
+it("stores each market once, keeps its latest description and spends no IDs on known markets", async () => {
+    const database = db as unknown as TDatabase;
+    const markets = () =>
+        db.select().from(tStashMarket.poe1).where(eq(tStashMarket.poe1.league, "Narrow"));
+    await upsertStashUniqueHourly(database, [
+        observation({
+            league: "Narrow",
+            hour: hour - 3600,
+            name: "Old",
+            signatureData: { b: 1, a: 2 },
+        }),
+        observation({ league: "Narrow", name: "New", signatureData: { a: 2, b: 1 } }),
+    ]);
+    const [market] = await markets();
+    expect(await markets()).toHaveLength(1);
+    expect(market).toMatchObject({ name: "New", signatureData: { a: 2, b: 1 } });
+    expect(
+        await db
+            .select({ hour: tStashMarketHour.poe1.hour })
+            .from(tStashMarketHour.poe1)
+            .where(eq(tStashMarketHour.poe1.marketId, market!.id))
+            .orderBy(tStashMarketHour.poe1.hour),
+    ).toEqual([{ hour: hour - 3600 }, { hour }]);
+
+    const [{ lastId }] = await db
+        .select({ lastId: sql<number>`max(${tStashMarket.poe1.id})`.mapWith(Number) })
+        .from(tStashMarket.poe1);
+    // Re-delivered hours of a known market with an unchanged description write no market row.
+    await upsertStashUniqueHourly(database, [
+        observation({ league: "Narrow", name: "New", signatureData: { b: 1, a: 2 } }),
+    ]);
+    await upsertStashUniqueHourly(database, [observation({ league: "Narrow", itemKey: "Added" })]);
+    const added = (await markets()).find((entry) => entry.itemKey === "Added");
+    expect(added?.id).toBe(lastId + 1);
+});
+
+it("lists no season for Ruthless, solo self-found or private leagues stored before they were dropped", async () => {
+    const database = db as unknown as TDatabase;
+    const leagues = [
+        "Ruthless Narrow",
+        "SSF Narrow",
+        "Chiba league (PL87141)",
+        "Tracked Narrow",
+    ] as const;
+    await upsertStashUniqueHourly(
+        database,
+        leagues.map((league) => observation({ league, likelySales: 1 })),
+    );
+    const { seasons } = await getMarketData(database, marketFiltersSchema.parse({}));
+    expect(seasons.map((season) => season.league)).toContain("Tracked Narrow");
+    expect(
+        seasons.filter((season) => (leagues as readonly string[]).includes(season.league)),
+    ).toEqual([expect.objectContaining({ league: "Tracked Narrow" })]);
 });

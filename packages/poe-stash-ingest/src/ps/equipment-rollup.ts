@@ -4,6 +4,7 @@ import {
     type CohortHourly,
     cohortHourlySchema,
     marketCohortDefinitionSchema,
+    marketLeagueTracked,
 } from "@poe-tools/market";
 import { REALM } from "#src/shared/auth.ts";
 import { queryAll } from "#src/shared/db.ts";
@@ -211,7 +212,11 @@ export async function rollupEquipment(
                     [url, JSON.stringify(pending.map(({ revision, id }) => ({ revision, id })))],
                 );
         }
-        await push({ stream: "equipment", rows }, { dryRun: opts.dryRun, onBatch: opts.onBatch });
+        // Leagues poe.boats doesn't store stay in this database and its archive.
+        await push(
+            { stream: "equipment", rows: rows.filter((row) => marketLeagueTracked(row.league)) },
+            { dryRun: opts.dryRun, onBatch: opts.onBatch },
+        );
         if (!opts.dryRun)
             for (const league of new Set(rows.map((row) => row.league))) {
                 await conn.run(

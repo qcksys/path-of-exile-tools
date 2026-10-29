@@ -10,6 +10,15 @@ export const listedLeagueSchema = z.object({
 });
 export type ListedLeague = z.infer<typeof listedLeagueSchema>;
 
+/**
+ * Whether poe.boats stores a league's market rows and gives it market features: not Ruthless,
+ * solo self-found or a private league (`Name (PL12345)`). The ingest workers still capture and
+ * archive those leagues; they just never deliver them.
+ */
+export function marketLeagueTracked(league: string) {
+    return !/\bruthless\b|\bSSF\b|solo self-found|\(PL\d+\)$/i.test(league);
+}
+
 /** A realm's complete league list at `listedAt`; leagues missing from it have ended. */
 export const leagueListSchema = z.object({
     realm: z.enum(["pc", "poe2", "xbox", "sony"]),

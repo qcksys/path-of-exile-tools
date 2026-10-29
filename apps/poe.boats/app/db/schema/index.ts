@@ -37,7 +37,12 @@ import {
 import { tStashPoe1HourCoverage, tStashPoe2HourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashPoe1League, tStashPoe2League } from "~/db/schema/stash.league";
 import { tStashPoe1MarketDaily, tStashPoe2MarketDaily } from "~/db/schema/stash.market-daily";
-import { tStashPoe1UniqueHourly, tStashPoe2UniqueHourly } from "~/db/schema/stash.unique-hourly";
+import {
+    tStashPoe1Market,
+    tStashPoe1MarketHour,
+    tStashPoe2Market,
+    tStashPoe2MarketHour,
+} from "~/db/schema/stash.unique-hourly";
 
 export const schema = {
     tStashPoe1Checkpoint,
@@ -57,8 +62,10 @@ export const schema = {
     tIdolPlannerPlacement,
     tIdolPlannerUserPrefs,
     tIdolPlannerSharedSet,
-    tStashPoe1UniqueHourly,
-    tStashPoe2UniqueHourly,
+    tStashPoe1Market,
+    tStashPoe2Market,
+    tStashPoe1MarketHour,
+    tStashPoe2MarketHour,
     tStashPoe1MarketDaily,
     tStashPoe2MarketDaily,
     tStashPoe1CurrencyHourly,

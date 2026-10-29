@@ -38,6 +38,7 @@ import {
     upsertStashCurrencyHourly,
 } from "~/db/queries/stash-ingest.queries";
 import { recordStashLeagues } from "~/db/queries/stash-league.queries";
+import { writeStashUniqueHourly } from "~/db/queries/stash-market.queries";
 import { tIngestWorker } from "~/db/schema/ingest.worker";
 import { tStashCheckpoint, tStashDailySample } from "~/db/schema/stash.checkpoint";
 import { tStashCohort } from "~/db/schema/stash.cohort";
@@ -48,7 +49,11 @@ import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashLeague } from "~/db/schema/stash.league";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
-import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
+import {
+    tStashMarket,
+    tStashMarketHour,
+    tStashUniqueHourly,
+} from "~/db/schema/stash.unique-hourly";
 import { seededRandom } from "~/lib/crafting-engine";
 import { bindExchangePrice } from "~/lib/crafting-exchange";
 import { calculateCraftingGraph } from "~/lib/crafting-graph-simulation";
@@ -400,7 +405,8 @@ beforeEach(async () => {
         await mysql.delete(tStashDailySample[game]);
         await mysql.delete(tStashCheckpoint[game]);
         await mysql.delete(tStashCurrencyHourly[game]);
-        await mysql.delete(tStashUniqueHourly[game]);
+        await mysql.delete(tStashMarketHour[game]);
+        await mysql.delete(tStashMarket[game]);
         // Market seasons read coverage, so it must not outlive the hourly rows it counts.
         await mysql.delete(tStashHourCoverage[game]);
         await mysql.delete(tStashLeague[game]);
@@ -576,6 +582,99 @@ it.each([
     await expect(rollupEquipment(local.conn, { hour: HOUR })).rejects.toThrow("retired");
     expect(await mysql.select().from(tStashUniqueHourly.poe1)).toEqual([]);
     expect(await mysql.select().from(tStashCohortHourly)).toEqual([]);
+});
+
+it("keeps Ruthless, solo self-found and private leagues in the worker database only", async () => {
+    const leagues = ["Ruthless Standard", "SSF Standard", "Chiba league (PL87141)"];
+    const stashes = ["Standard", ...leagues].map((league, n) => ({
+        ...stash,
+        id: `league-stash-${n}`,
+        accountName: `league-seller-${n}`,
+        league,
+        items: [{ ...item, id: `league-item-${n}` }],
+    }));
+    upstreamResponses.push({ body: { next_change_id: "leagues-1", stashes } });
+    const client = createClient({ baseUrl, userAgent: "leagues-e2e", token: TOKEN });
+    await ingestPs(local.conn, client, { pages: 1 });
+    const hour = Math.floor(Date.now() / 3600000) * 3600;
+    await rollupPs(local.conn, { hour });
+    expect(
+        (
+            await queryAll<{ league: string }>(
+                local.conn,
+                "SELECT DISTINCT league FROM ps_listing_hour ORDER BY league",
+            )
+        ).map((row) => row.league),
+    ).toEqual(["Chiba league (PL87141)", "Ruthless Standard", "SSF Standard", "Standard"]);
+    // Every league's hour counts as delivered, so it is not pushed again.
+    expect(
+        (
+            await queryAll<{ league: string }>(
+                local.conn,
+                "SELECT league FROM rollup_state WHERE stream_name = 'psapi' ORDER BY league",
+            )
+        ).map((row) => row.league),
+    ).toEqual(["Chiba league (PL87141)", "Ruthless Standard", "SSF Standard", "Standard"]);
+    const stored = async () =>
+        (
+            await mysql.selectDistinct({ league: tStashMarket.poe1.league }).from(tStashMarket.poe1)
+        ).map((row) => row.league);
+    expect(await stored()).toEqual(["Standard"]);
+
+    // Ruthless exchange pairs outside the price currencies stay with the worker too.
+    const exchange = {
+        next_change_id: HOUR + 3600,
+        markets: [
+            market,
+            { ...market, league: "Ruthless Standard", market_id: "Mirror|Fragment" },
+            { ...market, league: "Chiba league (PL87141)" },
+        ],
+    };
+    upstreamResponses.push({ body: exchange });
+    await ingestCx(local.conn, client, { fromHour: HOUR, catchUp: false });
+    await rollupCx(local.conn, { hour: HOUR });
+    expect(
+        (
+            await queryAll<{ league: string }>(
+                local.conn,
+                "SELECT DISTINCT league FROM cx_market_hour ORDER BY league",
+            )
+        ).map((row) => row.league),
+    ).toEqual(["Chiba league (PL87141)", "Ruthless Standard", "Standard"]);
+    expect(
+        await mysql
+            .selectDistinct({ league: tStashCurrencyHourly.poe1.league })
+            .from(tStashCurrencyHourly.poe1),
+    ).toEqual([{ league: "Standard" }]);
+
+    // The receiver also drops them from an older worker, acknowledging the whole batch.
+    await push({
+        stream: "psapi",
+        rows: leagues.map((league) => ({
+            realm: "pc",
+            league,
+            hour: hour - 3600,
+            itemKey: "Headhunter",
+            corrupted: false,
+            foilVariation: -1,
+            links: 0,
+            tab: "merchant",
+            signatureKind: "",
+            signatureValue: "",
+            signatureData: null,
+            iconAsset: null,
+            name: "Headhunter",
+            baseType: "Leather Belt",
+            frameType: 3,
+            identified: true,
+            listingCount: 1,
+            uniqueSellers: 1,
+            prices: {},
+            firstSeenAt: new Date(hour * 1000).toISOString(),
+            lastSeenAt: new Date(hour * 1000).toISOString(),
+        })),
+    });
+    expect(await stored()).toEqual(["Standard"]);
 });
 
 it("accepts authenticated worker heartbeats and exposes real coverage through HTTP and MCP", async () => {
@@ -3213,22 +3312,24 @@ it.each([
         ],
     });
     const convertedHour = HOUR + 7200;
-    await mysql.insert(tStashUniqueHourly.poe1).values({
-        realm: "pc",
-        league: "Standard",
-        hour: convertedHour,
-        itemKey: essenceName,
-        baseType: essenceName,
-        name: "",
-        frameType: 5,
-        identified: true,
-        tab: "merchant",
-        listingCount: 33,
-        uniqueSellers: 30,
-        prices: { divine: { count: 1, min: 2, median: 2, max: 2 } },
-        firstSeenAt: new Date(convertedHour * 1000).toISOString(),
-        lastSeenAt: new Date(convertedHour * 1000).toISOString(),
-    });
+    await writeStashUniqueHourly(mysql as unknown as TDatabase, "poe1", [
+        {
+            realm: "pc",
+            league: "Standard",
+            hour: convertedHour,
+            itemKey: essenceName,
+            baseType: essenceName,
+            name: "",
+            frameType: 5,
+            identified: true,
+            tab: "merchant",
+            listingCount: 33,
+            uniqueSellers: 30,
+            prices: { divine: { count: 1, min: 2, median: 2, max: 2 } },
+            firstSeenAt: new Date(convertedHour * 1000).toISOString(),
+            lastSeenAt: new Date(convertedHour * 1000).toISOString(),
+        },
+    ]);
     await mysql
         .insert(tStashCurrencyHourly.poe1)
         .values({ ...commodityExchangeSnapshot, hour: convertedHour });

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import tradeListingCurrencies from "../data/listing-currencies.json" with { type: "json" };
+import { marketLeagueTracked } from "./leagues.ts";
 
 const itemId = z.string().startsWith("Metadata/Items/").max(500);
 export const exchangeRealmSchema = z.enum(["pc", "xbox", "sony", "poe2"]);
@@ -121,12 +122,12 @@ const exchangePriceCurrencies = {
     ),
 };
 /**
- * Whether an exchange market is stored: one of its items must be a currency the realm's game is
- * priced in. Other pairs, such as one Mirror for one Fragmented Delirium Orb, are dropped, and so
- * is every Ruthless league, whose economy runs on currencies outside that set.
+ * Whether poe.boats stores an exchange market: its league must have market features, and one of
+ * its items must be a currency the realm's game is priced in. Other pairs, such as one Mirror for
+ * one Fragmented Delirium Orb, are dropped.
  */
 export function exchangeMarketTracked(realm: string, league: string, marketId: string) {
-    if (/\bruthless\b/i.test(league)) return false;
+    if (!marketLeagueTracked(league)) return false;
     const currencies = exchangePriceCurrencies[realm === "poe2" ? "poe2" : "poe1"];
     return marketId.split("|").some((id) => currencies.has(id));
 }

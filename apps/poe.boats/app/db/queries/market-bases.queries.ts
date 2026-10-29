@@ -1,3 +1,4 @@
+import { marketLeagueTracked } from "@poe-tools/market";
 import data from "@poe-tools/market/market-bases-poe1.json";
 import { and, desc, eq, gte, inArray, max } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
@@ -116,8 +117,9 @@ export async function marketBaseHistory(
 }
 
 /**
- * The active league whose crafting base cohorts were observed most recently, with that hour,
- * or the most recent ended one when no listed league has cohorts. Reads the hour coverage rollup.
+ * The active league with market features whose crafting base cohorts were observed most
+ * recently, with that hour, or the most recent ended one when no listed league has cohorts.
+ * Reads the hour coverage rollup.
  */
 export async function latestBaseSeason(db: TDatabase, realm: string) {
     const [rows, ended] = await Promise.all([
@@ -132,7 +134,8 @@ export async function latestBaseSeason(db: TDatabase, realm: string) {
         ),
         endedStashLeagues(db, realm),
     ]);
-    const row = rows.find((season) => !ended.has(season.league)) ?? rows[0];
+    const tracked = rows.filter((season) => marketLeagueTracked(season.league));
+    const row = tracked.find((season) => !ended.has(season.league)) ?? tracked[0];
     return row ? { league: row.league, latestHour: Number(row.latestHour) } : undefined;
 }
 

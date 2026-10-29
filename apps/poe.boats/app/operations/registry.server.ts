@@ -76,20 +76,7 @@ const shared = {
 } as const;
 // Markets merge foil and non-foil rows, list rows and history merge or filter link counts, and
 // the `tab` filter picks or merges stash tab kinds, so a market row has none of them.
-const marketRow = sStashUniqueHourlyS
-    .omit({
-        rowCreatedAt: true,
-        rowUpdatedAt: true,
-        rowDeletedAt: true,
-        foilVariation: true,
-        links: true,
-        tab: true,
-    })
-    .extend({
-        rowCreatedAt: z.string(),
-        rowUpdatedAt: z.string(),
-        rowDeletedAt: z.string().nullable(),
-    });
+const marketRow = sStashUniqueHourlyS.omit({ foilVariation: true, links: true, tab: true });
 const priceRates = (when: string) =>
     z
         .record(z.string(), z.number())
@@ -391,26 +378,7 @@ export const operations = [
             ),
         }),
         execute: async (filters, context) => {
-            const data = await getMarketData(
-                context.db,
-                filters,
-                filters.item ? "history" : "list",
-            );
-            return {
-                ...data,
-                rows: data.rows.map((row) => ({
-                    ...row,
-                    rowCreatedAt: row.rowCreatedAt.toISOString(),
-                    rowUpdatedAt: row.rowUpdatedAt.toISOString(),
-                    rowDeletedAt: row.rowDeletedAt?.toISOString() ?? null,
-                })),
-                history: data.history.map((row) => ({
-                    ...row,
-                    rowCreatedAt: row.rowCreatedAt.toISOString(),
-                    rowUpdatedAt: row.rowUpdatedAt.toISOString(),
-                    rowDeletedAt: row.rowDeletedAt?.toISOString() ?? null,
-                })),
-            };
+            return getMarketData(context.db, filters, filters.item ? "history" : "list");
         },
     }),
     defineOperation({

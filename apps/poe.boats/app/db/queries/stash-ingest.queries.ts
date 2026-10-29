@@ -14,8 +14,9 @@ import {
 } from "~/db/schema/stash.currency-hourly";
 import type { TStashCurrencyMarketI } from "~/db/schema/stash.currency-market";
 import type { StashCoverageStream } from "~/db/schema/stash.hour-coverage";
-import { type TStashUniqueHourlyI, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
+import type { TStashUniqueHourlyI } from "~/db/schema/stash.unique-hourly";
 import { isYellowBeast, yellowBeastMarket } from "~/lib/crafting-yellow-beasts";
+import { writeStashUniqueHourly } from "./stash-market.queries";
 import {
     refreshStashCurrencyDaily,
     refreshStashHourCoverage,
@@ -253,34 +254,12 @@ export async function upsertStashUniqueHourly(
     if (rows.length === 0) return 0;
     let written = 0;
     for (const [game, gameRows] of byGame(rows)) {
-        const table = tStashUniqueHourly[game];
         const itemDays = new Map<
             string,
             { realm: string; league: string; day: number; itemKeys: Set<string> }
         >();
         for (const batch of chunk(gameRows, UPSERT_CHUNK)) {
-            await db
-                .insert(table)
-                .values(batch)
-                .onDuplicateKeyUpdate({
-                    set: {
-                        iconAsset: sql`values(${table.iconAsset})`,
-                        name: sql`values(${table.name})`,
-                        baseType: sql`values(${table.baseType})`,
-                        frameType: sql`values(${table.frameType})`,
-                        listingCount: sql`values(${table.listingCount})`,
-                        uniqueSellers: sql`values(${table.uniqueSellers})`,
-                        removedCount: sql`values(${table.removedCount})`,
-                        likelySales: sql`values(${table.likelySales})`,
-                        relistedCount: sql`values(${table.relistedCount})`,
-                        pendingCount: sql`values(${table.pendingCount})`,
-                        salesPrices: sql`values(${table.salesPrices})`,
-                        prices: sql`values(${table.prices})`,
-                        signatureData: sql`values(${table.signatureData})`,
-                        firstSeenAt: sql`values(${table.firstSeenAt})`,
-                        lastSeenAt: sql`values(${table.lastSeenAt})`,
-                    },
-                });
+            await writeStashUniqueHourly(db, game, batch);
             for (const row of batch) {
                 const day = utcDay(row.hour);
                 const key = JSON.stringify([row.realm, row.league, day]);
