@@ -20,7 +20,7 @@ env:
 
 jobs:
   checks:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       APP_ENV: test
@@ -64,7 +64,7 @@ jobs:
           retention-days: 7
 
   unit:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -98,7 +98,7 @@ jobs:
           retention-days: 7
 
   packages:
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       APP_ENV: test
@@ -117,7 +117,7 @@ jobs:
         run: vp run --filter './packages/*' test
 
   browser:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -164,7 +164,7 @@ jobs:
   browser-report:
     if: ${{ !cancelled() }}
     needs: browser
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -193,7 +193,7 @@ jobs:
   validate:
     if: always()
     needs: [checks, unit, packages, browser, browser-report]
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Require all validation jobs to succeed
@@ -215,7 +215,7 @@ jobs:
     if: >-
       github.event_name != 'pull_request' &&
       (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     environment:
       name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
@@ -259,7 +259,7 @@ jobs:
   publish-ingest:
     needs: [validate, deploy]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/dev'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
