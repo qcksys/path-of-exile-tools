@@ -44,9 +44,16 @@ const atziriDefence = capture(
     (defence) => ATZIRI_DEFENCES[defence]!,
 );
 
+/** "+5 to maximum Mana" → "Mana", "6% increased Fire Damage" → "Fire Damage". */
+const lightOfMeaningStat = capture(
+    /^Passive Skills in Radius also grant [+-]?[\d.]+%? (?:to |increased )?(?:maximum )?(.+)$/,
+    (stat) => stat[0]!.toUpperCase() + stat.slice(1),
+);
+
 /**
  * Uniques whose rolled mods make separately priced markets, keyed by unique name. The list and
- * the variant labels follow poe.ninja's `variant` splits (checked 2026-10-27 in Allflame); the
+ * the variant labels follow poe.ninja's `variant` splits (checked 2026-10-27 in Allflame), plus
+ * The Light of Meaning, Sublime Vision and Thread of Hope, which poe.ninja does not split; the
  * `foulborn` extractor adds these labels to Foulborn copies.
  */
 export const UNIQUE_MOD_SPLITS: Record<string, Split> = {
@@ -71,7 +78,11 @@ export const UNIQUE_MOD_SPLITS: Record<string, Split> = {
     ),
     "Ralakesh's Impatience": capture(/Count as having maximum number of (\w+) Charges/),
     "Shroud of the Lightless": abyssalSockets,
+    // Every aura but the one it rolled is disabled.
+    "Sublime Vision": capture(/^Aura Skills other than (.+) are Disabled$/),
     "The First Crest": capture(/Aureus Coins are converted to (.+?) upon defeating/),
+    "The Light of Meaning": lightOfMeaningStat,
+    "Thread of Hope": capture(/Only affects Passives in (.+ Ring)/),
     Tombfist: abyssalSockets,
     "Volkuur's Guidance": capture(/Your (Fire|Cold|Lightning) Damage can Poison/),
     Voices: capture(/Adds (\d+) Small Passive Skills? which grant nothing/, count("passive")),

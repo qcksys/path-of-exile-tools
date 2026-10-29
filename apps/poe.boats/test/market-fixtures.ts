@@ -3,6 +3,7 @@ import type {
     getMarketData,
     getMarketExchangeItem,
 } from "~/db/queries/market.queries";
+import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
 import { isModPool, modPoolValues, parseModList } from "~/lib/mod-pools";
 import {
     type MarketBaseInput,
@@ -56,6 +57,12 @@ export function marketFixture(
         signatureValue: "",
         signatureData: null,
         links: null as number | null,
+        latestHour: row.hour,
+        listingCount: 3,
+        prices: { chaos: { count: 3, min: 6, median: 8, max: 12 } } as Record<
+            string,
+            MarketPriceSummary
+        > | null,
     };
     const bases = filters.category === "armour-bases";
     return {
@@ -144,7 +151,8 @@ export function marketFixture(
                         ...variant,
                         itemKey: filters.item!,
                         signatureKind: "forbidden-jewel",
-                        signatureValue: `Notable ${index}`,
+                        // The first is an Inquisitor notable; the rest are on no ascendancy.
+                        signatureValue: index ? `Notable ${index}` : "Pious Path",
                         periodSales: 30 - index,
                     }))
                   : filters.item

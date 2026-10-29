@@ -958,6 +958,9 @@ it("lists a unique's markets in both identification states as variants of each o
 });
 
 it("lists every variant of an item with more than a hundred", async () => {
+    const chaos = (count: number, median: number) => ({
+        chaos: { count, min: median, median, max: median },
+    });
     const flesh = (signatureValue: string, overrides: Partial<TStashUniqueHourlyI> = {}) =>
         observation({
             league: "Many Variants",
@@ -970,14 +973,13 @@ it("lists every variant of an item with more than a hundred", async () => {
             ...overrides,
         });
     const notables = Array.from({ length: 120 }, (_, index) => `Notable ${index + 100}`);
-    await db
-        .insert(market)
-        .values([
-            flesh("Best Seller", { likelySales: 3 }),
-            ...notables.map((notable) => flesh(notable)),
-            flesh("Zealot", { links: 6 }),
-            flesh("Zealot", { links: 0 }),
-        ]);
+    await db.insert(market).values([
+        flesh("Best Seller", { likelySales: 3 }),
+        ...notables.map((notable) => flesh(notable)),
+        flesh("Zealot", { links: 6, listingCount: 2, prices: chaos(2, 50) }),
+        // Unlisted in the latest hour, so the merged market is priced from its 6L copies.
+        flesh("Zealot", { links: 0, hour: hour - 3600, prices: chaos(1, 10) }),
+    ]);
     const { variants } = await getMarketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({
@@ -995,6 +997,50 @@ it("lists every variant of an item with more than a hundred", async () => {
         ["Zealot", null, 0],
         ["Zealot", 0, 0],
         ["Zealot", 6, 0],
+    ]);
+    expect(
+        variants
+            .filter((row) => row.signatureValue === "Zealot")
+            .map((row) => [row.links, row.latestHour, row.listingCount, row.prices]),
+    ).toEqual([
+        [null, hour, 2, chaos(2, 50)],
+        [0, hour - 3600, 1, chaos(1, 10)],
+        [6, hour, 2, chaos(2, 50)],
+    ]);
+});
+
+it("lists Forbidden jewels in their own category, apart from other jewels", async () => {
+    const jewel = (
+        itemKey: string,
+        baseType: string,
+        overrides: Partial<TStashUniqueHourlyI> = {},
+    ) => observation({ league: "Forbidden", itemKey, name: itemKey, baseType, ...overrides });
+    const notable = { signatureKind: "forbidden-jewel", signatureValue: "Pious Path" };
+    await db
+        .insert(market)
+        .values([
+            jewel("Forbidden Flame", "Crimson Jewel", notable),
+            jewel("Forbidden Flesh", "Cobalt Jewel", notable),
+            jewel("Forbidden Flesh", "Cobalt Jewel", { ...notable, corrupted: true }),
+            jewel("Watcher's Eye", "Prismatic Jewel"),
+            jewel("Unnamed", "Cobalt Jewel", { name: null }),
+        ]);
+    const list = async (category: string) =>
+        (
+            await marketData(
+                db as unknown as TDatabase,
+                marketFiltersSchema.parse({ league: "Forbidden", category }),
+                "list",
+            )
+        ).rows.map((row) => [row.itemKey, row.corrupted, row.category]);
+    // Uncorrupted unless asked, as unique equipment is.
+    expect(await list("forbidden")).toEqual([
+        ["Forbidden Flame", false, "forbidden"],
+        ["Forbidden Flesh", false, "forbidden"],
+    ]);
+    expect(await list("jewels")).toEqual([
+        ["Unnamed", false, "jewels"],
+        ["Watcher's Eye", false, "jewels"],
     ]);
 });
 
@@ -1347,7 +1393,8 @@ it("keeps item history independent of browsing filters and skips the list query 
     expect(result.variants).toEqual([
         expect.objectContaining({ itemKey: "Item 0", identified: true, corrupted: false }),
     ]);
-    expect(statements).toHaveLength(6);
+    // Includes the variants' latest rows, which price each variant.
+    expect(statements).toHaveLength(7);
     expect(statements.filter(({ sql: query }) => /\binner\s+join\b/i.test(query))).toEqual([]);
     expect(
         statements.filter(({ sql: query }) =>
@@ -1428,7 +1475,11 @@ it("merges every listing currency into chaos through same-league rates, whatever
     expect(inDivine.history.map((row) => [row.merged, row.priceRates])).toEqual(
         inChaos.history.map((row) => [row.merged, row.priceRates]),
     );
-    expect(inDivine.chaosRates).toEqual({});
+    // The item's variant is listed in divine, priced at the latest hour's (reused) rate.
+    expect(inDivine.chaosRates).toEqual({ divine: 150 });
+    expect(inDivine.variants.map((variant) => [variant.listingCount, variant.prices])).toEqual([
+        [1, { divine: { count: 1, min: 3, median: 3, max: 3 } }],
+    ]);
     const list = await marketData(
         db as unknown as TDatabase,
         marketFiltersSchema.parse({ league: "Merged" }),

@@ -69,6 +69,13 @@ lists its merged variant ("Any links", the default without a `links` filter) and
 Splendour [Armour] 6L). The `links` filter (`0`, `5` or `6`) selects one in history; list and
 history rows omit `links`, and variants carry it (null when merged). Rows ingested before the
 split, and listings whose stash has not been re-sent since, count as 0.
+Each variant carries its `latestHour` in the period with that hour's `listingCount` and `prices`;
+the item page shows the most listed currency's median beside each variant, and lists more than
+20 variants as a searchable table grouped by state, or by class and ascendancy for Forbidden
+Flame and Flesh. Those two jewels have their own `forbidden` category (left out of `jewels`),
+which pairs them by notable under each class and ascendancy with the pair's combined price; the
+notable-to-ascendancy table in `app/data/ascendancy-notables-poe1.json` comes from GGG's passive
+tree export (`vp run game-data:ascendancies`).
 Stash markets are also stored by `tab`: `merchant` for Faustus's merchant tabs (the public stash
 API's `stashType` `TradeStash`, where every item has a `~b/o` price and sells without contacting
 the seller), `other` for every other public tab, and empty for rows ingested before the split,

@@ -1,15 +1,19 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Link } from "react-router";
 import { DataTable, dataTableColumns } from "~/components/data-table";
 import { ItemArt } from "~/components/item-art";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
 import { MarketHistory, MarketHistoryPrice } from "~/components/market-history";
+import { MarketListingPrice } from "~/components/market-listing-price";
 import { MarketModValues } from "~/components/market-mod-values";
 import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
+import { forbiddenJewelGroup } from "~/lib/forbidden-jewels";
 import { marketItemArtUrl } from "~/lib/item-presentation";
+import { marketListingPrices, marketMostListedPrice } from "~/lib/market-listing-prices";
 import { marketNumber as number } from "~/lib/market-number";
+import type { MarketPriceRates } from "~/lib/market-price-currencies";
 import { marketSignatureLabel } from "~/lib/mod-pools";
 import { marketLink, parseMarketFilters } from "~/schemas/market";
 import type { Route } from "./+types/item";
@@ -29,6 +33,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 type HistoryRow = Awaited<ReturnType<typeof getMarketData>>["history"][number];
 type VariantRow = Awaited<ReturnType<typeof getMarketData>>["variants"][number];
 
+/** Up to this many variants show as links; more list as a searchable, grouped table. */
 const SHOWN_VARIANTS = 20;
 
 /** Uniques split by linked sockets as poe.ninja does: 5L, 6L and everything under 5 links. */
@@ -45,6 +50,115 @@ function variantLabel(variant: VariantRow, linkSplit: boolean) {
         variant.links !== null ? linksLabel(variant.links) : linkSplit ? "Any links" : "",
     ].filter(Boolean);
     return parts.length ? parts.join(" · ") : "Standard";
+}
+
+/** The variant table's group: a Forbidden jewel's class and ascendancy, else its state. */
+function variantGroup(variant: VariantRow) {
+    return (
+        forbiddenJewelGroup(variant) ??
+        [variant.identified ? "Identified" : "Unidentified", variant.corrupted ? "Corrupted" : ""]
+            .filter(Boolean)
+            .join(" · ")
+    );
+}
+
+type Prices = { chaosRates: Record<string, number>; rates: MarketPriceRates };
+
+function VariantPrice({
+    variant,
+    prices,
+    game,
+}: {
+    variant: VariantRow;
+    prices: Prices;
+    game: "poe1" | "poe2";
+}) {
+    const price = marketMostListedPrice(marketListingPrices(variant.prices, prices.chaosRates));
+    return price ? <MarketListingPrice price={price} rates={prices.rates} game={game} /> : null;
+}
+
+const variantColumn = dataTableColumns<VariantRow>();
+
+/** Many variants list as a searchable table, grouped by class and ascendancy or state. */
+function VariantTable({
+    variants,
+    label,
+    link,
+    isCurrent,
+    prices,
+    game,
+}: {
+    variants: VariantRow[];
+    label: (variant: VariantRow) => string;
+    link: (variant: VariantRow) => string;
+    isCurrent: (variant: VariantRow) => boolean;
+    prices: Prices;
+    game: "poe1" | "poe2";
+}) {
+    const columns = useMemo(() => {
+        const count = { sortDescFirst: true, meta: { filter: "range" } } as const;
+        return variantColumn.columns([
+            variantColumn.accessor(variantGroup, {
+                id: "group",
+                header: "Group",
+                meta: { filter: "text", className: "whitespace-nowrap text-muted-foreground" },
+            }),
+            variantColumn.accessor(label, {
+                id: "variant",
+                header: "Variant",
+                meta: { filter: "text" },
+                cell: ({ getValue, row: { original: variant } }) => (
+                    <Link
+                        to={link(variant)}
+                        aria-current={isCurrent(variant) ? "page" : undefined}
+                        className={`text-primary hover:underline ${isCurrent(variant) ? "font-semibold" : ""}`}
+                    >
+                        {getValue()}
+                    </Link>
+                ),
+            }),
+            variantColumn.accessor(
+                (variant) =>
+                    marketMostListedPrice(marketListingPrices(variant.prices, prices.chaosRates))
+                        ?.chaos,
+                {
+                    id: "price",
+                    header: "Median ask",
+                    ...count,
+                    sortUndefined: "last",
+                    cell: ({ row: { original: variant } }) => (
+                        <VariantPrice variant={variant} prices={prices} game={game} />
+                    ),
+                },
+            ),
+            variantColumn.accessor("listingCount", {
+                header: "Listings",
+                ...count,
+                cell: ({ getValue }) => number(getValue()),
+            }),
+            variantColumn.accessor("periodSales", {
+                header: "Likely sales",
+                ...count,
+                cell: ({ getValue }) => number(getValue()),
+            }),
+        ]);
+    }, [label, link, isCurrent, prices, game]);
+    const rows = useMemo(
+        () =>
+            // Stable: within a group, variants keep their best-selling-first order.
+            [...variants].sort((a, b) => variantGroup(a).localeCompare(variantGroup(b))),
+        [variants],
+    );
+    return (
+        <DataTable
+            label="Item variants"
+            data={rows}
+            columns={columns}
+            getRowId={link}
+            search
+            className="text-sm"
+        />
+    );
 }
 
 function sameMarket(a: VariantRow, b: VariantRow) {
@@ -116,42 +230,54 @@ function HourlyTable({ rows, game }: { rows: HistoryRow[]; game: "poe1" | "poe2"
 }
 
 export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
-    const { filters, seasons, history, variants, modValues } = loaderData;
+    const { filters, seasons, history, variants, modValues, chaosRates, priceRates } = loaderData;
     const selected = history.at(-1);
-    const isCurrent = (variant: VariantRow) =>
-        variant.itemKey === filters.item &&
-        String(variant.identified) === filters.identified &&
-        String(variant.corrupted) === filters.corrupted &&
-        variant.signatureKind === filters.kind &&
-        variant.signatureValue === filters.value &&
-        (variant.links === null ? undefined : String(variant.links)) === filters.links;
-    const linkSplit = (variant: VariantRow) =>
-        variants.some((other) => other.links !== null && sameMarket(other, variant));
+    const game = filters.realm === "poe2" ? "poe2" : "poe1";
+    const prices = useMemo(() => ({ chaosRates, rates: priceRates }), [chaosRates, priceRates]);
+    const isCurrent = useCallback(
+        (variant: VariantRow) =>
+            variant.itemKey === filters.item &&
+            String(variant.identified) === filters.identified &&
+            String(variant.corrupted) === filters.corrupted &&
+            variant.signatureKind === filters.kind &&
+            variant.signatureValue === filters.value &&
+            (variant.links === null ? undefined : String(variant.links)) === filters.links,
+        [filters],
+    );
+    const label = useCallback(
+        (variant: VariantRow) =>
+            variantLabel(
+                variant,
+                variants.some((other) => other.links !== null && sameMarket(other, variant)),
+            ),
+        [variants],
+    );
+    const link = useCallback((variant: VariantRow) => marketLink(filters, variant), [filters]);
     const variantLink = (variant: VariantRow) => (
-        <li key={marketLink(filters, variant)}>
+        <li key={link(variant)}>
             <Link
-                to={marketLink(filters, variant)}
+                to={link(variant)}
                 aria-current={isCurrent(variant) ? "page" : undefined}
                 className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 ${isCurrent(variant) ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted"}`}
             >
-                {variantLabel(variant, linkSplit(variant))}
+                {label(variant)}
                 <span className="text-xs text-muted-foreground">
+                    {variant.prices ? (
+                        <>
+                            <VariantPrice variant={variant} prices={prices} game={game} />
+                            {" · "}
+                        </>
+                    ) : null}
                     {number(variant.periodSales)} sales
                 </span>
             </Link>
         </li>
-    );
-    // Variants come best-selling first; the rest fold away, except the one on this page.
-    const shown = variants.filter((variant, index) => index < SHOWN_VARIANTS || isCurrent(variant));
-    const more = variants.filter(
-        (variant, index) => index >= SHOWN_VARIANTS && !isCurrent(variant),
     );
     const links = filters.links === undefined ? null : Number(filters.links);
     const otherVariants = variants.some((variant) => !isCurrent(variant));
     const itemName =
         variants.find((variant) => variant.itemKey === filters.item)?.name || filters.item;
     const periodSales = history.reduce((sum, row) => sum + row.likelySales, 0);
-    const game = filters.realm === "poe2" ? "poe2" : "poe1";
     return (
         <>
             <MarketFiltersForm filters={filters} seasons={seasons} />
@@ -171,17 +297,20 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                             ({variants.length})
                         </span>
                     </h2>
-                    <ul className="flex flex-wrap gap-2 text-sm">{shown.map(variantLink)}</ul>
-                    {more.length ? (
-                        <details>
-                            <summary className="cursor-pointer text-sm text-muted-foreground">
-                                Show {more.length} more
-                            </summary>
-                            <ul className="mt-2 flex flex-wrap gap-2 text-sm">
-                                {more.map(variantLink)}
-                            </ul>
-                        </details>
-                    ) : null}
+                    {variants.length > SHOWN_VARIANTS ? (
+                        <VariantTable
+                            variants={variants}
+                            label={label}
+                            link={link}
+                            isCurrent={isCurrent}
+                            prices={prices}
+                            game={game}
+                        />
+                    ) : (
+                        <ul className="flex flex-wrap gap-2 text-sm">
+                            {variants.map(variantLink)}
+                        </ul>
+                    )}
                 </nav>
             ) : null}
             {selected ? (
