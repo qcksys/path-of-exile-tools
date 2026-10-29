@@ -258,8 +258,7 @@ export function MarketFiltersForm({
                                     ])),
                           ])}
                     {uniques ||
-                    filters.category === "accessory-bases" ||
-                    filters.category === MARKET_CLUSTER_BASE_CATEGORY ||
+                    !baseClasses.some((name) => MARKET_BASE_LINK_CLASSES.includes(name)) ||
                     (filters.baseClass && !MARKET_BASE_LINK_CLASSES.includes(filters.baseClass))
                         ? null
                         : select("baseLinks", "Links", [

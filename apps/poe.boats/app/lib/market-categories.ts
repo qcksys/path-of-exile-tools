@@ -16,7 +16,7 @@ export const MARKET_CATEGORIES = {
         group: "Equipment & gems",
         icon: "Two-Stone Ring",
     },
-    flasks: { label: "Flasks", group: "Equipment & gems", icon: "Divine Life Flask" },
+    flasks: { label: "Unique flasks", group: "Equipment & gems", icon: "Divine Life Flask" },
     jewels: { label: "Jewels", group: "Equipment & gems", icon: "Crimson Jewel" },
     // Listed by name, apart from other jewels; see `marketCategoryFilter`.
     forbidden: { label: "Forbidden jewels", group: "Equipment & gems", icon: "Cobalt Jewel" },
@@ -53,6 +53,7 @@ export const MARKET_CATEGORIES = {
     "armour-bases": { label: "Armour bases", group: "Crafting bases", icon: "Vaal Regalia" },
     "weapon-bases": { label: "Weapon bases", group: "Crafting bases", icon: "Imbued Wand" },
     "accessory-bases": { label: "Accessory bases", group: "Crafting bases", icon: "Onyx Amulet" },
+    "flask-bases": { label: "Flask bases", group: "Crafting bases", icon: "Quicksilver Flask" },
     "cluster-jewel-bases": {
         label: "Cluster jewel bases",
         group: "Crafting bases",
@@ -94,6 +95,7 @@ export const MARKET_BASE_CATEGORIES: Partial<Record<MarketCategory, MarketCatego
     weapons: "weapon-bases",
     armour: "armour-bases",
     accessories: "accessory-bases",
+    flasks: "flask-bases",
 };
 
 /** Normal, magic and rare Cluster Jewels are listed by size, skill, passive count and item level. */

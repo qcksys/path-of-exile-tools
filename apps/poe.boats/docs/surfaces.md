@@ -121,9 +121,9 @@ currency. Mods are labelled from `signatureData`. The `mods` filter (`|`-separat
 only combinations with every listed mod and `anyMods` those with at least one, so requiring A
 prices each other mod as "cheapest with A and X"; `matches` lists the cheapest listed matching
 combinations, which link to their own history.
-Weapon, armour and accessory categories list uniques only. Normal, magic and rare equipment is
+Weapon, armour, accessory and flask categories list uniques only. Normal, magic and rare equipment is
 listed under the Crafting bases group (`armour-bases`, `weapon-bases`, `accessory-bases`,
-`cluster-jewel-bases`) from
+`flask-bases`, `cluster-jewel-bases`) from
 `stash_poe1_cohort_hourly`: each base cohort the generator writes to
 `packages/poe-market/data/market-bases-poe1.json` (item level 74 and up; bases that can reach six
 sockets, body armours and two-handed weapons (`MARKET_BASE_LINK_CLASSES`), split into 1–5 and 6
@@ -135,14 +135,18 @@ start where the base's rare modifier pool changes. From ilvl 74 each base lists 
 bands: of the levels that unlock at least a tenth of the top-tier (T1) spawn weight the base gains
 above ilvl 74, the two highest split off and lower levels group together
 (`significantLevelBands`), so each base type gets its own breakpoints (Focused Amulet: 74–83, 84,
-85+; Stygian Vise: 74–84, 85, 86+; most weapons 74–81, 82, 83+). `cluster-jewel-bases` lists
+85+; Stygian Vise: 74–84, 85, 86+; most weapons 74–81, 82, 83+). `flask-bases` lists every
+utility flask and the three highest life, mana and hybrid flasks with fixed bands instead:
+utility flasks 74–79, 80–83, 84 and 85+ (T1 Alchemist's at 80; Experimenter's, Armadillo and
+Impala at 84; of the Cheetah at 85), other flasks ilvl 83+ only; its `baseClass` values space the game data's
+flask classes (`Life Flask` for `LifeFlask`). `cluster-jewel-bases` lists
 normal, magic and rare Cluster Jewels by size, added small passive skill (the first `Added Small
 Passive Skills grant:` enchantment line, matched by the item query's `enchant` condition), passive
 count and poe.ninja's item level bands (1–49, 50–67, 68–74, 75–83, 84+). Base rows have no
 likely-sale estimates; they sort, search and range-filter in memory, with prices compared in
 chaos, and filter by `baseClass` (item class; a Cluster Jewel's size), `attributes` (required
 attributes, e.g. `str-int` or `str-dex-int`), `ilvl` (the band includes that level), `baseLinks` and `quality`.
-The unique weapon, armour and accessory categories also filter by `baseClass` and (armour)
+The unique weapon, armour, accessory and flask categories also filter by `baseClass` and (armour)
 `attributes`, matching each unique's base type through the generated
 `public/game-data/market-base-types-poe1.json` (base type name to item class and attribute set).
 List rows carry `recentSales`: likely sales in each of the 24 hours to the season's latest hour

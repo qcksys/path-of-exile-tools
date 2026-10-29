@@ -39,6 +39,29 @@ it("reserves image space, loads lazily, and recovers when the source changes aft
     expect(screen.getByRole("img", { name: "Second item" }).getAttribute("src")).toBe("two.png");
 });
 
+it("layers the frames of three-frame flask sprites, but not of single-frame tinctures", () => {
+    const load = (image: HTMLElement, width: number, height: number) => {
+        Object.defineProperty(image, "naturalWidth", { value: width, configurable: true });
+        Object.defineProperty(image, "naturalHeight", { value: height, configurable: true });
+        fireEvent.load(image);
+    };
+    const flask = "https://www.pathofexile.com/image/Art/2DItems/Flasks/TasteOfHate.png";
+    const { container, rerender } = render(<ItemArt src={flask} name="Taste of Hate" />);
+    load(screen.getByRole("img", { name: "Taste of Hate" }), 234, 156);
+    const sprite = screen.getByRole("img", { name: "Taste of Hate" });
+    expect(container.querySelector("img")).toBeNull();
+    expect(sprite.dataset.flaskSprite).toBe("");
+    expect(sprite.style.backgroundPosition).toMatch(/^center\b.*, left\b.*, right\b/);
+    expect(sprite.style.backgroundImage).toContain("TasteOfHate.png");
+    const tincture = "https://www.pathofexile.com/image/Art/2DItems/Flasks/BleedSap.png";
+    rerender(<ItemArt src={tincture} name="Tincture" />);
+    load(screen.getByRole("img", { name: "Tincture" }), 78, 156);
+    expect(container.querySelector("img")?.getAttribute("src")).toBe(tincture);
+    rerender(<ItemArt src="https://www.pathofexile.com/image/Art/2DItems/Wide.png" name="Wide" />);
+    load(screen.getByRole("img", { name: "Wide" }), 234, 156);
+    expect(container.querySelector("img")).toBeTruthy();
+});
+
 it("keeps a named placeholder without requesting an empty image URL", () => {
     const { container } = render(<CatalogItemArt id="missing" name="Unknown base" />);
     expect(container.querySelector("img")).toBeNull();

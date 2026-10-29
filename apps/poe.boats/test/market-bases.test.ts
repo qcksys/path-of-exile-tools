@@ -6,6 +6,7 @@ import {
     MARKET_BASE_CLASSES,
     MARKET_BASE_LINK_CLASSES,
     type MarketBaseRow,
+    marketBaseClass,
     marketBaseDescription,
     marketBaseDetails,
     marketBasesSchema,
@@ -189,8 +190,43 @@ describe("generated crafting base list", () => {
             new Set(bases.filter((entry) => entry.links).map((entry) => entry.itemClass)),
         ).toEqual(new Set(MARKET_BASE_LINK_CLASSES));
         expect(new Set(bases.map((entry) => entry.category))).toEqual(
-            new Set(["armour-bases", "weapon-bases", "accessory-bases", "cluster-jewel-bases"]),
+            new Set([
+                "armour-bases",
+                "weapon-bases",
+                "accessory-bases",
+                "flask-bases",
+                "cluster-jewel-bases",
+            ]),
         );
+    });
+
+    it("lists utility flasks by their key modifier levels and other flasks from ilvl 83", () => {
+        const flasks = bases.filter((entry) => entry.category === "flask-bases");
+        const names = (itemClass: string) =>
+            new Set(flasks.filter((entry) => entry.itemClass === itemClass).map((e) => e.baseType));
+        expect(names("Utility Flask").size).toBe(18);
+        expect(names("Life Flask")).toEqual(
+            new Set(["Eternal Life Flask", "Divine Life Flask", "Sanctified Life Flask"]),
+        );
+        expect(names("Mana Flask").has("Eternal Mana Flask")).toBe(true);
+        expect(names("Hybrid Flask").has("Hallowed Hybrid Flask")).toBe(true);
+        expect(
+            flasks
+                .filter((entry) => entry.baseType === "Quicksilver Flask")
+                .map((entry) => `${entry.ilvl.min}-${entry.ilvl.max}`),
+        ).toEqual(["74-79", "80-83", "84-84", "85-100"]);
+        for (const entry of flasks.filter((entry) => entry.itemClass !== "Utility Flask"))
+            expect(entry.ilvl, entry.id).toEqual({ min: 83, max: 100 });
+        expect(flasks.every((entry) => entry.links === null && entry.quality === null)).toBe(true);
+        expect(marketBaseDetails(flasks.find((e) => e.baseType === "Quicksilver Flask")!)).toBe(
+            "ilvl 74–79 · Utility Flask",
+        );
+    });
+
+    it("names the game data's flask classes as the market does", () => {
+        expect(marketBaseClass("LifeFlask")).toBe("Life Flask");
+        expect(marketBaseClass("UtilityFlask")).toBe("Utility Flask");
+        expect(marketBaseClass("Body Armour")).toBe("Body Armour");
     });
 
     it("lists each base under a type of its category, with its attribute requirements", () => {
@@ -236,8 +272,11 @@ describe("generated crafting base list", () => {
         expect(bands("Focused Amulet")).toEqual(["74-83", "84-84", "85-100"]);
         expect(bands("Stygian Vise")).toEqual(["74-84", "85-85", "86-100"]);
         expect(bands("Imperial Staff")).toEqual(["74-81", "82-82", "83-100"]);
+        // Flasks have fixed bands; see the flask test.
         for (const name of new Set(
-            bases.filter((entry) => !entry.cluster).map((entry) => entry.baseType),
+            bases
+                .filter((entry) => !entry.cluster && entry.category !== "flask-bases")
+                .map((entry) => entry.baseType),
         ))
             expect(bands(name).length, name).toBeLessThanOrEqual(3);
     });
