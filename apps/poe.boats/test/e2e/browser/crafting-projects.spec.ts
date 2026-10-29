@@ -45,7 +45,7 @@ import {
     marketGraph,
 } from "../../crafting-market-fixtures";
 import { nnnGraph, rage } from "../../crafting-nnn-fixtures";
-import { yellowBeastComponent } from "../../crafting-source-fixtures";
+import { recipeSourceHour, yellowBeastComponent } from "../../crafting-source-fixtures";
 import {
     vendorCurrencyInputId,
     vendorCurrencyOutputId,
@@ -698,7 +698,7 @@ test("beast prices refresh on reopening and preserve manual overrides", async ({
     let amount = 607;
     const currentQuote = () =>
         craftingSourceQuoteSchema.parse({
-            source: "poe.ninja",
+            source: "stash-recipe",
             game: "poe1",
             realm: "pc",
             league: graph.league,
@@ -706,17 +706,12 @@ test("beast prices refresh on reopening and preserve manual overrides", async ({
             id,
             yellowBeasts: "listing-count-weighted-mean-v1",
             amount,
-            fetchedAt: "2026-10-08T04:00:00.000Z",
+            hour: recipeSourceHour,
             components: [
-                { detailsId: "craicic-sand-spitter", quantity: 1, unitPrice: 1 },
-                { detailsId: "black-morrigan", quantity: 1, unitPrice: amount - 7 },
+                { itemKey: "Craicic Sand Spitter", quantity: 1, unitPrice: 1 },
+                { itemKey: "Black Morrigan", quantity: 1, unitPrice: amount - 7 },
             ]
-                .map((component) => ({
-                    ...component,
-                    name: component.detailsId,
-                    listingCount: 100,
-                    sourceUrl: "https://poe.ninja/poe1/api/economy/stash/current/item/overview",
-                }))
+                .map((component) => ({ ...component, listingCount: 100, hour: recipeSourceHour }))
                 .concat([yellowBeastComponent]),
         });
     await page.route("**/api/v1/crafting/market/sources", (route) => {

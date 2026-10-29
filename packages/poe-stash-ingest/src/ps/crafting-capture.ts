@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import type { Item } from "@poe-tools/api-client";
 import type { MarketCohortManifest } from "@poe-tools/market";
-import { isUniqueItem } from "#src/shared/capture.ts";
+import { isCapturedBeast, isUniqueItem } from "#src/shared/capture.ts";
 
 interface CapturePolicy {
     equipmentBaseTypes: string[];
@@ -61,6 +61,7 @@ export function compileCraftingCapture(manifest: MarketCohortManifest, policy: C
     return (item: Item): boolean => {
         if (
             isUniqueItem(item) ||
+            isCapturedBeast(item) ||
             item.frameType === 9 ||
             item.rarity === "Currency" ||
             item.frameType === 5 ||

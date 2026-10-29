@@ -6,14 +6,12 @@ import {
     upsertStashCurrencyHourly,
 } from "~/db/queries/stash-ingest.queries";
 import { handleScheduled } from "~/scheduled";
-import { updateScarabPrices } from "~/scheduled/poeninja";
 
 vi.mock("~/db/client", () => ({ openDatabase: vi.fn() }));
 vi.mock("~/db/queries/stash-ingest.queries", () => ({
     countStashCurrencyHour: vi.fn(),
     upsertStashCurrencyHourly: vi.fn(),
 }));
-vi.mock("~/scheduled/poeninja", () => ({ updateScarabPrices: vi.fn() }));
 vi.mock("~/services/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
 const item = "Metadata/Items/Currency/CurrencyAddModToRare";
@@ -53,7 +51,6 @@ function feed(request: string | URL | Request, overrides: Record<string, unknown
 beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(openDatabase).mockResolvedValue({ db: database, close });
-    vi.mocked(updateScarabPrices).mockResolvedValue({ successCount: 1, errorCount: 0 });
     vi.mocked(countStashCurrencyHour).mockResolvedValue(0);
     vi.mocked(upsertStashCurrencyHourly).mockImplementation(async (_, rows) => rows.length);
     vi.stubGlobal(
@@ -104,19 +101,6 @@ describe("scheduled exchange capture", () => {
             realm: "pc",
             hour,
         });
-    });
-
-    it("runs exchange capture when scarab capture rejects or reports unsuccessful leagues", async () => {
-        vi.mocked(updateScarabPrices).mockRejectedValueOnce(new Error("Scarab database failure"));
-        await expect(handleScheduled(controller, env)).rejects.toThrow(
-            "Scheduled market capture failed",
-        );
-        expect(upsertStashCurrencyHourly).toHaveBeenCalledTimes(12);
-        vi.mocked(updateScarabPrices).mockResolvedValueOnce({ successCount: 0, errorCount: 1 });
-        await expect(handleScheduled(controller, env)).rejects.toThrow(
-            "Scheduled market capture failed",
-        );
-        expect(upsertStashCurrencyHourly).toHaveBeenCalledTimes(24);
     });
 
     it("retries an hour after a partial database write without relying on the newest stored hour", async () => {

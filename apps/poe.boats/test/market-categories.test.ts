@@ -1,9 +1,12 @@
 import { MySqlDialect, mysqlTable, varchar } from "drizzle-orm/mysql-core";
 import { expect, it } from "vite-plus/test";
+import { RECIPE_BEASTS } from "~/lib/crafting-beasts";
+import { bestiaryNames } from "~/lib/crafting-yellow-beasts";
 import { marketBaseCategory } from "~/lib/market-categories";
 import { marketCategory, marketCategoryFilter } from "~/lib/market-categories.server";
 import { marketExchangeItem } from "~/lib/market-exchange.server";
 import { marketFiltersSchema } from "~/schemas/market";
+import poe1Categories from "../public/game-data/market-categories-poe1.json";
 
 const SPLINTER_TAGS: Record<string, string[]> = {
     "Timeless Vaal Splinter": ["legion_splinter", "currency"],
@@ -178,9 +181,15 @@ it("filters unique equipment by its base type's item class and attributes", () =
     expect(bases({ category: "armour" })).toContain("Goathide Boots");
 });
 
-it("lists spirit beasts, whose base type is the beast's name, under beasts", () => {
-    expect(marketCategory("pc", "Farrul, First of the Plains")).toBe("beasts");
+it("lists captured beasts, whose base type is the beast's name, under beasts", () => {
+    for (const name of ["Farrul, First of the Plains", "Craicic Croaker", "Vivid Vulture"])
+        expect(marketCategory("pc", name)).toBe("beasts");
     expect(marketCategory("poe2", "Farrul, First of the Plains")).toBe("other");
+});
+
+it("names no base item after a captured beast", () => {
+    for (const name of [...Object.values(RECIPE_BEASTS), ...bestiaryNames])
+        expect(Object.hasOwn(poe1Categories, name)).toBe(false);
 });
 
 it("identifies exchange skill gems without treating equipment as exchange items", () => {

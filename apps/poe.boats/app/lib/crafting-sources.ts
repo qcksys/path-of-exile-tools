@@ -1,5 +1,5 @@
-// biome-ignore-all lint/style/useNamingConvention: Bestiary keys are canonical game-data identifiers.
 import { exchangeCurrencyId } from "@poe-tools/market";
+import { RECIPE_BEASTS } from "~/lib/crafting-beasts";
 import { emptyResonator } from "~/lib/crafting-empty-resonator";
 import type { CraftingEngine } from "~/lib/crafting-engine";
 import { unavailableExchangePrices } from "~/lib/crafting-exchange";
@@ -15,50 +15,26 @@ import {
     commoditySourceQuoteSchema,
     commoditySourceReferenceSchema,
     craftingSourceReferenceSchema,
+    recipeSourceQuoteSchema,
     vendorUpgradeQuoteSchema,
     vendorUpgradeReferenceSchema,
 } from "~/schemas/crafting-sources";
 
-const beasts: Record<string, string> = {
-    LegendaryBeastGemFrog: "craicic-croaker",
-    LegendaryBeastLynx: "farric-lynx-alpha",
-    LegendaryBeastWolf: "farric-wolf-alpha",
-    LegendaryBeastSandSpitter: "craicic-sand-spitter",
-    LegendaryBeastShieldCrab: "craicic-shield-crab",
-    LegendaryBeastCrab: "craicic-savage-crab",
-    LegendaryBeastForestSnake: "saqawine-cobra",
-    LegendaryBeastDevourer: "fenumal-devourer",
-    LegendaryBeastSandSnake: "saqawine-blood-viper",
-    LegendaryBeastCarrionQueen: "fenumal-queen",
-    LegendaryBeastSquid: "craicic-watcher",
-    LegendaryBeastSpiker: "farric-goliath",
-    LegendaryBeastSandLeaper: "fenumal-scrabbler",
-    LegendaryBeastFrog: "craicic-maw",
-    LegendaryBeastPlagueSpider: "fenumal-plagued-arachnid",
-    LegendaryBeastSirenSpawn: "craicic-squid",
-    LegendaryBeastHellionIce: "farric-frost-hellion-alpha",
-    LegendaryBeastParasiticSquid: "craicic-vassal",
-    LegendaryBeastScorpion: "fenumal-scorpion",
-    MemoryLineLegendaryBeastHarvestBeastT3: "wild-bristle-matron",
-    SpiritBossTiger: "farrul-first-of-the-plains",
-    SpiritBossAvian: "saqawal-first-of-the-sky",
-    SpiritBossSpider: "fenumus-first-of-the-night",
-    SpiritBossCrab: "craiceann-first-of-the-deep",
-    Morrigan: "black-morrigan",
-};
+/** The Chronicle of Atzoatl market of temples whose only open crafting altar is the Locus. */
+export const LOCUS_TEMPLE = { itemKey: "Chronicle of Atzoatl", rooms: "Locus of Corruption" };
+
+/** A recipe's captured markets: named beasts, the generic Yellow Beast pool, or one temple. */
+export type CraftingSourceComponent = { itemKey: string; rooms?: string; quantity: number };
 
 export function craftingSourceRecipe(
     engine: CraftingEngine,
     id: string,
     assumption?: CraftingSourceOptions["assumption"],
-) {
+): { category: "Beast" | "Temple"; components: CraftingSourceComponent[] } {
     if (engine.catalog.game !== "poe1")
         throw new Error("Beast and temple price sources support PoE 1 PC only.");
     if (id === engine.catalog.crafting.locus?.id)
-        return {
-            category: "IncursionTemple" as const,
-            components: [{ detailsId: "locus-of-corruption-tier-3-temple", quantity: 1 }],
-        };
+        return { category: "Temple", components: [{ ...LOCUS_TEMPLE, quantity: 1 }] };
     if (id === "service:recombine")
         throw new Error(
             "Recombination consumes non-tradeable gold and dust. Enter your own service or opportunity-cost assumption.",
@@ -72,25 +48,25 @@ export function craftingSourceRecipe(
         );
     if (engine.beastRequiresLevel(id) || recipe.components.some((entry) => entry.level > 0))
         throw new Error(
-            "This recipe needs a beast level that poe.ninja does not distinguish. Enter a price for beasts matching the selected level.",
+            "This recipe needs a beast level that captured beast prices do not distinguish. Enter a price for beasts matching the selected level.",
         );
     if (assumption)
         throw new Error(
             "This saved species-specific beast estimate is retired. Look up the generic Yellow Beast pool and rebind the recipe.",
         );
-    const components = recipe.components.map((entry) => {
-        const detailsId = beasts[entry.id];
-        if (!detailsId)
+    const components: CraftingSourceComponent[] = recipe.components.map((entry) => {
+        const itemKey = RECIPE_BEASTS[entry.id];
+        if (!itemKey)
             throw new Error(
                 `No verified price-source identity for beast component ${entry.id}. Enter a whole-recipe price.`,
             );
-        return { detailsId, quantity: 1 };
+        return { itemKey, quantity: 1 };
     });
     if (!components.length || components.length > 4)
         throw new Error("Unsupported beast recipe component count.");
     if (components.length < 4)
-        components.push({ detailsId: yellowBeastId, quantity: 4 - components.length });
-    return { category: "Beast" as const, components };
+        components.push({ itemKey: yellowBeastId, quantity: 4 - components.length });
+    return { category: "Beast", components };
 }
 
 // Empty commodity signatures do not identify stored item, monster or experience payloads.
@@ -160,6 +136,7 @@ export function craftingCommodityIdentity(
 
 const prefixes = {
     "poe.ninja": "poeninja:v1:",
+    "stash-recipe": "stash-recipe:v1:",
     "stash-commodity": "stash-commodity:v1:",
     "vendor-upgrade": "vendor-upgrade:v1:",
 };
@@ -416,15 +393,15 @@ export function bindCraftingSourcePrice(
             },
         };
     }
-    const recipe = craftingSourceRecipe(engine, id, quote.assumption);
-    if (quote.yellowBeasts !== (recipe.category === "Beast" ? yellowBeastPolicy : undefined))
+    const parsed = recipeSourceQuoteSchema.parse(quote);
+    if (parsed.hour > Math.floor(Date.now() / 3_600_000) * 3600 - 3600)
+        throw new Error("A captured asking-price quote must describe a completed hour.");
+    const recipe = craftingSourceRecipe(engine, id);
+    if (parsed.yellowBeasts !== (recipe.category === "Beast" ? yellowBeastPolicy : undefined))
         throw new Error("The beast quote must identify the generic Yellow Beast pricing policy.");
-    for (const component of quote.components) {
-        if (component.detailsId === yellowBeastId) {
-            if (
-                component.name !== "Yellow Beast" ||
-                component.pool?.estimator !== yellowBeastPolicy
-            )
+    for (const component of parsed.components) {
+        if (component.itemKey === yellowBeastId) {
+            if (component.pool?.estimator !== yellowBeastPolicy)
                 throw new Error("The Yellow Beast component needs its generic pool provenance.");
             const pooled = yellowBeastPool(component.pool.species);
             if (
@@ -440,36 +417,39 @@ export function bindCraftingSourcePrice(
             );
         }
     }
-    const components = quote.components.map(({ detailsId, quantity }) => ({ detailsId, quantity }));
-    const amount = quote.components.reduce(
+    const components = parsed.components.map(({ itemKey, rooms, quantity }) => ({
+        itemKey,
+        ...(rooms === undefined ? {} : { rooms }),
+        quantity,
+    }));
+    const amount = parsed.components.reduce(
         (sum, entry) => sum + entry.quantity * entry.unitPrice,
         0,
     );
     if (
         JSON.stringify(components) !== JSON.stringify(recipe.components) ||
-        Math.abs(amount - quote.amount) > 1e-8
+        Math.abs(amount - parsed.amount) > 1e-8
     )
         throw new Error("The quote must include every component of the selected recipe.");
     const reference = craftingSourceReferenceSchema.parse({
-        source: quote.source,
-        game: quote.game,
-        realm: quote.realm,
-        league: quote.league,
-        currency: quote.currency,
+        source: parsed.source,
+        game: parsed.game,
+        realm: parsed.realm,
+        league: parsed.league,
+        currency: parsed.currency,
         id,
-        assumption: quote.assumption,
-        yellowBeasts: quote.yellowBeasts,
+        yellowBeasts: parsed.yellowBeasts,
     });
     return {
         ...graph,
         prices: {
             ...graph.prices,
             [id]: {
-                amount: quote.amount,
-                currency: quote.currency,
+                amount: parsed.amount,
+                currency: parsed.currency,
                 source: "market",
                 confidence: null,
-                observedAt: quote.fetchedAt,
+                observedAt: new Date(parsed.hour * 1000).toISOString(),
                 cohortId: `${prefixes[reference.source]}${encodeURIComponent(JSON.stringify(reference))}`,
             },
         },

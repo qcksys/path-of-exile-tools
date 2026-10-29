@@ -1,0 +1,1 @@
+DROP TABLE `qsPoeBoats__idol_planner_price_cache`;

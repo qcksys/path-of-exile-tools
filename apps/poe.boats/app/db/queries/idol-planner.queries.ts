@@ -2,7 +2,6 @@ import { and, eq, isNull } from "drizzle-orm";
 import type { TDatabase } from "~/db/client.ts";
 import { tIdolPlannerIdol } from "~/db/schema/idol-planner.idol";
 import { tIdolPlannerPlacement } from "~/db/schema/idol-planner.placement";
-import { tIdolPlannerPriceCache } from "~/db/schema/idol-planner.price-cache";
 import { tIdolPlannerSet } from "~/db/schema/idol-planner.set";
 import { tIdolPlannerSharedSet } from "~/db/schema/idol-planner.shared-set";
 import { tIdolPlannerUserPrefs } from "~/db/schema/idol-planner.user-prefs";
@@ -205,30 +204,4 @@ export async function loadSharedSet(db: PlannerDatabase, shareId: string) {
         .from(tIdolPlannerSharedSet)
         .where(eq(tIdolPlannerSharedSet.id, shareId));
     return result ?? null;
-}
-
-// -- Price Cache (replaces KV_POENINJA) --
-
-export async function getPriceCache(db: PlannerDatabase, league: string) {
-    const [result] = await db
-        .select()
-        .from(tIdolPlannerPriceCache)
-        .where(eq(tIdolPlannerPriceCache.league, league));
-    return result ?? null;
-}
-
-export async function upsertPriceCache(
-    db: PlannerDatabase,
-    league: string,
-    prices: NonNullable<typeof tIdolPlannerPriceCache.$inferInsert.prices>,
-) {
-    const existing = await getPriceCache(db, league);
-    if (existing) {
-        await db
-            .update(tIdolPlannerPriceCache)
-            .set({ prices, rowUpdatedAt: new Date() })
-            .where(eq(tIdolPlannerPriceCache.league, league));
-    } else {
-        await db.insert(tIdolPlannerPriceCache).values({ league, prices });
-    }
 }

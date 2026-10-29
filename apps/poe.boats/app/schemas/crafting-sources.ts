@@ -57,12 +57,32 @@ export const vendorUpgradeReferenceSchema = z.strictObject({
 export const vendorUpgradeQuoteSchema = vendorUpgradeReferenceSchema.extend({
     amount: z.number().positive(),
 });
+/** A beast or temple price saved from poe.ninja; a refresh rebinds it to captured listings. */
 const ninjaReference = z.strictObject({
     ...scope,
     source: z.literal("poe.ninja"),
     assumption,
     yellowBeasts,
 });
+const recipeReference = z.strictObject({
+    ...scope,
+    source: z.literal("stash-recipe"),
+    yellowBeasts,
+});
+/** One captured market's latest asking price in the project currency. */
+const recipeListing = {
+    unitPrice: z.number().positive(),
+    listingCount: z.number().int().positive(),
+    hour: z.number().int().nonnegative().multipleOf(3600),
+    /** The listing currency whose median was converted at the hour's exchange rate. */
+    exchange: z
+        .strictObject({
+            currency: scope.currency,
+            unitPrice: z.number().positive(),
+            rate: z.number().positive(),
+        })
+        .optional(),
+};
 export const commoditySourceReferenceSchema = z
     .strictObject({
         ...scope,
@@ -92,31 +112,31 @@ export const commoditySourceReferenceSchema = z
     }, "Empty resonator prices require the exact family and versioned emptiness provenance.");
 export const craftingSourceReferenceSchema = z.discriminatedUnion("source", [
     ninjaReference,
+    recipeReference,
     commoditySourceReferenceSchema,
     vendorUpgradeReferenceSchema,
 ]);
-const ninjaQuote = ninjaReference.extend({
+export const recipeSourceQuoteSchema = recipeReference.extend({
     amount: z.number().positive(),
-    fetchedAt: z.iso.datetime(),
+    /** The newest hour of the components' observations. */
+    hour: z.number().int().nonnegative().multipleOf(3600),
     components: z
         .array(
             z.strictObject({
-                detailsId: z.string().min(1).max(150),
-                name: z.string().min(1).max(200),
+                /** The market's item key (a species or Chronicle of Atzoatl), or `yellow-beast`. */
+                itemKey: z.string().min(1).max(200),
+                /** The temple's open tier 3 rooms, for a Chronicle of Atzoatl. */
+                rooms: z.string().max(200).optional(),
                 quantity: z.number().int().positive().max(4),
-                unitPrice: z.number().positive(),
-                listingCount: z.number().int().positive(),
-                sourceUrl: z.url().startsWith("https://poe.ninja/poe1/api/economy/"),
+                ...recipeListing,
                 pool: z
                     .strictObject({
                         estimator: z.literal("listing-count-weighted-mean-v1"),
                         species: z
                             .array(
                                 z.strictObject({
-                                    detailsId: z.string().min(1).max(150),
                                     name: z.string().min(1).max(200),
-                                    unitPrice: z.number().positive(),
-                                    listingCount: z.number().int().positive(),
+                                    ...recipeListing,
                                 }),
                             )
                             .min(1)
@@ -229,7 +249,7 @@ export const commoditySourceQuoteSchema = commoditySourceReferenceSchema
         );
     }, "Commodity conversion must preserve the original asking range and a valid matching-hour exchange quote.");
 export const craftingSourceQuoteSchema = z.discriminatedUnion("source", [
-    ninjaQuote,
+    recipeSourceQuoteSchema,
     commoditySourceQuoteSchema,
     vendorUpgradeQuoteSchema,
 ]);
@@ -253,3 +273,4 @@ export type CommoditySourceQuote = z.infer<typeof commoditySourceQuoteSchema>;
 export type CommoditySourceIdentity = Pick<CommoditySourceQuote, "id" | "baseType" | "variant">;
 export type VendorUpgradePath = z.infer<typeof vendorUpgradePathSchema>;
 export type VendorUpgradeQuote = z.infer<typeof vendorUpgradeQuoteSchema>;
+export type RecipeSourceQuote = z.infer<typeof recipeSourceQuoteSchema>;

@@ -25,7 +25,7 @@ import {
 } from "./crafting-commodity-fixtures";
 import { exchangeGraph, exchangeQuote } from "./crafting-exchange-fixtures";
 import { engine } from "./crafting-fixtures";
-import { yellowBeastComponent } from "./crafting-source-fixtures";
+import { recipeSourceHour, yellowBeastComponent } from "./crafting-source-fixtures";
 import {
     vendorCurrencyInputId,
     vendorCurrencyOutputId,
@@ -150,15 +150,23 @@ it("labels a migrated amount as an exchange quote instead of a stash asking pric
 
 it.each([
     [
+        "stash-recipe",
         { yellowBeasts: "listing-count-weighted-mean-v1" },
         "complete recipe includes the generic Yellow Beast listing-count-weighted mean",
     ],
+    ["stash-recipe", {}, "temple whose only open tier 3 crafting room is the Locus of Corruption"],
     [
+        "poe.ninja",
         { assumption: "rare-beast-mountain-lynx-v1" },
         "retired species-specific beast estimate; rebind using the generic Yellow Beast pool",
     ],
-    [{}, "exact temple room estimate"],
-])("describes the saved source policy without a species consent control: %j", (policy, caption) => {
+    [
+        "poe.ninja",
+        { yellowBeasts: "listing-count-weighted-mean-v1" },
+        "refresh to reprice from captured stash listings",
+    ],
+] as const)("describes the saved %s source policy without a species consent control: %j", (source, policy, caption) => {
+    const prefix = source === "poe.ninja" ? "poeninja:v1:" : "stash-recipe:v1:";
     render(
         <GraphPriceInput
             label="Recipe price"
@@ -169,12 +177,11 @@ it.each([
                 currency: "chaos",
                 source: "market",
                 confidence: null,
-                cohortId: `poeninja:v1:${encodeURIComponent(JSON.stringify({ source: "poe.ninja", game: "poe1", realm: "pc", league: "Standard", currency: "chaos", id: "yellowBeasts" in policy || "assumption" in policy ? id : "generated:locus-corruption", ...policy }))}`,
+                cohortId: `${prefix}${encodeURIComponent(JSON.stringify({ source, game: "poe1", realm: "pc", league: "Standard", currency: "chaos", id: "yellowBeasts" in policy || "assumption" in policy ? id : "generated:locus-corruption", ...policy }))}`,
             }}
         />,
     );
     expect(screen.getByText((text) => text.includes(caption))).toBeTruthy();
-    expect(screen.getByText(/historical source unavailable/)).toBeTruthy();
     expect(screen.queryByRole("checkbox")).toBeNull();
 });
 
@@ -242,7 +249,7 @@ it("offers captured currency asks without a beast assumption and only replaces a
     });
 });
 const quote = {
-    source: "poe.ninja",
+    source: "stash-recipe",
     game: "poe1",
     realm: "pc",
     league: "Standard",
@@ -250,18 +257,16 @@ const quote = {
     id,
     yellowBeasts: "listing-count-weighted-mean-v1",
     amount: 607,
-    fetchedAt: "2026-10-08T04:00:00.000Z",
+    hour: recipeSourceHour,
     components: [
-        ["craicic-sand-spitter", 1, 1],
-        ["black-morrigan", 1, 600],
+        { itemKey: "Craicic Sand Spitter", unitPrice: 1 },
+        { itemKey: "Black Morrigan", unitPrice: 600 },
     ]
-        .map(([detailsId, quantity, unitPrice]) => ({
-            detailsId,
-            name: detailsId,
-            quantity,
-            unitPrice,
+        .map((component) => ({
+            ...component,
+            quantity: 1,
             listingCount: 100,
-            sourceUrl: "https://poe.ninja/poe1/api/economy/stash/current/item/overview",
+            hour: recipeSourceHour,
         }))
         .concat([yellowBeastComponent]),
 };

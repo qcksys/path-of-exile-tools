@@ -1,5 +1,9 @@
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { createDbConnection } from "~/db/client";
+import {
+    findCraftingRecipeListings,
+    type RecipeListing,
+} from "~/db/queries/crafting-recipes.queries";
 import {
     bindCraftingSourcePrice,
     craftingSourceRecipe,
@@ -13,54 +17,80 @@ import { findCraftingSourcePrices } from "~/services/crafting-sources.server";
 import { exchangeGraph } from "./crafting-exchange-fixtures";
 import { engine } from "./crafting-fixtures";
 
+vi.mock("~/db/queries/crafting-recipes.queries", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("~/db/queries/crafting-recipes.queries")>()),
+    findCraftingRecipeListings: vi.fn(),
+}));
+
 const id = "EinharMasterCraftMorrigan7";
 const assumption = "rare-beast-mountain-lynx-v1" as const;
 const options = { ids: [id], realm: "pc" as const };
-const lines = [
-    ["black-morrigan", 600],
-    ["craicic-sand-spitter", 1],
-    ["mountain-lynx", 3],
-    ["craicic-croaker", 360],
-    ["craicic-savage-crab", 1],
-    ["saqawine-cobra", 1],
-    ["locus-of-corruption-tier-3-temple", 1000],
-].map(([detailsId, amount]) => ({
-    detailsId,
-    name: detailsId === "mountain-lynx" ? "Mountain Lynx" : detailsId,
-    chaosValue: amount,
-    divineValue: Number(amount) / 360,
-    exaltedValue: Number(amount) / 2,
-    listingCount: 100,
-}));
-const feed = (data = lines) =>
-    new Response(JSON.stringify({ lines: data }), {
-        headers: { "Cache-Control": "public, max-age=1800", etag: '"sample"' },
-    });
-afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.useRealTimers();
+const hour = Math.floor(Date.now() / 3_600_000) * 3600 - 3600;
+const db = createDbConnection("mysql://test:test@localhost/poe_test");
+const prices: [string, number][] = [
+    ["Black Morrigan", 600],
+    ["Craicic Sand Spitter", 1],
+    ["Mountain Lynx", 3],
+    ["Craicic Croaker", 360],
+    ["Craicic Savage Crab", 1],
+    ["Saqawine Cobra", 1],
+    ["Chronicle of Atzoatl|Locus of Corruption", 1000],
+];
+
+/** Captured listings by market key, each with 100 listings in the latest completed hour. */
+function listings(entries = prices, extra: Partial<RecipeListing> = {}) {
+    vi.mocked(findCraftingRecipeListings).mockResolvedValue(
+        new Map(
+            entries.map(([key, unitPrice]) => [
+                key,
+                { unitPrice, listingCount: 100, hour, ...extra },
+            ]),
+        ),
+    );
+}
+
+beforeEach(() => {
+    vi.clearAllMocks();
+    listings();
 });
 
-describe("supplemental crafting prices", () => {
-    it("prices all four beasts, uses the current imprint identity, and binds a complete recipe", async () => {
-        const fetcher = vi.fn().mockResolvedValue(feed());
-        vi.stubGlobal("fetch", fetcher);
-        const graph = { ...exchangeGraph(), league: "whole-recipe" };
-        const result = await findCraftingSourcePrices(graph, engine, {
-            ...options,
-            ids: [id, "EinharMasterCraft27", "EinharMasterCraft49"],
-        });
+describe("captured beast and temple prices", () => {
+    it("prices all four beasts from one listing lookup and binds a complete recipe", async () => {
+        const graph = exchangeGraph();
+        const result = await findCraftingSourcePrices(
+            graph,
+            engine,
+            { ...options, ids: [id, "EinharMasterCraft27", "EinharMasterCraft49"] },
+            db,
+        );
         expect(result.missing).toEqual({});
         const quote = result.quotes[id]!;
-        if (quote.source !== "poe.ninja") throw new Error("Expected beast source");
-        expect(result.quotes[id]?.amount).toBe(607);
-        expect(quote.components.map(({ quantity }) => quantity)).toEqual([1, 1, 2]);
+        if (quote.source !== "stash-recipe") throw new Error("Expected beast source");
+        expect(quote.amount).toBe(607);
+        expect(quote.hour).toBe(hour);
+        expect(quote.components.map(({ itemKey, quantity }) => [itemKey, quantity])).toEqual([
+            ["Craicic Sand Spitter", 1],
+            ["Black Morrigan", 1],
+            ["yellow-beast", 2],
+        ]);
         expect(result.quotes.EinharMasterCraft27?.amount).toBe(369);
         expect(result.quotes.EinharMasterCraft49?.amount).toBe(8);
-        expect(fetcher).toHaveBeenCalledTimes(1);
-        const bound = bindCraftingSourcePrice(graph, engine, id, result.quotes[id]!);
-        expect(bound.prices[id]).toMatchObject({ amount: 607, source: "market", confidence: null });
+        expect(findCraftingRecipeListings).toHaveBeenCalledOnce();
+        const [, league, currency, markets, at] = vi.mocked(findCraftingRecipeListings).mock
+            .calls[0]!;
+        expect([league, currency, at]).toEqual([graph.league, "chaos", undefined]);
+        expect(markets).toEqual(
+            expect.arrayContaining([{ itemKey: "Craicic Croaker" }, { itemKey: "Mountain Lynx" }]),
+        );
+        const bound = bindCraftingSourcePrice(graph, engine, id, quote);
+        expect(bound.prices[id]).toMatchObject({
+            amount: 607,
+            source: "market",
+            confidence: null,
+            observedAt: new Date(hour * 1000).toISOString(),
+        });
         expect(liveSourcePrices(bound)[0]?.reference).toMatchObject({
+            source: "stash-recipe",
             yellowBeasts: "listing-count-weighted-mean-v1",
         });
         for (const wrong of [
@@ -69,7 +99,7 @@ describe("supplemental crafting prices", () => {
             { game: "poe2" as const },
         ])
             expect(() =>
-                bindCraftingSourcePrice({ ...graph, ...wrong }, engine, id, result.quotes[id]!),
+                bindCraftingSourcePrice({ ...graph, ...wrong }, engine, id, quote),
             ).toThrow("does not match");
         expect(() =>
             bindCraftingSourcePrice(graph, engine, id, {
@@ -77,114 +107,88 @@ describe("supplemental crafting prices", () => {
                 components: quote.components.slice(0, 2),
             }),
         ).toThrow("every component");
+        expect(() =>
+            bindCraftingSourcePrice(graph, engine, id, { ...quote, hour: hour + 3600 }),
+        ).toThrow("completed hour");
     });
-    it("refuses retired species assumptions, level-sensitive beasts, other platforms and non-tradeable services without fetching", async () => {
-        const fetcher = vi.fn();
-        vi.stubGlobal("fetch", fetcher);
+    it("refuses retired species assumptions, level-sensitive beasts, other platforms and non-tradeable services without a lookup", async () => {
         const graph = exchangeGraph();
-        const result = await findCraftingSourcePrices(graph, engine, {
-            ...options,
-            assumption,
-            ids: [id, "EinharMasterCraft30", "service:recombine"],
-        });
+        const result = await findCraftingSourcePrices(
+            graph,
+            engine,
+            { ...options, assumption, ids: [id, "EinharMasterCraft30", "service:recombine"] },
+            db,
+        );
         expect(result.quotes).toEqual({});
         expect(result.missing[id]).toContain("rebind");
         expect(result.missing.EinharMasterCraft30).toContain("level");
         expect(result.missing["service:recombine"]).toContain("non-tradeable");
         expect(
-            (await findCraftingSourcePrices(graph, engine, { ...options, realm: "xbox" })).quotes,
+            (await findCraftingSourcePrices(graph, engine, { ...options, realm: "xbox" }, db))
+                .quotes,
         ).toEqual({});
-        expect(fetcher).not.toHaveBeenCalled();
+        expect(findCraftingRecipeListings).not.toHaveBeenCalled();
     });
-    it("accepts a chaos quote when the feed omits the rounded divine value", async () => {
-        const data = lines.map(({ divineValue: _, ...line }) => line);
-        vi.stubGlobal(
-            "fetch",
-            vi.fn().mockResolvedValue(new Response(JSON.stringify({ lines: data }))),
-        );
-        const graph = { ...exchangeGraph(), league: "omitted-currency" };
-        expect((await findCraftingSourcePrices(graph, engine, options)).quotes[id]?.amount).toBe(
-            607,
-        );
-        const divine = await findCraftingSourcePrices(
-            { ...graph, currency: "divine" },
-            engine,
-            options,
-        );
-        expect(divine.quotes).toEqual({});
-        expect(divine.missing[id]).toContain("No positive divine");
-    });
-    it("keeps the whole recipe unknown when any required component is absent, ambiguous or zero", async () => {
-        for (const [index, data] of [
-            lines.slice(0, 2),
-            [...lines, lines[0]!],
-            lines.map((line) => ({ ...line, chaosValue: 0 })),
-        ].entries()) {
-            vi.stubGlobal("fetch", vi.fn().mockResolvedValue(feed(data)));
-            const result = await findCraftingSourcePrices(
-                { ...exchangeGraph(), league: `missing-${index}` },
-                engine,
-                options,
-            );
-            expect(result.quotes).toEqual({});
-            expect(result.missing[id]).toContain("whole recipe remains unpriced");
-        }
-    });
-    it("honors source cache lifetimes and ETags, and reports expired-source failures instead of stale quotes", async () => {
-        vi.useFakeTimers();
-        const fetcher = vi
-            .fn()
-            .mockResolvedValueOnce(feed())
-            .mockResolvedValueOnce(
-                new Response(null, { status: 304, headers: { "Cache-Control": "max-age=1800" } }),
-            )
-            .mockResolvedValueOnce(new Response(null, { status: 503 }));
-        vi.stubGlobal("fetch", fetcher);
-        const graph = { ...exchangeGraph(), league: "cache-scope" };
-        const first = await findCraftingSourcePrices(graph, engine, options);
-        expect(await findCraftingSourcePrices(graph, engine, options)).toEqual(first);
-        expect(fetcher).toHaveBeenCalledTimes(1);
-        vi.advanceTimersByTime(1800_001);
-        expect(await findCraftingSourcePrices(graph, engine, options)).toEqual(first);
-        expect(fetcher.mock.calls[1]![1].headers.get("If-None-Match")).toBe('"sample"');
-        vi.advanceTimersByTime(1800_001);
-        const unavailable = await findCraftingSourcePrices(graph, engine, options);
-        expect(unavailable.quotes).toEqual({});
-        expect(unavailable.missing[id]).toContain("503");
-    });
-    it("prices only the exact single Locus room and never uses today's source for history", async () => {
-        const fetcher = vi.fn().mockResolvedValue(feed());
-        vi.stubGlobal("fetch", fetcher);
-        const graph = { ...exchangeGraph(), league: "temple-scope" };
-        const templeId = engine.catalog.crafting.locus!.id;
-        const result = await findCraftingSourcePrices(graph, engine, {
-            ids: [templeId],
-            realm: "pc",
+    it("keeps a converted ask's original currency and rate", async () => {
+        listings(prices, { exchange: { currency: "chaos", unitPrice: 360, rate: 1 / 360 } });
+        const graph = { ...exchangeGraph(), currency: "divine" };
+        const result = await findCraftingSourcePrices(graph, engine, options, db);
+        const quote = result.quotes[id]!;
+        if (quote.source !== "stash-recipe") throw new Error("Expected beast source");
+        expect(quote.components[0]?.exchange).toEqual({
+            currency: "chaos",
+            unitPrice: 360,
+            rate: 1 / 360,
         });
+        expect(vi.mocked(findCraftingRecipeListings).mock.calls[0]![2]).toBe("divine");
+        expect(bindCraftingSourcePrice(graph, engine, id, quote).prices[id]?.currency).toBe(
+            "divine",
+        );
+    });
+    it("keeps the whole recipe unknown when any required component has no captured ask", async () => {
+        listings(prices.filter(([key]) => key !== "Craicic Sand Spitter"));
+        const result = await findCraftingSourcePrices(exchangeGraph(), engine, options, db);
+        expect(result.quotes).toEqual({});
+        expect(result.missing[id]).toContain("Craicic Sand Spitter");
+        expect(result.missing[id]).toContain("whole recipe remains unpriced");
+    });
+    it("prices the exact Locus temple market, including at historical hours", async () => {
+        const graph = exchangeGraph();
+        const templeId = engine.catalog.crafting.locus!.id;
+        expect(craftingSourceRecipe(engine, templeId).components).toEqual([
+            { itemKey: "Chronicle of Atzoatl", rooms: "Locus of Corruption", quantity: 1 },
+        ]);
+        const result = await findCraftingSourcePrices(
+            graph,
+            engine,
+            { ids: [templeId], realm: "pc" },
+            db,
+        );
         const bound = bindCraftingSourcePrice(graph, engine, templeId, result.quotes[templeId]!);
         expect(bound.prices[templeId]?.amount).toBe(1000);
-        const db = createDbConnection("mysql://test:test@localhost/poe_test");
-        const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
-        expect(refreshed.issues).toEqual([]);
+        expect((await refreshCraftingMarketPrices(db, bound, engine)).issues).toEqual([]);
         const historical = await craftingMarketSnapshots(db, bound, engine, [1791428400]);
-        expect(historical.points[0]?.graph).toBeNull();
-        expect(historical.points[0]?.issues[0]).toContain("no captured historical source");
-        expect(fetcher).toHaveBeenCalledTimes(1);
-        expect(craftingSourceRecipe(engine, templeId).components).toEqual([
-            { detailsId: "locus-of-corruption-tier-3-temple", quantity: 1 },
-        ]);
+        expect(historical.points[0]?.issues).toEqual([]);
+        expect(vi.mocked(findCraftingRecipeListings).mock.lastCall?.[4]).toBe(1791428400);
     });
-    it("does not edit the graph when a later source response has the same price", async () => {
-        vi.useFakeTimers();
-        vi.stubGlobal(
-            "fetch",
-            vi.fn().mockImplementation(() => Promise.resolve(feed())),
-        );
-        const graph = { ...exchangeGraph(), league: "stable-refresh" };
-        const result = await findCraftingSourcePrices(graph, engine, options);
+    it("rebinds a price saved from poe.ninja to captured listings on refresh", async () => {
+        const graph = exchangeGraph();
+        graph.prices[id] = {
+            amount: 500,
+            currency: "chaos",
+            source: "market",
+            confidence: null,
+            cohortId: `poeninja:v1:${encodeURIComponent(JSON.stringify({ source: "poe.ninja", game: "poe1", realm: "pc", league: graph.league, currency: "chaos", id, yellowBeasts: "listing-count-weighted-mean-v1" }))}`,
+        };
+        const refreshed = await refreshCraftingMarketPrices(db, graph, engine);
+        expect(refreshed.issues).toEqual([]);
+        expect(refreshed.graph.prices[id]?.amount).toBe(607);
+        expect(liveSourcePrices(refreshed.graph)[0]?.reference.source).toBe("stash-recipe");
+    });
+    it("does not edit the graph when a later lookup has the same price", async () => {
+        const graph = exchangeGraph();
+        const result = await findCraftingSourcePrices(graph, engine, options, db);
         const bound = bindCraftingSourcePrice(graph, engine, id, result.quotes[id]!);
-        vi.advanceTimersByTime(1800_001);
-        const db = createDbConnection("mysql://test:test@localhost/poe_test");
         const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
         expect(refreshed.issues).toEqual([]);
         expect(refreshed.graph).toEqual(bound);

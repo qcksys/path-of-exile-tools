@@ -105,7 +105,8 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
                 <CardHeader>
                     <CardTitle>Market and filters</CardTitle>
                     <CardDescription>
-                        PC trade leagues · Prices from poe.ninja · All values in {currencyLabel}
+                        PC trade leagues · Prices from the currency exchange · All values in{" "}
+                        {currencyLabel}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-6">
@@ -443,22 +444,19 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
                         : "Covers regular liquid emotions through Isolation, Lesser/regular essences, and Lesser/regular runes. Unlock the Reforging Bench in Act 3. Random rerolls, Ancient/Potent emotions, and equipment recipes are excluded."}
                 </p>
                 <p>
-                    <a
-                        href="https://poe.ninja"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline"
-                    >
-                        poe.ninja
-                    </a>{" "}
-                    prices are cached for up to five minutes.{" "}
+                    Prices come from the hourly currency exchange, as the{" "}
+                    <Link to={`/${game}/market`} className="underline">
+                        market
+                    </Link>{" "}
+                    lists them: the latest completed hour's trades, or else the newest of the last
+                    seven days that traded.{" "}
                     {snapshot && Object.keys(snapshot.quotes).length > 0 ? (
                         <>
-                            Oldest data fetched:{" "}
+                            Latest hour:{" "}
                             <time dateTime={snapshot.fetchedAt}>
                                 {snapshot.fetchedAt.replace("T", " ").replace(/\.\d+Z$/, " UTC")}
                             </time>
-                            . This is the retrieval time, not the time of the underlying trades.
+                            .
                         </>
                     ) : null}
                 </p>

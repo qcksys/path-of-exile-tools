@@ -151,21 +151,22 @@ export function SourcePricePicker({
                 {hasRecipes && (
                     <>
                         <p className="text-muted-foreground">
-                            PoE 1 PC listing estimates from poe.ninja for the project league. Beast
-                            prices include all four sacrifices; temple prices buy one Locus of
-                            Corruption. Listing counts are not unique sellers, and confidence is
-                            uncalibrated. Historical process estimates need manual assumptions for
-                            these sources.
+                            Captured PoE 1 PC merchant-tab asks for the project league: each
+                            market's median ask in its latest priced hour within 24 completed hours,
+                            converted at that hour's exchange rate when listed in another currency.
+                            Beast prices include all four sacrifices; temple prices buy one
+                            Chronicle of Atzoatl whose only open tier 3 crafting room is the Locus
+                            of Corruption. Listing counts are not unique sellers, and confidence is
+                            uncalibrated.
                         </p>
                         <p className="text-muted-foreground">
                             Extra rare sacrifices use one generic Yellow Beast pool, priced as a
-                            listing-count-weighted mean of eligible species estimates. Named recipe
+                            listing-count-weighted mean of eligible species asks. Named recipe
                             beasts are priced separately.
                         </p>
                         <p className="text-muted-foreground">
                             Level-specific beasts and non-tradeable gold/dust remain manual. The
-                            date shown is retrieval time, not a guaranteed sale or source update
-                            time.
+                            hour shown is the newest observed hour, not a guaranteed sale.
                         </p>
                     </>
                 )}
@@ -320,31 +321,50 @@ export function SourcePricePicker({
                                                             currency={quote.currency}
                                                             game={graph.game}
                                                         />{" "}
-                                                        per recipe · retrieved{" "}
-                                                        {new Date(quote.fetchedAt).toLocaleString()}
+                                                        per recipe · newest observed hour{" "}
+                                                        {new Date(
+                                                            quote.hour * 1000,
+                                                        ).toLocaleString()}
                                                     </p>
                                                     <ul>
                                                         {quote.components.map((component) => (
-                                                            <li key={component.detailsId}>
+                                                            <li key={component.itemKey}>
                                                                 {component.quantity} ×{" "}
-                                                                {component.name}:{" "}
-                                                                {component.unitPrice}{" "}
+                                                                {component.pool
+                                                                    ? "Yellow Beast"
+                                                                    : component.rooms
+                                                                      ? `${component.itemKey} (${component.rooms})`
+                                                                      : component.itemKey}
+                                                                :{" "}
+                                                                {component.unitPrice.toLocaleString(
+                                                                    undefined,
+                                                                    { maximumSignificantDigits: 6 },
+                                                                )}{" "}
                                                                 <CurrencyLabel
                                                                     currency={quote.currency}
                                                                     game={graph.game}
                                                                 />{" "}
                                                                 each · {component.listingCount}{" "}
-                                                                listings ·{" "}
-                                                                {component.pool &&
-                                                                    `${component.pool.species.length} species estimates · listing-count-weighted mean · `}
-                                                                <a
-                                                                    className="underline"
-                                                                    href={component.sourceUrl}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                >
-                                                                    Source
-                                                                </a>
+                                                                listings
+                                                                {component.pool
+                                                                    ? ` · ${component.pool.species.length} species asks · listing-count-weighted mean`
+                                                                    : null}
+                                                                {component.exchange
+                                                                    ? ` · converted from ${component.exchange.currency}`
+                                                                    : null}
+                                                                {component.pool ? null : (
+                                                                    <>
+                                                                        {" · "}
+                                                                        <a
+                                                                            className="underline"
+                                                                            href={`/1/market?${new URLSearchParams({ realm: quote.realm, league: quote.league, q: component.itemKey, item: component.itemKey, currency: component.exchange?.currency ?? quote.currency, ...(component.rooms === undefined ? {} : { kind: "temple", value: component.rooms }) })}`}
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                        >
+                                                                            Captured history
+                                                                        </a>
+                                                                    </>
+                                                                )}
                                                             </li>
                                                         ))}
                                                     </ul>
