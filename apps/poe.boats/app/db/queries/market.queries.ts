@@ -3,6 +3,7 @@ import {
     exchangeSnapshotSchema,
     gemVariantValues,
     mapVariantValues,
+    marketLeagueTracked,
     marketObservationRange,
     TRANSFIGURED_GEMS,
     VAAL_GEMS,
@@ -20,7 +21,6 @@ import {
     max,
     min,
     notInArray,
-    notLike,
     or,
     type SQL,
     type SQLWrapper,
@@ -88,6 +88,7 @@ import {
     marketBaseIds,
     marketBaseRows,
 } from "./market-bases.queries";
+import { endedStashLeagues } from "./stash-league.queries";
 import { utcDay } from "./stash-rollups.queries";
 
 const PAGE_SIZE = 50;
@@ -222,7 +223,7 @@ async function marketLatestRows<
         "market.latest_rows",
         db
             .select()
-            .from(market, { forceIndex: "PRIMARY" })
+            .from(market)
             .where(
                 and(
                     eq(market.realm, filters.realm),
@@ -295,8 +296,8 @@ async function marketRecentSales(
                     signatureValue: value,
                     sales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
                 })
-                // (league, item key) followed by the primary key reads only the page's items.
-                .from(market, { forceIndex: "idx_stash_unique_item" })
+                // The view finds the page's markets by (realm, league, item key), then their hours.
+                .from(market)
                 .where(
                     and(
                         eq(market.realm, filters.realm),
@@ -375,22 +376,10 @@ export function getMarketData(db: TDatabase, input: MarketFilters, view: MarketV
 async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketView, span: Span) {
     const { market, daily } = marketTables(input.realm);
     const exchangeHour = marketObservationRange().latestHour;
-    const [stashSeasons, exchangeSeasons] = await Promise.all([
-        // Group by the full index prefix so MySQL can skip between season boundaries.
-        traceQuery(
-            "market.seasons",
-            db
-                .select({
-                    league: market.league,
-                    firstHour: min(market.hour),
-                    latestHour: max(market.hour),
-                })
-                .from(market)
-                .where(eq(market.realm, input.realm))
-                .groupBy(market.realm, market.league)
-                .orderBy(desc(max(market.hour))),
-        ),
+    const [stashSeasons, exchangeSeasons, ended] = await Promise.all([
+        marketStashSeasons(db, input.realm),
         marketExchangeSeasons(db, input.realm, exchangeHour),
+        endedStashLeagues(db, input.realm),
     ]);
     const byLeague = new Map(stashSeasons.map((season) => [season.league, season]));
     for (const season of exchangeSeasons) {
@@ -406,8 +395,9 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 : season,
         );
     }
-    const seasons = [...byLeague.values()].sort(
-        (a, b) => Number(b.latestHour) - Number(a.latestHour),
+    const seasons = activeFirst(
+        [...byLeague.values()].sort((a, b) => Number(b.latestHour) - Number(a.latestHour)),
+        ended,
     );
     const filters = {
         ...input,
@@ -840,8 +830,7 @@ async function marketVariants(
                 periodSales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
                 latestHour: sql<number>`max(${market.hour})`.mapWith(Number),
             })
-            // Without the hint MySQL can pick the primary key and scan every item in the window.
-            .from(market, { forceIndex: "idx_stash_unique_item" })
+            .from(market)
             .where(and(scope, inArray(market.itemKey, [...new Set([item, ...counterparts])])))
             .groupBy(
                 market.itemKey,
@@ -915,7 +904,7 @@ function marketVariantLatestRows(
         "market.variant_latest_rows",
         db
             .select()
-            .from(market, { forceIndex: "PRIMARY" })
+            .from(market)
             .where(
                 and(
                     scope,
@@ -973,11 +962,50 @@ function modPoolRows(
     );
 }
 
-/** Private league names end in their league ID, e.g. `Chiba league (PL87141)`. */
-const PRIVATE_LEAGUE = "% (PL%)";
+/**
+ * Seasons of leagues with market features, those the league API still lists first, keeping each
+ * group's order.
+ */
+function activeFirst<T extends { league: string }>(seasons: T[], ended: Set<string>) {
+    const tracked = seasons.filter((season) => marketLeagueTracked(season.league));
+    return [
+        ...tracked.filter((season) => !ended.has(season.league)),
+        ...tracked.filter((season) => ended.has(season.league)),
+    ];
+}
 
 /**
- * Each public league with exchange snapshots by `latestHour`, with its first and latest hours,
+ * Each league with stash listings, with its first and latest hours, newest first.
+ * Reads the hour coverage rollup, so hourly rows moved out of the database keep their season.
+ */
+function marketStashSeasons(db: TDatabase, realm: string) {
+    const { hourCoverage } = marketTables(realm);
+    return traceQuery(
+        "market.seasons",
+        db
+            .select({
+                league: hourCoverage.league,
+                firstHour: min(hourCoverage.hour),
+                latestHour: max(hourCoverage.hour),
+            })
+            .from(hourCoverage)
+            .where(and(eq(hourCoverage.stream, "uniques"), eq(hourCoverage.realm, realm)))
+            .groupBy(hourCoverage.stream, hourCoverage.realm, hourCoverage.league)
+            .orderBy(desc(max(hourCoverage.hour))),
+    );
+}
+
+/** `marketExchangeSeasons` with leagues the league API still lists first. */
+async function activeExchangeSeasons(db: TDatabase, realm: string, latestHour: number) {
+    const [seasons, ended] = await Promise.all([
+        marketExchangeSeasons(db, realm, latestHour),
+        endedStashLeagues(db, realm),
+    ]);
+    return activeFirst(seasons, ended);
+}
+
+/**
+ * Each league with exchange snapshots by `latestHour`, with its first and latest hours,
  * newest first. Leagues sharing the latest hour put the most snapshots first.
  * Reads the hour coverage rollup: grouping the hourly table scans every snapshot of the realm.
  */
@@ -997,7 +1025,6 @@ function marketExchangeSeasons(db: TDatabase, realm: string, latestHour: number)
                     eq(hourCoverage.stream, "currency"),
                     eq(hourCoverage.realm, realm),
                     lte(hourCoverage.hour, latestHour),
-                    notLike(hourCoverage.league, PRIVATE_LEAGUE),
                 ),
             )
             .groupBy(hourCoverage.stream, hourCoverage.realm, hourCoverage.league)
@@ -1239,9 +1266,9 @@ export function getMarketExchangePrices(
     });
 }
 
-/** Public leagues with exchange snapshots, the one that traded most recently first. */
+/** Public leagues with exchange snapshots, active leagues first, then the most recently traded. */
 export async function getMarketExchangeLeagues(db: TDatabase, realm: string) {
-    const seasons = await marketExchangeSeasons(db, realm, marketObservationRange().latestHour);
+    const seasons = await activeExchangeSeasons(db, realm, marketObservationRange().latestHour);
     return seasons.map((season) => season.league);
 }
 
@@ -1336,7 +1363,7 @@ export function getPoe2MarketExchange(db: TDatabase, input: Poe2MarketFilters) {
     return traceSpan("market.poe2_exchange", async (span) => {
         const realm = "poe2";
         const latestHour = marketObservationRange().latestHour;
-        const seasons = (await marketExchangeSeasons(db, realm, latestHour)).map((season) => ({
+        const seasons = (await activeExchangeSeasons(db, realm, latestHour)).map((season) => ({
             league: season.league,
             firstHour: Number(season.firstHour),
             latestHour: Number(season.latestHour),
@@ -1466,9 +1493,9 @@ function marketExchangeMarkets(
     );
 }
 
-/** The first of `marketExchangeSeasons`: the league whose exchange traded most recently. */
+/** The first of `activeExchangeSeasons`: the active league whose exchange traded most recently. */
 async function latestExchangeLeague(db: TDatabase, realm: string, latestHour: number) {
-    const [row] = await marketExchangeSeasons(db, realm, latestHour);
+    const [row] = await activeExchangeSeasons(db, realm, latestHour);
     return row?.league ?? "";
 }
 

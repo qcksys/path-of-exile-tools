@@ -11,12 +11,7 @@
     },
     "syncMode": "commit-generated",
     "mcp": {
-        "servers": {
-            "planetscale": {
-                "transport": "http",
-                "url": "https://mcp.pscale.dev/mcp/planetscale"
-            }
-        }
+        "servers": {}
     },
     "workspace": {
         "vscode": {

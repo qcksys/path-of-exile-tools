@@ -510,11 +510,17 @@ Each game (`poe1`, `poe2`) has its own tables; the receiver routes rows by realm
 
 | table                       | retention   | one row per                                |
 | --------------------------- | ----------- | ------------------------------------------ |
-| `unique_hourly`             | **forever** | `(realm, league, hour, item_key, identified, corrupted, foil_variation, links, tab, signature_kind, signature_value)`   |
+| `market`                    | **forever** | `(realm, league, item_key, identified, corrupted, foil_variation, links, tab, signature_kind, signature_value)`, with an int `id` and the latest description |
+| `market_hour`               | **forever** | `(hour, market_id)`; the `unique_hourly` view joins it to `market` |
 | `currency_hourly`           | **forever** | `(realm, league, market_id, hour)`                |
 | `basemap_snapshot`          | **forever** | `icon_asset` (public unid → name resolver) |
 | `cohort_hourly` (PoE 1)     | **forever** | `(realm, league, hour, cohort_id)`, the newest catalog revision's classification |
 | `cohort_window` (PoE 1)     | 48 hours    | `(realm, league, hour, cohort_id)`, the 6/24-hour price windows |
+| `league`                    | **forever** | `(realm, league)`, from GGG's league API   |
+
+Ruthless, SSF and private leagues stay in the worker's DuckDB and its archives: rollups mark their hours delivered without pushing them, and the receiver drops any that arrive. Exchange capture keeps every pair of those leagues, since the price-currency filter only decides what poe.boats stores.
+
+`process` pushes the realm's complete league list (`leagues` stream) at most hourly. poe.boats marks a stored league ended when it leaves the list or its `endAt` passes, and its markets default to leagues that are still listed.
 
 ## Pricing unidentified vs identified
 

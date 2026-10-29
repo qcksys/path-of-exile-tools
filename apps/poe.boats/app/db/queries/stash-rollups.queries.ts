@@ -14,6 +14,7 @@ import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { yellowBeastMarket, yellowBeastNames } from "~/lib/crafting-yellow-beasts";
 import { mergeMarketRows } from "~/lib/market-price-merge";
 import { MOD_POOL_KINDS } from "~/lib/mod-pools";
+import { writeStashUniqueHourly } from "./stash-market.queries";
 
 // Every rollup is recomputed from the hourly rows it summarises: the ingester re-pushes whole
 // hours (sale corrections, late unid resolutions), so increments would double count.
@@ -64,31 +65,14 @@ export async function refreshYellowBeastHourly(
             row.signatureValue,
         ]),
     );
-    const merged = [...markets.values()].map((group) => {
-        const { rowCreatedAt: _, rowUpdatedAt: _updated, ...row } = mergeMarketRows(group);
-        return { ...row, itemKey: yellowBeastMarket, baseType: yellowBeastMarket, name: null };
-    });
+    const merged = [...markets.values()].map((group) => ({
+        ...mergeMarketRows(group),
+        itemKey: yellowBeastMarket,
+        baseType: yellowBeastMarket,
+        name: null,
+    }));
     for (let index = 0; index < merged.length; index += YELLOW_BEAST_CHUNK)
-        await db
-            .insert(hourly)
-            .values(merged.slice(index, index + YELLOW_BEAST_CHUNK))
-            .onDuplicateKeyUpdate({
-                set: {
-                    iconAsset: sql`values(${hourly.iconAsset})`,
-                    frameType: sql`values(${hourly.frameType})`,
-                    listingCount: sql`values(${hourly.listingCount})`,
-                    uniqueSellers: sql`values(${hourly.uniqueSellers})`,
-                    removedCount: sql`values(${hourly.removedCount})`,
-                    likelySales: sql`values(${hourly.likelySales})`,
-                    relistedCount: sql`values(${hourly.relistedCount})`,
-                    pendingCount: sql`values(${hourly.pendingCount})`,
-                    salesPrices: sql`values(${hourly.salesPrices})`,
-                    prices: sql`values(${hourly.prices})`,
-                    signatureData: sql`values(${hourly.signatureData})`,
-                    firstSeenAt: sql`values(${hourly.firstSeenAt})`,
-                    lastSeenAt: sql`values(${hourly.lastSeenAt})`,
-                },
-            });
+        await writeStashUniqueHourly(db, "poe1", merged.slice(index, index + YELLOW_BEAST_CHUNK));
     return merged.length;
 }
 
@@ -136,8 +120,9 @@ export function refreshStashMarketDaily(
                         "listedHour",
                     ),
                 })
-                // (league, itemKey) plus the appended (realm, hour) reads each item's day as one range.
-                .from(hourly, scope.itemKeys ? { forceIndex: "idx_stash_unique_item" } : undefined)
+                // The view finds the items' markets by (realm, league, itemKey), then each market's
+                // day through `stash_market_hour_market_idx`.
+                .from(hourly)
                 .where(
                     and(
                         scope.realm === undefined ? undefined : eq(hourly.realm, scope.realm),
@@ -243,8 +228,8 @@ export const COVERAGE_STREAMS = {
 function coverageSource(game: StashGame, stream: StashCoverageStream) {
     if (stream === "currency")
         return { table: tStashCurrencyHourly[game], index: "stash_currency_coverage_idx" };
-    if (stream === "uniques")
-        return { table: tStashUniqueHourly[game], index: "stash_unique_market_cover_idx" };
+    // The view reads each hour's market hours by primary key and joins their markets.
+    if (stream === "uniques") return { table: tStashUniqueHourly[game], index: undefined };
     if (game !== "poe1") throw new Error("Equipment cohorts are stored for PoE 1 only.");
     // The primary key leads with the hour.
     return { table: tStashCohortHourly, index: "PRIMARY" };
@@ -269,7 +254,7 @@ export function refreshStashHourCoverage(
                     hour: table.hour,
                     rowCount: sql<number>`count(*)`.as("rowCount"),
                 })
-                .from(table, { forceIndex: index })
+                .from(table, index ? { forceIndex: index } : undefined)
                 .where(
                     and(
                         scope.realm === undefined ? undefined : eq(table.realm, scope.realm),

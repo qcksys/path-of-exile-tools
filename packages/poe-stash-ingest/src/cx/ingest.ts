@@ -1,6 +1,6 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import type { PoeApiClient } from "@poe-tools/api-client";
-import { exchangeMarketTracked } from "@poe-tools/market";
+import { exchangeMarketTracked, marketLeagueTracked } from "@poe-tools/market";
 import { REALM } from "#src/shared/auth.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
 import { withTransaction } from "#src/shared/db.ts";
@@ -53,7 +53,9 @@ export async function ingestCx(
         const markets = snap.markets.filter(
             (market) =>
                 (!opts.league || market.league === opts.league) &&
-                exchangeMarketTracked(REALM ?? "pc", market.league, market.market_id),
+                // Leagues poe.boats doesn't store keep every pair here, for the archive.
+                (!marketLeagueTracked(market.league) ||
+                    exchangeMarketTracked(REALM ?? "pc", market.league, market.market_id)),
         );
         const leaguesSeen = new Set(markets.map((market) => market.league));
 

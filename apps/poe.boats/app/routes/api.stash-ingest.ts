@@ -2,7 +2,9 @@ import {
     cohortHourlySchema,
     exchangeMarketTracked,
     ingestStatusSchema,
+    leagueListSchema,
     marketCohortDefinitionSchema,
+    marketLeagueTracked,
     stashCheckpointQuerySchema,
     stashCheckpointUploadSchema,
 } from "@poe-tools/market";
@@ -20,6 +22,7 @@ import {
     upsertStashCurrencyHourly,
     upsertStashUniqueHourly,
 } from "~/db/queries/stash-ingest.queries";
+import { recordStashLeagues } from "~/db/queries/stash-league.queries";
 import { sStashCurrencyHourlyI } from "~/db/schema/stash.currency-hourly";
 import { STASH_LISTING_TABS } from "~/db/schema/stash.unique-hourly";
 import { recordIngestStatus } from "~/operations/server-status.server";
@@ -98,6 +101,7 @@ const PAYLOAD_SCHEMA = z.discriminatedUnion("stream", [
         rows: z.array(stashCheckpointUploadSchema).max(500),
     }),
     z.object({ stream: z.literal("status"), rows: z.array(ingestStatusSchema).length(1) }),
+    leagueListSchema.extend({ stream: z.literal("leagues") }),
     z.object({ stream: z.literal("psapi"), rows: z.array(UNIQUE_ROW_SCHEMA).max(1000) }),
     z.object({ stream: z.literal("cxapi"), rows: z.array(CURRENCY_ROW_SCHEMA).max(1000) }),
     z.object({
@@ -150,15 +154,27 @@ export async function action({ request, context }: Route.ActionArgs) {
         written = await insertStashCheckpoints(db, parsed.rows);
     } else if (parsed.stream === "status") {
         written = await recordIngestStatus(db, parsed.rows[0]!);
+    } else if (parsed.stream === "leagues") {
+        written = await recordStashLeagues(db, parsed);
     } else if (parsed.stream === "psapi") {
-        written = await upsertStashUniqueHourly(db, parsed.rows);
+        await upsertStashUniqueHourly(
+            db,
+            parsed.rows.filter((row) => marketLeagueTracked(row.league)),
+        );
+        // Rows of leagues without market features are accepted but stay with the ingest workers.
+        written = parsed.rows.length;
     } else if (parsed.stream === "cxapi") {
-        written = await upsertStashCurrencyHourly(
+        await upsertStashCurrencyHourly(
             db,
             parsed.rows.filter((row) => exchangeMarketTracked(row.realm, row.league, row.marketId)),
         );
+        written = parsed.rows.length;
     } else if (parsed.stream === "equipment") {
-        written = await upsertStashCohortHourly(db, parsed.rows);
+        await upsertStashCohortHourly(
+            db,
+            parsed.rows.filter((row) => marketLeagueTracked(row.league)),
+        );
+        written = parsed.rows.length;
     } else if (parsed.stream === "equipment-definitions") {
         written = await insertStashCohorts(db, parsed.rows);
     } else {

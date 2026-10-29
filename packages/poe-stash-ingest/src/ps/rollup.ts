@@ -1,4 +1,5 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
+import { marketLeagueTracked } from "@poe-tools/market";
 import { REALM } from "#src/shared/auth.ts";
 import { queryAll } from "#src/shared/db.ts";
 import { push } from "#src/shared/remote/push.ts";
@@ -230,7 +231,11 @@ export async function rollupPs(
         return { hours: [hour], rows: 0 };
     }
 
-    await push({ stream: "psapi", rows }, { dryRun: opts.dryRun, onBatch: opts.onBatch });
+    // Leagues poe.boats doesn't store stay in this database and its archive.
+    await push(
+        { stream: "psapi", rows: rows.filter((row) => marketLeagueTracked(row.league)) },
+        { dryRun: opts.dryRun, onBatch: opts.onBatch },
+    );
 
     if (!opts.dryRun) {
         const byLeague = new Map<string, number>();

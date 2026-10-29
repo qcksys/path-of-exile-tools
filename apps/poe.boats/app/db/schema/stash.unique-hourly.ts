@@ -1,17 +1,18 @@
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
-    bigint,
     boolean,
+    char,
     index,
     int,
     json,
     mysqlTable,
+    mysqlView,
     primaryKey,
     tinyint,
+    uniqueIndex,
     varchar,
 } from "drizzle-orm/mysql-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
-import { timestampCols } from "~/db/helpers/schema.ts";
+import { createSelectSchema } from "drizzle-orm/zod";
 import { type StashGame, stashTableName } from "~/db/helpers/stash-game";
 
 /** The kind of public stash tab a market's listings were in; empty before tabs were recorded. */
@@ -31,47 +32,51 @@ export type MarketPriceSummary = {
     max: number;
 };
 
+/** The columns that identify a public-stash market; `identityHash` is the md5 of them. */
+export const STASH_MARKET_IDENTITY = [
+    "realm",
+    "league",
+    "itemKey",
+    "identified",
+    "corrupted",
+    "foilVariation",
+    "links",
+    "tab",
+    "signatureKind",
+    "signatureValue",
+] as const;
+
 /**
- * Permanent hourly summary of public-stash listings, written by
- * @poe-tools/stash-ingest. One row per *market* per hour, where a market
- * is identified by (league, hour, item_key, corrupted, foil_variation,
- * links, tab, signature_kind, signature_value).
+ * Every public-stash market, written by @poe-tools/stash-ingest. A market is identified by
+ * (realm, league, item_key, identified, corrupted, foil_variation, links, tab, signature_kind,
+ * signature_value), stored once here so each hourly row carries only its `id`.
  *
- * `links` is 5 or 6 for a unique whose largest linked socket group has that
- * many sockets, as poe.ninja splits them, otherwise 0. Rows ingested before
- * the split are 0 whatever their links.
+ * `links` is 5 or 6 for a unique whose largest linked socket group has that many sockets, as
+ * poe.ninja splits them, otherwise 0.
  *
- * `tab` is `merchant` for listings in Faustus's merchant tabs (stash type
- * `TradeStash`), `other` for every other public tab, and empty for listings
- * captured before tabs were recorded, which mix both.
+ * `tab` is `merchant` for listings in Faustus's merchant tabs (stash type `TradeStash`), `other`
+ * for every other public tab, and empty for listings captured before tabs were recorded.
  *
  * `item_key` is the unique's market identity:
  *   - `unid:<icon>`     unidentified unique (variant carried by icon_asset)
  *   - `<name>`          identified unique
  *   - `<baseType>`      currency / non-unique identified bulk
  *
- * Mod-driven variants (Forbidden Flame's allocated notable, Watcher's Eye
- * aura+stat pairs, Impossible Escape keystone, Forbidden Shako support)
- * are tracked as first-class columns:
- *   - `signature_kind`  e.g. `forbidden-jewel`, `watchers-eye`
- *   - `signature_value` deterministic stringified variant (PK component)
- *   - `signature_data`  full structured payload as JSON, for queries that
- *                       need to drill into individual fields (e.g. WHERE
- *                       signature_data->>'$.allocatedNotable' = 'X').
+ * Mod-driven variants (Forbidden Flame's allocated notable, Watcher's Eye aura+stat pairs,
+ * Impossible Escape keystone, Forbidden Shako support) are identified by `signature_kind` and the
+ * deterministic `signature_value`; `signature_data` holds the structured payload. Rows with no
+ * extracted signature use empty strings, not NULL.
  *
- * Rows with no extracted signature use `signature_kind = ''` and
- * `signature_value = ''` (empty strings, not NULL, so the PK works).
- *
- * Retention is permanent — this table is the long-term price/availability
- * history.
+ * The descriptive columns (icon, name, base type, frame, signature data) keep the latest delivery.
  */
-function stashUniqueHourly(game: StashGame) {
+function stashMarket(game: StashGame) {
     return mysqlTable(
-        stashTableName(game, "unique_hourly"),
+        stashTableName(game, "market"),
         {
+            id: int({ unsigned: true }).autoincrement().primaryKey(),
+            identityHash: char({ length: 32 }).notNull(),
             realm: varchar({ length: 10 }).notNull(),
             league: varchar({ length: 100 }).notNull(),
-            hour: bigint({ mode: "number" }).notNull(),
             itemKey: varchar({ length: 255 }).notNull(),
             identified: boolean().notNull(),
             corrupted: boolean().notNull().default(false),
@@ -80,12 +85,32 @@ function stashUniqueHourly(game: StashGame) {
             tab: varchar({ length: 8 }).$type<StashListingTab>().notNull().default(""),
             signatureKind: varchar({ length: 32 }).notNull().default(""),
             signatureValue: varchar({ length: 255 }).notNull().default(""),
-
             iconAsset: varchar({ length: 255 }),
             name: varchar({ length: 100 }),
             baseType: varchar({ length: 100 }).notNull(),
             frameType: int().notNull(),
+            signatureData: json().$type<Record<string, unknown>>(),
+        },
+        (table) => [
+            uniqueIndex("stash_market_identity_idx").on(table.identityHash),
+            index("stash_market_item_idx").on(table.realm, table.league, table.itemKey),
+        ],
+    );
+}
+export const tStashPoe1Market = stashMarket("poe1");
+export const tStashPoe2Market = stashMarket("poe2");
+export const tStashMarket = { poe1: tStashPoe1Market, poe2: tStashPoe2Market };
 
+/**
+ * Permanent hourly summary of each market's public-stash listings. The key leads with the hour,
+ * so each delivered hour appends; `stash_market_hour_market_idx` serves a market's history.
+ */
+function stashMarketHour(game: StashGame) {
+    return mysqlTable(
+        stashTableName(game, "market_hour"),
+        {
+            hour: int({ unsigned: true }).notNull(),
+            marketId: int({ unsigned: true }).notNull(),
             listingCount: int().notNull(),
             uniqueSellers: int().notNull(),
             removedCount: int().notNull().default(0),
@@ -94,53 +119,95 @@ function stashUniqueHourly(game: StashGame) {
             pendingCount: int().notNull().default(0),
             salesPrices: json().$type<Record<string, MarketPriceSummary>>(),
             prices: json().$type<Record<string, MarketPriceSummary>>(),
-            signatureData: json().$type<Record<string, unknown>>(),
-
             firstSeenAt: varchar({ length: 32 }).notNull(),
             lastSeenAt: varchar({ length: 32 }).notNull(),
-            ...timestampCols,
         },
         (table) => [
-            primaryKey({
-                columns: [
-                    table.realm,
-                    table.league,
-                    table.hour,
-                    table.itemKey,
-                    table.identified,
-                    table.corrupted,
-                    table.foilVariation,
-                    table.links,
-                    table.tab,
-                    table.signatureKind,
-                    table.signatureValue,
-                ],
-            }),
-            index("idx_stash_unique_league_hour").on(table.league, table.hour),
-            index("idx_stash_unique_item").on(table.league, table.itemKey),
-            index("idx_stash_unique_sig").on(table.signatureKind, table.signatureValue),
-            index("idx_stash_unique_icon").on(table.iconAsset),
-            // InnoDB appends the variant primary key; aggregation never needs the JSON payloads.
-            index("stash_unique_market_cover_idx").on(
-                table.realm,
-                table.league,
-                table.hour,
-                table.listingCount,
-                table.likelySales,
-                table.removedCount,
-                table.pendingCount,
-                table.baseType,
-                table.frameType,
-            ),
+            primaryKey({ columns: [table.hour, table.marketId] }),
+            index("stash_market_hour_market_idx").on(table.marketId, table.hour),
         ],
+    );
+}
+export const tStashPoe1MarketHour = stashMarketHour("poe1");
+export const tStashPoe2MarketHour = stashMarketHour("poe2");
+export const tStashMarketHour = { poe1: tStashPoe1MarketHour, poe2: tStashPoe2MarketHour };
+
+/** Each market hour with its market's identity and description, as one row per market per hour. */
+function stashUniqueHourly(game: StashGame) {
+    const market = tStashMarket[game];
+    const hour = tStashMarketHour[game];
+    return mysqlView(stashTableName(game, "unique_hourly")).as((qb) =>
+        qb
+            .select({
+                realm: market.realm,
+                league: market.league,
+                hour: hour.hour,
+                itemKey: market.itemKey,
+                identified: market.identified,
+                corrupted: market.corrupted,
+                foilVariation: market.foilVariation,
+                links: market.links,
+                tab: market.tab,
+                signatureKind: market.signatureKind,
+                signatureValue: market.signatureValue,
+                iconAsset: market.iconAsset,
+                name: market.name,
+                baseType: market.baseType,
+                frameType: market.frameType,
+                listingCount: hour.listingCount,
+                uniqueSellers: hour.uniqueSellers,
+                removedCount: hour.removedCount,
+                likelySales: hour.likelySales,
+                relistedCount: hour.relistedCount,
+                pendingCount: hour.pendingCount,
+                salesPrices: hour.salesPrices,
+                prices: hour.prices,
+                signatureData: market.signatureData,
+                firstSeenAt: hour.firstSeenAt,
+                lastSeenAt: hour.lastSeenAt,
+            })
+            .from(hour)
+            .innerJoin(market, eq(market.id, hour.marketId)),
     );
 }
 export const tStashPoe1UniqueHourly = stashUniqueHourly("poe1");
 export const tStashPoe2UniqueHourly = stashUniqueHourly("poe2");
 export const tStashUniqueHourly = { poe1: tStashPoe1UniqueHourly, poe2: tStashPoe2UniqueHourly };
 
-export type TStashUniqueHourlyS = InferSelectModel<typeof tStashPoe1UniqueHourly>;
-export type TStashUniqueHourlyI = InferInsertModel<typeof tStashPoe1UniqueHourly>;
-
+export type TStashUniqueHourlyS = typeof tStashPoe1UniqueHourly.$inferSelect;
 export const sStashUniqueHourlyS = createSelectSchema(tStashPoe1UniqueHourly);
-export const sStashUniqueHourlyI = createInsertSchema(tStashPoe1UniqueHourly);
+/** One market hour as ingest delivers it; omitted counts and identity axes take their defaults. */
+export type TStashUniqueHourlyI = Pick<
+    TStashUniqueHourlyS,
+    | "realm"
+    | "league"
+    | "hour"
+    | "itemKey"
+    | "identified"
+    | "baseType"
+    | "frameType"
+    | "listingCount"
+    | "uniqueSellers"
+    | "firstSeenAt"
+    | "lastSeenAt"
+> &
+    Partial<
+        Pick<
+            TStashUniqueHourlyS,
+            | "corrupted"
+            | "foilVariation"
+            | "links"
+            | "tab"
+            | "signatureKind"
+            | "signatureValue"
+            | "iconAsset"
+            | "name"
+            | "signatureData"
+            | "removedCount"
+            | "likelySales"
+            | "relistedCount"
+            | "pendingCount"
+            | "salesPrices"
+            | "prices"
+        >
+    >;

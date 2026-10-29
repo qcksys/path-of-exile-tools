@@ -362,6 +362,7 @@ program
                         currencyHours: Number(opts.currencyHours),
                         archive,
                         rawArchive,
+                        leagues: true,
                         currencyFromHour: (await getCursor(db.conn, "cxapi"))
                             ? undefined
                             : opts.currencyFromHour,

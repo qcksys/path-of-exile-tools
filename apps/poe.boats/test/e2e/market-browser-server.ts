@@ -4,8 +4,9 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import { createConnection } from "mysql2/promise";
 import type { TDatabase } from "../../app/db/client";
+import { writeStashUniqueHourly } from "../../app/db/queries/stash-market.queries";
 import { refreshStashRollups } from "../../app/db/queries/stash-rollups.queries";
-import { tStashPoe1UniqueHourly as market } from "../../app/db/schema/stash.unique-hourly";
+import type { TStashUniqueHourlyI } from "../../app/db/schema/stash.unique-hourly";
 import { marketFixture } from "../market-fixtures";
 
 const container = await new MySqlContainer("mysql:8.4").withDatabase("market_browser_test").start();
@@ -14,9 +15,11 @@ const db = drizzle({ client: connection });
 await migrate(db, {
     migrationsFolder: fileURLToPath(new URL("../../app/db/migrations", import.meta.url)),
 });
+const insertMarket = (rows: TStashUniqueHourlyI[]) =>
+    writeStashUniqueHourly(db as unknown as TDatabase, "poe1", rows);
 // The market shows merchant tab listings by default.
 const row = { ...marketFixture().rows[0]!, tab: "merchant" as const };
-await db.insert(market).values([
+await insertMarket([
     row,
     { ...row, identified: false },
     { ...row, corrupted: true },
