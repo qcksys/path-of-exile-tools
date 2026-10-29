@@ -81,7 +81,7 @@ export function AppHeader({ section, sectionBadge, tools }: AppHeaderProps = {})
                                     size="icon"
                                     render={
                                         <a
-                                            href="https://github.com/praetoros/path-of-exile-tools"
+                                            href="https://github.com/qcksys/path-of-exile-tools"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             aria-label="GitHub"
