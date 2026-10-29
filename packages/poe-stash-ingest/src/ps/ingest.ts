@@ -12,6 +12,7 @@ import type {
     EquipmentDiagnosticFixture,
     EquipmentDiagnostics,
 } from "#src/ps/equipment-diagnostics.ts";
+import { appendRawPage } from "#src/ps/raw-archive.ts";
 import { params, stashRounds } from "#src/ps/rounds.ts";
 import { evaluateSales, recordRemovals } from "#src/ps/sales.ts";
 import { REALM } from "#src/shared/auth.ts";
@@ -319,6 +320,8 @@ export async function ingestPs(
         equipment?: EquipmentClassifier;
         equipmentDiagnostics?: EquipmentDiagnostics;
         observedAt?: Date;
+        /** Directory that keeps every fetched page unfiltered; see `raw-archive.ts`. */
+        rawArchiveDir?: string;
     },
 ): Promise<PsIngestResult> {
     if (!Number.isSafeInteger(opts.pages) || opts.pages < 1)
@@ -356,6 +359,10 @@ export async function ingestPs(
         const page = await client.public.stashTabs(
             requestCursor ? { realm: REALM, id: requestCursor } : { realm: REALM },
         );
+        const capturedAt = Date.now();
+        // Written before processing, so a failure refetches the page; replays may see it twice.
+        if (opts.rawArchiveDir)
+            await appendRawPage(opts.rawArchiveDir, { capturedAt, cursor: requestCursor, page });
         const captureId = await archivePage(
             conn,
             page,
@@ -363,7 +370,7 @@ export async function ingestPs(
                 realm,
                 league: opts.league ?? "all",
                 cursor: requestCursor,
-                capturedAt: Date.now(),
+                capturedAt,
             },
             accepts,
         );

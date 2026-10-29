@@ -363,6 +363,40 @@ Checkpoints, daily samples, existing summaries and source archives are preserved
 
 Browse `/1/market` in the app. Filters separate realm, season and variant. The page includes per-currency asking price history, sample sizes, pending removals and likely sales. Missing hours remain gaps. Counts represent observations during an hour, not a census of the market. Archived season periods end at the season's last available observation.
 
+### Raw page archive
+
+When `PS_RAW_ARCHIVE_DIR` is set, live capture keeps every fetched psapi page, unfiltered, before
+it processes the page. Each page is one NDJSON line:
+
+```json
+{"capturedAt":1793204274205,"cursor":"3282530898-…","sha256":"…","page":{"next_change_id":"…","stashes":[…]}}
+```
+
+`capturedAt` is when the page arrived (psapi pages carry no time of their own), `cursor` is the
+requested change ID (`null` for the stream's first page), and `sha256` covers the page JSON as
+written. Lines append to `spool/<YYYY-MM-DDTHH>.ndjson` and are synced to disk one at a time; a line
+a crash left unfinished is cut before the next append. A page whose processing fails is fetched
+again, so a replay can see the same cursor twice.
+
+Each cycle, a background step seals every spooled hour before the current UTC hour into
+`<YYYY>/<MM>/<DD>/<HH>.ndjson.zst`: one zstd frame (level 19, long-distance matching, 128 MB window,
+content checksum). It decompresses the result and compares it with the spool, then writes a
+`.ndjson.zst.json` manifest (pages, sizes, SHA-256, SHA-1, first/last capture time and cursor), and
+only then deletes the spool. Sealing an hour already sealed fails and keeps the spool. Failures
+report as the `delivery` stage on the next cycle. On a 3 GB sample this format compressed 18×.
+
+When `B2_KEY_ID` is set, sealed hours without a B2 copy upload to the Backblaze B2 bucket named by
+`B2_BUCKET` through the native API, oldest first, named `$B2_PREFIX<YYYY>/<MM>/<DD>/<HH>.ndjson.zst`.
+The application key needs `listBuckets` (to find the bucket's ID) and `writeFiles`. B2 checks the upload against
+its SHA-1 (`X-Bz-Content-Sha1`); the file's SHA-256 travels as file info `sha256`. Busy or expired
+upload URLs are retried with a new one. The manifest records the B2 file ID, so each hour uploads
+once. The local copy is kept; nothing deletes sealed hours.
+
+`poe-stash-ps raw-archive` runs the seal and upload step once. `poe-stash-ps raw-verify [--from
+YYYY-MM-DDTHH] [--to YYYY-MM-DDTHH]` replays sealed hours. Replay (`replayRawArchive` in
+`src/ps/raw-archive.ts`) checks each file's SHA-256 against its manifest before reading it, so a
+damaged file yields no pages, and then checks every page's SHA-256 and the page count.
+
 ## Likely-sale policy
 
 `src/ps/sales.ts` owns the policy. A removal is a sale candidate when the stream reached its current cursor within the hour before it; removals seen further behind (initial catch-up or a long outage) are `unobserved`. A candidate is classified at the first poll that reaches the cursor at least an hour after its removal. The stream is a complete, ordered log, so by then any relist within that hour has been seen; backlogs or polling gaps in between do not delay or reset it.
@@ -389,6 +423,8 @@ poe-stash-ps rollup   [--hour <unixhour>] [--league <name|all>] [--dry-run]
 poe-stash-ps basemap                                  # rebuild icon → name from existing rows
 poe-stash-ps cursor   [--set <id>]                    # show or overwrite the saved cursor
 poe-stash-ps prune    [--max-rows N] [--keep-days N] [--dry-run]
+poe-stash-ps raw-archive                              # seal finished raw hours, upload to B2
+poe-stash-ps raw-verify [--from <hour>] [--to <hour>] # replay and check sealed raw hours
 ```
 
 #### Capture rule
