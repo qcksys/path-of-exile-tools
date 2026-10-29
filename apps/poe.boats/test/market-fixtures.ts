@@ -139,18 +139,26 @@ export function marketFixture(
                       links,
                       periodSales: 1,
                   }))
-                : filters.item
-                  ? [
-                        { ...variant, itemKey: filters.item, periodSales: 2 },
-                        { ...variant, itemKey: filters.item, corrupted: true, periodSales: 1 },
-                        {
-                            ...variant,
-                            itemKey: `unid:${row.iconAsset}`,
-                            identified: false,
-                            periodSales: 1,
-                        },
-                    ]
-                  : [],
+                : filters.item === "Forbidden Flesh"
+                  ? Array.from({ length: 30 }, (_, index) => ({
+                        ...variant,
+                        itemKey: filters.item!,
+                        signatureKind: "forbidden-jewel",
+                        signatureValue: `Notable ${index}`,
+                        periodSales: 30 - index,
+                    }))
+                  : filters.item
+                    ? [
+                          { ...variant, itemKey: filters.item, periodSales: 2 },
+                          { ...variant, itemKey: filters.item, corrupted: true, periodSales: 1 },
+                          {
+                              ...variant,
+                              itemKey: `unid:${row.iconAsset}`,
+                              identified: false,
+                              periodSales: 1,
+                          },
+                      ]
+                    : [],
         modValues: isModPool(filters.kind)
             ? modPoolValues(
                   [

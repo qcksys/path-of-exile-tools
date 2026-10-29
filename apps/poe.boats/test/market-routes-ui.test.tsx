@@ -604,6 +604,32 @@ it("links a unique's merged market to each of its link counts", async () => {
     ).toBe("page");
 });
 
+it("folds away all but the best-selling variants and the current one", async () => {
+    showMarket(
+        "/1/market/items/Forbidden%20Flesh?league=Allflame&category=jewels&kind=forbidden-jewel&value=Notable%2025",
+    );
+    const variants = await screen.findByRole("navigation", { name: "Item variants" });
+    expect(within(variants).getByRole("heading").textContent).toContain("(30)");
+    const [shown, more] = within(variants).getAllByRole("list");
+    const labels = (list: HTMLElement) =>
+        within(list)
+            .getAllByRole("link")
+            .map((link) => link.firstChild?.textContent);
+    expect(labels(shown!)).toEqual([
+        ...Array.from({ length: 20 }, (_, index) => `Notable ${index}`),
+        "Notable 25",
+    ]);
+    expect(
+        within(shown!)
+            .getByRole("link", { name: /Notable 25/ })
+            .getAttribute("aria-current"),
+    ).toBe("page");
+    expect(within(variants).getByText("Show 9 more").tagName).toBe("SUMMARY");
+    expect(labels(more!)).toEqual(
+        [20, 21, 22, 23, 24, 26, 27, 28, 29].map((index) => `Notable ${index}`),
+    );
+});
+
 it("links an identified unique to its unidentified market", async () => {
     showMarket("/1/market/items/Abberath's%20Hooves?league=Allflame&category=armour");
     const variants = await screen.findByRole("navigation", { name: "Item variants" });
