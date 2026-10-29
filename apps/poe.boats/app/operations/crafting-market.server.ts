@@ -187,12 +187,6 @@ export async function refreshCraftingMarketPrices(
                 continue;
             }
         }
-        if (at !== undefined && reference.source === "poe.ninja") {
-            issues.push(
-                `${id}: poe.ninja current listing estimates have no captured historical source; enter a manual assumption for history.`,
-            );
-            continue;
-        }
         const commodity =
             reference.source === "stash-commodity" ? craftingCommodityIdentity(engine, id) : null;
         if (
@@ -277,13 +271,9 @@ export async function refreshCraftingMarketPrices(
         for (const { id } of bindings) {
             const quote = result.quotes[id];
             if (quote) {
+                // A price saved from poe.ninja is rebound to the captured listings that replace it.
                 const updated = bindCraftingSourcePrice(next, engine, id, quote);
-                // Retrieval times change across isolates; captured observation times do not.
-                if (
-                    quote.source !== "poe.ninja"
-                        ? JSON.stringify(updated.prices[id]) !== JSON.stringify(next.prices[id])
-                        : next.prices[id]?.amount !== quote.amount
-                )
+                if (JSON.stringify(updated.prices[id]) !== JSON.stringify(next.prices[id]))
                     next = updated;
             } else {
                 if (reference.source === "vendor-upgrade")

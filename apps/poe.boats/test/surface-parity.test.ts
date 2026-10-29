@@ -80,7 +80,7 @@ import {
     marketGraph,
 } from "./crafting-market-fixtures";
 import { nnnGraph } from "./crafting-nnn-fixtures";
-import { yellowBeastComponent } from "./crafting-source-fixtures";
+import { recipeSourceHour, yellowBeastComponent } from "./crafting-source-fixtures";
 import { scouringMarketFixture, sourceMarketFixture } from "./crafting-source-market-fixtures";
 import {
     vendorCurrencyInputId,
@@ -987,31 +987,28 @@ describe("transport parity", () => {
         const graph = exchangeGraph();
         const id = "EinharMasterCraftMorrigan7";
         const sourceQuote = craftingSourceQuoteSchema.parse({
-            source: "poe.ninja",
+            source: "stash-recipe",
             game: "poe1",
             realm: "pc",
             league: graph.league,
             currency: "chaos",
             id,
             yellowBeasts: "listing-count-weighted-mean-v1",
-            fetchedAt: "2026-10-08T04:00:00.000Z",
+            hour: recipeSourceHour,
             amount: 607,
             components: [
-                ["craicic-sand-spitter", 1, 1],
-                ["black-morrigan", 1, 600],
+                { itemKey: "Craicic Sand Spitter", unitPrice: 1 },
+                { itemKey: "Black Morrigan", unitPrice: 600 },
             ]
-                .map(([detailsId, quantity, unitPrice]) => ({
-                    detailsId,
-                    name: detailsId,
-                    quantity,
-                    unitPrice,
+                .map((component) => ({
+                    ...component,
+                    quantity: 1,
                     listingCount: 100,
-                    sourceUrl:
-                        "https://poe.ninja/poe1/api/economy/stash/current/item/overview?league=Standard&type=Beast",
+                    hour: recipeSourceHour,
                 }))
                 .concat([yellowBeastComponent]),
         });
-        if (sourceQuote.source !== "poe.ninja") throw new Error("Expected beast source");
+        if (sourceQuote.source !== "stash-recipe") throw new Error("Expected beast source");
         const prices = { quotes: { [id]: sourceQuote }, missing: {} };
         const lookup = vi
             .spyOn(craftingSources, "findCraftingSourcePrices")

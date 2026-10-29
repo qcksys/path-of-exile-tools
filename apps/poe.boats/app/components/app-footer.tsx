@@ -13,15 +13,6 @@ export function AppFooter({ source }: { source?: string } = {}) {
                         <>
                             {t("footer.dataFrom")}{" "}
                             <a
-                                href="https://poe.ninja"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-accent underline-offset-4 hover:underline"
-                            >
-                                poe.ninja
-                            </a>
-                            {" & "}
-                            <a
                                 href="https://poedb.tw"
                                 target="_blank"
                                 rel="noopener noreferrer"

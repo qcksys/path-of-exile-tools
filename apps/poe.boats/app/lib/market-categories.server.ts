@@ -1,5 +1,7 @@
 import { and, eq, inArray, ne, notInArray, or } from "drizzle-orm";
 import type { AnyMySqlColumn } from "drizzle-orm/mysql-core";
+import { RECIPE_BEASTS } from "~/lib/crafting-beasts";
+import { bestiaryNames } from "~/lib/crafting-yellow-beasts";
 import { marketBaseTypesSchema } from "~/lib/market-bases";
 import { isMarketUniqueCategory } from "~/lib/market-categories";
 import { type MarketFilters, marketCategorySchema } from "~/schemas/market";
@@ -7,20 +9,18 @@ import poe1BaseTypes from "../../public/game-data/market-base-types-poe1.json";
 import poe1 from "../../public/game-data/market-categories-poe1.json";
 import poe2 from "../../public/game-data/market-categories-poe2.json";
 
-/** Spirit beasts are captured as uniques whose base type is the beast's name, which no base item has. */
-const SPIRIT_BEASTS = [
-    "Craiceann, First of the Deep",
-    "Farrul, First of the Plains",
-    "Fenumus, First of the Night",
-    "Saqawal, First of the Sky",
-];
+/**
+ * Captured beasts' base type is the beast's name, which no base item has: spirit beasts are
+ * uniques, and other beasts are rares.
+ */
+const BEASTS = new Set([...Object.values(RECIPE_BEASTS), ...bestiaryNames]);
 
 const catalogs = {
     poe1: new Map([
         ...Object.entries(poe1).map(
             ([name, category]) => [name, marketCategorySchema.parse(category)] as const,
         ),
-        ...SPIRIT_BEASTS.map((name) => [name, "beasts"] as const),
+        ...[...BEASTS].map((name) => [name, "beasts"] as const),
     ]),
     poe2: new Map(
         Object.entries(poe2).map(([name, category]) => [

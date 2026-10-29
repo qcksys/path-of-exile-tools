@@ -73,8 +73,10 @@ WITH observations AS (
         l.mod_signature::VARCHAR AS signature_data,
         l.icon_asset,
         l.base_type,
-        -- Listings stored before maps dropped their names still carry a rare map's name.
-        CASE WHEN json_extract_string(l.mod_signature, '$.kind') = 'map' THEN NULL
+        -- Listings stored before maps dropped their names still carry a rare map's name. A rare
+        -- beast's name is random, and every beast shares the Bestiary Orb icon a spirit beast
+        -- teaches the basemap.
+        CASE WHEN json_extract_string(l.mod_signature, '$.kind') IN ('map', 'beast') THEN NULL
             ELSE COALESCE(l.name, b.name) END AS resolved_name,
         l.frame_type,
         l.identified,

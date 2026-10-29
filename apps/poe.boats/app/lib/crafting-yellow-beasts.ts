@@ -2,39 +2,33 @@ import data from "./crafting-yellow-beasts.generated.json" with { type: "json" }
 
 export const yellowBeastPolicy = "listing-count-weighted-mean-v1" as const;
 export const yellowBeastId = "yellow-beast";
-const identities = new Map(
-    data.names.map((name) => [
-        name
-            .toLowerCase()
-            .replaceAll("'", "")
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-|-$/g, ""),
-        name,
-    ]),
-);
+/** Species that can fill a recipe's generic rare sacrifices, which stash listings key by name. */
+export const yellowBeastNames: readonly string[] = data.names;
+/** Every capturable species: the generic ones and those recipes name or the game disables. */
+export const bestiaryNames: readonly string[] = [...data.names, ...data.excludedNames];
+const names = new Set(yellowBeastNames);
 
 export interface YellowBeastEstimate {
-    detailsId: string;
     name: string;
     unitPrice: number;
     listingCount: number;
 }
 
-export function isYellowBeastIdentity(detailsId: string, name: string) {
-    return identities.get(detailsId) === name;
+export function isYellowBeast(name: string) {
+    return names.has(name);
 }
 
 export function yellowBeastPool(estimates: YellowBeastEstimate[]) {
     if (
         !estimates.length ||
-        new Set(estimates.map((entry) => entry.detailsId)).size !== estimates.length
+        new Set(estimates.map((entry) => entry.name)).size !== estimates.length
     )
         throw new Error("The Yellow Beast pool needs unambiguous positive species estimates.");
     let listingCount = 0;
     let weightedPrice = 0;
     for (const entry of estimates) {
         if (
-            !isYellowBeastIdentity(entry.detailsId, entry.name) ||
+            !isYellowBeast(entry.name) ||
             !Number.isFinite(entry.unitPrice) ||
             entry.unitPrice <= 0 ||
             !Number.isSafeInteger(entry.listingCount) ||

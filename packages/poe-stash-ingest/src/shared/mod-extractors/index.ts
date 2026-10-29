@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Item } from "@poe-tools/api-client";
+import { beastExtractor } from "#src/shared/mod-extractors/beast.ts";
 import { emptyResonatorExtractor } from "#src/shared/mod-extractors/empty-resonator.ts";
 import { forbiddenJewelExtractor } from "#src/shared/mod-extractors/forbidden-jewels.ts";
 import { forbiddenShakoExtractor } from "#src/shared/mod-extractors/forbidden-shako.ts";
@@ -8,6 +9,7 @@ import { gemExtractor } from "#src/shared/mod-extractors/gem.ts";
 import { impossibleEscapeExtractor } from "#src/shared/mod-extractors/impossible-escape.ts";
 import { mapExtractor } from "#src/shared/mod-extractors/map.ts";
 import { MOD_POOL_EXTRACTORS } from "#src/shared/mod-extractors/mod-pools.ts";
+import { templeExtractor } from "#src/shared/mod-extractors/temple.ts";
 import type { ModExtractor, ModSignature } from "#src/shared/mod-extractors/types.ts";
 import { uniqueModSplitExtractor } from "#src/shared/mod-extractors/unique-mod-splits.ts";
 
@@ -21,6 +23,8 @@ export const EXTRACTORS: readonly ModExtractor[] = [
     uniqueModSplitExtractor,
     gemExtractor,
     mapExtractor,
+    beastExtractor,
+    templeExtractor,
 ];
 
 export function extractModSignature(item: Item): ModSignature | null {

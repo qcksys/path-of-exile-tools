@@ -136,8 +136,10 @@ export function GraphPriceInput({
                         </>
                     ) : sourceReference.source === "vendor-upgrade" ? (
                         `Vendor-upgrade ingredient estimate · ${sourceReference.path.quantity} × ${sourceReference.path.inputName} · ${sourceReference.ingredient.itemVolume ?? "unknown"} ingredient units traded · confidence unknown · time shown is the ingredient observation hour · fixed recipe path supports captured history`
+                    ) : sourceReference.source === "poe.ninja" ? (
+                        `Saved poe.ninja listing estimate · ${sourceReference.assumption ? "retired species-specific beast estimate; rebind using the generic Yellow Beast pool" : "refresh to reprice from captured stash listings"}`
                     ) : (
-                        `poe.ninja listing estimate · time shown is retrieval time · ${sourceReference.assumption ? "retired species-specific beast estimate; rebind using the generic Yellow Beast pool" : sourceReference.yellowBeasts ? "complete recipe includes the generic Yellow Beast listing-count-weighted mean" : "exact temple room estimate"} · historical source unavailable`
+                        `Captured stash asking estimate · ${sourceReference.yellowBeasts ? "complete recipe includes the generic Yellow Beast listing-count-weighted mean" : "temple whose only open tier 3 crafting room is the Locus of Corruption"} · time shown is the newest observed hour · captured history available`
                     )}
                 </span>
             )}

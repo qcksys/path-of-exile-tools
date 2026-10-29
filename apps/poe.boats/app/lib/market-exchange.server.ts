@@ -10,6 +10,21 @@ const poe2Categories: Record<string, Poe2ExchangeCategory> = exchangeCategoriesP
     Poe2ExchangeCategory
 >;
 
+/** Each exchange item ID by name; a name shared by several IDs is left out. */
+const ids = Object.fromEntries(
+    (["poe1", "poe2"] as const).map((game) => {
+        const byName = new Map<string, string | null>();
+        for (const [id, name] of Object.entries(names[game]))
+            byName.set(name, byName.has(name) ? null : id);
+        return [game, byName];
+    }),
+) as Record<"poe1" | "poe2", Map<string, string | null>>;
+
+/** The exchange item ID of an item name; undefined for names outside the game catalog. */
+export function marketExchangeItemId(game: "poe1" | "poe2", name: string) {
+    return ids[game].get(name) ?? undefined;
+}
+
 /** Name and category of an exchange item; undefined for IDs outside the game catalog. */
 export function marketExchangeItem(
     realm: string,

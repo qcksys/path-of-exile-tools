@@ -258,6 +258,7 @@ Capture is limited to the configured league and **crafting-relevant candidates**
 
 - Selected good bases from the generated base cohorts and craftable jewel/cluster-jewel bases, even without an exact priced cohort match.
 - Uniques/relics, currency-tier materials and divination cards, including unidentified/unpriced items.
+- Captured beasts (items with Genus, Group and Family properties), which Bestiary recipe prices read by species.
 - Craftable bases with fractures, synthesis, influence, Delve/memory/mutation flags or special modifier flags.
 - Potential special-modifier donors, including lower-tier bases, identified using generated catalog text for drop-only, Delve, veiled/unveiled and mercenary modifiers.
 
@@ -409,7 +410,7 @@ Removal events are retained locally in `ps_sale` for correction. Pruning protect
 
 ## Extend item processing
 
-The raw archive retains crafting candidates selected by `src/ps/crafting-capture.ts` and the generated capture policy. Ordinary uniques, currency and divination cards are also normalized automatically. Add another item family to `ITEM_CATEGORIES` in `src/shared/capture.ts` to include it in that projection, and review its archive eligibility. Identity is defined in `src/shared/item-key.ts`.
+The raw archive retains crafting candidates selected by `src/ps/crafting-capture.ts` and the generated capture policy. Ordinary uniques, currency, divination cards and captured beasts are also normalized automatically. Rare beasts trade by species under a `beast` signature, which drops their random name; a Chronicle of Atzoatl carries a `temple` signature naming its open tier 3 Locus of Corruption and Doryani's Institute rooms. Add another item family to `ITEM_CATEGORIES` in `src/shared/capture.ts` to include it in that projection, and review its archive eligibility. Identity is defined in `src/shared/item-key.ts`.
 
 For a separately priced variant, add a `ModExtractor` under `src/shared/mod-extractors/` and register it in `EXTRACTORS`. Use `explicitModLines(item)` to support current modifier objects and legacy string modifiers. Implement `matches` and `extract`, returning a stable `kind` and deterministic JSON data; optionally provide `value` for a readable market key. Otherwise the signature is SHA-256 hashed. Sort unordered modifier collections before returning them. The ingestor persists the key, so adding an extractor requires no rollup SQL, receiver schema or UI changes. Add fixtures that prove equivalent variants group together and different variants remain separate. Existing historical observations keep the key under which they were captured.
 
