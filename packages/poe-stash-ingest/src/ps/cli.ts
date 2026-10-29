@@ -265,6 +265,44 @@ program
     });
 
 program
+    .command("raw-archive")
+    .description(
+        "Seal finished hours of raw pages in $PS_RAW_ARCHIVE_DIR and upload unsent hours to B2.",
+    )
+    .action(async () => {
+        const { maintainRawArchive, rawArchiveSettings } = await import("#src/ps/raw-archive.ts");
+        const settings = rawArchiveSettings();
+        if (!settings) throw new Error("Set PS_RAW_ARCHIVE_DIR to the raw page archive directory.");
+        console.log(JSON.stringify(await maintainRawArchive(settings)));
+    });
+
+program
+    .command("raw-verify")
+    .description("Replay sealed raw pages, checking every file and page checksum.")
+    .option("--from <hour>", "first UTC hour, YYYY-MM-DDTHH")
+    .option("--to <hour>", "last UTC hour, YYYY-MM-DDTHH")
+    .action(async (opts) => {
+        const { replayRawArchive, rawArchiveSettings } = await import("#src/ps/raw-archive.ts");
+        const settings = rawArchiveSettings();
+        if (!settings) throw new Error("Set PS_RAW_ARCHIVE_DIR to the raw page archive directory.");
+        let pages = 0;
+        let first: number | undefined;
+        let last: number | undefined;
+        for await (const record of replayRawArchive(settings.dir, opts)) {
+            pages++;
+            first ??= record.capturedAt;
+            last = record.capturedAt;
+        }
+        console.log(
+            JSON.stringify({
+                pages,
+                first: first && new Date(first).toISOString(),
+                last: last && new Date(last).toISOString(),
+            }),
+        );
+    });
+
+program
     .command("process")
     .description("Ingest, evaluate sales, and retry all pending completed hours.")
     .option("-p, --pages <n>", "maximum stash pages per cycle", positiveInteger, 50)
@@ -290,6 +328,8 @@ program
         const { REALM } = await import("#src/shared/auth.ts");
         const { archiveSettings } = await import("#src/shared/archive.ts");
         const archive = archiveSettings();
+        const { rawArchiveSettings } = await import("#src/ps/raw-archive.ts");
+        const rawArchive = rawArchiveSettings();
         const { createStatusReporter } = await import("#src/shared/status.ts");
         const { createEquipmentDiagnosticsLoader } = await import(
             "#src/ps/equipment-diagnostics-request.ts"
@@ -321,6 +361,7 @@ program
                         currency: opts.currency,
                         currencyHours: Number(opts.currencyHours),
                         archive,
+                        rawArchive,
                         currencyFromHour: (await getCursor(db.conn, "cxapi"))
                             ? undefined
                             : opts.currencyFromHour,

@@ -28,6 +28,7 @@ services:
     env_file: ./config/pc.env
     environment:
       PS_ARCHIVE_DIR: /backups
+      PS_RAW_ARCHIVE_DIR: /backups/raw
       PS_MEMORY_LIMIT: 10GB
       PS_CHECKPOINT_THRESHOLD: 1GB
       # Each reclassified hour re-delivers 24 hours of cohort rows; this keeps the pre-#76 pace.
@@ -40,6 +41,8 @@ services:
         target: poe_client_secret
       - source: pc_ingest_token
         target: poe_boats_ingest_token
+      - source: pc_b2_application_key
+        target: b2_application_key
   poe2:
     <<: *worker
     cpus: 1.0
@@ -60,6 +63,8 @@ secrets:
     file: ./secrets/pc_client_secret
   pc_ingest_token:
     file: ./secrets/pc_ingest_token
+  pc_b2_application_key:
+    file: ./secrets/pc_b2_application_key
   poe2_client_secret:
     file: ./secrets/poe2_client_secret
   poe2_ingest_token:

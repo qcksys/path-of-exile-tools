@@ -8,6 +8,7 @@ import type { EquipmentDiagnostics } from "#src/ps/equipment-diagnostics.ts";
 import { reclassifyArchivedEquipment } from "#src/ps/equipment-reclassify.ts";
 import { rollupEquipment } from "#src/ps/equipment-rollup.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
+import { maintainRawArchive, type RawArchiveOptions } from "#src/ps/raw-archive.ts";
 import { rollupPs } from "#src/ps/rollup.ts";
 import { type ArchiveOptions, archiveOldData } from "#src/shared/archive.ts";
 import { REALM } from "#src/shared/auth.ts";
@@ -38,6 +39,10 @@ function spendReclassifyAllowance(pages: number) {
 }
 let archiveCheckedAt = 0;
 let archiveBacklog = false;
+// Sealing an hour at zstd level 19 takes minutes, so it runs beside capture and reports
+// its failure on the next cycle.
+let rawMaintenanceRunning = false;
+let rawMaintenanceError: unknown;
 
 function operationFailure(operation: string, error: unknown) {
     return error instanceof TransactionRollbackError
@@ -127,6 +132,7 @@ export async function runPipeline(
         currencyFromHour?: number;
         currencyHours?: number;
         archive?: ArchiveOptions;
+        rawArchive?: RawArchiveOptions;
     },
 ) {
     await configureSource(conn, REALM ?? "pc", opts.league ?? null);
@@ -168,6 +174,7 @@ export async function runPipeline(
             ? null
             : await ingestPs(conn, client, {
                   ...opts,
+                  rawArchiveDir: opts.rawArchive?.dir,
                   onProgress: async (result) => {
                       await update({
                           pages: result.pages,
@@ -260,6 +267,29 @@ export async function runPipeline(
             },
             (error: unknown) => failStage("delivery", "Archive", error),
         );
+    }
+    if (opts.rawArchive) {
+        if (rawMaintenanceError !== undefined) {
+            const error = rawMaintenanceError;
+            rawMaintenanceError = undefined;
+            await failStage("delivery", "Raw page archive", error);
+        }
+        if (!rawMaintenanceRunning) {
+            rawMaintenanceRunning = true;
+            void maintainRawArchive(opts.rawArchive)
+                .then((result) => {
+                    if (result.sealed.length || result.uploaded)
+                        console.log(
+                            `raw archive: sealed ${result.sealed.join(", ") || "none"}; uploaded ${result.uploaded}`,
+                        );
+                })
+                .catch((error: unknown) => {
+                    rawMaintenanceError = error;
+                })
+                .finally(() => {
+                    rawMaintenanceRunning = false;
+                });
+        }
     }
     await update({
         stage: null,

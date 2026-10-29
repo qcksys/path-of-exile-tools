@@ -36,6 +36,7 @@ poe-ingest/
   config/poe2.env
   secrets/pc_client_secret
   secrets/pc_ingest_token
+  secrets/pc_b2_application_key
   secrets/poe2_client_secret
   secrets/poe2_ingest_token
   data/pc/market.duckdb
@@ -65,6 +66,30 @@ INGEST_PAGES=5
 INGEST_CURRENCY=true
 INGEST_CURRENCY_HOURS=1
 ```
+
+The PC worker also uploads its raw page archive (`/backups/raw`, see
+[Raw page archive](../../packages/poe-stash-ingest/README.md#raw-page-archive)) to Backblaze B2.
+The dev bucket is the private `<dev bucket>` (prod: `<prod bucket>`, with a key of the same
+name in the prod ingest item); its application key needs `listBuckets` and
+`writeFiles` on it. The key ID and key are `B2_KEY_ID` and `B2_APPLICATION_KEY` in the
+ingestor's 1Password item. Write the key
+to the secret file from a machine signed in to 1Password:
+
+```sh
+op read "op://<vault>/<ingest item>/B2_APPLICATION_KEY" | ssh <host> 'umask 077; cat > ~/poe-ingest/secrets/pc_b2_application_key'
+```
+
+and add to `config/pc.env`, with the key ID from the same item:
+
+```dotenv
+B2_KEY_ID=<application key ID>
+B2_APPLICATION_KEY_FILE=/run/secrets/b2_application_key
+B2_BUCKET=<bucket>
+B2_PREFIX=psapi/pc/
+```
+
+The secret file must exist before this Compose file is installed, even while upload is off.
+Without `B2_KEY_ID` the worker still archives raw pages locally.
 
 Preserve the existing client ID, contact and version. The PC worker uses `POE_REALM=pc`,
 `INGEST_LEAGUE=Allflame`, and `INGEST_WORKER_ID=<host>-dev-pc-allflame`. The second uses
