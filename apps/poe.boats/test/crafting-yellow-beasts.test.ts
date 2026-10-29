@@ -1,10 +1,10 @@
+import identities from "@poe-tools/market/yellow-beasts-poe1.json";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { createDbConnection } from "~/db/client";
 import { findCraftingRecipeListings } from "~/db/queries/crafting-recipes.queries";
 import { RECIPE_BEASTS } from "~/lib/crafting-beasts";
 import { bindCraftingSourcePrice, liveSourcePrices } from "~/lib/crafting-sources";
 import { isYellowBeast, yellowBeastPool } from "~/lib/crafting-yellow-beasts";
-import identities from "~/lib/crafting-yellow-beasts.generated.json";
 import { refreshCraftingMarketPrices } from "~/operations/crafting-market.server";
 import { findCraftingSourcePrices } from "~/services/crafting-sources.server";
 import { exchangeGraph } from "./crafting-exchange-fixtures";

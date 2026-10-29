@@ -86,7 +86,7 @@ const data = {
         .sort(),
 };
 await writeFile(
-    "app/lib/crafting-yellow-beasts.generated.json",
+    "../../packages/poe-market/data/yellow-beasts-poe1.json",
     `${JSON.stringify(data, null, 2)}\n`,
 );
 console.log(JSON.stringify({ names: names.length, excludedNames: data.excludedNames.length }));
