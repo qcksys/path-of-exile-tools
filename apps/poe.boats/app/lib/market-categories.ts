@@ -28,6 +28,8 @@ export const MARKET_CATEGORIES = {
     memories: { label: "Memories", group: "Atlas", icon: "Einhar's Memory" },
     heist: { label: "Heist", group: "League mechanics", icon: "Blueprint: Bunker" },
     wombgifts: { label: "Wombgifts", group: "League mechanics", icon: "Ancient Wombgift" },
+    legion: { label: "Legion", group: "League mechanics", icon: "Vaal Enshrouding Crystal" },
+    expedition: { label: "Expedition", group: "League mechanics", icon: "Exotic Coinage" },
     encounters: {
         label: "Encounter items",
         group: "League mechanics",
@@ -37,6 +39,7 @@ export const MARKET_CATEGORIES = {
     resonators: { label: "Resonators", group: "Crafting", icon: "Primitive Chaotic Resonator" },
     essences: { label: "Essences", group: "Crafting", icon: "Deafening Essence of Greed" },
     catalysts: { label: "Catalysts", group: "Crafting", icon: "Abrasive Catalyst" },
+    runes: { label: "Runes", group: "Crafting", icon: "Runegraft of the Agile" },
     beasts: { label: "Beasts", group: "Crafting", icon: "Imprinted Bestiary Orb" },
     corpses: { label: "Corpses", group: "Crafting", icon: "Perfect Pain Artist" },
     "armour-bases": { label: "Armour bases", group: "Crafting bases", icon: "Vaal Regalia" },
@@ -127,7 +130,17 @@ export function isMarketUniqueCategory(category: MarketCategory | "all") {
     return category in MARKET_BASE_CATEGORIES;
 }
 
+/** Stackable currency the trade site groups with fragments. */
+const FRAGMENT_CURRENCY = /^(?:Timeless .+ Splinter|Crescent Splinter|Memory of Trauma)$/;
+const EXPEDITION_CURRENCY = ["Astragali", "Exotic Coinage", "Scrap Metal", "Burial Medallion"];
+
 export function marketBaseCategory(name: string, itemClass: string): MarketCategory {
+    // Each Scrying Orb names the map it scries, and is listed per map.
+    if (name === "Scrying Orb") return "maps";
+    if (FRAGMENT_CURRENCY.test(name)) return "fragments";
+    if (name.endsWith(" Enshrouding Crystal")) return "legion";
+    if (EXPEDITION_CURRENCY.includes(name)) return "expedition";
+    if (itemClass === "StackableCurrency" && /^Runegraft of | Rune$/.test(name)) return "runes";
     if (name.includes("Scarab")) return "scarabs";
     if (name.endsWith("Delirium Orb")) return "delirium";
     if (name.includes("Invitation")) return "invitations";
