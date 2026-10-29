@@ -1,6 +1,8 @@
 import {
     MAP_DELIRIUM_BANDS,
     MAP_DELIRIUM_LABELS,
+    MAP_INFLUENCE_BAND_LABELS,
+    MAP_INFLUENCE_BANDS,
     MAP_MOD_BANDS,
     MAP_MOD_LABELS,
     MAP_QUANTITY_BANDS,
@@ -9,7 +11,7 @@ import {
 import { BandToggles } from "~/components/market-gem-filters";
 import type { MarketFilters } from "~/schemas/market";
 
-/** The map category's mod count, item quantity and delirium band filters. */
+/** The map category's mod count, item quantity, delirium and influence band filters. */
 export function MarketMapFilters({
     filters,
     onChange,
@@ -44,6 +46,14 @@ export function MarketMapFilters({
                 bands={MAP_DELIRIUM_BANDS}
                 labels={MAP_DELIRIUM_LABELS}
                 value={filters.mapDelirium}
+                onChange={onChange}
+            />
+            <BandToggles
+                name="mapInfluence"
+                legend="Influence"
+                bands={MAP_INFLUENCE_BANDS}
+                labels={MAP_INFLUENCE_BAND_LABELS}
+                value={filters.mapInfluence}
                 onChange={onChange}
             />
         </div>

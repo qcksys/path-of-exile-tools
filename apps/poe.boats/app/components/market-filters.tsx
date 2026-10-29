@@ -139,6 +139,7 @@ export function MarketFiltersForm({
                       mapMods: filters.mapMods,
                       mapQuantity: filters.mapQuantity,
                       mapDelirium: filters.mapDelirium,
+                      mapInfluence: filters.mapInfluence,
                       page: filters.page,
                       identified: filters.identified,
                       corrupted: filters.corrupted,
