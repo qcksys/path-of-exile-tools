@@ -181,6 +181,54 @@ function exchangeDailyRates(daily: MarketExchangeDaily[], anchor: string) {
     return result;
 }
 
+/** Hours of exchange volume the list charts, with MARKET_EXCHANGE_DAYS days. */
+export const MARKET_EXCHANGE_RECENT_HOURS = 24;
+
+export type MarketExchangeRecentVolume = { hourly: number[]; daily: number[] };
+
+/** No units traded in any of the charted hours or days. */
+export function marketExchangeNoRecentVolume(): MarketExchangeRecentVolume {
+    return {
+        hourly: Array<number>(MARKET_EXCHANGE_RECENT_HOURS).fill(0),
+        daily: Array<number>(MARKET_EXCHANGE_DAYS).fill(0),
+    };
+}
+
+/**
+ * Units of each of `itemIds` traded in each of the 24 hours to `latestHour` (from `hourly`
+ * snapshots) and on each of the last MARKET_EXCHANGE_DAYS UTC days (from `daily` totals),
+ * oldest first, over every market the item trades on.
+ */
+export function marketExchangeRecentVolume(
+    hourly: Pick<ExchangeSnapshot, "marketId" | "hour" | "volumeTraded">[],
+    daily: MarketExchangeDaily[],
+    latestHour: number,
+    itemIds: Iterable<string>,
+) {
+    const firstHour = latestHour - (MARKET_EXCHANGE_RECENT_HOURS - 1) * 3600;
+    const firstDay = Math.floor(latestHour / DAY) * DAY - (MARKET_EXCHANGE_DAYS - 1) * DAY;
+    const volumes = new Map<string, MarketExchangeRecentVolume>(
+        [...itemIds].map((id) => [id, marketExchangeNoRecentVolume()]),
+    );
+    for (const snapshot of hourly) {
+        if (snapshot.hour < firstHour || snapshot.hour > latestHour) continue;
+        for (const id of snapshot.marketId.split("|")) {
+            const volume = volumes.get(id);
+            if (volume)
+                volume.hourly[(snapshot.hour - firstHour) / 3600]! +=
+                    snapshot.volumeTraded?.[id] ?? 0;
+        }
+    }
+    for (const row of daily) {
+        if (row.day < firstDay || row.day > latestHour) continue;
+        for (const id of row.marketId.split("|")) {
+            const volume = volumes.get(id);
+            if (volume) volume.daily[(row.day - firstDay) / DAY]! += dailyVolumes(row, id).item;
+        }
+    }
+    return volumes;
+}
+
 export type MarketExchangeRow = {
     itemId: string;
     name: string;
@@ -204,6 +252,11 @@ export type MarketExchangeRow = {
     change: number | null;
     /** The pair with the most units of this item traded in the period, at its newest rate. */
     pair: { quoteId: string; name: string; rate: number } | null;
+};
+
+/** An exchange row of a market list, with the units of the item traded recently. */
+export type MarketExchangeListRow = MarketExchangeRow & {
+    recentVolume: MarketExchangeRecentVolume;
 };
 
 /**

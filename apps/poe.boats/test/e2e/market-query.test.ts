@@ -1442,6 +1442,11 @@ it("prices exchange-traded items from the exchange and leaves out their stash li
             price: 0.002,
             current: false,
             hour: hour - 7200,
+            // The trade 25 hours back falls outside the 24 charted hours but on the day before.
+            recentVolume: {
+                hourly: [...Array<number>(21).fill(0), 500, 0, 0],
+                daily: [0, 0, 0, 0, 0, 1, 500],
+            },
         }),
         expect.objectContaining({ name: "Portal Scroll", price: null, volume: null, hour: null }),
     ]);

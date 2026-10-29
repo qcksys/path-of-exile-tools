@@ -3,6 +3,7 @@ import { expect, it } from "vite-plus/test";
 import {
     type MarketExchangeDaily,
     marketExchangeHistory,
+    marketExchangeRecentVolume,
     marketExchangeRows,
 } from "~/lib/market-exchange";
 
@@ -354,4 +355,29 @@ it("returns an item's hourly exalted price through a chaos bridge", () => {
     expect(history.prices).toEqual([
         { hour, price: 0.02, low: null, high: null, via: chaos, units: 100 },
     ]);
+});
+
+it("sums each item's units traded across its markets by hour and UTC day", () => {
+    const volumes = marketExchangeRecentVolume(
+        [
+            snapshot(wisdom, 500, chaos, 1),
+            snapshot(wisdom, 200, divine, 1),
+            snapshot(wisdom, 100, chaos, 1, hour - 3600),
+            // Older than the 24 charted hours.
+            snapshot(wisdom, 9_000, chaos, 1, hour - 24 * 3600),
+        ],
+        [
+            daily(wisdom, 800, chaos, 2),
+            daily(divine, 3, wisdom, 600),
+            daily(wisdom, 50, chaos, 1, today - 6 * DAY),
+            daily(wisdom, 9_000, chaos, 1, today - 7 * DAY),
+        ],
+        hour,
+        [wisdom],
+    );
+    expect(volumes.get(wisdom)).toEqual({
+        hourly: [...Array<number>(22).fill(0), 100, 700],
+        daily: [50, 0, 0, 0, 0, 0, 1_400],
+    });
+    expect(volumes.has(chaos)).toBe(false);
 });

@@ -117,9 +117,11 @@ function showMarket(path = "/1/market/armour?league=Allflame&order=name-asc&page
 }
 
 it("renders list and detail through the layout outlet and restores browsing state", async () => {
+    // The file's first navigations load each route cold, which can pass findBy's 1 s default.
+    const cold = { timeout: 5000 };
     showMarket();
-    fireEvent.click(await screen.findByRole("link", { name: "Abberath's Hooves" }));
-    expect(await screen.findByRole("heading", { name: "Abberath's Hooves" })).toBeTruthy();
+    fireEvent.click(await screen.findByRole("link", { name: "Abberath's Hooves" }, cold));
+    expect(await screen.findByRole("heading", { name: "Abberath's Hooves" }, cold)).toBeTruthy();
     expect(screen.queryByRole("region", { name: "Item markets" })).toBeNull();
     expect(screen.getAllByRole("navigation", { name: "Market categories" })).toHaveLength(1);
     expect(screen.getByLabelText("Current URL").textContent).toContain(
@@ -131,7 +133,7 @@ it("renders list and detail through the layout outlet and restores browsing stat
         "history",
     );
     fireEvent.click(screen.getByRole("link", { name: /Back to markets/ }));
-    await screen.findByRole("region", { name: "Item markets" });
+    await screen.findByRole("region", { name: "Item markets" }, cold);
     expect(screen.getByLabelText("Current URL").textContent).toMatch(/^\/1\/market\/armour\?/);
     expect(screen.getByLabelText("Current URL").textContent).not.toContain("category=");
     expect(screen.getByLabelText("Current URL").textContent).toContain("page=2");
@@ -163,8 +165,9 @@ it("shows exchange-traded items with their value, trend, volume and most traded 
     const cells = [...row.querySelectorAll("td")].map((cell) => cell.textContent);
     expect(cells).toEqual([
         "Scroll of Wisdom",
-        "0.002 chaos≈ 0.00001333 divine",
-        "+25%",
+        "0.002 chaos≈ 0.00001333 divine+25% in 7 days",
+        // Units traded in the latest 6 hours, day and 7 days, as the stash rows chart likely sales.
+        "6h2K1d2K7d6K",
         "1.5K chaos",
         "1Chaos Orb⇄for500Scroll of Wisdom",
     ]);
@@ -184,7 +187,7 @@ it("switches exchange values between adaptive, chaos and divine", async () => {
     });
     showMarket("/1/market?league=Allflame&category=armour");
     const table = await screen.findByRole("table", { name: "Unique armour exchange" });
-    const value = () => exchangeRow(table, "Scroll of Wisdom").cells[1]!;
+    const value = () => exchangeRow(table, "Scroll of Wisdom").cells[1]!.querySelector("p")!;
     expect(value().textContent).toBe("2 divine≈ 300 chaos");
     fireEvent.click(screen.getByRole("button", { name: "Chaos Orb" }));
     expect(value().textContent).toBe("300 chaos");
