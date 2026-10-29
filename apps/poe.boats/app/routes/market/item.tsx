@@ -29,6 +29,8 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 type HistoryRow = Awaited<ReturnType<typeof getMarketData>>["history"][number];
 type VariantRow = Awaited<ReturnType<typeof getMarketData>>["variants"][number];
 
+const SHOWN_VARIANTS = 20;
+
 /** Uniques split by linked sockets as poe.ninja does: 5L, 6L and everything under 5 links. */
 function linksLabel(links: number) {
     return links ? `${links}L` : "0–4L";
@@ -125,6 +127,25 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
         (variant.links === null ? undefined : String(variant.links)) === filters.links;
     const linkSplit = (variant: VariantRow) =>
         variants.some((other) => other.links !== null && sameMarket(other, variant));
+    const variantLink = (variant: VariantRow) => (
+        <li key={marketLink(filters, variant)}>
+            <Link
+                to={marketLink(filters, variant)}
+                aria-current={isCurrent(variant) ? "page" : undefined}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 ${isCurrent(variant) ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted"}`}
+            >
+                {variantLabel(variant, linkSplit(variant))}
+                <span className="text-xs text-muted-foreground">
+                    {number(variant.periodSales)} sales
+                </span>
+            </Link>
+        </li>
+    );
+    // Variants come best-selling first; the rest fold away, except the one on this page.
+    const shown = variants.filter((variant, index) => index < SHOWN_VARIANTS || isCurrent(variant));
+    const more = variants.filter(
+        (variant, index) => index >= SHOWN_VARIANTS && !isCurrent(variant),
+    );
     const links = filters.links === undefined ? null : Number(filters.links);
     const otherVariants = variants.some((variant) => !isCurrent(variant));
     const itemName =
@@ -150,22 +171,17 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                             ({variants.length})
                         </span>
                     </h2>
-                    <ul className="flex flex-wrap gap-2 text-sm">
-                        {variants.map((variant) => (
-                            <li key={marketLink(filters, variant)}>
-                                <Link
-                                    to={marketLink(filters, variant)}
-                                    aria-current={isCurrent(variant) ? "page" : undefined}
-                                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 ${isCurrent(variant) ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted"}`}
-                                >
-                                    {variantLabel(variant, linkSplit(variant))}
-                                    <span className="text-xs text-muted-foreground">
-                                        {number(variant.periodSales)} sales
-                                    </span>
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
+                    <ul className="flex flex-wrap gap-2 text-sm">{shown.map(variantLink)}</ul>
+                    {more.length ? (
+                        <details>
+                            <summary className="cursor-pointer text-sm text-muted-foreground">
+                                Show {more.length} more
+                            </summary>
+                            <ul className="mt-2 flex flex-wrap gap-2 text-sm">
+                                {more.map(variantLink)}
+                            </ul>
+                        </details>
+                    ) : null}
                 </nav>
             ) : null}
             {selected ? (

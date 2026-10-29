@@ -12,7 +12,9 @@ export default defineConfig({
     },
     test: {
         environment: "node",
-        maxWorkers: 2,
+        // CI runners have 4 vCPUs. Locally, half the cores or more slows the CPU-heavy
+        // crafting and DuckDB tests past their timeouts.
+        maxWorkers: process.env.CI ? 2 : "40%",
         include: ["test/**/*.test.{ts,tsx,mjs}"],
         exclude: ["test/e2e/**"],
         setupFiles: ["test/crafting-ui-setup.ts"],
