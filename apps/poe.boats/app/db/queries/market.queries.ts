@@ -845,27 +845,24 @@ async function marketVariants(
                 valueGroup(market),
                 market.links,
             )
+            // Uniques that share art (e.g. replicas) share one unidentified market, named after only one of them.
+            .having(or(eq(market.itemKey, item), inArray(max(market.name), [...names])))
+            // Not limited: a cut-off drops the current variant and some of a market's link counts.
             .orderBy(
                 desc(sql`sum(${market.likelySales})`),
                 asc(market.corrupted),
                 asc(valueGroup(market)),
                 asc(market.links),
-            )
-            .limit(100),
+            ),
     );
-    // Uniques that share art (e.g. replicas) share one unidentified market, named after only one of them.
-    const markets = Map.groupBy(
-        variants.filter(
-            (row) => row.itemKey === item || (row.name !== null && names.has(row.name)),
-        ),
-        (row) =>
-            JSON.stringify([
-                row.itemKey,
-                row.identified,
-                row.corrupted,
-                row.signatureKind,
-                row.signatureValue,
-            ]),
+    const markets = Map.groupBy(variants, (row) =>
+        JSON.stringify([
+            row.itemKey,
+            row.identified,
+            row.corrupted,
+            row.signatureKind,
+            row.signatureValue,
+        ]),
     );
     // Each market first merges its link counts (`links` null, as the list shows it), then lists
     // them separately when any copy has 5 or 6 links.

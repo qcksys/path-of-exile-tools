@@ -953,6 +953,47 @@ it("lists a unique's markets in both identification states as variants of each o
     expect(await variants("Replica Eye")).toEqual([["Replica Eye", "Replica Eye", true, false]]);
 });
 
+it("lists every variant of an item with more than a hundred", async () => {
+    const flesh = (signatureValue: string, overrides: Partial<TStashUniqueHourlyI> = {}) =>
+        observation({
+            league: "Many Variants",
+            itemKey: "Forbidden Flesh",
+            name: "Forbidden Flesh",
+            baseType: "Cobalt Jewel",
+            corrupted: true,
+            signatureKind: "forbidden-jewel",
+            signatureValue,
+            ...overrides,
+        });
+    const notables = Array.from({ length: 120 }, (_, index) => `Notable ${index + 100}`);
+    await db
+        .insert(market)
+        .values([
+            flesh("Best Seller", { likelySales: 3 }),
+            ...notables.map((notable) => flesh(notable)),
+            flesh("Zealot", { links: 6 }),
+            flesh("Zealot", { links: 0 }),
+        ]);
+    const { variants } = await getMarketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({
+            league: "Many Variants",
+            item: "Forbidden Flesh",
+            corrupted: "true",
+            kind: "forbidden-jewel",
+            value: "Notable 219",
+        }),
+        "history",
+    );
+    expect(variants.map((row) => [row.signatureValue, row.links, row.periodSales])).toEqual([
+        ["Best Seller", null, 3],
+        ...notables.map((notable) => [notable, null, 0]),
+        ["Zealot", null, 0],
+        ["Zealot", 0, 0],
+        ["Zealot", 6, 0],
+    ]);
+});
+
 it("lists a mod pool unique once and values its mods on the item page", async () => {
     const haste = "Haste: #% increased Movement Speed";
     const precision = "Precision: #% increased Critical Strike Chance";
