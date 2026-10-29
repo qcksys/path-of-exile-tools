@@ -766,6 +766,8 @@ it("lists map markets under Maps by variant and filters them by included and exc
             map("Map (Tier 16)", "Unidentified · Delirium 0%", { identified: false }),
             map("Nightmare Map", "1–6 mods · Quantity 80–99% · Delirium 20%"),
             map("Map (Tier 14)", "8 mods · Delirium 0%", { corrupted: true }),
+            map("Map (Tier 14)", "1–6 mods · Delirium 0% · Elder Guardian"),
+            map("Map (Tier 14)", "1–6 mods · Delirium 0% · Memory"),
             observation({ league: "Maps", itemKey: "Kaom's Heart", name: "Kaom's Heart" }),
         ]);
     const list = async (filters: Record<string, string>) =>
@@ -777,6 +779,8 @@ it("lists map markets under Maps by variant and filters them by included and exc
             )
         ).rows.map((row) => [row.itemKey, row.signatureValue, row.category].join(" | "));
     expect(await list({ category: "maps" })).toEqual([
+        "Map (Tier 14) | 1–6 mods · Delirium 0% · Elder Guardian | maps",
+        "Map (Tier 14) | 1–6 mods · Delirium 0% · Memory | maps",
         "Map (Tier 14) | 8 mods · Delirium 0% | maps",
         "Map (Tier 16) | Unidentified · Delirium 0% | maps",
         "Map (Tier 16) | 1–6 mods · Quantity 60–79% · Delirium 0% | maps",
@@ -799,6 +803,17 @@ it("lists map markets under Maps by variant and filters them by included and exc
     ]);
     expect(await list({ category: "maps", identification: "false" })).toEqual([
         "Map (Tier 16) | Unidentified · Delirium 0% | maps",
+    ]);
+    expect(await list({ category: "maps", mapInfluence: "elder-guardian,memory" })).toEqual([
+        "Map (Tier 14) | 1–6 mods · Delirium 0% · Elder Guardian | maps",
+        "Map (Tier 14) | 1–6 mods · Delirium 0% · Memory | maps",
+    ]);
+    expect(
+        await list({ category: "maps", mapInfluence: "-none,-memory", mapDelirium: "0" }),
+    ).toEqual(["Map (Tier 14) | 1–6 mods · Delirium 0% · Elder Guardian | maps"]);
+    expect(await list({ category: "maps", mapMods: "1-6", mapInfluence: "none" })).toEqual([
+        "Map (Tier 16) | 1–6 mods · Quantity 60–79% · Delirium 0% | maps",
+        "Nightmare Map | 1–6 mods · Quantity 80–99% · Delirium 20% | maps",
     ]);
 });
 

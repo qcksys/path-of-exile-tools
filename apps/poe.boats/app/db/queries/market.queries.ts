@@ -131,7 +131,7 @@ function gemFilter(daily: DailyTable, filters: MarketFilters) {
         : sql`false`;
 }
 
-/** Map mod count, quantity and delirium band filters list only the map markets they allow. */
+/** Map mod count, quantity, delirium and influence filters list only the map markets they allow. */
 function mapFilter(daily: DailyTable, filters: MarketFilters) {
     const values = mapVariantValues(filters);
     if (!values) return undefined;

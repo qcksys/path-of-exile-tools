@@ -2,6 +2,7 @@ import {
     GEM_LEVEL_BANDS,
     GEM_QUALITY_BANDS,
     MAP_DELIRIUM_BANDS,
+    MAP_INFLUENCE_BANDS,
     MAP_MOD_BANDS,
     MAP_QUANTITY_BANDS,
     parseGemBandFilter,
@@ -136,6 +137,11 @@ export const marketFiltersSchema = z.object({
         "; only identified tier 16 and Nightmare maps have a quantity band",
     ),
     mapDelirium: mapBandFilter(MAP_DELIRIUM_BANDS, "delirium %"),
+    mapInfluence: mapBandFilter(
+        MAP_INFLUENCE_BANDS,
+        "influence",
+        "; `none` is an uninfluenced map, and `elder-guardian` an Elder map occupied by any guardian",
+    ),
     item: z.string().max(255).optional(),
     identified: z.enum(["true", "false"]).default("true"),
     corrupted: z.enum(["true", "false"]).default("false"),
@@ -424,6 +430,7 @@ export function marketLink(
         if (filters.mapMods) params.set("mapMods", filters.mapMods);
         if (filters.mapQuantity) params.set("mapQuantity", filters.mapQuantity);
         if (filters.mapDelirium) params.set("mapDelirium", filters.mapDelirium);
+        if (filters.mapInfluence) params.set("mapInfluence", filters.mapInfluence);
     }
     for (const param of MARKET_BASE_FILTERS) if (filters[param]) params.set(param, filters[param]);
     if (item) {

@@ -17,7 +17,7 @@ import { params, stashRounds } from "#src/ps/rounds.ts";
 import { evaluateSales, recordRemovals } from "#src/ps/sales.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { learnBasemap } from "#src/shared/basemap.ts";
-import { shouldCapture } from "#src/shared/capture.ts";
+import { isMapItem, shouldCapture } from "#src/shared/capture.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
 import { queryAll, withTransaction } from "#src/shared/db.ts";
 import { decodeIconAsset } from "#src/shared/icon.ts";
@@ -115,7 +115,8 @@ function listingRows(change: PublicStashChange, accountName: string, league: str
             frameType: item.frameType ?? -1,
             typeLine: item.typeLine,
             baseType: item.baseType,
-            name: item.identified ? item.name : null,
+            // A rare map's random name is not part of its market.
+            name: item.identified && !isMapItem(item) ? item.name : null,
             rarity: item.rarity ?? null,
             corrupted: item.corrupted ?? false,
             foilVariation: item.foilVariation ?? null,

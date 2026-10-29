@@ -58,7 +58,7 @@ export function BandToggles<Band extends string>({
     value,
     onChange,
 }: {
-    name: "gemLevel" | "gemQuality" | "mapMods" | "mapQuantity" | "mapDelirium";
+    name: "gemLevel" | "gemQuality" | "mapMods" | "mapQuantity" | "mapDelirium" | "mapInfluence";
     legend: string;
     bands: readonly Band[];
     labels: readonly string[];
