@@ -451,16 +451,23 @@ describe("market cohorts", () => {
             typeLine: "Experimenter's Quicksilver Flask of the Cheetah",
             frameType: 1,
             identified: true,
-            ilvl: 84,
+            ilvl: 85,
         };
         expect(classifier.acceptsBase("Quicksilver Flask")).toBe(true);
         expect(classifier.classify(normalizeApiItem("poe1", "stash", item))).toEqual({
-            matches: ["base:quicksilver-flask:84-100:any-links"],
+            matches: ["base:quicksilver-flask:85-100:any-links"],
             unknown: [],
         });
         expect(
-            classifier.classify(normalizeApiItem("poe1", "stash", { ...item, ilvl: 82 })).matches,
-        ).toEqual(["base:quicksilver-flask:82-83:any-links"]);
+            classifier.classify(normalizeApiItem("poe1", "stash", { ...item, ilvl: 84 })).matches,
+        ).toEqual(["base:quicksilver-flask:84-84:any-links"]);
+        const life = { ...item, baseType: "Divine Life Flask", typeLine: "Divine Life Flask" };
+        expect(
+            classifier.classify(normalizeApiItem("poe1", "stash", { ...life, ilvl: 83 })).matches,
+        ).toEqual(["base:divine-life-flask:83-100:any-links"]);
+        expect(
+            classifier.classify(normalizeApiItem("poe1", "stash", { ...life, ilvl: 82 })).matches,
+        ).toEqual([]);
         for (const flags of [{ corrupted: true }, { frameType: 3 }])
             expect(
                 classifier.classify(normalizeApiItem("poe1", "stash", { ...item, ...flags }))

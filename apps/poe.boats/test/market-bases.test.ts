@@ -200,7 +200,7 @@ describe("generated crafting base list", () => {
         );
     });
 
-    it("lists every utility flask and the top life, mana and hybrid flasks by item level", () => {
+    it("lists utility flasks by their key modifier levels and other flasks from ilvl 83", () => {
         const flasks = bases.filter((entry) => entry.category === "flask-bases");
         const names = (itemClass: string) =>
             new Set(flasks.filter((entry) => entry.itemClass === itemClass).map((e) => e.baseType));
@@ -214,10 +214,12 @@ describe("generated crafting base list", () => {
             flasks
                 .filter((entry) => entry.baseType === "Quicksilver Flask")
                 .map((entry) => `${entry.ilvl.min}-${entry.ilvl.max}`),
-        ).toEqual(["74-81", "82-83", "84-100"]);
+        ).toEqual(["74-79", "80-83", "84-84", "85-100"]);
+        for (const entry of flasks.filter((entry) => entry.itemClass !== "Utility Flask"))
+            expect(entry.ilvl, entry.id).toEqual({ min: 83, max: 100 });
         expect(flasks.every((entry) => entry.links === null && entry.quality === null)).toBe(true);
         expect(marketBaseDetails(flasks.find((e) => e.baseType === "Quicksilver Flask")!)).toBe(
-            "ilvl 74–81 · Utility Flask",
+            "ilvl 74–79 · Utility Flask",
         );
     });
 
@@ -270,8 +272,11 @@ describe("generated crafting base list", () => {
         expect(bands("Focused Amulet")).toEqual(["74-83", "84-84", "85-100"]);
         expect(bands("Stygian Vise")).toEqual(["74-84", "85-85", "86-100"]);
         expect(bands("Imperial Staff")).toEqual(["74-81", "82-82", "83-100"]);
+        // Flasks have fixed bands; see the flask test.
         for (const name of new Set(
-            bases.filter((entry) => !entry.cluster).map((entry) => entry.baseType),
+            bases
+                .filter((entry) => !entry.cluster && entry.category !== "flask-bases")
+                .map((entry) => entry.baseType),
         ))
             expect(bands(name).length, name).toBeLessThanOrEqual(3);
     });

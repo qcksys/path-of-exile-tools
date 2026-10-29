@@ -136,8 +136,9 @@ bands: of the levels that unlock at least a tenth of the top-tier (T1) spawn wei
 above ilvl 74, the two highest split off and lower levels group together
 (`significantLevelBands`), so each base type gets its own breakpoints (Focused Amulet: 74–83, 84,
 85+; Stygian Vise: 74–84, 85, 86+; most weapons 74–81, 82, 83+). `flask-bases` lists every
-utility flask and the three highest life, mana and hybrid flasks, with bands from their magic
-modifier pool (utility flasks 74–81, 82–83, 84+); its `baseClass` values space the game data's
+utility flask and the three highest life, mana and hybrid flasks with fixed bands instead:
+utility flasks 74–79, 80–83, 84 and 85+ (T1 Alchemist's at 80; Experimenter's, Armadillo and
+Impala at 84; of the Cheetah at 85), other flasks ilvl 83+ only; its `baseClass` values space the game data's
 flask classes (`Life Flask` for `LifeFlask`). `cluster-jewel-bases` lists
 normal, magic and rare Cluster Jewels by size, added small passive skill (the first `Added Small
 Passive Skills grant:` enchantment line, matched by the item query's `enchant` condition), passive

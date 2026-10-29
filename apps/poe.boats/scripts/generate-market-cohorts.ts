@@ -50,7 +50,7 @@ const current = history.revisions.find((entry) =>
 );
 if (!current) throw new Error("The crafting presets require a current ruleset.");
 const presetCohorts = craftingPresetCohorts(engine, current);
-// Flasks are never rare: their mod pool is a magic item's.
+// Flasks are never rare.
 const flasks = new Set(["LifeFlask", "ManaFlask", "HybridFlask", "UtilityFlask"]);
 const equipment = new Set([
     "Two Hand Sword",
@@ -80,6 +80,18 @@ const equipment = new Set([
     ...flasks,
 ]);
 const craftedRarity = (itemClass: string) => (flasks.has(itemClass) ? "magic" : "rare");
+// Flask bands follow the modifiers buyers ask for rather than spawn weight: utility flasks unlock
+// T1 Alchemist's at 80, Experimenter's, Armadillo and Impala at 84 and of the Cheetah at 85. Life,
+// mana and hybrid flasks are only tracked at item level 83 and up.
+const flaskLevelBands = (itemClass: string) =>
+    itemClass === "UtilityFlask"
+        ? [
+              { min: 74, max: 79 },
+              { min: 80, max: 83 },
+              { min: 84, max: 84 },
+              { min: 85, max: 100 },
+          ]
+        : [{ min: 83, max: 100 }];
 const armour = new Set(["Helmet", "Body Armour", "Boots", "Gloves", "Shield"]);
 const includedNames = new Set([
     "Grasping Mail",
@@ -158,7 +170,7 @@ for (const [baseId, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0
     const pool = (level: number) =>
         variants.flatMap((id) =>
             engine
-                .pool({ ...engine.createItem(id, level), rarity: craftedRarity(base.item_class) })
+                .pool({ ...engine.createItem(id, level), rarity: "rare" })
                 .map((mod) => ({ ...mod, id: `${id}:${mod.id}` })),
         );
     const topTiers = new Set(
@@ -176,13 +188,15 @@ for (const [baseId, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0
     };
     // At most three listed bands: the two highest levels that each unlock at least a tenth of the
     // base's gated top-tier weight split off, and lower levels group together.
-    const bands = significantLevelBands(
-        modifierLevelBands(changes, pool),
-        MARKET_BASE_MIN_LEVEL,
-        unlocked,
-        0.1,
-        2,
-    );
+    const bands = flasks.has(base.item_class)
+        ? flaskLevelBands(base.item_class)
+        : significantLevelBands(
+              modifierLevelBands(changes, pool),
+              MARKET_BASE_MIN_LEVEL,
+              unlocked,
+              0.1,
+              2,
+          );
     const slug = base.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
