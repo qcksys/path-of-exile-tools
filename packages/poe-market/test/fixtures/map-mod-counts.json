@@ -1,0 +1,619 @@
+{
+    "source": "pathofexile.com trade fetch, Allflame, 2026-10-29: explicit mod lines of tier 14, tier 16 and Nightmare maps, with the mod count from each item's extended explicit mod indices",
+    "maps": [
+        {
+            "mods": 8,
+            "explicitMods": [
+                "Monsters fire 2 additional Projectiles",
+                "Monsters deal 98% extra Physical Damage as Cold",
+                "Area contains two Unique Bosses",
+                "Unique Bosses are Possessed",
+                "Monsters have 50% increased Accuracy Rating",
+                "Players have 60% reduced effect of Non-Curse Auras from Skills",
+                "Players cannot Regenerate Life, Mana or Energy Shield",
+                "Players have 25% less Area of Effect",
+                "Players have -20% to amount of Suppressed Spell Damage Prevented"
+            ]
+        },
+        {
+            "mods": 4,
+            "explicitMods": [
+                "Area contains many Totems",
+                "Players cannot inflict Exposure",
+                "24% increased Monster Damage",
+                "Players gain 50% reduced Flask Charges"
+            ]
+        },
+        {
+            "mods": 4,
+            "explicitMods": [
+                "Area has patches of Burning Ground",
+                "Area contains two Unique Bosses",
+                "Unique Boss deals 25% increased Damage",
+                "Unique Boss has 30% increased Attack and Cast Speed",
+                "Players have 25% less Area of Effect"
+            ]
+        },
+        {
+            "mods": 4,
+            "explicitMods": [
+                "Players are Cursed with Elemental Weakness",
+                "Monsters fire 2 additional Projectiles",
+                "Monsters have a 20% chance to Ignite, Freeze and Shock on Hit",
+                "Players gain 50% reduced Flask Charges"
+            ]
+        },
+        {
+            "mods": 4,
+            "explicitMods": [
+                "Players have -11% to all maximum Resistances",
+                "Monsters have 100% increased Area of Effect",
+                "+40% Monster Physical Damage Reduction",
+                "Monsters gain a Power Charge on Hit"
+            ]
+        },
+        {
+            "mods": 4,
+            "explicitMods": [
+                "Monsters deal 103% extra Physical Damage as Cold",
+                "Unique Boss deals 25% increased Damage",
+                "Unique Boss has 30% increased Attack and Cast Speed",
+                "Monsters have +60% chance to Suppress Spell Damage",
+                "Players have 25% less Accuracy Rating"
+            ]
+        },
+        {
+            "mods": 5,
+            "explicitMods": [
+                "23% increased number of Rare Monsters",
+                "Players cannot inflict Exposure",
+                "All Monster Damage from Hits always Ignites",
+                "Monsters Maim on Hit with Attacks",
+                "Players have 60% reduced effect of Non-Curse Auras from Skills"
+            ]
+        },
+        {
+            "mods": 5,
+            "explicitMods": [
+                "Players are Cursed with Temporal Chains",
+                "Monsters gain a Frenzy Charge on Hit",
+                "Area contains two Unique Bosses",
+                "Unique Boss has 35% increased Life",
+                "Unique Boss has 70% increased Area of Effect",
+                "Players cannot Regenerate Life, Mana or Energy Shield"
+            ]
+        },
+        {
+            "mods": 5,
+            "explicitMods": [
+                "Players are Cursed with Enfeeble",
+                "Players have -12% to all maximum Resistances",
+                "Monsters deal 102% extra Physical Damage as Fire",
+                "Monsters are Hexproof",
+                "Monsters take 40% reduced Extra Damage from Critical Strikes"
+            ]
+        },
+        {
+            "mods": 8,
+            "explicitMods": [
+                "21% increased Magic Monsters",
+                "Monsters have 100% increased Area of Effect",
+                "Monsters Poison on Hit",
+                "Monsters deal 110% extra Physical Damage as Cold",
+                "Monsters' skills Chain 2 additional times",
+                "Area contains two Unique Bosses",
+                "Monsters cannot be Taunted",
+                "Monsters' Action Speed cannot be modified to below Base Value\nMonsters' Movement Speed cannot be modified to below Base Value",
+                "Players have 25% less Accuracy Rating"
+            ]
+        },
+        {
+            "mods": 8,
+            "explicitMods": [
+                "Players cannot inflict Exposure",
+                "Players are Cursed with Enfeeble",
+                "Unique Bosses are Possessed",
+                "+25% Monster Chaos Resistance",
+                "+40% Monster Elemental Resistances",
+                "All Monster Damage from Hits always Ignites",
+                "Monsters have +60% chance to Suppress Spell Damage",
+                "Players have 40% less Cooldown Recovery Rate",
+                "Players have 25% less Area of Effect"
+            ]
+        },
+        {
+            "mods": 5,
+            "explicitMods": [
+                "Area has patches of Burning Ground",
+                "Rare Monsters have [ElementalThorns|Elemental Thorns] reflecting 1500 Elemental Damage",
+                "Monsters Poison on Hit",
+                "Area contains two Unique Bosses",
+                "Monsters have 50% increased Accuracy Rating",
+                "Players have -20% to amount of Suppressed Spell Damage Prevented"
+            ]
+        },
+        {
+            "mods": 8,
+            "explicitMods": [
+                "27% increased Magic Monsters",
+                "22% increased number of Rare Monsters",
+                "Players cannot inflict Exposure",
+                "45% more Monster Life",
+                "Monsters have 100% increased Area of Effect",
+                "Monsters have 392% increased Critical Strike Chance",
+                "+41% to Monster Critical Strike Multiplier",
+                "Monsters cannot be Taunted",
+                "Monsters' Action Speed cannot be modified to below Base Value\nMonsters' Movement Speed cannot be modified to below Base Value",
+                "Monsters gain 32% of their Physical Damage as Extra Chaos Damage",
+                "Monsters Inflict Withered for 2 seconds on Hit"
+            ]
+        },
+        {
+            "mods": 5,
+            "explicitMods": [
+                "Monsters gain a Frenzy Charge on Hit",
+                "Debuffs on Monsters expire 100% faster",
+                "+25% Monster Chaos Resistance",
+                "+40% Monster Elemental Resistances",
+                "Monsters have +100% chance to Suppress Spell Damage",
+                "Players are assaulted by Bloodstained Sawblades"
+            ]
+        },
+        {
+            "mods": 4,
+            "explicitMods": [
+                "25% increased Monster Damage",
+                "Rare Monsters have [ElementalThorns|Elemental Thorns] reflecting 1500 Elemental Damage",
+                "Unique Boss has 35% increased Life",
+                "Unique Boss has 70% increased Area of Effect",
+                "Players have 60% less Recovery Rate of Life and Energy Shield"
+            ]
+        },
+        {
+            "mods": 8,
+            "explicitMods": [
+                "Area has increased monster variety",
+                "Players are Cursed with Enfeeble",
+                "25% increased Monster Damage",
+                "Unique Boss deals 25% increased Damage",
+                "Unique Boss has 30% increased Attack and Cast Speed",
+                "Unique Boss has 35% increased Life",
+                "Unique Boss has 70% increased Area of Effect",
+                "Monsters take 38% reduced Extra Damage from Critical Strikes",
+                "Players have 25% less Accuracy Rating",
+                "Players have 30% less Armour",
+                "Players have 40% reduced Chance to Block"
+            ]
+        },
+        {
+            "mods": 8,
+            "explicitMods": [
+                "Area has increased monster variety",
+                "Monsters have 70% chance to Avoid Elemental Ailments",
+                "22% increased Monster Damage",
+                "25% increased Monster Movement Speed",
+                "45% increased Monster Attack Speed",
+                "39% increased Monster Cast Speed",
+                "Monsters gain an Endurance Charge on Hit",
+                "Monsters are Hexproof",
+                "Monsters take 39% reduced Extra Damage from Critical Strikes",
+                "Monsters Hinder on Hit with Spells"
+            ]
+        },
+        {
+            "mods": 8,
+            "explicitMods": [
+                "Players have -20% to all maximum Resistances",
+                "Rare Monsters have [PhysicalThorns|Physical Thorns] reflecting 1500 Physical Damage",
+                "Rare Monsters have [ElementalThorns|Elemental Thorns] reflecting 2500 Elemental Damage",
+                "Monsters cannot be Stunned",
+                "Monsters gain a Frenzy Charge on Hit",
+                "Monsters' Action Speed cannot be modified to below Base Value",
+                "All Monster Damage can Ignite, Freeze and Shock",
+                "Monsters' Movement Speed cannot be modified to below Base Value",
+                "Monsters Ignite, Freeze and Shock on Hit",
+                "Players have 25% less Area of Effect",
+                "Rare Monsters have Volatile Cores",
+                "Players are assaulted by Bloodstained Sawblades"
+            ]
+        },
+        {
+            "mods": 8,
+            "explicitMods": [
+                "Area has patches of Burning Ground",
+                "Monsters deal 108% extra Physical Damage as Fire",
+                "Unique Bosses are Possessed",
+                "Monsters cannot be Taunted",
+                "Monsters' Action Speed cannot be modified to below Base Value\nMonsters' Movement Speed cannot be modified to below Base Value",
+                "Monsters have a 20% chance to Ignite, Freeze and Shock on Hit",
+                "Monsters Hinder on Hit with Spells",
+                "Buffs on Players expire 70% faster",
+                "Players have 60% less Recovery Rate of Life and Energy Shield"
+            ]
+        },
+        {
+            "mods": 8,
+            "explicitMods": [
+                "Area has patches of desecrated ground",
+                "Players are Cursed with Elemental Weakness",
+                "73% more Monster Life",
+                "Monsters cannot be Stunned",
+                "Monsters gain a Power Charge on Hit",
+                "Monsters' skills Chain 2 additional times",
+                "Unique Boss has 35% increased Life",
+                "Unique Boss has 70% increased Area of Effect",
+                "Monsters Maim on Hit with Attacks"
+            ]
+        },
+        {
+            "mods": 8,
+            "explicitMods": [
+                "Players have -10% to all maximum Resistances",
+                "95% more Monster Life",
+                "Rare Monsters have [PhysicalThorns|Physical Thorns] reflecting 800 Physical Damage",
+                "All Monster Damage from Hits always Ignites",
+                "Auras from Player Skills which affect Allies also affect Enemies",
+                "Players have 60% less Recovery Rate of Life and Energy Shield",
+                "Players have 25% less Area of Effect",
+                "Area contains Drowning Orbs"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Players are Cursed with Vulnerability",
+                "Players are Cursed with Enfeeble",
+                "Players are Cursed with Temporal Chains",
+                "Players are Cursed with Elemental Weakness",
+                "29% more Monster Life",
+                "27% increased Monster Movement Speed",
+                "39% increased Monster Attack Speed",
+                "42% increased Monster Cast Speed",
+                "Monsters cannot be Stunned",
+                "Monsters take 40% reduced Extra Damage from Critical Strikes",
+                "Players have 40% less effect of Flasks applied to them"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "28% increased Monster Movement Speed",
+                "42% increased Monster Attack Speed",
+                "37% increased Monster Cast Speed",
+                "Monsters have +1 to Maximum Endurance Charges",
+                "Unique Boss deals 25% increased Damage",
+                "Unique Boss has 30% increased Attack and Cast Speed",
+                "Monsters gain an Endurance Charge when hit",
+                "Monsters have +50% Chance to Block Attack Damage",
+                "Monsters Maim on Hit with Attacks",
+                "Players have 27% less Area of Effect"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Players are Cursed with Vulnerability",
+                "Players are Cursed with Temporal Chains",
+                "Players are Cursed with Elemental Weakness",
+                "Players have -12% to all maximum Resistances",
+                "39% increased Monster Damage",
+                "Monsters gain a Frenzy Charge on Hit",
+                "Unique Boss has 35% increased Life",
+                "Unique Boss has 70% increased Area of Effect",
+                "Rare monsters in area are Shaper-Touched"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Players are Cursed with Vulnerability",
+                "Players are Cursed with Elemental Weakness",
+                "Monsters deal 100% extra Physical Damage as Cold",
+                "Area contains Labyrinth Hazards",
+                "Monsters' Attacks have 60% chance to Impale on Hit",
+                "Players have 27% less Defences"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "29% more Monster Life",
+                "Monsters cannot be Stunned",
+                "Monsters Poison on Hit",
+                "Monsters deal 107% extra Physical Damage as Cold",
+                "Monsters have +1 to Maximum Power Charges",
+                "Monsters gain a Power Charge on Hit",
+                "Monsters take 38% reduced Extra Damage from Critical Strikes",
+                "Area contains Labyrinth Hazards",
+                "All Damage from Monsters' Hits can Poison",
+                "Monsters have 100% increased Poison Duration"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Players are Cursed with Vulnerability",
+                "Players are Cursed with Temporal Chains",
+                "Players are Cursed with Elemental Weakness",
+                "Monsters have +1 to Maximum Endurance Charges",
+                "Monsters have +1 to Maximum Power Charges",
+                "Monsters gain a Power Charge on Hit",
+                "Unique Boss has 35% increased Life",
+                "Unique Boss has 70% increased Area of Effect",
+                "Monsters' Attacks have 60% chance to Impale on Hit",
+                "Monsters gain an Endurance Charge when hit",
+                "Players are assaulted by Bloodstained Sawblades"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Players are Cursed with Vulnerability",
+                "Players are Cursed with Temporal Chains",
+                "Players are Cursed with Elemental Weakness",
+                "92% more Monster Life",
+                "Monsters have +1 to Maximum Frenzy Charges",
+                "Monsters gain a Frenzy Charge on Hit",
+                "Monsters have +100% chance to Suppress Spell Damage",
+                "Buffs on Players expire 100% faster",
+                "Players have 40% less effect of Flasks applied to them"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Players are Cursed with Elemental Weakness",
+                "Rare Monsters have [ElementalThorns|Elemental Thorns] reflecting 1500 Elemental Damage",
+                "Monsters deal 94% extra Physical Damage as Lightning",
+                "Monsters have +1 to Maximum Power Charges",
+                "Monsters gain a Power Charge on Hit",
+                "Rare Monsters have Volatile Cores",
+                "The Maven interferes with Players"
+            ]
+        },
+        {
+            "mods": 8,
+            "explicitMods": [
+                "Area has patches of Burning Ground",
+                "Players are Cursed with Temporal Chains",
+                "Rare Monsters have [PhysicalThorns|Physical Thorns] reflecting 1500 Physical Damage",
+                "Rare Monsters have [ElementalThorns|Elemental Thorns] reflecting 2500 Elemental Damage",
+                "+40% Monster Physical Damage Reduction",
+                "Monsters have +1 to Maximum Power Charges",
+                "Monsters gain a Power Charge on Hit",
+                "Monsters gain 184% of their Physical Damage as Extra Damage of a random Element",
+                "Players have 40% less Cooldown Recovery Rate",
+                "Map Boss is accompanied by a Synthesis Boss"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Players are Cursed with Vulnerability",
+                "Players are Cursed with Temporal Chains",
+                "Players are Cursed with Elemental Weakness",
+                "Monsters have 100% increased Area of Effect",
+                "Monsters fire 2 additional Projectiles",
+                "Area contains Labyrinth Hazards",
+                "Monsters' Attacks have 60% chance to Impale on Hit",
+                "Monsters have 50% increased Accuracy Rating",
+                "Players have 60% reduced effect of Non-Curse Auras from Skills",
+                "Players have -20% to amount of Suppressed Spell Damage Prevented"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "+50% Monster Physical Damage Reduction",
+                "Monsters Poison on Hit",
+                "Monsters gain a Power Charge on Hit",
+                "Unique Boss deals 25% increased Damage",
+                "Unique Boss has 30% increased Attack and Cast Speed",
+                "All Monster Damage can Ignite, Freeze and Shock",
+                "+35% Monster Chaos Resistance",
+                "+55% Monster Elemental Resistances",
+                "All Damage from Monsters' Hits can Poison",
+                "Monsters have 100% increased Poison Duration",
+                "Monsters Ignite, Freeze and Shock on Hit",
+                "Buffs on Players expire 70% faster"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Players have -20% to all maximum Resistances",
+                "+50% Monster Physical Damage Reduction",
+                "Monsters gain an Endurance Charge on Hit",
+                "Unique Bosses are Possessed",
+                "Area contains Labyrinth Hazards",
+                "+35% Monster Chaos Resistance",
+                "+55% Monster Elemental Resistances",
+                "Players have 60% reduced effect of Non-Curse Auras from Skills"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Monsters have 70% chance to Avoid Elemental Ailments",
+                "Monsters have +1 to Maximum Endurance Charges",
+                "Monsters gain an Endurance Charge when hit",
+                "60% less effect of Curses on Monsters",
+                "Monsters gain 87% of their Physical Damage as Extra Chaos Damage",
+                "Players have 25% less Accuracy Rating",
+                "Map Boss is accompanied by a Synthesis Boss"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Players are Cursed with Temporal Chains",
+                "98% more Monster Life",
+                "Monsters have +1 to Maximum Power Charges",
+                "Monsters gain a Power Charge on Hit",
+                "Unique Boss deals 25% increased Damage",
+                "Unique Boss has 30% increased Attack and Cast Speed",
+                "All Monster Damage from Hits always Ignites",
+                "Players have 60% reduced effect of Non-Curse Auras from Skills"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Monsters' skills Chain 3 additional times",
+                "Monsters take 40% reduced Extra Damage from Critical Strikes",
+                "Area contains Labyrinth Hazards",
+                "Monsters' Projectiles can Chain when colliding with Terrain",
+                "Monsters have a 20% chance to Ignite, Freeze and Shock on Hit",
+                "Area contains Unstable Tentacle Fiends",
+                "Buffs on Players expire 100% faster"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Players are Cursed with Temporal Chains",
+                "Monsters have 100% increased Area of Effect",
+                "30% increased Monster Movement Speed",
+                "35% increased Monster Attack Speed",
+                "41% increased Monster Cast Speed",
+                "Monsters fire 2 additional Projectiles",
+                "Monsters Poison on Hit",
+                "All Damage from Monsters' Hits can Poison",
+                "Monsters have 100% increased Poison Duration",
+                "Monsters steal Power, Frenzy and Endurance charges on Hit",
+                "Players have 40% less effect of Flasks applied to them"
+            ]
+        },
+        {
+            "mods": 8,
+            "explicitMods": [
+                "Monsters have 387% increased Critical Strike Chance",
+                "+42% to Monster Critical Strike Multiplier",
+                "Monsters are Hexproof",
+                "Unique Boss deals 25% increased Damage",
+                "Unique Boss has 30% increased Attack and Cast Speed",
+                "Unique Boss has 35% increased Life",
+                "Unique Boss has 70% increased Area of Effect",
+                "Monsters' Attacks have 60% chance to Impale on Hit",
+                "Monsters steal Power, Frenzy and Endurance charges on Hit",
+                "Area contains Unstable Tentacle Fiends",
+                "Players have 40% less Cooldown Recovery Rate"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Players are Cursed with Vulnerability",
+                "Players are Cursed with Temporal Chains",
+                "Players are Cursed with Elemental Weakness",
+                "Players have -12% to all maximum Resistances",
+                "Unique Boss deals 25% increased Damage",
+                "Unique Boss has 30% increased Attack and Cast Speed",
+                "Monsters' Attacks have 60% chance to Impale on Hit",
+                "Monsters gain 186% of their Physical Damage as Extra Damage of a random Element",
+                "Players have 30% less Area of Effect"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Players are Cursed with Vulnerability",
+                "Players are Cursed with Temporal Chains",
+                "Players are Cursed with Elemental Weakness",
+                "44% more Monster Life",
+                "22% increased Monster Damage",
+                "30% increased Monster Movement Speed",
+                "41% increased Monster Attack Speed",
+                "37% increased Monster Cast Speed",
+                "Monsters steal Power, Frenzy and Endurance charges on Hit",
+                "Players are targeted by a Meteor when they use a Flask"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Area has patches of Chilled Ground",
+                "Players are Cursed with Enfeeble",
+                "Monsters have +1 to Maximum Power Charges",
+                "Monsters gain a Power Charge on Hit",
+                "Unique Boss has 35% increased Life",
+                "Unique Boss has 70% increased Area of Effect",
+                "Unique Bosses are Possessed",
+                "Monsters gain 35% of their Physical Damage as Extra Chaos Damage",
+                "Monsters Inflict Withered for 2 seconds on Hit"
+            ]
+        },
+        {
+            "mods": 5,
+            "explicitMods": [
+                "25% increased Monster Movement Speed",
+                "38% increased Monster Attack Speed",
+                "43% increased Monster Cast Speed",
+                "Monsters have +1 to Maximum Endurance Charges",
+                "Monsters gain an Endurance Charge when hit",
+                "Monsters inflict 2 Grasping Vines on Hit",
+                "Monsters gain 71% of Maximum Life as Extra Maximum Energy Shield",
+                "Area contains Unstable Tentacle Fiends"
+            ]
+        },
+        {
+            "mods": 6,
+            "explicitMods": [
+                "Rare Monsters have [ElementalThorns|Elemental Thorns] reflecting 1500 Elemental Damage",
+                "+50% Monster Physical Damage Reduction",
+                "Monsters Poison on Hit",
+                "Monsters have +1 to Maximum Power Charges",
+                "Monsters gain a Power Charge on Hit",
+                "+35% Monster Chaos Resistance",
+                "+55% Monster Elemental Resistances",
+                "All Damage from Monsters' Hits can Poison",
+                "Monsters have 100% increased Poison Duration",
+                "Monsters have +100% chance to Suppress Spell Damage",
+                "The Maven interferes with Players"
+            ]
+        },
+        {
+            "mods": 4,
+            "explicitMods": [
+                "Area is inhabited by ranged monsters",
+                "Players are Cursed with Enfeeble",
+                "Monsters steal Power, Frenzy and Endurance charges on Hit",
+                "Players cannot Regenerate Life, Mana or Energy Shield"
+            ]
+        },
+        {
+            "mods": 4,
+            "explicitMods": [
+                "Area has increased monster variety",
+                "Monsters take 40% reduced Extra Damage from Critical Strikes",
+                "Monsters cannot be Taunted",
+                "Monsters gain 47% of Maximum Life as Extra Maximum Energy Shield",
+                "Monsters' Action Speed cannot be modified to below Base Value\nMonsters' Movement Speed cannot be modified to below Base Value"
+            ]
+        },
+        {
+            "mods": 4,
+            "explicitMods": [
+                "Players are Cursed with Temporal Chains",
+                "Monsters are Hexproof",
+                "Players have 40% less Cooldown Recovery Rate",
+                "Players cannot Regenerate Life, Mana or Energy Shield"
+            ]
+        },
+        {
+            "mods": 4,
+            "explicitMods": [
+                "Players cannot inflict Exposure",
+                "Players are Cursed with Elemental Weakness",
+                "Monsters deal 94% extra Physical Damage as Lightning",
+                "+25% Monster Chaos Resistance",
+                "+40% Monster Elemental Resistances"
+            ]
+        },
+        {
+            "mods": 2,
+            "explicitMods": ["42% more Monster Life", "Monsters gain an Endurance Charge on Hit"]
+        },
+        { "mods": 0, "explicitMods": [] }
+    ]
+}

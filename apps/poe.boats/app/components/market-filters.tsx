@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Form, useNavigation, useSubmit } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
 import { MarketGemFilters } from "~/components/market-gem-filters";
+import { MarketMapFilters } from "~/components/market-map-filters";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -135,6 +136,9 @@ export function MarketFiltersForm({
                       gemQuality: filters.gemQuality,
                       gemTransfigured: filters.gemTransfigured,
                       gemVaal: filters.gemVaal,
+                      mapMods: filters.mapMods,
+                      mapQuantity: filters.mapQuantity,
+                      mapDelirium: filters.mapDelirium,
                       page: filters.page,
                       identified: filters.identified,
                       corrupted: filters.corrupted,
@@ -221,6 +225,9 @@ export function MarketFiltersForm({
                 </div>
             ) : null}
             {!item && gems ? <MarketGemFilters filters={filters} onChange={apply} /> : null}
+            {!item && filters.category === "maps" ? (
+                <MarketMapFilters filters={filters} onChange={apply} />
+            ) : null}
             {!item && baseClasses ? (
                 <div className="flex flex-wrap items-end gap-3">
                     {select("baseClass", "Type", {

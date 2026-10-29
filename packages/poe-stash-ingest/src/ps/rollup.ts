@@ -87,9 +87,11 @@ WITH observations AS (
         AND ($2 IS NULL OR l.league = $2)
         -- Defer rolling up unidentified items whose icon_asset has not
         -- been basemapped yet. They stay in ps_listing_hour and become eligible
-        -- once an identified instance teaches the basemap.
+        -- once an identified instance teaches the basemap. Unidentified maps are
+        -- keyed by base type, not art, so they need no basemap.
         AND (
             l.identified
+            OR NOT starts_with(l.item_key, 'unid:')
             OR (l.icon_asset IS NOT NULL AND b.name IS NOT NULL)
         )
 ),

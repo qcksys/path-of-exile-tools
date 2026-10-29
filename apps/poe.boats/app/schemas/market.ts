@@ -1,4 +1,11 @@
-import { GEM_LEVEL_BANDS, GEM_QUALITY_BANDS, parseGemBandFilter } from "@poe-tools/market";
+import {
+    GEM_LEVEL_BANDS,
+    GEM_QUALITY_BANDS,
+    MAP_DELIRIUM_BANDS,
+    MAP_MOD_BANDS,
+    MAP_QUANTITY_BANDS,
+    parseGemBandFilter,
+} from "@poe-tools/market";
 import { z } from "zod";
 import {
     MARKET_BASE_ATTRIBUTE_SETS,
@@ -72,6 +79,16 @@ const gemBandFilter = (bands: readonly string[], axis: string) =>
             `Skill gem ${axis} bands (${bands.join(", ")}) to include, comma-separated; prefix one with - to exclude it. Set, only gem markets are listed`,
         );
 
+const mapBandFilter = (bands: readonly string[], axis: string, note = "") =>
+    z
+        .string()
+        .max(60)
+        .default("")
+        .refine((value) => parseGemBandFilter(value, bands) !== null, `Unknown map ${axis} band`)
+        .describe(
+            `Map ${axis} bands (${bands.join(", ")}) to include, comma-separated; prefix one with - to exclude it. Set, only tier and Nightmare map markets are listed${note}`,
+        );
+
 /** The stash tabs whose listings markets show; listings captured before tabs were recorded show only under `all`. */
 export const MARKET_TABS = {
     merchant: "Merchant tabs",
@@ -112,6 +129,13 @@ export const marketFiltersSchema = z.object({
         .describe(
             "Only Vaal skill gems (true) or only other gems (false); either lists only gem markets",
         ),
+    mapMods: mapBandFilter(MAP_MOD_BANDS, "mod count", "; unidentified maps have no mod count"),
+    mapQuantity: mapBandFilter(
+        MAP_QUANTITY_BANDS,
+        "item quantity %",
+        "; only identified tier 16 and Nightmare maps have a quantity band",
+    ),
+    mapDelirium: mapBandFilter(MAP_DELIRIUM_BANDS, "delirium %"),
     item: z.string().max(255).optional(),
     identified: z.enum(["true", "false"]).default("true"),
     corrupted: z.enum(["true", "false"]).default("false"),
@@ -374,13 +398,18 @@ export function marketLink(
         const bound = filters[param];
         if (bound !== undefined) params.set(param, String(bound));
     }
-    // Gem filters would empty any other category's list.
+    // Gem and map filters would empty any other category's list.
     if (filters.category === "gems") {
         if (filters.gemLevel) params.set("gemLevel", filters.gemLevel);
         if (filters.gemQuality) params.set("gemQuality", filters.gemQuality);
         if (filters.gemTransfigured !== "all")
             params.set("gemTransfigured", filters.gemTransfigured);
         if (filters.gemVaal !== "all") params.set("gemVaal", filters.gemVaal);
+    }
+    if (filters.category === "maps") {
+        if (filters.mapMods) params.set("mapMods", filters.mapMods);
+        if (filters.mapQuantity) params.set("mapQuantity", filters.mapQuantity);
+        if (filters.mapDelirium) params.set("mapDelirium", filters.mapDelirium);
     }
     for (const param of MARKET_BASE_FILTERS) if (filters[param]) params.set(param, filters[param]);
     if (item) {

@@ -2,6 +2,7 @@ import {
     exchangeCurrencyId,
     exchangeSnapshotSchema,
     gemVariantValues,
+    mapVariantValues,
     marketObservationRange,
     TRANSFIGURED_GEMS,
     VAAL_GEMS,
@@ -124,6 +125,15 @@ function gemFilter(daily: DailyTable, filters: MarketFilters) {
     if (!values) return undefined;
     return values.length
         ? and(eq(daily.signatureKind, "gem"), inArray(daily.signatureValue, values))
+        : sql`false`;
+}
+
+/** Map mod count, quantity and delirium band filters list only the map markets they allow. */
+function mapFilter(daily: DailyTable, filters: MarketFilters) {
+    const values = mapVariantValues(filters);
+    if (!values) return undefined;
+    return values.length
+        ? and(eq(daily.signatureKind, "map"), inArray(daily.signatureValue, values))
         : sql`false`;
 }
 
@@ -528,6 +538,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 days,
                 marketCategoryFilter(filters, daily.baseType, daily.signatureKind),
                 gemFilter(daily, filters),
+                mapFilter(daily, filters),
                 gemListFilter(daily, filters.gemTransfigured, TRANSFIGURED_GEMS),
                 gemListFilter(daily, filters.gemVaal, VAAL_GEMS),
                 filters.identification === "all"
