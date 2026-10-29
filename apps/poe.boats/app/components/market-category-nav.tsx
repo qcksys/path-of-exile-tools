@@ -103,7 +103,11 @@ export function MarketCategoryNav<Category extends string>({
     );
 }
 
-/** A market page's content, dimmed and marked busy while another market page loads. */
+/**
+ * A market page's content, marked busy while another market page loads. Everything but the
+ * filter form dims, and every control stays usable, so a filter changed while an earlier change
+ * loads replaces that navigation.
+ */
 export function MarketPageContent({ prefix, children }: { prefix: string; children: ReactNode }) {
     const pendingPath = usePendingPath();
     const loading = pendingPath?.startsWith(prefix) ?? false;
@@ -111,8 +115,8 @@ export function MarketPageContent({ prefix, children }: { prefix: string; childr
         <div
             aria-busy={loading || undefined}
             className={cn(
-                "relative min-w-0 space-y-5 transition-opacity",
-                loading && "pointer-events-none opacity-50",
+                "relative min-w-0 space-y-5 *:transition-opacity",
+                loading && "[&>:not(form,[aria-hidden])]:opacity-50",
             )}
         >
             <div
