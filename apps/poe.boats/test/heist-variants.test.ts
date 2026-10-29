@@ -55,13 +55,16 @@ const blueprint = (wings: string, enchantMods?: string[], areaLevel = "83") =>
         enchantMods ? { enchantMods } : {},
     );
 
-it("splits area level 83 contracts by their job requirement", () => {
+it("splits area level 83 contracts by the job they require, whatever its level", () => {
     const item = contract("83", requires(2, "Trap Disarmament"));
     expect(shouldCapture(item)).toBe(true);
     expect(itemKey(item)).toBe("Contract: Bunker");
     const signature = extractModSignature(item);
-    expect(signature).toEqual({ kind: "heist", job: "Trap Disarmament", level: 2 });
-    expect(signatureValue(signature)).toBe("Trap Disarmament (Level 2)");
+    expect(signature).toEqual({ kind: "heist", job: "Trap Disarmament" });
+    expect(signatureValue(signature)).toBe("Trap Disarmament");
+    expect(
+        signatureValue(extractModSignature(contract("83", requires(5, "Trap Disarmament")))),
+    ).toBe("Trap Disarmament");
 });
 
 it("splits blueprints by wings revealed and each enchant", () => {

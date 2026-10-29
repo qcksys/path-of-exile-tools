@@ -9,29 +9,26 @@ import type { ModExtractor } from "#src/shared/mod-extractors/types.ts";
 
 const REQUIREMENT = "Requires {1} (Level {0})";
 
-/** A contract's single job requirement, e.g. `{ job: "Lockpicking", level: 5 }`. */
-function contractRequirement(item: Item) {
-    const values = item.properties?.find((property) => property.name === REQUIREMENT)?.values;
-    const level = Number(values?.[0]?.[0]);
-    const job = values?.[1]?.[0];
-    return job && Number.isSafeInteger(level) ? { job, level } : null;
+/** The job a contract requires, e.g. `Lockpicking`, whatever its level. */
+function contractJob(item: Item) {
+    return item.properties?.find((property) => property.name === REQUIREMENT)?.values[1]?.[0];
 }
 
 /**
- * Contracts trade by their job requirement; blueprints by wings revealed and their enchants
+ * Contracts trade by the job they require; blueprints by wings revealed and their enchants
  * (e.g. `Heist Targets are always Thieves' Trinkets`), each enchant set its own market.
  */
 export const heistExtractor: ModExtractor = {
     kind: "heist",
     value: (signature) =>
         signature.job
-            ? `${signature.job} (Level ${signature.level})`
+            ? String(signature.job)
             : [`${signature.wings} wings`, ...(signature.enchants as string[])].join(" · "),
     matches: isHeistMarketItem,
     extract(item) {
         if (isHeistContract(item)) {
-            const requirement = contractRequirement(item);
-            return requirement && { kind: "heist", ...requirement };
+            const job = contractJob(item);
+            return job ? { kind: "heist", job } : null;
         }
         if (!isHeistBlueprint(item)) return null;
         return {
