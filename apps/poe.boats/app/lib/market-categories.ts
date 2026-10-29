@@ -198,9 +198,10 @@ export function marketBaseCategory(
         )
     )
         return "weapons";
+    if (itemClass === "Quiver") return "weapons";
     if (["Body Armour", "Boots", "Gloves", "Helmet", "Shield", "Focus"].includes(itemClass))
         return "armour";
-    if (["Amulet", "Ring", "Belt", "Quiver", "Trinket"].includes(itemClass)) return "accessories";
+    if (["Amulet", "Ring", "Belt", "Trinket"].includes(itemClass)) return "accessories";
     if (itemClass.endsWith("Flask")) return "flasks";
     if (itemClass.includes("Jewel")) return "jewels";
     if (itemClass.endsWith("Skill Gem")) return "gems";
