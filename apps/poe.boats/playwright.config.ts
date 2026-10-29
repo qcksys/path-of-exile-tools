@@ -10,8 +10,7 @@ export default defineConfig({
     testIgnore: "market.spec.ts",
     forbidOnly: !!process.env.CI,
     fullyParallel: true,
-    // Tests share one workerd server; at 4 workers, crafting catalog loads outlast the 5 s expect timeout.
-    workers: 2,
+    workers: 1,
     use: {
         baseURL,
         trace: "retain-on-failure",
