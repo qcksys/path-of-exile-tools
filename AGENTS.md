@@ -47,6 +47,10 @@ Do **not** use `vp lint` / `vp fmt` / `vp check` for this repo — those invoke 
 
 This applies even for read-only/diagnostic commands — e.g. use `vp exec biome check --max-diagnostics=200`, not `npx biome`.
 
+## Public repository
+
+This repository is public, and so is everything that leaves your machine: docs, code comments, changesets (they become `CHANGELOG.md`), commit messages and PR text. Describe the maintainer's deployment generically, with placeholders such as `<host>`, `<user>`, `<vault>` and `<bucket>`. Keep the specifics (host names, home paths, disk layouts, 1Password vault and item IDs, bucket and account names, figures measured on one machine) in your own memory or notes outside the repository. The `OP_ITEM` references in the `.env.*` files are the exception: Varlock needs them to resolve secrets.
+
 ## Agent configuration
 
 Edit shared MCP servers in `.agents/agents.json`, then run `vp run agents:sync` and `vp run agents:check`. The tool-specific MCP files and root `CLAUDE.md` are generated; edit instructions here in `AGENTS.md`.

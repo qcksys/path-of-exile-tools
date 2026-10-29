@@ -5,10 +5,16 @@ A Vite+ and pnpm monorepo containing:
 | Package | Purpose |
 | --- | --- |
 | `apps/poe.boats` | React Router app on Cloudflare Workers, with Better Auth and MySQL |
+| `apps/poe.boats-extension` | Chrome and Firefox extension that prices trade-site listings with poe.boats data |
 | `packages/poe-api-client` | Typed Path of Exile API client |
 | `packages/poe-stash-ingest` | DuckDB ingestor that pushes hourly summaries to poe.boats |
 | `packages/poe-stash-tracker` | Local SQLite stash tracker |
 | `packages/poe-game-data` | Extract and validate PoE 1/2 item bases, mods, weights, text, and images |
+| `packages/poe-1-data`, `packages/poe-2-data` | Committed client data for each game, with TypeScript types and Zod schemas |
+| `packages/poe-item-query` | Shared item facts and crafting, market, and trade queries |
+| `packages/poe-market` | Equipment market cohorts and asking-price summaries |
+| `packages/poe-trade-bridge` | Message and listing schemas shared by poe.boats and the extension |
+| `packages/poe-cli` | Shared conventions for the repository's command-line tools |
 
 ## Crafting workbench
 
@@ -90,7 +96,7 @@ PoE 1's crafting workbench can recombine an inventory donor with the current ite
 
 Open `/1/recombinator` from the Path of Exile 1 tools page. Search for a particular base, a generic armour attribute combination (STR, DEX, INT and their hybrids, per armour slot), or a weapon category such as Staff, Warstaff, One Hand Sword or Two Hand Sword. Generic choices use the tags shared by the generated bases in that category; only combinations present in the data are offered. Select up to three prefixes and three suffixes from the searchable list of natural, uninfluenced mods valid for that base and item level. Selecting a different base or level clears selected catalog mods. Custom modifiers remain available under the advanced accordion.
 
-The catalog is exported from the committed `packages/poe-1-data` outputs, with hashes checked against the package manifest. Eligible equipment classes come from the build's `RecombinableClasses` table in `crafting-data.json`; the exporter checks that supplement's build and source identities too. App builds refresh it automatically. Run `pnpm --filter poe-boats game-data:recombinator` after regenerating that package to refresh `apps/poe.boats/public/game-data/recombinator-poe1.json` during development. No local extraction snapshot is required.
+The catalog is exported from the committed `packages/poe-1-data` outputs, with hashes checked against the package manifest. Eligible equipment classes come from the build's `RecombinableClasses` table in `crafting-data.json`; the exporter checks that supplement's build and source identities too. App builds refresh it automatically. Run `vp run poe-boats#game-data:recombinator` after regenerating that package to refresh `apps/poe.boats/public/game-data/recombinator-poe1.json` during development. No local extraction snapshot is required.
 
 Connect items or earlier results in up to eight crafting steps. Load example creates a multi-step plan using actual catalog mods. Each step reports every modifier outcome, affix-count totals, and the probability of a selected target; failures from earlier steps remain in the calculation.
 
@@ -153,15 +159,7 @@ The [game-data pipeline guide](packages/poe-game-data/README.md) covers GGPK, lo
 
 [Varlock](https://varlock.dev/) loads each package's `.env.schema`, validates values, and resolves secrets from [1Password](https://varlock.dev/plugins/1password/). `APP_ENV` selects `local` (the default), `test`, `dev`, or `prod`.
 
-Each package has separate dev and prod records in vault `cgq6s2pwrz5g3jcj6zoreqvjni`, tagged `QckSys/poe`:
-
-| Package | Dev record | Prod record |
-| --- | --- | --- |
-| App | `poe.boats app dev` / `xjy43xo3efabt3ajhhr4ppp4o4` | `poe.boats app prod` / `kkfrsrvqnifcjeagnhuwkwpgoe` |
-| Ingestor | `poe.boats ingest dev` / `w7ykovvpq4qlhmnqleicnjtmxa` | `poe.boats ingest prod` / `zgoprixk57vs3ymsfveckbseui` |
-| Tracker | `poe.boats tracker dev` / `nwju225vledjtkrfpv4m5dmra4` | `poe.boats tracker prod` / `mu2p7icozscnnpkzfqea7o7bza` |
-
-The default `local` environment uses each package's dev record. The web app's hostname is `poe-boats.localhost` locally, `dev.poe.boats` in dev, and `poe.boats` in prod.
+Each package's `.env.schema` names its 1Password item in `OP_ITEM`, and its `.env.dev` and `.env.prod` files override that item for those environments where they exist. These items are in the maintainer's 1Password account. Without access, use the inert `test` environment described in [Install and validate](#install-and-validate). The web app's hostname is `poe-boats.localhost` locally, `dev.poe.boats` in dev, and `poe.boats` in prod.
 
 Populate the fields defined by each package's schema:
 
@@ -172,7 +170,7 @@ Populate the fields defined by each package's schema:
 
 Preserve existing auth and ingest secrets when migrating. Confirm which database each existing credential targets before copying it to an environment. Once values are safely stored and validated, remove the app's old `.dev.vars`; the Varlock Cloudflare integration replaces that mechanism. Existing ingestor `.env` files override schema values, so remove migrated credentials from those files as well.
 
-For local development, install the 1Password CLI, sign in, and enable its desktop app integration. Local commands allow desktop authentication for every selected environment. The default `local` environment uses the dev item. Put local non-secret overrides in an ignored `.env.local` in the relevant package. Never commit plaintext secrets.
+For local development, install the 1Password CLI, sign in, and enable its desktop app integration. Local commands allow desktop authentication for every selected environment. Put local non-secret overrides in an ignored `.env.local` in the relevant package. Never commit plaintext secrets.
 
 ```sh
 vp run -r env:check
@@ -226,6 +224,8 @@ gh secret set DATABASE_URL --env prod --repo qcksys/path-of-exile-tools
 The workflow uses the official Vite+ setup action, a frozen pnpm lockfile, and commit-pinned actions. Builds and migrations use inert `.env.test` credentials with the selected environment's public hostname, apart from that `DATABASE_URL`. GitHub does not access 1Password, validate other deployment credentials, or synchronize app secrets.
 
 Code deployments use [`wrangler deploy --keep-vars`](https://developers.cloudflare.com/workers/wrangler/commands/workers/#deploy) to preserve the worker's existing variables and secrets. The committed Wrangler configuration still defines the environment's public hostname and name.
+
+The ingestion worker image is published from `dev` and rolled out by a host updater; see [automatic dev ingestion deployment](deploy/ingest/README.md) and [the ingestion server guide](docs/ingestion-server.md).
 
 ## Manage secrets locally
 

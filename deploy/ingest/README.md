@@ -26,7 +26,7 @@ dedicated `read:packages` credential. Never put registry or ingestion credential
 
 ## Host installation
 
-The deployed directory is `/home/<user>/poe-ingest`. It contains these files:
+The deployed directory is `~/poe-ingest` in the deployment account's home. It contains these files:
 
 ```text
 poe-ingest/
@@ -69,11 +69,10 @@ INGEST_CURRENCY_HOURS=1
 
 The PC worker also uploads its raw page archive (`/backups/raw`, see
 [Raw page archive](../../packages/poe-stash-ingest/README.md#raw-page-archive)) to Backblaze B2.
-The dev bucket is the private `<dev bucket>` (prod: `<prod bucket>`, with a key of the same
-name in the prod ingest item); its application key needs `listBuckets` and
-`writeFiles` on it. The key ID and key are `B2_KEY_ID` and `B2_APPLICATION_KEY` in the
-ingestor's 1Password item. Write the key
-to the secret file from a machine signed in to 1Password:
+Use a private bucket per environment; its application key needs `listBuckets` and
+`writeFiles` on it. Keep the key ID and key as `B2_KEY_ID` and `B2_APPLICATION_KEY` in the
+environment's ingestor 1Password item. Write the key to the secret file from a machine
+signed in to 1Password:
 
 ```sh
 op read "op://<vault>/<ingest item>/B2_APPLICATION_KEY" | ssh <host> 'umask 077; cat > ~/poe-ingest/secrets/pc_b2_application_key'
@@ -91,10 +90,9 @@ B2_PREFIX=psapi/pc/
 The secret file must exist before this Compose file is installed, even while upload is off.
 Without `B2_KEY_ID` the worker still archives raw pages locally.
 
-Preserve the existing client ID, contact and version. The PC worker uses `POE_REALM=pc`,
-`INGEST_LEAGUE=Allflame`, and `INGEST_WORKER_ID=<host>-dev-pc-allflame`. The second uses
-`POE_REALM=poe2`, `INGEST_LEAGUE=Forbidden Rites`, and
-`INGEST_WORKER_ID=<host>-dev-poe2-forbidden-rites`. Update these scopes deliberately when
+Preserve the existing client ID, contact and version. The PC worker uses `POE_REALM=pc`
+and the second `POE_REALM=poe2`; each sets its current `INGEST_LEAGUE` and a unique
+`INGEST_WORKER_ID` such as `<host>-dev-pc-<league>`. Update these scopes deliberately when
 leagues change; retain each league's own database.
 
 Stop the original workers and copy each entire `/data` directory, including any WAL,
@@ -115,8 +113,8 @@ systemctl --user start poe-ingest-update.service
 journalctl --user -u poe-ingest-update.service -n 50 --no-pager
 ```
 
-Linger keeps the timer active after logout and starts it at boot. The existing unrelated
-Compose project on the host is not involved. Host Compose/updater changes need to be installed
+Linger keeps the timer active after logout and starts it at boot. Other Compose projects
+on the host are not involved. Host Compose/updater changes need to be installed
 from a reviewed revision; automatic updates replace the ingestion image.
 Deploy receiver support for `view=workers` before installing this updater on the host.
 
@@ -141,14 +139,14 @@ images. Monitor free space and arrange off-host data backups as described in the
 Each worker keeps its live database in `~/poe-ingest/data/<realm>` and writes daily Parquet
 archives of old rows to `/backups`, mounted from `~/poe-ingest/backups/<realm>` (see
 [Archiving old data](../../packages/poe-stash-ingest/README.md#archiving-old-data)). Give each
-folder its own filesystem so neither can fill the root filesystem. For example:
+folder its own filesystem so neither can fill the root filesystem:
 
 | Folder | Device | Why |
 | --- | --- | --- |
 | `data` | An SSD volume | DuckDB makes many random reads and writes |
 | `backups` | A hard disk is enough | archives are written once, in order, and rarely read |
 
-The archive disk is mounted with `nofail`, so a failed disk does not stop the host booting:
+Mount the archive disk with `nofail`, so a failed disk does not stop the host booting:
 
 ```sh
 UUID=<archive disk UUID> /home/<user>/poe-ingest/backups ext4 defaults,noatime,nofail,x-systemd.device-timeout=15s 0 2
@@ -156,8 +154,8 @@ UUID=<archive disk UUID> /home/<user>/poe-ingest/backups ext4 defaults,noatime,n
 
 Create `backups/pc` and `backups/poe2` owned by UID 1000 on the mounted disk before installing
 this Compose file; otherwise Docker creates them owned by root and the worker reports a failed
-delivery stage on each archive attempt. `PS_ARCHIVE_MAX_GB` must stay
-below the space the live database can use on its own filesystem.
+delivery stage on each archive attempt. `PS_ARCHIVE_MAX_GB` must stay below the space the live
+database can use on its own filesystem.
 
 Run the updater tests on Linux with:
 
