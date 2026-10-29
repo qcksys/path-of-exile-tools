@@ -6,12 +6,13 @@ import {
     ExchangeItemName,
     ExchangePair,
     ExchangePrice,
-    ExchangeTrend,
+    exchangeChange,
 } from "~/components/market-exchange";
 import { marketUtc } from "~/components/market-filters";
+import { MarketRecentSales } from "~/components/market-recent-sales";
 import {
     MARKET_EXCHANGE_DAYS,
-    type MarketExchangeRow,
+    type MarketExchangeListRow,
     type MarketExchangeUnit,
     marketExchangeUnitId,
 } from "~/lib/market-exchange";
@@ -20,7 +21,13 @@ import type { MarketPriceRates } from "~/lib/market-price-currencies";
 
 type Game = "poe1" | "poe2";
 
-const column = dataTableColumns<MarketExchangeRow>();
+const column = dataTableColumns<MarketExchangeListRow>();
+
+/** Rises in green, falls in red, and a change that rounds to 0% muted. */
+function changeTone(change: number) {
+    if (Math.round(change * 100) === 0) return "text-muted-foreground";
+    return change > 0 ? "text-success" : "text-destructive";
+}
 
 function exchangeColumns(
     game: Game,
@@ -65,6 +72,14 @@ function exchangeColumns(
                         <p className={row.current ? "font-semibold" : "text-muted-foreground"}>
                             <ExchangePrice price={row.price} rates={rates} game={game} />
                         </p>
+                        {row.change === null ? null : (
+                            <p className="text-xs text-muted-foreground">
+                                <span className={changeTone(row.change)}>
+                                    {exchangeChange(row.change)}
+                                </span>{" "}
+                                in {MARKET_EXCHANGE_DAYS} days
+                            </p>
+                        )}
                         {row.current ? null : (
                             <p className="text-xs text-muted-foreground">
                                 Last traded {row.hour === null ? "—" : marketUtc(row.hour)}
@@ -86,14 +101,13 @@ function exchangeColumns(
                 );
             },
         }),
-        column.accessor((row) => row.change ?? undefined, {
-            id: "change",
-            header: `Last ${MARKET_EXCHANGE_DAYS} days`,
+        column.accessor((row) => row.recentVolume.daily.reduce((sum, units) => sum + units, 0), {
+            id: "traded",
+            header: "Units traded",
             sortDescFirst: true,
-            sortUndefined: "last",
             enableColumnFilter: false,
             cell: ({ row: { original: row } }) => (
-                <ExchangeTrend history={row.history} change={row.change} />
+                <MarketRecentSales sales={row.recentVolume} label="units traded" />
             ),
         }),
         column.accessor((row) => row.volume ?? undefined, {
@@ -134,7 +148,7 @@ export function MarketExchangeTable({
     itemLink,
 }: {
     label: string;
-    rows: MarketExchangeRow[];
+    rows: MarketExchangeListRow[];
     game: Game;
     unit: MarketExchangeUnit;
     rates: MarketPriceRates;

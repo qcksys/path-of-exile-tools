@@ -83,6 +83,10 @@ export function marketFixture(
                           volume: 1_500,
                           history: [0.0016, null, null, null, null, null, 0.002],
                           change: 0.25,
+                          recentVolume: {
+                              hourly: [...Array<number>(22).fill(0), 500, 1_500],
+                              daily: [4_000, 0, 0, 0, 0, 0, 2_000],
+                          },
                           pair: {
                               quoteId: "Metadata/Items/Currency/CurrencyRerollRare",
                               name: "Chaos Orb",
@@ -198,8 +202,11 @@ export function marketExchangeFixture(
     const divine = "Metadata/Items/Currency/CurrencyModValues";
     const wisdom = "Metadata/Items/Currency/CurrencyIdentification";
     const hour = 1_792_836_000;
-    const exchange = marketFixture({ league: input.league || "Allflame", category: "currency" })
-        .exchange[0]!;
+    // The item page's row has no list-only recent volume.
+    const { recentVolume: _, ...exchange } = marketFixture({
+        league: input.league || "Allflame",
+        category: "currency",
+    }).exchange[0]!;
     return {
         realm: input.realm ?? "pc",
         league: input.league || "Allflame",

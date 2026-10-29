@@ -1,4 +1,4 @@
-import { marketNumber as number } from "~/lib/market-number";
+import { marketCompactNumber as compact, marketNumber as number } from "~/lib/market-number";
 
 const WINDOWS = [
     { label: "6h", name: "6 hours", points: (sales: RecentSales) => sales.hourly.slice(-6) },
@@ -45,8 +45,17 @@ function SalesBars({ values }: { values: number[] }) {
     );
 }
 
-/** Likely sales in the latest 6 hours, 24 hours and 7 UTC days, each as a total and bar sparkline. */
-export function MarketRecentSales({ sales }: { sales: RecentSales }) {
+/**
+ * Counts in the latest 6 hours, 24 hours and 7 UTC days, each as a total and bar sparkline:
+ * likely sales for stash markets, units traded for exchange items.
+ */
+export function MarketRecentSales({
+    sales,
+    label = "likely sales",
+}: {
+    sales: RecentSales;
+    label?: string;
+}) {
     return (
         <dl className="grid grid-cols-[auto_auto_auto] items-center gap-x-2 gap-y-0.5 text-xs">
             {WINDOWS.map((window) => {
@@ -63,9 +72,9 @@ export function MarketRecentSales({ sales }: { sales: RecentSales }) {
                             <SalesBars values={values} />
                             <span
                                 className="text-right font-semibold tabular-nums"
-                                title={`${number(total)} likely sales in the last ${window.name}`}
+                                title={`${number(total)} ${label} in the last ${window.name}`}
                             >
-                                {number(total)}
+                                {compact(total)}
                             </span>
                         </dd>
                     </div>
