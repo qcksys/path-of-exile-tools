@@ -164,7 +164,7 @@ describe("public stash lifecycle", () => {
         ["Forbidden Shako", "Socketed Gems are Supported by Level 35 Ice Bite"],
         [
             "Impossible Escape",
-            "Passives in Radius of Iron Reflexes can be Allocated without being connected to your tree",
+            "Passive Skills in Radius of Iron Reflexes can be Allocated\nwithout being connected to your tree",
         ],
         ["Watcher's Eye", "20% increased Fire Damage while affected by Anger"],
     ])("preserves %s signatures across current and legacy payloads", (name, mod) => {

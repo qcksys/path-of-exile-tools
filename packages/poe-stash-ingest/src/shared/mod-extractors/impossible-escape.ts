@@ -3,8 +3,8 @@ import { isUniqueItem } from "#src/shared/capture.ts";
 import { explicitModLines } from "#src/shared/mod-extractors/lines.ts";
 import type { ModExtractor, ModSignature } from "#src/shared/mod-extractors/types.ts";
 
-// "Passives in Radius of {Keystone} can be Allocated without being connected to your tree"
-const RE = /Passives in Radius of ([A-Za-z' ]+?) can be Allocated/;
+// "Passive Skills in Radius of {Keystone} can be Allocated\nwithout being connected to your tree"
+const RE = /Passive Skills in Radius of ([A-Za-z' ]+?) can be Allocated/;
 
 export const impossibleEscapeExtractor: ModExtractor = {
     kind: "impossible-escape",

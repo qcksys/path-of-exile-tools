@@ -50,10 +50,21 @@ const lightOfMeaningStat = capture(
     (stat) => stat[0]!.toUpperCase() + stat.slice(1),
 );
 
+/** "+5 to Strength" and "+40 to maximum Life" → "Life / Strength", whatever order they are listed in. */
+const splitPersonalityStats: Split = (lines) => {
+    const stats = lines
+        .filter((line) => !line.startsWith("This Jewel's Socket has"))
+        .map((line) => line.match(/^[+-]?[\d.]+%? (?:to |increased )?(?:maximum )?(.+)$/)?.[1])
+        .filter((stat) => stat !== undefined)
+        .map((stat) => stat[0]!.toUpperCase() + stat.slice(1))
+        .sort();
+    return stats.length > 0 ? stats.join(" / ") : undefined;
+};
+
 /**
  * Uniques whose rolled mods make separately priced markets, keyed by unique name. The list and
  * the variant labels follow poe.ninja's `variant` splits (checked 2026-10-27 in Allflame), plus
- * The Light of Meaning, Sublime Vision and Thread of Hope, which poe.ninja does not split; the
+ * Split Personality, The Light of Meaning, Sublime Vision and Thread of Hope, which poe.ninja does not split; the
  * `foulborn` extractor adds these labels to Foulborn copies.
  */
 export const UNIQUE_MOD_SPLITS: Record<string, Split> = {
@@ -78,6 +89,8 @@ export const UNIQUE_MOD_SPLITS: Record<string, Split> = {
     ),
     "Ralakesh's Impatience": capture(/Count as having maximum number of (\w+) Charges/),
     "Shroud of the Lightless": abyssalSockets,
+    // Two rolled stats; every pair is its own market.
+    "Split Personality": splitPersonalityStats,
     // Every aura but the one it rolled is disabled.
     "Sublime Vision": capture(/^Aura Skills other than (.+) are Disabled$/),
     "The First Crest": capture(/Aureus Coins are converted to (.+?) upon defeating/),
