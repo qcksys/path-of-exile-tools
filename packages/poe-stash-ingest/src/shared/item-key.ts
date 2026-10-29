@@ -1,6 +1,12 @@
 import type { Item } from "@poe-tools/api-client";
 import { gemMarketKey } from "@poe-tools/market";
-import { isGemItem, isMapItem, isUniqueItem } from "#src/shared/capture.ts";
+import {
+    HEIST_BLUEPRINT_KEY,
+    isGemItem,
+    isHeistBlueprint,
+    isMapItem,
+    isUniqueItem,
+} from "#src/shared/capture.ts";
 import { type ModSignature, signatureValue } from "#src/shared/mod-extractors/index.ts";
 
 export interface SignatureBreakout {
@@ -51,6 +57,7 @@ export function itemLinks(item: Item): number {
  *                         `Vaal Arc (Arc of Surging)` for a transfigured Vaal gem
  *   - Map               → `${baseType}` (`Map (Tier 16)`), identified or not;
  *                         identification is part of its mod signature
+ *   - Heist blueprint   → `Blueprint`, whatever its location
  *   - Currency / non-unique identified → `${baseType}`
  */
 export function itemKey(item: Item, iconAsset?: string | null): string {
@@ -63,5 +70,6 @@ export function itemKey(item: Item, iconAsset?: string | null): string {
     }
     if (isGemItem(item))
         return gemMarketKey({ typeLine: item.typeLine, hybridName: item.hybrid?.baseTypeName });
+    if (isHeistBlueprint(item)) return HEIST_BLUEPRINT_KEY;
     return item.baseType;
 }
