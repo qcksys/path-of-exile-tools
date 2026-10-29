@@ -16,7 +16,7 @@ import { byText, changeControl } from "./control-helpers";
 import { commodityQuote, convertedCommodityQuote, essenceId } from "./crafting-commodity-fixtures";
 import { exchangeQuote, transmuteId } from "./crafting-exchange-fixtures";
 import { baseId, catalog, engine, getCatalog } from "./crafting-fixtures";
-import { yellowBeastComponent } from "./crafting-source-fixtures";
+import { recipeSourceHour, yellowBeastComponent } from "./crafting-source-fixtures";
 import { vendorInputId, vendorOutputId, vendorQuote } from "./crafting-vendor-upgrade-fixtures";
 import { chooseStartingItem } from "./starting-item-helper";
 
@@ -153,7 +153,7 @@ it.each([
 it("copies a full beast recipe through the same source picker", async () => {
     const id = "EinharMasterCraftMorrigan7";
     const quote = {
-        source: "poe.ninja",
+        source: "stash-recipe",
         game: "poe1",
         realm: "pc",
         league: "Standard",
@@ -161,17 +161,12 @@ it("copies a full beast recipe through the same source picker", async () => {
         id,
         yellowBeasts: "listing-count-weighted-mean-v1",
         amount: 607,
-        fetchedAt: "2026-10-08T04:00:00.000Z",
+        hour: recipeSourceHour,
         components: [
-            { detailsId: "craicic-sand-spitter", quantity: 1, unitPrice: 1 },
-            { detailsId: "black-morrigan", quantity: 1, unitPrice: 600 },
+            { itemKey: "Craicic Sand Spitter", quantity: 1, unitPrice: 1 },
+            { itemKey: "Black Morrigan", quantity: 1, unitPrice: 600 },
         ]
-            .map((component) => ({
-                ...component,
-                name: component.detailsId,
-                listingCount: 100,
-                sourceUrl: "https://poe.ninja/poe1/api/economy/stash/current/item/overview",
-            }))
+            .map((component) => ({ ...component, listingCount: 100, hour: recipeSourceHour }))
             .concat([yellowBeastComponent]),
     };
     const fetcher = vi

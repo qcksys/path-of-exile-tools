@@ -1,9 +1,8 @@
 import { openDatabase } from "~/db/client";
 import { updateCurrencyExchange } from "~/scheduled/currency-exchange";
-import { updateScarabPrices } from "~/scheduled/poeninja";
 import { logger } from "~/services/logger";
 
-const CRON_POENINJA_PRICES = "*/15 * * * *";
+const CRON_CURRENCY_EXCHANGE = "*/15 * * * *";
 
 export async function handleScheduled(
     controller: ScheduledController,
@@ -12,29 +11,16 @@ export async function handleScheduled(
     const database = await openDatabase(env.DATABASE_URL, env.DATABASE_DRIVER);
     try {
         switch (controller.cron) {
-            case CRON_POENINJA_PRICES: {
-                const results = await Promise.allSettled([
-                    updateScarabPrices(database.db).then((result) => {
-                        if (result.errorCount)
-                            throw new Error(
-                                `Scarab capture failed for ${result.errorCount} leagues.`,
-                            );
-                    }),
-                    updateCurrencyExchange(database.db, controller.scheduledTime),
-                ]);
-                const failures = results.flatMap((result, index) => {
-                    if (result.status === "fulfilled") return [];
+            case CRON_CURRENCY_EXCHANGE: {
+                try {
+                    await updateCurrencyExchange(database.db, controller.scheduledTime);
+                } catch (error) {
                     logger.error(
-                        {
-                            source: index === 0 ? "scarabs" : "currency-exchange",
-                            error: String(result.reason),
-                        },
+                        { source: "currency-exchange", error: String(error) },
                         "Scheduled market capture failed",
                     );
-                    return [result.reason];
-                });
-                if (failures.length)
-                    throw new AggregateError(failures, "Scheduled market capture failed");
+                    throw new AggregateError([error], "Scheduled market capture failed");
+                }
                 break;
             }
             default:

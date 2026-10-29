@@ -7,10 +7,13 @@ import { type Connection, createConnection, type RowDataPacket } from "mysql2/pr
 import { afterAll, beforeAll, expect, it, vi } from "vite-plus/test";
 import type { TDatabase } from "~/db/client";
 import { stashGame } from "~/db/helpers/stash-game";
+import { findCraftingRecipeListings } from "~/db/queries/crafting-recipes.queries";
 import {
     getMarketBase,
     getMarketData,
     getMarketExchangeItem,
+    getMarketExchangeLeagues,
+    getMarketExchangePrices,
     getPoe2MarketExchange,
 } from "~/db/queries/market.queries";
 import {
@@ -25,6 +28,7 @@ import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
 import { type TStashUniqueHourlyI, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
+import { marketExchangeItemId } from "~/lib/market-exchange.server";
 import { getServerStatus } from "~/operations/server-status.server";
 import { marketFiltersSchema } from "~/schemas/market";
 
@@ -1980,4 +1984,124 @@ it("lists each crafting base cohort's latest hour in the period", async () => {
         baseId: "base:titan-plate:1-2:any-links",
     });
     expect([missing.base, missing.history, missing.variants]).toEqual([null, [], []]);
+});
+
+it("prices requested exchange items as the list does, bridging through divine and stale days", async () => {
+    const chaosId = "Metadata/Items/Currency/CurrencyRerollRare";
+    const divineId = "Metadata/Items/Currency/CurrencyModValues";
+    const wisdomId = "Metadata/Items/Currency/CurrencyIdentification";
+    const portalId = "Metadata/Items/Currency/CurrencyPortal";
+    const scarabId = marketExchangeItemId("poe1", "Breach Scarab of the Dreamer")!;
+    const snapshot = (marketId: string, at: number, volumeTraded: Record<string, number>) => ({
+        realm: "pc",
+        league: "ExchangePrices",
+        marketId,
+        hour: at,
+        volumeTraded,
+        lowestRatio: null,
+        highestRatio: null,
+        lowestStock: null,
+        highestStock: null,
+    });
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, [
+        snapshot(`${divineId}|${chaosId}`, hour, { [divineId]: 10, [chaosId]: 2000 }),
+        snapshot(`${scarabId}|${divineId}`, hour, { [scarabId]: 10, [divineId]: 1 }),
+        snapshot(`${wisdomId}|${chaosId}`, hour, { [wisdomId]: 0, [chaosId]: 0 }),
+        snapshot(`${wisdomId}|${chaosId}`, hour - 7200, { [wisdomId]: 500, [chaosId]: 1 }),
+        snapshot(`${portalId}|${chaosId}`, hour, { [portalId]: 0, [chaosId]: 0 }),
+    ]);
+    await refreshStashRollups(db as unknown as TDatabase);
+    const result = await getMarketExchangePrices(db as unknown as TDatabase, {
+        realm: "pc",
+        league: "ExchangePrices",
+        itemIds: [scarabId, wisdomId, portalId],
+    });
+    expect(result.latestHour).toBe(hour);
+    expect(result.prices.get(scarabId)).toEqual({ price: 20, hour });
+    expect(result.prices.get(wisdomId)).toEqual({ price: 0.002, hour: hour - 7200 });
+    expect(result.prices.has(portalId)).toBe(false);
+    expect(await getMarketExchangeLeagues(db as unknown as TDatabase, "pc")).toContain(
+        "ExchangePrices",
+    );
+});
+
+it("reads each beast and temple market's latest merchant ask, converting other currencies", async () => {
+    const chaosId = "Metadata/Items/Currency/CurrencyRerollRare";
+    const divineId = "Metadata/Items/Currency/CurrencyModValues";
+    const league = "Recipes";
+    const ask = (currency: string, median: number) => ({
+        [currency]: { count: 1, min: median, median, max: median },
+    });
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, [
+        {
+            realm: "pc",
+            league,
+            marketId: `${divineId}|${chaosId}`,
+            hour: hour - 3600,
+            volumeTraded: { [divineId]: 1, [chaosId]: 200 },
+            lowestRatio: null,
+            highestRatio: null,
+            lowestStock: null,
+            highestStock: null,
+        },
+    ]);
+    const beast = (overrides: Partial<TStashUniqueHourlyI>) =>
+        observation({
+            league,
+            name: null,
+            itemKey: "Vivid Vulture",
+            baseType: "Vivid Vulture",
+            frameType: 2,
+            signatureKind: "beast",
+            listingCount: 5,
+            ...overrides,
+        });
+    await db.insert(market).values([
+        beast({ prices: ask("chaos", 2) }),
+        beast({ hour: hour - 3600, prices: ask("chaos", 9) }),
+        beast({ tab: "", hour: hour, foilVariation: 1, prices: ask("chaos", 1) }),
+        beast({ itemKey: "Cave Beast", baseType: "Cave Beast", hour: hour - 30 * 3600 }),
+        beast({
+            itemKey: "Farrul, First of the Plains",
+            baseType: "Farrul, First of the Plains",
+            name: "Farrul, First of the Plains",
+            frameType: 3,
+            signatureKind: "",
+            hour: hour - 3600,
+            listingCount: 2,
+            prices: ask("divine", 1),
+        }),
+        ...[
+            ["Locus of Corruption", 50],
+            ["", 1],
+        ].map(([rooms, median]) =>
+            observation({
+                league,
+                name: "",
+                itemKey: "Chronicle of Atzoatl",
+                baseType: "Chronicle of Atzoatl",
+                frameType: 5,
+                signatureKind: "temple",
+                signatureValue: String(rooms),
+                listingCount: 3,
+                prices: ask("chaos", Number(median)),
+            }),
+        ),
+    ]);
+    const listings = await findCraftingRecipeListings(db as unknown as TDatabase, league, "chaos", [
+        { itemKey: "Vivid Vulture" },
+        { itemKey: "Farrul, First of the Plains" },
+        { itemKey: "Cave Beast" },
+        { itemKey: "Chronicle of Atzoatl", rooms: "Locus of Corruption" },
+    ]);
+    expect(Object.fromEntries(listings)).toEqual({
+        "Vivid Vulture": { unitPrice: 2, listingCount: 5, hour },
+        "Farrul, First of the Plains": {
+            unitPrice: 200,
+            listingCount: 2,
+            hour: hour - 3600,
+            exchange: { currency: "divine", unitPrice: 1, rate: 200 },
+        },
+        "Chronicle of Atzoatl|Locus of Corruption": { unitPrice: 50, listingCount: 3, hour },
+    });
 });

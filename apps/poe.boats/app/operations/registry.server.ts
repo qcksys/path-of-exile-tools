@@ -287,7 +287,8 @@ export const operations = [
             snapshot: MarketSnapshotSchema.nullable(),
             error: z.string().nullable(),
         }),
-        execute: ({ game, league }) => loadArbitrageMarket(game, league ?? null),
+        execute: ({ game, league }, context) =>
+            loadArbitrageMarket(context.db, game, league ?? null),
     }),
     defineOperation({
         ...shared,

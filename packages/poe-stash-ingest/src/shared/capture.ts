@@ -2,7 +2,7 @@ import type { Item } from "@poe-tools/api-client";
 import { isBlightedMap, isMapMarketBase } from "@poe-tools/market";
 
 /**
- * Whether to persist this item. Captures every unique, skill gem and tier or
+ * Whether to persist this item. Captures every unique, skill gem, captured beast and tier or
  * Nightmare map plus identified currency-tier items. No watchlist — the universe of interest is
  * defined by the structured mod-extractor config and downstream queries.
  *
@@ -17,8 +17,24 @@ export const ITEM_CATEGORIES: ReadonlyArray<{ name: string; matches: (item: Item
     { name: "divination-card", matches: (item) => item.identified && item.frameType === 6 },
     { name: "gem", matches: isGemItem },
     { name: "map", matches: isMapItem },
+    { name: "beast", matches: isCapturedBeast },
     { name: "heist", matches: isHeistMarketItem },
 ];
+
+const BESTIARY_PROPERTIES = ["Genus", "Group", "Family"];
+
+/**
+ * A beast captured in a Bestiary Orb: its base type is the monster's name and its properties name
+ * its genus, group and family. Yellow and red beasts are both rare items with a random name.
+ */
+export function isCapturedBeast(item: Pick<Item, "identified" | "properties">): boolean {
+    return (
+        item.identified &&
+        BESTIARY_PROPERTIES.every((name) =>
+            item.properties?.some((property) => property.name === name),
+        )
+    );
+}
 
 export function isUniqueItem(item: { rarity?: string | null; frameType?: number }): boolean {
     return item.rarity != null ? item.rarity === "Unique" : item.frameType === 3;

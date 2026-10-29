@@ -1111,24 +1111,80 @@ function exchangeDivine(rows: MarketExchangeRow[]): Record<string, number> {
 const EXCHANGE_HISTORY_PAIRS = 8;
 
 /**
- * Markets of `itemId` and the `anchor` markets of the items it trades against (and of the
+ * Markets of `itemIds` and the `anchor` markets of the items they trade against (and of the
  * `priced` currencies, which the page values are shown in).
  */
 function exchangeItemMarkets(
     markets: string[][],
-    itemId: string,
+    itemIds: string[],
     anchor: string,
     priced: string[],
 ) {
-    const counterparts = new Set(markets.flatMap((ids) => (ids.includes(itemId) ? ids : [])));
+    const items = new Set(itemIds);
+    const own = (ids: string[]) => ids.some((id) => items.has(id));
+    const counterparts = new Set(markets.flatMap((ids) => (own(ids) ? ids : [])));
     for (const id of priced) counterparts.add(id);
     return markets
         .filter(
             (ids) =>
-                ids.includes(itemId) ||
+                own(ids) ||
                 (ids.includes(anchor) && ids.some((id) => id !== anchor && counterparts.has(id))),
         )
         .map((ids) => ids.join("|"));
+}
+
+/**
+ * Prices of some exchange items in the realm's exchange unit, as the market list gives them: the
+ * latest hour's trades, or else the newest of the last MARKET_EXCHANGE_DAYS days that traded.
+ * Items without a usable path have a null price.
+ */
+export function getMarketExchangePrices(
+    db: TDatabase,
+    input: { realm: string; league: string; itemIds: string[] },
+) {
+    return traceSpan("market.exchange_prices", async () => {
+        const latestHour = marketObservationRange().latestHour;
+        const scope = { realm: input.realm, league: input.league };
+        const unit = marketExchangeUnit(input.realm);
+        const markets = (await marketExchangeMarkets(db, scope, latestHour)).map((row) =>
+            row.marketId.split("|"),
+        );
+        const marketIds = exchangeItemMarkets(
+            markets,
+            input.itemIds,
+            marketExchangeUnitId(unit),
+            [],
+        );
+        const [snapshots, days] = marketIds.length
+            ? await Promise.all([
+                  exchangeSnapshots(db, scope, [latestHour, latestHour], marketIds),
+                  exchangeDaily(db, scope, exchangeWindowStart(latestHour), marketIds),
+              ])
+            : [[], []];
+        const rows = marketExchangeRows(
+            snapshots,
+            days.filter((row) => row.day <= latestHour),
+            latestHour,
+            (itemId) => marketExchangeItem(input.realm, itemId),
+            input.itemIds,
+            0,
+            unit,
+        );
+        const prices = new Map(
+            rows.flatMap((row) =>
+                row.price === null || row.hour === null
+                    ? []
+                    : [[row.itemId, { price: row.price, hour: row.hour }] as const],
+            ),
+        );
+        return { latestHour, unit, prices };
+    });
+}
+
+/** Public leagues with exchange snapshots, the one that traded most recently first. */
+export async function getMarketExchangeLeagues(db: TDatabase, realm: string) {
+    const seasons = await marketExchangeSeasons(db, realm, marketObservationRange().latestHour);
+    return seasons.map((season) => season.league);
 }
 
 /**
@@ -1148,7 +1204,7 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
         const listed = league ? await marketExchangeMarkets(db, scope, latestHour) : [];
         const markets = listed.map((row) => row.marketId.split("|"));
         const priced = marketPriceCurrencyIds(input.realm);
-        const marketIds = exchangeItemMarkets(markets, input.itemId, anchor, priced);
+        const marketIds = exchangeItemMarkets(markets, [input.itemId], anchor, priced);
         const historyStart = latestHour - Number(input.days) * 86400 + 3600;
         const [snapshots, days] = marketIds.length
             ? await Promise.all([
@@ -1192,7 +1248,7 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
         ].map((id) => id.split("|"));
         const historyIds = exchangeItemMarkets(
             [...kept, ...markets.filter((ids) => !ids.includes(input.itemId))],
-            input.itemId,
+            [input.itemId],
             anchor,
             priced,
         );
