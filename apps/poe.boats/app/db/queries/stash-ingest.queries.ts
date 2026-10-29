@@ -15,10 +15,12 @@ import {
 import type { TStashCurrencyMarketI } from "~/db/schema/stash.currency-market";
 import type { StashCoverageStream } from "~/db/schema/stash.hour-coverage";
 import { type TStashUniqueHourlyI, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
+import { isYellowBeast, yellowBeastMarket } from "~/lib/crafting-yellow-beasts";
 import {
     refreshStashCurrencyDaily,
     refreshStashHourCoverage,
     refreshStashMarketDaily,
+    refreshYellowBeastHourly,
     upsertStashCurrencyMarkets,
     utcDay,
 } from "./stash-rollups.queries";
@@ -293,6 +295,15 @@ export async function upsertStashUniqueHourly(
             }
             await refreshCoverage(db, "uniques", batch);
             written += batch.length;
+        }
+        const yellowBeasts = gameRows.filter((row) => isYellowBeast(row.itemKey));
+        for (const { realm, league, rows: leagueRows } of byLeague(yellowBeasts)) {
+            const hours = [...new Set(leagueRows.map((row) => row.hour))];
+            await refreshYellowBeastHourly(db, { game, realm, league, hours });
+            for (const hour of hours)
+                itemDays
+                    .get(JSON.stringify([realm, league, utcDay(hour)]))
+                    ?.itemKeys.add(yellowBeastMarket);
         }
         // Each rollup re-reads the whole day of its items, so it runs once per item day after every
         // chunk is stored rather than once per chunk. A failed request is retried whole.

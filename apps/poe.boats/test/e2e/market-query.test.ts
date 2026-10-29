@@ -2157,3 +2157,66 @@ it("reads each beast and temple market's latest merchant ask, converting other c
         "Chronicle of Atzoatl|Locus of Corruption": { unitPrice: 50, listingCount: 3, hour },
     });
 });
+
+it("lists yellow beast species as one Yellow Beast market, beside red beasts", async () => {
+    const league = "Yellow";
+    const ask = (median: number, count: number) => ({
+        chaos: { count, min: median, median, max: median },
+    });
+    const beast = (itemKey: string, overrides: Partial<TStashUniqueHourlyI> = {}) =>
+        observation({
+            league,
+            name: null,
+            itemKey,
+            baseType: itemKey,
+            frameType: 2,
+            signatureKind: "beast",
+            ...overrides,
+        });
+    await upsertStashUniqueHourly(db as unknown as TDatabase, [
+        beast("Cave Beast", { listingCount: 3, likelySales: 1, prices: ask(2, 3) }),
+        beast("Arctic Wolf", { listingCount: 1, likelySales: 2, prices: ask(6, 1) }),
+        beast("Vivid Vulture", { listingCount: 2, prices: ask(50, 2) }),
+    ]);
+    // A species pushed in a later request merges with the hour's stored species.
+    await upsertStashUniqueHourly(db as unknown as TDatabase, [
+        beast("Cave Beast", { hour: hour - 3600, listingCount: 4, prices: ask(3, 4) }),
+        beast("Barrow Ape", { listingCount: 4, prices: ask(2, 4) }),
+    ]);
+    const read = (filters: Record<string, unknown>, view: "list" | "history" = "list") =>
+        getMarketData(
+            db as unknown as TDatabase,
+            marketFiltersSchema.parse({ league, currency: "chaos", ...filters }),
+            view,
+        );
+    const beasts = await read({ category: "beasts", order: "price-desc" });
+    expect(
+        beasts.rows.map(({ itemKey, listingCount, periodSales, category }) => ({
+            itemKey,
+            listingCount,
+            periodSales,
+            category,
+        })),
+    ).toEqual([
+        { itemKey: "Vivid Vulture", listingCount: 2, periodSales: 0, category: "beasts" },
+        { itemKey: "Yellow Beast", listingCount: 8, periodSales: 3, category: "beasts" },
+    ]);
+    expect(beasts.rows[1]?.prices?.chaos).toMatchObject({ count: 8, min: 2, max: 6 });
+    expect((await read({ category: "all" })).rows.map((row) => row.itemKey).sort()).toEqual([
+        "Vivid Vulture",
+        "Yellow Beast",
+    ]);
+    expect((await read({ category: "beasts", q: "yellow" })).rows).toMatchObject([
+        { itemKey: "Yellow Beast" },
+    ]);
+    const item = await read({ item: "Yellow Beast", kind: "beast" }, "history");
+    expect(item.history.map((row) => [row.hour, row.listingCount])).toEqual([
+        [hour - 3600, 4],
+        [hour, 8],
+    ]);
+    // Crafting still prices each species from its own rows.
+    const listings = await findCraftingRecipeListings(db as unknown as TDatabase, league, "chaos", [
+        { itemKey: "Cave Beast" },
+    ]);
+    expect(Object.fromEntries(listings)).toMatchObject({ "Cave Beast": { listingCount: 3 } });
+});

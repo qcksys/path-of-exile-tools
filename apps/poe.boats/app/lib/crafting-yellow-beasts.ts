@@ -2,6 +2,8 @@ import data from "./crafting-yellow-beasts.generated.json" with { type: "json" }
 
 export const yellowBeastPolicy = "listing-count-weighted-mean-v1" as const;
 export const yellowBeastId = "yellow-beast";
+/** The market item key and base type under which the market lists every yellow beast species together. */
+export const yellowBeastMarket = "Yellow Beast";
 /** Species that can fill a recipe's generic rare sacrifices, which stash listings key by name. */
 export const yellowBeastNames: readonly string[] = data.names;
 /** Every capturable species: the generic ones and those recipes name or the game disables. */
