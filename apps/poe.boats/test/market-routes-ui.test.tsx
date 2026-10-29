@@ -1113,3 +1113,51 @@ it("filters skill gems by tri-state level, quality and corruption toggles", asyn
     );
     expect(screen.getByLabelText("Current URL").textContent).not.toContain("gemLevel");
 });
+
+it("filters maps by tri-state mod count, quantity and delirium toggles", async () => {
+    showMarket("/1/market/maps?league=Allflame");
+    const mods = await screen.findByRole("group", { name: "Mods" });
+    const quantity = screen.getByRole("group", { name: "Item quantity" });
+    const delirium = screen.getByRole("group", { name: "Delirium" });
+    expect(screen.getByRole("combobox", { name: "Corruption" })).toBeTruthy();
+
+    fireEvent.click(within(mods).getByRole("button", { name: "8 mods: any" }));
+    fireEvent.click(within(quantity).getByRole("button", { name: "100–119%: any" }));
+    fireEvent.click(within(quantity).getByRole("button", { name: "120–139%: any" }));
+    fireEvent.click(within(delirium).getByRole("button", { name: "0%: any" }));
+    fireEvent.click(within(delirium).getByRole("button", { name: "0%: included" }));
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                category: "maps",
+                mapMods: "8",
+                mapQuantity: "100-119,120-139",
+                mapDelirium: "-0",
+            }),
+            "list",
+        ),
+    );
+    await waitFor(() =>
+        expect(screen.getByLabelText("Current URL").textContent).toContain("mapMods=8"),
+    );
+
+    fireEvent.click(
+        within(screen.getByRole("navigation", { name: "Market categories" })).getByRole("link", {
+            name: "Currency",
+        }),
+    );
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ category: "currency", mapMods: "", mapQuantity: "" }),
+            "list",
+        ),
+    );
+    await waitFor(() =>
+        expect(screen.getByLabelText("Current URL").textContent).toMatch(
+            /^\/1\/market\/currency\?/,
+        ),
+    );
+    expect(screen.getByLabelText("Current URL").textContent).not.toContain("mapMods");
+});

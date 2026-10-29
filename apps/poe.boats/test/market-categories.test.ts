@@ -28,6 +28,9 @@ it.each([
     ["Chronicle of Atzoatl", "MiscMapItem", "encounters"],
     ["Forbidden Tome", "ItemisedSanctum", "encounters"],
     ["Offering to the Goddess", "LabyrinthMapItem", "fragments"],
+    ["Map (Tier 16)", "MapKey", "maps"],
+    ["Nightmare Map", "MapKey", "maps"],
+    ["Maven's Invitation: The Feared", "MapKey", "invitations"],
     ["Enshrouded Helmet", "CocoonedItem", "other"],
     ["Unknown", "NewClass", "other"],
 ])("categorizes %s using its extracted class", (name, itemClass, category) => {

@@ -12,7 +12,7 @@ import { isGemItem } from "#src/shared/capture.ts";
 import type { ModExtractor } from "#src/shared/mod-extractors/types.ts";
 
 /** A property's first value as a whole number: `20 (Max)` is 20, `+23%` is 23. */
-function propertyNumber(item: Item, name: string) {
+export function propertyNumber(item: Item, name: string) {
     const value = item.properties?.find((property) => property.name === name)?.values[0]?.[0];
     const number = Number.parseInt(value?.replace(/^\+/, "") ?? "", 10);
     return Number.isSafeInteger(number) ? number : undefined;
