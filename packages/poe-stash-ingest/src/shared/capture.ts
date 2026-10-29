@@ -17,6 +17,7 @@ export const ITEM_CATEGORIES: ReadonlyArray<{ name: string; matches: (item: Item
     { name: "divination-card", matches: (item) => item.identified && item.frameType === 6 },
     { name: "gem", matches: isGemItem },
     { name: "map", matches: isMapItem },
+    { name: "heist", matches: isHeistMarketItem },
 ];
 
 export function isUniqueItem(item: { rarity?: string | null; frameType?: number }): boolean {
@@ -35,6 +36,34 @@ export function isMapItem(item: {
     typeLine: string;
 }): boolean {
     return !isUniqueItem(item) && isMapMarketBase(item.baseType) && !isBlightedMap(item.typeLine);
+}
+
+/** A property's first value, e.g. `83` for `Area Level` or `1/3` for `Wings Revealed`. */
+export function propertyText(item: Pick<Item, "properties">, name: string) {
+    return item.properties?.find((property) => property.name === name)?.values[0]?.[0];
+}
+
+export const HEIST_AREA_LEVEL = "83";
+/** Blueprints trade with one wing or every wing revealed. */
+export const HEIST_BLUEPRINT_WINGS = ["1/3", "1/4", "3/3", "4/4"];
+
+export function isHeistContract(item: Pick<Item, "properties">) {
+    return Boolean(item.properties?.some((property) => property.name.startsWith("Heist Target")));
+}
+
+export function isHeistBlueprint(item: Pick<Item, "properties">) {
+    return propertyText(item, "Wings Revealed") !== undefined;
+}
+
+/**
+ * Identified non-unique Heist contracts and blueprints for area level 83 (item level 83 and
+ * above); blueprints only with one or every wing revealed.
+ */
+export function isHeistMarketItem(item: Item): boolean {
+    if (!item.identified || isUniqueItem(item)) return false;
+    if (propertyText(item, "Area Level") !== HEIST_AREA_LEVEL) return false;
+    if (isHeistContract(item)) return true;
+    return HEIST_BLUEPRINT_WINGS.includes(propertyText(item, "Wings Revealed") ?? "");
 }
 
 export function shouldCapture(item: Item): boolean {
