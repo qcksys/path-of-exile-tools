@@ -834,7 +834,8 @@ async function marketVariants(
                 >`any_value(${market.signatureData})`,
                 periodSales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
             })
-            .from(market)
+            // Without the hint MySQL can pick the primary key and scan every item in the window.
+            .from(market, { forceIndex: "idx_stash_unique_item" })
             .where(and(scope, inArray(market.itemKey, [...new Set([item, ...counterparts])])))
             .groupBy(
                 market.itemKey,

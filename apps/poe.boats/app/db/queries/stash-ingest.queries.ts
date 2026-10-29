@@ -252,6 +252,10 @@ export async function upsertStashUniqueHourly(
     let written = 0;
     for (const [game, gameRows] of byGame(rows)) {
         const table = tStashUniqueHourly[game];
+        const itemDays = new Map<
+            string,
+            { realm: string; league: string; day: number; itemKeys: Set<string> }
+        >();
         for (const batch of chunk(gameRows, UPSERT_CHUNK)) {
             await db
                 .insert(table)
@@ -275,25 +279,33 @@ export async function upsertStashUniqueHourly(
                         lastSeenAt: sql`values(${table.lastSeenAt})`,
                     },
                 });
-            for (const { realm, league, rows: leagueRows } of byLeague(batch)) {
-                const days = new Map<number, Set<string>>();
-                for (const row of leagueRows) {
-                    const day = utcDay(row.hour);
-                    days.set(day, (days.get(day) ?? new Set()).add(row.itemKey));
-                }
-                for (const [day, itemKeys] of days)
-                    await refreshStashMarketDaily(db, {
-                        game,
-                        realm,
-                        league,
-                        fromHour: day,
-                        toHour: day,
-                        itemKeys: [...itemKeys],
-                    });
+            for (const row of batch) {
+                const day = utcDay(row.hour);
+                const key = JSON.stringify([row.realm, row.league, day]);
+                const entry = itemDays.get(key) ?? {
+                    realm: row.realm,
+                    league: row.league,
+                    day,
+                    itemKeys: new Set<string>(),
+                };
+                entry.itemKeys.add(row.itemKey);
+                itemDays.set(key, entry);
             }
             await refreshCoverage(db, "uniques", batch);
             written += batch.length;
         }
+        // Each rollup re-reads the whole day of its items, so it runs once per item day after every
+        // chunk is stored rather than once per chunk. A failed request is retried whole.
+        for (const { realm, league, day, itemKeys } of itemDays.values())
+            for (const keys of chunk([...itemKeys], UPSERT_CHUNK))
+                await refreshStashMarketDaily(db, {
+                    game,
+                    realm,
+                    league,
+                    fromHour: day,
+                    toHour: day,
+                    itemKeys: keys,
+                });
     }
     return written;
 }
