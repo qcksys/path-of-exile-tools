@@ -14,6 +14,7 @@ it.each([
     ["Goathide Boots", "Armours/Boots/BootsDex2", "Boots", "armour"],
     ["Leather Belt", "Belts/Belt3", "Belt", "accessories"],
     ["Spine Bow", "Weapons/TwoHandWeapons/Bows/Bow20", "Bow", "weapons"],
+    ["Artillery Quiver", "Quivers/QuiverAtlas1", "Quiver", "weapons"],
     ["Quicksilver Flask", "Flasks/FlaskUtility6", "UtilityFlask", "flasks"],
     ["Cobalt Jewel", "Jewels/JewelInt", "Jewel", "jewels"],
     ["Fireball", "Gems/SkillGemFireball", "Active Skill Gem", "gems"],

@@ -23,7 +23,7 @@ export const MARKET_BASE_ATTRIBUTE_SETS = {
 export type MarketBaseAttributeSet = keyof typeof MARKET_BASE_ATTRIBUTE_SETS;
 /** Item classes of each crafting base category. */
 export const MARKET_BASE_CLASSES = {
-    "accessory-bases": ["Amulet", "Belt", "Quiver", "Ring"],
+    "accessory-bases": ["Amulet", "Belt", "Ring"],
     "armour-bases": ["Body Armour", "Boots", "Gloves", "Helmet", "Shield"],
     "weapon-bases": [
         "Bow",
@@ -32,6 +32,7 @@ export const MARKET_BASE_CLASSES = {
         "One Hand Axe",
         "One Hand Mace",
         "One Hand Sword",
+        "Quiver",
         "Rune Dagger",
         "Sceptre",
         "Staff",
