@@ -4,7 +4,7 @@ if (process.argv[2] === "replay") {
     const { replayFixtures } = await import("#src/replay.ts");
     console.log(JSON.stringify(await replayFixtures(), null, 2));
 } else {
-    for (const key of ["POE_CLIENT_SECRET", "POE_BOATS_INGEST_TOKEN"]) {
+    for (const key of ["POE_CLIENT_SECRET", "POE_BOATS_INGEST_TOKEN", "B2_APPLICATION_KEY"]) {
         const file = process.env[`${key}_FILE`];
         if (file) process.env[key] = (await readFile(file, "utf8")).trim();
     }
