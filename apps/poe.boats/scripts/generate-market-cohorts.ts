@@ -134,7 +134,7 @@ const changes = Object.entries(catalog.mods).flatMap(([id, mod]) => [
 const cohorts: MarketCohort[] = [];
 const marketBases: MarketBase[] = [];
 const generatedNames = new Set<string>();
-for (const [, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0]))) {
+for (const [baseId, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0]))) {
     if (generatedNames.has(base.name)) continue;
     generatedNames.add(base.name);
     const variants = [...selected]
@@ -175,7 +175,7 @@ for (const [, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0]))) {
     const unmodified: ItemCondition[] = (
         ["corrupted", "mirrored", "fractured", "synthesised", "influenced", "intangible"] as const
     ).map((field) => ({ kind: "flag" as const, field, value: false }));
-    const category = MARKET_BASE_CATEGORIES[marketBaseCategory(base.name, base.item_class)];
+    const category = MARKET_BASE_CATEGORIES[marketBaseCategory(baseId, base)];
     if (!category) throw new Error(`No crafting base market category for ${base.item_class}.`);
     const { strength = 0, dexterity = 0, intelligence = 0, level = 0 } = base.requirements ?? {};
     const identity = {
