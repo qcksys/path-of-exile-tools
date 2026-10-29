@@ -109,6 +109,46 @@ const VARIANTS: [name: string, variant: string, mods: string[]][] = [
                 ],
             ] as [string, string, string[]],
     ),
+    ...["Determination", "Purity of Lightning"].map(
+        (aura) =>
+            [
+                "Sublime Vision",
+                aura,
+                [
+                    "Auras from your Skills have 30% increased Effect on you",
+                    "+1 to Maximum Endurance Charges while affected by Determination",
+                    `Aura Skills other than ${aura} are Disabled`,
+                ],
+            ] as [string, string, string[]],
+    ),
+    ...[
+        ["Mana", "+5 to maximum Mana"],
+        ["Energy Shield", "3% increased Energy Shield"],
+        ["Chaos Resistance", "+4% to Chaos Resistance"],
+        ["Fire Damage", "6% increased Fire Damage"],
+        ["All Attributes", "+2 to all Attributes"],
+        ["Global Critical Strike Chance", "5% increased Global Critical Strike Chance"],
+        ["Evasion Rating", "7% increased Evasion Rating"],
+    ].map(
+        ([variant, stat]) =>
+            ["The Light of Meaning", variant, [`Passive Skills in Radius also grant ${stat}`]] as [
+                string,
+                string,
+                string[],
+            ],
+    ),
+    ...["Small", "Very Large", "Massive"].map(
+        (size) =>
+            [
+                "Thread of Hope",
+                `${size} Ring`,
+                [
+                    `Only affects Passives in ${size} Ring`,
+                    "Passive Skills in Radius can be Allocated without being connected to your tree",
+                    "-15% to all Elemental Resistances",
+                ],
+            ] as [string, string, string[]],
+    ),
     ...["Relics", "Tainted Currency", "Experience"].map(
         (reward) =>
             [

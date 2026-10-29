@@ -577,7 +577,7 @@ it("links a unique's merged market to each of its link counts", async () => {
     expect(
         within(variants)
             .getAllByRole("link")
-            .map((link) => link.textContent?.split("1 sales")[0]),
+            .map((link) => link.firstChild?.textContent),
     ).toEqual(["Any links", "6L", "0–4L"]);
     expect(
         within(variants)
@@ -604,30 +604,77 @@ it("links a unique's merged market to each of its link counts", async () => {
     ).toBe("page");
 });
 
-it("folds away all but the best-selling variants and the current one", async () => {
+it("lists many variants in a table grouped by class and ascendancy, with prices", async () => {
     showMarket(
-        "/1/market/items/Forbidden%20Flesh?league=Allflame&category=jewels&kind=forbidden-jewel&value=Notable%2025",
+        "/1/market/items/Forbidden%20Flesh?league=Allflame&category=forbidden&kind=forbidden-jewel&value=Notable%2025",
     );
     const variants = await screen.findByRole("navigation", { name: "Item variants" });
     expect(within(variants).getByRole("heading").textContent).toContain("(30)");
-    const [shown, more] = within(variants).getAllByRole("list");
-    const labels = (list: HTMLElement) =>
-        within(list)
-            .getAllByRole("link")
-            .map((link) => link.firstChild?.textContent);
-    expect(labels(shown!)).toEqual([
-        ...Array.from({ length: 20 }, (_, index) => `Notable ${index}`),
-        "Notable 25",
-    ]);
+    const table = within(variants).getByRole("table", { name: "Item variants" });
+    const rows = within(table).getAllByRole("row").slice(1);
+    expect(rows).toHaveLength(30);
+    const cells = (row: HTMLElement) =>
+        within(row)
+            .getAllByRole("cell")
+            .map((cell) => cell.textContent);
+    // "Other notables" sorts before "Templar · Inquisitor"; sales order holds within a group.
+    expect(cells(rows[0]!).slice(0, 2)).toEqual(["Other notables", "Notable 1"]);
+    expect(cells(rows[29]!)).toEqual(["Templar · Inquisitor", "Pious Path", "8 chaos", "3", "30"]);
     expect(
-        within(shown!)
-            .getByRole("link", { name: /Notable 25/ })
-            .getAttribute("aria-current"),
+        within(table).getByRole("link", { name: "Notable 25" }).getAttribute("aria-current"),
     ).toBe("page");
-    expect(within(variants).getByText("Show 9 more").tagName).toBe("SUMMARY");
-    expect(labels(more!)).toEqual(
-        [20, 21, 22, 23, 24, 26, 27, 28, 29].map((index) => `Notable ${index}`),
-    );
+});
+
+it("pairs Forbidden Flame and Flesh by notable under their class and ascendancy", async () => {
+    vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+        const fixture = marketFixture(filters);
+        const [row] = fixture.rows;
+        const jewel = (name: string, notable: string, chaos: number) => ({
+            ...row!,
+            itemKey: name,
+            name,
+            baseType: name === "Forbidden Flame" ? "Crimson Jewel" : "Cobalt Jewel",
+            category: "forbidden" as const,
+            signatureKind: "forbidden-jewel",
+            signatureValue: notable,
+            prices: { chaos: { count: 4, min: chaos, median: chaos, max: chaos } },
+        });
+        return {
+            ...fixture,
+            exchange: [],
+            hasMore: false,
+            rows: [
+                jewel("Forbidden Flame", "Pious Path", 100),
+                jewel("Forbidden Flesh", "Pious Path", 200),
+                jewel("Forbidden Flesh", "Shaper of Flames", 50),
+            ],
+        };
+    });
+    showMarket("/1/market/forbidden?league=Allflame");
+    const templar = await screen.findByRole("region", { name: "Templar" });
+    const pious = within(
+        within(templar).getByRole("table", { name: "Inquisitor notables" }),
+    ).getAllByRole("row")[1]!;
+    expect(within(pious).getAllByRole("cell")[0]!.textContent).toBe("Pious Path");
+    expect(within(pious).getAllByRole("cell")[3]!.textContent).toBe("2 divine");
+    const witch = screen.getByRole("region", { name: "Witch" });
+    const shaper = within(
+        within(witch).getByRole("table", { name: "Elementalist notables" }),
+    ).getAllByRole("row")[1]!;
+    expect(within(shaper).getAllByRole("cell")[1]!.textContent).toBe("Not listed");
+    expect(within(shaper).getAllByRole("cell")[3]!.textContent).toBe("—");
+    expect(
+        within(screen.getByRole("navigation", { name: "Classes" }))
+            .getAllByRole("link")
+            .map((link) => link.textContent),
+    ).toEqual(["Witch", "Templar"]);
+});
+
+it("prices each variant link", async () => {
+    showMarket("/1/market/items/Abberath's%20Hooves?league=Allflame&category=armour");
+    const variants = await screen.findByRole("navigation", { name: "Item variants" });
+    const link = within(variants).getByRole("link", { name: /Corrupted/ });
+    expect(link.textContent).toBe("Corrupted8 chaos · 1 sales");
 });
 
 it("links an identified unique to its unidentified market", async () => {

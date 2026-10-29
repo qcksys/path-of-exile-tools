@@ -1,9 +1,10 @@
-import { and, eq, inArray, ne, notInArray, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne, notInArray, or } from "drizzle-orm";
 import type { AnyMySqlColumn } from "drizzle-orm/mysql-core";
 import { RECIPE_BEASTS } from "~/lib/crafting-beasts";
 import { bestiaryNames } from "~/lib/crafting-yellow-beasts";
+import { FORBIDDEN_JEWELS, isForbiddenJewel } from "~/lib/forbidden-jewels";
 import { marketBaseTypesSchema } from "~/lib/market-bases";
-import { isMarketUniqueCategory } from "~/lib/market-categories";
+import { isMarketUniqueCategory, MARKET_FORBIDDEN_CATEGORY } from "~/lib/market-categories";
 import { type MarketFilters, marketCategorySchema } from "~/schemas/market";
 import poe1BaseTypes from "../../public/game-data/market-base-types-poe1.json";
 import poe1 from "../../public/game-data/market-categories-poe1.json";
@@ -33,9 +34,15 @@ const catalogs = {
 /** Gem markets carry a `gem` signature; transfigured gems may have no base type in the catalog. */
 const GEM_KIND = "gem";
 
-export function marketCategory(realm: string, baseType: string, signatureKind = "") {
+export function marketCategory(
+    realm: string,
+    baseType: string,
+    signatureKind = "",
+    name: string | null = null,
+) {
     if (signatureKind === GEM_KIND) return "gems";
-    return catalogs[realm === "poe2" ? "poe2" : "poe1"].get(baseType) ?? "other";
+    const category = catalogs[realm === "poe2" ? "poe2" : "poe1"].get(baseType) ?? "other";
+    return category === "jewels" && isForbiddenJewel(name) ? MARKET_FORBIDDEN_CATEGORY : category;
 }
 
 const baseTypes = marketBaseTypesSchema.parse(poe1BaseTypes);
@@ -56,18 +63,30 @@ function baseTypeMatch(
 
 export function marketCategoryFilter(
     filters: MarketFilters,
-    baseType: AnyMySqlColumn,
-    signatureKind: AnyMySqlColumn,
+    {
+        baseType,
+        signatureKind,
+        name,
+    }: Record<"baseType" | "signatureKind" | "name", AnyMySqlColumn>,
 ) {
     const { realm, category } = filters;
     if (category === "all") return undefined;
     const catalog = catalogs[realm === "poe2" ? "poe2" : "poe1"];
     const unique = isMarketUniqueCategory(category);
+    const forbidden = category === MARKET_FORBIDDEN_CATEGORY;
+    // Forbidden jewels have no base types of their own: they are jewels picked out by name.
+    const listed = forbidden ? "jewels" : category;
     const bases = [...catalog]
-        .filter(([, value]) => (category === "other" ? value !== "other" : value === category))
-        .filter(([name]) => !unique || baseTypeMatch(name, filters))
-        .map(([name]) => name);
+        .filter(([, value]) => (category === "other" ? value !== "other" : value === listed))
+        .filter(([base]) => !unique || baseTypeMatch(base, filters))
+        .map(([base]) => base);
     if (category === "other") return and(notInArray(baseType, bases), ne(signatureKind, GEM_KIND));
     if (category === "gems") return or(inArray(baseType, bases), eq(signatureKind, GEM_KIND));
+    if (forbidden) return and(inArray(baseType, bases), inArray(name, [...FORBIDDEN_JEWELS]));
+    if (category === "jewels")
+        return and(
+            inArray(baseType, bases),
+            or(isNull(name), notInArray(name, [...FORBIDDEN_JEWELS])),
+        );
     return inArray(baseType, bases);
 }

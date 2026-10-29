@@ -16,6 +16,7 @@
         "game-data:market": "tsx scripts/generate-market-cohorts.ts",
         "game-data:listing-currencies": "tsx scripts/fetch-listing-currencies.ts",
         "game-data:exchange-categories": "tsx scripts/fetch-exchange-categories.ts",
+        "game-data:ascendancies": "tsx scripts/fetch-ascendancy-notables.ts",
         "game-data:gems": "tsx scripts/generate-gem-lists.ts",
         "game-data:maps": "tsx scripts/generate-map-mods.ts",
         "test": "vp test run",

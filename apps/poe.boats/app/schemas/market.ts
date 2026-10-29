@@ -17,6 +17,7 @@ import {
 import {
     isMarketUniqueCategory,
     MARKET_CATEGORIES,
+    MARKET_FORBIDDEN_CATEGORY,
     type MarketCategory,
     type MarketExchangeCategory,
     marketHasCorruption,
@@ -113,7 +114,10 @@ export const marketFiltersSchema = z.object({
     category: marketCategorySchema.or(z.literal("all")).default("all"),
     order: z.enum(Object.keys(MARKET_ORDERS) as [MarketOrder, ...MarketOrder[]]).default("sales"),
     identification: z.enum(["all", "true", "false"]).default("all"),
-    /** Omitted, unique equipment categories search uncorrupted markets and others any corruption. */
+    /**
+     * Omitted, unique equipment and Forbidden jewel categories search uncorrupted markets and
+     * others any corruption.
+     */
     corruption: z.enum(["all", "true", "false"]).optional(),
     /** A normal gem's level bands; for exceptional and awakened gems, below, at and above max level. */
     gemLevel: gemBandFilter(GEM_LEVEL_BANDS, "level"),
@@ -201,7 +205,8 @@ export function marketCorruption({
     corruption,
 }: Pick<MarketFilters, "category" | "corruption">) {
     if (!marketHasCorruption(category)) return "all";
-    return corruption ?? (isMarketUniqueCategory(category) ? "false" : "all");
+    const uncorrupted = isMarketUniqueCategory(category) || category === MARKET_FORBIDDEN_CATEGORY;
+    return corruption ?? (uncorrupted ? "false" : "all");
 }
 
 /** The identification a search filters by; categories that do not split by it match any. */
