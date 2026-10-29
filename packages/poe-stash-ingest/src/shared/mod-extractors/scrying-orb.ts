@@ -1,3 +1,4 @@
+import { propertyText } from "#src/shared/capture.ts";
 import type { ModExtractor } from "#src/shared/mod-extractors/types.ts";
 
 const BASE_TYPE = "Scrying Orb";
@@ -8,8 +9,7 @@ export const scryingOrbExtractor: ModExtractor = {
     value: (signature) => String(signature.map),
     matches: (item) => item.baseType === BASE_TYPE,
     extract(item) {
-        const map = item.properties?.find((property) => property.name === "Map Area")
-            ?.values[0]?.[0];
+        const map = propertyText(item, "Map Area");
         return map ? { kind: "scrying-orb", map } : null;
     },
 };

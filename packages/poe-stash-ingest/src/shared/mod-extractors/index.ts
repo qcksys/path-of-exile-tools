@@ -5,6 +5,7 @@ import { forbiddenJewelExtractor } from "#src/shared/mod-extractors/forbidden-je
 import { forbiddenShakoExtractor } from "#src/shared/mod-extractors/forbidden-shako.ts";
 import { foulbornExtractor } from "#src/shared/mod-extractors/foulborn.ts";
 import { gemExtractor } from "#src/shared/mod-extractors/gem.ts";
+import { heistExtractor } from "#src/shared/mod-extractors/heist.ts";
 import { impossibleEscapeExtractor } from "#src/shared/mod-extractors/impossible-escape.ts";
 import { mapExtractor } from "#src/shared/mod-extractors/map.ts";
 import { MOD_POOL_EXTRACTORS } from "#src/shared/mod-extractors/mod-pools.ts";
@@ -23,6 +24,7 @@ export const EXTRACTORS: readonly ModExtractor[] = [
     gemExtractor,
     mapExtractor,
     scryingOrbExtractor,
+    heistExtractor,
 ];
 
 export function extractModSignature(item: Item): ModSignature | null {
