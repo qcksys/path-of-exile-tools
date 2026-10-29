@@ -1,7 +1,12 @@
 import { and, eq, inArray, isNull, ne, notInArray, or } from "drizzle-orm";
 import type { AnyMySqlColumn } from "drizzle-orm/mysql-core";
 import { RECIPE_BEASTS } from "~/lib/crafting-beasts";
-import { bestiaryNames } from "~/lib/crafting-yellow-beasts";
+import {
+    bestiaryNames,
+    isYellowBeast,
+    yellowBeastMarket,
+    yellowBeastNames,
+} from "~/lib/crafting-yellow-beasts";
 import { FORBIDDEN_JEWELS, isForbiddenJewel } from "~/lib/forbidden-jewels";
 import { marketBaseTypesSchema } from "~/lib/market-bases";
 import { isMarketUniqueCategory, MARKET_FORBIDDEN_CATEGORY } from "~/lib/market-categories";
@@ -12,9 +17,10 @@ import poe2 from "../../public/game-data/market-categories-poe2.json";
 
 /**
  * Captured beasts' base type is the beast's name, which no base item has: spirit beasts are
- * uniques, and other beasts are rares.
+ * uniques, and other beasts are rares. Yellow beast species are listed together as one
+ * `Yellow Beast` market, so lists leave out their own rows.
  */
-const BEASTS = new Set([...Object.values(RECIPE_BEASTS), ...bestiaryNames]);
+const BEASTS = new Set([...Object.values(RECIPE_BEASTS), ...bestiaryNames, yellowBeastMarket]);
 
 const catalogs = {
     poe1: new Map([
@@ -70,7 +76,8 @@ export function marketCategoryFilter(
     }: Record<"baseType" | "signatureKind" | "name", AnyMySqlColumn>,
 ) {
     const { realm, category } = filters;
-    if (category === "all") return undefined;
+    if (category === "all")
+        return realm === "poe2" ? undefined : notInArray(baseType, [...yellowBeastNames]);
     const catalog = catalogs[realm === "poe2" ? "poe2" : "poe1"];
     const unique = isMarketUniqueCategory(category);
     const forbidden = category === MARKET_FORBIDDEN_CATEGORY;
@@ -79,7 +86,8 @@ export function marketCategoryFilter(
     const bases = [...catalog]
         .filter(([, value]) => (category === "other" ? value !== "other" : value === listed))
         .filter(([base]) => !unique || baseTypeMatch(base, filters))
-        .map(([base]) => base);
+        .map(([base]) => base)
+        .filter((base) => category === "other" || !isYellowBeast(base));
     if (category === "other") return and(notInArray(baseType, bases), ne(signatureKind, GEM_KIND));
     if (category === "gems") return or(inArray(baseType, bases), eq(signatureKind, GEM_KIND));
     if (forbidden) return and(inArray(baseType, bases), inArray(name, [...FORBIDDEN_JEWELS]));

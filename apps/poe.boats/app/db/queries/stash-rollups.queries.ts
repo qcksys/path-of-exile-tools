@@ -11,6 +11,8 @@ import {
 import { type StashCoverageStream, tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
 import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
+import { yellowBeastMarket, yellowBeastNames } from "~/lib/crafting-yellow-beasts";
+import { mergeMarketRows } from "~/lib/market-price-merge";
 import { MOD_POOL_KINDS } from "~/lib/mod-pools";
 
 // Every rollup is recomputed from the hourly rows it summarises: the ingester re-pushes whole
@@ -23,6 +25,72 @@ export function utcDay(hour: number) {
 }
 
 type RollupScope = { game: StashGame; realm?: string; league?: string };
+
+const YELLOW_BEAST_CHUNK = 100;
+
+/**
+ * Recomputes the PoE 1 `Yellow Beast` hourly rows (every stored hour when `hours` is omitted):
+ * each hour's yellow beast species rows merged per market variant, as one species-less market.
+ * The species rows stay stored for crafting's per-species prices.
+ */
+export async function refreshYellowBeastHourly(
+    db: TDatabase,
+    scope: RollupScope & { hours?: number[] },
+) {
+    if (scope.game !== "poe1") return 0;
+    const hourly = tStashUniqueHourly.poe1;
+    const rows = await db
+        .select()
+        .from(hourly)
+        .where(
+            and(
+                scope.realm === undefined ? undefined : eq(hourly.realm, scope.realm),
+                scope.league === undefined ? undefined : eq(hourly.league, scope.league),
+                scope.hours ? inArray(hourly.hour, scope.hours) : undefined,
+                inArray(hourly.itemKey, [...yellowBeastNames]),
+            ),
+        );
+    const markets = Map.groupBy(rows, (row) =>
+        JSON.stringify([
+            row.realm,
+            row.league,
+            row.hour,
+            row.identified,
+            row.corrupted,
+            row.foilVariation,
+            row.links,
+            row.tab,
+            row.signatureKind,
+            row.signatureValue,
+        ]),
+    );
+    const merged = [...markets.values()].map((group) => {
+        const { rowCreatedAt: _, rowUpdatedAt: _updated, ...row } = mergeMarketRows(group);
+        return { ...row, itemKey: yellowBeastMarket, baseType: yellowBeastMarket, name: null };
+    });
+    for (let index = 0; index < merged.length; index += YELLOW_BEAST_CHUNK)
+        await db
+            .insert(hourly)
+            .values(merged.slice(index, index + YELLOW_BEAST_CHUNK))
+            .onDuplicateKeyUpdate({
+                set: {
+                    iconAsset: sql`values(${hourly.iconAsset})`,
+                    frameType: sql`values(${hourly.frameType})`,
+                    listingCount: sql`values(${hourly.listingCount})`,
+                    uniqueSellers: sql`values(${hourly.uniqueSellers})`,
+                    removedCount: sql`values(${hourly.removedCount})`,
+                    likelySales: sql`values(${hourly.likelySales})`,
+                    relistedCount: sql`values(${hourly.relistedCount})`,
+                    pendingCount: sql`values(${hourly.pendingCount})`,
+                    salesPrices: sql`values(${hourly.salesPrices})`,
+                    prices: sql`values(${hourly.prices})`,
+                    signatureData: sql`values(${hourly.signatureData})`,
+                    firstSeenAt: sql`values(${hourly.firstSeenAt})`,
+                    lastSeenAt: sql`values(${hourly.lastSeenAt})`,
+                },
+            });
+    return merged.length;
+}
 
 /** Recomputes the game's market daily rows for every day touching [fromHour, toHour], optionally for some items only. */
 export function refreshStashMarketDaily(
@@ -264,6 +332,7 @@ export async function refreshStashRollups(
 ) {
     for (const game of scope.game ? [scope.game] : STASH_GAMES) {
         const scoped = { ...scope, game };
+        await refreshYellowBeastHourly(db, scoped);
         await refreshStashMarketDaily(db, scoped);
         await refreshStashCurrencyDaily(db, scoped);
         await refreshStashCurrencyMarkets(db, scoped);

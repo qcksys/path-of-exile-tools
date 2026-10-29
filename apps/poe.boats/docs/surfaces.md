@@ -442,6 +442,9 @@ the same order: apply it before merging, then rerun its backfill from UTC midnig
 migration day. So does the [exchange daily](../app/db/migrations/20261027155209_exchange_daily/migration.sql)
 migration, whose backfill groups every stored exchange hour by market and day. New indexes add storage and ingestion write work;
 check live Query Insights after deployment rather than treating local timings as production results.
+PoE 1 market lists show the 169 yellow beast species as one `Yellow Beast` market, whose hourly
+rows ingest merges from the hour's stored species rows (`refreshYellowBeastHourly`). Hours stored
+before that are backfilled after deploying with `vp run db:backfill-yellow-beasts <league> [days]`.
 
 Equipment lookup exposes per-lookup `Server-Timing` diagnostics through both HTTP and MCP:
 `equipment_db` measures the total cohort database awaits, `equipment_parse` measures validation and

@@ -1,7 +1,7 @@
 import { MySqlDialect, mysqlTable, varchar } from "drizzle-orm/mysql-core";
 import { expect, it } from "vite-plus/test";
 import { RECIPE_BEASTS } from "~/lib/crafting-beasts";
-import { bestiaryNames } from "~/lib/crafting-yellow-beasts";
+import { bestiaryNames, yellowBeastMarket, yellowBeastNames } from "~/lib/crafting-yellow-beasts";
 import { marketBaseCategory } from "~/lib/market-categories";
 import { marketCategory, marketCategoryFilter } from "~/lib/market-categories.server";
 import { marketExchangeItem } from "~/lib/market-exchange.server";
@@ -203,8 +203,28 @@ it("lists captured beasts, whose base type is the beast's name, under beasts", (
     expect(marketCategory("poe2", "Farrul, First of the Plains")).toBe("other");
 });
 
+it("lists yellow beast species only as the merged Yellow Beast market", () => {
+    expect(marketCategory("pc", yellowBeastMarket)).toBe("beasts");
+    const beasts = categoryFilterQuery({ category: "beasts" }).params;
+    expect(beasts).toEqual(
+        expect.arrayContaining([yellowBeastMarket, "Craicic Croaker", "Vivid Vulture"]),
+    );
+    expect(beasts).not.toContain("Cave Beast");
+    // `other` excludes every catalog base, so species rows stay out of it too.
+    expect(categoryFilterQuery({ category: "other" }).params).toContain("Cave Beast");
+    const all = categoryFilterQuery({ category: "all" });
+    expect(all.sql).toContain("not in");
+    expect(all.params).toEqual([...yellowBeastNames]);
+    expect(
+        marketCategoryFilter(
+            marketFiltersSchema.parse({ realm: "poe2", category: "all" }),
+            marketsTable,
+        ),
+    ).toBeUndefined();
+});
+
 it("names no base item after a captured beast", () => {
-    for (const name of [...Object.values(RECIPE_BEASTS), ...bestiaryNames])
+    for (const name of [...Object.values(RECIPE_BEASTS), ...bestiaryNames, yellowBeastMarket])
         expect(Object.hasOwn(poe1Categories, name)).toBe(false);
 });
 
