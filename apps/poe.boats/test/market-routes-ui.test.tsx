@@ -1173,3 +1173,39 @@ it("filters maps by tri-state mod count, quantity, delirium and influence toggle
     expect(screen.getByLabelText("Current URL").textContent).not.toContain("mapMods");
     expect(screen.getByLabelText("Current URL").textContent).not.toContain("mapInfluence");
 });
+
+it("keeps the filters usable while an earlier filter change loads", async () => {
+    showMarket("/1/market/maps?league=Allflame");
+    const mods = await screen.findByRole("group", { name: "Mods" });
+    const influence = screen.getByRole("group", { name: "Influence" });
+    const form = mods.closest("form")!;
+    const pending: (() => void)[] = [];
+    vi.mocked(getMarketData).mockImplementation(
+        (_db, filters) =>
+            new Promise((done) => {
+                pending.push(() => done(marketFixture(filters)));
+            }),
+    );
+
+    fireEvent.click(within(mods).getByRole("button", { name: "8 mods: any" }));
+    await waitFor(() => expect(within(form).getByRole("status").textContent).toBe("Loading…"));
+    const content = form.closest("[aria-busy='true']")!;
+    // The busy content dims its direct children other than the form.
+    expect(form.parentElement).toBe(content);
+    for (let node: Element | null = form; node; node = node.parentElement)
+        expect(node.classList.contains("pointer-events-none")).toBe(false);
+
+    fireEvent.click(within(influence).getByRole("button", { name: "None: any" }));
+    await waitFor(() =>
+        expect(getMarketData).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ mapMods: "8", mapInfluence: "none" }),
+            "list",
+        ),
+    );
+    for (const resolve of pending) resolve();
+    await waitFor(() =>
+        expect(screen.getByLabelText("Current URL").textContent).toContain("mapInfluence=none"),
+    );
+    expect(screen.getByLabelText("Current URL").textContent).toContain("mapMods=8");
+});
