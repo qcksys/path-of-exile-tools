@@ -57,11 +57,12 @@ export function itemLinks(item: Item): number {
  *                         `Vaal Arc (Arc of Surging)` for a transfigured Vaal gem
  *   - Map               → `${baseType}` (`Map (Tier 16)`), identified or not;
  *                         identification is part of its mod signature
- *   - Heist blueprint   → `Blueprint`, whatever its location
+ *   - Heist blueprint   → `Blueprint`, whatever its location, identified or not
  *   - Currency / non-unique identified → `${baseType}`
  */
 export function itemKey(item: Item, iconAsset?: string | null): string {
     if (isMapItem(item)) return item.baseType;
+    if (isHeistBlueprint(item)) return HEIST_BLUEPRINT_KEY;
     if (!item.identified) {
         return `unid:${iconAsset ?? item.baseType}`;
     }
@@ -70,6 +71,5 @@ export function itemKey(item: Item, iconAsset?: string | null): string {
     }
     if (isGemItem(item))
         return gemMarketKey({ typeLine: item.typeLine, hybridName: item.hybrid?.baseTypeName });
-    if (isHeistBlueprint(item)) return HEIST_BLUEPRINT_KEY;
     return item.baseType;
 }

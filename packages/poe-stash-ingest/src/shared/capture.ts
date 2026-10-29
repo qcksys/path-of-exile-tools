@@ -74,13 +74,14 @@ export function isHeistBlueprint(item: Pick<Item, "properties">) {
 }
 
 /**
- * Identified, uncorrupted, non-unique Heist contracts and blueprints for area level 83 (item level
- * 83 and above); blueprints only with one or every wing revealed.
+ * Uncorrupted, non-unique Heist contracts and blueprints for area level 83 (item level 83 and
+ * above): contracts only identified, blueprints identified or not (wings revealed and enchants
+ * show either way) and only with one or every wing revealed.
  */
 export function isHeistMarketItem(item: Item): boolean {
-    if (!item.identified || item.corrupted || isUniqueItem(item)) return false;
+    if (item.corrupted || isUniqueItem(item)) return false;
     if (propertyText(item, "Area Level") !== HEIST_AREA_LEVEL) return false;
-    if (isHeistContract(item)) return true;
+    if (isHeistContract(item)) return item.identified;
     return HEIST_BLUEPRINT_WINGS.includes(propertyText(item, "Wings Revealed") ?? "");
 }
 
