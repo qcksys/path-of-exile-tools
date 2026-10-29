@@ -1,8 +1,20 @@
 import { ImageOffIcon } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useItemPresentations } from "~/hooks/use-item-presentations";
 import { findItemPresentation } from "~/lib/item-presentation";
 import { cn } from "~/lib/utils";
+
+/**
+ * Flask art is a sprite of three frames side by side: the empty bottle, its overlay and its
+ * liquid. Tincture art in the same folder is a single frame.
+ */
+function isFlaskSprite(image: HTMLImageElement) {
+    return (
+        image.src.includes("/2DItems/Flasks/") &&
+        image.naturalHeight > 0 &&
+        image.naturalWidth === image.naturalHeight * 1.5
+    );
+}
 
 export function ItemArt({
     src,
@@ -16,6 +28,11 @@ export function ItemArt({
     decorative?: boolean;
 }) {
     const [failed, setFailed] = useState("");
+    const [sprite, setSprite] = useState("");
+    // Also checks on mount, for art that loaded before hydration attached `onLoad`.
+    const detectSprite = useCallback((image: HTMLImageElement | null) => {
+        if (image && isFlaskSprite(image)) setSprite(image.getAttribute("src")!);
+    }, []);
     return (
         <span
             aria-hidden={decorative || undefined}
@@ -25,8 +42,22 @@ export function ItemArt({
                 className,
             )}
         >
-            {src && failed !== src ? (
+            {src && failed !== src && sprite === src ? (
+                // The liquid under the bottle, under the overlay, as the game draws a full flask.
+                <span
+                    role="img"
+                    aria-label={name}
+                    data-flask-sprite=""
+                    className="block aspect-[1/2] h-full bg-no-repeat"
+                    style={{
+                        backgroundImage: Array(3).fill(`url("${src}")`).join(", "),
+                        backgroundSize: "300% 100%",
+                        backgroundPosition: "center, left, right",
+                    }}
+                />
+            ) : src && failed !== src ? (
                 <img
+                    ref={detectSprite}
                     src={src}
                     alt={decorative ? "" : name}
                     loading="lazy"
@@ -34,6 +65,7 @@ export function ItemArt({
                     width={96}
                     height={96}
                     className="max-h-full max-w-full object-contain"
+                    onLoad={(event) => detectSprite(event.currentTarget)}
                     onError={() => setFailed(src)}
                 />
             ) : (

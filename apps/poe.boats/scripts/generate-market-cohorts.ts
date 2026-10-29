@@ -17,6 +17,7 @@ import {
     MARKET_BASE_MIN_LEVEL,
     MARKET_CLUSTER_LEVEL_BANDS,
     type MarketBase,
+    marketBaseClass,
     marketBasesSchema,
 } from "../app/lib/market-bases";
 import {
@@ -49,6 +50,8 @@ const current = history.revisions.find((entry) =>
 );
 if (!current) throw new Error("The crafting presets require a current ruleset.");
 const presetCohorts = craftingPresetCohorts(engine, current);
+// Flasks are never rare.
+const flasks = new Set(["LifeFlask", "ManaFlask", "HybridFlask", "UtilityFlask"]);
 const equipment = new Set([
     "Two Hand Sword",
     "Wand",
@@ -74,7 +77,21 @@ const equipment = new Set([
     "Boots",
     "Gloves",
     "Quiver",
+    ...flasks,
 ]);
+const craftedRarity = (itemClass: string) => (flasks.has(itemClass) ? "magic" : "rare");
+// Flask bands follow the modifiers buyers ask for rather than spawn weight: utility flasks unlock
+// T1 Alchemist's at 80, Experimenter's, Armadillo and Impala at 84 and of the Cheetah at 85. Life,
+// mana and hybrid flasks are only tracked at item level 83 and up.
+const flaskLevelBands = (itemClass: string) =>
+    itemClass === "UtilityFlask"
+        ? [
+              { min: 74, max: 79 },
+              { min: 80, max: 83 },
+              { min: 84, max: 84 },
+              { min: 85, max: 100 },
+          ]
+        : [{ min: 83, max: 100 }];
 const armour = new Set(["Helmet", "Body Armour", "Boots", "Gloves", "Shield"]);
 const includedNames = new Set([
     "Grasping Mail",
@@ -112,7 +129,7 @@ for (const entry of Object.entries(catalog.bases)) {
     if (
         !equipment.has(base.item_class) ||
         base.corrupted ||
-        !base.rarities.includes("rare") ||
+        !base.rarities.includes(craftedRarity(base.item_class)) ||
         id.includes("Royale")
     )
         continue;
@@ -120,7 +137,11 @@ for (const entry of Object.entries(catalog.bases)) {
         .filter(([, range]) => range && range.max > 0)
         .map(([key]) => key)
         .sort();
-    const key = JSON.stringify([base.item_class, defences]);
+    // Each utility flask has its own effect, so every one is listed.
+    const key = JSON.stringify([
+        base.item_class,
+        base.item_class === "UtilityFlask" ? base.name : defences,
+    ]);
     grouped.set(key, [...(grouped.get(key) ?? []), entry]);
 }
 const selected = new Map<string, (typeof catalog.bases)[string]>();
@@ -167,13 +188,15 @@ for (const [baseId, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0
     };
     // At most three listed bands: the two highest levels that each unlock at least a tenth of the
     // base's gated top-tier weight split off, and lower levels group together.
-    const bands = significantLevelBands(
-        modifierLevelBands(changes, pool),
-        MARKET_BASE_MIN_LEVEL,
-        unlocked,
-        0.1,
-        2,
-    );
+    const bands = flasks.has(base.item_class)
+        ? flaskLevelBands(base.item_class)
+        : significantLevelBands(
+              modifierLevelBands(changes, pool),
+              MARKET_BASE_MIN_LEVEL,
+              unlocked,
+              0.1,
+              2,
+          );
     const slug = base.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
@@ -186,7 +209,7 @@ for (const [baseId, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0
     const { strength = 0, dexterity = 0, intelligence = 0, level = 0 } = base.requirements ?? {};
     const identity = {
         // `marketBasesSchema` rejects a class outside `MARKET_BASE_CLASSES` when the file is written.
-        itemClass: base.item_class as MarketBase["itemClass"],
+        itemClass: marketBaseClass(base.item_class) as MarketBase["itemClass"],
         attributes: MARKET_BASE_ATTRIBUTES.filter(
             (_, index) => [strength, dexterity, intelligence][index]! > 0,
         ),
@@ -353,6 +376,8 @@ for (const rule of Object.values(clusters.bases)) {
 }
 const curatedIds = new Set<string>();
 for (const [baseId, base] of selected) {
+    // Flasks cannot be fractured.
+    if (flasks.has(base.item_class)) continue;
     const item = { ...engine.createItem(baseId, 100), rarity: "rare" as const };
     const tiers = modifierTiers(engine, baseId);
     for (const { id, mod } of engine.pool(item)) {
