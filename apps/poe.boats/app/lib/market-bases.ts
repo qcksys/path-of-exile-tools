@@ -43,6 +43,7 @@ export const MARKET_BASE_CLASSES = {
         "Wand",
         "Warstaff",
     ],
+    "flask-bases": ["Life Flask", "Mana Flask", "Hybrid Flask", "Utility Flask"],
     [MARKET_CLUSTER_BASE_CATEGORY]: [
         "Small Cluster Jewel",
         "Medium Cluster Jewel",
@@ -64,6 +65,11 @@ export const MARKET_BASE_CLASS_NAMES = Object.values(MARKET_BASE_CLASSES).flat()
     MarketBaseClass,
     ...MarketBaseClass[],
 ];
+
+/** A game data item class as the market names it: the data spells flask classes as "LifeFlask". */
+export function marketBaseClass(itemClass: string) {
+    return itemClass.replace(/(?<=\w)Flask$/, " Flask");
+}
 /** Each equipment base type's item class and attribute set ("" for none), by base type name. */
 export const marketBaseTypesSchema = z.record(
     z.string(),

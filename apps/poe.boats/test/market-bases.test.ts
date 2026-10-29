@@ -6,6 +6,7 @@ import {
     MARKET_BASE_CLASSES,
     MARKET_BASE_LINK_CLASSES,
     type MarketBaseRow,
+    marketBaseClass,
     marketBaseDescription,
     marketBaseDetails,
     marketBasesSchema,
@@ -189,8 +190,41 @@ describe("generated crafting base list", () => {
             new Set(bases.filter((entry) => entry.links).map((entry) => entry.itemClass)),
         ).toEqual(new Set(MARKET_BASE_LINK_CLASSES));
         expect(new Set(bases.map((entry) => entry.category))).toEqual(
-            new Set(["armour-bases", "weapon-bases", "accessory-bases", "cluster-jewel-bases"]),
+            new Set([
+                "armour-bases",
+                "weapon-bases",
+                "accessory-bases",
+                "flask-bases",
+                "cluster-jewel-bases",
+            ]),
         );
+    });
+
+    it("lists every utility flask and the top life, mana and hybrid flasks by item level", () => {
+        const flasks = bases.filter((entry) => entry.category === "flask-bases");
+        const names = (itemClass: string) =>
+            new Set(flasks.filter((entry) => entry.itemClass === itemClass).map((e) => e.baseType));
+        expect(names("Utility Flask").size).toBe(18);
+        expect(names("Life Flask")).toEqual(
+            new Set(["Eternal Life Flask", "Divine Life Flask", "Sanctified Life Flask"]),
+        );
+        expect(names("Mana Flask").has("Eternal Mana Flask")).toBe(true);
+        expect(names("Hybrid Flask").has("Hallowed Hybrid Flask")).toBe(true);
+        expect(
+            flasks
+                .filter((entry) => entry.baseType === "Quicksilver Flask")
+                .map((entry) => `${entry.ilvl.min}-${entry.ilvl.max}`),
+        ).toEqual(["74-81", "82-83", "84-100"]);
+        expect(flasks.every((entry) => entry.links === null && entry.quality === null)).toBe(true);
+        expect(marketBaseDetails(flasks.find((e) => e.baseType === "Quicksilver Flask")!)).toBe(
+            "ilvl 74–81 · Utility Flask",
+        );
+    });
+
+    it("names the game data's flask classes as the market does", () => {
+        expect(marketBaseClass("LifeFlask")).toBe("Life Flask");
+        expect(marketBaseClass("UtilityFlask")).toBe("Utility Flask");
+        expect(marketBaseClass("Body Armour")).toBe("Body Armour");
     });
 
     it("lists each base under a type of its category, with its attribute requirements", () => {

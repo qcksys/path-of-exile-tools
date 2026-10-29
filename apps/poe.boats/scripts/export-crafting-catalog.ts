@@ -19,6 +19,7 @@ import { itemArtUrl, itemPresentationsSchema } from "../app/lib/item-presentatio
 import {
     MARKET_BASE_ATTRIBUTES,
     MARKET_BASE_CLASS_NAMES,
+    marketBaseClass,
     marketBaseTypesSchema,
 } from "../app/lib/market-bases";
 import { MARKET_CATEGORIES, marketBaseCategory } from "../app/lib/market-categories";
@@ -133,7 +134,9 @@ export async function exportCraftingCatalog(directory: string, output: string) {
             marketBaseTypesSchema.parse(
                 Object.fromEntries(
                     Object.values(bases)
-                        .filter((base) => base.name && classes.has(base.item_class))
+                        .filter(
+                            (base) => base.name && classes.has(marketBaseClass(base.item_class)),
+                        )
                         .map((base) => {
                             const {
                                 strength = 0,
@@ -143,7 +146,7 @@ export async function exportCraftingCatalog(directory: string, output: string) {
                             return [
                                 base.name,
                                 {
-                                    itemClass: base.item_class,
+                                    itemClass: marketBaseClass(base.item_class),
                                     attributes: MARKET_BASE_ATTRIBUTES.filter(
                                         (_, index) =>
                                             [strength, dexterity, intelligence][index]! > 0,

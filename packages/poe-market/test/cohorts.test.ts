@@ -444,6 +444,29 @@ describe("market cohorts", () => {
         expect(classifier.acceptsBase("Grasping Mail")).toBe(true);
         expect(classifier.acceptsBase("Rusted Sword")).toBe(false);
     });
+
+    it("captures magic flask bases by item level, apart from uniques and corrupted flasks", () => {
+        const item = {
+            baseType: "Quicksilver Flask",
+            typeLine: "Experimenter's Quicksilver Flask of the Cheetah",
+            frameType: 1,
+            identified: true,
+            ilvl: 84,
+        };
+        expect(classifier.acceptsBase("Quicksilver Flask")).toBe(true);
+        expect(classifier.classify(normalizeApiItem("poe1", "stash", item))).toEqual({
+            matches: ["base:quicksilver-flask:84-100:any-links"],
+            unknown: [],
+        });
+        expect(
+            classifier.classify(normalizeApiItem("poe1", "stash", { ...item, ilvl: 82 })).matches,
+        ).toEqual(["base:quicksilver-flask:82-83:any-links"]);
+        for (const flags of [{ corrupted: true }, { frameType: 3 }])
+            expect(
+                classifier.classify(normalizeApiItem("poe1", "stash", { ...item, ...flags }))
+                    .matches,
+            ).toEqual([]);
+    });
     it("uses shared query semantics, preserves overlapping membership and does not duplicate it", () => {
         const classifier = compileMarketCohorts(manifest);
         const item = normalizeApiItem("poe1", "stash", {

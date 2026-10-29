@@ -17,6 +17,7 @@ import {
     MARKET_BASE_MIN_LEVEL,
     MARKET_CLUSTER_LEVEL_BANDS,
     type MarketBase,
+    marketBaseClass,
     marketBasesSchema,
 } from "../app/lib/market-bases";
 import {
@@ -49,6 +50,8 @@ const current = history.revisions.find((entry) =>
 );
 if (!current) throw new Error("The crafting presets require a current ruleset.");
 const presetCohorts = craftingPresetCohorts(engine, current);
+// Flasks are never rare: their mod pool is a magic item's.
+const flasks = new Set(["LifeFlask", "ManaFlask", "HybridFlask", "UtilityFlask"]);
 const equipment = new Set([
     "Two Hand Sword",
     "Wand",
@@ -74,7 +77,9 @@ const equipment = new Set([
     "Boots",
     "Gloves",
     "Quiver",
+    ...flasks,
 ]);
+const craftedRarity = (itemClass: string) => (flasks.has(itemClass) ? "magic" : "rare");
 const armour = new Set(["Helmet", "Body Armour", "Boots", "Gloves", "Shield"]);
 const includedNames = new Set([
     "Grasping Mail",
@@ -112,7 +117,7 @@ for (const entry of Object.entries(catalog.bases)) {
     if (
         !equipment.has(base.item_class) ||
         base.corrupted ||
-        !base.rarities.includes("rare") ||
+        !base.rarities.includes(craftedRarity(base.item_class)) ||
         id.includes("Royale")
     )
         continue;
@@ -120,7 +125,11 @@ for (const entry of Object.entries(catalog.bases)) {
         .filter(([, range]) => range && range.max > 0)
         .map(([key]) => key)
         .sort();
-    const key = JSON.stringify([base.item_class, defences]);
+    // Each utility flask has its own effect, so every one is listed.
+    const key = JSON.stringify([
+        base.item_class,
+        base.item_class === "UtilityFlask" ? base.name : defences,
+    ]);
     grouped.set(key, [...(grouped.get(key) ?? []), entry]);
 }
 const selected = new Map<string, (typeof catalog.bases)[string]>();
@@ -149,7 +158,7 @@ for (const [baseId, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0
     const pool = (level: number) =>
         variants.flatMap((id) =>
             engine
-                .pool({ ...engine.createItem(id, level), rarity: "rare" })
+                .pool({ ...engine.createItem(id, level), rarity: craftedRarity(base.item_class) })
                 .map((mod) => ({ ...mod, id: `${id}:${mod.id}` })),
         );
     const topTiers = new Set(
@@ -186,7 +195,7 @@ for (const [baseId, base] of [...selected].sort((a, b) => a[0].localeCompare(b[0
     const { strength = 0, dexterity = 0, intelligence = 0, level = 0 } = base.requirements ?? {};
     const identity = {
         // `marketBasesSchema` rejects a class outside `MARKET_BASE_CLASSES` when the file is written.
-        itemClass: base.item_class as MarketBase["itemClass"],
+        itemClass: marketBaseClass(base.item_class) as MarketBase["itemClass"],
         attributes: MARKET_BASE_ATTRIBUTES.filter(
             (_, index) => [strength, dexterity, intelligence][index]! > 0,
         ),
@@ -353,6 +362,8 @@ for (const rule of Object.values(clusters.bases)) {
 }
 const curatedIds = new Set<string>();
 for (const [baseId, base] of selected) {
+    // Flasks cannot be fractured.
+    if (flasks.has(base.item_class)) continue;
     const item = { ...engine.createItem(baseId, 100), rarity: "rare" as const };
     const tiers = modifierTiers(engine, baseId);
     for (const { id, mod } of engine.pool(item)) {
