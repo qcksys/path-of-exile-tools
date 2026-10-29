@@ -18,6 +18,10 @@ import { marketSignatureLabel } from "~/lib/mod-pools";
 import { marketLink, parseMarketFilters } from "~/schemas/market";
 import type { Route } from "./+types/item";
 
+export const meta: Route.MetaFunction = ({ params }) => [
+    { title: `${params.item} · Season market · POE.BOATS` },
+];
+
 export function loader({ request, context, params }: Route.LoaderArgs) {
     return getMarketData(
         context.get(dbContext),

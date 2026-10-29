@@ -27,6 +27,7 @@ export default [
                 route("exchange/*", "routes/market/poe2-exchange.tsx"),
             ]),
         ]),
+        route("*", "routes/404.tsx"),
     ]),
     route("login", "routes/login.tsx"),
     route("account", "routes/account.tsx"),
@@ -53,5 +54,4 @@ export default [
     ]),
     ...prefix("2", [route("crafting/:mode?", "routes/crafting/poe2.tsx")]),
     route("idol-planner/*", "routes/legacy-idol-planner.ts"),
-    route("*", "routes/404.tsx"),
 ] satisfies RouteConfig;

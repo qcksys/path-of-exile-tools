@@ -46,6 +46,15 @@ it("exports PoE 2 skill gem identities without adding equipment to the exchange 
         expect(names["Metadata/Items/Currency/CurrencyModValues"]).toBe("Divine Orb");
         expect(names["Metadata/Items/Armours/BodyArmours/FourBodyStr1"]).toBeUndefined();
         expect(names["Metadata/Items/Weapons/TwoHandWeapons/Bows/FourBow1"]).toBeUndefined();
+        const items: Record<string, { art: string }> = JSON.parse(
+            await readFile(join(directory, "items-poe2.json"), "utf8"),
+        );
+        expect(items["Metadata/Items/SoulCores/RuneFireLesser"]!.art).toMatch(
+            /^https:\/\/web\.poecdn\.com\/gen\/image\/.+\/FireRuneTier1\.png$/,
+        );
+        expect(items["Metadata/Items/Armours/BodyArmours/FourBodyStr1"]!.art).toMatch(
+            /^https:\/\/cdn\.poe2db\.tw\/image\/Art\//,
+        );
     } finally {
         await rm(directory, { recursive: true, force: true });
     }

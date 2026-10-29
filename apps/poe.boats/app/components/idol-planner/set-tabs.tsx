@@ -20,6 +20,7 @@ import { Input } from "~/components/ui/input";
 import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { useTranslations } from "~/i18n";
+import { sharePath } from "~/lib/share";
 import type { IdolSet } from "~/schemas/idol-set";
 
 interface SetTabsProps {
@@ -93,7 +94,7 @@ export function SetTabs({
             setImportDialogOpen(false);
             setShareUrl("");
             setImportError("");
-            navigate(`/share/${shareMatch[1]}`);
+            navigate(sharePath(shareMatch[1]!));
         } else {
             setImportError(t("idolSet.invalidShareUrl"));
         }

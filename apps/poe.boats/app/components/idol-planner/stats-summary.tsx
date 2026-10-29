@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useScarabPrices } from "~/context/scarab-prices-context";
 import { getMapCraftingOptionById } from "~/data/map-crafting-options";
-import { getScarabById, getScarabEffect, getScarabName } from "~/data/scarab-data";
+import { getScarabEffect, getScarabName, getSlotScarabs } from "~/data/scarab-data";
 import { useLocale, useTranslations } from "~/i18n";
 import type { SupportedLocale } from "~/i18n/types";
 import { highlightNumbers } from "~/lib/highlight-numbers";
@@ -203,9 +203,7 @@ export function StatsSummary({ placements, inventory, mapDevice }: StatsSummaryP
 
     const selectedScarabs = useMemo(() => {
         if (!mapDevice) return [];
-        return mapDevice.slots
-            .map((slot) => (slot.scarabId ? getScarabById(slot.scarabId) : null))
-            .filter((s): s is Scarab => s !== null);
+        return getSlotScarabs(mapDevice.slots);
     }, [mapDevice]);
 
     const selectedCraftingOption = useMemo(() => {

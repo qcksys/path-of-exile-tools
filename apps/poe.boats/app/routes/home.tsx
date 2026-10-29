@@ -1,4 +1,16 @@
 import { Link } from "react-router";
+import type { Route } from "./+types/home";
+
+export function meta(): Route.MetaDescriptors {
+    return [
+        { title: "POE.BOATS · Path of Exile tools" },
+        {
+            name: "description",
+            content:
+                "Crafting calculators, market prices, arbitrage and idol planning for Path of Exile 1 and Path of Exile 2.",
+        },
+    ];
+}
 
 const Home = () => {
     return (

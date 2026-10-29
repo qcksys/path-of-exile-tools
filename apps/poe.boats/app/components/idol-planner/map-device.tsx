@@ -21,6 +21,7 @@ import {
     getScarabEffect,
     getScarabName,
     getScarabsByCategory,
+    getSlotScarabs,
     SCARAB_CATEGORIES,
     SCARABS,
 } from "~/data/scarab-data";
@@ -467,9 +468,7 @@ export function MapDeviceComponent({
     }, [mapDevice.slots]);
 
     const selectedScarabs = useMemo(() => {
-        return mapDevice.slots
-            .map((slot) => (slot.scarabId ? getScarabById(slot.scarabId) : null))
-            .filter((s): s is Scarab => s !== null);
+        return getSlotScarabs(mapDevice.slots);
     }, [mapDevice.slots]);
 
     const hasAwakeningScrab = useMemo(() => {

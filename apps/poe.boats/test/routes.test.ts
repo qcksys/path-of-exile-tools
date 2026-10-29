@@ -3,6 +3,7 @@ import { matchRoutes } from "react-router";
 import { describe, expect, it } from "vite-plus/test";
 import { buildShareUrl } from "~/lib/share";
 import routeConfig from "~/routes";
+import { action as notFoundAction, loader as notFoundLoader } from "~/routes/404";
 import { action, loader } from "~/routes/legacy-idol-planner";
 
 function routeObjects(entries: RouteConfigEntry[]): import("react-router").RouteObject[] {
@@ -87,7 +88,8 @@ describe("site layout", () => {
         ["/login", false],
         ["/account", false],
         ["/api/stash-ingest", false],
-        ["/3/", false],
+        ["/3/", true],
+        ["/1/idol-planner/unknown", true],
     ])("%s renders inside the site layout: %s", (path, inside) => {
         const ids = matchRoutes(routes, path)?.map((match) => match.route.id);
         expect(ids?.includes("routes/layouts/site.tsx")).toBe(inside);
@@ -119,6 +121,21 @@ describe("legacy planner redirects", () => {
 
         expect(response.status).toBe(308);
         expect(response.headers.get("Location")).toBe("/1/idol-planner/api/sets/example");
+    });
+});
+
+describe("not found route", () => {
+    it.each([
+        ["loader", notFoundLoader],
+        ["action", notFoundAction],
+    ])("throws a 404 from its %s", (_, handler) => {
+        let thrown: unknown;
+        try {
+            handler();
+        } catch (error) {
+            thrown = error;
+        }
+        expect(thrown).toMatchObject({ init: { status: 404 } });
     });
 });
 
