@@ -32,6 +32,7 @@ describe("upstream modifier formats", () => {
 describe("Foulborn uniques", () => {
     const foulborn = {
         name: "Foulborn Hand of Thought and Motion",
+        baseType: "Blue Pearl Amulet",
         frameType: 3,
         identified: true,
         mutated: true,
