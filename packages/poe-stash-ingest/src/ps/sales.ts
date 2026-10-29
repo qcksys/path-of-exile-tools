@@ -1,4 +1,5 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
+import { yellowBeastMarket, yellowBeastNames } from "@poe-tools/market";
 import { params } from "#src/ps/rounds.ts";
 import { withTransaction } from "#src/shared/db.ts";
 import type { ListingTab } from "#src/shared/stash-tab.ts";
@@ -14,7 +15,8 @@ export const SALE_POLICY = {
 /**
  * Records the listings these stashes lost in the current transaction as sale candidates. A removal
  * from a public stash gives its `tab`, so listings seen before tabs were recorded take it; a sale
- * is compared only with listings in the same kind of tab.
+ * is compared only with listings in the same kind of tab. Yellow beast species are listed as one
+ * market, so a yellow beast is compared with listings of every yellow species.
  */
 export async function recordRemovals(
     conn: DuckDBConnection,
@@ -34,23 +36,31 @@ export async function recordRemovals(
         );
     }
     const stashIds = removals.map((removal) => removal.stashId);
+    const marketKey = (item: string) =>
+        `CASE WHEN list_contains($2::JSON::VARCHAR[], ${item}.item_key) THEN $3 ELSE ${item}.item_key END`;
     await conn.run(
         `INSERT INTO ps_sale BY NAME
          WITH stash AS MATERIALIZED (
-             SELECT * FROM ps_listing WHERE stash_id IN (${params(stashIds, 2)})
+             SELECT * FROM ps_listing WHERE stash_id IN (${params(stashIds, 4)})
          ), removed AS MATERIALIZED (
              -- A stash changed twice in one page repeats its removals; ON CONFLICT would scan
              -- every sale, while this transaction's own sales sit in the newest row groups.
              SELECT stash.* REPLACE (coalesce(stash.tab, j.value->>'tab') AS tab),
-                (j.value->>'withdrawn')::BOOLEAN AS withdrawn FROM stash
+                (j.value->>'withdrawn')::BOOLEAN AS withdrawn,
+                ${marketKey("stash")} AS market_key FROM stash
              JOIN json_each($1::JSON) j ON stash.stash_id = (j.value->>'stashId')
              WHERE stash.removed_at = current_timestamp::TIMESTAMP AND NOT EXISTS (
                  SELECT 1 FROM ps_sale s WHERE s.removed_at = current_timestamp::TIMESTAMP
                      AND s.stash_id = stash.stash_id AND s.item_id = stash.item_id)
+         ), market_items AS (
+             SELECT item_key FROM removed
+             UNION SELECT unnest($2::JSON::VARCHAR[]) WHERE EXISTS (
+                 SELECT 1 FROM removed WHERE market_key = $3)
          ), market AS MATERIALIZED (
-             SELECT * FROM ps_listing WHERE item_key IN (SELECT item_key FROM removed)
+             SELECT *, ${marketKey("ps_listing")} AS market_key FROM ps_listing
+             WHERE item_key IN (SELECT item_key FROM market_items)
          )
-         SELECT l.* EXCLUDE (raw_item, withdrawn),
+         SELECT l.* EXCLUDE (raw_item, withdrawn, market_key),
             CASE WHEN l.withdrawn THEN 'withdrawn'
                 -- Far behind the stream (initial catch-up, or a long outage), a removal's time and
                 -- market say little about when or whether it sold.
@@ -65,7 +75,7 @@ export async function recordRemovals(
              SELECT median(seller_price) AS price, count(*) AS sellers FROM (
                  SELECT lower(p.account_name), median(p.price_amount) AS seller_price
                  FROM market p
-                 WHERE p.league = l.league AND p.item_key = l.item_key
+                 WHERE p.league = l.league AND p.market_key = l.market_key
                      AND p.identified = l.identified AND p.corrupted = l.corrupted
                      AND coalesce(p.foil_variation, -1) = coalesce(l.foil_variation, -1)
                      AND coalesce(p.links, 0) = coalesce(l.links, 0)
@@ -79,7 +89,12 @@ export async function recordRemovals(
                  GROUP BY lower(p.account_name)
              ) peers
          ) m ON TRUE`,
-        [JSON.stringify(removals), ...stashIds],
+        [
+            JSON.stringify(removals),
+            JSON.stringify(yellowBeastNames),
+            yellowBeastMarket,
+            ...stashIds,
+        ],
     );
 }
 

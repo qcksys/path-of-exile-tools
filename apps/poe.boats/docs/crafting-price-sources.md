@@ -196,7 +196,7 @@ Recipe identity references:
 - [Extracted Bestiary component identities](https://www.poewiki.net/wiki/Module:Bestiary/components).
 - [Black Mórrigan recipe components](https://www.poewiki.net/wiki/The_Black_M%C3%B3rrigan).
 - [Four-sacrifice beastcrafting](https://www.poewiki.net/wiki/Beastcrafting).
-- [Pinned generic-beast classification](../app/lib/crafting-yellow-beasts.generated.json).
+- [Pinned generic-beast classification](../../../packages/poe-market/data/yellow-beasts-poe1.json).
 
 The 3.29 imprint beast is named Craicic Croaker in the current feed. A missing or
 renamed source identity fails closed; no fuzzy name match or cheapest unrelated
