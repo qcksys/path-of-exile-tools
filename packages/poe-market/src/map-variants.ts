@@ -3,7 +3,8 @@ import { parseGemBandFilter } from "./gem-variants.ts";
 
 /**
  * PoE 1 map markets: one per map base (`Map (Tier 16)`, `Nightmare Map`), corruption state,
- * identification, mod count band, delirium and, on tier 16 and Nightmare maps, item quantity band.
+ * identification, mod count band, delirium, influence (Shaper, Elder, an Elder Guardian or the
+ * Originator's Memories) and, on tier 16 and Nightmare maps, item quantity band.
  * Blighted and Blight-ravaged maps share the tier's base type and are not tracked.
  */
 export const MAP_MOD_BANDS = ["1-6", "8"] as const;
@@ -121,23 +122,48 @@ export function mapModCount(explicitMods: readonly string[]) {
     return count(lines.sort());
 }
 
+export const MAP_INFLUENCES = ["shaper", "elder", "elder-guardian", "memory"] as const;
+export const MAP_INFLUENCE_LABELS = ["Shaper", "Elder", "Elder Guardian", "Memory"] as const;
+export type MapInfluence = (typeof MAP_INFLUENCES)[number];
+/** The influence filter's bands: each influence, and `none` for uninfluenced maps. */
+export const MAP_INFLUENCE_BANDS = ["none", ...MAP_INFLUENCES] as const;
+export const MAP_INFLUENCE_BAND_LABELS = ["None", ...MAP_INFLUENCE_LABELS] as const;
+export type MapInfluenceBand = (typeof MAP_INFLUENCE_BANDS)[number];
+
+/** The implicit naming each map influence, which shows whether or not the map is identified. */
+const MAP_INFLUENCE_IMPLICITS: Record<string, MapInfluence> = {
+    "Area is influenced by The Shaper": "shaper",
+    "Area is influenced by The Elder": "elder",
+    "Area is Influenced by the Originator's Memories": "memory",
+};
+/** Elder maps occupied by a guardian trade as one market: a Blessed Orb rerolls the guardian. */
+const ELDER_GUARDIAN = /^Map is occupied by The (?:Enslaver|Eradicator|Constrictor|Purifier)$/;
+
+export function mapInfluence(implicitMods: readonly string[]): MapInfluence | undefined {
+    if (implicitMods.some((mod) => ELDER_GUARDIAN.test(mod))) return "elder-guardian";
+    return implicitMods.map((mod) => MAP_INFLUENCE_IMPLICITS[mod]).find(Boolean);
+}
+
 /**
- * The market's `signatureValue`, e.g. `8 mods · Quantity 100–119% · Delirium 40%`, or
- * `Unidentified · Delirium 0%`: an unidentified map shows neither its mods nor its quantity.
+ * The market's `signatureValue`, e.g. `8 mods · Quantity 100–119% · Delirium 40%`,
+ * `Unidentified · Delirium 0%` (an unidentified map shows neither its mods nor its quantity), or
+ * `1–6 mods · Delirium 0% · Memory` for an influenced map.
  */
 export function mapVariantValue(variant: {
     identified: boolean;
     mods?: MapModBand;
     quantity?: MapQuantityBand;
     delirium: MapDeliriumBand;
+    influence?: MapInfluence;
 }) {
-    const { identified, mods, quantity, delirium } = variant;
+    const { identified, mods, quantity, delirium, influence } = variant;
     return [
         identified && mods ? MAP_MOD_LABELS[MAP_MOD_BANDS.indexOf(mods)] : "Unidentified",
         identified && quantity
             ? [`Quantity ${MAP_QUANTITY_LABELS[MAP_QUANTITY_BANDS.indexOf(quantity)]}`]
             : [],
         `Delirium ${MAP_DELIRIUM_LABELS[MAP_DELIRIUM_BANDS.indexOf(delirium)]}`,
+        influence ? [MAP_INFLUENCE_LABELS[MAP_INFLUENCES.indexOf(influence)]] : [],
     ]
         .flat()
         .join(" · ");
@@ -153,17 +179,22 @@ function allowedBands<Band extends string>(value: string, bands: readonly Band[]
 }
 
 /**
- * Every map `signatureValue` passing mod count, quantity and delirium band filters, or undefined
- * when none is set. Mod count and quantity filters drop unidentified maps, which show neither; a
- * quantity filter also drops maps below tier 16, which have no quantity band.
+ * Every map `signatureValue` passing mod count, quantity, delirium and influence band filters, or
+ * undefined when none is set. Mod count and quantity filters drop unidentified maps, which show
+ * neither; a quantity filter also drops maps below tier 16, which have no quantity band.
  */
 export function mapVariantValues(filters: {
     mapMods: string;
     mapQuantity: string;
     mapDelirium: string;
+    mapInfluence: string;
 }) {
-    if (!filters.mapMods && !filters.mapQuantity && !filters.mapDelirium) return undefined;
+    if (!filters.mapMods && !filters.mapQuantity && !filters.mapDelirium && !filters.mapInfluence)
+        return undefined;
     const deliria = allowedBands(filters.mapDelirium, MAP_DELIRIUM_BANDS);
+    const influences = allowedBands(filters.mapInfluence, MAP_INFLUENCE_BANDS).map((band) =>
+        band === "none" ? undefined : band,
+    );
     const quantities = [
         ...allowedBands(filters.mapQuantity, MAP_QUANTITY_BANDS),
         ...(filters.mapQuantity ? [] : [undefined]),
@@ -177,6 +208,8 @@ export function mapVariantValues(filters: {
         ...(unidentified ? [{ identified: false, mods: undefined, quantity: undefined }] : []),
     ];
     return variants.flatMap((variant) =>
-        deliria.map((delirium) => mapVariantValue({ ...variant, delirium })),
+        deliria.flatMap((delirium) =>
+            influences.map((influence) => mapVariantValue({ ...variant, delirium, influence })),
+        ),
     );
 }

@@ -1117,11 +1117,12 @@ it("filters skill gems by tri-state level, quality and corruption toggles", asyn
     expect(screen.getByLabelText("Current URL").textContent).not.toContain("gemLevel");
 });
 
-it("filters maps by tri-state mod count, quantity and delirium toggles", async () => {
+it("filters maps by tri-state mod count, quantity, delirium and influence toggles", async () => {
     showMarket("/1/market/maps?league=Allflame");
     const mods = await screen.findByRole("group", { name: "Mods" });
     const quantity = screen.getByRole("group", { name: "Item quantity" });
     const delirium = screen.getByRole("group", { name: "Delirium" });
+    const influence = screen.getByRole("group", { name: "Influence" });
     expect(screen.getByRole("combobox", { name: "Corruption" })).toBeTruthy();
 
     fireEvent.click(within(mods).getByRole("button", { name: "8 mods: any" }));
@@ -1129,6 +1130,7 @@ it("filters maps by tri-state mod count, quantity and delirium toggles", async (
     fireEvent.click(within(quantity).getByRole("button", { name: "120–139%: any" }));
     fireEvent.click(within(delirium).getByRole("button", { name: "0%: any" }));
     fireEvent.click(within(delirium).getByRole("button", { name: "0%: included" }));
+    fireEvent.click(within(influence).getByRole("button", { name: "Elder Guardian: any" }));
     await waitFor(() =>
         expect(getMarketData).toHaveBeenLastCalledWith(
             expect.anything(),
@@ -1137,6 +1139,7 @@ it("filters maps by tri-state mod count, quantity and delirium toggles", async (
                 mapMods: "8",
                 mapQuantity: "100-119,120-139",
                 mapDelirium: "-0",
+                mapInfluence: "elder-guardian",
             }),
             "list",
         ),
@@ -1153,7 +1156,12 @@ it("filters maps by tri-state mod count, quantity and delirium toggles", async (
     await waitFor(() =>
         expect(getMarketData).toHaveBeenLastCalledWith(
             expect.anything(),
-            expect.objectContaining({ category: "currency", mapMods: "", mapQuantity: "" }),
+            expect.objectContaining({
+                category: "currency",
+                mapMods: "",
+                mapQuantity: "",
+                mapInfluence: "",
+            }),
             "list",
         ),
     );
@@ -1163,4 +1171,5 @@ it("filters maps by tri-state mod count, quantity and delirium toggles", async (
         ),
     );
     expect(screen.getByLabelText("Current URL").textContent).not.toContain("mapMods");
+    expect(screen.getByLabelText("Current URL").textContent).not.toContain("mapInfluence");
 });

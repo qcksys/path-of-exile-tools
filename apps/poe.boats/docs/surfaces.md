@@ -174,13 +174,16 @@ belong to Maps, though their item class is `MapKey`. Each lists one market per c
 variant (`signatureKind` `map`, `signatureValue` like `8 mods · Quantity 100–119% · Delirium 40%`):
 mod count band 1–6 (normal maps included) or 8 (7 counts as 8), delirium 0–100% in 20% steps from
 the `Players in Area are N% Delirious` enchant, and on tier 16 and Nightmare maps the Item Quantity
-band (0–59%, then 20% steps to 200%+). Unidentified maps show neither mods nor quantity, so their
-value is `Unidentified · Delirium N%`; the identification is in the value so the rollup, which
+band (0–59%, then 20% steps to 200%+). An influence implicit appends `Shaper`, `Elder`,
+`Elder Guardian` (any of the four guardians, which a Blessed Orb rerolls) or `Memory` (the
+Originator's Memories). A rare map's random name is not stored. Unidentified maps show neither mods
+nor quantity, so their value is `Unidentified · Delirium N%`; the identification is in the value so the rollup, which
 groups by item key and signature, keeps the `identified` column true to each market. Several map
 mods show two or more lines, so the mod count matches lines to the multi-line map mods of the game
 data (`vp run game-data:maps` writes `packages/poe-market/data/maps-poe1.json`) and takes the
 fewest mods that explain them. The Maps list adds tri-state toggles per band; `mapMods`,
-`mapQuantity` and `mapDelirium` hold them as `8,-1-6`, and links to other categories drop them.
+`mapQuantity`, `mapDelirium` and `mapInfluence` (`none`, `shaper`, `elder`, `elder-guardian`,
+`memory`) hold them as `8,-1-6`, and links to other categories drop them.
 The shared market query applies category, text, identification, corruption, gem and map bands,
 column ranges and ordering before pagination. Without a `corruption` filter, the unique weapon, armour and
 accessory categories list uncorrupted markets and every other category lists any corruption; the

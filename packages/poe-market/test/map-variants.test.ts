@@ -4,6 +4,7 @@ import {
     isMapMarketBase,
     mapDeliriumBand,
     mapHasQuantityBands,
+    mapInfluence,
     mapModBand,
     mapModCount,
     mapQuantityBand,
@@ -103,15 +104,35 @@ describe("map variants", () => {
         expect(mapVariantValue({ identified: false, delirium: "20" })).toBe(
             "Unidentified · Delirium 20%",
         );
+        expect(mapVariantValue({ identified: false, delirium: "0", influence: "memory" })).toBe(
+            "Unidentified · Delirium 0% · Memory",
+        );
     });
 
+    it.each([
+        [["Area is influenced by The Shaper"], "shaper"],
+        [["Area is influenced by The Elder"], "elder"],
+        [["Area is influenced by The Elder", "Map is occupied by The Enslaver"], "elder-guardian"],
+        [["Map is occupied by The Purifier", "Area is influenced by The Elder"], "elder-guardian"],
+        [["Area is Influenced by the Originator's Memories"], "memory"],
+        [[], undefined],
+    ] as const)("reads the influence of a map with implicits %j as %s", (implicits, influence) => {
+        expect(mapInfluence(implicits)).toBe(influence);
+    });
+
+    const noFilters = { mapMods: "", mapQuantity: "", mapDelirium: "", mapInfluence: "" };
+
     it("lists no values without filters", () => {
-        expect(mapVariantValues({ mapMods: "", mapQuantity: "", mapDelirium: "" })).toBeUndefined();
+        expect(mapVariantValues(noFilters)).toBeUndefined();
     });
 
     it("lists the values passing band filters", () => {
-        const values = mapVariantValues({ mapMods: "8", mapQuantity: "", mapDelirium: "-0" });
+        const values = mapVariantValues({ ...noFilters, mapMods: "8", mapDelirium: "-0" });
         expect(values).toContain("8 mods · Delirium 20%");
+        expect(values).toContain("8 mods · Delirium 20% · Memory");
+        expect(values).toContain("8 mods · Delirium 20% · Shaper");
+        expect(values).toContain("8 mods · Delirium 20% · Elder");
+        expect(values).toContain("8 mods · Delirium 20% · Elder Guardian");
         expect(values).toContain("8 mods · Quantity 200%+ · Delirium 100%");
         expect(values).not.toContain("8 mods · Delirium 0%");
         expect(values).not.toContain("1–6 mods · Delirium 20%");
@@ -119,7 +140,7 @@ describe("map variants", () => {
     });
 
     it("keeps unidentified maps and lower tiers unless a filter rules them out", () => {
-        const values = mapVariantValues({ mapMods: "", mapQuantity: "", mapDelirium: "20" });
+        const values = mapVariantValues({ ...noFilters, mapDelirium: "20" });
         expect(values).toEqual(
             expect.arrayContaining([
                 "Unidentified · Delirium 20%",
@@ -127,13 +148,29 @@ describe("map variants", () => {
                 "1–6 mods · Quantity 0–59% · Delirium 20%",
             ]),
         );
-        const quantity = mapVariantValues({ mapMods: "", mapQuantity: "100-119", mapDelirium: "" });
+        const quantity = mapVariantValues({ ...noFilters, mapQuantity: "100-119" });
         expect(quantity).toContain("8 mods · Quantity 100–119% · Delirium 0%");
         expect(quantity).not.toContain("8 mods · Delirium 0%");
         expect(quantity).not.toContain("Unidentified · Delirium 0%");
     });
 
+    it("lists the values passing an influence filter", () => {
+        const values = mapVariantValues({ ...noFilters, mapInfluence: "elder-guardian,memory" });
+        expect(values).toContain("Unidentified · Delirium 0% · Elder Guardian");
+        expect(values).toContain("8 mods · Delirium 40% · Memory");
+        expect(values).not.toContain("8 mods · Delirium 40% · Elder");
+        expect(values).not.toContain("8 mods · Delirium 40%");
+        const uninfluenced = mapVariantValues({ ...noFilters, mapInfluence: "none" });
+        expect(uninfluenced).toContain("8 mods · Delirium 40%");
+        expect(uninfluenced?.some((value) => value.endsWith("Shaper"))).toBe(false);
+        const notShaper = mapVariantValues({ ...noFilters, mapInfluence: "-shaper" });
+        expect(notShaper).toContain("8 mods · Delirium 40%");
+        expect(notShaper).toContain("8 mods · Delirium 40% · Elder");
+        expect(notShaper?.some((value) => value.endsWith("Shaper"))).toBe(false);
+    });
+
     it("lists nothing for an unknown band", () => {
-        expect(mapVariantValues({ mapMods: "7", mapQuantity: "", mapDelirium: "" })).toEqual([]);
+        expect(mapVariantValues({ ...noFilters, mapMods: "7" })).toEqual([]);
+        expect(mapVariantValues({ ...noFilters, mapInfluence: "conqueror" })).toEqual([]);
     });
 });

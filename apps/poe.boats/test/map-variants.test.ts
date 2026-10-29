@@ -132,6 +132,32 @@ describe("map capture", () => {
             map("e", "Map (Tier 16)", { identified: false, rarity: "Rare", delirious: 20 }),
             "Unidentified · Delirium 20%",
         ],
+        [
+            "a Memory Influenced tier 12 map",
+            map("f", "Map (Tier 12)", {
+                explicitMods: EIGHT_MODS,
+                implicitMods: ["Area is Influenced by the Originator's Memories"],
+            }),
+            "8 mods · Delirium 0% · Memory",
+        ],
+        [
+            "a Shaper influenced tier 16 map",
+            map("h", "Map (Tier 16)", {
+                explicitMods: EIGHT_MODS,
+                quantity: 120,
+                implicitMods: ["Area is influenced by The Shaper"],
+            }),
+            "8 mods · Quantity 120–139% · Delirium 0% · Shaper",
+        ],
+        [
+            "an unidentified Memory Influenced map",
+            map("g", "Map (Tier 16)", {
+                identified: false,
+                rarity: "Rare",
+                implicitMods: ["Area is Influenced by the Originator's Memories"],
+            }),
+            "Unidentified · Delirium 0% · Memory",
+        ],
     ])("bands %s", (_name, item, value) => {
         const signature = extractModSignature(item);
         expect(signature?.kind).toBe("map");
@@ -178,12 +204,14 @@ describe("map split in ingest", () => {
                     stashType: "PremiumStash",
                     items: [
                         map("a", "Map (Tier 16)", {
+                            name: "Damnation Carving",
                             explicitMods: EIGHT_MODS,
                             quantity: 105,
                             corrupted: true,
                             note: "~price 3 divine",
                         }),
                         map("b", "Map (Tier 16)", {
+                            name: "Hate Carving",
                             explicitMods: EIGHT_MODS,
                             quantity: 112,
                             corrupted: true,
@@ -196,6 +224,28 @@ describe("map split in ingest", () => {
                             note: "~price 4 chaos",
                         }),
                         map("e", "Map (Tier 3)", { note: "~price 1 chaos" }),
+                        map("f", "Map (Tier 3)", {
+                            implicitMods: ["Area is Influenced by the Originator's Memories"],
+                            note: "~price 6 chaos",
+                        }),
+                        map("g", "Map (Tier 3)", {
+                            implicitMods: ["Area is influenced by The Elder"],
+                            note: "~price 7 chaos",
+                        }),
+                        map("h", "Map (Tier 3)", {
+                            implicitMods: [
+                                "Area is influenced by The Elder",
+                                "Map is occupied by The Constrictor",
+                            ],
+                            note: "~price 8 chaos",
+                        }),
+                        map("i", "Map (Tier 3)", {
+                            implicitMods: [
+                                "Area is influenced by The Elder",
+                                "Map is occupied by The Eradicator",
+                            ],
+                            note: "~price 9 chaos",
+                        }),
                     ],
                 },
             ],
@@ -208,6 +258,7 @@ describe("map split in ingest", () => {
         await rollupPs(db.conn, { hour, league: "Standard" });
         const rows = deliveries.flatMap((delivery) => delivery.rows);
         expect(rows.every((row) => row.signatureKind === "map")).toBe(true);
+        expect(rows.every((row) => row.name === null)).toBe(true);
         expect(
             rows
                 .map((row) => [
@@ -222,6 +273,9 @@ describe("map split in ingest", () => {
             ["Map (Tier 16)", "1–6 mods · Quantity 0–59% · Delirium 0%", false, true, 1],
             ["Map (Tier 16)", "8 mods · Quantity 100–119% · Delirium 0%", true, true, 2],
             ["Map (Tier 16)", "Unidentified · Delirium 0%", false, false, 1],
+            ["Map (Tier 3)", "1–6 mods · Delirium 0% · Elder Guardian", false, true, 2],
+            ["Map (Tier 3)", "1–6 mods · Delirium 0% · Elder", false, true, 1],
+            ["Map (Tier 3)", "1–6 mods · Delirium 0% · Memory", false, true, 1],
             ["Map (Tier 3)", "1–6 mods · Delirium 0%", false, true, 1],
         ]);
     });

@@ -73,7 +73,9 @@ WITH observations AS (
         l.mod_signature::VARCHAR AS signature_data,
         l.icon_asset,
         l.base_type,
-        COALESCE(l.name, b.name) AS resolved_name,
+        -- Listings stored before maps dropped their names still carry a rare map's name.
+        CASE WHEN json_extract_string(l.mod_signature, '$.kind') = 'map' THEN NULL
+            ELSE COALESCE(l.name, b.name) END AS resolved_name,
         l.frame_type,
         l.identified,
         l.account_name,
