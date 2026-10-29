@@ -30,6 +30,16 @@ import {
 
 const digest = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
+const UNTRADEABLE_CLASSES = new Set(["QuestItem", "HiddenItem", "GhostItem", "RemovedItem"]);
+
+/** Orders same-named bases so a released, tradeable one sorts last. */
+function catalogRank(base: { release_state: string; item_class: string }) {
+    return (
+        (base.release_state === "released" ? 2 : 0) +
+        (UNTRADEABLE_CLASSES.has(base.item_class) ? 0 : 1)
+    );
+}
+
 export function parseSocketInfo(value: unknown) {
     if (value === undefined) return [];
     if (typeof value !== "string" || !/^\d+:\d+:\d+(?: \d+:\d+:\d+)*$/.test(value))
@@ -85,9 +95,12 @@ export async function exportCraftingCatalog(directory: string, output: string) {
         resolve(dirname(output), `market-categories-${manifest.game}.json`),
         `${JSON.stringify(
             Object.fromEntries(
-                Object.values(bases)
-                    .filter((base) => base.name)
-                    .map((base) => [base.name, marketBaseCategory(base.name, base.item_class)]),
+                Object.entries(bases)
+                    .filter(([, base]) => base.name)
+                    // Bases share names (Vaal Temple Map is a Map and a MapKey); the market keys
+                    // by name, so the last entry, a released tradeable base, wins.
+                    .sort(([, a], [, b]) => catalogRank(a) - catalogRank(b))
+                    .map(([id, base]) => [base.name, marketBaseCategory(id, base)]),
             ),
         )}\n`,
     );
@@ -96,9 +109,9 @@ export async function exportCraftingCatalog(directory: string, output: string) {
         `${JSON.stringify(
             Object.fromEntries(
                 Object.entries(bases)
-                    .filter(([, base]) => {
+                    .filter(([id, base]) => {
                         if (!base.name) return false;
-                        const category = marketBaseCategory(base.name, base.item_class);
+                        const category = marketBaseCategory(id, base);
                         return (
                             category === "gems" ||
                             MARKET_CATEGORIES[category].group !== "Equipment & gems"

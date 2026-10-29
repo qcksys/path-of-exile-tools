@@ -30,6 +30,12 @@ export const MARKET_CATEGORIES = {
     wombgifts: { label: "Wombgifts", group: "League mechanics", icon: "Ancient Wombgift" },
     legion: { label: "Legion", group: "League mechanics", icon: "Vaal Enshrouding Crystal" },
     expedition: { label: "Expedition", group: "League mechanics", icon: "Exotic Coinage" },
+    embers: {
+        label: "Allflame embers",
+        group: "League mechanics",
+        icon: "Allflame Ember of Kulemak",
+    },
+    ducats: { label: "Ducats & charts", group: "League mechanics", icon: "Merrick's Ducat" },
     encounters: {
         label: "Encounter items",
         group: "League mechanics",
@@ -125,32 +131,67 @@ export function marketHasCorruption(category: MarketCategory | "all") {
     return category === "gems" || IDENTIFICATION_CATEGORIES.has(category);
 }
 
+/** The fields of a game data base item that decide its market category. */
+export interface MarketBaseItem {
+    name: string;
+    // biome-ignore lint/style/useNamingConvention: Matches the extracted base item field.
+    item_class: string;
+    tags?: readonly string[];
+}
+
 /** The categories listing unique equipment, apart from its crafting bases. */
 export function isMarketUniqueCategory(category: MarketCategory | "all") {
     return category in MARKET_BASE_CATEGORIES;
 }
 
-/** Stackable currency the trade site groups with fragments. */
-const FRAGMENT_CURRENCY = /^(?:Timeless .+ Splinter|Crescent Splinter|Memory of Trauma)$/;
-const EXPEDITION_CURRENCY = ["Astragali", "Exotic Coinage", "Scrap Metal", "Burial Medallion"];
-
-export function marketBaseCategory(name: string, itemClass: string): MarketCategory {
+/**
+ * Categories by base item ID, after `Metadata/Items/`, following the trade site's exchange groups.
+ * The first match wins.
+ */
+const ID_CATEGORIES: [RegExp, MarketCategory][] = [
     // Each Scrying Orb names the map it scries, and is listed per map.
-    if (name === "Scrying Orb") return "maps";
-    if (FRAGMENT_CURRENCY.test(name)) return "fragments";
-    if (name.endsWith(" Enshrouding Crystal")) return "legion";
-    if (EXPEDITION_CURRENCY.includes(name)) return "expedition";
-    if (itemClass === "StackableCurrency" && /^Runegraft of | Rune$/.test(name)) return "runes";
-    if (name.includes("Scarab")) return "scarabs";
-    if (name.endsWith("Delirium Orb")) return "delirium";
+    [/^Currency\/CurrencyScryingOrb$/, "maps"],
+    [/^Scarabs\//, "scarabs"],
+    [/^Currency\/CurrencyAfflictionOrb/, "delirium"],
+    [/^Currency\/CurrencyDelveCrafting/, "fossils"],
+    [/^Currency\/(?:CurrencyEssence|CurrencyCorruptMonolith$)/, "essences"],
+    [/^Currency\/CurrencyJewelleryQuality/, "catalysts"],
+    [/^Currency\/(?:Mushrune|CurrencyExtractOil$)/, "oils"],
+    [/^Currency\/AncestralTattoo/, "tattoos"],
+    [/^Currency\/AncestralOmen/, "omens"],
+    [/^Currency\/(?:Runegraft|KalguuranRune)/, "runes"],
+    [/^Currency\/LegionCocoon/, "legion"],
+    [/^(?:Currency\/CurrencyRefresh|Expedition\/ExpeditionVendorCurrency)/, "expedition"],
+    [/^MapFragments\/.*AllflamePack$/, "embers"],
+    [/^Deepwater\//, "ducats"],
+    [
+        /^(?:Currency\/(?:\w+MemoryThread|Astrolabe\w+|CurrencyBreachUpgradeUnique(?:Fire|Cold|Lightning|Physical|Chaos)|CurrencyAfflictionShard|CurrencyRitual(?:Splinter|Stone)|CurrencyValdoPuzzleBox)|MapFragments\/CurrencyMavenKeyFragment)$/,
+        "fragments",
+    ],
+];
+
+/** biome-ignore-start lint/style/useNamingConvention: Keys are extracted item class names. */
+const CLASS_CATEGORIES: Record<string, MarketCategory> = {
+    CocoonedItem: "legion",
+    NecropolisPack: "embers",
+    CursedDucat: "ducats",
+};
+/** biome-ignore-end lint/style/useNamingConvention: Keys are extracted item class names. */
+
+/** Splinters of Breachstones and Timeless Emblems, by their base item tag. */
+const FRAGMENT_TAGS = ["breachstone_splinter", "legion_splinter"];
+
+export function marketBaseCategory(
+    id: string,
+    { name, item_class: itemClass, tags = [] }: MarketBaseItem,
+): MarketCategory {
+    const path = id.replace(/^Metadata\/Items\//, "");
+    const byId = ID_CATEGORIES.find(([pattern]) => pattern.test(path));
+    if (byId) return byId[1];
+    if (Object.hasOwn(CLASS_CATEGORIES, itemClass)) return CLASS_CATEGORIES[itemClass]!;
+    if (tags.some((tag) => FRAGMENT_TAGS.includes(tag))) return "fragments";
     if (name.includes("Invitation")) return "invitations";
-    if (name.endsWith("Fossil")) return "fossils";
     if (/^Delve.*SocketableCurrency$/.test(itemClass)) return "resonators";
-    if (/^(?:.* Essence of |Essence of |Remnant of Corruption$)/.test(name)) return "essences";
-    if (name.endsWith("Catalyst")) return "catalysts";
-    if (name.endsWith(" Oil")) return "oils";
-    if (/^(Tattoo of |Journey Tattoo of )/.test(name)) return "tattoos";
-    if (name.startsWith("Omen of ")) return "omens";
     if (
         /^(One Hand|Two Hand|Thrusting|Claw|Dagger|Rune Dagger|Sceptre|Bow|Wand|Staff|Warstaff|FishingRod|Spear|Crossbow|Flail)/.test(
             itemClass,
@@ -165,16 +206,11 @@ export function marketBaseCategory(name: string, itemClass: string): MarketCateg
     if (itemClass.endsWith("Skill Gem")) return "gems";
     if (itemClass === "Tincture") return "tinctures";
     if (itemClass.includes("Relic")) return "relics";
-    if (["Map", "Waystone"].includes(itemClass) || isMapMarketBase(name)) return "maps";
+    if (["Map", "MapKey", "Waystone"].includes(itemClass) || isMapMarketBase(name)) return "maps";
     if (
-        [
-            "MapFragment",
-            "UniqueFragment",
-            "Breachstone",
-            "MapKey",
-            "VaultKey",
-            "LabyrinthMapItem",
-        ].includes(itemClass)
+        ["MapFragment", "UniqueFragment", "Breachstone", "VaultKey", "LabyrinthMapItem"].includes(
+            itemClass,
+        )
     )
         return "fragments";
     if (itemClass === "DivinationCard") return "cards";
