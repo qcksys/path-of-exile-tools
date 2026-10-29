@@ -158,19 +158,35 @@ it("uses each game's verified base catalog and retains unknown items", () => {
     expect(marketCategory("pc", "Unknown future base")).toBe("other");
 });
 
+const marketsTable = mysqlTable("markets", {
+    baseType: varchar({ length: 255 }),
+    signatureKind: varchar({ length: 32 }),
+    name: varchar({ length: 100 }),
+});
+
+function categoryFilterQuery(filters: Record<string, string>) {
+    return new MySqlDialect().sqlToQuery(
+        marketCategoryFilter(marketFiltersSchema.parse({ realm: "pc", ...filters }), marketsTable)!,
+    );
+}
+
+it("lists Forbidden Flame and Flesh apart from other jewels", () => {
+    expect(marketCategory("pc", "Crimson Jewel", "forbidden-jewel", "Forbidden Flame")).toBe(
+        "forbidden",
+    );
+    expect(marketCategory("pc", "Cobalt Jewel", "", "Forbidden Flesh")).toBe("forbidden");
+    expect(marketCategory("pc", "Cobalt Jewel", "", "Watcher's Eye")).toBe("jewels");
+    const forbidden = categoryFilterQuery({ category: "forbidden" });
+    expect(forbidden.params).toEqual(
+        expect.arrayContaining(["Crimson Jewel", "Cobalt Jewel", "Forbidden Flame"]),
+    );
+    const jewels = categoryFilterQuery({ category: "jewels" });
+    expect(jewels.sql).toContain("(`markets`.`name` is null)) or (`markets`.`name` not in");
+    expect(jewels.params).toContain("Forbidden Flesh");
+});
+
 it("filters unique equipment by its base type's item class and attributes", () => {
-    const table = mysqlTable("markets", {
-        baseType: varchar({ length: 255 }),
-        signatureKind: varchar({ length: 32 }),
-    });
-    const bases = (filters: Record<string, string>) =>
-        new MySqlDialect().sqlToQuery(
-            marketCategoryFilter(
-                marketFiltersSchema.parse({ realm: "pc", ...filters }),
-                table.baseType,
-                table.signatureKind,
-            )!,
-        ).params;
+    const bases = (filters: Record<string, string>) => categoryFilterQuery(filters).params;
     const axes = bases({ category: "weapons", baseClass: "Two Hand Axe" });
     expect(axes).toContain("Vaal Axe");
     expect(axes).not.toContain("Spine Bow");

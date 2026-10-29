@@ -36,7 +36,7 @@ import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
 import { type TStashUniqueHourlyS, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { rankMarketBases } from "~/lib/market-bases";
-import { isMarketBaseCategory } from "~/lib/market-categories";
+import { isMarketBaseCategory, MARKET_FORBIDDEN_CATEGORY } from "~/lib/market-categories";
 import { marketCategory, marketCategoryFilter } from "~/lib/market-categories.server";
 import {
     MARKET_EXCHANGE_DAYS,
@@ -91,6 +91,8 @@ import {
 import { utcDay } from "./stash-rollups.queries";
 
 const PAGE_SIZE = 50;
+/** Forbidden jewels list every notable on one page, so each class and ascendancy is complete. */
+const FORBIDDEN_PAGE_SIZE = 1000;
 const CHAOS = exchangeCurrencyId("chaos")!;
 const DIVINE = exchangeCurrencyId("divine")!;
 const EXALTED = exchangeCurrencyId("exalted")!;
@@ -429,6 +431,8 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     });
     const season = seasons.find((entry) => entry.league === filters.league);
     const latestHour = Number(season?.latestHour ?? 0);
+    const pageSize =
+        filters.category === MARKET_FORBIDDEN_CATEGORY ? FORBIDDEN_PAGE_SIZE : PAGE_SIZE;
     // Windows start at UTC midnight so lists sum whole days of `stash_market_daily`.
     const windowStart = utcDay(latestHour - Number(filters.days) * 86400 + 3600);
     const scope = and(
@@ -539,7 +543,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         .where(
             and(
                 days,
-                marketCategoryFilter(filters, daily.baseType, daily.signatureKind),
+                marketCategoryFilter(filters, daily),
                 gemFilter(daily, filters),
                 mapFilter(daily, filters),
                 gemListFilter(daily, filters.gemTransfigured, TRANSFIGURED_GEMS),
@@ -582,7 +586,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             asc(daily.signatureValue),
         ])
         .$dynamic();
-    if (!pageLatestRows) grouped.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
+    if (!pageLatestRows) grouped.limit(pageSize + 1).offset((filters.page - 1) * pageSize);
     const page = grouped.as("page");
     // One row per market: its latest hour's totals across its foil and non-foil rows.
     const marketsQuery = db
@@ -638,7 +642,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             asc(page.signatureValue),
         )
         .$dynamic();
-    if (pageLatestRows) marketsQuery.limit(PAGE_SIZE + 1).offset((filters.page - 1) * PAGE_SIZE);
+    if (pageLatestRows) marketsQuery.limit(pageSize + 1).offset((filters.page - 1) * pageSize);
     const rowsPromise =
         view === "history" || baseCategory
             ? Promise.resolve([])
@@ -682,7 +686,8 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             : [],
         modRowsPromise,
     ]);
-    const priced = [...rows, ...baseRows];
+    // Variants are priced at the season's latest rates, as list rows are.
+    const priced = [...rows, ...baseRows, ...variants];
     const rates = await marketChaosRates(
         db,
         filters,
@@ -742,13 +747,13 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         filters,
         seasons,
         season,
-        rows: rows.slice(0, PAGE_SIZE).map((row) => ({
+        rows: rows.slice(0, pageSize).map((row) => ({
             ...row,
-            category: marketCategory(filters.realm, row.baseType, row.signatureKind),
+            category: marketCategory(filters.realm, row.baseType, row.signatureKind, row.name),
         })),
         /** Crafting base cohorts (normal, magic and rare together) in a crafting base category. */
         bases: bases.rows,
-        hasMore: rows.length > PAGE_SIZE || bases.hasMore,
+        hasMore: rows.length > pageSize || bases.hasMore,
         variants,
         /** For a pool unique's variant: each mod's value, in the display currency. */
         modValues:
@@ -833,6 +838,7 @@ async function marketVariants(
                     TStashUniqueHourlyS["signatureData"]
                 >`any_value(${market.signatureData})`,
                 periodSales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
+                latestHour: sql<number>`max(${market.hour})`.mapWith(Number),
             })
             // Without the hint MySQL can pick the primary key and scan every item in the window.
             .from(market, { forceIndex: "idx_stash_unique_item" })
@@ -855,6 +861,7 @@ async function marketVariants(
                 asc(market.links),
             ),
     );
+    const latest = await marketVariantLatestRows(db, market, scope, variants);
     const markets = Map.groupBy(variants, (row) =>
         JSON.stringify([
             row.itemKey,
@@ -867,16 +874,67 @@ async function marketVariants(
     // Each market first merges its link counts (`links` null, as the list shows it), then lists
     // them separately when any copy has 5 or 6 links.
     return [...markets.values()].flatMap((group) => {
+        const latestHour = Math.max(...group.map((row) => row.latestHour));
         const merged = {
             ...group[0]!,
             links: null,
+            latestHour,
             periodSales: group.reduce((sum, row) => sum + row.periodSales, 0),
         };
         const linked = group.some((row) => row.links > 0);
-        return [merged, ...(linked ? group : [])].map((row) =>
-            asMarket(row, row.signatureKind, row.signatureValue),
-        );
+        return [merged, ...(linked ? group : [])].map((row) => {
+            const rows = latest.filter(
+                (entry) =>
+                    entry.hour === row.latestHour &&
+                    marketRowKey(entry, 0) === marketRowKey(row, 0) &&
+                    (row.links === null || entry.links === row.links),
+            );
+            const current = rows.length ? mergeMarketRows(rows) : undefined;
+            return asMarket(
+                {
+                    ...row,
+                    prices: current?.prices ?? null,
+                    listingCount: current?.listingCount ?? 0,
+                },
+                row.signatureKind,
+                row.signatureValue,
+            );
+        });
     });
+}
+
+/** Each variant's rows in its latest hour in the period, for its price and listings then. */
+function marketVariantLatestRows(
+    db: TDatabase,
+    market: MarketTable,
+    scope: SQL | undefined,
+    variants: (MarketRowKey & { links: number; latestHour: number })[],
+) {
+    if (!variants.length) return Promise.resolve([]);
+    return traceQuery(
+        "market.variant_latest_rows",
+        db
+            .select()
+            .from(market, { forceIndex: "PRIMARY" })
+            .where(
+                and(
+                    scope,
+                    or(
+                        ...variants.map((variant) =>
+                            and(
+                                eq(market.hour, variant.latestHour),
+                                eq(market.itemKey, variant.itemKey),
+                                eq(market.identified, variant.identified),
+                                eq(market.corrupted, variant.corrupted),
+                                eq(market.signatureKind, variant.signatureKind),
+                                valueMatch(market, variant.signatureKind, variant.signatureValue),
+                                eq(market.links, variant.links),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+    );
 }
 
 /** A pool unique variant's sibling combinations: the latest hour's listings and every hour with likely sales. */

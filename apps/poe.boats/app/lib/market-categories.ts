@@ -18,6 +18,8 @@ export const MARKET_CATEGORIES = {
     },
     flasks: { label: "Flasks", group: "Equipment & gems", icon: "Divine Life Flask" },
     jewels: { label: "Jewels", group: "Equipment & gems", icon: "Crimson Jewel" },
+    // Listed by name, apart from other jewels; see `marketCategoryFilter`.
+    forbidden: { label: "Forbidden jewels", group: "Equipment & gems", icon: "Cobalt Jewel" },
     gems: { label: "Skill gems", group: "Equipment & gems", icon: "Fireball" },
     tinctures: { label: "Tinctures", group: "Equipment & gems", icon: "Prismatic Tincture" },
     relics: { label: "Relics", group: "Equipment & gems", icon: "Urn Relic" },
@@ -116,6 +118,7 @@ const IDENTIFICATION_CATEGORIES = new Set<MarketCategory | "all">([
     "accessories",
     "flasks",
     "jewels",
+    "forbidden",
     "tinctures",
     "relics",
     "maps",
@@ -143,6 +146,9 @@ export interface MarketBaseItem {
 export function isMarketUniqueCategory(category: MarketCategory | "all") {
     return category in MARKET_BASE_CATEGORIES;
 }
+
+/** Forbidden Flame and Flesh are listed under their own category, paired by notable. */
+export const MARKET_FORBIDDEN_CATEGORY = "forbidden" satisfies MarketCategory;
 
 /**
  * Categories by base item ID, after `Metadata/Items/`, following the trade site's exchange groups.

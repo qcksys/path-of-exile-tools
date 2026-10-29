@@ -5,6 +5,7 @@ import { CatalogItemArt, ItemArt } from "~/components/item-art";
 import { ExchangeDisplayPicker } from "~/components/market-exchange";
 import { MarketExchangeTable } from "~/components/market-exchange-table";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
+import { MarketForbiddenJewels } from "~/components/market-forbidden-jewels";
 import { MarketListingPrices } from "~/components/market-listing-price";
 import { MarketRecentSales } from "~/components/market-recent-sales";
 import { RouteError } from "~/components/route-error";
@@ -12,7 +13,11 @@ import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import { marketItemArtUrl } from "~/lib/item-presentation";
 import { type MarketBaseRow, marketBaseDetails, marketBaseVariant } from "~/lib/market-bases";
-import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
+import {
+    MARKET_CATEGORIES,
+    MARKET_FORBIDDEN_CATEGORY,
+    type MarketCategory,
+} from "~/lib/market-categories";
 import { marketNumber as number } from "~/lib/market-number";
 import type { MarketPriceRates } from "~/lib/market-price-currencies";
 import { marketTableState } from "~/lib/market-table";
@@ -338,7 +343,16 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                         <ExchangeDisplayPicker game={game} />
                     </div>
                 </header>
+                {filters.category === MARKET_FORBIDDEN_CATEGORY && rows.length ? (
+                    <MarketForbiddenJewels
+                        rows={rows}
+                        filters={filters}
+                        game={game}
+                        prices={prices}
+                    />
+                ) : null}
                 {categories.map((category) => {
+                    if (filters.category === MARKET_FORBIDDEN_CATEGORY) return null;
                     const entries = rows.filter((row) => row.category === category);
                     const traded = exchange.filter((row) => row.category === category);
                     if (!entries.length && !traded.length) return null;
