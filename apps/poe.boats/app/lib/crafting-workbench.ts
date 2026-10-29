@@ -47,6 +47,15 @@ export function editCraftingStartingItem(
     }
 }
 
+/**
+ * The seed of an emulated craft: the project seed advanced by the crafts taken so far. Undo and
+ * Reset return to a craft count already rolled from, so each one also shifts the seed (`rerolls`)
+ * to keep the next craft from repeating the previous roll.
+ */
+export function emulationSeed(seed: number, actions: number, rerolls: number) {
+    return (seed + actions + rerolls * 0x9e3779b9) >>> 0;
+}
+
 export function emulateCraftingItem(
     engine: CraftingEngine,
     input: CraftingItem,

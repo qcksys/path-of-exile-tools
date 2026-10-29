@@ -39,6 +39,8 @@ const bases = Object.entries(
     ),
 );
 const items: Record<string, Poe2ExchangeCategory> = {};
+// poe2db's CDN lacks art for some exchange items (runes, soul cores), so the market shows the trade site's.
+const images: Record<string, string> = {};
 const unresolved: string[] = [];
 for (const group of groups) {
     const category = GROUPS[group.id];
@@ -50,7 +52,10 @@ for (const group of groups) {
         const ids = id
             ? [id]
             : bases.flatMap(([base, { name }]) => (name === entry.text ? base : []));
-        for (const base of ids) items[base] = category;
+        for (const base of ids) {
+            items[base] = category;
+            if (entry.image) images[base] = new URL(entry.image, "https://web.poecdn.com").href;
+        }
         // Group headings such as "Uncut Support Gems" name no base item.
         if (!ids.length) unresolved.push(entry.text);
     }
@@ -61,5 +66,5 @@ console.log(
 if (unresolved.length) console.log(`poe2: no single base item for ${unresolved.join(", ")}`);
 await writeFile(
     new URL("../app/data/exchange-categories-poe2.json", import.meta.url),
-    `${JSON.stringify({ fetchedAt: new Date().toISOString(), source: url, items }, null, 4)}\n`,
+    `${JSON.stringify({ fetchedAt: new Date().toISOString(), source: url, items, images }, null, 4)}\n`,
 );

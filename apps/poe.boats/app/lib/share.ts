@@ -24,9 +24,13 @@ export function createSharePayload(set: IdolSet, inventory: InventoryIdol[]): Sh
     };
 }
 
+export function sharePath(shareId: string): string {
+    return `/1/idol-planner/share/${shareId}`;
+}
+
 export function buildShareUrl(baseUrl: string, shareId: string): string {
     const url = new URL(baseUrl);
-    url.pathname = `/1/idol-planner/share/${shareId}`;
+    url.pathname = sharePath(shareId);
     return url.toString();
 }
 

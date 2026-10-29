@@ -1,6 +1,6 @@
 import scarabsJson from "~/data/scarabs.json";
 import { DEFAULT_LOCALE, type SupportedLocale } from "~/i18n/types";
-import type { Scarab, ScarabsData } from "~/schemas/scarab";
+import type { MapDeviceSlot, Scarab, ScarabsData } from "~/schemas/scarab";
 
 const scarabsData = scarabsJson as ScarabsData;
 
@@ -15,6 +15,14 @@ for (const scarab of SCARABS) {
 
 export function getScarabById(id: string): Scarab | undefined {
     return scarabsById.get(id);
+}
+
+/** The scarabs in a map device's slots, skipping ids no longer in the scarab data. */
+export function getSlotScarabs(slots: MapDeviceSlot[]): Scarab[] {
+    return slots.flatMap((slot) => {
+        const scarab = slot.scarabId ? scarabsById.get(slot.scarabId) : undefined;
+        return scarab ? [scarab] : [];
+    });
 }
 
 export function getScarabsByCategory(category: string): Scarab[] {

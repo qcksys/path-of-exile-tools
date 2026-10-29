@@ -17,7 +17,6 @@ import {
 import {
     isMarketUniqueCategory,
     MARKET_CATEGORIES,
-    MARKET_FORBIDDEN_CATEGORY,
     type MarketCategory,
     type MarketExchangeCategory,
     marketHasCorruption,
@@ -198,15 +197,15 @@ export const MARKET_BASE_FILTERS = [
 
 /**
  * The corruption a search filters by: its own choice, or its category's default. Categories
- * whose markets do not split by corruption match any.
+ * whose markets do not split by corruption match any. Forbidden jewels default to any: every
+ * listed one is corrupted.
  */
 export function marketCorruption({
     category,
     corruption,
 }: Pick<MarketFilters, "category" | "corruption">) {
     if (!marketHasCorruption(category)) return "all";
-    const uncorrupted = isMarketUniqueCategory(category) || category === MARKET_FORBIDDEN_CATEGORY;
-    return corruption ?? (uncorrupted ? "false" : "all");
+    return corruption ?? (isMarketUniqueCategory(category) ? "false" : "all");
 }
 
 /** The identification a search filters by; categories that do not split by it match any. */

@@ -11,6 +11,7 @@ import {
     modsSchema,
     tagsSchema,
 } from "../../../packages/poe-game-data/src/model";
+import exchangeCategoriesPoe2 from "../app/data/exchange-categories-poe2.json";
 import { gildedImplicitId } from "../app/lib/crafting-fossils";
 import { heistEnchantmentKind } from "../app/lib/crafting-heist";
 import { supportedStrongbox } from "../app/lib/crafting-strongboxes";
@@ -71,6 +72,8 @@ export async function exportCraftingCatalog(directory: string, output: string) {
         throw new Error("Package hash mismatch: crafting-data.json");
     const bases = baseItemsSchema.parse(rawBases);
     const mods = modsSchema.parse(rawMods);
+    const tradeImages: Record<string, string> =
+        manifest.game === "poe2" ? exchangeCategoriesPoe2.images : {};
     const presentations = itemPresentationsSchema.parse(
         Object.fromEntries(
             Object.entries(bases)
@@ -80,7 +83,9 @@ export async function exportCraftingCatalog(directory: string, output: string) {
                     {
                         name: base.name,
                         itemClass: base.item_class,
-                        art: itemArtUrl(base.visual_identity.dds_file, manifest.game),
+                        art:
+                            tradeImages[id] ??
+                            itemArtUrl(base.visual_identity.dds_file, manifest.game),
                         dropLevel: base.drop_level,
                         requirements: base.requirements,
                         implicits: base.implicits.flatMap((mod) =>

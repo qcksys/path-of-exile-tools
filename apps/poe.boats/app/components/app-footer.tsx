@@ -16,7 +16,7 @@ export function AppFooter({ source }: { source?: string } = {}) {
                                 href="https://poedb.tw"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-accent underline-offset-4 hover:underline"
+                                className="text-primary underline-offset-4 hover:underline"
                             >
                                 poedb.tw
                             </a>

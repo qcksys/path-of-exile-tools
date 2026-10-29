@@ -1,7 +1,12 @@
 import { Link } from "react-router";
 import type { SiteHandle } from "~/routes/layouts/site";
+import type { Route } from "./+types/poe1-home";
 
 export const handle = { section: "Path of Exile 1" } satisfies SiteHandle;
+
+export function meta(): Route.MetaDescriptors {
+    return [{ title: "Path of Exile 1 · POE.BOATS" }];
+}
 
 export default function Poe1Home() {
     return (

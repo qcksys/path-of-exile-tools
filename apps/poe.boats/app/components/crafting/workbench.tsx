@@ -20,7 +20,11 @@ import {
     validateProject,
 } from "~/lib/crafting-simulation";
 import { strongbox } from "~/lib/crafting-strongboxes";
-import { editCraftingStartingItem, emulateCraftingItem } from "~/lib/crafting-workbench";
+import {
+    editCraftingStartingItem,
+    emulateCraftingItem,
+    emulationSeed,
+} from "~/lib/crafting-workbench";
 import { craftingItemOptions } from "~/lib/item-presentation";
 import {
     type CraftingCatalog,
@@ -121,6 +125,7 @@ export function CraftingWorkbench({
         [project.inventory, library.library.inventory],
     );
     const nextHistoryId = useRef(1);
+    const rerolls = useRef(0);
     const [history, setHistory] = useState<HistoryEntry[]>([
         {
             id: 0,
@@ -313,7 +318,7 @@ export function CraftingWorkbench({
                 engine,
                 project.item,
                 command,
-                project.seed + current.actions,
+                emulationSeed(project.seed, current.actions, rerolls.current),
             );
             const spending = { ...current.spending };
             for (const cost of applied.cost)
@@ -405,7 +410,11 @@ export function CraftingWorkbench({
                     useProcess,
                     seed:
                         type === "emulate-process"
-                            ? (validated.seed + history[cursor]!.actions) >>> 0
+                            ? emulationSeed(
+                                  validated.seed,
+                                  history[cursor]!.actions,
+                                  rerolls.current,
+                              )
                             : validated.seed,
                 },
             });
@@ -1018,6 +1027,7 @@ export function CraftingWorkbench({
                                             size="sm"
                                             disabled={cursor === 0}
                                             onClick={() => {
+                                                rerolls.current++;
                                                 setCursor(cursor - 1);
                                                 change({ item: history[cursor - 1]!.item });
                                             }}
@@ -1040,7 +1050,8 @@ export function CraftingWorkbench({
                                             variant="ghost"
                                             size="sm"
                                             onClick={() =>
-                                                safely(() =>
+                                                safely(() => {
+                                                    rerolls.current++;
                                                     setItem(
                                                         editCraftingStartingItem(engine, {
                                                             kind: "create",
@@ -1051,8 +1062,8 @@ export function CraftingWorkbench({
                                                         {},
                                                         0,
                                                         1,
-                                                    ),
-                                                )
+                                                    );
+                                                })
                                             }
                                         >
                                             Reset
