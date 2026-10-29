@@ -62,6 +62,8 @@ export function propertyText(item: Pick<Item, "properties">, name: string) {
 export const HEIST_AREA_LEVEL = "83";
 /** Blueprints trade with one wing or every wing revealed. */
 export const HEIST_BLUEPRINT_WINGS = ["1/3", "1/4", "3/3", "4/4"];
+/** Every blueprint shares one market, whatever its location (`Blueprint: Bunker`). */
+export const HEIST_BLUEPRINT_KEY = "Blueprint";
 
 export function isHeistContract(item: Pick<Item, "properties">) {
     return Boolean(item.properties?.some((property) => property.name.startsWith("Heist Target")));
@@ -72,13 +74,14 @@ export function isHeistBlueprint(item: Pick<Item, "properties">) {
 }
 
 /**
- * Identified non-unique Heist contracts and blueprints for area level 83 (item level 83 and
- * above); blueprints only with one or every wing revealed.
+ * Uncorrupted, non-unique Heist contracts and blueprints for area level 83 (item level 83 and
+ * above): contracts only identified, blueprints identified or not (wings revealed and enchants
+ * show either way) and only with one or every wing revealed.
  */
 export function isHeistMarketItem(item: Item): boolean {
-    if (!item.identified || isUniqueItem(item)) return false;
+    if (item.corrupted || isUniqueItem(item)) return false;
     if (propertyText(item, "Area Level") !== HEIST_AREA_LEVEL) return false;
-    if (isHeistContract(item)) return true;
+    if (isHeistContract(item)) return item.identified;
     return HEIST_BLUEPRINT_WINGS.includes(propertyText(item, "Wings Revealed") ?? "");
 }
 

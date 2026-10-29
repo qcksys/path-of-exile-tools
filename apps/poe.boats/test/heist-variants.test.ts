@@ -67,6 +67,21 @@ it("splits area level 83 contracts by the job they require, whatever its level",
     ).toBe("Trap Disarmament");
 });
 
+it("keys every blueprint as Blueprint, whatever its location", () => {
+    expect(itemKey(blueprint("1/3"))).toBe("Blueprint");
+    expect(itemKey({ ...blueprint("4/4"), baseType: "Blueprint: Tunnels" })).toBe("Blueprint");
+});
+
+it("captures unidentified blueprints in the same market by wings revealed and enchants", () => {
+    const enchant = "Heist Targets are always Thieves' Trinkets";
+    const unidentified = { ...blueprint("4/4", [enchant]), identified: false };
+    expect(shouldCapture(unidentified)).toBe(true);
+    expect(itemKey(unidentified, "Blueprint.png")).toBe("Blueprint");
+    expect(signatureValue(extractModSignature(unidentified))).toBe(
+        signatureValue(extractModSignature(blueprint("4/4", [enchant]))),
+    );
+});
+
 it("splits blueprints by wings revealed and each enchant", () => {
     expect(signatureValue(extractModSignature(blueprint("1/3")))).toBe("1/3 wings");
     expect(signatureValue(extractModSignature(blueprint("4/4")))).toBe("4/4 wings");
@@ -77,8 +92,15 @@ it("splits blueprints by wings revealed and each enchant", () => {
     ).toBe("1/4 wings · Heist Targets are always Thieves' Trinkets");
 });
 
-it("leaves lower area levels, partly revealed blueprints and unique contracts uncaptured", () => {
+it("leaves lower area levels, partly revealed blueprints, corrupted and unique contracts uncaptured", () => {
     expect(shouldCapture(contract("81", requires(2, "Agility")))).toBe(false);
+    expect(shouldCapture({ ...contract("83", requires(2, "Agility")), corrupted: true })).toBe(
+        false,
+    );
+    expect(shouldCapture({ ...blueprint("4/4"), corrupted: true })).toBe(false);
+    expect(shouldCapture({ ...contract("83", requires(2, "Agility")), identified: false })).toBe(
+        false,
+    );
     expect(shouldCapture(blueprint("1/3", undefined, "75"))).toBe(false);
     expect(shouldCapture(blueprint("2/3"))).toBe(false);
     expect(shouldCapture(blueprint("3/4"))).toBe(false);
