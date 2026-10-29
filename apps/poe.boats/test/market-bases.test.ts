@@ -207,6 +207,15 @@ describe("generated crafting base list", () => {
         expect(find("Titan Plate").attributes).toEqual(["str"]);
         expect(find("Necrotic Armour").attributes).toEqual(["dex", "int"]);
         expect(find("Focused Amulet").attributes).toEqual([]);
+        for (const name of [
+            "Cryonic Ring",
+            "Enthalpic Ring",
+            "Synaptic Ring",
+            "Organic Ring",
+            "Fugitive Ring",
+            "Formless Ring",
+        ])
+            expect(find(name)?.category, name).toBe("accessory-bases");
         expect(find("Runic Helm").attributes).toEqual(["str", "dex", "int"]);
         expect(find("Titan Plate").level).toBe(73);
         expect(find("Large Cluster Jewel").level).toBeNull();

@@ -397,6 +397,43 @@ it("keeps daily rollups, exchange markets and coverage current through the inges
     ]);
 });
 
+it("rolls up each item day once per ingest request, after every chunk is stored", async () => {
+    // 150 items over two hours of one day: the second chunk repeats items from the first.
+    const rows = [hour - 3600, hour].flatMap((at) =>
+        Array.from({ length: 150 }, (_, index) =>
+            observation({ league: "Chunked", hour: at, itemKey: `Chunk ${index}`, likelySales: 1 }),
+        ),
+    );
+    statements.length = 0;
+    await upsertStashUniqueHourly(db as unknown as TDatabase, rows);
+    const rollups = statements.filter(
+        (query) =>
+            query.sql.startsWith("insert into") && query.sql.includes("stash_poe1_market_daily"),
+    );
+    expect(rollups).toHaveLength(1);
+    const daily = await db
+        .select({
+            itemKey: tStashMarketDaily.poe1.itemKey,
+            sales: tStashMarketDaily.poe1.likelySales,
+        })
+        .from(tStashMarketDaily.poe1)
+        .where(eq(tStashMarketDaily.poe1.league, "Chunked"));
+    expect(daily).toHaveLength(150);
+    expect(daily.every((row) => Number(row.sales) === 2)).toBe(true);
+});
+
+it("reads an item's variants from the item key index", async () => {
+    statements.length = 0;
+    await getMarketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league: "Current", item: "Item 3" }),
+        "history",
+    );
+    const query = statements.find((entry) => entry.sql.includes("any_value("))!;
+    const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
+    expect(plan[0]?.key).toBe("idx_stash_unique_item");
+});
+
 function observation(overrides: Partial<TStashUniqueHourlyI>): TStashUniqueHourlyI {
     return {
         realm: "pc",
@@ -914,6 +951,47 @@ it("lists a unique's markets in both identification states as variants of each o
     expect(await variants("Watcher's Eye")).toEqual(both);
     expect(await variants(`unid:${icon}`)).toEqual(both);
     expect(await variants("Replica Eye")).toEqual([["Replica Eye", "Replica Eye", true, false]]);
+});
+
+it("lists every variant of an item with more than a hundred", async () => {
+    const flesh = (signatureValue: string, overrides: Partial<TStashUniqueHourlyI> = {}) =>
+        observation({
+            league: "Many Variants",
+            itemKey: "Forbidden Flesh",
+            name: "Forbidden Flesh",
+            baseType: "Cobalt Jewel",
+            corrupted: true,
+            signatureKind: "forbidden-jewel",
+            signatureValue,
+            ...overrides,
+        });
+    const notables = Array.from({ length: 120 }, (_, index) => `Notable ${index + 100}`);
+    await db
+        .insert(market)
+        .values([
+            flesh("Best Seller", { likelySales: 3 }),
+            ...notables.map((notable) => flesh(notable)),
+            flesh("Zealot", { links: 6 }),
+            flesh("Zealot", { links: 0 }),
+        ]);
+    const { variants } = await getMarketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({
+            league: "Many Variants",
+            item: "Forbidden Flesh",
+            corrupted: "true",
+            kind: "forbidden-jewel",
+            value: "Notable 219",
+        }),
+        "history",
+    );
+    expect(variants.map((row) => [row.signatureValue, row.links, row.periodSales])).toEqual([
+        ["Best Seller", null, 3],
+        ...notables.map((notable) => [notable, null, 0]),
+        ["Zealot", null, 0],
+        ["Zealot", 0, 0],
+        ["Zealot", 6, 0],
+    ]);
 });
 
 it("lists a mod pool unique once and values its mods on the item page", async () => {
