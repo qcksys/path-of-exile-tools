@@ -50,7 +50,7 @@ function TriStateToggle({
 }
 
 /** A URL band filter (`20,-21`) as one tri-state toggle per band, kept in a hidden input. */
-function BandToggles<Band extends string>({
+export function BandToggles<Band extends string>({
     name,
     legend,
     bands,
@@ -58,7 +58,7 @@ function BandToggles<Band extends string>({
     value,
     onChange,
 }: {
-    name: "gemLevel" | "gemQuality";
+    name: "gemLevel" | "gemQuality" | "mapMods" | "mapQuantity" | "mapDelirium";
     legend: string;
     bands: readonly Band[];
     labels: readonly string[];

@@ -741,6 +741,67 @@ it("lists gem markets under Skill gems by band and filters them by included and 
     expect(await list({ category: "gems", gemLevel: "-1-19,-20,-21" })).toEqual([]);
 });
 
+it("lists map markets under Maps by variant and filters them by included and excluded bands", async () => {
+    const map = (
+        itemKey: string,
+        signatureValue: string,
+        overrides: Partial<TStashUniqueHourlyI> = {},
+    ) =>
+        observation({
+            league: "Maps",
+            itemKey,
+            name: "",
+            baseType: itemKey,
+            frameType: 2,
+            signatureKind: "map",
+            signatureValue,
+            ...overrides,
+        });
+    await db
+        .insert(market)
+        .values([
+            map("Map (Tier 16)", "8 mods · Quantity 100–119% · Delirium 0%", { corrupted: true }),
+            map("Map (Tier 16)", "8 mods · Quantity 120–139% · Delirium 40%", { corrupted: true }),
+            map("Map (Tier 16)", "1–6 mods · Quantity 60–79% · Delirium 0%"),
+            map("Map (Tier 16)", "Unidentified · Delirium 0%", { identified: false }),
+            map("Nightmare Map", "1–6 mods · Quantity 80–99% · Delirium 20%"),
+            map("Map (Tier 14)", "8 mods · Delirium 0%", { corrupted: true }),
+            observation({ league: "Maps", itemKey: "Kaom's Heart", name: "Kaom's Heart" }),
+        ]);
+    const list = async (filters: Record<string, string>) =>
+        (
+            await marketData(
+                db as unknown as TDatabase,
+                marketFiltersSchema.parse({ league: "Maps", order: "name-asc", ...filters }),
+                "list",
+            )
+        ).rows.map((row) => [row.itemKey, row.signatureValue, row.category].join(" | "));
+    expect(await list({ category: "maps" })).toEqual([
+        "Map (Tier 14) | 8 mods · Delirium 0% | maps",
+        "Map (Tier 16) | Unidentified · Delirium 0% | maps",
+        "Map (Tier 16) | 1–6 mods · Quantity 60–79% · Delirium 0% | maps",
+        "Map (Tier 16) | 8 mods · Quantity 100–119% · Delirium 0% | maps",
+        "Map (Tier 16) | 8 mods · Quantity 120–139% · Delirium 40% | maps",
+        "Nightmare Map | 1–6 mods · Quantity 80–99% · Delirium 20% | maps",
+    ]);
+    expect(await list({ category: "fragments" })).toEqual([]);
+    expect(await list({ category: "maps", mapMods: "8", mapQuantity: "-100-119" })).toEqual([
+        "Map (Tier 16) | 8 mods · Quantity 120–139% · Delirium 40% | maps",
+    ]);
+    expect(await list({ category: "maps", mapDelirium: "-0" })).toEqual([
+        "Map (Tier 16) | 8 mods · Quantity 120–139% · Delirium 40% | maps",
+        "Nightmare Map | 1–6 mods · Quantity 80–99% · Delirium 20% | maps",
+    ]);
+    expect(await list({ category: "maps", mapMods: "8", corruption: "true" })).toEqual([
+        "Map (Tier 14) | 8 mods · Delirium 0% | maps",
+        "Map (Tier 16) | 8 mods · Quantity 100–119% · Delirium 0% | maps",
+        "Map (Tier 16) | 8 mods · Quantity 120–139% · Delirium 40% | maps",
+    ]);
+    expect(await list({ category: "maps", identification: "false" })).toEqual([
+        "Map (Tier 16) | Unidentified · Delirium 0% | maps",
+    ]);
+});
+
 it("lists only transfigured or Vaal gems, or only other gems, with their filters", async () => {
     const gem = (itemKey: string, baseType: string, overrides: Partial<TStashUniqueHourlyI> = {}) =>
         observation({

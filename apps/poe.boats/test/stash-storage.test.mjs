@@ -44,7 +44,7 @@ it("bootstraps hourly observations from an existing database once", async () => 
     expect(await queryAll(db.conn, "SELECT item_id FROM ps_listing_hour")).toHaveLength(1);
 });
 
-it("prunes old delivered observations while retaining pending, unmapped and recent ones", async () => {
+it("prunes old delivered observations, and unidentified maps, while retaining pending, unmapped and recent ones", async () => {
     await seedListing();
     await db.conn.run(`INSERT INTO ps_listing_hour
         SELECT * EXCLUDE (removed_at, raw_item),
@@ -56,15 +56,20 @@ it("prunes old delivered observations while retaining pending, unmapped and rece
     await db.conn.run(`INSERT INTO ps_listing_hour
         SELECT * REPLACE ('pending' AS item_id, 'Other' AS league) FROM ps_listing_hour WHERE item_id = 'delivered'`);
     await db.conn.run(`INSERT INTO ps_listing_hour
-        SELECT * REPLACE ('unmapped' AS item_id, FALSE AS identified) FROM ps_listing_hour WHERE item_id = 'delivered'`);
+        SELECT * REPLACE ('unmapped' AS item_id, FALSE AS identified, 'unid:' || coalesce(icon_asset, base_type) AS item_key)
+        FROM ps_listing_hour WHERE item_id = 'delivered'`);
+    // Unidentified maps are keyed by base type and need no basemap.
+    await db.conn.run(`INSERT INTO ps_listing_hour
+        SELECT * REPLACE ('unid-map' AS item_id, FALSE AS identified, 'Map (Tier 16)' AS item_key)
+        FROM ps_listing_hour WHERE item_id = 'delivered'`);
     await db.conn.run(`INSERT INTO rollup_state
         SELECT 'psapi', league, observed_hour, current_timestamp, 1 FROM ps_listing_hour WHERE item_id = 'delivered'`);
     expect(await prune(db.conn, { keepDays: 30, maxRows: 100, dryRun: true })).toMatchObject({
-        droppedHourlyRows: 1,
+        droppedHourlyRows: 2,
     });
-    expect(await queryAll(db.conn, "SELECT * FROM ps_listing_hour")).toHaveLength(4);
+    expect(await queryAll(db.conn, "SELECT * FROM ps_listing_hour")).toHaveLength(5);
     expect(await prune(db.conn, { keepDays: 30, maxRows: 100 })).toMatchObject({
-        droppedHourlyRows: 1,
+        droppedHourlyRows: 2,
     });
     expect(await queryAll(db.conn, "SELECT item_id FROM ps_listing_hour ORDER BY item_id")).toEqual(
         [{ item_id: "item" }, { item_id: "pending" }, { item_id: "unmapped" }],

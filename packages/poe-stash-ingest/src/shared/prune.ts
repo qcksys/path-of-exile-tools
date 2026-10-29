@@ -51,7 +51,8 @@ export async function prune(conn: DuckDBConnection, opts: PruneOptions): Promise
                 AND r.league = l.league AND r.hour = l.observed_hour
             LEFT JOIN icon_basemap b ON b.icon_asset = l.icon_asset
             WHERE l.last_seen_at < ${cutoffSql} AND l.last_seen_at <= r.pushed_at
-                AND (l.identified OR (b.name IS NOT NULL AND b.first_seen_at <= r.pushed_at))
+                AND (l.identified OR NOT starts_with(l.item_key, 'unid:')
+                    OR (b.name IS NOT NULL AND b.first_seen_at <= r.pushed_at))
                 AND NOT EXISTS (SELECT 1 FROM ps_sale s WHERE s.league = l.league
                     AND epoch(date_trunc('hour', s.removed_at))::BIGINT = l.observed_hour
                     AND s.status IN ('pending', 'likely-sold'))`;

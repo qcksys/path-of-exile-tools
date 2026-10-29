@@ -1,3 +1,5 @@
+import { isMapMarketBase } from "@poe-tools/market";
+
 /** Each category's label, navigation group, and the item whose art is its navigation icon. */
 export const MARKET_CATEGORIES = {
     currency: { label: "Currency", group: "General", icon: "Chaos Orb" },
@@ -150,7 +152,7 @@ export function marketBaseCategory(name: string, itemClass: string): MarketCateg
     if (itemClass.endsWith("Skill Gem")) return "gems";
     if (itemClass === "Tincture") return "tinctures";
     if (itemClass.includes("Relic")) return "relics";
-    if (["Map", "Waystone"].includes(itemClass)) return "maps";
+    if (["Map", "Waystone"].includes(itemClass) || isMapMarketBase(name)) return "maps";
     if (
         [
             "MapFragment",
