@@ -2,6 +2,11 @@ import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { Button } from "~/components/ui/button";
 import { authClient } from "~/lib/auth.client";
+import type { Route } from "./+types/login";
+
+export function meta(): Route.MetaDescriptors {
+    return [{ title: "Sign in · POE.BOATS" }];
+}
 
 const Login = () => {
     const [params] = useSearchParams();

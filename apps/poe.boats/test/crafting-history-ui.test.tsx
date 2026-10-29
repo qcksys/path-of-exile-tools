@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import { CraftingWorkbench } from "../app/components/crafting/workbench";
 import { CraftingEngine, seededRandom } from "../app/lib/crafting-engine";
 import { CraftingProcess } from "../app/lib/crafting-simulation";
+import { emulationSeed } from "../app/lib/crafting-workbench";
 import { craftingCatalogSchema, craftingProjectSchema } from "../app/schemas/crafting";
 import { changeControl, expectControlValue } from "./control-helpers";
 import { chooseStartingItem } from "./starting-item-helper";
@@ -100,6 +101,17 @@ for (const game of ["poe1", "poe2"] as const) {
     describe(`${game} action history list`, () => {
         const entries = () =>
             within(screen.getByRole("list", { name: "Item history" })).getAllByRole("listitem");
+
+        it("rolls a new outcome when a craft is repeated after undo", () => {
+            mount();
+            const start = currentItem();
+            fireEvent.click(button("Apply craft"));
+            const first = currentItem();
+            fireEvent.click(button("Undo"));
+            expect(currentItem()).toBe(start);
+            fireEvent.click(button("Apply craft"));
+            expect(currentItem()).not.toBe(first);
+        });
 
         it("keeps last modifier changes aligned with undo, redo, manual edits, clearing and loading", () => {
             mount();
@@ -244,8 +256,10 @@ for (const game of ["poe1", "poe2"] as const) {
             fireEvent.click(button("Apply craft"));
             expect(amount(engine.methodName(method))).toBe("1");
             fireEvent.click(button("Save project"));
+            // The undo before clearing shifts the seed once.
             expect(saved().item).toEqual(
-                engine.apply(before.item, method, seededRandom(project.seed)).item,
+                engine.apply(before.item, method, seededRandom(emulationSeed(project.seed, 0, 1)))
+                    .item,
             );
             fireEvent.click(button("Undo"));
             expect(currentItem()).toBe(retained);

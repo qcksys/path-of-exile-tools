@@ -151,6 +151,7 @@ describe("market browsing", () => {
         expect(corruption({ category: "accessories" })).toBe("false");
         expect(corruption({ category: "armour", corruption: "all" })).toBe("all");
         expect(corruption({ category: "armour-bases" })).toBe("all");
+        expect(corruption({ category: "forbidden" })).toBe("all");
         expect(corruption({ category: "currency" })).toBe("all");
         expect(corruption({})).toBe("all");
         const params = (input: Record<string, string>) =>
