@@ -122,6 +122,20 @@ const VARIANTS: [name: string, variant: string, mods: string[]][] = [
             ] as [string, string, string[]],
     ),
     ...[
+        ["Life / Strength", ["+5 to Strength", "+40 to maximum Life"]],
+        ["Accuracy Rating / Dexterity", ["+5 to Dexterity", "+40 to Accuracy Rating"]],
+    ].map(
+        ([variant, stats]) =>
+            [
+                "Split Personality",
+                variant,
+                [
+                    "This Jewel's Socket has 25% increased effect per Allocated Passive Skill between\nit and your Class' starting location",
+                    ...stats,
+                ],
+            ] as [string, string, string[]],
+    ),
+    ...[
         ["Mana", "+5 to maximum Mana"],
         ["Energy Shield", "3% increased Energy Shield"],
         ["Chaos Resistance", "+4% to Chaos Resistance"],
@@ -217,6 +231,28 @@ describe("uniques split by mods", () => {
                 ]),
             ),
         ).toEqual({ kind: "unique-mod-split", variant: "Power" });
+    });
+
+    it("keeps one Split Personality market per stat pair whatever the mod order", () => {
+        expect(
+            extractModSignature(
+                unique("Split Personality", ["+40 to maximum Life", "+5 to Strength"]),
+            ),
+        ).toEqual(
+            extractModSignature(
+                unique("Split Personality", ["+5 to Strength", "+40 to maximum Life"]),
+            ),
+        );
+    });
+
+    it("splits Impossible Escape by keystone", () => {
+        const signature = extractModSignature(
+            unique("Impossible Escape", [
+                "Passive Skills in Radius of Chaos Inoculation can be Allocated\nwithout being connected to your tree",
+            ]),
+        );
+        expect(signature).toEqual({ kind: "impossible-escape", keystone: "Chaos Inoculation" });
+        expect(signatureValue(signature)).toBe("Chaos Inoculation");
     });
 
     it("ignores unidentified copies, non-uniques and copies without the splitting mod", () => {

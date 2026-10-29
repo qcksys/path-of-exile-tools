@@ -13,7 +13,7 @@ describe("upstream modifier formats", () => {
         ],
         [
             "Impossible Escape",
-            "Passives in Radius of Iron Reflexes can be Allocated without being connected to your tree",
+            "Passive Skills in Radius of Iron Reflexes can be Allocated\nwithout being connected to your tree",
         ],
         ["Forbidden Shako", "Socketed Gems are Supported by Level 35 Ice Bite"],
     ])("groups object and legacy string modifiers identically for %s", (name, description) => {
