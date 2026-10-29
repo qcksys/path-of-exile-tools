@@ -23,6 +23,11 @@ export async function selectValue(
             : "index" in value
               ? listbox.getByRole("option").nth(value.index)
               : listbox.getByRole("option", { name: value.label, exact: true });
+    // A click on an option while its popup still zooms in can miss it and leave the popup open.
+    await option.evaluate((element) => {
+        const popup = element.closest('[data-slot$="-content"]') ?? element;
+        return Promise.all(popup.getAnimations().map((animation) => animation.finished));
+    });
     await option.click();
     await expect(control).toHaveAttribute("aria-expanded", "false");
     await expect(listbox).toHaveCount(0);

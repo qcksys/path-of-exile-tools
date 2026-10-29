@@ -1033,10 +1033,11 @@ it("lists Forbidden jewels in their own category, apart from other jewels", asyn
                 "list",
             )
         ).rows.map((row) => [row.itemKey, row.corrupted, row.category]);
-    // Uncorrupted unless asked, as unique equipment is.
+    // Any corruption unless asked: every listed Forbidden jewel is corrupted.
     expect(await list("forbidden")).toEqual([
         ["Forbidden Flame", false, "forbidden"],
         ["Forbidden Flesh", false, "forbidden"],
+        ["Forbidden Flesh", true, "forbidden"],
     ]);
     expect(await list("jewels")).toEqual([
         ["Unnamed", false, "jewels"],
