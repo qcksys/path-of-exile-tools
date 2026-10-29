@@ -14,6 +14,7 @@ import { scryingOrbExtractor } from "#src/shared/mod-extractors/scrying-orb.ts";
 import { templeExtractor } from "#src/shared/mod-extractors/temple.ts";
 import type { ModExtractor, ModSignature } from "#src/shared/mod-extractors/types.ts";
 import { uniqueModSplitExtractor } from "#src/shared/mod-extractors/unique-mod-splits.ts";
+import { wombgiftExtractor } from "#src/shared/mod-extractors/wombgift.ts";
 
 export const EXTRACTORS: readonly ModExtractor[] = [
     forbiddenJewelExtractor,
@@ -29,6 +30,7 @@ export const EXTRACTORS: readonly ModExtractor[] = [
     templeExtractor,
     scryingOrbExtractor,
     heistExtractor,
+    wombgiftExtractor,
 ];
 
 export function extractModSignature(item: Item): ModSignature | null {
