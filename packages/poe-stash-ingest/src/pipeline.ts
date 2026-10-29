@@ -13,9 +13,12 @@ import { rollupPs } from "#src/ps/rollup.ts";
 import { type ArchiveOptions, archiveOldData } from "#src/shared/archive.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { queryAll, TransactionRollbackError } from "#src/shared/db.ts";
+import { deliverLeagues } from "#src/shared/leagues.ts";
 import { configureSource } from "#src/shared/source.ts";
 
 const ARCHIVE_INTERVAL_MS = 3_600_000;
+const LEAGUE_INTERVAL_MS = 3_600_000;
+let leaguesDeliveredAt = 0;
 // Each reclassified hour re-delivers the 24 hours whose windows include it, so with fast cycles
 // PS_RECLASSIFY_PAGES_PER_HOUR caps the receiver's write load; unset, every cycle reclassifies.
 let reclassifyTokens = 0;
@@ -133,6 +136,8 @@ export async function runPipeline(
         currencyHours?: number;
         archive?: ArchiveOptions;
         rawArchive?: RawArchiveOptions;
+        /** Deliver the realm's league list to poe.boats, at most hourly. */
+        leagues?: boolean;
     },
 ) {
     await configureSource(conn, REALM ?? "pc", opts.league ?? null);
@@ -254,6 +259,14 @@ export async function runPipeline(
         await failStage("delivery", "Rollup delivery", error);
         return null;
     });
+    if (opts.leagues && Date.now() - leaguesDeliveredAt >= LEAGUE_INTERVAL_MS) {
+        await deliverLeagues(client).then(
+            () => {
+                leaguesDeliveredAt = Date.now();
+            },
+            (error: unknown) => failStage("delivery", "League list delivery", error),
+        );
+    }
     // Archive failures report as delivery so workers need no receiver schema change.
     if (opts.archive && (archiveBacklog || Date.now() - archiveCheckedAt >= ARCHIVE_INTERVAL_MS)) {
         archiveCheckedAt = Date.now();

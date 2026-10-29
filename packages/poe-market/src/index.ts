@@ -5,6 +5,7 @@ export * from "./exchange.ts";
 export * from "./exchange-window.ts";
 export * from "./gem-variants.ts";
 export * from "./ingest-status.ts";
+export * from "./leagues.ts";
 export * from "./level-bands.ts";
 export * from "./map-variants.ts";
 export * from "./observation-time.ts";

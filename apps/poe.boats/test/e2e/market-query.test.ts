@@ -102,9 +102,17 @@ it("discovers season boundaries without scanning every hourly observation", asyn
         { league: "Previous", firstHour: hour - 86400 - 19 * 3600, latestHour: hour - 86400 },
     ]);
     expect(result.rows).toEqual([]);
-    const query = statements[0]!;
-    const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
-    expect(plan.some((row) => String(row.Extra).includes("Using index for group-by"))).toBe(true);
+    // Seasons come from the hour coverage rollup, which keeps hours whose rows left the database.
+    const seasonQueries = statements.filter(
+        ({ sql: query, params }) =>
+            query.includes(getTableName(tStashHourCoverage.poe1)) && params.includes("uniques"),
+    );
+    expect(seasonQueries).toHaveLength(1);
+    expect(
+        statements.filter(
+            ({ sql: query }) => query.includes(getTableName(market)) && /\bmin\(/i.test(query),
+        ),
+    ).toEqual([]);
 });
 
 it("fetches full item records by primary key only after selecting the market page", async () => {
@@ -1394,20 +1402,20 @@ it("keeps item history independent of browsing filters and skips the list query 
     expect(result.variants).toEqual([
         expect.objectContaining({ itemKey: "Item 0", identified: true, corrupted: false }),
     ]);
-    // Includes the variants' latest rows, which price each variant.
-    expect(statements).toHaveLength(7);
+    // Includes the variants' latest rows, which price each variant, and the ended leagues.
+    expect(statements).toHaveLength(8);
     expect(statements.filter(({ sql: query }) => /\binner\s+join\b/i.test(query))).toEqual([]);
     expect(
         statements.filter(({ sql: query }) =>
             query.includes(getTableName(tStashCurrencyHourly.poe1)),
         ),
     ).toHaveLength(1);
-    // Exchange seasons come from the coverage rollup, not a scan of every hourly snapshot.
+    // Stash and exchange seasons come from the coverage rollup, not a scan of every hourly row.
     expect(
         statements.filter(({ sql: query }) =>
             query.includes(getTableName(tStashHourCoverage.poe1)),
         ),
-    ).toHaveLength(1);
+    ).toHaveLength(2);
 });
 
 it("merges every listing currency into chaos through same-league rates, whatever the display currency", async () => {

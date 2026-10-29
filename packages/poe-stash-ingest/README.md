@@ -515,6 +515,9 @@ Each game (`poe1`, `poe2`) has its own tables; the receiver routes rows by realm
 | `basemap_snapshot`          | **forever** | `icon_asset` (public unid → name resolver) |
 | `cohort_hourly` (PoE 1)     | **forever** | `(realm, league, hour, cohort_id)`, the newest catalog revision's classification |
 | `cohort_window` (PoE 1)     | 48 hours    | `(realm, league, hour, cohort_id)`, the 6/24-hour price windows |
+| `league`                    | **forever** | `(realm, league)`, from GGG's league API   |
+
+`process` pushes the realm's complete league list (`leagues` stream) at most hourly. poe.boats marks a stored league ended when it leaves the list or its `endAt` passes, and its markets default to leagues that are still listed.
 
 ## Pricing unidentified vs identified
 

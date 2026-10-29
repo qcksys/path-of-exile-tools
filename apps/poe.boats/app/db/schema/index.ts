@@ -35,6 +35,7 @@ import {
     tStashPoe2CurrencyMarket,
 } from "~/db/schema/stash.currency-market";
 import { tStashPoe1HourCoverage, tStashPoe2HourCoverage } from "~/db/schema/stash.hour-coverage";
+import { tStashPoe1League, tStashPoe2League } from "~/db/schema/stash.league";
 import { tStashPoe1MarketDaily, tStashPoe2MarketDaily } from "~/db/schema/stash.market-daily";
 import { tStashPoe1UniqueHourly, tStashPoe2UniqueHourly } from "~/db/schema/stash.unique-hourly";
 
@@ -68,6 +69,8 @@ export const schema = {
     tStashPoe2CurrencyMarket,
     tStashPoe1HourCoverage,
     tStashPoe2HourCoverage,
+    tStashPoe1League,
+    tStashPoe2League,
     tStashCohortHourly,
     tStashCohortRevision,
     tStashCohortWindow,

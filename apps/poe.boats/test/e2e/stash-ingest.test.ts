@@ -37,6 +37,7 @@ import {
     upsertStashCohortHourly,
     upsertStashCurrencyHourly,
 } from "~/db/queries/stash-ingest.queries";
+import { recordStashLeagues } from "~/db/queries/stash-league.queries";
 import { tIngestWorker } from "~/db/schema/ingest.worker";
 import { tStashCheckpoint, tStashDailySample } from "~/db/schema/stash.checkpoint";
 import { tStashCohort } from "~/db/schema/stash.cohort";
@@ -45,6 +46,7 @@ import { tStashCohortRevision } from "~/db/schema/stash.cohort-revision";
 import { tStashCohortWindow } from "~/db/schema/stash.cohort-window";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
+import { tStashLeague } from "~/db/schema/stash.league";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
 import { tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { seededRandom } from "~/lib/crafting-engine";
@@ -92,6 +94,7 @@ import {
     openDb,
     queryAll,
 } from "../../../../packages/poe-stash-ingest/src/shared/db.ts";
+import { deliverLeagues } from "../../../../packages/poe-stash-ingest/src/shared/leagues.ts";
 import { push } from "../../../../packages/poe-stash-ingest/src/shared/remote/push.ts";
 import type { UniqueHourlyRow } from "../../../../packages/poe-stash-ingest/src/shared/remote/types.ts";
 import {
@@ -400,6 +403,7 @@ beforeEach(async () => {
         await mysql.delete(tStashUniqueHourly[game]);
         // Market seasons read coverage, so it must not outlive the hourly rows it counts.
         await mysql.delete(tStashHourCoverage[game]);
+        await mysql.delete(tStashLeague[game]);
     }
     await mysql.delete(tIngestWorker);
     await mysql.delete(tStashCohortHourly);
@@ -1928,6 +1932,110 @@ it("delivers inferred sales through HTTP and exposes season-isolated price histo
         likelySales: 0,
         relistedCount: 1,
     });
+});
+
+it("records each realm's league list, ends leagues that leave it and defaults markets to listed leagues", async () => {
+    const listed = (id: string, endAt?: string) => ({
+        id,
+        realm: "pc",
+        category: { id: "Allflame", current: true },
+        rules: [{ id: "Hardcore", name: "Hardcore" }],
+        startAt: "2026-10-01T20:00:00Z",
+        ...(endAt ? { endAt } : {}),
+    });
+    const client = createClient({ baseUrl, userAgent: "league-e2e", token: TOKEN });
+    const listedAt = 1_800_000_000;
+    vi.spyOn(Date, "now").mockReturnValue(listedAt * 1000);
+    upstreamResponses.push({
+        body: {
+            leagues: [
+                listed("Allflame"),
+                listed("Old League"),
+                listed("Finished Event", "2020-01-01T00:00:00Z"),
+            ],
+        },
+    });
+    expect(await deliverLeagues(client)).toBe(3);
+    expect(
+        await mysql
+            .select({
+                league: tStashLeague.poe1.league,
+                category: tStashLeague.poe1.category,
+                rules: tStashLeague.poe1.rules,
+                startAt: tStashLeague.poe1.startAt,
+                endedAt: tStashLeague.poe1.endedAt,
+            })
+            .from(tStashLeague.poe1)
+            .orderBy(tStashLeague.poe1.league),
+    ).toEqual([
+        {
+            league: "Allflame",
+            category: "Allflame",
+            rules: ["Hardcore"],
+            startAt: 1_790_884_800,
+            endedAt: null,
+        },
+        {
+            league: "Finished Event",
+            category: "Allflame",
+            rules: ["Hardcore"],
+            startAt: 1_790_884_800,
+            endedAt: 1_577_836_800,
+        },
+        {
+            league: "Old League",
+            category: "Allflame",
+            rules: ["Hardcore"],
+            startAt: 1_790_884_800,
+            endedAt: null,
+        },
+    ]);
+
+    // Seasons come from hour coverage; the ended league has the newest hour.
+    await mysql.insert(tStashHourCoverage.poe1).values([
+        { stream: "uniques", realm: "pc", league: "Allflame", hour: HOUR, rowCount: 1 },
+        { stream: "uniques", realm: "pc", league: "Old League", hour: HOUR + 3600, rowCount: 1 },
+    ]);
+    const database = mysql as unknown as TDatabase;
+    const filters = marketFiltersSchema.parse({});
+    expect((await getMarketData(database, filters)).filters.league).toBe("Old League");
+
+    vi.spyOn(Date, "now").mockReturnValue((listedAt + 3600) * 1000);
+    upstreamResponses.push({ body: { leagues: [listed("Allflame")] } });
+    expect(await deliverLeagues(client)).toBe(1);
+    const ended = async () =>
+        Object.fromEntries(
+            (
+                await mysql
+                    .select({
+                        league: tStashLeague.poe1.league,
+                        endedAt: tStashLeague.poe1.endedAt,
+                    })
+                    .from(tStashLeague.poe1)
+            ).map((row) => [row.league, row.endedAt]),
+        );
+    expect(await ended()).toEqual({
+        Allflame: null,
+        "Finished Event": 1_577_836_800,
+        "Old League": listedAt + 3600,
+    });
+    const data = await getMarketData(database, filters);
+    expect(data.filters.league).toBe("Allflame");
+    expect(data.seasons.map((season) => season.league)).toEqual(["Allflame", "Old League"]);
+
+    // A list delivered late neither revives nor ends a league listed more recently.
+    await recordStashLeagues(database, {
+        realm: "pc",
+        listedAt: listedAt - 60,
+        rows: [{ id: "Old League", category: null, rules: [], startAt: null, endAt: null }],
+    });
+    expect(await ended()).toEqual({
+        Allflame: null,
+        "Finished Event": 1_577_836_800,
+        "Old League": listedAt + 3600,
+    });
+    // Each game keeps its own list.
+    expect(await mysql.select().from(tStashLeague.poe2)).toEqual([]);
 });
 
 it("updates a seeded currency market with a long ID through HTTP to MySQL", async () => {
