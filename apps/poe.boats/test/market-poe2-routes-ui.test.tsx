@@ -6,7 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { dbContext } from "~/context";
 import { createDbConnection } from "~/db/client";
 import { getMarketExchangeItem, getPoe2MarketExchange } from "~/db/queries/market.queries";
-import type { MarketExchangeRow } from "~/lib/market-exchange";
+import type { MarketExchangeListRow } from "~/lib/market-exchange";
 import Poe2MarketIndex, { loader as listLoader } from "~/routes/market/poe2";
 import Poe2MarketExchangeItem, { loader as exchangeLoader } from "~/routes/market/poe2-exchange";
 import Poe2Market from "~/routes/market-poe2";
@@ -26,7 +26,7 @@ const divine = "Metadata/Items/Currency/CurrencyModValues";
 const rune = "Metadata/Items/SoulCores/RuneFire";
 const season = { league: "Rites", firstHour: hour - 86400, latestHour: hour };
 
-const runeRow: MarketExchangeRow = {
+const runeRow: MarketExchangeListRow = {
     itemId: rune,
     name: "Desert Rune",
     category: "runes",
@@ -38,6 +38,7 @@ const runeRow: MarketExchangeRow = {
     history: [600, null, null, null, null, null, 800],
     change: 1 / 3,
     pair: { quoteId: divine, name: "Divine Orb", rate: 2 },
+    recentVolume: { hourly: Array<number>(24).fill(1), daily: Array<number>(7).fill(30) },
 };
 
 function exchangeFixture(filters: Poe2MarketFilters) {

@@ -283,6 +283,20 @@ export const marketExchangeRowSchema = z.object({
         ),
 });
 
+/** An exchange row of a market list, with the units of the item traded recently. */
+export const marketExchangeListRowSchema = marketExchangeRowSchema.extend({
+    recentVolume: z.object({
+        hourly: z
+            .array(z.number())
+            .describe(
+                "Units of the item traded in each of the 24 hours to the latest, oldest first",
+            ),
+        daily: z
+            .array(z.number())
+            .describe("Units of the item traded on each of the last 7 UTC days, oldest first"),
+    }),
+});
+
 export const marketExchangeItemInputSchema = marketFiltersSchema
     .pick({ realm: true, league: true, days: true })
     .extend({ itemId: z.string().startsWith("Metadata/Items/").max(255) });

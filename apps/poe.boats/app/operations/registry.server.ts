@@ -12,6 +12,7 @@ import {
     marketBaseInputSchema,
     marketCategorySchema,
     marketExchangeItemInputSchema,
+    marketExchangeListRowSchema,
     marketExchangeRowSchema,
     marketExchangeUnitSchema,
     marketFiltersSchema,
@@ -329,7 +330,7 @@ export const operations = [
                 ),
             hasMore: z.boolean(),
             exchange: z
-                .array(marketExchangeRowSchema)
+                .array(marketExchangeListRowSchema)
                 .describe(
                     "Items on the exchange, dearest first, priced in `exchangeUnit`; their stash listings are left out of rows. Read one with get_season_exchange_item",
                 ),
@@ -528,7 +529,7 @@ export const operations = [
             unit: marketExchangeUnitSchema,
             divine: z.number().nullable().describe("Exalted per Divine Orb, for display"),
             priceRates: priceRates("as the rows price them"),
-            rows: z.array(marketExchangeRowSchema),
+            rows: z.array(marketExchangeListRowSchema),
         }),
         execute: (input, context) => getPoe2MarketExchange(context.db, input),
     }),
