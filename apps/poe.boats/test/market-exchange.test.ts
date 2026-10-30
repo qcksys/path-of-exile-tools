@@ -3,6 +3,7 @@ import { expect, it } from "vite-plus/test";
 import {
     type MarketExchangeDaily,
     marketExchangeHistory,
+    marketExchangeIqr,
     marketExchangeRecentVolume,
     marketExchangeRows,
 } from "~/lib/market-exchange";
@@ -298,26 +299,77 @@ it("returns an item's hourly chaos price and range through a bridge and each pai
             price: 600,
             low: 540,
             high: 720,
+            p25: null,
+            p75: null,
             via: taintedExalted,
             units: 6,
         },
-        { hour, price: 400, low: 380, high: 410, via: chaos, units: 5 },
+        { hour, price: 400, low: 380, high: 410, p25: null, p75: null, via: chaos, units: 5 },
     ]);
     expect(history.pairs).toEqual([
         {
             quoteId: taintedExalted,
             name: "Tainted Exalted Orb",
             hours: [
-                { hour: hour - 3600, rate: 2, low: 1.8, high: 2.4, units: 6 },
-                { hour, rate: 1, low: null, high: null, units: 4 },
+                { hour: hour - 3600, rate: 2, low: 1.8, high: 2.4, p25: null, p75: null, units: 6 },
+                { hour, rate: 1, low: null, high: null, p25: null, p75: null, units: 4 },
             ],
         },
         {
             quoteId: chaos,
             name: "Chaos Orb",
-            hours: [{ hour, rate: 400, low: 380, high: 410, units: 1 }],
+            hours: [{ hour, rate: 400, low: 380, high: 410, p25: null, p75: null, units: 1 }],
         },
     ]);
+});
+
+it("estimates a symmetric IQR when the volume-weighted rate is the midpoint", () => {
+    const { p25, p75 } = marketExchangeIqr(10, 20, 15, 9);
+    expect(p25).toBeCloseTo(10 + Math.sqrt(0.25 * 10 * 5));
+    expect(p75).toBeCloseTo(20 - Math.sqrt(0.25 * 10 * 5));
+});
+
+it("skews the estimated IQR towards the volume-weighted rate", () => {
+    const middle = marketExchangeIqr(10, 20, 15, 100);
+    const low = marketExchangeIqr(10, 20, 14, 100);
+    const high = marketExchangeIqr(10, 20, 16, 100);
+    expect(low.p25!).toBeLessThan(middle.p25!);
+    expect(low.p75!).toBeLessThan(middle.p75!);
+    expect(high.p25!).toBeGreaterThan(middle.p25!);
+    expect(high.p75!).toBeGreaterThan(middle.p75!);
+});
+
+it("keeps the estimated IQR inside the range when the rate falls outside it", () => {
+    const { p25, p75 } = marketExchangeIqr(10, 20, 30, 100);
+    expect(p25!).toBeGreaterThanOrEqual(10);
+    expect(p75!).toBeLessThanOrEqual(20);
+});
+
+it("needs more than 8 units and a range to estimate an IQR", () => {
+    expect(marketExchangeIqr(10, 20, 15, 8)).toEqual({ p25: null, p75: null });
+    expect(marketExchangeIqr(null, 20, 15, 100)).toEqual({ p25: null, p75: null });
+    expect(marketExchangeIqr(10, 20, null, 100)).toEqual({ p25: null, p75: null });
+    expect(marketExchangeIqr(10, 10, 10, 100)).toEqual({ p25: 10, p75: 10 });
+});
+
+it("estimates each hour's IQR in the exchange unit through a bridge", () => {
+    const history = marketExchangeHistory(
+        [
+            {
+                ...snapshot(teardrop, 100, taintedExalted, 150),
+                lowestRatio: { [teardrop]: 1, [taintedExalted]: 1 },
+                highestRatio: { [teardrop]: 1, [taintedExalted]: 2 },
+            },
+            snapshot(taintedExalted, 1, chaos, 300),
+        ],
+        teardrop,
+        describe,
+    );
+    const direct = marketExchangeIqr(1, 2, 1.5, 100);
+    expect(history.pairs[0]!.hours[0]).toMatchObject(direct);
+    const [point] = history.prices;
+    expect(point!.p25).toBeCloseTo(direct.p25! * 300);
+    expect(point!.p75).toBeCloseTo(direct.p75! * 300);
 });
 
 it("prices PoE 2 items in exalted, through divine before chaos when there is no exalted pair", () => {
@@ -353,7 +405,7 @@ it("returns an item's hourly exalted price through a chaos bridge", () => {
         "exalted",
     );
     expect(history.prices).toEqual([
-        { hour, price: 0.02, low: null, high: null, via: chaos, units: 100 },
+        { hour, price: 0.02, low: null, high: null, p25: null, p75: null, via: chaos, units: 100 },
     ]);
 });
 

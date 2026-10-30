@@ -668,6 +668,108 @@ it("pairs Forbidden Flame and Flesh by notable under their class and ascendancy"
             .getAllByRole("link")
             .map((link) => link.textContent),
     ).toEqual(["Witch", "Templar"]);
+    // Each jewel charts its recent likely sales, as other market tabs do.
+    expect(within(pious).getAllByRole("cell")[1]!.querySelectorAll("svg")).toHaveLength(3);
+    expect(within(pious).getAllByRole("cell")[4]!.textContent).toBe("4");
+});
+
+function showForbiddenPairs(search: string) {
+    vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+        const fixture = marketFixture(filters);
+        const [row] = fixture.rows;
+        const flame = (notable: string, chaos: number | null, periodSales: number) => ({
+            ...row!,
+            itemKey: "Forbidden Flame",
+            name: "Forbidden Flame",
+            baseType: "Crimson Jewel",
+            category: "forbidden" as const,
+            signatureKind: "forbidden-jewel",
+            signatureValue: notable,
+            periodSales,
+            prices:
+                chaos === null
+                    ? null
+                    : { chaos: { count: 4, min: chaos, median: chaos, max: chaos } },
+        });
+        const flesh = (notable: string, chaos: number) => ({
+            ...flame(notable, chaos, 0),
+            itemKey: "Forbidden Flesh",
+            name: "Forbidden Flesh",
+            baseType: "Cobalt Jewel",
+        });
+        return {
+            ...fixture,
+            exchange: [],
+            hasMore: false,
+            rows: [
+                flame("Pious Path", 100, 1),
+                flesh("Pious Path", 100),
+                flame("Righteous Providence", 50, 9),
+                flesh("Righteous Providence", 50),
+                flame("Augury of Penitence", null, 4),
+            ],
+        };
+    });
+    showMarket(`/1/market/forbidden?league=Allflame${search}`);
+}
+
+async function forbiddenNotables() {
+    const table = await screen.findByRole("table", { name: "Inquisitor notables" });
+    return within(table)
+        .getAllByRole("row")
+        .slice(1)
+        .map((row) => within(row).getAllByRole("cell")[0]!.textContent);
+}
+
+it("orders Forbidden pairs by likely sales by default", async () => {
+    showForbiddenPairs("");
+    expect(await forbiddenNotables()).toEqual([
+        "Righteous Providence",
+        "Augury of Penitence",
+        "Pious Path",
+    ]);
+});
+
+it("orders Forbidden pairs by price with unpriced pairs last in either direction", async () => {
+    showForbiddenPairs("&order=price-desc");
+    expect(await forbiddenNotables()).toEqual([
+        "Pious Path",
+        "Righteous Providence",
+        "Augury of Penitence",
+    ]);
+    cleanup();
+    showForbiddenPairs("&order=price-asc");
+    expect(await forbiddenNotables()).toEqual([
+        "Righteous Providence",
+        "Pious Path",
+        "Augury of Penitence",
+    ]);
+});
+
+it("sorts Forbidden pairs from the price and sales column headers", async () => {
+    showForbiddenPairs("&order=sales-asc");
+    expect(await forbiddenNotables()).toEqual([
+        "Pious Path",
+        "Augury of Penitence",
+        "Righteous Providence",
+    ]);
+    const table = screen.getByRole("table", { name: "Inquisitor notables" });
+    expect(
+        within(table).getByRole("columnheader", { name: "Likely sales" }).getAttribute("aria-sort"),
+    ).toBe("ascending");
+    fireEvent.click(within(table).getByRole("button", { name: "Pair" }));
+    await waitFor(() =>
+        expect(
+            within(screen.getByRole("table", { name: "Inquisitor notables" }))
+                .getByRole("columnheader", { name: "Pair" })
+                .getAttribute("aria-sort"),
+        ).toBe("descending"),
+    );
+    expect(await forbiddenNotables()).toEqual([
+        "Pious Path",
+        "Righteous Providence",
+        "Augury of Penitence",
+    ]);
 });
 
 it("prices each variant link", async () => {
@@ -907,7 +1009,7 @@ it("shows one merged price history in the value display at each hour's rate", as
     expect(within(history).queryByRole("link", { name: "chaos" })).toBeNull();
     expect(within(history).queryByRole("link", { name: "divine" })).toBeNull();
     expect(
-        within(history).getAllByRole("img", { name: /Hourly lowest asking price/ }),
+        within(history).getAllByRole("img", { name: /Hourly lowest and average asking/ }),
     ).toHaveLength(1);
     const table = within(history).getByRole("table", { name: "Hourly observations" });
     const asks = () =>
@@ -919,9 +1021,7 @@ it("shows one merged price history in the value display at each hour's rate", as
     expect(asks()).toEqual(["2 chaos", "2 chaos≈ 0.02 divine"]);
     fireEvent.click(within(history).getByRole("button", { name: "Divine Orb" }));
     expect(asks()).toEqual(["2 chaos", "0.02 divine"]);
-    expect(
-        within(history).getByRole("img", { name: /Hourly lowest asking price in divine/ }),
-    ).toBeTruthy();
+    expect(within(history).getByRole("img", { name: /likely sale prices in divine/ })).toBeTruthy();
 
     // The value display carries from the item page back to the list.
     fireEvent.click(screen.getByRole("link", { name: /Back to markets/ }));
