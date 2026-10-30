@@ -2683,6 +2683,11 @@ it("stores a Watcher's Eye once for its item and once per mod for its mod count"
                         eye("two", [anger, clarity], { note: "~b/o 10 chaos" }),
                         // Unrecognised second mod: only the item's market.
                         eye("one", [anger, "+10 to Strength"], { note: "~b/o 5 chaos" }),
+                        // Corrupted eyes have no market at all.
+                        eye("corrupted", [anger, clarity, determination], {
+                            corrupted: true,
+                            note: "~b/o 900 chaos",
+                        }),
                     ],
                 },
             ],
