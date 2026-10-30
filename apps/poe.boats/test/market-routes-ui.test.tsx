@@ -1126,16 +1126,17 @@ it("filters skill gems by tri-state level, quality and corruption toggles", asyn
     const quality = screen.getByRole("group", { name: "Gem quality" });
     expect(screen.queryByRole("combobox", { name: "Corruption" })).toBeNull();
 
-    fireEvent.click(within(level).getByRole("button", { name: "20: any" }));
-    fireEvent.click(within(level).getByRole("button", { name: "21: any" }));
-    fireEvent.click(within(level).getByRole("button", { name: "21: included" }));
+    expect(within(level).getByRole("button", { name: "Under Max: any" })).toBeTruthy();
+    fireEvent.click(within(level).getByRole("button", { name: "Max: any" }));
+    fireEvent.click(within(level).getByRole("button", { name: "Over Max: any" }));
+    fireEvent.click(within(level).getByRole("button", { name: "Over Max: included" }));
     fireEvent.click(within(quality).getByRole("button", { name: "20%: any" }));
     fireEvent.click(screen.getByRole("button", { name: "Corrupted: any" }));
     fireEvent.click(screen.getByRole("button", { name: "Corrupted: included" }));
     fireEvent.click(screen.getByRole("button", { name: "Transfigured: any" }));
     fireEvent.click(screen.getByRole("button", { name: "Vaal: any" }));
     fireEvent.click(screen.getByRole("button", { name: "Vaal: included" }));
-    expect(within(level).getByRole("button", { name: "21: excluded" })).toBeTruthy();
+    expect(within(level).getByRole("button", { name: "Over Max: excluded" })).toBeTruthy();
     await waitFor(() =>
         expect(getMarketData).toHaveBeenLastCalledWith(
             expect.anything(),
@@ -1154,8 +1155,8 @@ it("filters skill gems by tri-state level, quality and corruption toggles", asyn
         expect(screen.getByLabelText("Current URL").textContent).toContain("gemLevel=20%2C-21"),
     );
 
-    fireEvent.click(within(level).getByRole("button", { name: "20: included" }));
-    fireEvent.click(within(level).getByRole("button", { name: "20: excluded" }));
+    fireEvent.click(within(level).getByRole("button", { name: "Max: included" }));
+    fireEvent.click(within(level).getByRole("button", { name: "Max: excluded" }));
     await waitFor(() =>
         expect(getMarketData).toHaveBeenLastCalledWith(
             expect.anything(),

@@ -1,9 +1,9 @@
 import {
     formatGemBandFilter,
     GEM_LEVEL_BANDS,
+    GEM_LEVEL_LABELS,
     GEM_QUALITY_BANDS,
     GEM_QUALITY_LABELS,
-    GEM_TIERS,
     type GemBandState,
     parseGemBandFilter,
 } from "@poe-tools/market";
@@ -149,22 +149,14 @@ export function MarketGemFilters({
 }) {
     return (
         <div className="flex flex-wrap items-start gap-x-6 gap-y-3 border-t border-border pt-4">
-            <div className="grid gap-1">
-                <BandToggles
-                    name="gemLevel"
-                    legend="Gem level"
-                    bands={GEM_LEVEL_BANDS}
-                    labels={GEM_TIERS.normal.levels}
-                    value={filters.gemLevel}
-                    onChange={onChange}
-                />
-                <p className="text-xs text-muted-foreground">
-                    {Object.values(GEM_TIERS)
-                        .slice(1)
-                        .map((tier) => `${tier.label}: ${tier.levels.join(", ")}`)
-                        .join(" · ")}
-                </p>
-            </div>
+            <BandToggles
+                name="gemLevel"
+                legend="Gem level"
+                bands={GEM_LEVEL_BANDS}
+                labels={GEM_LEVEL_LABELS}
+                value={filters.gemLevel}
+                onChange={onChange}
+            />
             <BandToggles
                 name="gemQuality"
                 legend="Gem quality"
