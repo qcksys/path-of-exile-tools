@@ -119,7 +119,8 @@ mod count (`3 mods: Haste: You have Phasing`). Per-mod totals therefore exceed t
 mod's price includes the value of the mods alongside it. Every page of a pool unique, and the market
 operation's `modValues`, list those markets with the same corruption: listings, cheapest and median
 ask in the latest hour, likely sales and the median last ask before them over the period, in the
-display currency. Each links to its own history.
+display currency. Each links to its own history. Corrupted Watcher's Eyes have no market: the
+worker keeps their listings, but its rollup leaves them out.
 Weapon, armour, accessory and flask categories list uniques only. Normal, magic and rare equipment is
 listed under the Crafting bases group (`armour-bases`, `weapon-bases`, `accessory-bases`,
 `flask-bases`, `cluster-jewel-bases`) from

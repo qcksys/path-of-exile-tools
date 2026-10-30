@@ -104,6 +104,8 @@ WITH observations AS (
             OR NOT starts_with(l.item_key, 'unid:')
             OR (l.icon_asset IS NOT NULL AND b.name IS NOT NULL)
         )
+        -- Corrupted Watcher's Eyes have no market. IS NOT TRUE keeps nameless listings.
+        AND (COALESCE(l.corrupted, FALSE) AND COALESCE(l.name, b.name) = 'Watcher''s Eye') IS NOT TRUE
 ),
 pool_mods AS (
     SELECT *, len(mods) AS mod_count, unnest(mods) AS mod
