@@ -2200,7 +2200,7 @@ it("bounds historical exchange cycles and resumes the next committed hour", asyn
     expect(await getCursor(local.conn, "cxapi")).toBe(String(HOUR + 10800));
 });
 
-it("captures a full exchange snapshot atomically, filtering leagues and tolerating replay", async () => {
+it("captures a full exchange snapshot atomically, for every league and tolerating replay", async () => {
     const markets = Array.from({ length: 1000 }, (_, index) => ({
         ...market,
         market_id: `${MARKET_ID}-${index}`,
@@ -2217,15 +2217,18 @@ it("captures a full exchange snapshot atomically, filtering leagues and tolerati
             catchUp: false,
             league: "Standard",
         });
-        expect(result).toMatchObject({ leagues: 1, markets: 1001, nextHour: HOUR + 3600 });
+        expect(result).toMatchObject({ leagues: 2, markets: 1001, nextHour: HOUR + 3600 });
     }
     expect(
         await queryAll(
             local.conn,
             `SELECT league, count(*)::INTEGER AS count,
-            min(observed_hour)::INTEGER AS hour FROM cx_market_hour GROUP BY league`,
+            min(observed_hour)::INTEGER AS hour FROM cx_market_hour GROUP BY league ORDER BY league`,
         ),
-    ).toEqual([{ league: "Standard", count: 1000, hour: HOUR }]);
+    ).toEqual([
+        { league: "Other league", count: 1, hour: HOUR },
+        { league: "Standard", count: 1000, hour: HOUR },
+    ]);
     upstreamResponses.push({
         body: {
             next_change_id: HOUR + 7200,
@@ -2238,7 +2241,7 @@ it("captures a full exchange snapshot atomically, filtering leagues and tolerati
     expect(await getCursor(local.conn, "cxapi")).toBe(String(HOUR + 3600));
     expect(
         await queryAll(local.conn, "SELECT count(*)::INTEGER AS count FROM cx_market_hour"),
-    ).toEqual([{ count: 1000 }]);
+    ).toEqual([{ count: 1001 }]);
 });
 
 it("prices a whole craft from replayed exchange hours without mixing realms, leagues or zero-volume markets", async () => {

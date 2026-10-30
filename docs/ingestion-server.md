@@ -12,7 +12,9 @@ hours for PoE 1 PC and PoE 2, across every league present in the public
 [GGG hourly feed](https://www.pathofexile.com/developer/docs/reference#currencyexchange).
 It writes the original ratios, volumes and source hours directly to the app's MySQL history.
 No OAuth credentials, local machine or separate ingestion worker are needed for this collector.
-Console realms still require the separately configured ingestion worker.
+Console realms still require the separately configured ingestion worker. An ingestion worker also
+captures and delivers the exchange of every league in its realm, whatever its `INGEST_LEAGUE`, so
+its database can restore the app's exchange history.
 
 Each run repeats the six-hour range, latest first. Idempotent upserts repair partial writes
 and temporary failures without advancing a cursor past unfinished data. A failed hour does

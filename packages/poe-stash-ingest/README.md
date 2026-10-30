@@ -478,7 +478,7 @@ poe-stash-cx rollup  [--hour <unix>] [--league <name|all>] [--dry-run]
 poe-stash-cx cursor  [--set <hour>]
 ```
 
-cx is already hourly; rollup is a passthrough that POSTs cached `cx_market_hour` rows to poe.boats.
+cx is already hourly; rollup is a passthrough that POSTs cached `cx_market_hour` rows to poe.boats. Every league in the realm's feed is captured and delivered, whatever the worker's `INGEST_LEAGUE`, so this database can restore the app's exchange history. To fill earlier hours, set the cursor back with `poe-stash-cx cursor --set <hour>` while the worker is stopped.
 
 ## Local schema (DuckDB)
 
