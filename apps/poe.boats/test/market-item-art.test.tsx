@@ -33,6 +33,7 @@ function showMarket(
         listingCount: 5,
         uniqueSellers: 5,
         newCount: 1,
+        soldAgeSeconds: 3600,
         likelySales: 2,
         removedCount: 2,
         relistedCount: 0,

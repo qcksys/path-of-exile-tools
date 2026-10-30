@@ -73,8 +73,9 @@ Each variant carries its `latestHour` in the period with that hour's `listingCou
 the item page shows the most listed currency's median beside each variant, and lists more than
 20 variants as a searchable table grouped by state, or by class and ascendancy for Forbidden
 Flame and Flesh. Those two jewels have their own `forbidden` category (left out of `jewels`),
-which pairs them by notable under each class and ascendancy with the pair's combined price; the
-notable-to-ascendancy table in `app/data/ascendancy-notables-poe1.json` comes from GGG's passive
+which pairs them by notable under each class and ascendancy with the pair's combined price and
+likely sales, sorted within each ascendancy by the list's `order` and with each jewel's recent sales
+bars; the notable-to-ascendancy table in `app/data/ascendancy-notables-poe1.json` comes from GGG's passive
 tree export (`vp run game-data:ascendancies`).
 Stash markets are also stored by `tab`: `merchant` for Faustus's merchant tabs (the public stash
 API's `stashType` `TradeStash`, where every item has a `~b/o` price and sells without contacting
@@ -96,7 +97,9 @@ the shared value display (adaptively, in chaos or in divine). Each row links to
 `/1/market/exchange/<item ID after Metadata/Items/>` (`get_season_exchange_item`), which shows the
 same row and the item's hourly chaos price and per-pair rates over the list's period, each with the
 hour's lowest to highest traded rate as a shaded range (a converted price scales its pair's range
-by the bridge item's chaos price). The history reads the item's chaos, divine and exalted pairs,
+by the bridge item's chaos price), the lowest rate as a line, and `p25`/`p75`, an interquartile
+range estimated from those rates and the volume-weighted rate as a triangular distribution (null
+at 8 units or fewer, since the exchange digest has no individual trades). The history reads the item's chaos, divine and exalted pairs,
 its eight other most traded pairs and the chaos markets that convert them. List filters stay in
 the query for the way back. Exchange rows and history give amounts as `price` in the currency
 named by `unit` (`exchangeUnit` on `get_season_market`).
@@ -208,6 +211,9 @@ selected-currency median, listings and sellers, and the period's likely sales. T
 hourly table searches, filters and sorts its loaded rows in the browser. Categories use the verified per-game base catalog, grouped like
 [poe.ninja's economy navigation](https://poe.ninja/poe1/economy); unknown bases remain in Other items.
 Price ordering compares only the selected original currency, with missing quotes last.
+The item chart plots each hour's min, interquartile (above 8 observations) and average asks and
+likely sales, total, new, likely sold and delisted listings (removals that are not likely sales,
+relists or pending), and `soldAgeSeconds`, the likely sales' average time from first seen to removed.
 Item history keeps the per-currency hourly summaries (count, min, mean, p10–p90 quantiles, max;
 older rows lack mean and quantiles) and adds `merged`/`mergedSales`: each listing currency
 converted to chaos at read time with that hour's same-league exchange rate (direct, or via divine),

@@ -94,10 +94,12 @@ describe("sale inference", () => {
         expect((await events())[0].status).toBe("likely-sold");
         const network = vi.fn().mockResolvedValue(Response.json({ written: 1 }));
         vi.stubGlobal("fetch", network);
+        await db.conn.run("UPDATE ps_sale SET first_seen_at = removed_at - INTERVAL 2 HOUR");
         await rollupPs(db.conn, { hour: Math.floor(Date.now() / 3600000) * 3600 });
         const row = JSON.parse(network.mock.calls[0][1].body).rows[0];
         expect(row).toMatchObject({
             likelySales: 1,
+            soldAgeSeconds: 7200,
             removedCount: 1,
             pendingCount: 0,
             prices: { divine: { median: 10 } },

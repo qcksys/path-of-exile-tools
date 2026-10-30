@@ -27,6 +27,7 @@ interface AggregateRow {
     listingCount: number;
     uniqueSellers: number;
     newCount: number;
+    soldAgeSeconds: number | null;
     pricesJson: string;
     salesPricesJson: string;
     removedCount: number;
@@ -56,7 +57,7 @@ WITH observations AS (
     SELECT * EXCLUDE (observed_hour), observed_hour AS hour, 'listing' AS status
     FROM ps_listing_hour WHERE observed_hour = $1 AND ($2 IS NULL OR league = $2)
     UNION ALL BY NAME
-    SELECT * EXCLUDE (removed_at, eligible_since, market_price, market_sellers, updated_at),
+    SELECT * EXCLUDE (eligible_since, market_price, market_sellers, updated_at),
         epoch(date_trunc('hour', removed_at))::BIGINT AS hour
     FROM ps_sale WHERE epoch(date_trunc('hour', removed_at))::BIGINT = $1
         AND ($2 IS NULL OR league = $2)
@@ -86,7 +87,8 @@ WITH observations AS (
         l.price_amount,
         l.price_currency,
         l.first_seen_at,
-        l.last_seen_at
+        l.last_seen_at,
+        l.removed_at
     FROM observations l
     LEFT JOIN icon_basemap b ON l.icon_asset = b.icon_asset
     WHERE l.hour = $1
@@ -155,6 +157,9 @@ SELECT
     COUNT(*) FILTER (
         WHERE w.status = 'listing' AND epoch(date_trunc('hour', w.first_seen_at))::BIGINT = w.hour
     ) AS "newCount",
+    ROUND(AVG(epoch(w.removed_at) - epoch(w.first_seen_at)) FILTER (
+        WHERE w.status = 'likely-sold'
+    )) AS "soldAgeSeconds",
     COUNT(*) FILTER (WHERE w.status <> 'listing') AS "removedCount",
     COUNT(*) FILTER (WHERE w.status = 'likely-sold') AS "likelySales",
     COUNT(*) FILTER (WHERE w.status = 'relisted') AS "relistedCount",
@@ -219,6 +224,7 @@ export async function rollupPs(
         listingCount: Number(a.listingCount),
         uniqueSellers: Number(a.uniqueSellers),
         newCount: Number(a.newCount),
+        soldAgeSeconds: a.soldAgeSeconds === null ? undefined : Number(a.soldAgeSeconds),
         prices: JSON.parse(a.pricesJson) as UniqueHourlyRow["prices"],
         salesPrices: JSON.parse(a.salesPricesJson) as UniqueHourlyRow["prices"],
         removedCount: Number(a.removedCount),

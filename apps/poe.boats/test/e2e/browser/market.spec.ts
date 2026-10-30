@@ -61,7 +61,7 @@ test("opens nested history, preserves variants and browsing state, and supports 
     await expect(
         page.getByRole("heading", { name: "Abberath's Hooves", exact: true }),
     ).toBeVisible();
-    await expect(page.getByLabel("Hourly lowest asking price in chaos")).toBeVisible();
+    await expect(page.getByLabel("likely sale prices in chaos")).toBeVisible();
     await selectValue(page.getByRole("combobox", { name: "Period", exact: true }), "30");
     await expect(page).toHaveURL(/days=30/);
     await page.reload();
