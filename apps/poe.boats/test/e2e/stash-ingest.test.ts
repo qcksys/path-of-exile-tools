@@ -21,7 +21,7 @@ import { z } from "zod";
 import { api } from "~/api/router.server";
 import { dbContext, envContext } from "~/context";
 import type { TDatabase } from "~/db/client";
-import { STASH_GAMES } from "~/db/helpers/stash-game";
+import { STASH_GAMES, stashGame } from "~/db/helpers/stash-game";
 import {
     craftingExchangeHistory,
     findCraftingExchangePrices,
@@ -32,6 +32,7 @@ import {
     findCraftingMarketPrices,
 } from "~/db/queries/crafting-market.queries";
 import { getMarketData } from "~/db/queries/market.queries";
+import { writeStashCurrencyHourly } from "~/db/queries/stash-currency.queries";
 import {
     COHORT_WINDOW_RETENTION_HOURS,
     upsertStashCohortHourly,
@@ -45,7 +46,12 @@ import { tStashCohort } from "~/db/schema/stash.cohort";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCohortRevision } from "~/db/schema/stash.cohort-revision";
 import { tStashCohortWindow } from "~/db/schema/stash.cohort-window";
-import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
+import {
+    type TStashCurrencyHourlyI,
+    tStashCurrencyHour,
+    tStashCurrencyHourly,
+} from "~/db/schema/stash.currency-hourly";
+import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashLeague } from "~/db/schema/stash.league";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
@@ -138,9 +144,16 @@ import {
 
 const HOUR = 1_790_899_200;
 const TOKEN = "inert-e2e-ingest-token";
+
+/** Stores exchange market hours, as ingest does, without refreshing the rollups that read them. */
+async function insertCurrency(rows: TStashCurrencyHourlyI | TStashCurrencyHourlyI[]) {
+    for (const [game, gameRows] of Map.groupBy([rows].flat(), (row) => stashGame(row.realm)))
+        await writeStashCurrencyHourly(mysql as unknown as TDatabase, game, gameRows);
+}
 // Chaos first, so the `${MARKET_ID}-${index}` variants stay markets with a price currency.
-const MARKET_ID =
-    "Metadata/Items/Currency/CurrencyRerollRare|Metadata/Items/DivinationCards/DivinationCardTheMetalsmithsGift";
+const CHAOS = "Metadata/Items/Currency/CurrencyRerollRare";
+const CARD = "Metadata/Items/DivinationCards/DivinationCardTheMetalsmithsGift";
+const MARKET_ID = `${CHAOS}|${CARD}`;
 const item = {
     id: "item-1",
     verified: true,
@@ -167,11 +180,12 @@ const stash = {
 const market = {
     league: "Standard",
     market_id: MARKET_ID,
-    lowest_ratio: { chaos: 100, divine: 1 },
-    highest_ratio: { chaos: 110, divine: 1 },
-    volume_traded: { chaos: 1000, divine: 10 },
-    lowest_stock: { chaos: 100, divine: 1 },
-    highest_stock: { chaos: 1000, divine: 10 },
+    // The digest keys each map by the market's two items.
+    lowest_ratio: { [CHAOS]: 100, [CARD]: 1 },
+    highest_ratio: { [CHAOS]: 110, [CARD]: 1 },
+    volume_traded: { [CHAOS]: 1000, [CARD]: 10 },
+    lowest_stock: { [CHAOS]: 100, [CARD]: 1 },
+    highest_stock: { [CHAOS]: 1000, [CARD]: 10 },
 };
 
 let container: StartedMySqlContainer;
@@ -238,7 +252,7 @@ async function parity(
 }
 
 it("refuses a previously issued stash quote for a known exchange item in both HTTP and MCP", async () => {
-    await mysql.insert(tStashCurrencyHourly.poe1).values({
+    await insertCurrency({
         ...commodityExchangeSnapshot,
         marketId: `${essenceId}|${chaosId}`,
         hour: HOUR,
@@ -404,7 +418,9 @@ beforeEach(async () => {
     for (const game of STASH_GAMES) {
         await mysql.delete(tStashDailySample[game]);
         await mysql.delete(tStashCheckpoint[game]);
-        await mysql.delete(tStashCurrencyHourly[game]);
+        await mysql.delete(tStashCurrencyHour[game]);
+        // Crafting's exchange membership reads each market's first hour from here.
+        await mysql.delete(tStashCurrencyMarket[game]);
         await mysql.delete(tStashMarketHour[game]);
         await mysql.delete(tStashMarket[game]);
         // Market seasons read coverage, so it must not outlive the hourly rows it counts.
@@ -793,7 +809,7 @@ it("accepts authenticated worker heartbeats and exposes real coverage through HT
 it("converts captured indirect pairs only with positive matching-hour legs and preserves historical scope", async () => {
     const divine = "Metadata/Items/Currency/CurrencyModValues";
     const db = mysql as unknown as TDatabase;
-    await mysql.insert(tStashCurrencyHourly.poe1).values([
+    await insertCurrency([
         {
             realm: "pc",
             league: "Standard",
@@ -867,7 +883,7 @@ it("converts captured indirect pairs only with positive matching-hour legs and p
 it("uses a bounded same-hour non-reference exchange bridge without changing legacy bindings", async () => {
     const item = "Metadata/Items/Currency/CurrencyHellscapeUpgradeModTier";
     const bridge = "Metadata/Items/Currency/CurrencyHellscapeAddModToRare";
-    await mysql.insert(tStashCurrencyHourly.poe1).values([
+    await insertCurrency([
         {
             realm: "pc",
             league: "Standard",
@@ -931,7 +947,7 @@ it("uses a bounded same-hour non-reference exchange bridge without changing lega
         conversion: "two-leg-exchange-v1",
     });
     expect(next.quotes[item]).toBeUndefined();
-    await mysql.insert(tStashCurrencyHourly.poe1).values({
+    await insertCurrency({
         realm: "pc",
         league: "Standard",
         hour: HOUR,
@@ -951,7 +967,7 @@ it("fails closed when there are too many same-hour markets to discover conversio
         marketId: `${item}|Metadata/Items/Currency/Bridge${index}`,
     }));
     for (let offset = 0; offset < rows.length; offset += 500)
-        await mysql.insert(tStashCurrencyHourly.poe1).values(rows.slice(offset, offset + 500));
+        await insertCurrency(rows.slice(offset, offset + 500));
     const result = await findCraftingExchangePrices(mysql as unknown as TDatabase, {
         game: "poe1",
         realm: "pc",
@@ -967,7 +983,7 @@ it("fails closed when there are too many same-hour markets to discover conversio
 
 it("shares explicit vendor ingredient two-leg conversion across HTTP and MCP", async () => {
     const bridge = "Metadata/Items/Currency/CurrencyHellscapeAddModToRare";
-    await mysql.insert(tStashCurrencyHourly.poe1).values([
+    await insertCurrency([
         {
             realm: "pc",
             league: "Standard",
@@ -2138,12 +2154,12 @@ it("records each realm's league list, ends leagues that leave it and defaults ma
 });
 
 it("updates a seeded currency market with a long ID through HTTP to MySQL", async () => {
-    await mysql.insert(tStashCurrencyHourly.poe1).values({
+    await insertCurrency({
         realm: "pc",
         league: "Standard",
         marketId: MARKET_ID,
         hour: HOUR,
-        volumeTraded: { chaos: 1, divine: 1 },
+        volumeTraded: { [CHAOS]: 1, [CARD]: 1 },
     });
     upstreamResponses.push({ body: { next_change_id: HOUR + 3600, markets: [market] } });
     const client = createClient({ baseUrl, userAgent: "ingest-e2e", token: "inert-token" });
@@ -2156,8 +2172,8 @@ it("updates a seeded currency market with a long ID through HTTP to MySQL", asyn
         league: "Standard",
         marketId: MARKET_ID,
         hour: HOUR,
-        lowestRatio: { chaos: 100, divine: 1 },
-        volumeTraded: { chaos: 1000, divine: 10 },
+        lowestRatio: { [CHAOS]: 100, [CARD]: 1 },
+        volumeTraded: { [CHAOS]: 1000, [CARD]: 10 },
     });
 });
 
@@ -2756,7 +2772,7 @@ it("captures and prices the correct Two-Toned Boots variant while excluding othe
 it("prices an explicit NPC Augmentation purchase from fresh Transmutation and refuses stale ingredient fallback", async () => {
     const database = mysql as unknown as TDatabase;
     const graph = exchangeGraph();
-    await mysql.insert(tStashCurrencyHourly.poe1).values([
+    await insertCurrency([
         { ...vendorCurrencySnapshot, hour: HOUR },
         {
             ...vendorCurrencySnapshot,
@@ -2804,7 +2820,7 @@ it("prices an explicit NPC Augmentation purchase from fresh Transmutation and re
         path: vendorCurrencyQuote.path,
         ingredient: { hour: HOUR, itemId: vendorCurrencyInputId },
     });
-    await mysql.insert(tStashCurrencyHourly.poe1).values([
+    await insertCurrency([
         {
             ...vendorCurrencySnapshot,
             hour: HOUR + 3600,
@@ -2829,7 +2845,7 @@ it("prices an explicit NPC Augmentation purchase from fresh Transmutation and re
         path: vendorCurrencyQuote.path,
         ingredient: { hour: HOUR + 3600, itemId: vendorCurrencyInputId },
     });
-    await mysql.insert(tStashCurrencyHourly.poe1).values([
+    await insertCurrency([
         {
             ...vendorCurrencySnapshot,
             hour: HOUR + 7200,
@@ -3102,9 +3118,7 @@ it("captures only proven-empty Prime Chaotic Resonators for versioned source bin
                 row.itemKey === name && row.hour === convertedHour && row.signatureKind === variant,
         ),
     ).toMatchObject({ frameType: -1, listingCount: 3, prices: { divine: { count: 3 } } });
-    await mysql
-        .insert(tStashCurrencyHourly.poe1)
-        .values({ ...commodityExchangeSnapshot, hour: HOUR });
+    await insertCurrency({ ...commodityExchangeSnapshot, hour: HOUR });
     expect((await sources(convertedHour)).quotes).toEqual({});
     expect((await sources(convertedHour, { conversion: undefined })).quotes).toEqual({});
     expect(
@@ -3113,9 +3127,7 @@ it("captures only proven-empty Prime Chaotic Resonators for versioned source bin
         graph: bound,
         issues: [expect.stringContaining("matching-hour exchange conversion")],
     });
-    await mysql
-        .insert(tStashCurrencyHourly.poe1)
-        .values({ ...commodityExchangeSnapshot, hour: convertedHour });
+    await insertCurrency({ ...commodityExchangeSnapshot, hour: convertedHour });
     expect((await sources(convertedHour)).quotes[id]).toMatchObject({
         variant,
         hour: convertedHour,
@@ -3330,9 +3342,7 @@ it.each([
             lastSeenAt: new Date(convertedHour * 1000).toISOString(),
         },
     ]);
-    await mysql
-        .insert(tStashCurrencyHourly.poe1)
-        .values({ ...commodityExchangeSnapshot, hour: convertedHour });
+    await insertCurrency({ ...commodityExchangeSnapshot, hour: convertedHour });
     const current = { ...lookup, at: convertedHour };
     expect(
         craftingSourceResultSchema.parse(
@@ -3377,10 +3387,8 @@ it.each([
             { graph: { prices: { [essenceId]: { amount: 600 } } }, issues: [] },
         ],
     });
-    await mysql.delete(tStashCurrencyHourly.poe1);
-    await mysql
-        .insert(tStashCurrencyHourly.poe1)
-        .values({ ...commodityExchangeSnapshot, hour: convertedHour - 3600 });
+    await mysql.delete(tStashCurrencyHour.poe1);
+    await insertCurrency({ ...commodityExchangeSnapshot, hour: convertedHour - 3600 });
     expect(
         craftingSourceResultSchema.parse(
             await parity("crafting/market/sources", "find_crafting_source_prices", {
@@ -3390,7 +3398,7 @@ it.each([
         ).quotes,
     ).toEqual({});
 
-    await mysql.insert(tStashCurrencyHourly.poe1).values({ ...vendorSnapshot, hour: HOUR });
+    await insertCurrency({ ...vendorSnapshot, hour: HOUR });
     const vendorLookup = {
         graph,
         realm: "pc",
@@ -3416,7 +3424,7 @@ it.each([
     ).graph;
     expect(vendorBound.prices[vendorOutputId]).toMatchObject({ amount: 18, confidence: null });
     expect(vendorBound.prices[vendorOutputId]).not.toHaveProperty("samples");
-    await mysql.insert(tStashCurrencyHourly.poe1).values({
+    await insertCurrency({
         ...vendorSnapshot,
         hour: HOUR + 3600,
         volumeTraded: { [vendorInputId]: 0, [chaosId]: 0 },

@@ -10,7 +10,7 @@ import {
     countStashCurrencyHour,
     upsertStashCurrencyHourly,
 } from "~/db/queries/stash-ingest.queries";
-import { sStashCurrencyHourlyI } from "~/db/schema/stash.currency-hourly";
+import { sStashCurrencyMarketI } from "~/db/schema/stash.currency-market";
 import { logger } from "~/services/logger";
 
 const amounts = z.record(
@@ -23,7 +23,7 @@ const feedSchema = z.object({
         .array(
             z.object({
                 league: exchangeSnapshotSchema.shape.league,
-                market_id: sStashCurrencyHourlyI.shape.marketId.min(1),
+                market_id: sStashCurrencyMarketI.shape.marketId.min(1),
                 volume_traded: amounts,
                 lowest_ratio: amounts,
                 highest_ratio: amounts,

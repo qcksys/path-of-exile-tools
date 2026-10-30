@@ -23,7 +23,7 @@ import {
     upsertStashUniqueHourly,
 } from "~/db/queries/stash-ingest.queries";
 import { recordStashLeagues } from "~/db/queries/stash-league.queries";
-import { sStashCurrencyHourlyI } from "~/db/schema/stash.currency-hourly";
+import { sStashCurrencyMarketI } from "~/db/schema/stash.currency-market";
 import { STASH_LISTING_TABS } from "~/db/schema/stash.unique-hourly";
 import { recordIngestStatus } from "~/operations/server-status.server";
 import { logger } from "~/services/logger";
@@ -82,7 +82,7 @@ const CURRENCY_ROW_SCHEMA = z.object({
     realm: REALM_SCHEMA,
     league: z.string().min(1).max(100),
     hour: z.number().int().nonnegative(),
-    marketId: sStashCurrencyHourlyI.shape.marketId.min(1),
+    marketId: sStashCurrencyMarketI.shape.marketId.min(1),
     lowestRatio: z.record(z.string(), z.number()),
     highestRatio: z.record(z.string(), z.number()),
     volumeTraded: z.record(z.string(), z.number()),

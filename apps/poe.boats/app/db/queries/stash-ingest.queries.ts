@@ -12,17 +12,16 @@ import {
     type TStashCurrencyHourlyI,
     tStashCurrencyHourly,
 } from "~/db/schema/stash.currency-hourly";
-import type { TStashCurrencyMarketI } from "~/db/schema/stash.currency-market";
 import type { StashCoverageStream } from "~/db/schema/stash.hour-coverage";
 import type { TStashUniqueHourlyI } from "~/db/schema/stash.unique-hourly";
 import { isYellowBeast, yellowBeastMarket } from "~/lib/crafting-yellow-beasts";
+import { writeStashCurrencyHourly } from "./stash-currency.queries";
 import { writeStashUniqueHourly } from "./stash-market.queries";
 import {
     refreshStashCurrencyDaily,
     refreshStashHourCoverage,
     refreshStashMarketDaily,
     refreshYellowBeastHourly,
-    upsertStashCurrencyMarkets,
     utcDay,
 } from "./stash-rollups.queries";
 
@@ -333,37 +332,8 @@ export async function upsertStashCurrencyHourly(
         return a.hour - b.hour;
     });
     for (const [game, gameRows] of byGame(ordered)) {
-        const table = tStashCurrencyHourly[game];
         for (const batch of chunk(gameRows, UPSERT_CHUNK)) {
-            await retryCurrencyDeadlock(() =>
-                db
-                    .insert(table)
-                    .values(batch)
-                    .onDuplicateKeyUpdate({
-                        set: {
-                            lowestRatio: sql`values(${table.lowestRatio})`,
-                            highestRatio: sql`values(${table.highestRatio})`,
-                            volumeTraded: sql`values(${table.volumeTraded})`,
-                            lowestStock: sql`values(${table.lowestStock})`,
-                            highestStock: sql`values(${table.highestStock})`,
-                        },
-                    }),
-            );
-            // Batches are sorted by market then hour, so each market's first row has its earliest hour.
-            const markets = new Map<string, TStashCurrencyMarketI>();
-            for (const row of batch) {
-                const key = JSON.stringify([row.realm, row.league, row.marketId]);
-                if (!markets.has(key))
-                    markets.set(key, {
-                        realm: row.realm,
-                        league: row.league,
-                        marketId: row.marketId,
-                        firstHour: row.hour,
-                    });
-            }
-            await retryCurrencyDeadlock(() =>
-                upsertStashCurrencyMarkets(db, game, [...markets.values()]),
-            );
+            await writeStashCurrencyHourly(db, game, batch, retryCurrencyDeadlock);
             for (const { realm, league, rows: leagueRows } of byLeague(batch)) {
                 const days = new Map<number, Set<string>>();
                 for (const row of leagueRows) {
@@ -402,7 +372,7 @@ function isDeadlock(error: unknown): boolean {
     return error instanceof Error && /\bDeadlock found\b.*\(errno 1213\)/is.test(error.message);
 }
 
-async function retryCurrencyDeadlock(write: () => PromiseLike<unknown>) {
+async function retryCurrencyDeadlock<T>(write: () => PromiseLike<T>): Promise<T> {
     for (let attempt = 0; ; attempt++) {
         try {
             return await write();

@@ -168,7 +168,7 @@ export function refreshStashCurrencyDaily(
     const day = sql<number>`floor(${hourly.hour} / ${sql.raw(String(DAY))}) * ${sql.raw(String(DAY))}`;
     // Units traded of the market ID's first (1) or second (-1) item.
     const side = (index: 1 | -1) =>
-        sql<number>`cast(json_extract(${hourly.volumeTraded}, concat('$."', substring_index(${hourly.marketId}, '|', ${sql.raw(String(index))}), '"')) as unsigned)`;
+        sql<number>`cast(${index === 1 ? hourly.volumeTradedFirst : hourly.volumeTradedSecond} as unsigned)`;
     const traded = sql`${side(1)} > 0 and ${side(-1)} > 0`;
     const hours =
         scope.fromHour === undefined || scope.toHour === undefined
@@ -226,9 +226,8 @@ export const COVERAGE_STREAMS = {
 } as const satisfies Record<StashGame, readonly StashCoverageStream[]>;
 
 function coverageSource(game: StashGame, stream: StashCoverageStream) {
-    if (stream === "currency")
-        return { table: tStashCurrencyHourly[game], index: "stash_currency_coverage_idx" };
-    // The view reads each hour's market hours by primary key and joins their markets.
+    // The views read each hour's rows by primary key and join their markets.
+    if (stream === "currency") return { table: tStashCurrencyHourly[game], index: undefined };
     if (stream === "uniques") return { table: tStashUniqueHourly[game], index: undefined };
     if (game !== "poe1") throw new Error("Equipment cohorts are stored for PoE 1 only.");
     // The primary key leads with the hour.

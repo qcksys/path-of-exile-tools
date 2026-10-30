@@ -227,7 +227,7 @@ it("commits overlapping currency batches from separate connections without losin
     const rows = Array.from({ length: 401 }, (_, index) => ({
         realm: "pc",
         league: "Concurrent",
-        marketId: `pair:${String(index).padStart(4, "0")}`,
+        marketId: `chaos|pair:${String(index).padStart(4, "0")}`,
         hour,
         volumeTraded: { chaos: 0 },
         lowestRatio: { chaos: 1 },
@@ -260,15 +260,16 @@ it("recovers an actual MySQL deadlock victim by replaying its autocommitted batc
         realm: "pc",
         league: "Deadlock",
         hour,
-        marketId: `pair:${String(index).padStart(4, "0")}`,
+        marketId: `chaos|pair:${String(index).padStart(4, "0")}`,
         volumeTraded: { chaos: 1 },
     }));
     await upsertStashCurrencyHourly(db as unknown as TDatabase, rows);
     let writer: Promise<number> | undefined;
     try {
         await blocker.beginTransaction();
+        // The writer's first statement records the markets, so the lock cycle forms there.
         await blocker.query(
-            "SELECT marketId FROM qsPoeBoats__stash_poe1_currency_hourly WHERE realm = 'pc' AND league = 'Deadlock' AND marketId >= 'pair:0001' FOR UPDATE",
+            "SELECT marketId FROM qsPoeBoats__stash_poe1_currency_market WHERE realm = 'pc' AND league = 'Deadlock' AND marketId >= 'chaos|pair:0001' FOR UPDATE",
         );
         writer = upsertStashCurrencyHourly(
             db as unknown as TDatabase,
@@ -284,7 +285,7 @@ it("recovers an actual MySQL deadlock victim by replaying its autocommitted batc
             })
             .toBeGreaterThan(0);
         await blocker.query(
-            "UPDATE qsPoeBoats__stash_poe1_currency_hourly SET volumeTraded = JSON_OBJECT('chaos', 2) WHERE realm = 'pc' AND league = 'Deadlock' AND marketId = 'pair:0000'",
+            "UPDATE qsPoeBoats__stash_poe1_currency_market SET firstHour = firstHour - 1 WHERE realm = 'pc' AND league = 'Deadlock' AND marketId = 'chaos|pair:0000'",
         );
         await blocker.commit();
         expect(await writer).toBe(2);
@@ -294,10 +295,10 @@ it("recovers an actual MySQL deadlock victim by replaying its autocommitted batc
             .where(
                 and(
                     eq(tStashCurrencyHourly.poe1.league, "Deadlock"),
-                    eq(tStashCurrencyHourly.poe1.marketId, "pair:0000"),
+                    eq(tStashCurrencyHourly.poe1.marketId, "chaos|pair:0000"),
                 ),
             );
-        expect(stored[0]?.volumeTraded).toEqual({ chaos: 0 });
+        expect(stored[0]?.volumeTraded?.chaos).toBe(0);
     } finally {
         await blocker.rollback();
         await Promise.allSettled(writer ? [writer] : []);
