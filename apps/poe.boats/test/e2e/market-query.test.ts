@@ -1677,7 +1677,7 @@ it("lists exchange-only PoE 2 leagues in exalted, from the latest completed hour
     });
     expect(item).toMatchObject({ unit: "exalted", divine: 400, item: { price: 40 } });
     expect(item.history.prices).toEqual([
-        { hour, price: 40, low: null, high: null, via: divineId, units: 10 },
+        { hour, price: 40, low: null, high: null, p25: null, p75: null, via: divineId, units: 10 },
     ]);
     // Divine Orb trades against exalted itself, which must not pull in every exalted market.
     statements.length = 0;

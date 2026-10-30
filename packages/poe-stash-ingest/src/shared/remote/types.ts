@@ -49,6 +49,8 @@ export interface UniqueHourlyRow {
     uniqueSellers: number;
     /** Listings first seen in this hour. */
     newCount?: number;
+    /** The likely sales' average seconds from first seen to removed; absent without likely sales. */
+    soldAgeSeconds?: number;
     removedCount?: number;
     likelySales?: number;
     relistedCount?: number;

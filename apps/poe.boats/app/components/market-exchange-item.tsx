@@ -122,7 +122,8 @@ export function MarketExchangeItem({
                 <h3 className="text-sm font-semibold">
                     Hourly price history{" "}
                     <span className="font-normal text-muted-foreground">
-                        · last {days} days, lowest to highest rate shaded
+                        · last {days} days, lowest to highest rate shaded, with an interquartile
+                        range estimated from those rates and the volume
                     </span>
                 </h3>
                 <div className="flex flex-wrap gap-2 text-sm">

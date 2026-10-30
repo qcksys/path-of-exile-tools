@@ -118,6 +118,7 @@ describe("merging market rows", () => {
             listingCount,
             uniqueSellers: listingCount,
             newCount: listingCount,
+            soldAgeSeconds: null as number | null,
             removedCount: 1,
             likelySales: 1,
             relistedCount: 0,
@@ -173,6 +174,18 @@ describe("merging market rows", () => {
         expect(
             mergeMarketRows([row(2, null), row(3, null, { newCount: null })]).newCount,
         ).toBeNull();
+    });
+
+    it("averages sold age over each merged row's likely sales", () => {
+        const merged = mergeMarketRows([
+            row(1, null, { likelySales: 3, soldAgeSeconds: 1000 }),
+            row(1, null, { likelySales: 1, soldAgeSeconds: 5000 }),
+            // No sales, or from before sold age was recorded: neither counts.
+            row(1, null, { likelySales: 0, soldAgeSeconds: null }),
+            row(1, null, { likelySales: 7, soldAgeSeconds: null }),
+        ]);
+        expect(merged.soldAgeSeconds).toBe(2000);
+        expect(mergeMarketRows([row(1, null), row(1, null)]).soldAgeSeconds).toBeNull();
     });
 
     it("returns a lone row unchanged", () => {

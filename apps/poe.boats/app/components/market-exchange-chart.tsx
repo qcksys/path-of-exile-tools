@@ -8,16 +8,26 @@ type Point = {
     value: number | null;
     low: number | null;
     high: number | null;
+    p25: number | null;
+    p75: number | null;
     units: number;
 };
 
+const IQR_COLOR = "var(--chart-2)";
+const LOWEST_NAME = "Lowest rate";
+const IQR_NAME = "Estimated IQR";
+
 function rangeSummary(point: Point | undefined) {
     if (!point || point.value === null) return "No rate";
-    const range =
-        point.low !== null && point.high !== null
-            ? ` (range ${marketNumber(point.low)}–${marketNumber(point.high)})`
-            : "";
-    return `${marketNumber(point.value)}${range}`;
+    const details = [
+        ...(point.low !== null && point.high !== null
+            ? [`range ${marketNumber(point.low)}–${marketNumber(point.high)}`]
+            : []),
+        ...(point.p25 !== null && point.p75 !== null
+            ? [`estimated interquartile ${marketNumber(point.p25)}–${marketNumber(point.p75)}`]
+            : []),
+    ];
+    return `${marketNumber(point.value)}${details.length ? ` (${details.join(", ")})` : ""}`;
 }
 
 export function marketExchangeChartOption(
@@ -37,10 +47,34 @@ export function marketExchangeChartOption(
         lineStyle: { opacity: 0 },
         tooltip: { show: false },
     } as const;
+    // The estimated interquartile band works the same way; both series share a legend entry.
+    const iqrBand = {
+        ...band,
+        name: IQR_NAME,
+        stack: "interquartile",
+        color: IQR_COLOR,
+    } as const;
+    const hasIqr = points.some((point) => point.p25 !== null && point.p75 !== null);
     return {
         useUTC: true,
         grid: { left: 8, right: 8, top: 32, bottom: 8, outerBoundsMode: "same" },
-        legend: { data: [valueName, unitsName], top: 0 },
+        legend: {
+            data: [
+                valueName,
+                LOWEST_NAME,
+                ...(hasIqr
+                    ? [
+                          {
+                              name: IQR_NAME,
+                              icon: "rect",
+                              itemStyle: { color: IQR_COLOR, opacity: 0.35 },
+                          },
+                      ]
+                    : []),
+                unitsName,
+            ],
+            top: 0,
+        },
         tooltip: { trigger: "axis" },
         xAxis: { type: "time" },
         yAxis: [
@@ -76,6 +110,35 @@ export function marketExchangeChartOption(
                     ranged(point) ? point.high! - point.low! : null,
                 ]),
             },
+            ...(hasIqr
+                ? [
+                      {
+                          ...iqrBand,
+                          data: points.map((point) => [point.hour * 1000, point.p25]),
+                      },
+                      {
+                          ...iqrBand,
+                          areaStyle: { opacity: 0.35 },
+                          data: points.map((point) => [
+                              point.hour * 1000,
+                              point.p25 === null || point.p75 === null
+                                  ? null
+                                  : point.p75 - point.p25,
+                          ]),
+                      },
+                  ]
+                : []),
+            {
+                type: "line",
+                name: LOWEST_NAME,
+                color: IQR_COLOR,
+                symbolSize: 3,
+                lineStyle: { width: 1.5 },
+                data: points.map(({ hour, low }) => [hour * 1000, low]),
+                tooltip: {
+                    valueFormatter: (value) => (value === null ? "—" : marketNumber(Number(value))),
+                },
+            },
             {
                 type: "line",
                 name: valueName,
@@ -108,7 +171,7 @@ export function MarketExchangeChart({
     return (
         <EChart
             option={option}
-            label={`Hourly ${valueName.toLowerCase()} with the lowest to highest rate traded in each hour shaded, and ${unitsName.toLowerCase()} as bars. Hours without trades are left out.`}
+            label={`Hourly ${valueName.toLowerCase()} and lowest rate, with the lowest to highest rate traded in each hour shaded and an interquartile range estimated from those rates and the volume shaded inside it, and ${unitsName.toLowerCase()} as bars. Hours without trades are left out.`}
             className="h-64"
         />
     );

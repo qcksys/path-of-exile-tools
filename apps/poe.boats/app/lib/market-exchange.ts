@@ -388,12 +388,43 @@ function latestTraded(
     return null;
 }
 
-/** One traded hour: the volume-weighted rate, the hour's lowest and highest rates, and units traded. */
+/** An hour needs more observations than this (listings, sales or units traded) to show an IQR. */
+export const MARKET_IQR_MIN_COUNT = 8;
+
+/**
+ * An hour's interquartile range estimated from its lowest and highest rates and volume-weighted
+ * rate: the digest has no individual trades, so it takes a triangular distribution over the range
+ * whose mean is the volume-weighted rate. Null without a range or above MARKET_IQR_MIN_COUNT units.
+ */
+export function marketExchangeIqr(
+    low: number | null,
+    high: number | null,
+    rate: number | null,
+    units: number,
+) {
+    if (low === null || high === null || rate === null || !(units > MARKET_IQR_MIN_COUNT))
+        return { p25: null, p75: null };
+    const width = high - low;
+    if (!(width > 0)) return { p25: low, p75: high };
+    const peak = Math.min(high, Math.max(low, 3 * rate - low - high));
+    const quantile = (q: number) =>
+        q < (peak - low) / width
+            ? low + Math.sqrt(q * width * (peak - low))
+            : high - Math.sqrt((1 - q) * width * (high - peak));
+    return { p25: quantile(0.25), p75: quantile(0.75) };
+}
+
+/**
+ * One traded hour: the volume-weighted rate, the hour's lowest and highest rates, their estimated
+ * interquartile range, and units traded.
+ */
 export type MarketExchangePoint = {
     hour: number;
     rate: number;
     low: number | null;
     high: number | null;
+    p25: number | null;
+    p75: number | null;
     units: number;
 };
 
@@ -442,6 +473,7 @@ export function marketExchangeHistory(
                 rate: quote.amount,
                 low: quote.low,
                 high: quote.high,
+                ...marketExchangeIqr(quote.low, quote.high, quote.amount, quote.itemVolume),
                 units: quote.itemVolume,
             });
             pairs.set(quoteId, pair);
@@ -450,11 +482,14 @@ export function marketExchangeHistory(
         const rate = itemId === anchor ? { price: 1, via: anchor } : rates.get(itemId);
         const leg = rate && itemId !== anchor ? full(itemId, rate.via) : null;
         const scale = rate?.via === anchor ? 1 : rate ? rates.get(rate.via)?.price : undefined;
+        const low = leg?.low && scale ? leg.low * scale : null;
+        const high = leg?.high && scale ? leg.high * scale : null;
         prices.push({
             hour,
             price: rate?.price ?? null,
-            low: leg?.low && scale ? leg.low * scale : null,
-            high: leg?.high && scale ? leg.high * scale : null,
+            low,
+            high,
+            ...marketExchangeIqr(low, high, rate?.price ?? null, leg?.itemVolume ?? 0),
             via: rate?.via ?? null,
             units,
         });

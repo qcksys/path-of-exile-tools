@@ -1,8 +1,8 @@
 {
     "version": "6",
     "dialect": "mysql",
-    "id": "590f18c2-a780-4eb3-b166-64066986b3b5",
-    "prevIds": ["6e808974-664e-4ab7-8911-0eedcdeca91b"],
+    "id": "d3995752-2062-4292-abae-1dc573ddf830",
+    "prevIds": ["e0a9d7d6-b937-4f19-bd55-0b6db6ff6080"],
     "ddl": [
         {
             "name": "qsPoeBoats__auth_account",
@@ -4995,6 +4995,20 @@
         },
         {
             "table": "qsPoeBoats__stash_poe1_market_hour",
+            "name": "soldAgeSeconds",
+            "type": "int unsigned",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe1_market_hour",
             "name": "removedCount",
             "type": "int",
             "notNull": true,
@@ -5389,6 +5403,20 @@
             "table": "qsPoeBoats__stash_poe2_market_hour",
             "name": "newCount",
             "type": "int",
+            "notNull": false,
+            "autoIncrement": false,
+            "default": null,
+            "onUpdateNow": false,
+            "onUpdateNowFsp": null,
+            "charSet": null,
+            "collation": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "qsPoeBoats__stash_poe2_market_hour",
+            "name": "soldAgeSeconds",
+            "type": "int unsigned",
             "notNull": false,
             "autoIncrement": false,
             "default": null,
@@ -6431,7 +6459,7 @@
         },
         {
             "name": "qsPoeBoats__stash_poe1_unique_hourly",
-            "definition": "select `qsPoeBoats__stash_poe1_market`.`realm`, `qsPoeBoats__stash_poe1_market`.`league`, `qsPoeBoats__stash_poe1_market_hour`.`hour`, `qsPoeBoats__stash_poe1_market`.`itemKey`, `qsPoeBoats__stash_poe1_market`.`identified`, `qsPoeBoats__stash_poe1_market`.`corrupted`, `qsPoeBoats__stash_poe1_market`.`links`, `qsPoeBoats__stash_poe1_market`.`tab`, `qsPoeBoats__stash_poe1_market`.`signatureKind`, `qsPoeBoats__stash_poe1_market`.`signatureValue`, `qsPoeBoats__stash_poe1_market`.`iconAsset`, `qsPoeBoats__stash_poe1_market`.`name`, `qsPoeBoats__stash_poe1_market`.`baseType`, `qsPoeBoats__stash_poe1_market`.`frameType`, `qsPoeBoats__stash_poe1_market_hour`.`listingCount`, `qsPoeBoats__stash_poe1_market_hour`.`uniqueSellers`, `qsPoeBoats__stash_poe1_market_hour`.`newCount`, `qsPoeBoats__stash_poe1_market_hour`.`removedCount`, `qsPoeBoats__stash_poe1_market_hour`.`likelySales`, `qsPoeBoats__stash_poe1_market_hour`.`relistedCount`, `qsPoeBoats__stash_poe1_market_hour`.`pendingCount`, `qsPoeBoats__stash_poe1_market_hour`.`salesPrices`, `qsPoeBoats__stash_poe1_market_hour`.`prices`, `qsPoeBoats__stash_poe1_market`.`signatureData`, `qsPoeBoats__stash_poe1_market_hour`.`firstSeenAt`, `qsPoeBoats__stash_poe1_market_hour`.`lastSeenAt` from `qsPoeBoats__stash_poe1_market_hour` inner join `qsPoeBoats__stash_poe1_market` on `qsPoeBoats__stash_poe1_market`.`id` = `qsPoeBoats__stash_poe1_market_hour`.`marketId`",
+            "definition": "select `qsPoeBoats__stash_poe1_market`.`realm`, `qsPoeBoats__stash_poe1_market`.`league`, `qsPoeBoats__stash_poe1_market_hour`.`hour`, `qsPoeBoats__stash_poe1_market`.`itemKey`, `qsPoeBoats__stash_poe1_market`.`identified`, `qsPoeBoats__stash_poe1_market`.`corrupted`, `qsPoeBoats__stash_poe1_market`.`links`, `qsPoeBoats__stash_poe1_market`.`tab`, `qsPoeBoats__stash_poe1_market`.`signatureKind`, `qsPoeBoats__stash_poe1_market`.`signatureValue`, `qsPoeBoats__stash_poe1_market`.`iconAsset`, `qsPoeBoats__stash_poe1_market`.`name`, `qsPoeBoats__stash_poe1_market`.`baseType`, `qsPoeBoats__stash_poe1_market`.`frameType`, `qsPoeBoats__stash_poe1_market_hour`.`listingCount`, `qsPoeBoats__stash_poe1_market_hour`.`uniqueSellers`, `qsPoeBoats__stash_poe1_market_hour`.`newCount`, `qsPoeBoats__stash_poe1_market_hour`.`soldAgeSeconds`, `qsPoeBoats__stash_poe1_market_hour`.`removedCount`, `qsPoeBoats__stash_poe1_market_hour`.`likelySales`, `qsPoeBoats__stash_poe1_market_hour`.`relistedCount`, `qsPoeBoats__stash_poe1_market_hour`.`pendingCount`, `qsPoeBoats__stash_poe1_market_hour`.`salesPrices`, `qsPoeBoats__stash_poe1_market_hour`.`prices`, `qsPoeBoats__stash_poe1_market`.`signatureData`, `qsPoeBoats__stash_poe1_market_hour`.`firstSeenAt`, `qsPoeBoats__stash_poe1_market_hour`.`lastSeenAt` from `qsPoeBoats__stash_poe1_market_hour` inner join `qsPoeBoats__stash_poe1_market` on `qsPoeBoats__stash_poe1_market`.`id` = `qsPoeBoats__stash_poe1_market_hour`.`marketId`",
             "algorithm": "undefined",
             "sqlSecurity": "definer",
             "withCheckOption": null,
@@ -6439,7 +6467,7 @@
         },
         {
             "name": "qsPoeBoats__stash_poe2_unique_hourly",
-            "definition": "select `qsPoeBoats__stash_poe2_market`.`realm`, `qsPoeBoats__stash_poe2_market`.`league`, `qsPoeBoats__stash_poe2_market_hour`.`hour`, `qsPoeBoats__stash_poe2_market`.`itemKey`, `qsPoeBoats__stash_poe2_market`.`identified`, `qsPoeBoats__stash_poe2_market`.`corrupted`, `qsPoeBoats__stash_poe2_market`.`links`, `qsPoeBoats__stash_poe2_market`.`tab`, `qsPoeBoats__stash_poe2_market`.`signatureKind`, `qsPoeBoats__stash_poe2_market`.`signatureValue`, `qsPoeBoats__stash_poe2_market`.`iconAsset`, `qsPoeBoats__stash_poe2_market`.`name`, `qsPoeBoats__stash_poe2_market`.`baseType`, `qsPoeBoats__stash_poe2_market`.`frameType`, `qsPoeBoats__stash_poe2_market_hour`.`listingCount`, `qsPoeBoats__stash_poe2_market_hour`.`uniqueSellers`, `qsPoeBoats__stash_poe2_market_hour`.`newCount`, `qsPoeBoats__stash_poe2_market_hour`.`removedCount`, `qsPoeBoats__stash_poe2_market_hour`.`likelySales`, `qsPoeBoats__stash_poe2_market_hour`.`relistedCount`, `qsPoeBoats__stash_poe2_market_hour`.`pendingCount`, `qsPoeBoats__stash_poe2_market_hour`.`salesPrices`, `qsPoeBoats__stash_poe2_market_hour`.`prices`, `qsPoeBoats__stash_poe2_market`.`signatureData`, `qsPoeBoats__stash_poe2_market_hour`.`firstSeenAt`, `qsPoeBoats__stash_poe2_market_hour`.`lastSeenAt` from `qsPoeBoats__stash_poe2_market_hour` inner join `qsPoeBoats__stash_poe2_market` on `qsPoeBoats__stash_poe2_market`.`id` = `qsPoeBoats__stash_poe2_market_hour`.`marketId`",
+            "definition": "select `qsPoeBoats__stash_poe2_market`.`realm`, `qsPoeBoats__stash_poe2_market`.`league`, `qsPoeBoats__stash_poe2_market_hour`.`hour`, `qsPoeBoats__stash_poe2_market`.`itemKey`, `qsPoeBoats__stash_poe2_market`.`identified`, `qsPoeBoats__stash_poe2_market`.`corrupted`, `qsPoeBoats__stash_poe2_market`.`links`, `qsPoeBoats__stash_poe2_market`.`tab`, `qsPoeBoats__stash_poe2_market`.`signatureKind`, `qsPoeBoats__stash_poe2_market`.`signatureValue`, `qsPoeBoats__stash_poe2_market`.`iconAsset`, `qsPoeBoats__stash_poe2_market`.`name`, `qsPoeBoats__stash_poe2_market`.`baseType`, `qsPoeBoats__stash_poe2_market`.`frameType`, `qsPoeBoats__stash_poe2_market_hour`.`listingCount`, `qsPoeBoats__stash_poe2_market_hour`.`uniqueSellers`, `qsPoeBoats__stash_poe2_market_hour`.`newCount`, `qsPoeBoats__stash_poe2_market_hour`.`soldAgeSeconds`, `qsPoeBoats__stash_poe2_market_hour`.`removedCount`, `qsPoeBoats__stash_poe2_market_hour`.`likelySales`, `qsPoeBoats__stash_poe2_market_hour`.`relistedCount`, `qsPoeBoats__stash_poe2_market_hour`.`pendingCount`, `qsPoeBoats__stash_poe2_market_hour`.`salesPrices`, `qsPoeBoats__stash_poe2_market_hour`.`prices`, `qsPoeBoats__stash_poe2_market`.`signatureData`, `qsPoeBoats__stash_poe2_market_hour`.`firstSeenAt`, `qsPoeBoats__stash_poe2_market_hour`.`lastSeenAt` from `qsPoeBoats__stash_poe2_market_hour` inner join `qsPoeBoats__stash_poe2_market` on `qsPoeBoats__stash_poe2_market`.`id` = `qsPoeBoats__stash_poe2_market_hour`.`marketId`",
             "algorithm": "undefined",
             "sqlSecurity": "definer",
             "withCheckOption": null,

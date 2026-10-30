@@ -68,12 +68,25 @@ beforeEach(() => {
         divine: 400,
         priceRates: { exalted: 1, chaos: 4, annul: 1 / 20, divine: 1 / 400 },
         history: {
-            prices: [{ hour, price: 800, low: 760, high: 840, via: divine, units: 30 }],
+            prices: [
+                {
+                    hour,
+                    price: 800,
+                    low: 760,
+                    high: 840,
+                    p25: 780,
+                    p75: 820,
+                    via: divine,
+                    units: 30,
+                },
+            ],
             pairs: [
                 {
                     quoteId: divine,
                     name: "Divine Orb",
-                    hours: [{ hour, rate: 2, low: 1.9, high: 2.1, units: 30 }],
+                    hours: [
+                        { hour, rate: 2, low: 1.9, high: 2.1, p25: 1.95, p75: 2.05, units: 30 },
+                    ],
                 },
             ],
         },

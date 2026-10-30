@@ -5,6 +5,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { type CostPoint, historyChartOption } from "~/components/crafting/process-cost-history";
 import { resolveTokens } from "~/components/echart";
 import { exchangeDisplays, exchangePriceText } from "~/components/market-exchange";
+import { marketExchangeChartOption } from "~/components/market-exchange-chart";
 import { MarketPriceChart, marketPriceChartOption } from "~/components/market-price-chart";
 import { type ChartOption, init } from "~/lib/echarts";
 import { marketNumber } from "~/lib/market-number";
@@ -67,8 +68,12 @@ function axisLabels(svg: string) {
         .map(([, , label]) => Number(label!.replaceAll(",", "")));
 }
 
-const saleMedian = 2;
-const lowestAsk = 3;
+const lowestSale = 6;
+const lowestAsk = 7;
+
+function many(price: MergedMarketPrice, count = 9): MergedMarketPrice {
+    return { ...price, count };
+}
 
 describe("market browsing", () => {
     it("preserves small fractional prices without rounding them to zero", () => {
@@ -216,11 +221,11 @@ describe("market browsing", () => {
         expect(tooltipValue(option, lowestAsk, null, 2)).toBe("No listings");
         expect(
             renderToStaticMarkup(<MarketPriceChart points={[point(3600, flat(10))]} game="poe1" />),
-        ).toContain("Hourly lowest asking price in chaos");
+        ).toContain("Hourly lowest and average asking and likely sale prices in chaos");
     });
     it("shades the likely-sale interquartile range, ignoring outlying asks", () => {
         const outlier = { ...flat(4), p75: 300_000, p90: 300_000, max: 300_000 };
-        const sale = { ...flat(10), p25: 5, p75: 15 };
+        const sale = many({ ...flat(10), p25: 5, p75: 15 });
         const option = marketPriceChartOption(
             [point(3600, outlier, { ...sale, unconverted: 2 }), point(7200, outlier, sale)],
             "poe1",
@@ -241,9 +246,189 @@ describe("market browsing", () => {
         expect(Math.min(...labels)).toBeLessThanOrEqual(4);
         expect(Math.max(...labels)).toBeGreaterThanOrEqual(15);
         expect(Math.max(...labels)).toBeLessThan(100);
-        expect(tooltipValue(option, saleMedian, 10, 0)).toBe(
-            "10 chaos (interquartile 5 chaos–15 chaos, 1 likely sales, 2 without an exchange rate)",
+        expect(tooltipValue(option, lowestSale, 10, 0)).toBe(
+            "10 chaos (lowest of 9 likely sales, median 10 chaos, interquartile 5 chaos–15 chaos, 2 without an exchange rate)",
         );
+    });
+    it("shades an ask interquartile range only above 8 listings", () => {
+        const ask = { ...flat(10), p25: 8, p75: 14 };
+        const option = marketPriceChartOption(
+            [point(3600, many(ask, 8)), point(7200, many(ask, 9)), point(10800, many(ask, 40))],
+            "poe1",
+        )!;
+        expect(series(option, 2)).toMatchObject({
+            name: "IQR ask",
+            color: "var(--primary)",
+            data: [
+                [3600_000, null],
+                [7200_000, 8],
+                [10800_000, 8],
+            ],
+        });
+        expect(series(option, 3)).toMatchObject({
+            name: "IQR ask",
+            stack: series(option, 2).stack,
+            data: [
+                [3600_000, null],
+                [7200_000, 6],
+                [10800_000, 6],
+            ],
+        });
+        expect(tooltipValue(option, lowestAsk, 10, 0)).toBe(
+            "10 chaos (lowest of 8 listings, median 10 chaos)",
+        );
+        expect(tooltipValue(option, lowestAsk, 10, 1)).toBe(
+            "10 chaos (lowest of 9 listings, median 10 chaos, interquartile 8 chaos–14 chaos)",
+        );
+    });
+    it("connects the sold interquartile band across hours with too few sales", () => {
+        const sale = many({ ...flat(10), p25: 8, p75: 14 });
+        const option = marketPriceChartOption(
+            [
+                point(3600, flat(5), sale),
+                point(7200, flat(5), flat(9)),
+                point(10800, flat(5), sale),
+            ],
+            "poe1",
+        )!;
+        expect(series(option, 0).data).toEqual([
+            [3600_000, 8],
+            [10800_000, 8],
+        ]);
+        expect(series(option, 1).data).toEqual([
+            [3600_000, 6],
+            [10800_000, 6],
+        ]);
+    });
+    it("plots average asks and sales, starting with average asks hidden", () => {
+        const ask = { ...flat(10), mean: 30 };
+        const sale = { ...flat(10), mean: 12 };
+        const option = marketPriceChartOption(
+            [point(3600, ask, sale), point(7200, { ...ask, mean: null })],
+            "poe1",
+        )!;
+        expect(series(option, 4)).toMatchObject({
+            name: "Avg sold (chaos)",
+            data: [[3600_000, 12]],
+        });
+        expect(series(option, 5)).toMatchObject({
+            name: "Avg ask (chaos)",
+            data: [
+                [3600_000, 30],
+                [7200_000, null],
+            ],
+        });
+        expect(tooltipValue(option, 5, 30, 0)).toBe("30 chaos");
+        expect(tooltipValue(option, 5, null, 1)).toBe("—");
+        expect((option.legend as { selected: unknown }).selected).toEqual({
+            "Avg ask (chaos)": false,
+        });
+    });
+    it("counts delisted listings as removals that are not sales, relists or undecided", () => {
+        const option = marketPriceChartOption(
+            [
+                {
+                    ...point(3600, flat(5)),
+                    likelySales: 3,
+                    removedCount: 10,
+                    relistedCount: 2,
+                    pendingCount: 1,
+                },
+            ],
+            "poe1",
+        )!;
+        const delisted = (option.series as LineSeriesOption[]).find(
+            (entry) => entry.name === "Delisted",
+        )!;
+        expect(delisted).toMatchObject({ yAxisIndex: 2, data: [[3600_000, 4]] });
+    });
+    it("plots the likely sales' average age in hours in its own panel", () => {
+        const option = marketPriceChartOption(
+            [
+                { ...point(3600, flat(5)), likelySales: 2, soldAgeSeconds: 7200 },
+                { ...point(7200, flat(5)), likelySales: 0, soldAgeSeconds: null },
+                { ...point(10800, flat(5)), likelySales: 1, soldAgeSeconds: 345_600 },
+                { ...point(18000, flat(5)), likelySales: 1, soldAgeSeconds: 3600 },
+            ],
+            "poe1",
+        )!;
+        expect(option.grid).toHaveLength(3);
+        expect(option.yAxis).toHaveLength(4);
+        expect(option.dataZoom).toMatchObject([
+            { xAxisIndex: [0, 1, 2] },
+            { xAxisIndex: [0, 1, 2] },
+        ]);
+        const all = option.series as LineSeriesOption[];
+        const index = all.findIndex((entry) => entry.name === "Avg sold age (hours)");
+        expect(all[index]).toMatchObject({
+            xAxisIndex: 2,
+            yAxisIndex: 3,
+            data: [
+                [3600_000, 2],
+                [10800_000, 96],
+                [14400_000, null],
+                [18000_000, 1],
+            ],
+        });
+        expect(tooltipValue(option, index, 2)).toBe("2 hours");
+        expect(tooltipValue(option, index, 96)).toBe("4 days");
+        expect(renderSvg(option)).toContain("<path");
+    });
+    it("charts an exchange item's lowest rate and estimated IQR beside its value", () => {
+        const base = { value: 15, low: 10, high: 20, units: 100 };
+        const option = marketExchangeChartOption(
+            [
+                { hour: 3600, ...base, p25: 12, p75: 17 },
+                { hour: 7200, ...base, p25: null, p75: null },
+            ],
+            "Chaos per unit",
+            "Units traded",
+        )!;
+        expect((option.legend as { data: unknown[] }).data).toMatchObject([
+            "Chaos per unit",
+            "Lowest rate",
+            { name: "Estimated IQR" },
+            "Units traded",
+        ]);
+        const all = option.series as LineSeriesOption[];
+        expect(all.filter((entry) => entry.name === "Estimated IQR")).toMatchObject([
+            {
+                stack: "interquartile",
+                data: [
+                    [3600_000, 12],
+                    [7200_000, null],
+                ],
+            },
+            {
+                stack: "interquartile",
+                data: [
+                    [3600_000, 5],
+                    [7200_000, null],
+                ],
+            },
+        ]);
+        expect(all.find((entry) => entry.name === "Lowest rate")).toMatchObject({
+            data: [
+                [3600_000, 10],
+                [7200_000, 10],
+            ],
+        });
+        expect(tooltipValue(option, all.length - 1, 15, 0)).toBe(
+            "15 (range 10–20, estimated interquartile 12–17)",
+        );
+        expect(renderSvg(option)).toContain("<path");
+    });
+    it("leaves the estimated IQR out of the legend when no hour has one", () => {
+        const option = marketExchangeChartOption(
+            [{ hour: 3600, value: 15, low: 10, high: 20, p25: null, p75: null, units: 3 }],
+            "Chaos per unit",
+            "Units traded",
+        )!;
+        expect((option.legend as { data: unknown[] }).data).toEqual([
+            "Chaos per unit",
+            "Lowest rate",
+            "Units traded",
+        ]);
     });
     it("connects sale prices across listed hours without a sale but not across gaps", () => {
         const option = marketPriceChartOption(
@@ -255,14 +440,14 @@ describe("market browsing", () => {
             ],
             "poe1",
         )!;
-        expect(series(option, saleMedian).data).toEqual([
+        expect(series(option, lowestSale).data).toEqual([
             [3600_000, 10],
             [10800_000, 12],
             [14400_000, null],
             [18000_000, 14],
         ]);
-        expect(tooltipValue(option, saleMedian, 12, 1)).toBe(
-            "12 chaos (interquartile 12 chaos–12 chaos, 1 likely sales)",
+        expect(tooltipValue(option, lowestSale, 12, 1)).toBe(
+            "12 chaos (lowest of 1 likely sales, median 12 chaos)",
         );
     });
     it("shows each hour's prices in the value display at that hour's rates", () => {
@@ -289,7 +474,7 @@ describe("market browsing", () => {
         // In divine, each hour converts at its own rate; an hour without one leaves a gap.
         const divine = marketPriceChartOption(points, "poe1", "divine")!;
         expect(series(divine, lowestAsk)).toMatchObject({
-            name: "Lowest ask (divine)",
+            name: "Min ask (divine)",
             data: [
                 [3600_000, null],
                 [7200_000, 5],
@@ -303,17 +488,21 @@ describe("market browsing", () => {
     it("colours likely sales apart from the lowest ask", () => {
         const option = marketPriceChartOption([point(3600, flat(5), flat(6))], "poe1")!;
         expect(series(option, lowestAsk).color).toBe("var(--primary)");
-        expect(series(option, saleMedian).color).toBe("var(--chart-2)");
+        expect(series(option, lowestSale).color).toBe("var(--chart-2)");
         // The interquartile band shades in the likely sale's colour.
         expect(series(option, 1).color).toBe("var(--chart-2)");
     });
-    it("toggles the interquartile band from the legend as one entry", () => {
+    it("toggles each interquartile band from the legend as one entry", () => {
         const option = marketPriceChartOption([point(3600, flat(5), flat(6))], "poe1")!;
-        expect(series(option, 0).name).toBe("Likely sale IQR");
-        expect(series(option, 1).name).toBe("Likely sale IQR");
-        expect((option.legend as { data: unknown[] }).data[2]).toMatchObject({
-            name: "Likely sale IQR",
+        expect(series(option, 0).name).toBe("IQR sold");
+        expect(series(option, 1).name).toBe("IQR sold");
+        expect((option.legend as { data: unknown[] }).data[4]).toMatchObject({
+            name: "IQR sold",
             itemStyle: { color: "var(--chart-2)" },
+        });
+        expect((option.legend as { data: unknown[] }).data[1]).toMatchObject({
+            name: "IQR ask",
+            itemStyle: { color: "var(--primary)" },
         });
     });
     it("zooms both panels to a date range together", () => {
@@ -350,15 +539,18 @@ describe("market browsing", () => {
         )!;
         expect(option.legend).toMatchObject({
             data: [
-                "Lowest ask (chaos)",
-                "Median likely sale (chaos)",
-                expect.objectContaining({ name: "Likely sale IQR" }),
+                "Min ask (chaos)",
+                expect.objectContaining({ name: "IQR ask" }),
+                "Avg ask (chaos)",
+                "Min sold (chaos)",
+                expect.objectContaining({ name: "IQR sold" }),
+                "Avg sold (chaos)",
                 "Total listings",
                 "New listings",
-                "Likely sales",
+                "Likely sold listings",
             ],
         });
-        const [listings, added, sales] = (option.series as LineSeriesOption[]).slice(4);
+        const [listings, added, sales] = (option.series as LineSeriesOption[]).slice(8);
         expect(listings).toMatchObject({
             type: "line",
             xAxisIndex: 1,
@@ -394,8 +586,8 @@ describe("market browsing", () => {
                 [18000_000, 0],
             ],
         });
-        expect(tooltipValue(option, 5, null)).toBe("Not recorded");
-        expect(tooltipValue(option, 6, 1200)).toBe("1,200");
+        expect(tooltipValue(option, 9, null)).toBe("Not recorded");
+        expect(tooltipValue(option, 10, 1200)).toBe("1,200");
         expect(renderSvg(option)).toContain("<path");
     });
     it("leaves out new listings and likely sales a market does not record", () => {
@@ -403,9 +595,10 @@ describe("market browsing", () => {
             [point(3600, flat(5)), point(7200, flat(6))],
             "poe1",
         )!;
-        expect(option.series).toHaveLength(5);
+        expect(option.series).toHaveLength(9);
         expect(option.yAxis).toHaveLength(2);
-        expect((option.legend as { data: string[] }).data).not.toContain("Likely sales");
+        expect((option.legend as { data: string[] }).data).not.toContain("Likely sold listings");
+        expect((option.legend as { data: string[] }).data).not.toContain("Delisted");
     });
     it("resolves theme token colours anywhere in an option", () => {
         const option = {

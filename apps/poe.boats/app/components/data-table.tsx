@@ -20,7 +20,7 @@ import {
     useTable,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import type { ComponentProps, ReactNode } from "react";
+import { type ComponentProps, type ReactNode, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -76,6 +76,8 @@ export function DataTable<TData extends RowData>({
     server,
     search = false,
     empty = "No rows match these filters.",
+    maxRows,
+    keepRow,
     className,
 }: {
     label: string;
@@ -86,8 +88,13 @@ export function DataTable<TData extends RowData>({
     /** Adds a box that searches every filterable column of the loaded rows. */
     search?: boolean;
     empty?: ReactNode;
+    /** Shows only this many rows, after sorting and filtering, until "Show all" is pressed. */
+    maxRows?: number;
+    /** A row `maxRows` never hides. */
+    keepRow?: (row: TData) => boolean;
     className?: string;
 }) {
+    const [showAll, setShowAll] = useState(false);
     const table = useTable({
         features: dataTableFeatures,
         data,
@@ -107,7 +114,12 @@ export function DataTable<TData extends RowData>({
               }
             : {}),
     });
-    const rows = table.getRowModel().rows;
+    const allRows = table.getRowModel().rows;
+    const canLimit = maxRows !== undefined && allRows.length > maxRows;
+    const rows =
+        canLimit && !showAll
+            ? allRows.filter((row, index) => index < maxRows || keepRow?.(row.original))
+            : allRows;
     return (
         <div className={cn("space-y-3", className)}>
             {search ? (
@@ -196,6 +208,16 @@ export function DataTable<TData extends RowData>({
                     )}
                 </TableBody>
             </Table>
+            {canLimit ? (
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAll(!showAll)}
+                >
+                    {showAll ? `Show top ${maxRows}` : `Show all ${allRows.length}`}
+                </Button>
+            ) : null}
         </div>
     );
 }
@@ -223,7 +245,7 @@ function ColumnFilter<TData extends RowData>({
                 return next;
             });
         return (
-            <div className="mt-1.5 flex gap-1 font-normal">
+            <div className="mt-1.5 flex flex-wrap gap-1 font-normal">
                 <FilterInput
                     live={live}
                     value={min}

@@ -348,6 +348,7 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                         filters={filters}
                         game={game}
                         prices={prices}
+                        server={server}
                     />
                 ) : null}
                 {categories.map((category) => {

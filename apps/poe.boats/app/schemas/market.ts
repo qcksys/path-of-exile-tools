@@ -204,6 +204,29 @@ export function marketCorruption({
     return corruption ?? (isMarketUniqueCategory(category) ? "false" : "all");
 }
 
+export type MarketMapBandFilter = "mapMods" | "mapQuantity" | "mapDelirium" | "mapInfluence";
+
+/**
+ * What an item page's variant table narrows by. Its loader ignores these, so changing them only
+ * filters the variants already loaded; the list reads them on the way back (from page 1).
+ */
+const marketItemViewFiltersSchema = marketFiltersSchema.pick({
+    page: true,
+    identification: true,
+    corruption: true,
+    mapMods: true,
+    mapQuantity: true,
+    mapDelirium: true,
+    mapInfluence: true,
+});
+export const MARKET_ITEM_VIEW_PARAMS = Object.keys(marketItemViewFiltersSchema.shape);
+
+export function marketItemViewFilters(params: URLSearchParams) {
+    const filters = marketItemViewFiltersSchema.parse(Object.fromEntries(params));
+    // Spread over the loaded filters, an absent key would keep a corruption filter just cleared.
+    return { ...filters, corruption: filters.corruption };
+}
+
 /** The identification a search filters by; categories that do not split by it match any. */
 export function marketIdentification({
     category,

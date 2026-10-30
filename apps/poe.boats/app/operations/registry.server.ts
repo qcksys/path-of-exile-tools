@@ -401,12 +401,14 @@ export const operations = [
                             price: z.number().nullable(),
                             low: z.number().nullable(),
                             high: z.number().nullable(),
+                            p25: z.number().nullable(),
+                            p75: z.number().nullable(),
                             via: z.string().nullable(),
                             units: z.number(),
                         }),
                     )
                     .describe(
-                        "Each hour the item traded, oldest first: its volume-weighted price in the exchange unit (directly or through `via`), the hour's lowest and highest rates of that pair in the exchange unit (scaled by `via`'s price), and units traded across its pairs",
+                        "Each hour the item traded, oldest first: its volume-weighted price in the exchange unit (directly or through `via`), the hour's lowest and highest rates of that pair in the exchange unit (scaled by `via`'s price), their interquartile range estimated from those rates and the volume-weighted price (null at 8 units or fewer on that pair), and units traded across its pairs",
                     ),
                 pairs: z
                     .array(
@@ -419,13 +421,15 @@ export const operations = [
                                     rate: z.number(),
                                     low: z.number().nullable(),
                                     high: z.number().nullable(),
+                                    p25: z.number().nullable(),
+                                    p75: z.number().nullable(),
                                     units: z.number(),
                                 }),
                             ),
                         }),
                     )
                     .describe(
-                        "Each pair, most traded first: per traded hour, units of the other item per unit (volume-weighted, lowest and highest) and units of this item traded",
+                        "Each pair, most traded first: per traded hour, units of the other item per unit (volume-weighted, lowest, highest and estimated interquartile range) and units of this item traded",
                     ),
             }),
         }),

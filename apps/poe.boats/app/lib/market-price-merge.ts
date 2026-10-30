@@ -218,6 +218,7 @@ type MarketRowCounts = {
     listingCount: number;
     uniqueSellers: number;
     newCount: number | null;
+    soldAgeSeconds: number | null;
     removedCount: number;
     likelySales: number;
     relistedCount: number;
@@ -242,12 +243,19 @@ export function mergeMarketRows<Row extends MarketRowCounts>(rows: Row[]): Row {
     );
     const sum = (key: keyof MarketRowCounts) =>
         rows.reduce((total, row) => total + (row[key] as number), 0);
+    const aged = rows.filter((row) => row.soldAgeSeconds !== null && row.likelySales > 0);
+    const agedSales = aged.reduce((total, row) => total + row.likelySales, 0);
     return {
         ...representative,
         listingCount: sum("listingCount"),
         uniqueSellers: sum("uniqueSellers"),
         // Rows from before new listings were counted leave the merged count unknown.
         newCount: rows.some((row) => row.newCount === null) ? null : sum("newCount"),
+        // Weighted by likely sales, so a merged market's average covers each of its sales once.
+        soldAgeSeconds: agedSales
+            ? aged.reduce((total, row) => total + row.soldAgeSeconds! * row.likelySales, 0) /
+              agedSales
+            : null,
         removedCount: sum("removedCount"),
         likelySales: sum("likelySales"),
         relistedCount: sum("relistedCount"),
