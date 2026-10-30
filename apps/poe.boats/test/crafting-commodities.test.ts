@@ -84,8 +84,18 @@ function capture(changes: Partial<typeof row> = {}) {
             ),
         );
 }
+/** Records an exchange market's first hour, as ingest does beside each stored hour. */
+function recordMarket(realm: string, league: string, marketId: string, firstHour: number) {
+    sqlite
+        .prepare(
+            `INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_currency_market VALUES (?,?,?,?)
+            ON CONFLICT (realm, league, marketId) DO UPDATE SET firstHour = min(firstHour, excluded.firstHour)`,
+        )
+        .run(realm, league, marketId, firstHour);
+}
 function captureExchange(changes: Partial<typeof commodityExchangeSnapshot> = {}) {
     const entry = { ...commodityExchangeSnapshot, ...changes };
+    recordMarket(entry.realm, entry.league, entry.marketId, entry.hour);
     sqlite
         .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_currency_hourly VALUES (?,?,?,?,?,?,?)`)
         .run(
@@ -110,6 +120,8 @@ beforeEach(() => {
         tab TEXT)`);
     sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_currency_hourly (
         realm TEXT, league TEXT, hour INTEGER, marketId TEXT, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT)`);
+    sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_currency_market (
+        realm TEXT, league TEXT, marketId TEXT, firstHour INTEGER, PRIMARY KEY (realm, league, marketId))`);
     db = drizzle(async (sql, params) => {
         statements.push(sql);
         const statement = sqlite.prepare(sql.replace(/ force index \(`PRIMARY`\)/i, ""));
@@ -192,7 +204,7 @@ it("uses exchange membership at each cutoff and preserves the original stash bin
     expect(prior.points[0]?.graph?.prices[essenceId]?.amount).toBe(16.5);
     expect(prior.points[1]?.graph?.prices[essenceId]?.amount).toBe(5);
     expect(recovered.graph).toEqual(unchanged);
-    expect(statements.filter((sql) => sql.includes("min(`hour`)"))).toHaveLength(1);
+    expect(statements.filter((sql) => sql.includes("currency_market"))).toHaveLength(1);
 });
 
 it("ignores future-only observations, keeps resonator IDs distinct, and fails closed above the market limit", async () => {
@@ -205,8 +217,10 @@ it("ignores future-only observations, keeps resonator IDs distinct, and fails cl
     const insert = sqlite.prepare(
         `INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_currency_hourly VALUES (?,?,?,?,?,?,?)`,
     );
-    for (let i = 0; i < 5000; i++)
+    for (let i = 0; i < 5000; i++) {
         insert.run("pc", "Standard", hour, `item-${i}|${chaosId}`, "{}", null, null);
+        recordMarket("pc", "Standard", `item-${i}|${chaosId}`, hour);
+    }
     expect(await knownCraftingExchangeItems(db, "Standard", hour)).toBeNull();
     capture();
     const result = await findCraftingSourcePrices(
@@ -891,6 +905,7 @@ it("requires conversion opt-in, keeps native policy, and refreshes using the new
         16.5, 600,
     ]);
     sqlite.exec(`DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_currency_hourly`);
+    sqlite.exec(`DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_currency_market`);
     const missing = await refreshCraftingMarketPrices(db, refreshed.graph, engine);
     expect(missing.graph).toBe(refreshed.graph);
     expect(missing.issues).toHaveLength(1);

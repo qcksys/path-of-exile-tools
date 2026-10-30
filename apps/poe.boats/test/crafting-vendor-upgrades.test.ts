@@ -45,6 +45,13 @@ function capture(
     } = {},
 ) {
     const entry = { ...vendorSnapshot, ...changes };
+    // Ingest records each market's first hour beside the hours it stores.
+    sqlite
+        .prepare(
+            `INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_currency_market VALUES (?,?,?,?)
+            ON CONFLICT (realm, league, marketId) DO UPDATE SET firstHour = min(firstHour, excluded.firstHour)`,
+        )
+        .run(entry.realm, entry.league, entry.marketId, entry.hour);
     sqlite
         .prepare(`INSERT INTO ${DB_TABLE_PREFIX}stash_poe1_currency_hourly VALUES (?,?,?,?,?,?,?)`)
         .run(
@@ -63,6 +70,9 @@ beforeEach(() => {
     sqlite = new DatabaseSync(":memory:");
     sqlite.exec(
         `CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_currency_hourly (realm TEXT, league TEXT, hour INTEGER, marketId TEXT, volumeTraded TEXT, lowestRatio TEXT, highestRatio TEXT)`,
+    );
+    sqlite.exec(
+        `CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_currency_market (realm TEXT, league TEXT, marketId TEXT, firstHour INTEGER, PRIMARY KEY (realm, league, marketId))`,
     );
     sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_unique_hourly (
         realm TEXT, league TEXT, hour INTEGER, itemKey TEXT, baseType TEXT, name TEXT,

@@ -26,10 +26,7 @@ import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCohortRevision } from "~/db/schema/stash.cohort-revision";
 import { tStashCohortWindow } from "~/db/schema/stash.cohort-window";
 import { tStashPoe1CurrencyDaily, tStashPoe2CurrencyDaily } from "~/db/schema/stash.currency-daily";
-import {
-    tStashPoe1CurrencyHourly,
-    tStashPoe2CurrencyHourly,
-} from "~/db/schema/stash.currency-hourly";
+import { tStashPoe1CurrencyHour, tStashPoe2CurrencyHour } from "~/db/schema/stash.currency-hourly";
 import {
     tStashPoe1CurrencyMarket,
     tStashPoe2CurrencyMarket,
@@ -68,8 +65,8 @@ export const schema = {
     tStashPoe2MarketHour,
     tStashPoe1MarketDaily,
     tStashPoe2MarketDaily,
-    tStashPoe1CurrencyHourly,
-    tStashPoe2CurrencyHourly,
+    tStashPoe1CurrencyHour,
+    tStashPoe2CurrencyHour,
     tStashPoe1CurrencyDaily,
     tStashPoe2CurrencyDaily,
     tStashPoe1CurrencyMarket,

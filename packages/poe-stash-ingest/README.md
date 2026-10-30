@@ -512,7 +512,8 @@ Each game (`poe1`, `poe2`) has its own tables; the receiver routes rows by realm
 | --------------------------- | ----------- | ------------------------------------------ |
 | `market`                    | **forever** | `(realm, league, item_key, identified, corrupted, foil_variation, links, tab, signature_kind, signature_value)`, with an int `id` and the latest description |
 | `market_hour`               | **forever** | `(hour, market_id)`; the `unique_hourly` view joins it to `market` |
-| `currency_hourly`           | **forever** | `(realm, league, market_id, hour)`                |
+| `currency_market`           | **forever** | `(realm, league, market_id)`, with an int `id` and the first hour |
+| `currency_hour`             | **forever** | `(hour, market_id)`, each digest map's two item values as columns; the `currency_hourly` view rebuilds the maps |
 | `basemap_snapshot`          | **forever** | `icon_asset` (public unid → name resolver) |
 | `cohort_hourly` (PoE 1)     | **forever** | `(realm, league, hour, cohort_id)`, the newest catalog revision's classification |
 | `cohort_window` (PoE 1)     | 48 hours    | `(realm, league, hour, cohort_id)`, the 6/24-hour price windows |

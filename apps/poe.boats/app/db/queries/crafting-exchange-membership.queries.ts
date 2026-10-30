@@ -1,19 +1,21 @@
 import { marketObservationRange } from "@poe-tools/market";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, lte } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
-import { tStashPoe1CurrencyHourly as currencyHourly } from "~/db/schema/stash.currency-hourly";
+import { tStashPoe1CurrencyMarket as currencyMarket } from "~/db/schema/stash.currency-market";
 
 export async function loadCraftingExchangeMembership(db: TDatabase, league: string, at?: number) {
     const { latestHour } = marketObservationRange(at);
+    // Each market keeps its earliest stored hour, so this reads no hourly rows.
     const rows = await db
-        .select({
-            marketId: currencyHourly.marketId,
-            firstHour: sql<number>`min(${currencyHourly.hour})`,
-        })
-        .from(currencyHourly, { forceIndex: "PRIMARY" })
-        .where(and(eq(currencyHourly.realm, "pc"), eq(currencyHourly.league, league)))
-        .groupBy(currencyHourly.realm, currencyHourly.league, currencyHourly.marketId)
-        .having(sql`min(${currencyHourly.hour}) <= ${latestHour}`)
+        .select({ marketId: currencyMarket.marketId, firstHour: currencyMarket.firstHour })
+        .from(currencyMarket)
+        .where(
+            and(
+                eq(currencyMarket.realm, "pc"),
+                eq(currencyMarket.league, league),
+                lte(currencyMarket.firstHour, latestHour),
+            ),
+        )
         .limit(5001);
     if (rows.length > 5000) return null;
     const ids = new Map<string, number>();
