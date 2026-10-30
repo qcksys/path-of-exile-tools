@@ -163,6 +163,23 @@ const VARIANTS: [name: string, variant: string, mods: string[]][] = [
                 ],
             ] as [string, string, string[]],
     ),
+    ...[
+        "Animated Weapons",
+        "Summoned Raging Spirits",
+        "Sentinels of Absolution",
+        "Living Lightning",
+    ].map(
+        (minions) =>
+            [
+                "The Dark Monarch",
+                minions,
+                [
+                    "+1 to Level of all Minion Skill Gems",
+                    "50% reduced Light Radius",
+                    `Maximum number of ${minions} is Doubled\nCannot have Minions other than ${minions}`,
+                ],
+            ] as [string, string, string[]],
+    ),
     ...["Relics", "Tainted Currency", "Experience"].map(
         (reward) =>
             [

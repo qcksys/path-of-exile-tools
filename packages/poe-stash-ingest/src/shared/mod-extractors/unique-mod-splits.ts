@@ -64,8 +64,8 @@ const splitPersonalityStats: Split = (lines) => {
 /**
  * Uniques whose rolled mods make separately priced markets, keyed by unique name. The list and
  * the variant labels follow poe.ninja's `variant` splits (checked 2026-10-27 in Allflame), plus
- * Split Personality, The Light of Meaning, Sublime Vision and Thread of Hope, which poe.ninja does not split; the
- * `foulborn` extractor adds these labels to Foulborn copies.
+ * Split Personality, The Light of Meaning, Sublime Vision and Thread of Hope, which poe.ninja does not split, and
+ * The Dark Monarch; the `foulborn` extractor adds these labels to Foulborn copies.
  */
 export const UNIQUE_MOD_SPLITS: Record<string, Split> = {
     // Hybrid energy shield versions that roll life instead of flat energy shield trade apart.
@@ -93,6 +93,8 @@ export const UNIQUE_MOD_SPLITS: Record<string, Split> = {
     "Split Personality": splitPersonalityStats,
     // Every aura but the one it rolled is disabled.
     "Sublime Vision": capture(/^Aura Skills other than (.+) are Disabled$/),
+    // One of 16 minion types is doubled and the only minions allowed.
+    "The Dark Monarch": capture(/Maximum number of (.+?) is Doubled/),
     "The First Crest": capture(/Aureus Coins are converted to (.+?) upon defeating/),
     "The Light of Meaning": lightOfMeaningStat,
     "Thread of Hope": capture(/Only affects Passives in (.+ Ring)/),
