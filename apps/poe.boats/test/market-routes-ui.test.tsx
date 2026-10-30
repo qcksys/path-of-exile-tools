@@ -1,8 +1,14 @@
 // @vitest-environment jsdom
 // biome-ignore-all lint/style/useNamingConvention: React Router fixture components use PascalCase.
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { createRoutesStub, RouterContextProvider, useLoaderData, useLocation } from "react-router";
-import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
+import {
+    createRoutesStub,
+    RouterContextProvider,
+    type ShouldRevalidateFunctionArgs,
+    useLoaderData,
+    useLocation,
+} from "react-router";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { dbContext } from "~/context";
 import { createDbConnection } from "~/db/client";
 import { getMarketBase, getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
@@ -10,7 +16,7 @@ import Market from "~/routes/market";
 import MarketBase, { loader as baseLoader } from "~/routes/market/base";
 import MarketExchangeItem, { loader as exchangeLoader } from "~/routes/market/exchange";
 import MarketIndex, { loader as listLoader } from "~/routes/market/index";
-import MarketItem, { loader as itemLoader } from "~/routes/market/item";
+import MarketItem, { loader as itemLoader, shouldRevalidate } from "~/routes/market/item";
 import { changeControl, expectControlValue } from "./control-helpers";
 import { marketBaseFixture, marketExchangeFixture, marketFixture } from "./market-fixtures";
 
@@ -604,25 +610,247 @@ it("links a unique's merged market to each of its link counts", async () => {
     ).toBe("page");
 });
 
-it("lists many variants in a table grouped by class and ascendancy, with prices", async () => {
+it("lists many variants as their best sellers, with prices, until all are shown", async () => {
     showMarket(
         "/1/market/items/Forbidden%20Flesh?league=Allflame&category=forbidden&kind=forbidden-jewel&value=Notable%2025",
     );
     const variants = await screen.findByRole("navigation", { name: "Item variants" });
     expect(within(variants).getByRole("heading").textContent).toContain("(30)");
     const table = within(variants).getByRole("table", { name: "Item variants" });
-    const rows = within(table).getAllByRole("row").slice(1);
-    expect(rows).toHaveLength(30);
+    const rows = () => within(table).getAllByRole("row").slice(1);
     const cells = (row: HTMLElement) =>
         within(row)
             .getAllByRole("cell")
             .map((cell) => cell.textContent);
-    // "Other notables" sorts before "Templar · Inquisitor"; sales order holds within a group.
-    expect(cells(rows[0]!).slice(0, 2)).toEqual(["Other notables", "Notable 1"]);
-    expect(cells(rows[29]!)).toEqual(["Templar · Inquisitor", "Pious Path", "8 chaos", "3", "30"]);
+    // The top 10 by sales, then the selected variant, which is below them.
+    expect(rows()).toHaveLength(11);
+    expect(cells(rows()[0]!)).toEqual(["Templar · Inquisitor", "Pious Path", "8 chaos", "3", "30"]);
+    expect(cells(rows()[1]!).slice(0, 2)).toEqual(["Other notables", "Notable 1"]);
     expect(
         within(table).getByRole("link", { name: "Notable 25" }).getAttribute("aria-current"),
     ).toBe("page");
+    fireEvent.click(within(variants).getByRole("button", { name: "Show all 30" }));
+    expect(rows()).toHaveLength(30);
+    fireEvent.click(within(variants).getByRole("button", { name: "Show top 10" }));
+    expect(rows()).toHaveLength(11);
+});
+
+describe("a map's variant table", () => {
+    const identified = ["1–6 mods", "8 mods"].flatMap((mods) =>
+        ["Quantity 100–119%", "Quantity 60–79%"].flatMap((quantity) =>
+            ["0%", "20%", "40%"].flatMap((delirium) =>
+                ["", " · Memory"].map(
+                    (influence) => `${mods} · ${quantity} · Delirium ${delirium}${influence}`,
+                ),
+            ),
+        ),
+    );
+    const unidentified = "Unidentified · Delirium 40%";
+
+    beforeEach(() => {
+        vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+            const fixture = marketFixture(filters);
+            return {
+                ...fixture,
+                variants: [...identified, unidentified].map((signatureValue, index) => ({
+                    ...fixture.variants[0]!,
+                    signatureKind: "map",
+                    signatureValue,
+                    identified: signatureValue !== unidentified,
+                    corrupted: signatureValue === unidentified,
+                    periodSales: 100 - index,
+                })),
+            };
+        });
+    });
+
+    const show = async (search = "") => {
+        showMarket(
+            `/1/market/items/Map%20(Tier%2016)?league=Allflame&category=maps&kind=map&value=x${search}`,
+        );
+        return screen.findByRole("navigation", { name: "Item variants" }, { timeout: 5000 });
+    };
+    const rows = (variants: HTMLElement) =>
+        within(within(variants).getByRole("table", { name: "Item variants" }))
+            .getAllByRole("row")
+            .slice(1);
+    const cells = (row: HTMLElement) =>
+        within(row)
+            .getAllByRole("cell")
+            .map((cell) => cell.textContent);
+
+    it("splits each signature into its own columns and keeps the full label on the link", async () => {
+        const variants = await show();
+        fireEvent.click(within(variants).getByRole("button", { name: "Show all 25" }));
+        expect(cells(rows(variants)[1]!).slice(0, 5)).toEqual([
+            "1–6 mods",
+            "100–119%",
+            "0%",
+            "Memory",
+            "—",
+        ]);
+        expect(cells(rows(variants)[24]!).slice(0, 5)).toEqual([
+            "Unidentified",
+            "—",
+            "40%",
+            "—",
+            "Corrupted",
+        ]);
+        expect(
+            within(variants).getByRole("link", {
+                name: "1–6 mods · Quantity 100–119% · Delirium 0% · Memory",
+            }),
+        ).toBeTruthy();
+        expect(
+            within(variants).getByRole("link", { name: `${unidentified} · Corrupted` }),
+        ).toBeTruthy();
+    });
+
+    it("sorts by band order rather than by label", async () => {
+        const variants = await show();
+        fireEvent.click(within(variants).getByRole("button", { name: "Quantity" }));
+        // Alphabetically, 100–119% would sort before 60–79%.
+        expect(cells(rows(variants)[0]!)[1]).toBe("60–79%");
+    });
+
+    it("offers toggles only for the bands this map has", async () => {
+        const variants = await show();
+        const influence = within(variants).getByRole("group", { name: "Influence" });
+        expect(within(influence).getByRole("button", { name: "Memory: any" })).toBeTruthy();
+        expect(within(influence).queryByRole("button", { name: "Shaper: any" })).toBeNull();
+        const delirium = within(variants).getByRole("group", { name: "Delirium" });
+        expect(within(delirium).queryByRole("button", { name: "100%: any" })).toBeNull();
+    });
+
+    it("narrows the rows through the URL and carries the filter to the other variants", async () => {
+        const variants = await show("&page=3");
+        fireEvent.click(
+            within(within(variants).getByRole("group", { name: "Mods" })).getByRole("button", {
+                name: "8 mods: any",
+            }),
+        );
+        fireEvent.click(
+            within(within(variants).getByRole("group", { name: "Delirium" })).getByRole("button", {
+                name: "0%: any",
+            }),
+        );
+        await waitFor(() =>
+            expect(within(variants).getByRole("status").textContent).toBe(
+                "4 of 25 variants match these filters",
+            ),
+        );
+        expect(rows(variants)).toHaveLength(4);
+        const url = screen.getByLabelText("Current URL").textContent;
+        expect(url).toContain("mapMods=8");
+        expect(url).toContain("mapDelirium=0");
+        expect(url).not.toContain("page=");
+        const link = within(variants).getByRole("link", {
+            name: "8 mods · Quantity 100–119% · Delirium 0%",
+        });
+        expect(link.getAttribute("href")).toContain("mapMods=8");
+        expect(link.getAttribute("href")).toContain("kind=map");
+    });
+
+    it("filters by identification and corruption", async () => {
+        const variants = await show();
+        fireEvent.click(
+            within(within(variants).getByRole("group", { name: "Identification" })).getByRole(
+                "button",
+                { name: "Identified: any" },
+            ),
+        );
+        await waitFor(() =>
+            expect(within(variants).getByRole("status").textContent).toContain("24 of 25"),
+        );
+        expect(rows(variants)).toHaveLength(10);
+        fireEvent.click(
+            within(within(variants).getByRole("group", { name: "Corruption" })).getByRole(
+                "button",
+                { name: "Corrupted: any" },
+            ),
+        );
+        await waitFor(() =>
+            expect(within(variants).getByRole("status").textContent).toContain("0 of 25"),
+        );
+        expect(within(variants).getByText("No rows match these filters.")).toBeTruthy();
+    });
+
+    it("clears a corruption filter the page loaded with", async () => {
+        const variants = await show("&corruption=true");
+        expect(within(variants).getByRole("status").textContent).toContain("1 of 25");
+        const toggle = (name: string) =>
+            fireEvent.click(
+                within(within(variants).getByRole("group", { name: "Corruption" })).getByRole(
+                    "button",
+                    { name },
+                ),
+            );
+        toggle("Corrupted: included");
+        await waitFor(() =>
+            expect(within(variants).getByRole("status").textContent).toContain("24 of 25"),
+        );
+        toggle("Corrupted: excluded");
+        await waitFor(() => expect(within(variants).queryByRole("status")).toBeNull());
+        expect(screen.getByLabelText("Current URL").textContent).not.toContain("corruption=");
+    });
+
+    it("applies filters already set on the map list", async () => {
+        const variants = await show("&mapInfluence=memory");
+        expect(within(variants).getByRole("status").textContent).toContain("12 of 25");
+        expect(
+            within(within(variants).getByRole("group", { name: "Influence" })).getByRole("button", {
+                name: "Memory: included",
+            }),
+        ).toBeTruthy();
+    });
+
+    it("does not repeat Unidentified on the selected variant", async () => {
+        vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+            const fixture = marketFixture(filters);
+            return {
+                ...fixture,
+                history: fixture.history.map((row) => ({
+                    ...row,
+                    identified: false,
+                    signatureKind: "map",
+                    signatureValue: unidentified,
+                })),
+            };
+        });
+        showMarket("/1/market/items/Map%20(Tier%2016)?league=Allflame&category=maps");
+        expect((await screen.findByText(unidentified)).textContent).toBe(unidentified);
+    });
+
+    it("falls back to the grouped table for a value it cannot split", async () => {
+        vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+            const fixture = marketFixture(filters);
+            return {
+                ...fixture,
+                variants: [...identified, "Something else"].map((signatureValue) => ({
+                    ...fixture.variants[0]!,
+                    signatureKind: "map",
+                    signatureValue,
+                })),
+            };
+        });
+        const variants = await show();
+        expect(within(variants).getByRole("columnheader", { name: /Group/ })).toBeTruthy();
+        expect(within(variants).queryByRole("group", { name: "Mods" })).toBeNull();
+    });
+});
+
+it("skips the item loader when only the variant table's filters change", () => {
+    const check = (current: string, next: string) =>
+        shouldRevalidate({
+            currentUrl: new URL(`https://example.invalid/1/market/items/Map?${current}`),
+            nextUrl: new URL(`https://example.invalid/1/market/items/Map?${next}`),
+            defaultShouldRevalidate: true,
+        } as ShouldRevalidateFunctionArgs);
+    expect(
+        check("kind=map&page=2", "kind=map&mapMods=8&corruption=true&identification=false"),
+    ).toBe(false);
+    expect(check("kind=map&value=a", "kind=map&value=b")).toBe(true);
+    expect(check("days=7&mapMods=8", "days=30&mapMods=8")).toBe(true);
 });
 
 it("pairs Forbidden Flame and Flesh by notable under their class and ascendancy", async () => {

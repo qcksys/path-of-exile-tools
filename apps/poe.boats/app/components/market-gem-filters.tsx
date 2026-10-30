@@ -56,6 +56,7 @@ export function BandToggles<Band extends string>({
     bands,
     labels,
     value,
+    shown,
     onChange,
 }: {
     name: "gemLevel" | "gemQuality" | "mapMods" | "mapQuantity" | "mapDelirium" | "mapInfluence";
@@ -63,36 +64,41 @@ export function BandToggles<Band extends string>({
     bands: readonly Band[];
     labels: readonly string[];
     value: string;
-    onChange: () => void;
+    /** Only these bands get a toggle, plus any already set; with one left to choose, none do. */
+    shown?: ReadonlySet<string>;
+    onChange: (value: string) => void;
 }) {
     const [current, setCurrent] = useState(value);
     useEffect(() => setCurrent(value), [value]);
     const filter = parseGemBandFilter(current, bands);
     const stateOf = (band: Band): ToggleState =>
         filter?.include.has(band) ? "include" : filter?.exclude.has(band) ? "exclude" : undefined;
+    const visible = (band: Band) => !shown || shown.has(band) || stateOf(band) !== undefined;
+    if (shown && !current && bands.filter(visible).length < 2) return null;
     return (
         <fieldset className="grid gap-1.5">
             <legend className="mb-1.5 text-xs text-muted-foreground">{legend}</legend>
             <Input type="hidden" name={name} value={current} />
             <div className="flex flex-wrap gap-1.5">
-                {bands.map((band, index) => (
-                    <TriStateToggle
-                        key={band}
-                        label={labels[index]!}
-                        state={stateOf(band)}
-                        onChange={(state) => {
-                            setCurrent(
-                                formatGemBandFilter({
+                {bands.map((band, index) =>
+                    visible(band) ? (
+                        <TriStateToggle
+                            key={band}
+                            label={labels[index]!}
+                            state={stateOf(band)}
+                            onChange={(state) => {
+                                const next = formatGemBandFilter({
                                     ...Object.fromEntries(
                                         bands.map((entry) => [entry, stateOf(entry)]),
                                     ),
                                     [band]: state,
-                                }),
-                            );
-                            onChange();
-                        }}
-                    />
-                ))}
+                                });
+                                setCurrent(next);
+                                onChange(next);
+                            }}
+                        />
+                    ) : null,
+                )}
             </div>
         </fieldset>
     );
@@ -104,18 +110,18 @@ const FLAG_STATES = { true: "include", false: "exclude", all: undefined } as con
  * A yes/no filter (`all`, `true`, `false`) as one tri-state toggle: included lists only the gems
  * with the flag, excluded only those without it.
  */
-function FlagToggle({
+export function FlagToggle({
     name,
     legend,
     label,
     value,
     onChange,
 }: {
-    name: "corruption" | "gemTransfigured" | "gemVaal";
+    name: "corruption" | "identification" | "gemTransfigured" | "gemVaal";
     legend: string;
     label: string;
     value: keyof typeof FLAG_STATES;
-    onChange: () => void;
+    onChange: (value: keyof typeof FLAG_STATES) => void;
 }) {
     const [current, setCurrent] = useState(value);
     useEffect(() => setCurrent(value), [value]);
@@ -128,10 +134,10 @@ function FlagToggle({
                     label={label}
                     state={FLAG_STATES[current]}
                     onChange={(state) => {
-                        setCurrent(
-                            state === "include" ? "true" : state === "exclude" ? "false" : "all",
-                        );
-                        onChange();
+                        const next =
+                            state === "include" ? "true" : state === "exclude" ? "false" : "all";
+                        setCurrent(next);
+                        onChange(next);
                     }}
                 />
             </div>
