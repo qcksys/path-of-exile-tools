@@ -106,13 +106,6 @@ CREATE TABLE `qsPoeBoats__idol_planner_placement` (
 	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE `qsPoeBoats__idol_planner_price_cache` (
-	`league` varchar(100) PRIMARY KEY,
-	`prices` json,
-	`rowCreatedAt` datetime NOT NULL DEFAULT (now()),
-	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
-);
---> statement-breakpoint
 CREATE TABLE `qsPoeBoats__idol_planner_set` (
 	`id` varchar(36) PRIMARY KEY,
 	`userId` varchar(36) NOT NULL,
@@ -293,39 +286,40 @@ CREATE TABLE `qsPoeBoats__stash_poe2_currency_daily` (
 	CONSTRAINT PRIMARY KEY(`realm`,`league`,`day`,`marketId`)
 );
 --> statement-breakpoint
-CREATE TABLE `qsPoeBoats__stash_poe1_currency_hourly` (
-	`realm` varchar(10) NOT NULL,
-	`league` varchar(100) NOT NULL,
-	`marketId` varchar(512) NOT NULL,
-	`hour` bigint NOT NULL,
-	`lowestRatio` json,
-	`highestRatio` json,
-	`volumeTraded` json,
-	`lowestStock` json,
-	`highestStock` json,
-	`rowCreatedAt` datetime NOT NULL DEFAULT (now()),
-	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
-	`rowDeletedAt` datetime,
-	CONSTRAINT PRIMARY KEY(`realm`,`league`,`marketId`,`hour`)
+CREATE TABLE `qsPoeBoats__stash_poe1_currency_hour` (
+	`hour` int unsigned NOT NULL,
+	`marketId` int unsigned NOT NULL,
+	`lowestRatioFirst` double NOT NULL,
+	`lowestRatioSecond` double NOT NULL,
+	`highestRatioFirst` double NOT NULL,
+	`highestRatioSecond` double NOT NULL,
+	`volumeTradedFirst` double NOT NULL,
+	`volumeTradedSecond` double NOT NULL,
+	`lowestStockFirst` double NOT NULL,
+	`lowestStockSecond` double NOT NULL,
+	`highestStockFirst` double NOT NULL,
+	`highestStockSecond` double NOT NULL,
+	CONSTRAINT PRIMARY KEY(`hour`,`marketId`)
 );
 --> statement-breakpoint
-CREATE TABLE `qsPoeBoats__stash_poe2_currency_hourly` (
-	`realm` varchar(10) NOT NULL,
-	`league` varchar(100) NOT NULL,
-	`marketId` varchar(512) NOT NULL,
-	`hour` bigint NOT NULL,
-	`lowestRatio` json,
-	`highestRatio` json,
-	`volumeTraded` json,
-	`lowestStock` json,
-	`highestStock` json,
-	`rowCreatedAt` datetime NOT NULL DEFAULT (now()),
-	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
-	`rowDeletedAt` datetime,
-	CONSTRAINT PRIMARY KEY(`realm`,`league`,`marketId`,`hour`)
+CREATE TABLE `qsPoeBoats__stash_poe2_currency_hour` (
+	`hour` int unsigned NOT NULL,
+	`marketId` int unsigned NOT NULL,
+	`lowestRatioFirst` double NOT NULL,
+	`lowestRatioSecond` double NOT NULL,
+	`highestRatioFirst` double NOT NULL,
+	`highestRatioSecond` double NOT NULL,
+	`volumeTradedFirst` double NOT NULL,
+	`volumeTradedSecond` double NOT NULL,
+	`lowestStockFirst` double NOT NULL,
+	`lowestStockSecond` double NOT NULL,
+	`highestStockFirst` double NOT NULL,
+	`highestStockSecond` double NOT NULL,
+	CONSTRAINT PRIMARY KEY(`hour`,`marketId`)
 );
 --> statement-breakpoint
 CREATE TABLE `qsPoeBoats__stash_poe1_currency_market` (
+	`id` int unsigned AUTO_INCREMENT NOT NULL,
 	`realm` varchar(10) NOT NULL,
 	`league` varchar(100) NOT NULL,
 	`marketId` varchar(512) NOT NULL,
@@ -333,10 +327,12 @@ CREATE TABLE `qsPoeBoats__stash_poe1_currency_market` (
 	`rowCreatedAt` datetime NOT NULL DEFAULT (now()),
 	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	`rowDeletedAt` datetime,
-	CONSTRAINT PRIMARY KEY(`realm`,`league`,`marketId`)
+	CONSTRAINT PRIMARY KEY(`realm`,`league`,`marketId`),
+	CONSTRAINT `stash_currency_market_id_idx` UNIQUE INDEX(`id`)
 );
 --> statement-breakpoint
 CREATE TABLE `qsPoeBoats__stash_poe2_currency_market` (
+	`id` int unsigned AUTO_INCREMENT NOT NULL,
 	`realm` varchar(10) NOT NULL,
 	`league` varchar(100) NOT NULL,
 	`marketId` varchar(512) NOT NULL,
@@ -344,7 +340,8 @@ CREATE TABLE `qsPoeBoats__stash_poe2_currency_market` (
 	`rowCreatedAt` datetime NOT NULL DEFAULT (now()),
 	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	`rowDeletedAt` datetime,
-	CONSTRAINT PRIMARY KEY(`realm`,`league`,`marketId`)
+	CONSTRAINT PRIMARY KEY(`realm`,`league`,`marketId`),
+	CONSTRAINT `stash_currency_market_id_idx` UNIQUE INDEX(`id`)
 );
 --> statement-breakpoint
 CREATE TABLE `qsPoeBoats__stash_poe1_hour_coverage` (
@@ -371,6 +368,38 @@ CREATE TABLE `qsPoeBoats__stash_poe2_hour_coverage` (
 	CONSTRAINT PRIMARY KEY(`stream`,`realm`,`league`,`hour`)
 );
 --> statement-breakpoint
+CREATE TABLE `qsPoeBoats__stash_poe1_league` (
+	`realm` varchar(10) NOT NULL,
+	`league` varchar(100) NOT NULL,
+	`category` varchar(100),
+	`rules` json NOT NULL,
+	`startAt` bigint,
+	`endAt` bigint,
+	`firstListedAt` bigint NOT NULL,
+	`lastListedAt` bigint NOT NULL,
+	`endedAt` bigint,
+	`rowCreatedAt` datetime NOT NULL DEFAULT (now()),
+	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	`rowDeletedAt` datetime,
+	CONSTRAINT PRIMARY KEY(`realm`,`league`)
+);
+--> statement-breakpoint
+CREATE TABLE `qsPoeBoats__stash_poe2_league` (
+	`realm` varchar(10) NOT NULL,
+	`league` varchar(100) NOT NULL,
+	`category` varchar(100),
+	`rules` json NOT NULL,
+	`startAt` bigint,
+	`endAt` bigint,
+	`firstListedAt` bigint NOT NULL,
+	`lastListedAt` bigint NOT NULL,
+	`endedAt` bigint,
+	`rowCreatedAt` datetime NOT NULL DEFAULT (now()),
+	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	`rowDeletedAt` datetime,
+	CONSTRAINT PRIMARY KEY(`realm`,`league`)
+);
+--> statement-breakpoint
 CREATE TABLE `qsPoeBoats__stash_poe1_market_daily` (
 	`realm` varchar(10) NOT NULL,
 	`league` varchar(100) NOT NULL,
@@ -378,7 +407,7 @@ CREATE TABLE `qsPoeBoats__stash_poe1_market_daily` (
 	`itemKey` varchar(255) NOT NULL,
 	`identified` boolean NOT NULL,
 	`corrupted` boolean NOT NULL,
-	`foilVariation` int NOT NULL,
+	`tab` varchar(8) NOT NULL DEFAULT '',
 	`signatureKind` varchar(32) NOT NULL,
 	`signatureValue` varchar(255) NOT NULL,
 	`name` varchar(100),
@@ -392,7 +421,7 @@ CREATE TABLE `qsPoeBoats__stash_poe1_market_daily` (
 	`rowCreatedAt` datetime NOT NULL DEFAULT (now()),
 	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	`rowDeletedAt` datetime,
-	CONSTRAINT PRIMARY KEY(`realm`,`league`,`day`,`itemKey`,`identified`,`corrupted`,`foilVariation`,`signatureKind`,`signatureValue`)
+	CONSTRAINT PRIMARY KEY(`realm`,`league`,`day`,`itemKey`,`identified`,`corrupted`,`tab`,`signatureKind`,`signatureValue`)
 );
 --> statement-breakpoint
 CREATE TABLE `qsPoeBoats__stash_poe2_market_daily` (
@@ -402,7 +431,7 @@ CREATE TABLE `qsPoeBoats__stash_poe2_market_daily` (
 	`itemKey` varchar(255) NOT NULL,
 	`identified` boolean NOT NULL,
 	`corrupted` boolean NOT NULL,
-	`foilVariation` int NOT NULL,
+	`tab` varchar(8) NOT NULL DEFAULT '',
 	`signatureKind` varchar(32) NOT NULL,
 	`signatureValue` varchar(255) NOT NULL,
 	`name` varchar(100),
@@ -416,71 +445,83 @@ CREATE TABLE `qsPoeBoats__stash_poe2_market_daily` (
 	`rowCreatedAt` datetime NOT NULL DEFAULT (now()),
 	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	`rowDeletedAt` datetime,
-	CONSTRAINT PRIMARY KEY(`realm`,`league`,`day`,`itemKey`,`identified`,`corrupted`,`foilVariation`,`signatureKind`,`signatureValue`)
+	CONSTRAINT PRIMARY KEY(`realm`,`league`,`day`,`itemKey`,`identified`,`corrupted`,`tab`,`signatureKind`,`signatureValue`)
 );
 --> statement-breakpoint
-CREATE TABLE `qsPoeBoats__stash_poe1_unique_hourly` (
+CREATE TABLE `qsPoeBoats__stash_poe1_market` (
+	`id` int unsigned AUTO_INCREMENT PRIMARY KEY,
+	`identityHash` char(32) NOT NULL,
 	`realm` varchar(10) NOT NULL,
 	`league` varchar(100) NOT NULL,
-	`hour` bigint NOT NULL,
 	`itemKey` varchar(255) NOT NULL,
 	`identified` boolean NOT NULL,
 	`corrupted` boolean NOT NULL DEFAULT false,
-	`foilVariation` int NOT NULL DEFAULT -1,
 	`links` tinyint NOT NULL DEFAULT 0,
+	`tab` varchar(8) NOT NULL DEFAULT '',
 	`signatureKind` varchar(32) NOT NULL DEFAULT '',
 	`signatureValue` varchar(255) NOT NULL DEFAULT '',
 	`iconAsset` varchar(255),
 	`name` varchar(100),
 	`baseType` varchar(100) NOT NULL,
 	`frameType` int NOT NULL,
+	`signatureData` json,
+	CONSTRAINT `stash_market_identity_idx` UNIQUE INDEX(`identityHash`)
+);
+--> statement-breakpoint
+CREATE TABLE `qsPoeBoats__stash_poe1_market_hour` (
+	`hour` int unsigned NOT NULL,
+	`marketId` int unsigned NOT NULL,
 	`listingCount` int NOT NULL,
 	`uniqueSellers` int NOT NULL,
+	`newCount` int,
+	`soldAgeSeconds` int unsigned,
 	`removedCount` int NOT NULL DEFAULT 0,
 	`likelySales` int NOT NULL DEFAULT 0,
 	`relistedCount` int NOT NULL DEFAULT 0,
 	`pendingCount` int NOT NULL DEFAULT 0,
 	`salesPrices` json,
 	`prices` json,
-	`signatureData` json,
 	`firstSeenAt` varchar(32) NOT NULL,
 	`lastSeenAt` varchar(32) NOT NULL,
-	`rowCreatedAt` datetime NOT NULL DEFAULT (now()),
-	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
-	`rowDeletedAt` datetime,
-	CONSTRAINT PRIMARY KEY(`realm`,`league`,`hour`,`itemKey`,`identified`,`corrupted`,`foilVariation`,`links`,`signatureKind`,`signatureValue`)
+	CONSTRAINT PRIMARY KEY(`hour`,`marketId`)
 );
 --> statement-breakpoint
-CREATE TABLE `qsPoeBoats__stash_poe2_unique_hourly` (
+CREATE TABLE `qsPoeBoats__stash_poe2_market` (
+	`id` int unsigned AUTO_INCREMENT PRIMARY KEY,
+	`identityHash` char(32) NOT NULL,
 	`realm` varchar(10) NOT NULL,
 	`league` varchar(100) NOT NULL,
-	`hour` bigint NOT NULL,
 	`itemKey` varchar(255) NOT NULL,
 	`identified` boolean NOT NULL,
 	`corrupted` boolean NOT NULL DEFAULT false,
-	`foilVariation` int NOT NULL DEFAULT -1,
 	`links` tinyint NOT NULL DEFAULT 0,
+	`tab` varchar(8) NOT NULL DEFAULT '',
 	`signatureKind` varchar(32) NOT NULL DEFAULT '',
 	`signatureValue` varchar(255) NOT NULL DEFAULT '',
 	`iconAsset` varchar(255),
 	`name` varchar(100),
 	`baseType` varchar(100) NOT NULL,
 	`frameType` int NOT NULL,
+	`signatureData` json,
+	CONSTRAINT `stash_market_identity_idx` UNIQUE INDEX(`identityHash`)
+);
+--> statement-breakpoint
+CREATE TABLE `qsPoeBoats__stash_poe2_market_hour` (
+	`hour` int unsigned NOT NULL,
+	`marketId` int unsigned NOT NULL,
 	`listingCount` int NOT NULL,
 	`uniqueSellers` int NOT NULL,
+	`newCount` int,
+	`soldAgeSeconds` int unsigned,
 	`removedCount` int NOT NULL DEFAULT 0,
 	`likelySales` int NOT NULL DEFAULT 0,
 	`relistedCount` int NOT NULL DEFAULT 0,
 	`pendingCount` int NOT NULL DEFAULT 0,
 	`salesPrices` json,
 	`prices` json,
-	`signatureData` json,
 	`firstSeenAt` varchar(32) NOT NULL,
 	`lastSeenAt` varchar(32) NOT NULL,
-	`rowCreatedAt` datetime NOT NULL DEFAULT (now()),
-	`rowUpdatedAt` datetime NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
-	`rowDeletedAt` datetime,
-	CONSTRAINT PRIMARY KEY(`realm`,`league`,`hour`,`itemKey`,`identified`,`corrupted`,`foilVariation`,`links`,`signatureKind`,`signatureValue`)
+	CONSTRAINT PRIMARY KEY(`hour`,`marketId`)
 );
 --> statement-breakpoint
 CREATE INDEX `account_userId_idx` ON `qsPoeBoats__auth_account` (`userId`);--> statement-breakpoint
@@ -498,17 +539,15 @@ CREATE INDEX `stash_cohort_history_idx` ON `qsPoeBoats__stash_poe1_cohort_hourly
 CREATE INDEX `stash_cohort_base_page_idx` ON `qsPoeBoats__stash_poe1_cohort` (`baseTypeKey`,`id`);--> statement-breakpoint
 CREATE INDEX `stash_currency_daily_market_idx` ON `qsPoeBoats__stash_poe1_currency_daily` (`realm`,`league`,`marketId`,`day`);--> statement-breakpoint
 CREATE INDEX `stash_currency_daily_market_idx` ON `qsPoeBoats__stash_poe2_currency_daily` (`realm`,`league`,`marketId`,`day`);--> statement-breakpoint
-CREATE INDEX `stash_currency_coverage_idx` ON `qsPoeBoats__stash_poe1_currency_hourly` (`realm`,`league`,`hour`);--> statement-breakpoint
-CREATE INDEX `stash_currency_coverage_idx` ON `qsPoeBoats__stash_poe2_currency_hourly` (`realm`,`league`,`hour`);--> statement-breakpoint
+CREATE INDEX `stash_currency_hour_market_idx` ON `qsPoeBoats__stash_poe1_currency_hour` (`marketId`,`hour`);--> statement-breakpoint
+CREATE INDEX `stash_currency_hour_market_idx` ON `qsPoeBoats__stash_poe2_currency_hour` (`marketId`,`hour`);--> statement-breakpoint
 CREATE INDEX `stash_market_daily_base_idx` ON `qsPoeBoats__stash_poe1_market_daily` (`realm`,`league`,`baseType`,`day`,`frameType`,`likelySales`,`removedCount`,`pendingCount`,`latestHour`,`listedHour`);--> statement-breakpoint
 CREATE INDEX `stash_market_daily_base_idx` ON `qsPoeBoats__stash_poe2_market_daily` (`realm`,`league`,`baseType`,`day`,`frameType`,`likelySales`,`removedCount`,`pendingCount`,`latestHour`,`listedHour`);--> statement-breakpoint
-CREATE INDEX `idx_stash_unique_league_hour` ON `qsPoeBoats__stash_poe1_unique_hourly` (`league`,`hour`);--> statement-breakpoint
-CREATE INDEX `idx_stash_unique_item` ON `qsPoeBoats__stash_poe1_unique_hourly` (`league`,`itemKey`);--> statement-breakpoint
-CREATE INDEX `idx_stash_unique_sig` ON `qsPoeBoats__stash_poe1_unique_hourly` (`signatureKind`,`signatureValue`);--> statement-breakpoint
-CREATE INDEX `idx_stash_unique_icon` ON `qsPoeBoats__stash_poe1_unique_hourly` (`iconAsset`);--> statement-breakpoint
-CREATE INDEX `stash_unique_market_cover_idx` ON `qsPoeBoats__stash_poe1_unique_hourly` (`realm`,`league`,`hour`,`listingCount`,`likelySales`,`removedCount`,`pendingCount`,`baseType`,`frameType`);--> statement-breakpoint
-CREATE INDEX `idx_stash_unique_league_hour` ON `qsPoeBoats__stash_poe2_unique_hourly` (`league`,`hour`);--> statement-breakpoint
-CREATE INDEX `idx_stash_unique_item` ON `qsPoeBoats__stash_poe2_unique_hourly` (`league`,`itemKey`);--> statement-breakpoint
-CREATE INDEX `idx_stash_unique_sig` ON `qsPoeBoats__stash_poe2_unique_hourly` (`signatureKind`,`signatureValue`);--> statement-breakpoint
-CREATE INDEX `idx_stash_unique_icon` ON `qsPoeBoats__stash_poe2_unique_hourly` (`iconAsset`);--> statement-breakpoint
-CREATE INDEX `stash_unique_market_cover_idx` ON `qsPoeBoats__stash_poe2_unique_hourly` (`realm`,`league`,`hour`,`listingCount`,`likelySales`,`removedCount`,`pendingCount`,`baseType`,`frameType`);
+CREATE INDEX `stash_market_item_idx` ON `qsPoeBoats__stash_poe1_market` (`realm`,`league`,`itemKey`);--> statement-breakpoint
+CREATE INDEX `stash_market_hour_market_idx` ON `qsPoeBoats__stash_poe1_market_hour` (`marketId`,`hour`);--> statement-breakpoint
+CREATE INDEX `stash_market_item_idx` ON `qsPoeBoats__stash_poe2_market` (`realm`,`league`,`itemKey`);--> statement-breakpoint
+CREATE INDEX `stash_market_hour_market_idx` ON `qsPoeBoats__stash_poe2_market_hour` (`marketId`,`hour`);--> statement-breakpoint
+CREATE ALGORITHM = undefined SQL SECURITY definer VIEW `qsPoeBoats__stash_poe1_currency_hourly` AS (select `qsPoeBoats__stash_poe1_currency_market`.`realm`, `qsPoeBoats__stash_poe1_currency_market`.`league`, `qsPoeBoats__stash_poe1_currency_market`.`marketId`, `qsPoeBoats__stash_poe1_currency_hour`.`hour`, json_object(substring_index(`qsPoeBoats__stash_poe1_currency_market`.`marketId`, '|', 1), `qsPoeBoats__stash_poe1_currency_hour`.`lowestRatioFirst`, substring_index(`qsPoeBoats__stash_poe1_currency_market`.`marketId`, '|', -1), `qsPoeBoats__stash_poe1_currency_hour`.`lowestRatioSecond`) as `lowestRatio`, json_object(substring_index(`qsPoeBoats__stash_poe1_currency_market`.`marketId`, '|', 1), `qsPoeBoats__stash_poe1_currency_hour`.`highestRatioFirst`, substring_index(`qsPoeBoats__stash_poe1_currency_market`.`marketId`, '|', -1), `qsPoeBoats__stash_poe1_currency_hour`.`highestRatioSecond`) as `highestRatio`, json_object(substring_index(`qsPoeBoats__stash_poe1_currency_market`.`marketId`, '|', 1), `qsPoeBoats__stash_poe1_currency_hour`.`volumeTradedFirst`, substring_index(`qsPoeBoats__stash_poe1_currency_market`.`marketId`, '|', -1), `qsPoeBoats__stash_poe1_currency_hour`.`volumeTradedSecond`) as `volumeTraded`, json_object(substring_index(`qsPoeBoats__stash_poe1_currency_market`.`marketId`, '|', 1), `qsPoeBoats__stash_poe1_currency_hour`.`lowestStockFirst`, substring_index(`qsPoeBoats__stash_poe1_currency_market`.`marketId`, '|', -1), `qsPoeBoats__stash_poe1_currency_hour`.`lowestStockSecond`) as `lowestStock`, json_object(substring_index(`qsPoeBoats__stash_poe1_currency_market`.`marketId`, '|', 1), `qsPoeBoats__stash_poe1_currency_hour`.`highestStockFirst`, substring_index(`qsPoeBoats__stash_poe1_currency_market`.`marketId`, '|', -1), `qsPoeBoats__stash_poe1_currency_hour`.`highestStockSecond`) as `highestStock`, `qsPoeBoats__stash_poe1_currency_hour`.`volumeTradedFirst`, `qsPoeBoats__stash_poe1_currency_hour`.`volumeTradedSecond` from `qsPoeBoats__stash_poe1_currency_hour` inner join `qsPoeBoats__stash_poe1_currency_market` on `qsPoeBoats__stash_poe1_currency_market`.`id` = `qsPoeBoats__stash_poe1_currency_hour`.`marketId`);--> statement-breakpoint
+CREATE ALGORITHM = undefined SQL SECURITY definer VIEW `qsPoeBoats__stash_poe2_currency_hourly` AS (select `qsPoeBoats__stash_poe2_currency_market`.`realm`, `qsPoeBoats__stash_poe2_currency_market`.`league`, `qsPoeBoats__stash_poe2_currency_market`.`marketId`, `qsPoeBoats__stash_poe2_currency_hour`.`hour`, json_object(substring_index(`qsPoeBoats__stash_poe2_currency_market`.`marketId`, '|', 1), `qsPoeBoats__stash_poe2_currency_hour`.`lowestRatioFirst`, substring_index(`qsPoeBoats__stash_poe2_currency_market`.`marketId`, '|', -1), `qsPoeBoats__stash_poe2_currency_hour`.`lowestRatioSecond`) as `lowestRatio`, json_object(substring_index(`qsPoeBoats__stash_poe2_currency_market`.`marketId`, '|', 1), `qsPoeBoats__stash_poe2_currency_hour`.`highestRatioFirst`, substring_index(`qsPoeBoats__stash_poe2_currency_market`.`marketId`, '|', -1), `qsPoeBoats__stash_poe2_currency_hour`.`highestRatioSecond`) as `highestRatio`, json_object(substring_index(`qsPoeBoats__stash_poe2_currency_market`.`marketId`, '|', 1), `qsPoeBoats__stash_poe2_currency_hour`.`volumeTradedFirst`, substring_index(`qsPoeBoats__stash_poe2_currency_market`.`marketId`, '|', -1), `qsPoeBoats__stash_poe2_currency_hour`.`volumeTradedSecond`) as `volumeTraded`, json_object(substring_index(`qsPoeBoats__stash_poe2_currency_market`.`marketId`, '|', 1), `qsPoeBoats__stash_poe2_currency_hour`.`lowestStockFirst`, substring_index(`qsPoeBoats__stash_poe2_currency_market`.`marketId`, '|', -1), `qsPoeBoats__stash_poe2_currency_hour`.`lowestStockSecond`) as `lowestStock`, json_object(substring_index(`qsPoeBoats__stash_poe2_currency_market`.`marketId`, '|', 1), `qsPoeBoats__stash_poe2_currency_hour`.`highestStockFirst`, substring_index(`qsPoeBoats__stash_poe2_currency_market`.`marketId`, '|', -1), `qsPoeBoats__stash_poe2_currency_hour`.`highestStockSecond`) as `highestStock`, `qsPoeBoats__stash_poe2_currency_hour`.`volumeTradedFirst`, `qsPoeBoats__stash_poe2_currency_hour`.`volumeTradedSecond` from `qsPoeBoats__stash_poe2_currency_hour` inner join `qsPoeBoats__stash_poe2_currency_market` on `qsPoeBoats__stash_poe2_currency_market`.`id` = `qsPoeBoats__stash_poe2_currency_hour`.`marketId`);--> statement-breakpoint
+CREATE ALGORITHM = undefined SQL SECURITY definer VIEW `qsPoeBoats__stash_poe1_unique_hourly` AS (select `qsPoeBoats__stash_poe1_market`.`realm`, `qsPoeBoats__stash_poe1_market`.`league`, `qsPoeBoats__stash_poe1_market_hour`.`hour`, `qsPoeBoats__stash_poe1_market`.`itemKey`, `qsPoeBoats__stash_poe1_market`.`identified`, `qsPoeBoats__stash_poe1_market`.`corrupted`, `qsPoeBoats__stash_poe1_market`.`links`, `qsPoeBoats__stash_poe1_market`.`tab`, `qsPoeBoats__stash_poe1_market`.`signatureKind`, `qsPoeBoats__stash_poe1_market`.`signatureValue`, `qsPoeBoats__stash_poe1_market`.`iconAsset`, `qsPoeBoats__stash_poe1_market`.`name`, `qsPoeBoats__stash_poe1_market`.`baseType`, `qsPoeBoats__stash_poe1_market`.`frameType`, `qsPoeBoats__stash_poe1_market_hour`.`listingCount`, `qsPoeBoats__stash_poe1_market_hour`.`uniqueSellers`, `qsPoeBoats__stash_poe1_market_hour`.`newCount`, `qsPoeBoats__stash_poe1_market_hour`.`soldAgeSeconds`, `qsPoeBoats__stash_poe1_market_hour`.`removedCount`, `qsPoeBoats__stash_poe1_market_hour`.`likelySales`, `qsPoeBoats__stash_poe1_market_hour`.`relistedCount`, `qsPoeBoats__stash_poe1_market_hour`.`pendingCount`, `qsPoeBoats__stash_poe1_market_hour`.`salesPrices`, `qsPoeBoats__stash_poe1_market_hour`.`prices`, `qsPoeBoats__stash_poe1_market`.`signatureData`, `qsPoeBoats__stash_poe1_market_hour`.`firstSeenAt`, `qsPoeBoats__stash_poe1_market_hour`.`lastSeenAt` from `qsPoeBoats__stash_poe1_market_hour` inner join `qsPoeBoats__stash_poe1_market` on `qsPoeBoats__stash_poe1_market`.`id` = `qsPoeBoats__stash_poe1_market_hour`.`marketId`);--> statement-breakpoint
+CREATE ALGORITHM = undefined SQL SECURITY definer VIEW `qsPoeBoats__stash_poe2_unique_hourly` AS (select `qsPoeBoats__stash_poe2_market`.`realm`, `qsPoeBoats__stash_poe2_market`.`league`, `qsPoeBoats__stash_poe2_market_hour`.`hour`, `qsPoeBoats__stash_poe2_market`.`itemKey`, `qsPoeBoats__stash_poe2_market`.`identified`, `qsPoeBoats__stash_poe2_market`.`corrupted`, `qsPoeBoats__stash_poe2_market`.`links`, `qsPoeBoats__stash_poe2_market`.`tab`, `qsPoeBoats__stash_poe2_market`.`signatureKind`, `qsPoeBoats__stash_poe2_market`.`signatureValue`, `qsPoeBoats__stash_poe2_market`.`iconAsset`, `qsPoeBoats__stash_poe2_market`.`name`, `qsPoeBoats__stash_poe2_market`.`baseType`, `qsPoeBoats__stash_poe2_market`.`frameType`, `qsPoeBoats__stash_poe2_market_hour`.`listingCount`, `qsPoeBoats__stash_poe2_market_hour`.`uniqueSellers`, `qsPoeBoats__stash_poe2_market_hour`.`newCount`, `qsPoeBoats__stash_poe2_market_hour`.`soldAgeSeconds`, `qsPoeBoats__stash_poe2_market_hour`.`removedCount`, `qsPoeBoats__stash_poe2_market_hour`.`likelySales`, `qsPoeBoats__stash_poe2_market_hour`.`relistedCount`, `qsPoeBoats__stash_poe2_market_hour`.`pendingCount`, `qsPoeBoats__stash_poe2_market_hour`.`salesPrices`, `qsPoeBoats__stash_poe2_market_hour`.`prices`, `qsPoeBoats__stash_poe2_market`.`signatureData`, `qsPoeBoats__stash_poe2_market_hour`.`firstSeenAt`, `qsPoeBoats__stash_poe2_market_hour`.`lastSeenAt` from `qsPoeBoats__stash_poe2_market_hour` inner join `qsPoeBoats__stash_poe2_market` on `qsPoeBoats__stash_poe2_market`.`id` = `qsPoeBoats__stash_poe2_market_hour`.`marketId`);
