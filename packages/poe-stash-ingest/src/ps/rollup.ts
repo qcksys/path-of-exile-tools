@@ -26,6 +26,7 @@ interface AggregateRow {
     identified: boolean;
     listingCount: number;
     uniqueSellers: number;
+    newCount: number;
     pricesJson: string;
     salesPricesJson: string;
     removedCount: number;
@@ -151,6 +152,9 @@ SELECT
     ANY_VALUE(w.identified) AS identified,
     COUNT(*) FILTER (WHERE w.status = 'listing') AS "listingCount",
     COUNT(DISTINCT w.account_name) FILTER (WHERE w.status = 'listing') AS "uniqueSellers",
+    COUNT(*) FILTER (
+        WHERE w.status = 'listing' AND epoch(date_trunc('hour', w.first_seen_at))::BIGINT = w.hour
+    ) AS "newCount",
     COUNT(*) FILTER (WHERE w.status <> 'listing') AS "removedCount",
     COUNT(*) FILTER (WHERE w.status = 'likely-sold') AS "likelySales",
     COUNT(*) FILTER (WHERE w.status = 'relisted') AS "relistedCount",
@@ -214,6 +218,7 @@ export async function rollupPs(
         identified: a.identified,
         listingCount: Number(a.listingCount),
         uniqueSellers: Number(a.uniqueSellers),
+        newCount: Number(a.newCount),
         prices: JSON.parse(a.pricesJson) as UniqueHourlyRow["prices"],
         salesPrices: JSON.parse(a.salesPricesJson) as UniqueHourlyRow["prices"],
         removedCount: Number(a.removedCount),

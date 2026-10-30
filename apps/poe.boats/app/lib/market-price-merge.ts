@@ -217,6 +217,7 @@ export function mergePriceSummaries(
 type MarketRowCounts = {
     listingCount: number;
     uniqueSellers: number;
+    newCount: number | null;
     removedCount: number;
     likelySales: number;
     relistedCount: number;
@@ -245,6 +246,8 @@ export function mergeMarketRows<Row extends MarketRowCounts>(rows: Row[]): Row {
         ...representative,
         listingCount: sum("listingCount"),
         uniqueSellers: sum("uniqueSellers"),
+        // Rows from before new listings were counted leave the merged count unknown.
+        newCount: rows.some((row) => row.newCount === null) ? null : sum("newCount"),
         removedCount: sum("removedCount"),
         likelySales: sum("likelySales"),
         relistedCount: sum("relistedCount"),

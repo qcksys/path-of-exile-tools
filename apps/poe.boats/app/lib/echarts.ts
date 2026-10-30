@@ -1,5 +1,7 @@
 import { BarChart, type BarSeriesOption, LineChart, type LineSeriesOption } from "echarts/charts";
 import {
+    DataZoomComponent,
+    type DataZoomComponentOption,
     GridComponent,
     type GridComponentOption,
     LegendComponent,
@@ -13,11 +15,20 @@ import { SVGRenderer } from "echarts/renderers";
 export type ChartOption = ComposeOption<
     | BarSeriesOption
     | LineSeriesOption
+    | DataZoomComponentOption
     | GridComponentOption
     | LegendComponentOption
     | TooltipComponentOption
 >;
 
-use([BarChart, LineChart, GridComponent, LegendComponent, TooltipComponent, SVGRenderer]);
+use([
+    BarChart,
+    LineChart,
+    DataZoomComponent,
+    GridComponent,
+    LegendComponent,
+    TooltipComponent,
+    SVGRenderer,
+]);
 
 export { init };

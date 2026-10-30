@@ -17,6 +17,28 @@ function tokenColor(style: CSSStyleDeclaration, name: string) {
     return `rgba(${red},${green},${blue},${alpha! / 255})`;
 }
 
+/**
+ * Replaces each `var(--token)` colour in an option with `color(token)`, so options can name the
+ * app's tokens.
+ */
+export function resolveTokens<T>(value: T, color: (token: string) => string): T {
+    if (typeof value === "string") {
+        const token = /^var\((--[\w-]+)\)$/.exec(value)?.[1];
+        return (token ? color(token) : value) as T;
+    }
+    if (Array.isArray(value)) return value.map((item) => resolveTokens(item, color)) as T;
+    if (value && Object.getPrototypeOf(value) === Object.prototype)
+        return Object.fromEntries(
+            Object.entries(value).map(([key, item]) => [key, resolveTokens(item, color)]),
+        ) as T;
+    return value;
+}
+
+function resolvedOption(option: ChartOption, element: HTMLElement) {
+    const style = getComputedStyle(element);
+    return resolveTokens(option, (token) => tokenColor(style, token));
+}
+
 function chartTheme(element: HTMLElement) {
     const style = getComputedStyle(element);
     const muted = tokenColor(style, "--muted-foreground");
@@ -61,7 +83,7 @@ export function EChart({
     const latest = useRef(option);
     useEffect(() => {
         latest.current = option;
-        chart.current?.setOption(option, { notMerge: true });
+        chart.current?.setOption(resolvedOption(option, container.current!), { notMerge: true });
     }, [option]);
     useEffect(() => {
         const element = container.current!;
@@ -70,7 +92,7 @@ export function EChart({
         const start = () => {
             chart.current?.dispose();
             chart.current = echarts!.init(element, chartTheme(element), { renderer: "svg" });
-            chart.current.setOption(latest.current);
+            chart.current.setOption(resolvedOption(latest.current, element));
         };
         void import("~/lib/echarts").then((loaded) => {
             if (!active) return;

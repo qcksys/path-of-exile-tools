@@ -118,6 +118,7 @@ describe("merging foil variations", () => {
             name: "Example",
             listingCount,
             uniqueSellers: listingCount,
+            newCount: listingCount,
             removedCount: 1,
             likelySales: 1,
             relistedCount: 0,
@@ -160,6 +161,7 @@ describe("merging foil variations", () => {
             name: "Most",
             listingCount: 4,
             uniqueSellers: 4,
+            newCount: 4,
             removedCount: 3,
             likelySales: 3,
             pendingCount: 6,
@@ -168,6 +170,12 @@ describe("merging foil variations", () => {
             salesPrices: { chaos: { count: 1, median: 25 } },
         });
         expect(merged.prices!.chaos).toMatchObject({ count: 4, min: 20, median: 20, max: 100 });
+    });
+
+    it("leaves new listings unknown when any row predates counting them", () => {
+        expect(
+            mergeMarketRows([row(2, null), row(3, null, { newCount: null })]).newCount,
+        ).toBeNull();
     });
 
     it("returns a lone row unchanged", () => {
