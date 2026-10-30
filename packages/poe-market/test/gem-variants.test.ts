@@ -101,6 +101,21 @@ describe("gem band filters", () => {
         ]);
     });
 
+    it("maps the under and over max bands to each tier's own levels", () => {
+        expect(gemVariantValues({ gemLevel: "1-19", gemQuality: "20" })).toEqual([
+            "Level 1–19 · Quality 20%",
+            "Level 1–2 · Quality 20%",
+            "Level 1–3 · Quality 20%",
+            "Level 1–4 · Quality 20%",
+        ]);
+        expect(gemVariantValues({ gemLevel: "21", gemQuality: "20" })).toEqual([
+            "Level 21 · Quality 20%",
+            "Level 4 · Quality 20%",
+            "Level 5 · Quality 20%",
+            "Level 6 · Quality 20%",
+        ]);
+    });
+
     it("allows every band but the excluded ones when nothing is included", () => {
         const values = gemVariantValues({ gemLevel: "-21", gemQuality: "-0-19,-21-23" });
         expect(values).toEqual([

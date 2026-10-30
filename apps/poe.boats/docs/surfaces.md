@@ -174,7 +174,8 @@ the Exceptional gem tag, 1–3, 4, 5 for awakened exceptional gems (Awakened Emp
 Enlighten), and 1–4, 5, 6 for other awakened gems; the max band says `(max)` so the tiers' bands
 never share a value. Quality bands are 0–19%, 20% and 21–23%. Gem
 markets belong to Skill gems whatever their base type. The Skill gems list replaces its corruption
-select with tri-state toggles for each level band, each quality band, corruption, transfigured and
+select with tri-state toggles for each level band (Under Max, Max and Over Max, which match each
+gem against its own tier's levels), each quality band, corruption, transfigured and
 Vaal (include, exclude or neither; `gemTransfigured` and `gemVaal` are `all`, `true` or `false`); `gemLevel` and `gemQuality` hold the bands as `20,-21` (band tokens are a
 normal gem's: `1-19`, `20`, `21` and `0-19`, `20`, `21-23`), and links to other categories drop
 them.

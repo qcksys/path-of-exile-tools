@@ -11,18 +11,16 @@ export type GemLevelBand = (typeof GEM_LEVEL_BANDS)[number];
 export type GemQualityBand = (typeof GEM_QUALITY_BANDS)[number];
 
 export const GEM_TIERS = {
-    normal: { label: "Normal", maxLevel: 20, levels: ["1–19", "20", "21"] },
-    exceptional: { label: "Exceptional", maxLevel: 3, levels: ["1–2", "3", "4"] },
+    normal: { maxLevel: 20, levels: ["1–19", "20", "21"] },
+    exceptional: { maxLevel: 3, levels: ["1–2", "3", "4"] },
     /** Awakened Empower, Enhance and Enlighten. */
-    "awakened-exceptional": {
-        label: "Awakened exceptional",
-        maxLevel: 4,
-        levels: ["1–3", "4", "5"],
-    },
-    awakened: { label: "Awakened", maxLevel: 5, levels: ["1–4", "5", "6"] },
+    "awakened-exceptional": { maxLevel: 4, levels: ["1–3", "4", "5"] },
+    awakened: { maxLevel: 5, levels: ["1–4", "5", "6"] },
 } as const;
 export type GemTier = keyof typeof GEM_TIERS;
 
+/** Each level band relative to the gem's own maximum level, so one filter fits every tier. */
+export const GEM_LEVEL_LABELS = ["Under Max", "Max", "Over Max"] as const;
 export const GEM_QUALITY_LABELS = ["0–19%", "20%", "21–23%"] as const;
 
 /**
