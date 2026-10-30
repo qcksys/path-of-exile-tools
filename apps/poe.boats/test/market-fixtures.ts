@@ -33,6 +33,7 @@ export function marketFixture(
         signatureData: null,
         listingCount: 5,
         uniqueSellers: 4,
+        newCount: 1,
         likelySales: 2,
         removedCount: 2,
         relistedCount: 0,

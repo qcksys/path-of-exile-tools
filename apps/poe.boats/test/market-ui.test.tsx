@@ -3,6 +3,7 @@ import type { TooltipComponentOption } from "echarts/components";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vite-plus/test";
 import { type CostPoint, historyChartOption } from "~/components/crafting/process-cost-history";
+import { resolveTokens } from "~/components/echart";
 import { exchangeDisplays, exchangePriceText } from "~/components/market-exchange";
 import { MarketPriceChart, marketPriceChartOption } from "~/components/market-price-chart";
 import { type ChartOption, init } from "~/lib/echarts";
@@ -37,7 +38,7 @@ function point(
     mergedSales: MergedMarketPrice | null = null,
     priceRates: MarketPriceRates = { chaos: 1 },
 ) {
-    return { hour, merged, mergedSales, priceRates };
+    return { hour, merged, mergedSales, priceRates, listingCount: 1 };
 }
 
 function renderSvg(option: ChartOption) {
@@ -59,10 +60,11 @@ function tooltipValue(option: ChartOption, index: number, value: number | null, 
     return valueFormatter!(value as number, dataIndex);
 }
 
+/** A price chart's numeric axis labels above its count panel, which starts at 70% of the height. */
 function axisLabels(svg: string) {
-    return [...svg.matchAll(/<text[^>]*>([\d.,]+)<\/text>/g)].map(([, label]) =>
-        Number(label!.replaceAll(",", "")),
-    );
+    return [...svg.matchAll(/<text[^>]*translate\([\d.]+ ([\d.]+)\)[^>]*>([\d.,]+)<\/text>/g)]
+        .filter(([, y]) => Number(y) < 260 * 0.66)
+        .map(([, , label]) => Number(label!.replaceAll(",", "")));
 }
 
 const saleMedian = 2;
@@ -297,6 +299,125 @@ describe("market browsing", () => {
         expect(tooltipValue(divine, lowestAsk, 0.025, 2)).toBe(
             "0.025 divine (lowest of 1 listings, median 0.025 divine)",
         );
+    });
+    it("colours likely sales apart from the lowest ask", () => {
+        const option = marketPriceChartOption([point(3600, flat(5), flat(6))], "poe1")!;
+        expect(series(option, lowestAsk).color).toBe("var(--primary)");
+        expect(series(option, saleMedian).color).toBe("var(--chart-2)");
+        // The interquartile band shades in the likely sale's colour.
+        expect(series(option, 1).color).toBe("var(--chart-2)");
+    });
+    it("toggles the interquartile band from the legend as one entry", () => {
+        const option = marketPriceChartOption([point(3600, flat(5), flat(6))], "poe1")!;
+        expect(series(option, 0).name).toBe("Likely sale IQR");
+        expect(series(option, 1).name).toBe("Likely sale IQR");
+        expect((option.legend as { data: unknown[] }).data[2]).toMatchObject({
+            name: "Likely sale IQR",
+            itemStyle: { color: "var(--chart-2)" },
+        });
+    });
+    it("zooms both panels to a date range together", () => {
+        const option = marketPriceChartOption(
+            [point(3600, flat(5)), point(7200, flat(6)), point(10800, flat(7))],
+            "poe1",
+        )!;
+        expect(option.dataZoom).toMatchObject([
+            { type: "inside", xAxisIndex: [0, 1] },
+            { type: "slider", xAxisIndex: [0, 1] },
+        ]);
+        const chart = init(null, null, { renderer: "svg", ssr: true, width: 920, height: 260 });
+        chart.setOption(option);
+        chart.dispatchAction({ type: "dataZoom", start: 50, end: 100 });
+        const extents = (
+            chart.getOption().dataZoom as { startValue: number; endValue: number }[]
+        ).map(({ startValue, endValue }) => [startValue, endValue]);
+        chart.dispose();
+        expect(extents).toEqual([
+            [7200_000, 10800_000],
+            [7200_000, 10800_000],
+        ]);
+    });
+    it("plots total listings, new listings and likely sales per hour under the prices", () => {
+        const option = marketPriceChartOption(
+            [
+                { ...point(3600, flat(5)), listingCount: 40, newCount: null, likelySales: 0 },
+                { ...point(7200, flat(5), flat(6)), listingCount: 42, newCount: 5, likelySales: 3 },
+                // An hour without convertible prices still has counts.
+                { ...point(10800, null), listingCount: 41, newCount: 1, likelySales: 2 },
+                { ...point(18000, flat(5)), listingCount: 30, newCount: 2, likelySales: 0 },
+            ],
+            "poe1",
+        )!;
+        expect(option.legend).toMatchObject({
+            data: [
+                "Lowest ask (chaos)",
+                "Median likely sale (chaos)",
+                expect.objectContaining({ name: "Likely sale IQR" }),
+                "Total listings",
+                "New listings",
+                "Likely sales",
+            ],
+        });
+        const [listings, added, sales] = (option.series as LineSeriesOption[]).slice(4);
+        expect(listings).toMatchObject({
+            type: "line",
+            xAxisIndex: 1,
+            yAxisIndex: 1,
+            data: [
+                [3600_000, 40],
+                [7200_000, 42],
+                [10800_000, 41],
+                [14400_000, null],
+                [18000_000, 30],
+            ],
+        });
+        expect(added).toMatchObject({
+            type: "bar",
+            yAxisIndex: 1,
+            color: "var(--chart-1)",
+            data: [
+                [3600_000, null],
+                [7200_000, 5],
+                [10800_000, 1],
+                [18000_000, 2],
+            ],
+        });
+        // Likely sales have their own axis, so a few sales stay visible beside many listings.
+        expect(sales).toMatchObject({
+            type: "bar",
+            yAxisIndex: 2,
+            color: "var(--chart-2)",
+            data: [
+                [3600_000, 0],
+                [7200_000, 3],
+                [10800_000, 2],
+                [18000_000, 0],
+            ],
+        });
+        expect(tooltipValue(option, 5, null)).toBe("Not recorded");
+        expect(tooltipValue(option, 6, 1200)).toBe("1,200");
+        expect(renderSvg(option)).toContain("<path");
+    });
+    it("leaves out new listings and likely sales a market does not record", () => {
+        const option = marketPriceChartOption(
+            [point(3600, flat(5)), point(7200, flat(6))],
+            "poe1",
+        )!;
+        expect(option.series).toHaveLength(5);
+        expect(option.yAxis).toHaveLength(2);
+        expect((option.legend as { data: string[] }).data).not.toContain("Likely sales");
+    });
+    it("resolves theme token colours anywhere in an option", () => {
+        const option = {
+            legend: { data: ["Ask", { name: "Band", itemStyle: { color: "var(--chart-2)" } }] },
+            series: [{ itemStyle: { color: "var(--chart-1)" }, data: [[1, 2]] }],
+            yAxis: { axisLabel: { formatter: marketNumber, color: "red" } },
+        };
+        expect(resolveTokens(option, (token) => `resolved${token}`)).toEqual({
+            legend: { data: ["Ask", { name: "Band", itemStyle: { color: "resolved--chart-2" } }] },
+            series: [{ itemStyle: { color: "resolved--chart-1" }, data: [[1, 2]] }],
+            yAxis: { axisLabel: { formatter: marketNumber, color: "red" } },
+        });
     });
     it("restates exchange-unit values in each game's price currencies", () => {
         const poe2 = { exalted: 1, chaos: 4, annul: 0.05, divine: 0.0025 };

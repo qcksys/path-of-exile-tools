@@ -12,12 +12,19 @@ import { MARKET_PRICE_CURRENCIES, type MarketPriceRates } from "~/lib/market-pri
 import type { MergedMarketPrice } from "~/schemas/market";
 
 type Game = "poe1" | "poe2";
-/** An hour's merged prices in the game's exchange unit, with its price currency rates. */
+/**
+ * An hour's merged prices in the game's exchange unit, with its price currency rates and counts.
+ * Markets without sale estimates omit `likelySales`; `newCount` is null for hours ingested before
+ * new listings were counted.
+ */
 type Point = {
     hour: number;
     merged: MergedMarketPrice | null;
     mergedSales: MergedMarketPrice | null;
     priceRates: MarketPriceRates;
+    listingCount: number;
+    newCount?: number | null;
+    likelySales?: number;
 };
 type Row = {
     at: number;
@@ -26,6 +33,14 @@ type Row = {
     rates: MarketPriceRates;
 };
 type Format = (value: number) => string;
+
+const ASK_COLOR = "var(--primary)";
+const SALE_COLOR = "var(--chart-2)";
+const NEW_LISTINGS_COLOR = "var(--chart-1)";
+
+function count(value: unknown) {
+    return value === null || value === undefined ? "Not recorded" : marketNumber(Number(value));
+}
 
 function unconverted(price: MergedMarketPrice) {
     return price.unconverted ? `, ${price.unconverted} without an exchange rate` : "";
@@ -81,32 +96,101 @@ export function marketPriceChartOption(
             exchangePriceText(value, row?.rates ?? {}, display, game);
     // Sales are sparse, so sale prices connect across observed hours without a sale.
     const saleRows = rows.filter((row) => row.sales || !row.ask);
+    // Counts cover every observed hour, priced or not; the listings line breaks at gaps too.
+    const countRows: { at: number; point: Point | null }[] = [];
+    let counted = -Infinity;
+    for (const point of points) {
+        if (countRows.length && point.hour - counted > 3600)
+            countRows.push({ at: (counted + 3600) * 1000, point: null });
+        counted = point.hour;
+        countRows.push({ at: point.hour * 1000, point });
+    }
+    const hasNew = points.some((point) => point.newCount !== null && point.newCount !== undefined);
+    const hasSales = points.some((point) => point.likelySales !== undefined);
     const askName = `Lowest ask (${currency})`;
     const saleName = `Median likely sale (${currency})`;
-    // The interquartile band stacks the p75 - p25 width on an invisible p25 line.
+    const iqrName = "Likely sale IQR";
+    const listingsName = "Total listings";
+    const newName = "New listings";
+    const salesName = "Likely sales";
+    // The interquartile band stacks the p75 - p25 width on an invisible p25 line. Both share a
+    // name, so the legend toggles them together.
     const band = {
         type: "line",
+        name: iqrName,
         stack: "interquartile",
         symbol: "none",
         silent: true,
+        color: SALE_COLOR,
         lineStyle: { opacity: 0 },
         tooltip: { show: false },
     } as const;
+    const counts = {
+        xAxisIndex: 1,
+        yAxisIndex: 1,
+        tooltip: { valueFormatter: count },
+    } as const;
+    const time = {
+        type: "time",
+        min: points[0]!.hour * 1000,
+        max: Math.max(points.at(-1)!.hour, points[0]!.hour + 3600) * 1000,
+    } as const;
+    const countAxis = {
+        type: "value",
+        gridIndex: 1,
+        minInterval: 1,
+        splitNumber: 2,
+        axisLabel: { formatter: (value: number) => marketNumber(value) },
+    } as const;
+    // Fixed margins keep the price and count panels' time axes aligned.
+    const sides = { left: 52, right: hasSales ? 44 : 24, outerBoundsMode: "none" } as const;
+    const both = [0, 1];
     return {
         useUTC: true,
-        grid: { left: 8, right: 24, top: 32, bottom: 8, outerBoundsMode: "same" },
-        legend: { data: [askName, saleName] },
+        grid: [
+            { ...sides, top: 32, bottom: "38%" },
+            { ...sides, top: "70%", bottom: 56 },
+        ],
+        legend: {
+            top: 0,
+            data: [
+                askName,
+                saleName,
+                // The band's own lines are invisible, so its legend icon is a shaded swatch.
+                { name: iqrName, icon: "rect", itemStyle: { color: SALE_COLOR, opacity: 0.3 } },
+                listingsName,
+                ...(hasNew ? [newName] : []),
+                ...(hasSales ? [salesName] : []),
+            ],
+        },
         tooltip: { trigger: "axis" },
-        xAxis: {
-            type: "time",
-            min: points[0]!.hour * 1000,
-            max: Math.max(points.at(-1)!.hour, points[0]!.hour + 3600) * 1000,
-        },
-        yAxis: {
-            type: "value",
-            scale: true,
-            axisLabel: { formatter: (value: number) => marketNumber(value) },
-        },
+        axisPointer: { link: [{ xAxisIndex: "all" }] },
+        // The date range: drag the slider's handles, or scroll and drag on the chart.
+        dataZoom: [
+            { type: "inside", xAxisIndex: both },
+            { type: "slider", xAxisIndex: both, height: 20, bottom: 8 },
+        ],
+        xAxis: [
+            { ...time, axisLabel: { show: false } },
+            { ...time, gridIndex: 1 },
+        ],
+        yAxis: [
+            {
+                type: "value",
+                scale: true,
+                axisLabel: { formatter: (value: number) => marketNumber(value) },
+            },
+            countAxis,
+            ...(hasSales
+                ? [
+                      {
+                          ...countAxis,
+                          splitLine: { show: false },
+                          axisLabel: { ...countAxis.axisLabel, color: SALE_COLOR },
+                      },
+                  ]
+                : []),
+        ],
         series: [
             { ...band, data: saleRows.map((row) => [row.at, plot(row, row.sales?.p25)]) },
             {
@@ -121,6 +205,7 @@ export function marketPriceChartOption(
             {
                 type: "line",
                 name: saleName,
+                color: SALE_COLOR,
                 data: saleRows.map((row) => [row.at, plot(row, row.sales?.median)]),
                 symbolSize: 6,
                 lineStyle: { width: 1.5 },
@@ -135,6 +220,7 @@ export function marketPriceChartOption(
             {
                 type: "line",
                 name: askName,
+                color: ASK_COLOR,
                 data: rows.map((row) => [row.at, plot(row, row.ask?.min)]),
                 symbolSize: 5,
                 lineStyle: { width: 2.5 },
@@ -143,6 +229,39 @@ export function marketPriceChartOption(
                         askSummary(rows[dataIndex]?.ask ?? null, format(rows[dataIndex])),
                 },
             },
+            {
+                ...counts,
+                type: "line",
+                name: listingsName,
+                color: ASK_COLOR,
+                symbol: "none",
+                lineStyle: { width: 1.5 },
+                areaStyle: { opacity: 0.1 },
+                data: countRows.map(({ at, point }) => [at, point?.listingCount ?? null]),
+            },
+            ...(hasNew
+                ? [
+                      {
+                          ...counts,
+                          type: "bar",
+                          name: newName,
+                          color: NEW_LISTINGS_COLOR,
+                          data: points.map((point) => [point.hour * 1000, point.newCount ?? null]),
+                      } as const,
+                  ]
+                : []),
+            ...(hasSales
+                ? [
+                      {
+                          ...counts,
+                          type: "bar",
+                          name: salesName,
+                          yAxisIndex: 2,
+                          color: SALE_COLOR,
+                          data: points.map((point) => [point.hour * 1000, point.likelySales ?? 0]),
+                      } as const,
+                  ]
+                : []),
         ],
     };
 }
@@ -165,8 +284,8 @@ export function MarketPriceChart({ points, game }: { points: Point[]; game: Game
     return (
         <EChart
             option={option}
-            label={`Hourly lowest asking price in ${currency} across all listing currencies, with the median likely sale price and its interquartile range shaded. Gaps indicate no observations.`}
-            className="h-64"
+            label={`Hourly lowest asking price in ${currency} across all listing currencies, with the median likely sale price and its interquartile range shaded. Below, total and new listings and likely sales per hour. Gaps indicate no observations.`}
+            className="h-96"
         />
     );
 }

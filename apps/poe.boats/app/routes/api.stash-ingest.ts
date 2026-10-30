@@ -66,6 +66,8 @@ const UNIQUE_ROW_SCHEMA = z.object({
     identified: z.boolean(),
     listingCount: z.number().int().nonnegative(),
     uniqueSellers: z.number().int().nonnegative(),
+    // Ingesters before new listings were counted omit it.
+    newCount: z.number().int().nonnegative().optional(),
     removedCount: z.number().int().nonnegative().optional(),
     likelySales: z.number().int().nonnegative().optional(),
     relistedCount: z.number().int().nonnegative().optional(),

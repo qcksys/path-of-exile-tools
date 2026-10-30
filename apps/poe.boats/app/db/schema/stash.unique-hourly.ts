@@ -104,6 +104,9 @@ export const tStashMarket = { poe1: tStashPoe1Market, poe2: tStashPoe2Market };
 /**
  * Permanent hourly summary of each market's public-stash listings. The key leads with the hour,
  * so each delivered hour appends; `stash_market_hour_market_idx` serves a market's history.
+ *
+ * `newCount` is the listings first seen in the hour; it is null for hours ingested before it was
+ * counted.
  */
 function stashMarketHour(game: StashGame) {
     return mysqlTable(
@@ -113,6 +116,7 @@ function stashMarketHour(game: StashGame) {
             marketId: int({ unsigned: true }).notNull(),
             listingCount: int().notNull(),
             uniqueSellers: int().notNull(),
+            newCount: int(),
             removedCount: int().notNull().default(0),
             likelySales: int().notNull().default(0),
             relistedCount: int().notNull().default(0),
@@ -156,6 +160,7 @@ function stashUniqueHourly(game: StashGame) {
                 frameType: market.frameType,
                 listingCount: hour.listingCount,
                 uniqueSellers: hour.uniqueSellers,
+                newCount: hour.newCount,
                 removedCount: hour.removedCount,
                 likelySales: hour.likelySales,
                 relistedCount: hour.relistedCount,
@@ -203,6 +208,7 @@ export type TStashUniqueHourlyI = Pick<
             | "iconAsset"
             | "name"
             | "signatureData"
+            | "newCount"
             | "removedCount"
             | "likelySales"
             | "relistedCount"

@@ -49,6 +49,8 @@ export interface UniqueHourlyRow {
 
     listingCount: number;
     uniqueSellers: number;
+    /** Listings first seen in this hour. */
+    newCount?: number;
     removedCount?: number;
     likelySales?: number;
     relistedCount?: number;

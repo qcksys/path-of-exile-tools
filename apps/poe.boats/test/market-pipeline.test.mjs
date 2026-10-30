@@ -221,6 +221,19 @@ describe("sale inference", () => {
     });
 });
 
+it("counts listings first seen in the rolled-up hour as new", async () => {
+    await ingest([{ ...stash, items: [item, { ...item, id: "item-old" }] }]);
+    await db.conn.run(`UPDATE ps_listing_hour SET first_seen_at = first_seen_at - INTERVAL 2 HOUR
+        WHERE item_id = 'item-old'`);
+    const network = vi.fn().mockResolvedValue(Response.json({ written: 1 }));
+    vi.stubGlobal("fetch", network);
+    await rollupPs(db.conn, { hour: Math.floor(Date.now() / 3600000) * 3600 });
+    expect(JSON.parse(network.mock.calls[0][1].body).rows[0]).toMatchObject({
+        listingCount: 2,
+        newCount: 1,
+    });
+});
+
 it("leaves the earlier hour of a listing still in the stash but no longer captured", async () => {
     await ingest([stash]);
     // Captured yesterday; the item is still listed but now falls outside the capture policy.

@@ -22,6 +22,7 @@ function withMarketDefaults(row: TStashUniqueHourlyI) {
         iconAsset: row.iconAsset ?? null,
         name: row.name ?? null,
         signatureData: row.signatureData ?? null,
+        newCount: row.newCount ?? null,
     };
 }
 type StashMarketRow = ReturnType<typeof withMarketDefaults>;
@@ -137,6 +138,7 @@ export async function writeStashUniqueHourly(
                 marketId: ids.get(stashMarketIdentityHash(row))!,
                 listingCount: row.listingCount,
                 uniqueSellers: row.uniqueSellers,
+                newCount: row.newCount,
                 removedCount: row.removedCount,
                 likelySales: row.likelySales,
                 relistedCount: row.relistedCount,
@@ -151,6 +153,7 @@ export async function writeStashUniqueHourly(
             set: {
                 listingCount: sql`values(${table.listingCount})`,
                 uniqueSellers: sql`values(${table.uniqueSellers})`,
+                newCount: sql`values(${table.newCount})`,
                 removedCount: sql`values(${table.removedCount})`,
                 likelySales: sql`values(${table.likelySales})`,
                 relistedCount: sql`values(${table.relistedCount})`,
