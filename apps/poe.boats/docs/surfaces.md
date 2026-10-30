@@ -198,7 +198,9 @@ mods show two or more lines, so the mod count matches lines to the multi-line ma
 data (`vp run game-data:maps` writes `packages/poe-market/data/maps-poe1.json`) and takes the
 fewest mods that explain them. The Maps list adds tri-state toggles per band; `mapMods`,
 `mapQuantity`, `mapDelirium` and `mapInfluence` (`none`, `shaper`, `elder`, `elder-guardian`,
-`memory`) hold them as `8,-1-6`, and links to other categories drop them.
+`memory`) hold them as `8,-1-6`, and links to other categories drop them. A map's item page reads
+the same parameters, plus `identification` and `corruption`, to narrow its variant table in the
+browser; its loader ignores them and `shouldRevalidate` skips it when only they change.
 The shared market query applies category, text, identification, corruption, gem and map bands,
 column ranges and ordering before pagination. Without a `corruption` filter, the unique weapon, armour and
 accessory categories list uncorrupted markets and every other category lists any corruption; the

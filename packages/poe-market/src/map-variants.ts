@@ -169,6 +169,25 @@ export function mapVariantValue(variant: {
         .join(" · ");
 }
 
+/** The fields of a `mapVariantValue`, or undefined when `value` is not one. */
+export function parseMapVariantValue(value: string) {
+    const parts = value.split(" · ");
+    const after = (prefix: string) =>
+        parts.find((part) => part.startsWith(prefix))?.slice(prefix.length) ?? "";
+    const band = <Band>(bands: readonly Band[], labels: readonly string[], label = "") =>
+        bands[labels.indexOf(label)];
+    const delirium = band(MAP_DELIRIUM_BANDS, MAP_DELIRIUM_LABELS, after("Delirium "));
+    if (!delirium) return undefined;
+    const variant = {
+        identified: parts[0] !== "Unidentified",
+        mods: band(MAP_MOD_BANDS, MAP_MOD_LABELS, parts[0]),
+        quantity: band(MAP_QUANTITY_BANDS, MAP_QUANTITY_LABELS, after("Quantity ")),
+        delirium,
+        influence: band(MAP_INFLUENCES, MAP_INFLUENCE_LABELS, parts.at(-1)),
+    };
+    return mapVariantValue(variant) === value ? variant : undefined;
+}
+
 /** Bands passing a filter: the included ones (every band when none are), less the excluded ones. */
 function allowedBands<Band extends string>(value: string, bands: readonly Band[]) {
     const filter = parseGemBandFilter(value, bands);

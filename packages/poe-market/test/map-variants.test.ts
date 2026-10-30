@@ -10,6 +10,7 @@ import {
     mapQuantityBand,
     mapVariantValue,
     mapVariantValues,
+    parseMapVariantValue,
 } from "../src/map-variants.ts";
 import samples from "./fixtures/map-mod-counts.json" with { type: "json" };
 
@@ -118,6 +119,37 @@ describe("map variants", () => {
         [[], undefined],
     ] as const)("reads the influence of a map with implicits %j as %s", (implicits, influence) => {
         expect(mapInfluence(implicits)).toBe(influence);
+    });
+
+    it.each([
+        "Unidentified · Delirium 0%",
+        "Unidentified · Delirium 40% · Elder Guardian",
+        "1–6 mods · Delirium 100%",
+        "8 mods · Quantity 200%+ · Delirium 20% · Memory",
+    ])("parses %s back into its fields", (value) => {
+        const fields = parseMapVariantValue(value);
+        expect(fields).toBeDefined();
+        expect(mapVariantValue(fields!)).toBe(value);
+    });
+
+    it("reads each field of a map variant value", () => {
+        expect(parseMapVariantValue("8 mods · Quantity 100–119% · Delirium 40% · Shaper")).toEqual({
+            identified: true,
+            mods: "8",
+            quantity: "100-119",
+            delirium: "40",
+            influence: "shaper",
+        });
+    });
+
+    it.each([
+        "",
+        "Delirium 0%",
+        "8 mods",
+        "7 mods · Delirium 0%",
+        "8 mods · Delirium 0% · Conqueror",
+    ])("does not parse %j", (value) => {
+        expect(parseMapVariantValue(value)).toBeUndefined();
     });
 
     const noFilters = { mapMods: "", mapQuantity: "", mapDelirium: "", mapInfluence: "" };
