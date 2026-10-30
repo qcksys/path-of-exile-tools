@@ -152,10 +152,6 @@ export const marketFiltersSchema = z.object({
     value: z.string().max(255).default(""),
     /** An item page's linked-socket market (0 for under 5 links); omitted, every link count merges. */
     links: z.enum(["0", "5", "6"]).optional(),
-    /** Watcher's Eye mods every valued item must have, separated by `|`. */
-    mods: z.string().max(1000).default(""),
-    /** Watcher's Eye mods of which valued items need at least one, separated by `|`. */
-    anyMods: z.string().max(1000).default(""),
     currency: z.string().max(40).default("divine"),
     /** Crafting base filters; empty matches every base. Unique equipment also filters by type and attributes. */
     baseClass: z
@@ -468,8 +464,6 @@ export function marketLink(
         params.set("kind", item.signatureKind);
         params.set("value", item.signatureValue);
         if (item.links != null) params.set("links", String(item.links));
-        if (filters.mods) params.set("mods", filters.mods);
-        if (filters.anyMods) params.set("anyMods", filters.anyMods);
         return `/1/market/items/${encodeURIComponent(item.itemKey)}?${params}`;
     }
     return `/1/market/${filters.category === "all" ? MARKET_DEFAULT_CATEGORY : filters.category}?${params}`;

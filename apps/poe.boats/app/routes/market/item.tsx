@@ -28,7 +28,6 @@ import { marketItemArtUrl } from "~/lib/item-presentation";
 import { marketListingPrices, marketMostListedPrice } from "~/lib/market-listing-prices";
 import { marketNumber as number } from "~/lib/market-number";
 import type { MarketPriceRates } from "~/lib/market-price-currencies";
-import { marketSignatureLabel } from "~/lib/mod-pools";
 import {
     MARKET_ITEM_VIEW_PARAMS,
     type MarketFilters,
@@ -84,7 +83,7 @@ function linksLabel(links: number) {
 /** `linkSplit`: the variant's market also lists its link counts, so a merged variant says so. */
 function variantLabel(variant: VariantRow, linkSplit: boolean) {
     const parts = [
-        marketSignatureLabel(variant),
+        variant.signatureValue,
         // A map's signature already says it is unidentified.
         variant.identified || variant.signatureKind === "map" ? "" : "Unidentified",
         variant.corrupted ? "Corrupted" : "",
@@ -622,7 +621,7 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                                           ? ""
                                           : "Unidentified",
                                     selected.corrupted ? "Corrupted" : "",
-                                    marketSignatureLabel(selected),
+                                    selected.signatureValue,
                                     selectedLinks !== null ? linksLabel(selectedLinks) : "",
                                 ]
                                     .filter(Boolean)
@@ -647,7 +646,7 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
             ) : filters.item ? (
                 <p role="status">No observations for this variant in the selected period.</p>
             ) : null}
-            {modValues?.mods.length ? (
+            {modValues?.length ? (
                 <MarketModValues filters={filters} values={modValues} game={game} />
             ) : null}
         </>

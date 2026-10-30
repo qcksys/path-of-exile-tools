@@ -50,12 +50,12 @@ export async function ingestCx(
     while (true) {
         if (id > previousHour()) break;
         const snap = await client.public.currencyExchange({ realm: REALM, id });
+        // Every league is kept, whatever the database's season, so the feed's history survives here.
         const markets = snap.markets.filter(
             (market) =>
-                (!opts.league || market.league === opts.league) &&
                 // Leagues poe.boats doesn't store keep every pair here, for the archive.
-                (!marketLeagueTracked(market.league) ||
-                    exchangeMarketTracked(REALM ?? "pc", market.league, market.market_id)),
+                !marketLeagueTracked(market.league) ||
+                exchangeMarketTracked(REALM ?? "pc", market.league, market.market_id),
         );
         const leaguesSeen = new Set(markets.map((market) => market.league));
 

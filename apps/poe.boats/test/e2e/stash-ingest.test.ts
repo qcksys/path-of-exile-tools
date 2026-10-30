@@ -672,7 +672,6 @@ it("keeps Ruthless, solo self-found and private leagues in the worker database o
             hour: hour - 3600,
             itemKey: "Headhunter",
             corrupted: false,
-            foilVariation: -1,
             links: 0,
             tab: "merchant",
             signatureKind: "",
@@ -2201,7 +2200,7 @@ it("bounds historical exchange cycles and resumes the next committed hour", asyn
     expect(await getCursor(local.conn, "cxapi")).toBe(String(HOUR + 10800));
 });
 
-it("captures a full exchange snapshot atomically, filtering leagues and tolerating replay", async () => {
+it("captures a full exchange snapshot atomically, for every league and tolerating replay", async () => {
     const markets = Array.from({ length: 1000 }, (_, index) => ({
         ...market,
         market_id: `${MARKET_ID}-${index}`,
@@ -2218,15 +2217,18 @@ it("captures a full exchange snapshot atomically, filtering leagues and tolerati
             catchUp: false,
             league: "Standard",
         });
-        expect(result).toMatchObject({ leagues: 1, markets: 1001, nextHour: HOUR + 3600 });
+        expect(result).toMatchObject({ leagues: 2, markets: 1001, nextHour: HOUR + 3600 });
     }
     expect(
         await queryAll(
             local.conn,
             `SELECT league, count(*)::INTEGER AS count,
-            min(observed_hour)::INTEGER AS hour FROM cx_market_hour GROUP BY league`,
+            min(observed_hour)::INTEGER AS hour FROM cx_market_hour GROUP BY league ORDER BY league`,
         ),
-    ).toEqual([{ league: "Standard", count: 1000, hour: HOUR }]);
+    ).toEqual([
+        { league: "Other league", count: 1, hour: HOUR },
+        { league: "Standard", count: 1000, hour: HOUR },
+    ]);
     upstreamResponses.push({
         body: {
             next_change_id: HOUR + 7200,
@@ -2239,7 +2241,7 @@ it("captures a full exchange snapshot atomically, filtering leagues and tolerati
     expect(await getCursor(local.conn, "cxapi")).toBe(String(HOUR + 3600));
     expect(
         await queryAll(local.conn, "SELECT count(*)::INTEGER AS count FROM cx_market_hour"),
-    ).toEqual([{ count: 1000 }]);
+    ).toEqual([{ count: 1001 }]);
 });
 
 it("prices a whole craft from replayed exchange hours without mixing realms, leagues or zero-volume markets", async () => {
@@ -2497,7 +2499,6 @@ it("stores each stash tab kind as its own market, and rows from older ingesters 
         hour: HOUR,
         itemKey: "Headhunter",
         corrupted: false,
-        foilVariation: -1,
         links: 0,
         signatureKind: "",
         signatureValue: "",
@@ -2653,12 +2654,19 @@ it("records delivery only after a successful receiver write", async () => {
     expect(await mysql.select().from(tStashCurrencyHourly.poe1)).toHaveLength(1);
 });
 
-it("stores a three-mod Watcher's Eye and groups equivalent mod orders", async () => {
-    const mods = [
-        "Gain 15% of Physical Damage as Extra Fire Damage while affected by Anger",
-        "Gain 10% of Maximum Mana as Extra Maximum Energy Shield while affected by Clarity",
-        "You take 60% reduced Extra Damage from Critical Strikes while affected by Determination",
-    ];
+it("stores a Watcher's Eye once for its item and once per mod for its mod count", async () => {
+    const anger = "Gain 15% of Physical Damage as Extra Fire Damage while affected by Anger";
+    const clarity =
+        "Gain 10% of Maximum Mana as Extra Maximum Energy Shield while affected by Clarity";
+    const determination =
+        "You take 60% reduced Extra Damage from Critical Strikes while affected by Determination";
+    const eye = (id: string, explicitMods: string[], overrides: Record<string, unknown> = {}) => ({
+        ...item,
+        id,
+        name: "Watcher's Eye",
+        explicitMods,
+        ...overrides,
+    });
     upstreamResponses.push({
         body: {
             next_change_id: "page-2",
@@ -2666,13 +2674,15 @@ it("stores a three-mod Watcher's Eye and groups equivalent mod orders", async ()
                 {
                     ...stash,
                     items: [
-                        { ...item, name: "Watcher's Eye", explicitMods: mods },
-                        {
-                            ...item,
-                            id: "item-2",
-                            name: "Watcher's Eye",
-                            explicitMods: [...mods].reverse(),
-                        },
+                        eye("three", [anger, clarity, determination], { note: "~b/o 90 chaos" }),
+                        // A foil shares its market, and another roll order the same mods.
+                        eye("foil", [determination, clarity, anger], {
+                            foilVariation: 3,
+                            note: "~b/o 30 chaos",
+                        }),
+                        eye("two", [anger, clarity], { note: "~b/o 10 chaos" }),
+                        // Unrecognised second mod: only the item's market.
+                        eye("one", [anger, "+10 to Strength"], { note: "~b/o 5 chaos" }),
                     ],
                 },
             ],
@@ -2685,14 +2695,73 @@ it("stores a three-mod Watcher's Eye and groups equivalent mod orders", async ()
     );
     await rollupPs(local.conn, { hour: Math.floor(Date.now() / 3_600_000) * 3600 });
     const rows = await mysql.select().from(tStashUniqueHourly.poe1);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({
-        listingCount: 2,
+    const masked = {
+        anger: "Anger: Gain #% of Physical Damage as Extra Fire Damage",
+        clarity: "Clarity: Gain #% of Maximum Mana as Extra Maximum Energy Shield",
+        determination: "Determination: You take #% reduced Extra Damage from Critical Strikes",
+    };
+    expect(
+        rows
+            .map((row) => [row.signatureValue, row.listingCount, row.prices?.chaos?.max])
+            .sort(([a], [b]) => String(a).localeCompare(String(b))),
+    ).toEqual(
+        [
+            ["", 4, 90],
+            [`2 mods: ${masked.anger}`, 1, 10],
+            [`2 mods: ${masked.clarity}`, 1, 10],
+            [`3 mods: ${masked.anger}`, 2, 90],
+            [`3 mods: ${masked.clarity}`, 2, 90],
+            [`3 mods: ${masked.determination}`, 2, 90],
+        ].sort(([a], [b]) => String(a).localeCompare(String(b))),
+    );
+    expect(rows.find((row) => row.signatureValue === `3 mods: ${masked.anger}`)).toMatchObject({
         signatureKind: "watchers-eye",
-        signatureData: { mods: expect.any(Array) },
+        signatureData: { kind: "watchers-eye", mod: masked.anger, modCount: 3 },
     });
-    expect(rows[0]?.signatureData?.mods).toHaveLength(3);
-    expect(rows[0]?.signatureValue.length).toBeLessThanOrEqual(255);
+    // Per-mod markets stay out of the daily rollup the list reads, which would count eyes repeatedly.
+    const daily = await mysql
+        .select()
+        .from(tStashMarketDaily.poe1)
+        .where(eq(tStashMarketDaily.poe1.itemKey, "Watcher's Eye"));
+    expect(daily.map((row) => row.signatureValue)).toEqual([""]);
+});
+
+it("reads mods from Watcher's Eye signatures stored before rolls were masked", async () => {
+    upstreamResponses.push({
+        body: {
+            next_change_id: "page-2",
+            stashes: [
+                {
+                    ...stash,
+                    items: [
+                        {
+                            ...item,
+                            name: "Watcher's Eye",
+                            explicitMods: [
+                                "12% increased Movement Speed while affected by Haste",
+                                "40% increased Critical Strike Chance while affected by Precision",
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
+    });
+    await ingestPs(
+        local.conn,
+        createClient({ baseUrl, userAgent: "ingest-e2e", token: "inert-token" }),
+        { pages: 1 },
+    );
+    await local.conn.run(
+        `UPDATE ps_listing_hour SET mod_signature = '{"kind":"watchers-eye","mods":[{"aura":"Haste","stat":"12% increased Movement Speed"},"Precision: 40.5% increased Critical Strike Chance"]}'`,
+    );
+    await rollupPs(local.conn, { hour: Math.floor(Date.now() / 3_600_000) * 3600 });
+    const rows = await mysql.select().from(tStashUniqueHourly.poe1);
+    expect(rows.map((row) => row.signatureValue).sort()).toEqual([
+        "",
+        "2 mods: Haste: #% increased Movement Speed",
+        "2 mods: Precision: #% increased Critical Strike Chance",
+    ]);
 });
 
 it("captures and prices the correct Two-Toned Boots variant while excluding other or unknown implicits", async () => {

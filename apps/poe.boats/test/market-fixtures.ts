@@ -4,7 +4,7 @@ import type {
     getMarketExchangeItem,
 } from "~/db/queries/market.queries";
 import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
-import { isModPool, modPoolValues, parseModList } from "~/lib/mod-pools";
+import { isModPool, modPoolValues } from "~/lib/mod-pools";
 import {
     type MarketBaseInput,
     type MarketExchangeItemInput,
@@ -169,20 +169,18 @@ export function marketFixture(
         modValues: isModPool(filters.kind)
             ? modPoolValues(
                   [
-                      ["Haste: #% increased Movement Speed", "Precision: #% increased Accuracy"],
-                      [
-                          "Discipline: #% faster start of Energy Shield Recharge",
-                          "Haste: #% increased Movement Speed",
-                      ],
-                  ].map((mods, index) => ({
-                      signatureValue: mods.join(" / "),
-                      mods,
+                      "Haste: #% increased Movement Speed",
+                      "Discipline: #% faster start of Energy Shield Recharge",
+                  ].map((mod, index) => ({
+                      signatureValue: `3 mods: ${mod}`,
+                      mod,
+                      modCount: 3,
                       listings: 2,
                       ask: 10 + index * 5,
+                      medianAsk: 11 + index * 5,
                       sales: 1,
                       salePrice: 12 + index * 5,
                   })),
-                  { require: parseModList(filters.mods), anyOf: parseModList(filters.anyMods) },
               )
             : null,
         history: filters.item

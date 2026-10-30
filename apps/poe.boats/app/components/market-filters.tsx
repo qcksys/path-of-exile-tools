@@ -145,8 +145,6 @@ export function MarketFiltersForm({
                       corrupted: filters.corrupted,
                       kind: filters.kind,
                       value: filters.value,
-                      mods: filters.mods,
-                      anyMods: filters.anyMods,
                       // An empty `links` would fail validation; omitted, link counts merge.
                       ...(filters.links ? { links: filters.links } : {}),
                   }).map(([name, value]) => (

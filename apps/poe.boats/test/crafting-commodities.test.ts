@@ -62,7 +62,6 @@ const row = {
     frameType: 5,
     identified: 1,
     corrupted: 0,
-    foilVariation: -1,
     signatureKind: "",
     signatureValue: "",
     listingCount: 25,
@@ -115,7 +114,7 @@ beforeEach(() => {
     sqlite = new DatabaseSync(":memory:");
     sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_unique_hourly (
         realm TEXT, league TEXT, hour INTEGER, itemKey TEXT, baseType TEXT, name TEXT,
-        frameType INTEGER, identified INTEGER, corrupted INTEGER, foilVariation INTEGER,
+        frameType INTEGER, identified INTEGER, corrupted INTEGER,
         signatureKind TEXT, signatureValue TEXT, listingCount INTEGER, uniqueSellers INTEGER, prices TEXT,
         tab TEXT)`);
     sqlite.exec(`CREATE TABLE ${DB_TABLE_PREFIX}stash_poe1_currency_hourly (
@@ -490,7 +489,6 @@ it.each([
     { league: "Other" },
     { corrupted: 1 },
     { identified: 0 },
-    { foilVariation: 0 },
     { frameType: 3 },
     { hour: hour + 3600 },
     { hour: hour - 24 * 3600 },
@@ -772,7 +770,6 @@ it.each([
     { frameType: -1 },
     { identified: 0 },
     { corrupted: 1 },
-    { foilVariation: 0 },
     { signatureKind: "variant" },
     { signatureValue: "variant" },
     { hour: hour + 3600 },

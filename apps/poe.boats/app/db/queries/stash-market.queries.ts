@@ -14,7 +14,6 @@ function withMarketDefaults(row: TStashUniqueHourlyI) {
     return {
         ...row,
         corrupted: row.corrupted ?? false,
-        foilVariation: row.foilVariation ?? -1,
         links: row.links ?? 0,
         tab: row.tab ?? "",
         signatureKind: row.signatureKind ?? "",
@@ -94,7 +93,6 @@ async function storeStashMarkets(db: TDatabase, game: StashGame, rows: StashMark
                     itemKey: row.itemKey,
                     identified: row.identified,
                     corrupted: row.corrupted,
-                    foilVariation: row.foilVariation,
                     links: row.links,
                     tab: row.tab,
                     signatureKind: row.signatureKind,

@@ -1,4 +1,4 @@
-import { and, between, eq, inArray, sql } from "drizzle-orm";
+import { and, between, eq, inArray, notInArray, or, sql } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
 import { STASH_GAMES, type StashGame } from "~/db/helpers/stash-game";
 import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
@@ -58,7 +58,6 @@ export async function refreshYellowBeastHourly(
             row.hour,
             row.identified,
             row.corrupted,
-            row.foilVariation,
             row.links,
             row.tab,
             row.signatureKind,
@@ -85,9 +84,6 @@ export function refreshStashMarketDaily(
     const daily = tStashMarketDaily[scope.game];
     // Literals keep the select and group-by expressions identical under ONLY_FULL_GROUP_BY.
     const day = sql<number>`floor(${hourly.hour} / ${sql.raw(String(DAY))}) * ${sql.raw(String(DAY))}`;
-    const pools = sql.raw(MOD_POOL_KINDS.map((kind) => `'${kind}'`).join(", "));
-    // A mod pool unique's combinations are one market; the item page reads them from the hourly rows.
-    const value = sql<string>`case when ${hourly.signatureKind} in (${pools}) then '' else ${hourly.signatureValue} end`;
     const hours =
         scope.fromHour === undefined || scope.toHour === undefined
             ? undefined
@@ -103,10 +99,9 @@ export function refreshStashMarketDaily(
                     itemKey: hourly.itemKey,
                     identified: hourly.identified,
                     corrupted: hourly.corrupted,
-                    foilVariation: hourly.foilVariation,
                     tab: hourly.tab,
                     signatureKind: hourly.signatureKind,
-                    signatureValue: value.as("signatureValue"),
+                    signatureValue: hourly.signatureValue,
                     name: sql<string | null>`max(${hourly.name})`.as("name"),
                     baseType: sql<string>`max(${hourly.baseType})`.as("baseType"),
                     frameType: sql<number>`max(${hourly.frameType})`.as("frameType"),
@@ -129,6 +124,11 @@ export function refreshStashMarketDaily(
                         scope.league === undefined ? undefined : eq(hourly.league, scope.league),
                         hours,
                         scope.itemKeys ? inArray(hourly.itemKey, scope.itemKeys) : undefined,
+                        // A mod pool unique's per-mod markets count its listings more than once.
+                        or(
+                            notInArray(hourly.signatureKind, [...MOD_POOL_KINDS]),
+                            eq(hourly.signatureValue, ""),
+                        ),
                     ),
                 )
                 .groupBy(
@@ -138,10 +138,9 @@ export function refreshStashMarketDaily(
                     hourly.itemKey,
                     hourly.identified,
                     hourly.corrupted,
-                    hourly.foilVariation,
                     hourly.tab,
                     hourly.signatureKind,
-                    value,
+                    hourly.signatureValue,
                 ),
         )
         .onDuplicateKeyUpdate({

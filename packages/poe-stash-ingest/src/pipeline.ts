@@ -86,7 +86,9 @@ export async function flushRollups(
             LEFT JOIN rollup_state r ON r.stream_name = 'equipment' AND r.league = l.league AND r.hour = l.hour
             WHERE r.pushed_at IS NULL OR l.changed_at > r.pushed_at
         ) SELECT * FROM dirty
-        WHERE hour < epoch(date_trunc('hour', current_timestamp)) AND ($1 IS NULL OR league = $1)
+        -- The exchange is captured for every league, whatever the database's season.
+        WHERE hour < epoch(date_trunc('hour', current_timestamp))
+            AND ($1 IS NULL OR league = $1 OR stream = 'cxapi')
         -- Equipment reclassification re-dirties days of hours; it must not hold back market hours.
         ORDER BY CASE stream WHEN 'psapi' THEN 0 WHEN 'cxapi' THEN 1 ELSE 2 END, hour, league
         LIMIT $2`,

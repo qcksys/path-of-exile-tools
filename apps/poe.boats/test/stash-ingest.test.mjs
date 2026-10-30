@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import { createClient } from "../../../packages/poe-api-client/src/client.ts";
 import { ingestCx } from "../../../packages/poe-stash-ingest/src/cx/ingest.ts";
 import { rollupCx } from "../../../packages/poe-stash-ingest/src/cx/rollup.ts";
+import { flushRollups } from "../../../packages/poe-stash-ingest/src/pipeline.ts";
 import { ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest.ts";
 import { rollupPs } from "../../../packages/poe-stash-ingest/src/ps/rollup.ts";
 import {
@@ -403,6 +404,28 @@ describe("currency ingestion and delivery", () => {
             { market_id: market.market_id },
         ]);
     });
+    it("captures and delivers every league's exchange whatever the database's season", async () => {
+        network.mockResolvedValueOnce(
+            Response.json({
+                next_change_id: hour,
+                markets: [market, { ...market, league: "Hardcore" }],
+            }),
+        );
+        await ingestCx(db.conn, client, { fromHour: hour - 3600, catchUp: false, league: "Keep" });
+        const leagues = await queryAll(
+            db.conn,
+            "SELECT league FROM cx_market_hour ORDER BY league",
+        );
+        expect(leagues.map((row) => row.league)).toEqual(["Hardcore", "Standard"]);
+        const delivered = [];
+        network.mockImplementation(async (_url, init) => {
+            const body = JSON.parse(String(init?.body));
+            delivered.push(...body.rows.map((row) => row.league));
+            return receive(body);
+        });
+        await flushRollups(db.conn, { league: "Keep" });
+        expect(delivered.sort()).toEqual(["Hardcore", "Standard"]);
+    });
     it("sends a real DuckDB rollup accepted by the receiver", async () => {
         page();
         await ingestPs(db.conn, client, { pages: 1 });
@@ -589,6 +612,7 @@ describe("receiver validation and mod extraction", () => {
         network.mockImplementationOnce(async (_url, init) =>
             receive(JSON.parse(String(init?.body))),
         );
-        await expect(rollupPs(db.conn, { hour })).resolves.toMatchObject({ rows: 1 });
+        // The item's market and one per mod.
+        await expect(rollupPs(db.conn, { hour })).resolves.toMatchObject({ rows: 4 });
     });
 });

@@ -18,7 +18,7 @@ program
         positiveInteger,
     )
     .option("--catch-up", "walk forward until next_change_id stops advancing")
-    .option("-l, --league <name>", "season to capture", "all")
+    .option("-l, --league <name>", "the database's season; every league is captured", "all")
     .action(async (opts) => {
         const { ingestCx } = await import("#src/cx/ingest.ts");
         const { createPoeClient } = await import("#src/shared/auth.ts");

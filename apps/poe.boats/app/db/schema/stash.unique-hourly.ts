@@ -39,7 +39,6 @@ export const STASH_MARKET_IDENTITY = [
     "itemKey",
     "identified",
     "corrupted",
-    "foilVariation",
     "links",
     "tab",
     "signatureKind",
@@ -48,8 +47,9 @@ export const STASH_MARKET_IDENTITY = [
 
 /**
  * Every public-stash market, written by @poe-tools/stash-ingest. A market is identified by
- * (realm, league, item_key, identified, corrupted, foil_variation, links, tab, signature_kind,
- * signature_value), stored once here so each hourly row carries only its `id`.
+ * (realm, league, item_key, identified, corrupted, links, tab, signature_kind, signature_value),
+ * stored once here so each hourly row carries only its `id`. Foil and non-foil listings share a
+ * market.
  *
  * `links` is 5 or 6 for a unique whose largest linked socket group has that many sockets, as
  * poe.ninja splits them, otherwise 0.
@@ -62,10 +62,11 @@ export const STASH_MARKET_IDENTITY = [
  *   - `<name>`          identified unique
  *   - `<baseType>`      currency / non-unique identified bulk
  *
- * Mod-driven variants (Forbidden Flame's allocated notable, Watcher's Eye aura+stat pairs,
- * Impossible Escape keystone, Forbidden Shako support) are identified by `signature_kind` and the
- * deterministic `signature_value`; `signature_data` holds the structured payload. Rows with no
- * extracted signature use empty strings, not NULL.
+ * Mod-driven variants (Forbidden Flame's allocated notable, Impossible Escape keystone, Forbidden
+ * Shako support) are identified by `signature_kind` and the deterministic `signature_value`;
+ * `signature_data` holds the structured payload. Rows with no extracted signature use empty
+ * strings, not NULL. A mod pool unique (Watcher's Eye) has one market for the item with an empty
+ * value, plus a market per mod and mod count (`3 mods: Haste: You have Phasing`).
  *
  * The descriptive columns (icon, name, base type, frame, signature data) keep the latest delivery.
  */
@@ -80,7 +81,6 @@ function stashMarket(game: StashGame) {
             itemKey: varchar({ length: 255 }).notNull(),
             identified: boolean().notNull(),
             corrupted: boolean().notNull().default(false),
-            foilVariation: int().notNull().default(-1),
             links: tinyint().notNull().default(0),
             tab: varchar({ length: 8 }).$type<StashListingTab>().notNull().default(""),
             signatureKind: varchar({ length: 32 }).notNull().default(""),
@@ -151,7 +151,6 @@ function stashUniqueHourly(game: StashGame) {
                 itemKey: market.itemKey,
                 identified: market.identified,
                 corrupted: market.corrupted,
-                foilVariation: market.foilVariation,
                 links: market.links,
                 tab: market.tab,
                 signatureKind: market.signatureKind,
@@ -203,7 +202,6 @@ export type TStashUniqueHourlyI = Pick<
         Pick<
             TStashUniqueHourlyS,
             | "corrupted"
-            | "foilVariation"
             | "links"
             | "tab"
             | "signatureKind"

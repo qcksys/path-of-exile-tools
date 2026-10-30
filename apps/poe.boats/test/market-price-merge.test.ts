@@ -107,14 +107,13 @@ describe("merging listing currencies", () => {
     });
 });
 
-describe("merging foil variations", () => {
+describe("merging market rows", () => {
     function row(
         listingCount: number,
         prices: Record<string, MarketPriceSummary> | null,
         overrides: Partial<TStashUniqueHourlyS> = {},
     ) {
         return {
-            foilVariation: 3,
             name: "Example",
             listingCount,
             uniqueSellers: listingCount,
@@ -149,7 +148,6 @@ describe("merging foil variations", () => {
                 3,
                 { chaos: { count: 3, min: 20, median: 20, max: 20 } },
                 {
-                    foilVariation: 7,
                     name: "Most",
                     firstSeenAt: "2026-10-24T01:00:00Z",
                     salesPrices: { chaos: { count: 1, min: 25, median: 25, max: 25 } },
@@ -158,7 +156,6 @@ describe("merging foil variations", () => {
             row(0, null, { lastSeenAt: "2026-10-24T03:00:00Z" }),
         ]);
         expect(merged).toMatchObject({
-            foilVariation: 7,
             name: "Most",
             listingCount: 4,
             uniqueSellers: 4,

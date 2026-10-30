@@ -60,8 +60,7 @@ with all variant axes intact; item links keep `category` in the query for the wa
 page lists every variant of the item in the period (corruption and extracted signatures such as
 Foulborn mutated modifiers) and links between them, including the same unique's markets in the
 other identification state (unidentified uniques are keyed `unid:<icon>`). Foil and non-foil
-listings of an item trade as one market in the list, variants and history; stored rows keep each
-`foil_variation`, and market rows omit it. Uniques are also stored by `links`, as poe.ninja splits
+listings of an item are one stored market, with no separate foil prices. Uniques are also stored by `links`, as poe.ninja splits
 body armours and two-handed weapons: 5 or 6 for the largest linked socket group, otherwise 0. The
 list merges every link count into one row; on the item page, a market with 5- or 6-link copies
 lists its merged variant ("Any links", the default without a `links` filter) and each link count
@@ -113,17 +112,14 @@ leagues (names ending in ` (PL<id>)`); leagues sharing the latest hour list the 
 `/2/market/exchange/<item ID after Metadata/Items/>` and call `get_season_exchange_item` with realm
 `poe2`. `/1/market` links with realm `poe2` redirect there, searching for their item.
 Uniques whose mods come from a pool (ingest's `MOD_POOLS`: Watcher's Eye's aura mods, PoE 2
-Loreweave's borrowed unique mods) record one market per combination of masked mods, so every roll
-of the same mods trades together; older Watcher's Eye per-roll markets keep their hashed signature
-until their listings are seen again. The category list and the item's variants merge a pool
-unique's combinations into one market with an empty `value`; its item page shows their merged
-history. Every variant page of a pool unique, and the market operation's `modValues`, value each
-mod over the item's combinations with the same corruption: listings and cheapest ask in
-the latest hour, likely sales and the median last ask before them over the period, in the display
-currency. Mods are labelled from `signatureData`. The `mods` filter (`|`-separated mod IDs) keeps
-only combinations with every listed mod and `anyMods` those with at least one, so requiring A
-prices each other mod as "cheapest with A and X"; `matches` lists the cheapest listed matching
-combinations, which link to their own history.
+Loreweave's borrowed unique mods) are not priced by combination. Each listing counts once in the
+item's market, with an empty `value`, which the category list and the item's variants show, and,
+when it has at least two recognised mods, once at its full price in a market per masked mod and
+mod count (`3 mods: Haste: You have Phasing`). Per-mod totals therefore exceed the item's, and a
+mod's price includes the value of the mods alongside it. Every page of a pool unique, and the market
+operation's `modValues`, list those markets with the same corruption: listings, cheapest and median
+ask in the latest hour, likely sales and the median last ask before them over the period, in the
+display currency. Each links to its own history.
 Weapon, armour, accessory and flask categories list uniques only. Normal, magic and rare equipment is
 listed under the Crafting bases group (`armour-bases`, `weapon-bases`, `accessory-bases`,
 `flask-bases`, `cluster-jewel-bases`) from
@@ -405,9 +401,9 @@ re-pushes whole hours with later sale corrections: `market_daily` (per listed ma
 day: sums, newest and newest listed hour, base type, rarity and name), `currency_market` (each
 exchange market's first hour), `currency_daily` (per exchange market per UTC day: units of each
 side traded in the hours where both traded, those hours' count and the newest) and
-`hour_coverage` (stored rows per stream, league and hour). The daily rollup stores a mod
-pool unique's combinations (Watcher's Eye, Loreweave) as one market with an empty signature
-value, as the list shows them; they were 78% of a week's daily rows. It has no `links` column:
+`hour_coverage` (stored rows per stream, league and hour). The daily rollup stores only a mod
+pool unique's item market (Watcher's Eye, Loreweave), not its per-mod markets, which count each
+listing more than once. It has no `links` column:
 the list merges link counts, and the item page reads them from the hourly rows. It keeps `tab`,
 which the list filters by. A category list without
 text search reads the daily rollup through its covering base-type index; other lists read it by

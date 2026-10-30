@@ -65,7 +65,6 @@ export async function findCraftingCommodityPrices(
                 ),
                 eq(hourly.identified, true),
                 eq(hourly.corrupted, false),
-                eq(hourly.foilVariation, -1),
                 gte(hourly.hour, range.earliestHour),
                 lte(hourly.hour, range.latestHour),
             ),

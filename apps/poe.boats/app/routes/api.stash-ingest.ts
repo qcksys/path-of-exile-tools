@@ -51,7 +51,6 @@ const UNIQUE_ROW_SCHEMA = z.object({
     hour: z.number().int().nonnegative(),
     itemKey: z.string().min(1).max(255),
     corrupted: z.boolean(),
-    foilVariation: z.number().int(),
     // Ingesters before the links split omit it.
     links: z.number().int().min(0).max(6).default(0),
     // Ingesters before the tab split omit it; their rows mix both kinds of tab.
