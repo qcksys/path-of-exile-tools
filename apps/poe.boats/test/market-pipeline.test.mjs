@@ -117,6 +117,87 @@ describe("sale inference", () => {
         await mature();
         expect((await events())[0].status).toBe("relisted");
     });
+    describe("Watcher's Eye", () => {
+        const haste = "12% increased Movement Speed while affected by Haste";
+        const grace = "6% chance to Blind Enemies which Hit you while affected by Grace";
+        const wrath = "15% increased Lightning Damage while affected by Wrath";
+        const anger = "15% increased Fire Damage while affected by Anger";
+        const eye = (id, explicitMods, note) => ({
+            ...item,
+            id,
+            name: "Watcher's Eye",
+            typeLine: "Prismatic Jewel",
+            baseType: "Prismatic Jewel",
+            explicitMods,
+            note,
+        });
+        async function sell(price, peers) {
+            const sold = eye("sold", [haste, grace], `~price ${price} divine`);
+            await ingest([
+                ...peers.map((peer, n) => ({
+                    ...stash,
+                    id: `stash-${n + 1}`,
+                    accountName: `seller-${n + 1}`,
+                    items: [peer],
+                })),
+                { ...stash, items: [sold] },
+            ]);
+            await evaluateSales(db.conn, true);
+            await ingest([{ ...stash, items: [] }]);
+            await mature();
+            return (await events()).find((row) => row.price_amount === price);
+        }
+        // Three sellers list Haste with other mods; none has this exact combination.
+        const hastePeers = [wrath, anger, "20% increased Cold Damage while affected by Hatred"].map(
+            (other, n) => eye(`peer-${n}`, [haste, other], "~price 10 divine"),
+        );
+
+        it("compares an eye with its best mod's other sellers, not its exact combination", async () => {
+            expect(await sell(15, hastePeers)).toMatchObject({
+                status: "likely-sold",
+                market_price: 10,
+                market_sellers: "3",
+            });
+        });
+        it("allows up to twice the best mod's price", async () => {
+            expect((await sell(21, hastePeers)).status).toBe("outside-market");
+        });
+        it("rejects an eye well under its best mod's price", async () => {
+            expect((await sell(7, hastePeers)).status).toBe("outside-market");
+        });
+        it("takes the most valuable mod that enough sellers list", async () => {
+            const gracePeers = [
+                wrath,
+                anger,
+                "20% increased Cold Damage while affected by Hatred",
+            ].map((other, n) => eye(`grace-${n}`, [grace, other], "~price 100 divine"));
+            expect(await sell(150, [...hastePeers, ...gracePeers])).toMatchObject({
+                status: "likely-sold",
+                market_price: 100,
+            });
+        });
+        it("ignores items with a different number of mods", async () => {
+            const threeMods = [
+                wrath,
+                anger,
+                "20% increased Cold Damage while affected by Hatred",
+            ].map((other, n) =>
+                eye(
+                    `three-${n}`,
+                    [haste, other, "1% increased Damage while using Pride"],
+                    "~price 10 divine",
+                ),
+            );
+            expect(await sell(10, threeMods)).toMatchObject({
+                status: "insufficient-market",
+                market_price: null,
+                market_sellers: "0",
+            });
+        });
+        it("needs three other sellers for a mod", async () => {
+            expect((await sell(10, hastePeers.slice(0, 2))).status).toBe("insufficient-market");
+        });
+    });
     it("does not treat a copy listed alongside the sold item as its relist", async () => {
         const copy = { ...item, id: "item-copy" };
         await ingest([
