@@ -2,18 +2,21 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import { marketLeagueTracked } from "@poe-tools/market";
 import { REALM } from "#src/shared/auth.ts";
 import { queryAll } from "#src/shared/db.ts";
+import { MOD_POOLS } from "#src/shared/mod-extractors/mod-pools.ts";
 import { push } from "#src/shared/remote/push.ts";
 import type { UniqueHourlyRow } from "#src/shared/remote/types.ts";
 import { assertSourceRealm } from "#src/shared/source.ts";
 
 const STREAM = "psapi";
+const POOL_KINDS = Object.values(MOD_POOLS)
+    .map((pool) => `'${pool.kind}'`)
+    .join(", ");
 
 interface AggregateRow {
     league: string;
     hour: number;
     itemKey: string;
     corrupted: boolean;
-    foilVariation: number;
     links: number;
     tab: UniqueHourlyRow["tab"];
     signatureKind: string;
@@ -43,13 +46,13 @@ interface AggregateRow {
  *   1. `windowed` — every captured listing observed in the target hour,
  *      enriched with the resolved name (basemap join) and a deterministic
  *      `signature_value` projection of `mod_signature` keyed by `kind`.
- *   2. Top-level GROUP BY (league, hour, item_key, corrupted,
- *      foil_variation, links, tab, signature_kind, signature_value) — one row per
- *      *market* per hour. Variant axes are first-class columns; the JSON
- *      payload is preserved on `signature_data` for ad-hoc field queries.
- *
- * `foil_variation` defaults to -1 (never a real foil index) so it can sit
- * in a NOT NULL primary key.
+ *   2. `markets` — `windowed` with each mod pool unique's listing counted once in
+ *      its item's market (empty value) and, when it has several mods, once in a
+ *      market per mod and mod count. Mod markets sum to more listings than exist.
+ *   3. Top-level GROUP BY (league, hour, item_key, corrupted, links, tab,
+ *      signature_kind, signature_value) — one row per *market* per hour. Foil and
+ *      non-foil listings share a market. Variant axes are first-class columns; the
+ *      JSON payload is preserved on `signature_data` for ad-hoc field queries.
  */
 const ROLLUP_SQL = /* sql */ `
 WITH observations AS (
@@ -67,7 +70,6 @@ WITH observations AS (
         l.status,
         l.item_key,
         COALESCE(l.corrupted, FALSE) AS corrupted,
-        COALESCE(l.foil_variation, -1) AS foil_variation,
         COALESCE(l.links, 0) AS links,
         COALESCE(l.tab, '') AS tab,
         COALESCE(json_extract_string(l.mod_signature, '$.kind'), '') AS signature_kind,
@@ -101,9 +103,40 @@ WITH observations AS (
             OR (l.icon_asset IS NOT NULL AND b.name IS NOT NULL)
         )
 ),
+pool_mods AS (
+    SELECT *, len(mods) AS mod_count, unnest(mods) AS mod
+    FROM (
+        SELECT *, json_extract(signature_data, '$.mods[*]') AS mods
+        FROM windowed WHERE signature_kind IN (${POOL_KINDS})
+    )
+    WHERE len(mods) >= 2
+),
+masked_mods AS (
+    -- Listings stored before ingest masked rolls keep them; older Watcher's Eyes store {aura, stat}.
+    SELECT * EXCLUDE (mods, mod), regexp_replace(
+        COALESCE((mod->>'aura') || ': ' || (mod->>'stat'), mod->>'$'),
+        '\\d+(?:\\.\\d+)?', '#', 'g'
+    ) AS mod
+    FROM pool_mods
+),
+markets AS (
+    SELECT * REPLACE (
+        CASE WHEN signature_kind IN (${POOL_KINDS}) THEN '' ELSE signature_value END AS signature_value,
+        CASE WHEN signature_kind IN (${POOL_KINDS})
+            THEN json_object('kind', signature_kind)::VARCHAR
+            ELSE signature_data END AS signature_data
+    )
+    FROM windowed
+    UNION ALL
+    SELECT * EXCLUDE (mod, mod_count) REPLACE (
+        left(mod_count || ' mods: ' || mod, 255) AS signature_value,
+        json_object('kind', signature_kind, 'mod', mod, 'modCount', mod_count)::VARCHAR AS signature_data
+    )
+    FROM masked_mods
+),
 prices AS (
     SELECT
-        league, hour, item_key, corrupted, foil_variation, links, tab,
+        league, hour, item_key, corrupted, links, tab,
         signature_kind, signature_value, price_currency, status,
         COUNT(*) AS price_count,
         MIN(price_amount) AS min,
@@ -114,14 +147,14 @@ prices AS (
         QUANTILE_CONT(price_amount, 0.75) AS p75,
         QUANTILE_CONT(price_amount, 0.9) AS p90,
         MAX(price_amount) AS max
-    FROM windowed
+    FROM markets
     WHERE price_amount > 0 AND price_currency IS NOT NULL AND status IN ('listing', 'likely-sold')
-    GROUP BY league, hour, item_key, corrupted, foil_variation, links, tab,
+    GROUP BY league, hour, item_key, corrupted, links, tab,
              signature_kind, signature_value, price_currency, status
 ),
 prices_agg AS (
     SELECT
-        league, hour, item_key, corrupted, foil_variation, links, tab,
+        league, hour, item_key, corrupted, links, tab,
         signature_kind, signature_value, status,
         json_group_object(
             price_currency,
@@ -131,7 +164,7 @@ prices_agg AS (
             )
         ) AS prices_json
     FROM prices
-    GROUP BY league, hour, item_key, corrupted, foil_variation, links, tab,
+    GROUP BY league, hour, item_key, corrupted, links, tab,
              signature_kind, signature_value, status
 )
 SELECT
@@ -139,7 +172,6 @@ SELECT
     w.hour,
     w.item_key AS "itemKey",
     w.corrupted,
-    w.foil_variation AS "foilVariation",
     w.links,
     w.tab,
     w.signature_kind AS "signatureKind",
@@ -163,17 +195,17 @@ SELECT
     COALESCE(s.prices_json, '{}') AS "salesPricesJson",
     MIN(w.first_seen_at)::VARCHAR AS "firstSeenAt",
     MAX(w.last_seen_at)::VARCHAR AS "lastSeenAt"
-FROM windowed w
+FROM markets w
 LEFT JOIN (SELECT * FROM prices_agg WHERE status = 'listing') p USING (
-    league, hour, item_key, corrupted, foil_variation, links, tab,
+    league, hour, item_key, corrupted, links, tab,
     signature_kind, signature_value
 )
 LEFT JOIN (SELECT * FROM prices_agg WHERE status = 'likely-sold') s USING (
-    league, hour, item_key, corrupted, foil_variation, links, tab,
+    league, hour, item_key, corrupted, links, tab,
     signature_kind, signature_value
 )
 GROUP BY
-    w.league, w.hour, w.item_key, w.corrupted, w.foil_variation, w.links, w.tab,
+    w.league, w.hour, w.item_key, w.corrupted, w.links, w.tab,
     w.signature_kind, w.signature_value, p.prices_json, s.prices_json
 ORDER BY w.league, w.item_key, w.signature_kind, w.signature_value
 `;
@@ -203,7 +235,6 @@ export async function rollupPs(
         hour: Number(a.hour),
         itemKey: a.itemKey,
         corrupted: a.corrupted,
-        foilVariation: Number(a.foilVariation),
         links: Number(a.links),
         tab: a.tab,
         signatureKind: a.signatureKind,

@@ -14,7 +14,6 @@ import { marketItemArtUrl } from "~/lib/item-presentation";
 import { marketListingPrices, marketMostListedPrice } from "~/lib/market-listing-prices";
 import { marketNumber as number } from "~/lib/market-number";
 import type { MarketPriceRates } from "~/lib/market-price-currencies";
-import { marketSignatureLabel } from "~/lib/mod-pools";
 import { marketLink, parseMarketFilters } from "~/schemas/market";
 import type { Route } from "./+types/item";
 
@@ -48,7 +47,7 @@ function linksLabel(links: number) {
 /** `linkSplit`: the variant's market also lists its link counts, so a merged variant says so. */
 function variantLabel(variant: VariantRow, linkSplit: boolean) {
     const parts = [
-        marketSignatureLabel(variant),
+        variant.signatureValue,
         variant.identified ? "" : "Unidentified",
         variant.corrupted ? "Corrupted" : "",
         variant.links !== null ? linksLabel(variant.links) : linkSplit ? "Any links" : "",
@@ -342,9 +341,7 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                             <p className="text-sm text-muted-foreground">
                                 {selected.identified ? "Identified" : "Unidentified"}
                                 {selected.corrupted ? " · Corrupted" : ""}
-                                {marketSignatureLabel(selected)
-                                    ? ` · ${marketSignatureLabel(selected)}`
-                                    : ""}
+                                {selected.signatureValue ? ` · ${selected.signatureValue}` : ""}
                                 {links !== null ? ` · ${linksLabel(links)}` : ""}
                             </p>
                         </div>
@@ -366,7 +363,7 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
             ) : filters.item ? (
                 <p role="status">No observations for this variant in the selected period.</p>
             ) : null}
-            {modValues?.mods.length ? (
+            {modValues?.length ? (
                 <MarketModValues filters={filters} values={modValues} game={game} />
             ) : null}
         </>

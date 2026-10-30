@@ -21,7 +21,6 @@ import {
 import { marketNumber as number } from "~/lib/market-number";
 import type { MarketPriceRates } from "~/lib/market-price-currencies";
 import { marketTableState } from "~/lib/market-table";
-import { marketSignatureLabel } from "~/lib/mod-pools";
 import {
     type MarketFilters,
     marketBaseLink,
@@ -220,7 +219,7 @@ function marketColumns(filters: MarketFilters, game: Game, { chaosRates, rates }
                         <p className="mt-1 max-w-md break-words text-xs text-muted-foreground">
                             {row.baseType} · {row.identified ? "Identified" : "Unidentified"}
                             {row.corrupted ? " · Corrupted" : ""}
-                            {marketSignatureLabel(row) ? ` · ${marketSignatureLabel(row)}` : ""}
+                            {row.signatureValue ? ` · ${row.signatureValue}` : ""}
                         </p>
                     </div>
                 </div>

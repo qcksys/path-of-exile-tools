@@ -20,6 +20,7 @@ import {
     lte,
     max,
     min,
+    ne,
     notInArray,
     or,
     type SQL,
@@ -63,13 +64,7 @@ import {
     mergeMarketPrices,
     mergeMarketRows,
 } from "~/lib/market-price-merge";
-import {
-    isModPool,
-    MOD_POOL_KINDS,
-    modPoolMods,
-    modPoolValues,
-    parseModList,
-} from "~/lib/mod-pools";
+import { isModPool, MOD_POOL_KINDS, modPoolMod, modPoolValues } from "~/lib/mod-pools";
 import {
     type MarketBaseInput,
     type MarketExchangeItemInput,
@@ -113,18 +108,6 @@ function marketTables(realm: string) {
 type MarketTable = ReturnType<typeof marketTables>["market"];
 type DailyTable = ReturnType<typeof marketTables>["daily"];
 
-/**
- * A pool unique's mod combinations merge into one market with an empty value where markets are
- * listed (the market list and the item's variants); the item page values and links the combinations.
- */
-function valueGroup(table: MarketTable) {
-    return sql<string>`case when ${inArray(table.signatureKind, [...MOD_POOL_KINDS])} then '' else ${table.signatureValue} end`;
-}
-
-function valueMatch(market: MarketTable, kind: string, value: string) {
-    return isModPool(kind) && !value ? undefined : eq(market.signatureValue, value);
-}
-
 /** Gem level and quality band filters list only the gem markets in the bands they allow. */
 function gemFilter(daily: DailyTable, filters: MarketFilters) {
     const values = gemVariantValues(filters);
@@ -166,22 +149,13 @@ function tabMatch(table: MarketTable | DailyTable, filters: Pick<MarketFilters, 
     return filters.tab === "all" ? undefined : eq(table.tab, filters.tab);
 }
 
-/** Clears the representative combination from a pool unique's merged every-combination row. */
-function asMarket<Row extends { signatureValue: string; signatureData: unknown }>(
-    row: Row,
-    kind: string,
-    value: string,
-): Row {
-    return isModPool(kind) && !value ? { ...row, signatureValue: "", signatureData: null } : row;
-}
-
 /**
- * Merges one hour's rows of a market, which spans foil variations (and link counts unless the
- * filters pick one, and stash tab kinds under `all`), so the result has none of them.
+ * Merges one hour's rows of a market, which spans link counts unless the filters pick one, and
+ * stash tab kinds under `all`, so the result has neither.
  */
-function mergeMarket(rows: TStashUniqueHourlyS[], kind: string, value: string) {
-    const { foilVariation: _, links: _links, tab: _tab, ...row } = mergeMarketRows(rows);
-    return asMarket(row, kind, value);
+function mergeMarket(rows: TStashUniqueHourlyS[]) {
+    const { links: _links, tab: _tab, ...row } = mergeMarketRows(rows);
+    return row;
 }
 
 type MarketRowKey = Pick<
@@ -196,19 +170,17 @@ function marketRowKey(row: MarketRowKey, hour: number) {
         Boolean(row.identified),
         Boolean(row.corrupted),
         row.signatureKind,
-        isModPool(row.signatureKind) ? "" : row.signatureValue,
+        row.signatureValue,
     ]);
 }
 
-/** One row per hour, merging foil and non-foil listings (and a pool unique's combinations). */
-function mergeByHour(rows: TStashUniqueHourlyS[], filters: MarketFilters) {
+/** One row per hour. */
+function mergeByHour(rows: TStashUniqueHourlyS[]) {
     const hours = Map.groupBy(rows, (row) => row.hour);
-    return [...hours.values()]
-        .map((group) => mergeMarket(group, filters.kind, filters.value))
-        .sort((a, b) => a.hour - b.hour);
+    return [...hours.values()].map(mergeMarket).sort((a, b) => a.hour - b.hour);
 }
 
-/** Each listed market's latest-hour row, merged across foil and non-foil listings, in list order. */
+/** Each listed market's latest-hour row, in list order. */
 async function marketLatestRows<
     Market extends MarketRowKey & {
         latestHour: number;
@@ -237,7 +209,7 @@ async function marketLatestRows<
                                 eq(market.identified, entry.identified),
                                 eq(market.corrupted, entry.corrupted),
                                 eq(market.signatureKind, entry.signatureKind),
-                                valueMatch(market, entry.signatureKind, entry.signatureValue),
+                                eq(market.signatureValue, entry.signatureValue),
                             ),
                         ),
                     ),
@@ -250,7 +222,7 @@ async function marketLatestRows<
         if (!group) return [];
         return [
             {
-                ...mergeMarket(group, entry.signatureKind, entry.signatureValue),
+                ...mergeMarket(group),
                 rank: 1,
                 periodSales: entry.periodSales,
                 periodRemovals: entry.periodRemovals,
@@ -282,7 +254,6 @@ async function marketRecentSales(
     const itemKeys = [...new Set(markets.map((row) => row.itemKey))];
     const firstHour = latestHour - (RECENT_SALE_HOURS - 1) * 3600;
     const firstDay = utcDay(latestHour) - (RECENT_SALE_DAYS - 1) * 86400;
-    const value = valueGroup(market);
     const [hours, days] = await Promise.all([
         traceQuery(
             "market.recent_sales_hourly",
@@ -293,7 +264,7 @@ async function marketRecentSales(
                     identified: market.identified,
                     corrupted: market.corrupted,
                     signatureKind: market.signatureKind,
-                    signatureValue: value,
+                    signatureValue: market.signatureValue,
                     sales: sql<number>`sum(${market.likelySales})`.mapWith(Number),
                 })
                 // The view finds the page's markets by (realm, league, item key), then their hours.
@@ -314,7 +285,7 @@ async function marketRecentSales(
                     market.identified,
                     market.corrupted,
                     market.signatureKind,
-                    value,
+                    market.signatureValue,
                 ),
         ),
         traceQuery(
@@ -445,15 +416,14 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                               eq(market.identified, filters.identified === "true"),
                               eq(market.corrupted, filters.corrupted === "true"),
                               eq(market.signatureKind, filters.kind),
-                              valueMatch(market, filters.kind, filters.value),
+                              eq(market.signatureValue, filters.value),
                               linksMatch(market, filters),
                           ),
                       )
                       .orderBy(desc(market.hour))
-                      // 90 days of hours for non-foil plus up to 16 merged foil variations, per link
-                      // count and, under `all`, per stash tab kind.
-                      .limit(2160 * 17 * 3 * (filters.tab === "all" ? 3 : 1)),
-              ).then((rows) => mergeByHour(rows, filters))
+                      // 90 days of hours per link count and, under `all`, per stash tab kind.
+                      .limit(2160 * 3 * (filters.tab === "all" ? 3 : 1)),
+              ).then(mergeByHour)
             : Promise.resolve([]);
     const variantsPromise =
         filters.item && view !== "list"
@@ -509,7 +479,6 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             identified: daily.identified,
             corrupted: daily.corrupted,
             signatureKind: daily.signatureKind,
-            // Already empty for a mod pool unique's every-combination market.
             signatureValue: daily.signatureValue,
             latestHour: sql<number>`coalesce(max(${daily.listedHour}), max(${daily.latestHour}))`
                 .mapWith(Number)
@@ -603,7 +572,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 eq(market.identified, page.identified),
                 eq(market.corrupted, page.corrupted),
                 eq(market.signatureKind, page.signatureKind),
-                eq(valueGroup(market), page.signatureValue),
+                eq(market.signatureValue, page.signatureValue),
             ),
         )
         .groupBy(
@@ -745,29 +714,28 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         bases: bases.rows,
         hasMore: rows.length > pageSize || bases.hasMore,
         variants,
-        /** For a pool unique's variant: each mod's value, in the display currency. */
+        /** For a pool unique: each mod's value per mod count, in the display currency. */
         modValues:
             modRows &&
             modPoolValues(
                 modRows.flatMap((row) => {
-                    const mods = modPoolMods(row.signatureData);
-                    if (!mods) return [];
+                    const mod = modPoolMod(row.signatureData);
+                    if (!mod) return [];
                     const rate = marketDisplayRate(rates, filters.currency, row.hour);
-                    const current = row.hour === latestHour;
+                    const asks =
+                        row.hour === latestHour ? mergeMarketPrices(row.prices, rate) : null;
                     return [
                         {
+                            ...mod,
                             signatureValue: row.signatureValue,
-                            mods,
-                            listings: current ? row.listingCount : 0,
-                            ask: current
-                                ? (mergeMarketPrices(row.prices, rate)?.min ?? null)
-                                : null,
+                            listings: row.hour === latestHour ? row.listingCount : 0,
+                            ask: asks?.min ?? null,
+                            medianAsk: asks?.median ?? null,
                             sales: row.likelySales,
                             salePrice: mergeMarketPrices(row.salesPrices, rate)?.median ?? null,
                         },
                     ];
                 }),
-                { require: parseModList(filters.mods), anyOf: parseModList(filters.anyMods) },
             ),
         /** Exchange-traded items matching the category and search, on the first page only. */
         exchange: exchangeRows,
@@ -798,6 +766,11 @@ async function marketVariants(
     scope: SQL | undefined,
     item: string,
 ) {
+    // A mod pool unique's per-mod markets are valued on the item page, not listed as variants.
+    const notModMarket = or(
+        notInArray(market.signatureKind, [...MOD_POOL_KINDS]),
+        eq(market.signatureValue, ""),
+    );
     const identities = await traceQuery(
         "market.variant_identities",
         db
@@ -807,7 +780,7 @@ async function marketVariants(
                 iconAsset: market.iconAsset,
             })
             .from(market)
-            .where(and(scope, eq(market.itemKey, item), eq(market.frameType, 3))),
+            .where(and(scope, eq(market.itemKey, item), eq(market.frameType, 3), notModMarket)),
     );
     const names = new Set(identities.flatMap((row) => row.name ?? []));
     const counterparts = identities.flatMap((row) =>
@@ -822,7 +795,7 @@ async function marketVariants(
                 identified: market.identified,
                 corrupted: market.corrupted,
                 signatureKind: market.signatureKind,
-                signatureValue: valueGroup(market),
+                signatureValue: market.signatureValue,
                 links: market.links,
                 signatureData: sql<
                     TStashUniqueHourlyS["signatureData"]
@@ -831,13 +804,19 @@ async function marketVariants(
                 latestHour: sql<number>`max(${market.hour})`.mapWith(Number),
             })
             .from(market)
-            .where(and(scope, inArray(market.itemKey, [...new Set([item, ...counterparts])])))
+            .where(
+                and(
+                    scope,
+                    inArray(market.itemKey, [...new Set([item, ...counterparts])]),
+                    notModMarket,
+                ),
+            )
             .groupBy(
                 market.itemKey,
                 market.identified,
                 market.corrupted,
                 market.signatureKind,
-                valueGroup(market),
+                market.signatureValue,
                 market.links,
             )
             // Uniques that share art (e.g. replicas) share one unidentified market, named after only one of them.
@@ -846,7 +825,7 @@ async function marketVariants(
             .orderBy(
                 desc(sql`sum(${market.likelySales})`),
                 asc(market.corrupted),
-                asc(valueGroup(market)),
+                asc(market.signatureValue),
                 asc(market.links),
             ),
     );
@@ -879,15 +858,11 @@ async function marketVariants(
                     (row.links === null || entry.links === row.links),
             );
             const current = rows.length ? mergeMarketRows(rows) : undefined;
-            return asMarket(
-                {
-                    ...row,
-                    prices: current?.prices ?? null,
-                    listingCount: current?.listingCount ?? 0,
-                },
-                row.signatureKind,
-                row.signatureValue,
-            );
+            return {
+                ...row,
+                prices: current?.prices ?? null,
+                listingCount: current?.listingCount ?? 0,
+            };
         });
     });
 }
@@ -916,7 +891,7 @@ function marketVariantLatestRows(
                                 eq(market.identified, variant.identified),
                                 eq(market.corrupted, variant.corrupted),
                                 eq(market.signatureKind, variant.signatureKind),
-                                valueMatch(market, variant.signatureKind, variant.signatureValue),
+                                eq(market.signatureValue, variant.signatureValue),
                                 eq(market.links, variant.links),
                             ),
                         ),
@@ -926,7 +901,7 @@ function marketVariantLatestRows(
     );
 }
 
-/** A pool unique variant's sibling combinations: the latest hour's listings and every hour with likely sales. */
+/** A pool unique's per-mod markets: the latest hour's listings and every hour with likely sales. */
 function modPoolRows(
     db: TDatabase,
     filters: MarketFilters,
@@ -955,6 +930,7 @@ function modPoolRows(
                     eq(market.identified, true),
                     eq(market.corrupted, filters.corrupted === "true"),
                     eq(market.signatureKind, filters.kind),
+                    ne(market.signatureValue, ""),
                     linksMatch(market, filters),
                     or(eq(market.hour, latestHour), gt(market.likelySales, 0)),
                 ),

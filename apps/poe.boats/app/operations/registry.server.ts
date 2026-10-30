@@ -74,9 +74,9 @@ const shared = {
     readOnly: true,
     method: "get",
 } as const;
-// Markets merge foil and non-foil rows, list rows and history merge or filter link counts, and
-// the `tab` filter picks or merges stash tab kinds, so a market row has none of them.
-const marketRow = sStashUniqueHourlyS.omit({ foilVariation: true, links: true, tab: true });
+// List rows and history merge or filter link counts, and the `tab` filter picks or merges stash
+// tab kinds, so a market row has neither.
+const marketRow = sStashUniqueHourlyS.omit({ links: true, tab: true });
 const priceRates = (when: string) =>
     z
         .record(z.string(), z.number())
@@ -91,33 +91,22 @@ const season = z.object({
     firstHour: z.union([z.string(), z.number()]).nullable(),
     latestHour: z.union([z.string(), z.number()]).nullable(),
 });
-const modPrices = {
-    listings: z.number(),
-    cheapest: z.number().nullable(),
-    sales: z.number(),
-    saleMedian: z.number().nullable(),
-};
 const watchersEyeModValues = z
-    .object({
-        require: z.array(z.string()),
-        anyOf: z.array(z.string()),
-        cheapest: z.number().nullable(),
-        mods: z.array(
-            z.object({
-                mod: z.string(),
-                combinations: z.number(),
-                cheapestValue: z.string().nullable(),
-                ...modPrices,
-            }),
-        ),
-        matchCount: z.number(),
-        matches: z.array(
-            z.object({ mods: z.array(z.string()), signatureValue: z.string(), ...modPrices }),
-        ),
-    })
+    .array(
+        z.object({
+            signatureValue: z.string(),
+            mod: z.string(),
+            modCount: z.number(),
+            listings: z.number(),
+            cheapest: z.number().nullable(),
+            medianAsk: z.number().nullable(),
+            sales: z.number(),
+            saleMedian: z.number().nullable(),
+        }),
+    )
     .nullable()
     .describe(
-        "For a variant of a unique whose mods come from a pool (kinds watchers-eye, loreweave): each mod's value among the item's mod combinations that have every `mods` entry and, if `anyMods` is set, one of those (both |-separated mod IDs). Per mod: listings and cheapest ask in the latest hour, likely sales and their median last ask over the period, in the display currency. `matches` are the cheapest listed matching combinations (link one with its `signatureValue`). Lists and variants show such a unique as one market with an empty `value`.",
+        "For a unique whose mods come from a pool (kinds watchers-eye, loreweave): each mod's value per mod count. Every item counts once for each of its mods at its full price, so these totals exceed the item's. Listings and asks are from the latest hour; likely sales and their median last ask cover the period, in the display currency. Open a mod's own market with its `signatureValue` as `value`. Lists and variants show such a unique as one market with an empty `value`.",
     );
 
 export const operations = [

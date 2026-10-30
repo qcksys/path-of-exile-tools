@@ -589,6 +589,7 @@ describe("receiver validation and mod extraction", () => {
         network.mockImplementationOnce(async (_url, init) =>
             receive(JSON.parse(String(init?.body))),
         );
-        await expect(rollupPs(db.conn, { hour })).resolves.toMatchObject({ rows: 1 });
+        // The item's market and one per mod.
+        await expect(rollupPs(db.conn, { hour })).resolves.toMatchObject({ rows: 4 });
     });
 });

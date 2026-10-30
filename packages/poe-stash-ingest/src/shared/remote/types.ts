@@ -27,8 +27,6 @@ export interface UniqueHourlyRow {
     itemKey: string;
     /** Variant axes — first-class PK components on the remote. */
     corrupted: boolean;
-    /** -1 sentinel for "not foil" (column is non-nullable to participate in PK). */
-    foilVariation: number;
     /** 5 or 6 for a unique's largest linked socket group, otherwise 0. */
     links: number;
     /** Merchant (Faustus) or other public tabs; empty for listings seen before tabs were recorded. */
