@@ -535,6 +535,42 @@ describe("receiver validation and mod extraction", () => {
             mods: ["Anger: Gain #% of Physical Damage as Extra Fire Damage"],
         });
     });
+    it.each([
+        [
+            "9% chance to deal Double Damage while using Pride",
+            "Pride: #% chance to deal Double Damage",
+        ],
+        [
+            "Your Hits Intimidate Enemies for 4 seconds while you are using Pride",
+            "Pride: Your Hits Intimidate Enemies for # seconds",
+        ],
+        [
+            "18% of Damage taken while affected by Clarity Recouped as Mana",
+            "Clarity: #% of Damage taken Recouped as Mana",
+        ],
+        [
+            "Consecrated Ground you create while affected by Zealotry causes enemies to take 8% increased Damage",
+            "Zealotry: Consecrated Ground you create causes enemies to take #% increased Damage",
+        ],
+        ["While affected by Haste, you have Phasing", "Haste: you have Phasing"],
+        [
+            "Prevent +3% of Reflected Elemental Damage you would take while\naffected by Purity of Elements",
+            "Purity of Elements: Prevent +#% of Reflected Elemental Damage you would take",
+        ],
+    ])("reads the Watcher's Eye mod %j", (line, mod) => {
+        expect(
+            extractModSignature({ ...item, name: "Watcher's Eye", explicitMods: [line] }),
+        ).toEqual({ kind: "watchers-eye", mods: [mod] });
+    });
+    it("ignores Watcher's Eye lines without an aura condition", () => {
+        expect(
+            extractModSignature({
+                ...item,
+                name: "Watcher's Eye",
+                explicitMods: ["4% increased maximum Life", "5% increased maximum Mana"],
+            }),
+        ).toBeNull();
+    });
     it("records a PoE 2 Loreweave's pooled mods without markup or rolls", () => {
         const signature = extractModSignature({
             ...item,

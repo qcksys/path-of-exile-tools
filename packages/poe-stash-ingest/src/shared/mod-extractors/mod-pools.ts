@@ -37,15 +37,20 @@ function normalise(line: string) {
         .trim();
 }
 
-/** The aura condition can precede or follow the stat, sometimes across a newline. */
+const AURA_CONDITION = new RegExp(
+    `^(.*?)\\s*\\bwhile (?:you are )?(?:affected by|using) (${AURAS.join("|")})\\b,?\\s*(.*)$`,
+    "i",
+);
+
+/**
+ * The aura condition can open, close or sit inside the stat ("#% of Damage taken while affected by
+ * Clarity Recouped as Mana"), sometimes across a newline; Pride's mods say "while using Pride".
+ */
 function auraMod(line: string): string | null {
-    const text = normalise(line);
-    const prefix = text.match(/^While affected by ([A-Za-z ]+?),\s*(.+)$/i);
-    const suffix = text.match(/^(.+?) while affected by ([A-Za-z ]+)$/i);
-    const aura = (prefix?.[1] ?? suffix?.[2])?.trim();
-    const stat = (prefix?.[2] ?? suffix?.[1])?.trim();
-    if (!aura || !stat || !AURAS.includes(aura as (typeof AURAS)[number])) return null;
-    return `${aura}: ${stat}`;
+    const match = normalise(line).match(AURA_CONDITION);
+    if (!match) return null;
+    const stat = `${match[1]} ${match[3]}`.trim();
+    return stat ? `${match[2]}: ${stat}` : null;
 }
 
 /**

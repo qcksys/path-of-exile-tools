@@ -2,6 +2,7 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import { yellowBeastMarket, yellowBeastNames } from "@poe-tools/market";
 import { params } from "#src/ps/rounds.ts";
 import { withTransaction } from "#src/shared/db.ts";
+import { MOD_POOLS } from "#src/shared/mod-extractors/mod-pools.ts";
 import type { ListingTab } from "#src/shared/stash-tab.ts";
 
 export const SALE_POLICY = {
@@ -10,7 +11,68 @@ export const SALE_POLICY = {
     minimumSellers: 3,
     minimumPriceRatio: 0.75,
     maximumPriceRatio: 1.25,
+    /** A mod pool unique compares with its best mod alone, so its other mods can add value. */
+    maximumModPoolPriceRatio: 2,
 } as const;
+
+const POOL_KINDS = Object.values(MOD_POOLS)
+    .map((pool) => `'${pool.kind}'`)
+    .join(", ");
+
+/**
+ * Sets the market of the mod pool uniques among `ps_sale` rows matching `filter`. Their exact mod
+ * combinations rarely have enough sellers, so each is compared with its most valuable mod: the
+ * median of other sellers' prices for items with that mod and the same number of mods, when the
+ * sale was removed. A sale with no mod listed by enough sellers has no market.
+ */
+export async function priceModPoolSales(
+    conn: DuckDBConnection,
+    filter: string,
+    values: string[] = [],
+): Promise<void> {
+    await conn.run(
+        `UPDATE ps_sale SET market_price = market.price, market_sellers = coalesce(market.sellers, 0)
+         FROM (
+             WITH sales AS MATERIALIZED (
+                 SELECT rowid AS sale_id, league, item_key, identified, corrupted, price_currency,
+                     coalesce(tab, '') AS tab, lower(account_name) AS seller, removed_at,
+                     json_extract_string(mod_signature, '$.mods[*]') AS mods
+                 FROM ps_sale
+                 WHERE (${filter}) AND json_extract_string(mod_signature, '$.kind') IN (${POOL_KINDS})
+             ), peers AS MATERIALIZED (
+                 SELECT league, item_key, identified, corrupted, price_currency, price_amount,
+                     coalesce(tab, '') AS tab, lower(account_name) AS seller,
+                     first_seen_at, last_seen_at, removed_at,
+                     json_extract_string(mod_signature, '$.mods[*]') AS mods
+                 FROM ps_listing
+                 WHERE item_key IN (SELECT item_key FROM sales) AND price_amount > 0
+             ), seller_prices AS (
+                 SELECT s.sale_id, s.mod, p.seller, median(p.price_amount) AS price
+                 FROM (SELECT *, unnest(mods) AS mod FROM sales) s
+                 JOIN peers p ON p.league = s.league AND p.item_key = s.item_key
+                     AND p.identified = s.identified AND p.corrupted = s.corrupted
+                     AND p.tab = s.tab AND p.price_currency = s.price_currency
+                     AND p.seller <> s.seller AND len(p.mods) = len(s.mods)
+                     AND list_contains(p.mods, s.mod)
+                     AND p.first_seen_at <= s.removed_at
+                     AND (p.removed_at IS NULL OR p.removed_at > s.removed_at)
+                     AND p.last_seen_at >= s.removed_at - INTERVAL ${SALE_POLICY.marketWindowSeconds} SECOND
+                 GROUP BY s.sale_id, s.mod, p.seller
+             ), mod_markets AS (
+                 SELECT sale_id, median(price) AS price, count(*) AS sellers
+                 FROM seller_prices GROUP BY sale_id, mod
+                 HAVING count(*) >= ${SALE_POLICY.minimumSellers}
+             ), best AS (
+                 SELECT sale_id, max(price) AS price, arg_max(sellers, price) AS sellers
+                 FROM mod_markets GROUP BY sale_id
+             )
+             SELECT sales.sale_id, best.price, best.sellers
+             FROM sales LEFT JOIN best ON best.sale_id = sales.sale_id
+         ) market
+         WHERE ps_sale.rowid = market.sale_id`,
+        values,
+    );
+}
 
 /**
  * Records the listings these stashes lost in the current transaction as sale candidates. A removal
@@ -96,6 +158,11 @@ export async function recordRemovals(
             ...stashIds,
         ],
     );
+    await priceModPoolSales(
+        conn,
+        `removed_at = current_timestamp::TIMESTAMP AND stash_id IN (${params(stashIds)})`,
+        stashIds,
+    );
 }
 
 export async function evaluateSales(
@@ -137,7 +204,10 @@ export async function evaluateSales(
                 `UPDATE ps_sale SET status = CASE
                     WHEN market_sellers < ${SALE_POLICY.minimumSellers} OR market_price IS NULL
                         OR price_amount IS NULL OR price_currency IS NULL THEN 'insufficient-market'
-                    WHEN price_amount / market_price BETWEEN ${SALE_POLICY.minimumPriceRatio} AND ${SALE_POLICY.maximumPriceRatio}
+                    WHEN price_amount / market_price BETWEEN ${SALE_POLICY.minimumPriceRatio} AND
+                        CASE WHEN json_extract_string(mod_signature, '$.kind') IN (${POOL_KINDS})
+                            THEN ${SALE_POLICY.maximumModPoolPriceRatio}
+                            ELSE ${SALE_POLICY.maximumPriceRatio} END
                         THEN 'likely-sold'
                     ELSE 'outside-market' END,
                     updated_at = $1::TIMESTAMP
