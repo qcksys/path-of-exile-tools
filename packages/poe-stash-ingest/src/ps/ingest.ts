@@ -330,6 +330,8 @@ export async function ingestPs(
         equipment?: EquipmentClassifier;
         equipmentDiagnostics?: EquipmentDiagnostics;
         observedAt?: Date;
+        /** When the page's listings were seen; by default, its capture time or now. */
+        listingsObservedAt?: Date;
         /** Directory that keeps every fetched page unfiltered; see `raw-archive.ts`. */
         rawArchiveDir?: string;
         /** Reads pages a capture process archived, at their capture times, instead of fetching. */
@@ -421,7 +423,7 @@ export async function ingestPs(
                     result.leagues.set(lg, acc);
                 }
             }
-            const r = await applyStashChanges(conn, changes, pageTime);
+            const r = await applyStashChanges(conn, changes, opts.listingsObservedAt ?? pageTime);
             result.equipmentObserved += await captureEquipmentPage(
                 conn,
                 changes,
