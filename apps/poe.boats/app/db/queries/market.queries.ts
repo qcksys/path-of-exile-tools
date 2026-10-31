@@ -431,7 +431,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             : Promise.resolve([]);
     const modRowsPromise =
         filters.item && view !== "list" && isModPool(filters.kind)
-            ? modPoolRows(db, filters, filters.item, scope, latestHour)
+            ? modPoolRows(db, filters, filters.item, scope, windowStart)
             : Promise.resolve(null);
     // Crafting base categories list equipment cohorts instead of unique and exchange markets.
     const baseCategory = isMarketBaseCategory(filters.category);
@@ -722,13 +722,12 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                     const mod = modPoolMod(row.signatureData);
                     if (!mod) return [];
                     const rate = marketDisplayRate(rates, filters.currency, row.hour);
-                    const asks =
-                        row.hour === latestHour ? mergeMarketPrices(row.prices, rate) : null;
+                    const asks = row.current ? mergeMarketPrices(row.prices, rate) : null;
                     return [
                         {
                             ...mod,
                             signatureValue: row.signatureValue,
-                            listings: row.hour === latestHour ? row.listingCount : 0,
+                            listings: row.current ? row.listingCount : 0,
                             ask: asks?.min ?? null,
                             medianAsk: asks?.median ?? null,
                             sales: row.likelySales,
@@ -901,16 +900,43 @@ function marketVariantLatestRows(
     );
 }
 
-/** A pool unique's per-mod markets: the latest hour's listings and every hour with likely sales. */
-function modPoolRows(
+/**
+ * A pool unique's per-mod markets: its latest listed hour's listings, marked `current`, and every
+ * hour with likely sales. That hour is the item's own, since the season's can be a newer exchange
+ * hour with no stash rows yet.
+ */
+async function modPoolRows(
     db: TDatabase,
     filters: MarketFilters,
     item: string,
     scope: SQL | undefined,
-    latestHour: number,
+    windowStart: number,
 ) {
-    const { market } = marketTables(filters.realm);
-    return traceQuery(
+    const { market, daily } = marketTables(filters.realm);
+    const [listed] = await traceQuery(
+        "market.mod_pool_latest",
+        db
+            .select({
+                hour: sql<number>`coalesce(max(${daily.listedHour}), max(${daily.latestHour}))`.mapWith(
+                    Number,
+                ),
+            })
+            .from(daily)
+            .where(
+                and(
+                    eq(daily.realm, filters.realm),
+                    eq(daily.league, filters.league),
+                    gte(daily.day, windowStart),
+                    tabMatch(daily, filters),
+                    eq(daily.itemKey, item),
+                    eq(daily.identified, true),
+                    eq(daily.corrupted, filters.corrupted === "true"),
+                    eq(daily.signatureKind, filters.kind),
+                ),
+            ),
+    );
+    const latestHour = listed?.hour ?? 0;
+    const rows = await traceQuery(
         "market.mod_pool",
         db
             .select({
@@ -936,6 +962,7 @@ function modPoolRows(
                 ),
             ),
     );
+    return rows.map((row) => ({ ...row, current: row.hour === latestHour }));
 }
 
 /**

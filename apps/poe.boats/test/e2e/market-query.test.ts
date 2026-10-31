@@ -1123,6 +1123,22 @@ it("lists a mod pool unique once and values its mods on the item page", async ()
     ]);
     expect(single.modValues).toHaveLength(4);
 
+    // An exchange hour can arrive before its stash hour; the item's latest listings still count.
+    vi.setSystemTime((hour + 7200) * 1000);
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, [
+        {
+            realm: "pc",
+            league: "Mods",
+            marketId: "chaos|divine",
+            hour: hour + 3600,
+            volumeTraded: { chaos: 1 },
+        },
+    ]);
+    const ahead = await marketData(db as unknown as TDatabase, filters, "history");
+    vi.setSystemTime((hour + 3600) * 1000);
+    expect(Number(ahead.season?.latestHour)).toBe(hour + 3600);
+    expect(ahead.modValues).toEqual(result.modValues);
+
     const other = await marketData(
         db as unknown as TDatabase,
         { ...filters, kind: "", value: "" },
