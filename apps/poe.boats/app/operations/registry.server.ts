@@ -362,6 +362,11 @@ export const operations = [
                     mergedSales: mergedMarketPriceSchema
                         .nullable()
                         .describe("Last asks of likely sales, converted like `merged`"),
+                    mergedDelisted: mergedMarketPriceSchema
+                        .nullable()
+                        .describe(
+                            "Last asks of removals that are not likely sales, relists or undecided, converted like `merged`",
+                        ),
                     priceRates: priceRates("at this hour"),
                 }),
             ),
