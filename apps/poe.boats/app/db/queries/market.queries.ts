@@ -35,6 +35,7 @@ import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
+import { tStashMarketPrice } from "~/db/schema/stash.market-price";
 import { type TStashUniqueHourlyS, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { rankMarketBases } from "~/lib/market-bases";
 import { isMarketBaseCategory, MARKET_FORBIDDEN_CATEGORY } from "~/lib/market-categories";
@@ -56,11 +57,9 @@ import { marketExchangeItem } from "~/lib/market-exchange.server";
 import { MARKET_PRICE_CURRENCIES } from "~/lib/market-price-currencies";
 import {
     chaosRatesByHour,
-    MARKET_RATE_MAX_AGE,
     marketDisplayRate,
     marketGame,
     marketPriceRates,
-    marketRatePairs,
     mergeMarketPrices,
     mergeMarketRows,
 } from "~/lib/market-price-merge";
@@ -83,6 +82,7 @@ import {
     marketBaseIds,
     marketBaseRows,
 } from "./market-bases.queries";
+import { marketRateSnapshots } from "./market-rates.queries";
 import { endedStashLeagues } from "./stash-league.queries";
 import { utcDay } from "./stash-rollups.queries";
 
@@ -99,6 +99,7 @@ function marketTables(realm: string) {
     return {
         market: tStashUniqueHourly[game],
         daily: tStashMarketDaily[game],
+        marketPrice: tStashMarketPrice[game],
         currencyHourly: tStashCurrencyHourly[game],
         currencyDaily: tStashCurrencyDaily[game],
         currencyMarket: tStashCurrencyMarket[game],
@@ -345,7 +346,7 @@ export function getMarketData(db: TDatabase, input: MarketFilters, view: MarketV
 }
 
 async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketView, span: Span) {
-    const { market, daily } = marketTables(input.realm);
+    const { market, daily, marketPrice } = marketTables(input.realm);
     const exchangeHour = marketObservationRange().latestHour;
     const [stashSeasons, exchangeSeasons, ended] = await Promise.all([
         marketStashSeasons(db, input.realm),
@@ -451,10 +452,21 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         tabMatch(daily, filters),
     );
     const search = filters.q ? `%${filters.q.replace(/[\\%_]/g, "\\$&")}%` : undefined;
-    const currencyField = (field: string) =>
-        sql`cast(json_unquote(json_extract(${market.prices}, ${`$.${JSON.stringify(filters.currency)}.${field}`})) as decimal(30, 10))`;
-    // A market merging foil and non-foil rows orders by their listing-weighted median.
-    const price = sql`sum(${currencyField("median")} * ${currencyField("count")}) / sum(${currencyField("count")})`;
+    // The price locked when the market's newest listed hour was written, as its price cell shows it.
+    const priceDivisor =
+        !season ||
+        view === "history" ||
+        baseCategory ||
+        filters.currency === "chaos" ||
+        filters.currency === "divine"
+            ? undefined
+            : await marketDisplayCurrencyRate(db, filters, latestHour);
+    const price =
+        filters.currency === "divine"
+            ? sql`max(${marketPrice.priceDivine})`
+            : filters.currency === "chaos"
+              ? sql`max(${marketPrice.priceChaos})`
+              : sql`max(${marketPrice.priceChaos}) / ${priceDivisor ?? null}`;
     const listings = sql`sum(${market.listingCount})`;
     const sellers = sql`sum(${market.uniqueSellers})`;
     const latestRowOrders: Partial<Record<MarketOrder, SQL>> = {
@@ -573,6 +585,20 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 eq(market.corrupted, page.corrupted),
                 eq(market.signatureKind, page.signatureKind),
                 eq(market.signatureValue, page.signatureValue),
+            ),
+        )
+        .leftJoin(
+            marketPrice,
+            and(
+                eq(marketPrice.realm, filters.realm),
+                eq(marketPrice.league, filters.league),
+                eq(marketPrice.itemKey, page.itemKey),
+                eq(marketPrice.identified, page.identified),
+                eq(marketPrice.corrupted, page.corrupted),
+                eq(marketPrice.tab, filters.tab),
+                eq(marketPrice.signatureKind, page.signatureKind),
+                eq(marketPrice.signatureValue, page.signatureValue),
+                gte(marketPrice.hour, windowStart),
             ),
         )
         .groupBy(
@@ -1550,6 +1576,16 @@ function aggregateOrder(order: MarketOrder, periodSales: SQLWrapper, latestHour:
     return [];
 }
 
+/** Chaos per unit of the selected currency at the hour, to state locked chaos prices in it. */
+async function marketDisplayCurrencyRate(
+    db: TDatabase,
+    filters: Pick<MarketFilters, "realm" | "league" | "currency">,
+    hour: number,
+) {
+    const rates = await marketChaosRates(db, filters, [], [hour]);
+    return marketDisplayRate(rates, "chaos", hour)(filters.currency);
+}
+
 async function marketChaosRates(
     db: TDatabase,
     filters: Pick<MarketFilters, "realm" | "league" | "currency">,
@@ -1568,32 +1604,9 @@ async function marketChaosRates(
             ]),
         ]),
     ];
-    const { currencyHourly } = marketTables(filters.realm);
     const snapshots = await traceQuery(
         "market.rates",
-        db
-            .select({
-                realm: currencyHourly.realm,
-                league: currencyHourly.league,
-                marketId: currencyHourly.marketId,
-                hour: currencyHourly.hour,
-                volumeTraded: currencyHourly.volumeTraded,
-                lowestRatio: currencyHourly.lowestRatio,
-                highestRatio: currencyHourly.highestRatio,
-            })
-            .from(currencyHourly)
-            .where(
-                and(
-                    eq(currencyHourly.realm, filters.realm),
-                    eq(currencyHourly.league, filters.league),
-                    inArray(
-                        currencyHourly.marketId,
-                        marketRatePairs(currencies, marketGame(filters.realm)),
-                    ),
-                    gte(currencyHourly.hour, Math.min(...hours) - MARKET_RATE_MAX_AGE),
-                    lte(currencyHourly.hour, Math.max(...hours)),
-                ),
-            ),
+        marketRateSnapshots(db, filters, currencies, hours),
         { "market.currencies": currencies.length },
     );
     return chaosRatesByHour(

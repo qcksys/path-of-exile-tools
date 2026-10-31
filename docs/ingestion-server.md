@@ -40,6 +40,11 @@ must use the same selected hour and estimate window. Historical cutoffs remain i
 cannot select the current incomplete hour. Listing-price conversion still uses the listing's
 exact hour; the separate general-market display-rate fallback is unchanged.
 
+The market list sorts and filters by prices locked when a stash hour is written, at that hour's
+exchange rates. So a worker that captures the exchange delivers each hour's exchange first and holds
+that hour's stash rows until the exchange is captured. An exchange outage therefore pauses stash
+delivery; capture keeps running, and the held hours are delivered once the exchange recovers.
+
 Equipment asking prices and their source archive still require a persistent public-stash
 worker. Deploying the scheduled exchange collector does not create equipment observations
 or restore equipment history. Apply the existing database migrations before deployment.

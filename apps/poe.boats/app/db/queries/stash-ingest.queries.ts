@@ -17,6 +17,7 @@ import type { TStashUniqueHourlyI } from "~/db/schema/stash.unique-hourly";
 import { isYellowBeast, yellowBeastMarket } from "~/lib/crafting-yellow-beasts";
 import { writeStashCurrencyHourly } from "./stash-currency.queries";
 import { writeStashUniqueHourly } from "./stash-market.queries";
+import { lockDeliveredMarketPrices } from "./stash-market-price.queries";
 import {
     refreshStashCurrencyDaily,
     refreshStashHourCoverage,
@@ -296,6 +297,13 @@ export async function upsertStashUniqueHourly(
                     toHour: day,
                     itemKeys: keys,
                 });
+        await lockDeliveredMarketPrices(
+            db,
+            game,
+            gameRows.flatMap((row) =>
+                isYellowBeast(row.itemKey) ? [row, { ...row, itemKey: yellowBeastMarket }] : [row],
+            ),
+        );
     }
     return written;
 }

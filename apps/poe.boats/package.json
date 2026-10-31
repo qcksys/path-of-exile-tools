@@ -30,6 +30,7 @@
         "db:generate": "vp run db:drizzle generate",
         "db:migrate": "vp run db:drizzle migrate",
         "db:backfill-yellow-beasts": "varlock run -- tsx scripts/backfill-yellow-beasts.ts",
+        "db:backfill-market-prices": "varlock run -- tsx scripts/backfill-market-prices.ts",
         "types": "vp run types:cf && vp run types:rr && vp run types:tsc",
         "typecheck": "vp run types",
         "types:cf": "varlock-wrangler types --env-interface CloudflareBindings",

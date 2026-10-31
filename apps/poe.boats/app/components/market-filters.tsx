@@ -275,7 +275,8 @@ export function MarketFiltersForm({
             ) : null}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">
-                    Price sorting and filters use{" "}
+                    Prices sort by the value each row shows, at the exchange rate of the hour it was
+                    listed, and filter in{" "}
                     {filters.currency ? (
                         <CurrencyLabel currency={filters.currency} game={game} />
                     ) : (

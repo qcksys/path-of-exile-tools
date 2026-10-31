@@ -537,6 +537,94 @@ it.each([
     ]);
 });
 
+describe("exchange before stash", () => {
+    const streams = (network) =>
+        network.mock.calls.map(([, request]) => JSON.parse(request.body).stream);
+    const previous = () => Math.floor(Date.now() / 3_600_000) * 3600 - 3600;
+    const chaosId = "Metadata/Items/Currency/CurrencyRerollRare";
+    const divineId = "Metadata/Items/Currency/CurrencyModValues";
+    const amounts = { [chaosId]: 200, [divineId]: 1 };
+    const snapshot = (id) => ({
+        next_change_id: id + 3600,
+        markets: [
+            {
+                league: "Season A",
+                market_id: `${chaosId}|${divineId}`,
+                lowest_ratio: amounts,
+                highest_ratio: amounts,
+                volume_traded: amounts,
+                lowest_stock: amounts,
+                highest_stock: amounts,
+            },
+        ],
+    });
+    function deliver() {
+        const network = vi
+            .fn()
+            .mockImplementation((_url, request) =>
+                Promise.resolve(Response.json({ written: JSON.parse(request.body).rows.length })),
+            );
+        vi.stubGlobal("fetch", network);
+        return network;
+    }
+    async function previousHourStash() {
+        await ingest([stash]);
+        await db.conn.run("UPDATE ps_listing_hour SET observed_hour = $1", [previous()]);
+        client.public.stashTabs.mockResolvedValue({ stashes: [], next_change_id: "cursor-end" });
+    }
+    afterEach(() => {
+        client.public.currencyExchange = undefined;
+    });
+
+    it("holds a stash hour until that hour's exchange has been captured", async () => {
+        await previousHourStash();
+        client.public.currencyExchange = vi.fn().mockRejectedValue(new Error("feed unavailable"));
+        const network = deliver();
+        await expect(runPipeline(db.conn, client, { pages: 1 })).rejects.toThrow(
+            "pipeline stages failed",
+        );
+        expect(streams(network)).not.toContain("psapi");
+    });
+
+    it("delivers an hour's exchange before its stash rows", async () => {
+        await previousHourStash();
+        client.public.currencyExchange = vi.fn().mockImplementation(({ id }) => snapshot(id));
+        const network = deliver();
+        await runPipeline(db.conn, client, { pages: 1 });
+        const delivered = streams(network);
+        expect(delivered).toContain("cxapi");
+        expect(delivered).toContain("psapi");
+        expect(delivered.indexOf("cxapi")).toBeLessThan(delivered.indexOf("psapi"));
+    });
+
+    it("releases the hour when the feed's tail repeats its own hour as the next one", async () => {
+        await previousHourStash();
+        client.public.currencyExchange = vi
+            .fn()
+            .mockImplementation(({ id }) => ({ ...snapshot(id), next_change_id: id }));
+        const network = deliver();
+        await runPipeline(db.conn, client, { pages: 1 });
+        expect(streams(network)).toContain("psapi");
+    });
+
+    it("does not wait for an exchange the worker does not capture", async () => {
+        await previousHourStash();
+        const network = deliver();
+        await runPipeline(db.conn, client, { pages: 1, currency: false });
+        expect(streams(network)).toContain("psapi");
+    });
+
+    it("does not let an hour with an empty digest hold stash back", async () => {
+        await previousHourStash();
+        client.public.currencyExchange = vi
+            .fn()
+            .mockImplementation(({ id }) => ({ ...snapshot(id), markets: [] }));
+        const network = deliver();
+        await runPipeline(db.conn, client, { pages: 1 });
+        expect(streams(network)).toContain("psapi");
+    });
+});
+
 it("batches large stashes without losing raw modifiers, null fields, or icon counts", async () => {
     const iconAsset = "Art/2DItems/Belts/Headhunter";
     const icon = `https://example.invalid/gen/image/${Buffer.from(JSON.stringify([0, 0, { f: iconAsset }])).toString("base64url")}`;

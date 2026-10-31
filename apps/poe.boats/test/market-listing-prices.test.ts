@@ -1,7 +1,42 @@
 import { expect, it } from "vite-plus/test";
-import { marketListingPrices } from "~/lib/market-listing-prices";
+import { marketListingPrices, marketLockedPrice } from "~/lib/market-listing-prices";
 
 const summary = (median: number, count: number) => ({ count, min: median, median, max: median });
+
+it("locks the most listed currency's median in chaos and divine", () => {
+    const rates = { divine: 200, vaal: 2 };
+    expect(marketLockedPrice({ chaos: summary(30, 13), divine: summary(7, 4) }, rates)).toEqual({
+        priceChaos: 30,
+        priceDivine: 0.15,
+    });
+    expect(marketLockedPrice({ divine: summary(20, 11) }, rates)).toEqual({
+        priceChaos: 4000,
+        priceDivine: 20,
+    });
+    expect(marketLockedPrice({ vaal: summary(50, 3), chaos: summary(1, 1) }, rates)).toEqual({
+        priceChaos: 100,
+        priceDivine: 0.5,
+    });
+});
+
+it("locks what it can without a rate, and nothing for a market without prices", () => {
+    expect(marketLockedPrice({ divine: summary(20, 1) }, {})).toEqual({
+        priceChaos: null,
+        priceDivine: 20,
+    });
+    expect(marketLockedPrice({ chaos: summary(30, 1) }, {})).toEqual({
+        priceChaos: 30,
+        priceDivine: null,
+    });
+    expect(marketLockedPrice({ fragment: summary(1, 9), chaos: summary(5, 1) }, {})).toEqual({
+        priceChaos: null,
+        priceDivine: null,
+    });
+    expect(marketLockedPrice(null, { divine: 200 })).toEqual({
+        priceChaos: null,
+        priceDivine: null,
+    });
+});
 
 it("orders currencies cheapest first in chaos, then by listing count", () => {
     const prices = marketListingPrices(

@@ -60,6 +60,28 @@ export function marketMostListedPrice<Price extends { count: number; chaos?: num
 }
 
 /**
+ * What a market's price cell shows, its most listed currency's median, in chaos and in divine.
+ * A value is null when the market has no prices or the rates cannot convert it.
+ */
+export function marketLockedPrice(
+    prices: Record<string, MarketPriceSummary> | null,
+    chaosRates: Record<string, number>,
+) {
+    const primary = marketMostListedPrice(marketListingPrices(prices, chaosRates));
+    const chaos = primary?.chaos ?? null;
+    const divine = chaosRates.divine;
+    return {
+        priceChaos: chaos,
+        priceDivine:
+            primary?.currency === "divine"
+                ? primary.median
+                : chaos !== null && divine
+                  ? chaos / divine
+                  : null,
+    };
+}
+
+/**
  * A row's listing currencies, cheapest first by chaos value and then most listed. Chaos is
  * restated in divine, divine in chaos, and other currencies in divine once they are worth at
  * least one divine, otherwise in chaos. Currencies costing more than MARKET_OUTLIER_FACTOR
