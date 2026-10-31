@@ -44,12 +44,14 @@ function daily(
     quoteVolume: number,
     day = today,
     latestHour = day + 3600,
+    tradedHours = 1,
 ): MarketExchangeDaily {
     return {
         marketId: `${item}|${quote}`,
         day,
         firstVolume: itemVolume,
         secondVolume: quoteVolume,
+        tradedHours,
         latestHour,
     };
 }
@@ -314,13 +316,130 @@ it("returns an item's hourly chaos price and range through a bridge and each pai
                 { hour: hour - 3600, rate: 2, low: 1.8, high: 2.4, p25: null, p75: null, units: 6 },
                 { hour, rate: 1, low: null, high: null, p25: null, p75: null, units: 4 },
             ],
+            lowVolume: false,
         },
         {
             quoteId: chaos,
             name: "Chaos Orb",
             hours: [{ hour, rate: 400, low: 380, high: 410, p25: null, p75: null, units: 1 }],
+            lowVolume: false,
         },
     ]);
+});
+
+it("marks pairs trading in under a tenth of the hours of the item's busiest pair as low volume", () => {
+    const hours = (count: number) => Array.from({ length: count }, (_, i) => hour - i * 3600);
+    const pairHours = (quote: string, count: number, units = 1) =>
+        hours(count).map((at) => snapshot(teardrop, units, quote, 2, at));
+    const lowVolume = (snapshots: ExchangeSnapshot[]) =>
+        Object.fromEntries(
+            marketExchangeHistory(snapshots, teardrop, describe).pairs.map((pair) => [
+                pair.name,
+                pair.lowVolume,
+            ]),
+        );
+    expect(lowVolume([...pairHours(divine, 20), ...pairHours(chaos, 1)])).toEqual({
+        "Divine Orb": false,
+        "Chaos Orb": true,
+    });
+    // Exactly a tenth is kept, and units do not count: many units in one hour is still thin.
+    expect(lowVolume([...pairHours(divine, 20), ...pairHours(chaos, 2)])).toEqual({
+        "Divine Orb": false,
+        "Chaos Orb": false,
+    });
+    expect(lowVolume([...pairHours(divine, 20), ...pairHours(chaos, 1, 1_000)])).toEqual({
+        "Divine Orb": false,
+        "Chaos Orb": true,
+    });
+    expect(lowVolume(pairHours(chaos, 1))).toEqual({ "Chaos Orb": false });
+});
+
+it("leaves a low volume pair out of an item's hourly price, keeping its rates and units", () => {
+    const at = hour - 3600;
+    const history = marketExchangeHistory(
+        [
+            ...Array.from({ length: 20 }, (_, i) => hour - i * 3600).flatMap((traded) => [
+                snapshot(teardrop, 1, divine, 1000, traded),
+                snapshot(divine, 1, chaos, 400, traded),
+            ]),
+            snapshot(teardrop, 2, chaos, 130_000, at),
+        ],
+        teardrop,
+        describe,
+    );
+    expect(history.prices.find((point) => point.hour === at)).toMatchObject({
+        price: 400_000,
+        via: divine,
+        units: 3,
+    });
+    const thin = history.pairs.find((pair) => pair.quoteId === chaos)!;
+    expect(thin.lowVolume).toBe(true);
+    expect(thin.hours.map((point) => point.rate)).toEqual([65_000]);
+});
+
+it("leaves no price for an hour where only a low volume pair traded", () => {
+    const at = hour - 3600;
+    const history = marketExchangeHistory(
+        [
+            ...Array.from({ length: 20 }, (_, i) => hour - (i + 2) * 3600).flatMap((traded) => [
+                snapshot(teardrop, 1, divine, 1000, traded),
+                snapshot(divine, 1, chaos, 400, traded),
+            ]),
+            snapshot(teardrop, 2, chaos, 130_000, at),
+        ],
+        teardrop,
+        describe,
+    );
+    expect(history.prices.find((point) => point.hour === at)).toMatchObject({
+        price: null,
+        via: null,
+        units: 2,
+    });
+});
+
+it("does not let a low volume pair set an item's latest price or daily trend", () => {
+    const earlier = today - 3 * DAY;
+    const days = [earlier, today - 2 * DAY, today - DAY, today];
+    const rows = marketExchangeRows(
+        [
+            snapshot(teardrop, 1, divine, 1000),
+            snapshot(divine, 1, chaos, 400),
+            // Traded alongside the busy pair in the latest hour, and earlier in the window.
+            snapshot(teardrop, 2, chaos, 130_000),
+        ],
+        [
+            ...days.flatMap((day) => [
+                daily(teardrop, 24, divine, 24_000, day, day + 3600, 24),
+                daily(divine, 24, chaos, 9_600, day, day + 3600, 24),
+            ]),
+            daily(teardrop, 2, chaos, 130_000, earlier, earlier + 3600, 1),
+        ],
+        hour,
+        describe,
+    );
+    const row = byName(rows)["Tainted Divine Teardrop"]!;
+    expect(row).toMatchObject({ price: 400_000, via: { itemId: divine }, current: true });
+    expect(row.history.filter((value) => value !== null)).toEqual([
+        400_000, 400_000, 400_000, 400_000,
+    ]);
+    expect(row.change).toBe(0);
+});
+
+it("judges a low volume pair from the priced item's side, leaving its other side's price", () => {
+    // Under a tenth of Divine Orb's hours on the Exalted Orb pair, but all of Exalted Orb's.
+    const rows = marketExchangeRows(
+        [snapshot(divine, 1, chaos, 400), snapshot(exalted, 1, divine, 1)],
+        [
+            daily(divine, 24, chaos, 9_600, today, today + 3600, 24),
+            daily(exalted, 2, divine, 2, today, today + 3600, 1),
+        ],
+        hour,
+        describe,
+    );
+    expect(byName(rows)).toMatchObject({
+        "Divine Orb": { price: 400, via: { itemId: chaos } },
+        "Exalted Orb": { price: 400, via: { itemId: divine } },
+    });
 });
 
 it("estimates a symmetric IQR when the volume-weighted rate is the midpoint", () => {

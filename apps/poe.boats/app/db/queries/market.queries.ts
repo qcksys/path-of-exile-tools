@@ -1099,6 +1099,7 @@ function exchangeDaily(
                 day: currencyDaily.day,
                 firstVolume: currencyDaily.firstVolume,
                 secondVolume: currencyDaily.secondVolume,
+                tradedHours: currencyDaily.tradedHours,
                 latestHour: currencyDaily.latestHour,
             })
             .from(currencyDaily)

@@ -423,7 +423,7 @@ export const operations = [
                         }),
                     )
                     .describe(
-                        "Each hour the item traded, oldest first: its volume-weighted price in the exchange unit (directly or through `via`), the hour's lowest and highest rates of that pair in the exchange unit (scaled by `via`'s price), their interquartile range estimated from those rates and the volume-weighted price (null at 8 units or fewer on that pair), and units traded across its pairs",
+                        "Each hour the item traded, oldest first: its volume-weighted price in the exchange unit (directly or through `via`; null when only `lowVolume` pairs traded, since they do not set it), the hour's lowest and highest rates of that pair in the exchange unit (scaled by `via`'s price), their interquartile range estimated from those rates and the volume-weighted price (null at 8 units or fewer on that pair), and units traded across its pairs",
                     ),
                 pairs: z
                     .array(
@@ -441,6 +441,11 @@ export const operations = [
                                     units: z.number(),
                                 }),
                             ),
+                            lowVolume: z
+                                .boolean()
+                                .describe(
+                                    "Traded in under a tenth of the hours of the item's busiest pair over the period. These do not set the item's price, and the item page hides them by default",
+                                ),
                         }),
                     )
                     .describe(

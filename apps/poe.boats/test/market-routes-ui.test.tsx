@@ -284,6 +284,58 @@ it("opens an exchange item's page with its history and returns to the list", asy
     expect(screen.getByLabelText("Current URL").textContent).toContain("order=name-asc");
 });
 
+it("hides an exchange item's low volume pairs until asked, leaving their series with them", async () => {
+    vi.mocked(getMarketExchangeItem).mockImplementation(async (_db, input) => {
+        const fixture = marketExchangeFixture(input);
+        return {
+            ...fixture,
+            history: {
+                ...fixture.history,
+                pairs: fixture.history.pairs.map((pair) => ({
+                    ...pair,
+                    lowVolume: pair.name === "Divine Orb",
+                })),
+            },
+        };
+    });
+    showMarket("/1/market?league=Allflame&category=armour");
+    const table = await screen.findByRole("table", { name: "Unique armour exchange" });
+    fireEvent.click(within(table).getByRole("link", { name: "Scroll of Wisdom" }));
+    const page = await screen.findByRole("region", { name: "Exchange item" });
+    const pairs = within(page).getByRole("region", { name: "Exchange pairs" });
+    const history = within(page).getByRole("region", { name: "Price history" });
+    const pairNames = () =>
+        within(pairs)
+            .getAllByRole("row")
+            .map((row) => (row as HTMLTableRowElement).cells[0]!.textContent);
+    const toggle = within(pairs).getByRole("button", { name: "Show low volume pairs (1)" });
+    const divineSeries = "Divine Orb per Scroll of Wisdom";
+    const pressed = (name: string) =>
+        within(history).getByRole("button", { name }).getAttribute("aria-pressed");
+
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    expect(pairNames()).toEqual(["Traded against", "Chaos Orb"]);
+    expect(within(history).queryByRole("button", { name: divineSeries })).toBeNull();
+
+    fireEvent.click(toggle);
+    expect(pairNames()).toEqual(["Traded against", "Chaos Orb", "Divine Orb"]);
+    fireEvent.click(within(history).getByRole("button", { name: divineSeries }));
+    expect(pressed(divineSeries)).toBe("true");
+
+    // Hiding the charted pair falls back to the value series.
+    fireEvent.click(toggle);
+    expect(within(history).queryByRole("button", { name: divineSeries })).toBeNull();
+    expect(pressed("Chaos value")).toBe("true");
+});
+
+it("offers no low volume toggle when an exchange item has none", async () => {
+    showMarket("/1/market?league=Allflame&category=armour");
+    const table = await screen.findByRole("table", { name: "Unique armour exchange" });
+    fireEvent.click(within(table).getByRole("link", { name: "Scroll of Wisdom" }));
+    const page = await screen.findByRole("region", { name: "Exchange item" });
+    expect(within(page).queryByRole("button", { name: /low volume/ })).toBeNull();
+});
+
 it("answers 404 for an item outside the exchange catalogue", async () => {
     await expect(
         exchangeLoader({

@@ -167,6 +167,7 @@ export async function runPipeline(
         cursor?: string;
         currency?: boolean;
         observedAt?: Date;
+        listingsObservedAt?: Date;
         equipmentDiagnostics?: EquipmentDiagnostics;
         onStatus?: (patch: Partial<IngestStatus>) => Promise<void>;
         currencyFromHour?: number;

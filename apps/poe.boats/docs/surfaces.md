@@ -100,7 +100,13 @@ hour's lowest to highest traded rate as a shaded range (a converted price scales
 by the bridge item's chaos price), the lowest rate as a line, and `p25`/`p75`, an interquartile
 range estimated from those rates and the volume-weighted rate as a triangular distribution (null
 at 8 units or fewer, since the exchange digest has no individual trades). The history reads the item's chaos, divine and exalted pairs,
-its eight other most traded pairs and the chaos markets that convert them. List filters stay in
+its eight other most traded pairs and the chaos markets that convert them. Pairs that traded in
+under a tenth of the hours of the item's busiest pair carry `lowVolume`; the page hides them from
+its series and pairs table until asked, and the operation returns them all. A low volume pair never
+sets the item's price, whether on the list and `getMarketExchangePrices` (judged over the last 7 UTC
+days from `tradedHours`) or in the hourly history (judged over the period). An hour or day where
+only such a pair traded has no price from it. Stash listing rates (`chaosRatesByHour`) still read
+every pair. List filters stay in
 the query for the way back. Exchange rows and history give amounts as `price` in the currency
 named by `unit` (`exchangeUnit` on `get_season_market`).
 The PoE 2 market at `/2/market/:category` (`get_poe2_season_exchange`) lists only the currency
