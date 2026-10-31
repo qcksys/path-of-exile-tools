@@ -1,3 +1,4 @@
+export * from "./base-variants.ts";
 export * from "./cohorts.ts";
 export * from "./coverage.ts";
 export * from "./equipment-window.ts";

@@ -71,7 +71,7 @@ describe("links split in ingest", () => {
                 accountName: account,
                 league: "Standard",
                 stash: "",
-                stashType: "PremiumStash",
+                stashType: "TradeStash",
                 items,
             })),
         });

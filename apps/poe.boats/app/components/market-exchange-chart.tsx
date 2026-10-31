@@ -57,7 +57,7 @@ export function marketExchangeChartOption(
     const hasIqr = points.some((point) => point.p25 !== null && point.p75 !== null);
     return {
         useUTC: true,
-        grid: { left: 8, right: 8, top: 32, bottom: 8, outerBoundsMode: "same" },
+        grid: { left: 8, right: 8, top: 32, bottom: 40, outerBoundsMode: "same" },
         legend: {
             data: [
                 valueName,
@@ -76,6 +76,8 @@ export function marketExchangeChartOption(
             top: 0,
         },
         tooltip: { trigger: "axis" },
+        // The date range: drag the slider's handles, or scroll and drag on the chart.
+        dataZoom: [{ type: "inside" }, { type: "slider", height: 20, bottom: 8 }],
         xAxis: { type: "time" },
         yAxis: [
             {
@@ -172,7 +174,7 @@ export function MarketExchangeChart({
         <EChart
             option={option}
             label={`Hourly ${valueName.toLowerCase()} and lowest rate, with the lowest to highest rate traded in each hour shaded and an interquartile range estimated from those rates and the volume shaded inside it, and ${unitsName.toLowerCase()} as bars. Hours without trades are left out.`}
-            className="h-64"
+            className="h-72"
         />
     );
 }

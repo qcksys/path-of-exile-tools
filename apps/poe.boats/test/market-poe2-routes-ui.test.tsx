@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // biome-ignore-all lint/style/useNamingConvention: React Router fixture components use PascalCase.
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { createRoutesStub, RouterContextProvider, useLoaderData, useLocation } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { dbContext } from "~/context";
@@ -11,6 +11,7 @@ import Poe2MarketIndex, { loader as listLoader } from "~/routes/market/poe2";
 import Poe2MarketExchangeItem, { loader as exchangeLoader } from "~/routes/market/poe2-exchange";
 import Poe2Market from "~/routes/market-poe2";
 import type { Poe2MarketFilters } from "~/schemas/market";
+import { changeControl } from "./control-helpers";
 
 vi.mock("~/components/app-header", () => ({ AppHeader: () => null }));
 vi.mock("~/components/app-footer", () => ({ AppFooter: () => null }));
@@ -61,6 +62,7 @@ beforeEach(() => {
     vi.mocked(getMarketExchangeItem).mockImplementation(async (_db, input) => ({
         realm: input.realm,
         league: input.league || season.league,
+        seasons: [season],
         latestHour: hour,
         historyStart: hour - Number(input.days) * 86400 + 3600,
         unit: "exalted",
@@ -186,6 +188,19 @@ it("opens a PoE 2 exchange item's page and returns to its category", async () =>
     });
     expect(page.textContent).toContain("Runes · Rites · Currency exchange");
     expect(page.textContent).toContain("Exalted value, averaged over 7 days");
+    // PoE 2 has one realm, so the page offers only its season and period.
+    expect(screen.queryByRole("combobox", { name: "Realm" })).toBeNull();
+    expect(screen.getByRole("combobox", { name: "Season" })).toBeTruthy();
+    changeControl(screen.getByRole("combobox", { name: "Period" }), { target: { value: "90" } });
+    await waitFor(() =>
+        expect(getMarketExchangeItem).toHaveBeenLastCalledWith(expect.anything(), {
+            realm: "poe2",
+            league: "Rites",
+            days: "90",
+            itemId: rune,
+        }),
+    );
+    expect(screen.getByLabelText("Current URL").textContent).toContain("category=runes");
     expect(within(page).getByRole("button", { name: "Exalted value" })).toBeTruthy();
     fireEvent.click(within(page).getByRole("link", { name: /Back to markets/ }));
     await screen.findByRole("table", { name: "Runes exchange" });

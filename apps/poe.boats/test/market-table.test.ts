@@ -20,6 +20,34 @@ describe("market table state", () => {
         expect(marketTableOrder([])).toBe("sales");
     });
 
+    it("keeps only the filters of the link's category", () => {
+        const link = (category: string) =>
+            new URL(
+                marketLink(
+                    marketFiltersSchema.parse({
+                        category,
+                        baseClass: "Helmet",
+                        attributes: "int",
+                        quality: "30",
+                        gemLevel: "20",
+                        gemVaal: "true",
+                        mapMods: "8",
+                    }),
+                ),
+                "https://example.invalid",
+            ).searchParams;
+        const kept = (category: string) =>
+            ["baseClass", "attributes", "quality", "gemLevel", "gemVaal", "mapMods"].filter(
+                (param) => link(category).has(param),
+            );
+        expect(kept("armour-bases")).toEqual(["baseClass", "attributes", "quality"]);
+        expect(kept("armour")).toEqual(["baseClass", "attributes"]);
+        expect(kept("weapons")).toEqual(["baseClass"]);
+        expect(kept("gems")).toEqual(["gemLevel", "gemVaal"]);
+        expect(kept("maps")).toEqual(["mapMods"]);
+        expect(kept("currency")).toEqual([]);
+    });
+
     it("maps the item filter to the text search and range filters to URL bounds", () => {
         const filters = marketFiltersSchema.parse({ q: "old", page: 4, salesMax: 9 });
         const next = applyMarketTableFilters(filters, [

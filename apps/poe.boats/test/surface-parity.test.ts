@@ -97,7 +97,7 @@ import {
     workbenchProject,
 } from "./crafting-workbench-fixtures";
 import { catalogFixture } from "./fixtures/recombinator-catalog";
-import { marketBaseFixture, marketExchangeFixture, marketFixture } from "./market-fixtures";
+import { marketExchangeFixture, marketFixture } from "./market-fixtures";
 
 vi.mock("~/services/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
@@ -2968,54 +2968,6 @@ it("reads an exchange item's price, trend and pair history alike over HTTP and M
                 await mcp("tools/call", {
                     name: "get_season_exchange_item",
                     arguments: { itemId: "Chaos Orb" },
-                })
-            ).json(),
-        );
-        expect(CallToolResultSchema.parse(invalidRpc.result).isError).toBe(true);
-        expect(query).toHaveBeenCalledTimes(2);
-    } finally {
-        query.mockRestore();
-    }
-});
-
-it("reads a crafting base's history and variants alike over HTTP and MCP", async () => {
-    const input = {
-        realm: "pc",
-        league: "Allflame",
-        days: "30",
-        currency: "chaos",
-        baseId: "base:titan-plate:86-100:6-link",
-    } as const;
-    const fixture = marketBaseFixture(input);
-    const query = vi.spyOn(marketQueries, "getMarketBase").mockResolvedValue(fixture);
-    try {
-        const response = await api.request(
-            `https://poe.boats/api/v1/market/base?${new URLSearchParams(input)}`,
-            {},
-            { runtime },
-        );
-        expect(response.status).toBe(200);
-        const expected = JSON.parse(JSON.stringify(fixture));
-        expect(await response.json()).toEqual(expected);
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", { name: "get_season_market_base", arguments: input })
-            ).json(),
-        );
-        expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(expected);
-        expect(query).toHaveBeenLastCalledWith(context.db, input);
-        // Base IDs are crafting base cohort IDs; anything else is refused before the query.
-        const invalid = await api.request(
-            "https://poe.boats/api/v1/market/base?baseId=Titan%20Plate",
-            {},
-            { runtime },
-        );
-        expect(invalid.status).toBe(400);
-        const invalidRpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", {
-                    name: "get_season_market_base",
-                    arguments: { baseId: "Titan Plate" },
                 })
             ).json(),
         );

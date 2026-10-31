@@ -129,7 +129,7 @@ describe("empty resonator forward capture", () => {
                     accountName: "fixture-seller",
                     league: "Standard",
                     stash: "",
-                    stashType: "PremiumStash",
+                    stashType: "TradeStash",
                     items,
                 },
             ],

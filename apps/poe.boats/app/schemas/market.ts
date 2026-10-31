@@ -1,29 +1,12 @@
-import {
-    GEM_LEVEL_BANDS,
-    GEM_QUALITY_BANDS,
-    MAP_DELIRIUM_BANDS,
-    MAP_INFLUENCE_BANDS,
-    MAP_MOD_BANDS,
-    MAP_QUANTITY_BANDS,
-    parseGemBandFilter,
-} from "@poe-tools/market";
 import { z } from "zod";
 import {
-    MARKET_BASE_ATTRIBUTE_SETS,
-    MARKET_BASE_CLASS_NAMES,
-    MARKET_BASE_LEVELS,
-    type MarketBaseAttributeSet,
-} from "~/lib/market-bases";
-import {
-    isMarketUniqueCategory,
     MARKET_CATEGORIES,
     type MarketCategory,
     type MarketExchangeCategory,
-    marketHasCorruption,
-    marketHasIdentification,
     POE2_EXCHANGE_CATEGORIES,
     type Poe2ExchangeCategory,
 } from "~/lib/market-categories";
+import { MARKET_AXES, MARKET_AXIS_SCHEMAS, marketSettings } from "~/lib/market-kinds";
 
 export const marketCategorySchema = z.enum(
     Object.keys(MARKET_CATEGORIES) as [MarketCategory, ...MarketCategory[]],
@@ -70,43 +53,17 @@ export const MARKET_RANGE_PARAMS = Object.values(MARKET_RANGE_COLUMNS).flat() as
 
 const rangeBound = z.coerce.number().nonnegative().max(1e12).optional();
 
-const gemBandFilter = (bands: readonly string[], axis: string) =>
-    z
-        .string()
-        .max(40)
-        .default("")
-        .refine((value) => parseGemBandFilter(value, bands) !== null, `Unknown gem ${axis} band`)
-        .describe(
-            `Skill gem ${axis} bands (${bands.join(", ")}) to include, comma-separated; prefix one with - to exclude it. Set, only gem markets are listed`,
-        );
-
-const mapBandFilter = (bands: readonly string[], axis: string, note = "") =>
-    z
-        .string()
-        .max(60)
-        .default("")
-        .refine((value) => parseGemBandFilter(value, bands) !== null, `Unknown map ${axis} band`)
-        .describe(
-            `Map ${axis} bands (${bands.join(", ")}) to include, comma-separated; prefix one with - to exclude it. Set, only tier and Nightmare map markets are listed${note}`,
-        );
-
-/** The stash tabs whose listings markets show; listings captured before tabs were recorded show only under `all`. */
-export const MARKET_TABS = {
-    merchant: "Merchant tabs",
-    other: "Other tabs",
-    all: "All tabs",
+/** The realms the market offers; `poe2` links redirect to the PoE 2 market. */
+export const MARKET_REALMS = { pc: "PC", xbox: "Xbox", sony: "PlayStation" } as const;
+export const MARKET_PERIODS = {
+    "7": "Last 7 days",
+    "30": "Last 30 days",
+    "90": "Last 90 days",
 } as const;
-export type MarketTab = keyof typeof MARKET_TABS;
 
 export const marketFiltersSchema = z.object({
     realm: z.enum(["pc", "poe2", "xbox", "sony"]).default("pc"),
     league: z.string().max(100).default(""),
-    tab: z
-        .enum(Object.keys(MARKET_TABS) as [MarketTab, ...MarketTab[]])
-        .default("merchant")
-        .describe(
-            "Listings from Faustus's merchant tabs (`merchant`, stash type TradeStash), from every other public tab (`other`), or both (`all`, which alone includes listings captured before tabs were recorded). Crafting bases always count merchant tabs only",
-        ),
     q: z.string().max(100).default(""),
     days: z.enum(["7", "30", "90"]).default("7"),
     page: z.coerce.number().int().min(1).max(10000).default(1),
@@ -118,33 +75,7 @@ export const marketFiltersSchema = z.object({
      * others any corruption.
      */
     corruption: z.enum(["all", "true", "false"]).optional(),
-    /** A normal gem's level bands; for exceptional and awakened gems, below, at and above max level. */
-    gemLevel: gemBandFilter(GEM_LEVEL_BANDS, "level"),
-    gemQuality: gemBandFilter(GEM_QUALITY_BANDS, "quality"),
-    gemTransfigured: z
-        .enum(["all", "true", "false"])
-        .default("all")
-        .describe(
-            "Only transfigured skill gems (true) or only other gems (false); either lists only gem markets",
-        ),
-    gemVaal: z
-        .enum(["all", "true", "false"])
-        .default("all")
-        .describe(
-            "Only Vaal skill gems (true) or only other gems (false); either lists only gem markets",
-        ),
-    mapMods: mapBandFilter(MAP_MOD_BANDS, "mod count", "; unidentified maps have no mod count"),
-    mapQuantity: mapBandFilter(
-        MAP_QUANTITY_BANDS,
-        "item quantity %",
-        "; only identified tier 16 and Nightmare maps have a quantity band",
-    ),
-    mapDelirium: mapBandFilter(MAP_DELIRIUM_BANDS, "delirium %"),
-    mapInfluence: mapBandFilter(
-        MAP_INFLUENCE_BANDS,
-        "influence",
-        "; `none` is an uninfluenced map, and `elder-guardian` an Elder map occupied by any guardian",
-    ),
+    ...MARKET_AXIS_SCHEMAS,
     item: z.string().max(255).optional(),
     identified: z.enum(["true", "false"]).default("true"),
     corrupted: z.enum(["true", "false"]).default("false"),
@@ -153,27 +84,6 @@ export const marketFiltersSchema = z.object({
     /** An item page's linked-socket market (0 for under 5 links); omitted, every link count merges. */
     links: z.enum(["0", "5", "6"]).optional(),
     currency: z.string().max(40).default("divine"),
-    /** Crafting base filters; empty matches every base. Unique equipment also filters by type and attributes. */
-    baseClass: z
-        .enum(["", ...MARKET_BASE_CLASS_NAMES])
-        .default("")
-        .describe("The item class of a crafting base, or of a unique's base type"),
-    attributes: z
-        .enum(["", ...(Object.keys(MARKET_BASE_ATTRIBUTE_SETS) as MarketBaseAttributeSet[])])
-        .default("")
-        .describe(
-            "The attributes a crafting base, or a unique's base type, requires, e.g. `str-int`",
-        ),
-    ilvl: z
-        // Cluster Jewel bands start at 1, 50, 68, 75 and 84; equipment bands from 74.
-        .enum(["", "1", "50", "68", ...MARKET_BASE_LEVELS])
-        .default("")
-        .describe("Crafting bases whose item level band includes this level"),
-    baseLinks: z.enum(["", "1-5", "6"]).default(""),
-    quality: z
-        .enum(["", "25", "30"])
-        .default("")
-        .describe("Crafting base cohorts split at this minimum quality"),
     ...(Object.fromEntries(MARKET_RANGE_PARAMS.map((param) => [param, rangeBound])) as Record<
         MarketRangeParam,
         typeof rangeBound
@@ -181,15 +91,6 @@ export const marketFiltersSchema = z.object({
 });
 
 export type MarketFilters = z.infer<typeof marketFiltersSchema>;
-
-/** The crafting base category filters, which category navigation clears. */
-export const MARKET_BASE_FILTERS = [
-    "baseClass",
-    "attributes",
-    "ilvl",
-    "baseLinks",
-    "quality",
-] as const satisfies (keyof MarketFilters)[];
 
 /**
  * The corruption a search filters by: its own choice, or its category's default. Categories
@@ -200,8 +101,9 @@ export function marketCorruption({
     category,
     corruption,
 }: Pick<MarketFilters, "category" | "corruption">) {
-    if (!marketHasCorruption(category)) return "all";
-    return corruption ?? (isMarketUniqueCategory(category) ? "false" : "all");
+    const settings = marketSettings(category);
+    if (!settings.corruption) return "all";
+    return corruption ?? settings.defaultCorruption;
 }
 
 export type MarketMapBandFilter = "mapMods" | "mapQuantity" | "mapDelirium" | "mapInfluence";
@@ -232,7 +134,7 @@ export function marketIdentification({
     category,
     identification,
 }: Pick<MarketFilters, "category" | "identification">) {
-    return marketHasIdentification(category) ? identification : "all";
+    return marketSettings(category).identification ? identification : "all";
 }
 
 /**
@@ -331,19 +233,6 @@ export const marketExchangeItemInputSchema = marketFiltersSchema
     .extend({ itemId: z.string().startsWith("Metadata/Items/").max(255) });
 export type MarketExchangeItemInput = z.infer<typeof marketExchangeItemInputSchema>;
 
-export const marketBaseInputSchema = marketFiltersSchema
-    .pick({ realm: true, league: true, days: true, currency: true })
-    .extend({ baseId: z.string().startsWith("base:").max(128) });
-export type MarketBaseInput = z.infer<typeof marketBaseInputSchema>;
-
-/** A crafting base cohort's page, keeping the list's filters for the way back. */
-export function marketBaseLink(filters: MarketFilters, baseId: string) {
-    const [path, query] = marketLink(filters).split("?");
-    const params = new URLSearchParams(query);
-    params.set("category", path!.split("/").at(-1)!);
-    return `/1/market/bases/${encodeURIComponent(baseId)}?${params}`;
-}
-
 const EXCHANGE_ID_PREFIX = "Metadata/Items/";
 
 /** The path of an exchange item's page in a game's market. */
@@ -436,26 +325,14 @@ export function marketLink(
         identification: filters.identification,
         ...(filters.corruption ? { corruption: filters.corruption } : {}),
     });
-    if (filters.tab !== "merchant") params.set("tab", filters.tab);
+    const settings = marketSettings(filters.category);
     for (const param of MARKET_RANGE_PARAMS) {
         const bound = filters[param];
         if (bound !== undefined) params.set(param, String(bound));
     }
-    // Gem and map filters would empty any other category's list.
-    if (filters.category === "gems") {
-        if (filters.gemLevel) params.set("gemLevel", filters.gemLevel);
-        if (filters.gemQuality) params.set("gemQuality", filters.gemQuality);
-        if (filters.gemTransfigured !== "all")
-            params.set("gemTransfigured", filters.gemTransfigured);
-        if (filters.gemVaal !== "all") params.set("gemVaal", filters.gemVaal);
-    }
-    if (filters.category === "maps") {
-        if (filters.mapMods) params.set("mapMods", filters.mapMods);
-        if (filters.mapQuantity) params.set("mapQuantity", filters.mapQuantity);
-        if (filters.mapDelirium) params.set("mapDelirium", filters.mapDelirium);
-        if (filters.mapInfluence) params.set("mapInfluence", filters.mapInfluence);
-    }
-    for (const param of MARKET_BASE_FILTERS) if (filters[param]) params.set(param, filters[param]);
+    // Another category's axes would empty this one's list.
+    for (const param of settings.axes)
+        if (filters[param] !== MARKET_AXES[param].empty) params.set(param, filters[param]);
     if (item) {
         // The item path has no category segment, so the query keeps it for links back to the list.
         params.set("category", filters.category);

@@ -50,8 +50,8 @@ export const MARKET_CATEGORIES = {
     runes: { label: "Runes", group: "Crafting", icon: "Runegraft of the Agile" },
     beasts: { label: "Beasts", group: "Crafting", icon: "Imprinted Bestiary Orb" },
     corpses: { label: "Corpses", group: "Crafting", icon: "Perfect Pain Artist" },
-    "armour-bases": { label: "Armour bases", group: "Crafting bases", icon: "Vaal Regalia" },
-    "weapon-bases": { label: "Weapon bases", group: "Crafting bases", icon: "Imbued Wand" },
+    "armour-bases": { label: "Armour bases", group: "Crafting bases", icon: "Twilight Regalia" },
+    "weapon-bases": { label: "Weapon bases", group: "Crafting bases", icon: "Prophecy Wand" },
     "accessory-bases": { label: "Accessory bases", group: "Crafting bases", icon: "Onyx Amulet" },
     "flask-bases": { label: "Flask bases", group: "Crafting bases", icon: "Quicksilver Flask" },
     "cluster-jewel-bases": {
@@ -101,52 +101,12 @@ export const MARKET_BASE_CATEGORIES: Partial<Record<MarketCategory, MarketCatego
 /** Normal, magic and rare Cluster Jewels are listed by size, skill, passive count and item level. */
 export const MARKET_CLUSTER_BASE_CATEGORY = "cluster-jewel-bases" satisfies MarketCategory;
 
-export function isMarketBaseCategory(category: MarketCategory | "all") {
-    return (
-        category === MARKET_CLUSTER_BASE_CATEGORY ||
-        Object.values(MARKET_BASE_CATEGORIES).includes(category as MarketCategory)
-    );
-}
-
-/**
- * Categories whose markets split by identification: unique equipment, jewels and maps, and the
- * category-less lists. Elsewhere (stackable items, gems, crafting bases) the filter is hidden and
- * every identification state matches.
- */
-const IDENTIFICATION_CATEGORIES = new Set<MarketCategory | "all">([
-    "all",
-    "weapons",
-    "armour",
-    "accessories",
-    "flasks",
-    "jewels",
-    "forbidden",
-    "tinctures",
-    "relics",
-    "maps",
-    "other",
-]);
-
-export function marketHasIdentification(category: MarketCategory | "all") {
-    return IDENTIFICATION_CATEGORIES.has(category);
-}
-
-/** Categories whose markets split by corruption: those split by identification, and skill gems. */
-export function marketHasCorruption(category: MarketCategory | "all") {
-    return category === "gems" || IDENTIFICATION_CATEGORIES.has(category);
-}
-
 /** The fields of a game data base item that decide its market category. */
 export interface MarketBaseItem {
     name: string;
     // biome-ignore lint/style/useNamingConvention: Matches the extracted base item field.
     item_class: string;
     tags?: readonly string[];
-}
-
-/** The categories listing unique equipment, apart from its crafting bases. */
-export function isMarketUniqueCategory(category: MarketCategory | "all") {
-    return category in MARKET_BASE_CATEGORIES;
 }
 
 /** Forbidden Flame and Flesh are listed under their own category, paired by notable. */

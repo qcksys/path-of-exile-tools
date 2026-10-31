@@ -1,177 +1,27 @@
-import { useMemo } from "react";
-import { Link } from "react-router";
-import { DataTable, dataTableColumns } from "~/components/data-table";
-import { CatalogItemArt } from "~/components/item-art";
-import { marketUtc } from "~/components/market-filters";
-import { MarketHistory, MarketHistoryPrice } from "~/components/market-history";
-import { MarketListingPrice } from "~/components/market-listing-price";
-import { RouteError } from "~/components/route-error";
-import { dbContext } from "~/context";
-import { getMarketBase } from "~/db/queries/market.queries";
-import { marketBaseDetails, marketBaseVariant } from "~/lib/market-bases";
-import { marketListingPrices } from "~/lib/market-listing-prices";
-import { marketNumber as number } from "~/lib/market-number";
-import { marketBaseLink, marketLink, parseMarketFilters } from "~/schemas/market";
+import { marketBaseFromCohortId } from "@poe-tools/market";
+import { redirect } from "react-router";
+import { marketCategorySchema, marketLink, parseMarketFilters } from "~/schemas/market";
 import type { Route } from "./+types/base";
 
-export const meta: Route.MetaFunction = ({ loaderData }) => [
-    {
-        title: `${loaderData?.base ? `${loaderData.base.baseType} · ` : ""}Season market · POE.BOATS`,
-    },
-];
-
-export async function loader({ request, context, params }: Route.LoaderArgs) {
+/**
+ * Crafting bases had their own pages, by cohort ID. They are ordinary item pages now, so an old
+ * bookmark goes to its market, or to its list when that base is no longer listed.
+ */
+export function loader({ request, params }: Route.LoaderArgs) {
     const filters = parseMarketFilters(request);
-    const data = await getMarketBase(context.get(dbContext), {
-        realm: filters.realm,
-        league: filters.league,
-        days: filters.days,
-        currency: filters.currency,
-        baseId: params.base,
-    });
-    const { base } = data;
-    if (!base) throw new Response("Unknown crafting base", { status: 404 });
-    return { ...data, base, filters: { ...filters, league: data.league } };
-}
-
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-    return <RouteError error={error} />;
-}
-
-type HistoryRow = Route.ComponentProps["loaderData"]["history"][number];
-
-const column = dataTableColumns<HistoryRow>();
-
-function HourlyTable({ rows, game }: { rows: HistoryRow[]; game: "poe1" | "poe2" }) {
-    const columns = useMemo(() => {
-        const count = { sortDescFirst: true, meta: { filter: "range" } } as const;
-        return column.columns([
-            column.accessor((row) => marketUtc(row.hour), {
-                id: "hour",
-                header: "Hour (UTC)",
-                sortDescFirst: true,
-                meta: { filter: "text", className: "whitespace-nowrap" },
-            }),
-            column.accessor((row) => row.merged?.median, {
-                id: "ask",
-                header: "Median ask",
-                ...count,
-                sortUndefined: "last",
-                cell: ({ getValue, row }) => (
-                    <MarketHistoryPrice
-                        value={getValue()}
-                        rates={row.original.priceRates}
-                        game={game}
-                    />
-                ),
-            }),
-            column.accessor("listingCount", {
-                header: "Listings observed",
-                ...count,
-                cell: ({ getValue }) => number(getValue()),
-            }),
-            column.accessor("uniqueSellers", {
-                header: "Sellers",
-                ...count,
-                cell: ({ getValue }) => number(getValue()),
-            }),
-        ]);
-    }, [game]);
-    return (
-        <DataTable
-            label="Hourly observations"
-            data={rows}
-            columns={columns}
-            getRowId={(row) => String(row.hour)}
-            search
-            className="mt-3"
-        />
-    );
-}
-
-export default function MarketBase({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
-    const { filters, base, history, variants, chaosRates, priceRates } = loaderData;
-    const game = filters.realm === "poe2" ? "poe2" : "poe1";
-    const latest = history.at(-1);
-    const points = history.map((row) => ({ ...row, mergedSales: null }));
-    return (
-        <section
-            aria-label="Crafting base"
-            className="space-y-5 rounded-xl border border-border bg-card p-5"
-        >
-            <div>
-                <Link to={marketLink(filters)} className="text-sm text-muted-foreground underline">
-                    ← Back to markets
-                </Link>
-                <h2 className="mt-2 flex items-center gap-3 text-2xl font-semibold">
-                    <CatalogItemArt name={base.baseType} game={game} className="size-16" />
-                    {base.baseType}
-                </h2>
-                <p className="text-sm text-muted-foreground">{marketBaseDetails(base)}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                    Normal, magic and rare items together; uncorrupted, unfractured, uninfluenced
-                    and not intangible.
-                </p>
-            </div>
-            {variants.length > 1 ? (
-                <nav aria-label="Base variants" className="space-y-2">
-                    <h3 className="text-sm font-semibold">
-                        Variants of {base.baseType}{" "}
-                        <span className="font-normal text-muted-foreground">
-                            ({variants.length})
-                        </span>
-                    </h3>
-                    <ul className="flex flex-wrap gap-2 text-sm">
-                        {variants.map((variant) => {
-                            const price = marketListingPrices(variant.prices, chaosRates).find(
-                                (entry) => !entry.outlier,
-                            );
-                            const current = variant.id === base.id;
-                            return (
-                                <li key={variant.id}>
-                                    <Link
-                                        to={marketBaseLink(filters, variant.id)}
-                                        aria-current={current ? "page" : undefined}
-                                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 ${current ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted"}`}
-                                    >
-                                        {marketBaseVariant(variant)}
-                                        <span className="text-xs text-muted-foreground">
-                                            {price ? (
-                                                <>
-                                                    <MarketListingPrice
-                                                        price={price}
-                                                        rates={priceRates}
-                                                        game={game}
-                                                    />
-                                                    {" · "}
-                                                </>
-                                            ) : null}
-                                            {number(variant.listingCount)} listed
-                                        </span>
-                                    </Link>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </nav>
-            ) : null}
-            {latest ? (
-                <section aria-label="Price history" className="space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                        {number(latest.listingCount)} listings from {number(latest.uniqueSellers)}{" "}
-                        sellers at {marketUtc(latest.hour)}
-                    </p>
-                    <MarketHistory
-                        points={points}
-                        game={game}
-                        summary="Hourly observations (latest 72 hours with data)"
-                    >
-                        <HourlyTable rows={history.slice(-72).reverse()} game={game} />
-                    </MarketHistory>
-                </section>
-            ) : (
-                <p role="status">No observations for this base in the selected period.</p>
-            )}
-        </section>
+    const market = marketBaseFromCohortId(params.base);
+    if (!market) return redirect(marketLink(filters), 308);
+    return redirect(
+        marketLink(
+            { ...filters, category: marketCategorySchema.parse(market.category) },
+            {
+                itemKey: market.baseType,
+                identified: true,
+                corrupted: false,
+                signatureKind: "base",
+                signatureValue: market.value,
+            },
+        ),
+        308,
     );
 }

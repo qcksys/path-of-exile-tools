@@ -61,6 +61,7 @@ export default function MarketExchangeItemPage({
             data={loaderData}
             league={filters.league}
             days={filters.days}
+            realm={filters.realm}
             game="poe1"
             categoryLabel={MARKET_CATEGORIES[item.category as MarketCategory].label}
             backTo={marketLink(filters)}

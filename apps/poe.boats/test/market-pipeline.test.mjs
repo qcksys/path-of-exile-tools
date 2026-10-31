@@ -32,6 +32,7 @@ const stash = {
     accountName: "seller-0",
     league: "Season A",
     public: true,
+    stashType: "TradeStash",
     items: [item],
 };
 let db;

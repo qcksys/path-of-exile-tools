@@ -1,10 +1,17 @@
 import type { Item } from "@poe-tools/api-client";
-import { isBlightedMap, isMapMarketBase } from "@poe-tools/market";
+import { normalizeApiItem } from "@poe-tools/item-query";
+import {
+    isBlightedMap,
+    isMapMarketBase,
+    isMarketBaseType,
+    marketBaseItemValue,
+} from "@poe-tools/market";
 
 /**
  * Whether to persist this item. Captures every unique, skill gem, captured beast and tier or
- * Nightmare map plus identified currency-tier items. No watchlist — the universe of interest is
- * defined by the structured mod-extractor config and downstream queries.
+ * Nightmare map, identified currency-tier items and clean equipment of listed crafting bases. No
+ * watchlist — the universe of interest is defined by the structured mod-extractor config and
+ * downstream queries.
  *
  * Legacy numeric frames remain a fallback when rarity is absent.
  */
@@ -19,7 +26,17 @@ export const ITEM_CATEGORIES: ReadonlyArray<{ name: string; matches: (item: Item
     { name: "map", matches: isMapItem },
     { name: "beast", matches: isCapturedBeast },
     { name: "heist", matches: isHeistMarketItem },
+    { name: "base", matches: isMarketBaseItem },
 ];
+
+/** A clean item of a listed crafting base, in one of its item level bands. */
+export function isMarketBaseItem(item: Item): boolean {
+    return (
+        !isUniqueItem(item) &&
+        isMarketBaseType(item.baseType) &&
+        marketBaseItemValue(normalizeApiItem("poe1", "stash", item)) !== null
+    );
+}
 
 const BESTIARY_PROPERTIES = ["Genus", "Group", "Family"];
 

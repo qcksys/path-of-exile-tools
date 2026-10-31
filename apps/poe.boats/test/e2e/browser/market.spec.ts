@@ -77,6 +77,60 @@ test("opens nested history, preserves variants and browsing state, and supports 
     ).toBeVisible();
 });
 
+test("lists crafting bases with likely sales, opens their item page and filters by band", async ({
+    page,
+}, testInfo) => {
+    await page.goto("/1/market/armour-bases?league=Allflame&order=name-asc");
+    const list = page.getByRole("region", { name: "Armour bases", exact: true });
+    await expect(list.getByRole("columnheader", { name: /Likely sales/ })).toBeVisible();
+    await expect(list.getByText("ilvl 86+ · 6 links · Body Armour · Int · Level 84")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Abberath's Hooves", exact: true })).toHaveCount(0);
+    await selectValue(page.getByRole("combobox", { name: "Links", exact: true }), "6");
+    await expect(page).toHaveURL(/baseLinks=6/);
+    await expect(list.getByText(/ilvl 84–85/)).toHaveCount(0);
+    await page.screenshot({ path: testInfo.outputPath("bases-list.png"), fullPage: true });
+    await list.getByRole("link", { name: "Twilight Regalia", exact: true }).click();
+    await expect(page).toHaveURL(/\/1\/market\/items\/Twilight%20Regalia/);
+    await expect(
+        page.getByRole("heading", { name: "Twilight Regalia", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText(/Normal, magic and rare items together/)).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Period", exact: true })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("bases-item.png"), fullPage: true });
+    await page.getByRole("link", { name: /Back to markets/ }).click();
+    await expect(page).toHaveURL(/\/1\/market\/armour-bases\?.*baseLinks=6/);
+});
+
+test("changes an exchange item's season and period and keeps the way back", async ({
+    page,
+}, testInfo) => {
+    await page.goto(
+        "/1/market/exchange/Currency/CurrencyIdentification?league=Exchange+One&category=currency&order=name-asc",
+    );
+    const heading = page.getByRole("heading", { name: "Scroll of Wisdom", exact: true });
+    await expect(heading).toBeVisible();
+    await selectValue(page.getByRole("combobox", { name: "Period", exact: true }), "30");
+    await expect(page).toHaveURL(/days=30/);
+    await expect(page.getByRole("heading", { name: /Hourly price history/ })).toContainText(
+        "last 30 days",
+    );
+    await selectValue(page.getByRole("combobox", { name: "Season", exact: true }), "Exchange Two");
+    await expect(page).toHaveURL(/league=Exchange\+Two/);
+    await expect(page.getByText(/Exchange Two · Currency exchange/)).toBeVisible();
+    // The way back keeps the list's filters.
+    await expect(page).toHaveURL(/category=currency/);
+    await expect(page).toHaveURL(/order=name-asc/);
+    await expect(page.getByRole("img", { name: /Hourly chaos/ }).locator("svg")).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("exchange-desktop.png"), fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        390,
+    );
+    await page.screenshot({ path: testInfo.outputPath("exchange-mobile.png"), fullPage: true });
+    await page.getByRole("link", { name: /Back to markets/ }).click();
+    await expect(page).toHaveURL((url) => url.pathname === "/1/market/currency");
+});
+
 test("redirects legacy bookmarks and displays a usable mobile history page", async ({
     page,
 }, testInfo) => {

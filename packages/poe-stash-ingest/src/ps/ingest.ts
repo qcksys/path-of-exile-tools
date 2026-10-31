@@ -112,13 +112,17 @@ function listingRows(change: PublicStashChange, accountName: string, league: str
             league,
             itemKey: itemKey(item, iconAsset),
             iconAsset,
-            identified: item.identified,
+            // Crafting base markets do not split by identification, so sales compare across it.
+            identified: signature?.kind === "base" || item.identified,
             // Unknown legacy frame; preserve the source frameTypeId in rawItem.
             frameType: item.frameType ?? -1,
             typeLine: item.typeLine,
             baseType: item.baseType,
-            // A rare map's random name is not part of its market.
-            name: item.identified && !isMapItem(item) ? item.name : null,
+            // A rare map's or crafting base's random name is not part of its market.
+            name:
+                item.identified && !isMapItem(item) && signature?.kind !== "base"
+                    ? item.name
+                    : null,
             rarity: item.rarity ?? null,
             corrupted: item.corrupted ?? false,
             foilVariation: item.foilVariation ?? null,

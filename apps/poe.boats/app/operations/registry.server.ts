@@ -1,15 +1,12 @@
 import { z } from "zod";
 import {
-    getMarketBase,
     getMarketData,
     getMarketExchangeItem,
     getPoe2MarketExchange,
 } from "~/db/queries/market.queries";
 import { sStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
-import { marketBaseRowSchema, marketBaseSchema } from "~/lib/market-bases";
 import { ArbitrageGameSchema, MarketSnapshotSchema, VendorRecipeSchema } from "~/schemas/arbitrage";
 import {
-    marketBaseInputSchema,
     marketCategorySchema,
     marketExchangeItemInputSchema,
     marketExchangeListRowSchema,
@@ -74,8 +71,8 @@ const shared = {
     readOnly: true,
     method: "get",
 } as const;
-// List rows and history merge or filter link counts, and the `tab` filter picks or merges stash
-// tab kinds, so a market row has neither. Its locked prices only order and filter the list.
+// List rows and history merge or filter link counts, and show merchant tabs only, so a market row
+// has neither. Its locked prices only order and filter the list.
 const marketRow = sStashUniqueHourlyS.omit({
     links: true,
     tab: true,
@@ -280,7 +277,7 @@ export const operations = [
         name: "get_season_market",
         ui: "/1/market/currency",
         description:
-            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. Without `corruption`, the `weapons`, `armour`, `accessories` and `forbidden` categories list uncorrupted markets and the others any corruption; the returned `filters` carry the applied value. The `forbidden` category lists Forbidden Flame and Forbidden Flesh (kind `forbidden-jewel`, `value` the allocated ascendancy notable), which `jewels` leaves out, all on one page. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`, `flask-bases`) return `bases` instead: normal, magic and rare equipment cohorts by base, item level, links and quality, without likely-sale estimates. With an item, returns that item's history and every variant of it in the period instead of rows; history merges every listing currency at each hour's exchange rate into `historyUnit`, whatever `currency` is.Rows and an item without `links` merge every link count; `links` (0 for under 5, 5 or 6) reads one linked-socket market of a unique, as poe.ninja splits body armours and two-handed weapons. Skill gems (kind `gem`) list one market per gem, level band, quality band and corruption state, with `value` naming the bands (e.g. `Level 20 (max) · Quality 20%`); `gemLevel` and `gemQuality` include or exclude bands, and `gemTransfigured` and `gemVaal` keep only transfigured or Vaal gems, or only others. Tier and Nightmare maps (kind `map`, item `Map (Tier 16)` or `Nightmare Map`) list one market per base, corruption, identification, mod count band, delirium, influence (Shaper, Elder, Elder Guardian for any guardian, or Memory) and, for tier 16 and Nightmare maps, item quantity band, with `value` naming them (e.g. `8 mods · Quantity 100–119% · Delirium 40%`, `Unidentified · Delirium 0%`, or `1–6 mods · Delirium 0% · Memory`); `mapMods`, `mapQuantity`, `mapDelirium` and `mapInfluence` include or exclude bands.",
+            "Read season market rows with the UI's filters and pagination; category `all` lists every unique, currency and other item category. Without `corruption`, the `weapons`, `armour`, `accessories` and `forbidden` categories list uncorrupted markets and the others any corruption; the returned `filters` carry the applied value. The `forbidden` category lists Forbidden Flame and Forbidden Flesh (kind `forbidden-jewel`, `value` the allocated ascendancy notable), which `jewels` leaves out, all on one page. The crafting base categories (`armour-bases`, `weapon-bases`, `accessory-bases`, `flask-bases`, `cluster-jewel-bases`) list clean normal, magic and rare equipment (kind `base`) per base, with `value` naming its item level band, links, quality band or Cluster Jewel skill and passive count (e.g. `ilvl 86+ · 6 links · Quality 30%+`). With an item, returns that item's history and every variant of it in the period instead of rows; history merges every listing currency at each hour's exchange rate into `historyUnit`, whatever `currency` is.Rows and an item without `links` merge every link count; `links` (0 for under 5, 5 or 6) reads one linked-socket market of a unique, as poe.ninja splits body armours and two-handed weapons. Skill gems (kind `gem`) list one market per gem, level band, quality band and corruption state, with `value` naming the bands (e.g. `Level 20 (max) · Quality 20%`); `gemLevel` and `gemQuality` include or exclude bands, and `gemTransfigured` and `gemVaal` keep only transfigured or Vaal gems, or only others. Tier and Nightmare maps (kind `map`, item `Map (Tier 16)` or `Nightmare Map`) list one market per base, corruption, identification, mod count band, delirium, influence (Shaper, Elder, Elder Guardian for any guardian, or Memory) and, for tier 16 and Nightmare maps, item quantity band, with `value` naming them (e.g. `8 mods · Quantity 100–119% · Delirium 40%`, `Unidentified · Delirium 0%`, or `1–6 mods · Delirium 0% · Memory`); `mapMods`, `mapQuantity`, `mapDelirium` and `mapInfluence` include or exclude bands.",
         input: marketFiltersSchema,
         output: z.object({
             filters: marketFiltersSchema,
@@ -293,6 +290,12 @@ export const operations = [
                     periodSales: z.number(),
                     periodRemovals: z.number(),
                     periodPending: z.number(),
+                    baseDescription: z
+                        .string()
+                        .nullable()
+                        .describe(
+                            "A crafting base's item class, attributes and level requirement; null otherwise",
+                        ),
                     recentSales: z.object({
                         hourly: z
                             .array(z.number())
@@ -307,12 +310,11 @@ export const operations = [
                     }),
                 }),
             ),
-            bases: z
-                .array(marketBaseRowSchema)
-                .describe(
-                    "Crafting base cohorts at their latest hour in the period, uncorrupted, unfractured, unmirrored, unsynthesised, uninfluenced and not intangible",
-                ),
             hasMore: z.boolean(),
+            baseDescription: z
+                .string()
+                .nullable()
+                .describe("With a crafting base item, its item class, attributes and level"),
             exchange: z
                 .array(marketExchangeListRowSchema)
                 .describe(
@@ -394,6 +396,7 @@ export const operations = [
         output: z.object({
             realm: z.string(),
             league: z.string(),
+            seasons: z.array(season).describe("Leagues with exchange data, active leagues first"),
             latestHour: z.number().describe("The latest completed hour"),
             historyStart: z.number().describe("The first hour of `history`"),
             unit: marketExchangeUnitSchema,
@@ -451,53 +454,6 @@ export const operations = [
             }),
         }),
         execute: (input, context) => getMarketExchangeItem(context.db, input),
-    }),
-    defineOperation({
-        ...shared,
-        family: "market",
-        path: "/base",
-        name: "get_season_market_base",
-        ui: "/1/market/armour-bases",
-        description:
-            "Read one crafting base cohort (a `bases` row ID from get_season_market): its hourly listings and asking prices over the last `days` days (every listing currency merged at each hour's exchange rate into `historyUnit`), and every listed cohort of the same base type and Cluster Jewel skill (item level bands, passive counts, link and quality splits) at its latest hour. Equipment lists at most three item level bands from ilvl 74: the two highest levels unlocking at least a tenth of the base's item-level-gated top-tier modifier weight split off. Cluster Jewels use poe.ninja's bands: 1–49, 50–67, 68–74, 75–83 and 84+. An empty league reads the league whose bases were observed most recently.",
-        input: marketBaseInputSchema,
-        output: z.object({
-            realm: z.string(),
-            league: z.string(),
-            days: z.string(),
-            currency: z.string(),
-            baseId: z.string(),
-            latestHour: z.number().describe("The newest observed hour; 0 without data"),
-            base: marketBaseSchema
-                .nullable()
-                .describe("Null for an ID that is not a listed crafting base cohort"),
-            historyUnit,
-            history: z
-                .array(
-                    marketBaseRowSchema
-                        .pick({
-                            hour: true,
-                            listingCount: true,
-                            uniqueSellers: true,
-                            unknownCount: true,
-                        })
-                        .extend({
-                            merged: mergedMarketPriceSchema
-                                .nullable()
-                                .describe(
-                                    "Asking prices from every listing currency, each converted at this hour's exchange rate into `historyUnit`",
-                                ),
-                            priceRates: priceRates("at this hour"),
-                        }),
-                )
-                .describe("Each observed hour, oldest first"),
-            variants: z.array(marketBaseRowSchema),
-            chaosRates: z
-                .record(z.string(), z.number())
-                .describe("Chaos per unit of each listing currency, at the latest hour"),
-            priceRates: priceRates("at the latest hour"),
-        }),
-        execute: (input, context) => getMarketBase(context.db, input),
     }),
     defineOperation({
         ...shared,

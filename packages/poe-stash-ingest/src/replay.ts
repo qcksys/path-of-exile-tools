@@ -186,7 +186,9 @@ export async function replayFixtures() {
             db = await openDb();
             const [counts] = await queryAll<{ total: string; active: string }>(
                 db.conn,
-                "SELECT count(*) AS total, count(*) FILTER (WHERE removed_at IS NULL) AS active FROM ps_listing",
+                // The fixture's clean equipment is also a crafting base market; this counts its uniques.
+                `SELECT count(*) AS total, count(*) FILTER (WHERE removed_at IS NULL) AS active
+                FROM ps_listing WHERE coalesce(mod_signature->>'kind', '') <> 'base'`,
             );
             assert.equal(Number(counts?.total), 3000);
             assert.equal(Number(counts?.active), 2400);
