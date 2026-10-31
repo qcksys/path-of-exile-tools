@@ -90,6 +90,24 @@ B2_PREFIX=psapi/pc/
 The secret file must exist before this Compose file is installed, even while upload is off.
 Without `B2_KEY_ID` the worker still archives raw pages locally.
 
+The `pc-capture` service runs the [separate capture process](../../packages/poe-stash-ingest/README.md#separate-capture-process).
+It holds the stream cursor and seals and uploads raw hours; the `pc` worker reads the archive with
+`PS_SEPARATE_CAPTURE=true`. The updater replaces it with the other services and `--wait` checks its
+health, but only `pc` and `poe2` are verified for successful cycles. To move a running host to this
+Compose file, roll out an image that has the `capture` command first, then:
+
+```sh
+docker compose -f ~/poe-ingest/compose.yaml stop pc
+# Install the new compose.yaml, keeping a copy of the old one.
+docker compose -f ~/poe-ingest/compose.yaml up -d --wait
+```
+
+On first start, the worker records the end of the raw archive as its position and gives capture its
+saved cursor, so no page is skipped or read twice. Keep the `pc` worker stopped until the new file is
+in place. To go back, stop both services, restore the old file and start it: the old worker fetches
+from its database cursor, which is behind by whatever it had not yet read from the archive, and any
+pages it did not read stay only in the archive.
+
 Preserve the existing client ID, contact and version. The PC worker uses `POE_REALM=pc`
 and the second `POE_REALM=poe2`; each sets its current `INGEST_LEAGUE` and a unique
 `INGEST_WORKER_ID` such as `<host>-dev-pc-<league>`. Update these scopes deliberately when

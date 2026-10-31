@@ -216,6 +216,10 @@ export async function openDb(path = process.env.PS_LOCAL_DB ?? "./data.duckdb"):
     };
 }
 
+/** SQL for a TIMESTAMP column's UTC clock time, by default the transaction's start. */
+export const sqlTimestamp = (at?: Date) =>
+    at ? `'${at.toISOString().slice(0, 23)}'::TIMESTAMP` : "current_timestamp::TIMESTAMP";
+
 /** Convenience: read all rows of a query as plain objects. */
 export async function queryAll<T = Record<string, unknown>>(
     conn: DuckDBConnection,

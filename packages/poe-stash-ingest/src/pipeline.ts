@@ -8,7 +8,11 @@ import type { EquipmentDiagnostics } from "#src/ps/equipment-diagnostics.ts";
 import { reclassifyArchivedEquipment } from "#src/ps/equipment-reclassify.ts";
 import { rollupEquipment } from "#src/ps/equipment-rollup.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
-import { maintainRawArchive, type RawArchiveOptions } from "#src/ps/raw-archive.ts";
+import {
+    maintainRawArchive,
+    type RawArchiveOptions,
+    type RawPageReader,
+} from "#src/ps/raw-archive.ts";
 import { rollupPs } from "#src/ps/rollup.ts";
 import { type ArchiveOptions, archiveOldData } from "#src/shared/archive.ts";
 import { REALM } from "#src/shared/auth.ts";
@@ -59,6 +63,8 @@ export async function flushRollups(
         league?: string | null;
         dryRun?: boolean;
         limit?: number;
+        /** Hold back stash hours from this one on; by default, the current hour. */
+        stashBeforeHour?: number;
         onProgress?: (hours: number, rows: number) => Promise<void>;
         onBatch?: () => Promise<void>;
     } = {},
@@ -88,11 +94,12 @@ export async function flushRollups(
         ) SELECT * FROM dirty
         -- The exchange is captured for every league, whatever the database's season.
         WHERE hour < epoch(date_trunc('hour', current_timestamp))
+            AND (stream = 'cxapi' OR $3 IS NULL OR hour < $3)
             AND ($1 IS NULL OR league = $1 OR stream = 'cxapi')
         -- Equipment reclassification re-dirties days of hours; it must not hold back market hours.
         ORDER BY CASE stream WHEN 'psapi' THEN 0 WHEN 'cxapi' THEN 1 ELSE 2 END, hour, league
         LIMIT $2`,
-        [opts.league ?? null, opts.limit ?? 168],
+        [opts.league ?? null, opts.limit ?? 168, opts.stashBeforeHour ?? null],
     ).catch((error: unknown) => {
         throw operationFailure("Pending rollup discovery", error);
     });
@@ -140,6 +147,8 @@ export async function runPipeline(
         rawArchive?: RawArchiveOptions;
         /** Deliver the realm's league list to poe.boats, at most hourly. */
         leagues?: boolean;
+        /** Read pages a capture process archived instead of fetching them. */
+        spool?: RawPageReader;
     },
 ) {
     await configureSource(conn, REALM ?? "pc", opts.league ?? null);
@@ -196,9 +205,13 @@ export async function runPipeline(
     await update({
         stage: "currency",
         failedStages: [...failedStages],
-        stashCaughtUp: stash?.caughtUp ?? null,
+        stashCaughtUp: stash?.drained ?? stash?.caughtUp ?? null,
         progressAt: Date.now(),
     });
+    // An hour is whole once a later hour's page has been read, whatever the time is now.
+    const stashBeforeHour = opts.spool
+        ? Math.floor(opts.spool.position.capturedAt / 3_600_000) * 3600
+        : undefined;
     const currency =
         opts.currency === false
             ? []
@@ -232,6 +245,7 @@ export async function runPipeline(
                 realm: REALM ?? "pc",
                 league: opts.league ?? "all",
                 limitPages,
+                completedBefore: stashBeforeHour,
                 equipmentDiagnostics: opts.equipmentDiagnostics,
             })
                 .then(async (result) => {
@@ -251,6 +265,7 @@ export async function runPipeline(
     );
     const delivered = await flushRollups(conn, {
         ...opts,
+        stashBeforeHour,
         onBatch: async () => {
             await update({ progressAt: Date.now() });
         },
