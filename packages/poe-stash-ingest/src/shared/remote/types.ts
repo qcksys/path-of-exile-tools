@@ -56,6 +56,8 @@ export interface UniqueHourlyRow {
     relistedCount?: number;
     pendingCount?: number;
     salesPrices?: Record<string, PriceSummary>;
+    /** Last asks of removals that are not likely sales, relists or undecided. */
+    delistedPrices?: Record<string, PriceSummary>;
     /** Per-currency price aggregates: { chaos: { count, min, median, max, ... }, divine: {...} } */
     prices: Record<string, PriceSummary>;
     firstSeenAt: string; // ISO

@@ -125,6 +125,7 @@ describe("merging market rows", () => {
             pendingCount: 2,
             prices,
             salesPrices: null,
+            delistedPrices: null,
             firstSeenAt: "2026-10-24T02:00:00Z",
             lastSeenAt: "2026-10-24T02:00:00Z",
             ...overrides,
@@ -151,9 +152,13 @@ describe("merging market rows", () => {
                     name: "Most",
                     firstSeenAt: "2026-10-24T01:00:00Z",
                     salesPrices: { chaos: { count: 1, min: 25, median: 25, max: 25 } },
+                    delistedPrices: { chaos: { count: 2, min: 40, median: 40, max: 40 } },
                 },
             ),
-            row(0, null, { lastSeenAt: "2026-10-24T03:00:00Z" }),
+            row(0, null, {
+                lastSeenAt: "2026-10-24T03:00:00Z",
+                delistedPrices: { chaos: { count: 1, min: 70, median: 70, max: 70 } },
+            }),
         ]);
         expect(merged).toMatchObject({
             name: "Most",
@@ -168,6 +173,7 @@ describe("merging market rows", () => {
             salesPrices: { chaos: { count: 1, median: 25 } },
         });
         expect(merged.prices!.chaos).toMatchObject({ count: 4, min: 20, median: 20, max: 100 });
+        expect(merged.delistedPrices!.chaos).toMatchObject({ count: 3, min: 40, max: 70 });
     });
 
     it("leaves new listings unknown when any row predates counting them", () => {

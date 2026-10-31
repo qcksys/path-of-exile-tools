@@ -44,6 +44,7 @@ export function marketFixture(
             chaos: { count: 4, min: 10, median: 15, max: 20 },
         },
         salesPrices: null,
+        delistedPrices: null,
         firstSeenAt: "2026-10-24T00:00:00Z",
         lastSeenAt: "2026-10-24T01:00:00Z",
     };
@@ -200,6 +201,7 @@ export function marketFixture(
                           max: 3,
                       },
                       mergedSales: null,
+                      mergedDelisted: null,
                       priceRates: { chaos: 1, divine: 1 / 150 },
                   },
               ]

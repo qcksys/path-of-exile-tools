@@ -225,6 +225,7 @@ type MarketRowCounts = {
     pendingCount: number;
     prices: Record<string, MarketPriceSummary> | null;
     salesPrices: Record<string, MarketPriceSummary> | null;
+    delistedPrices: Record<string, MarketPriceSummary> | null;
     firstSeenAt: string;
     lastSeenAt: string;
 };
@@ -262,6 +263,7 @@ export function mergeMarketRows<Row extends MarketRowCounts>(rows: Row[]): Row {
         pendingCount: sum("pendingCount"),
         prices: mergePriceSummaries(rows.map((row) => row.prices)),
         salesPrices: mergePriceSummaries(rows.map((row) => row.salesPrices)),
+        delistedPrices: mergePriceSummaries(rows.map((row) => row.delistedPrices)),
         firstSeenAt: rows.map((row) => row.firstSeenAt).sort()[0]!,
         lastSeenAt: rows
             .map((row) => row.lastSeenAt)

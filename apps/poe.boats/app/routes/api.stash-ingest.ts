@@ -74,6 +74,7 @@ const UNIQUE_ROW_SCHEMA = z.object({
     pendingCount: z.number().int().nonnegative().optional(),
     prices: PRICE_SCHEMA,
     salesPrices: PRICE_SCHEMA.optional(),
+    delistedPrices: PRICE_SCHEMA.optional(),
     firstSeenAt: z.string().max(32),
     lastSeenAt: z.string().max(32),
 });

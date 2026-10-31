@@ -107,7 +107,9 @@ export const tStashMarket = { poe1: tStashPoe1Market, poe2: tStashPoe2Market };
  *
  * `newCount` is the listings first seen in the hour; it is null for hours ingested before it was
  * counted. `soldAgeSeconds` is the likely sales' average time from first seen to removed; it is null
- * for hours without likely sales and hours ingested before it was recorded.
+ * for hours without likely sales and hours ingested before it was recorded. `delistedPrices` is the
+ * last asks of removals that are not likely sales, relists or undecided; it is null for hours
+ * ingested before it was recorded.
  */
 function stashMarketHour(game: StashGame) {
     return mysqlTable(
@@ -124,6 +126,7 @@ function stashMarketHour(game: StashGame) {
             relistedCount: int().notNull().default(0),
             pendingCount: int().notNull().default(0),
             salesPrices: json().$type<Record<string, MarketPriceSummary>>(),
+            delistedPrices: json().$type<Record<string, MarketPriceSummary>>(),
             prices: json().$type<Record<string, MarketPriceSummary>>(),
             firstSeenAt: varchar({ length: 32 }).notNull(),
             lastSeenAt: varchar({ length: 32 }).notNull(),
@@ -168,6 +171,7 @@ function stashUniqueHourly(game: StashGame) {
                 relistedCount: hour.relistedCount,
                 pendingCount: hour.pendingCount,
                 salesPrices: hour.salesPrices,
+                delistedPrices: hour.delistedPrices,
                 prices: hour.prices,
                 signatureData: market.signatureData,
                 firstSeenAt: hour.firstSeenAt,
@@ -216,6 +220,7 @@ export type TStashUniqueHourlyI = Pick<
             | "relistedCount"
             | "pendingCount"
             | "salesPrices"
+            | "delistedPrices"
             | "prices"
         >
     >;
