@@ -271,9 +271,10 @@ export async function upsertStashUniqueHourly(
                 entry.itemKeys.add(row.itemKey);
                 itemDays.set(key, entry);
             }
-            await refreshCoverage(db, "uniques", batch);
             written += batch.length;
         }
+        // One recount per request: each scans the hour's markets. A failed request is retried whole.
+        await refreshCoverage(db, "uniques", gameRows);
         const yellowBeasts = gameRows.filter((row) => isYellowBeast(row.itemKey));
         for (const { realm, league, rows: leagueRows } of byLeague(yellowBeasts)) {
             const hours = [...new Set(leagueRows.map((row) => row.hour))];

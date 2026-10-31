@@ -59,11 +59,13 @@ const ROLLUP_SQL = /* sql */ `
 WITH observations AS (
     SELECT * EXCLUDE (observed_hour), observed_hour AS hour, 'listing' AS status
     FROM ps_listing_hour WHERE observed_hour = $1 AND ($2 IS NULL OR league = $2)
+        AND ($3::VARCHAR IS NULL OR list_contains($3::JSON::VARCHAR[], item_key))
     UNION ALL BY NAME
     SELECT * EXCLUDE (eligible_since, market_price, market_sellers, updated_at),
         epoch(date_trunc('hour', removed_at))::BIGINT AS hour
     FROM ps_sale WHERE epoch(date_trunc('hour', removed_at))::BIGINT = $1
         AND ($2 IS NULL OR league = $2)
+        AND ($3::VARCHAR IS NULL OR list_contains($3::JSON::VARCHAR[], item_key))
 ), windowed AS (
     SELECT
         l.league,
@@ -221,20 +223,57 @@ function unixHour(d: Date = new Date()): number {
     return Math.floor(d.getTime() / 3_600_000) * 3600;
 }
 
+/**
+ * The items whose observations changed since this hour was last delivered, or null when the whole
+ * hour must be sent: it was never delivered, or a newly learned icon can name any of its markets.
+ * Every market of an item is sent, because a mod pool unique's sale reaches several of them.
+ */
+async function changedItemKeys(conn: DuckDBConnection, hour: number, league: string) {
+    const rows = await queryAll<{ itemKey: string; basemap: boolean; changed: boolean }>(
+        conn,
+        `WITH state AS (
+            SELECT pushed_at FROM rollup_state
+            WHERE stream_name = '${STREAM}' AND league = $2 AND hour = $1
+        ), observations AS (
+            SELECT item_key, icon_asset, last_seen_at AS changed_at FROM ps_listing_hour
+            WHERE observed_hour = $1 AND league = $2
+            UNION ALL
+            SELECT item_key, icon_asset, updated_at FROM ps_sale
+            WHERE epoch(date_trunc('hour', removed_at))::BIGINT = $1 AND league = $2
+        )
+        SELECT o.item_key AS "itemKey", bool_or(b.first_seen_at > s.pushed_at) AS basemap,
+            bool_or(o.changed_at > s.pushed_at) AS changed
+        FROM observations o CROSS JOIN state s
+        LEFT JOIN icon_basemap b ON b.icon_asset = o.icon_asset
+        GROUP BY o.item_key`,
+        [hour, league],
+    );
+    if (!rows.length || rows.some((row) => row.basemap)) return null;
+    return rows.filter((row) => row.changed).map((row) => row.itemKey);
+}
+
 export async function rollupPs(
     conn: DuckDBConnection,
     opts: {
         hour?: number;
         league?: string | null;
         dryRun?: boolean;
+        /** Send a delivered hour's changed items, not all of it; needs `league`. */
+        changedOnly?: boolean;
         onBatch?: () => Promise<void>;
     },
 ): Promise<{ hours: number[]; rows: number }> {
     await assertSourceRealm(conn, REALM ?? "pc");
     const hour = opts.hour ?? unixHour() - 3600;
     const league = opts.league ?? null;
+    const itemKeys =
+        opts.changedOnly && league !== null ? await changedItemKeys(conn, hour, league) : null;
 
-    const aggregates = await queryAll<AggregateRow>(conn, ROLLUP_SQL, [hour, league]);
+    const aggregates = await queryAll<AggregateRow>(conn, ROLLUP_SQL, [
+        hour,
+        league,
+        itemKeys && JSON.stringify(itemKeys),
+    ]);
 
     const rows: UniqueHourlyRow[] = aggregates.map((a) => ({
         realm: REALM ?? "pc",
@@ -268,7 +307,18 @@ export async function rollupPs(
         lastSeenAt: a.lastSeenAt,
     }));
 
+    // `row_count` stays the whole hour's. This hour must also stop being pending when its changed
+    // items have no market, such as a corrupted Watcher's Eye.
+    const markDelivered = async () => {
+        if (!opts.dryRun)
+            await conn.run(
+                `UPDATE rollup_state SET pushed_at = now()
+                WHERE stream_name = '${STREAM}' AND league = $1 AND hour = $2`,
+                [league, hour],
+            );
+    };
     if (rows.length === 0) {
+        if (itemKeys) await markDelivered();
         console.log(
             `psapi rollup hour=${hour} league=${league ?? "all"}: no rows; nothing to push.`,
         );
@@ -281,6 +331,13 @@ export async function rollupPs(
         { dryRun: opts.dryRun, onBatch: opts.onBatch },
     );
 
+    if (itemKeys) {
+        await markDelivered();
+        console.log(
+            `psapi rollup hour=${hour}: ${rows.length} rows of ${itemKeys.length} changed items pushed.`,
+        );
+        return { hours: [hour], rows: rows.length };
+    }
     if (!opts.dryRun) {
         const byLeague = new Map<string, number>();
         for (const r of rows) byLeague.set(r.league, (byLeague.get(r.league) ?? 0) + 1);

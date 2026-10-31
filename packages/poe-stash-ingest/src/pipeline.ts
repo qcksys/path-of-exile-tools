@@ -107,11 +107,13 @@ export async function flushRollups(
     let hours = 0;
     for (const entry of pending) {
         const rollup =
-            entry.stream === "psapi"
-                ? rollupPs
-                : entry.stream === "equipment"
-                  ? rollupEquipment
-                  : rollupCx;
+            entry.stream === "equipment"
+                ? rollupEquipment
+                : entry.stream === "cxapi"
+                  ? rollupCx
+                  : (...[db, target]: Parameters<typeof rollupPs>) =>
+                        // A sale's status keeps changing for days; each must not resend its hour.
+                        rollupPs(db, { ...target, changedOnly: true });
         rows += (
             await rollup(conn, {
                 hour: Number(entry.hour),
