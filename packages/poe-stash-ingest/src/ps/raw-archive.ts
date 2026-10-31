@@ -1,6 +1,16 @@
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, open, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import {
+    type FileHandle,
+    mkdir,
+    open,
+    readdir,
+    readFile,
+    rename,
+    rm,
+    stat,
+    writeFile,
+} from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { createInterface } from "node:readline";
 import { pipeline } from "node:stream/promises";
@@ -48,7 +58,20 @@ export interface RawRecord {
     page: PublicStashPage;
 }
 
+/**
+ * How far a database has read the raw archive: bytes into one hour's uncompressed NDJSON, which a
+ * spool and its sealed file share, and the capture time of the last page read.
+ */
+export interface RawPosition {
+    hour: string;
+    offset: number;
+    capturedAt: number;
+}
+
 export class RawArchiveError extends Error {}
+
+/** `stream_cursor` row holding the database's `RawPosition`. */
+export const RAW_POSITION_STREAM = "psapi-raw";
 
 const SPOOL = "spool";
 const PAGE_FIELD = ',"page":';
@@ -88,32 +111,35 @@ function sealedPath(dir: string, hour: string) {
     return join(dir, year!, month!, day!, `${hh}.ndjson.zst`);
 }
 
-/** Cuts a line left unfinished by a crash, so the next append starts on a clean line. */
-async function trimPartialLine(path: string) {
-    const fh = await open(path, "r+").catch((error: NodeJS.ErrnoException) => {
+/** Bytes of the file up to and including its last newline. */
+async function completeBytes(fh: FileHandle) {
+    const { size } = await fh.stat();
+    const chunk = Buffer.alloc(64 * 1024);
+    let end = size;
+    while (end > 0) {
+        const start = Math.max(0, end - chunk.length);
+        await fh.read(chunk, 0, end - start, start);
+        const newline = chunk.subarray(0, end - start).lastIndexOf(0x0a);
+        if (newline >= 0) return start + newline + 1;
+        end = start;
+    }
+    return 0;
+}
+
+const openExisting = (path: string, flags: string) =>
+    open(path, flags).catch((error: NodeJS.ErrnoException) => {
         if (error.code === "ENOENT") return undefined;
         throw error;
     });
+
+/** Cuts a line left unfinished by a crash, so the next append starts on a clean line. */
+async function trimPartialLine(path: string) {
+    const fh = await openExisting(path, "r+");
     if (!fh) return;
     try {
         const { size } = await fh.stat();
-        if (size === 0) return;
-        const last = Buffer.alloc(1);
-        await fh.read(last, 0, 1, size - 1);
-        if (last[0] === 0x0a) return;
-        const chunk = Buffer.alloc(64 * 1024);
-        let end = size;
-        while (end > 0) {
-            const start = Math.max(0, end - chunk.length);
-            await fh.read(chunk, 0, end - start, start);
-            const newline = chunk.subarray(0, end - start).lastIndexOf(0x0a);
-            if (newline >= 0) {
-                await fh.truncate(start + newline + 1);
-                return;
-            }
-            end = start;
-        }
-        await fh.truncate(0);
+        const complete = await completeBytes(fh);
+        if (complete < size) await fh.truncate(complete);
     } finally {
         await fh.close();
     }
@@ -152,6 +178,23 @@ async function fileDigests(path: string) {
     return { sha256: sha256.digest("hex"), sha1: sha1.digest("hex") };
 }
 
+interface RawLineHeader {
+    capturedAt: number;
+    cursor: string | null;
+    sha256: string;
+}
+
+function parseRawLine(path: string, line: string, record: number | string) {
+    const split = line.indexOf(PAGE_FIELD);
+    if (split < 0 || !line.endsWith("}"))
+        throw new RawArchiveError(`${path} record ${record} is malformed.`);
+    const header = JSON.parse(`${line.slice(0, split)}}`) as RawLineHeader;
+    const pageJson = line.slice(split + PAGE_FIELD.length, -1);
+    if (digest("sha256", pageJson) !== header.sha256)
+        throw new RawArchiveError(`${path} record ${record} does not match its checksum.`);
+    return { header, pageJson };
+}
+
 /**
  * Streams one sealed hour's records, checking each page against its recorded SHA-256. With a
  * manifest, the whole file's SHA-256 is checked first, so a damaged file yields no records.
@@ -165,17 +208,7 @@ async function* readRawFile(path: string, manifest?: RawManifest) {
         crlfDelay: Number.POSITIVE_INFINITY,
     });
     for await (const line of lines) {
-        const split = line.indexOf(PAGE_FIELD);
-        if (split < 0 || !line.endsWith("}"))
-            throw new RawArchiveError(`${path} record ${pages + 1} is malformed.`);
-        const header = JSON.parse(`${line.slice(0, split)}}`) as {
-            capturedAt: number;
-            cursor: string | null;
-            sha256: string;
-        };
-        const pageJson = line.slice(split + PAGE_FIELD.length, -1);
-        if (digest("sha256", pageJson) !== header.sha256)
-            throw new RawArchiveError(`${path} record ${pages + 1} does not match its checksum.`);
+        const { header, pageJson } = parseRawLine(path, line, pages + 1);
         pages++;
         yield { line, header, pageJson };
     }
@@ -302,6 +335,129 @@ export async function* replayRawArchive(
                 cursor: header.cursor,
                 page: JSON.parse(pageJson) as PublicStashPage,
             };
+    }
+}
+
+/** Hours with a spool or a sealed file, sorted. */
+async function rawHours(dir: string) {
+    const spooled = (await readdir(join(dir, SPOOL)).catch(() => [] as string[]))
+        .filter((name) => name.endsWith(".ndjson"))
+        .map((name) => name.slice(0, -".ndjson".length));
+    const sealed = (await sealedHours(dir)).flatMap((file) => {
+        const match = /(\d{4})[\\/](\d{2})[\\/](\d{2})[\\/](\d{2})\.ndjson\.zst$/.exec(file);
+        return match ? [`${match[1]}-${match[2]}-${match[3]}T${match[4]}`] : [];
+    });
+    return [...new Set([...spooled, ...sealed])].sort();
+}
+
+/** The end of everything archived so far, without its unfinished last line. */
+export async function rawEndPosition(dir: string): Promise<Omit<RawPosition, "capturedAt">> {
+    const hour = (await rawHours(dir)).at(-1);
+    if (!hour) return { hour: "", offset: 0 };
+    const fh = await openExisting(join(dir, SPOOL, `${hour}.ndjson`), "r");
+    if (!fh) return { hour, offset: (await readManifest(sealedPath(dir, hour))).rawBytes };
+    try {
+        return { hour, offset: await completeBytes(fh) };
+    } finally {
+        await fh.close();
+    }
+}
+
+/** Yields the complete lines of a file being appended to, from a byte offset. */
+async function* spoolLines(path: string, start: number) {
+    let partial: Buffer[] = [];
+    for await (const chunk of createReadStream(path, { start }) as AsyncIterable<Buffer>) {
+        let from = 0;
+        for (let newline = chunk.indexOf(0x0a); newline >= 0; newline = chunk.indexOf(0x0a, from)) {
+            yield Buffer.concat([...partial, chunk.subarray(from, newline)]).toString();
+            partial = [];
+            from = newline + 1;
+        }
+        if (from < chunk.length) partial.push(chunk.subarray(from));
+    }
+}
+
+/**
+ * Reads pages in capture order from a position, following the spool as capture appends to it and
+ * moving to the sealed file when capture seals an hour first. `advance` passes the page `peek`
+ * returned, so a page that fails to process is read again.
+ */
+export class RawPageReader {
+    position: RawPosition;
+    private readonly dir: string;
+    private lines?: AsyncGenerator<{ header: RawLineHeader; pageJson: string; bytes: number }>;
+    private current?: RawRecord & { end: RawPosition };
+
+    constructor(dir: string, position: RawPosition) {
+        this.dir = dir;
+        this.position = position;
+    }
+
+    private async *openHour({ hour, offset }: RawPosition) {
+        if (!hour) return;
+        const spool = join(this.dir, SPOOL, `${hour}.ndjson`);
+        if (await stat(spool).catch(() => undefined)) {
+            for await (const line of spoolLines(spool, offset)) {
+                const parsed = parseRawLine(spool, line, `at byte ${offset}`);
+                yield { ...parsed, bytes: Buffer.byteLength(line) + 1 };
+            }
+            return;
+        }
+        const sealed = sealedPath(this.dir, hour);
+        if (!(await stat(`${sealed}.json`).catch(() => undefined))) return;
+        let read = 0;
+        for await (const { line, header, pageJson } of readRawFile(
+            sealed,
+            await readManifest(sealed),
+        )) {
+            const bytes = Buffer.byteLength(line) + 1;
+            read += bytes;
+            if (read > offset) yield { header, pageJson, bytes };
+        }
+    }
+
+    /** The next page, or null until capture archives another. */
+    async peek() {
+        if (this.current) return this.current;
+        let later: string | undefined;
+        for (;;) {
+            this.lines ??= this.openHour(this.position);
+            const next = await this.lines.next().catch((error: NodeJS.ErrnoException) => {
+                // Capture sealed this hour between the check and the read; its file is there now.
+                if (error.code === "ENOENT") return undefined;
+                throw error;
+            });
+            if (next && !next.done) {
+                const { hour, offset } = this.position;
+                this.current = {
+                    capturedAt: next.value.header.capturedAt,
+                    cursor: next.value.header.cursor,
+                    page: JSON.parse(next.value.pageJson) as PublicStashPage,
+                    end: {
+                        hour,
+                        offset: offset + next.value.bytes,
+                        capturedAt: next.value.header.capturedAt,
+                    },
+                };
+                return this.current;
+            }
+            this.lines = undefined;
+            if (!next) continue;
+            if (later) {
+                this.position = { ...this.position, hour: later, offset: 0 };
+                later = undefined;
+                continue;
+            }
+            // Capture finishes an hour before it starts the next, so read this hour once more
+            // after seeing a later one: pages may have arrived since the last read.
+            later = (await rawHours(this.dir)).find((hour) => hour > this.position.hour);
+            if (!later) return null;
+        }
+    }
+
+    advance() {
+        if (this.current) this.position = this.current.end;
+        this.current = undefined;
     }
 }
 

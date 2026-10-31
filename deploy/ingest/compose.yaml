@@ -29,12 +29,34 @@ services:
     environment:
       PS_ARCHIVE_DIR: /backups
       PS_RAW_ARCHIVE_DIR: /backups/raw
+      # pc-capture fetches the stream; this worker reads the archive and can fall behind safely.
+      PS_SEPARATE_CAPTURE: "true"
+      INGEST_PAGES: "50"
       PS_MEMORY_LIMIT: 10GB
       PS_CHECKPOINT_THRESHOLD: 1GB
       # Each reclassified hour re-delivers 24 hours of cohort rows; this keeps the pre-#76 pace.
       PS_RECLASSIFY_PAGES_PER_HOUR: "120"
     volumes:
       - ./data/pc:/data
+      - ./backups/pc:/backups
+    secrets:
+      - source: pc_client_secret
+        target: poe_client_secret
+      - source: pc_ingest_token
+        target: poe_boats_ingest_token
+      - source: pc_b2_application_key
+        target: b2_application_key
+  # The one step that cannot be rebuilt: it needs no database, so nothing downstream can stop it.
+  pc-capture:
+    <<: *worker
+    command: [capture]
+    # Sealing an hour at zstd level 19 takes one core beside fetching.
+    cpus: 2.0
+    env_file: ./config/pc.env
+    environment:
+      PS_RAW_ARCHIVE_DIR: /backups/raw
+      INGEST_STATUS_FILE: /backups/raw/capture-status.json
+    volumes:
       - ./backups/pc:/backups
     secrets:
       - source: pc_client_secret

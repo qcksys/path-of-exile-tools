@@ -1,7 +1,7 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import { yellowBeastMarket, yellowBeastNames } from "@poe-tools/market";
 import { params } from "#src/ps/rounds.ts";
-import { withTransaction } from "#src/shared/db.ts";
+import { sqlTimestamp, withTransaction } from "#src/shared/db.ts";
 import { MOD_POOLS } from "#src/shared/mod-extractors/mod-pools.ts";
 import type { ListingTab } from "#src/shared/stash-tab.ts";
 
@@ -83,8 +83,11 @@ export async function priceModPoolSales(
 export async function recordRemovals(
     conn: DuckDBConnection,
     removals: readonly { stashId: string; withdrawn: boolean; tab?: ListingTab }[],
+    /** When the page was captured; by default, now. */
+    observedAt?: Date,
 ): Promise<void> {
     if (!removals.length) return;
+    const seenAt = sqlTimestamp(observedAt);
     const withdrawn = removals.filter((removal) => removal.withdrawn).map((r) => r.stashId);
     if (withdrawn.length) {
         await conn.run(
@@ -111,8 +114,8 @@ export async function recordRemovals(
                 (j.value->>'withdrawn')::BOOLEAN AS withdrawn,
                 ${marketKey("stash")} AS market_key FROM stash
              JOIN json_each($1::JSON) j ON stash.stash_id = (j.value->>'stashId')
-             WHERE stash.removed_at = current_timestamp::TIMESTAMP AND NOT EXISTS (
-                 SELECT 1 FROM ps_sale s WHERE s.removed_at = current_timestamp::TIMESTAMP
+             WHERE stash.removed_at = ${seenAt} AND NOT EXISTS (
+                 SELECT 1 FROM ps_sale s WHERE s.removed_at = ${seenAt}
                      AND s.stash_id = stash.stash_id AND s.item_id = stash.item_id)
          ), market_items AS (
              SELECT item_key FROM removed
@@ -127,7 +130,7 @@ export async function recordRemovals(
                 -- Far behind the stream (initial catch-up, or a long outage), a removal's time and
                 -- market say little about when or whether it sold.
                 WHEN NOT EXISTS (SELECT 1 FROM pipeline_health WHERE id = 1
-                    AND last_caught_up_at >= current_timestamp::TIMESTAMP - INTERVAL ${SALE_POLICY.graceSeconds} SECOND)
+                    AND last_caught_up_at >= ${seenAt} - INTERVAL ${SALE_POLICY.graceSeconds} SECOND)
                     THEN 'unobserved'
                 ELSE 'pending' END AS status,
             NULL::TIMESTAMP AS eligible_since, m.price AS market_price,
@@ -147,7 +150,7 @@ export async function recordRemovals(
                      AND lower(p.account_name) <> lower(l.account_name)
                      AND p.removed_at IS NULL AND p.price_currency = l.price_currency
                      AND p.price_amount > 0
-                     AND p.last_seen_at >= current_timestamp - INTERVAL ${SALE_POLICY.marketWindowSeconds} SECOND
+                     AND p.last_seen_at >= ${seenAt} - INTERVAL ${SALE_POLICY.marketWindowSeconds} SECOND
                  GROUP BY lower(p.account_name)
              ) peers
          ) m ON TRUE`,
@@ -160,11 +163,15 @@ export async function recordRemovals(
     );
     await priceModPoolSales(
         conn,
-        `removed_at = current_timestamp::TIMESTAMP AND stash_id IN (${params(stashIds)})`,
+        `removed_at = ${seenAt} AND stash_id IN (${params(stashIds)})`,
         stashIds,
     );
 }
 
+/**
+ * `now` is the stream's time, which a database reading a capture process's archive can be behind;
+ * `updated_at` stays the real time, because delivery compares it with when an hour was pushed.
+ */
 export async function evaluateSales(
     conn: DuckDBConnection,
     caughtUp: boolean,
@@ -176,7 +183,7 @@ export async function evaluateSales(
         // Matching the same variant with a new ID is deliberately conservative, but a copy
         // that was already listed while the sold item was still listed is not its replacement.
         await conn.run(
-            `UPDATE ps_sale s SET status = 'relisted', updated_at = $1::TIMESTAMP
+            `UPDATE ps_sale s SET status = 'relisted', updated_at = current_timestamp::TIMESTAMP
             WHERE s.status IN ('pending', 'likely-sold') AND EXISTS (
                 SELECT 1 FROM ps_listing p
                 WHERE p.league = s.league AND lower(p.account_name) = lower(s.account_name)
@@ -193,7 +200,6 @@ export async function evaluateSales(
                     ))
                     AND (p.removed_at IS NULL OR p.last_seen_at > s.removed_at)
             )`,
-            [timestamp],
         );
 
         // The stream is a complete, ordered log: at its head every change up to now has been seen,
@@ -210,7 +216,7 @@ export async function evaluateSales(
                             ELSE ${SALE_POLICY.maximumPriceRatio} END
                         THEN 'likely-sold'
                     ELSE 'outside-market' END,
-                    updated_at = $1::TIMESTAMP
+                    updated_at = current_timestamp::TIMESTAMP
                 WHERE status = 'pending'
                     AND removed_at <= $1::TIMESTAMP - INTERVAL ${SALE_POLICY.graceSeconds} SECOND`,
                 [timestamp],

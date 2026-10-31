@@ -393,6 +393,29 @@ its SHA-1 (`X-Bz-Content-Sha1`); the file's SHA-256 travels as file info `sha256
 upload URLs are retried with a new one. The manifest records the B2 file ID, so each hour uploads
 once. The local copy is kept; nothing deletes sealed hours.
 
+### Separate capture process
+
+The stream cannot be read again: an old cursor returns each stash once at its current state, so a
+change not fetched while it happens is lost. Everything after the fetch can be rebuilt. In the
+default mode a worker fetches in the same loop as DuckDB, delivery and archiving, so a slow receiver,
+a page that fails to process or a full database disk stops fetching.
+
+The `capture` command runs that step alone. It needs `PS_RAW_ARCHIVE_DIR` and no database: it fetches
+pages, syncs each to the spool, and keeps its cursor in `capture-state.json` beside them. It also
+seals and uploads finished hours. It starts a request at most every 2.5 s, polls every minute at the
+stream's head, waits as a rate limit asks, and otherwise retries the same cursor with a growing delay.
+It reports status as `<INGEST_WORKER_ID>-capture`.
+
+A `process` worker with `PS_SEPARATE_CAPTURE=true` reads those pages instead of fetching, and keeps its
+place in `stream_cursor`, updated in the same transaction as the page. A page that fails is read again
+while capture continues. Listings, removals, sales and equipment use each page's `capturedAt`, so a
+worker that falls behind records what it would have recorded on time. The worker delivers a stash hour
+only after reading a page from a later hour.
+
+A new database starts after everything archived. To rebuild one from the archive, set `PS_RAW_FROM` (or
+`--raw-from`) to the first UTC hour to read; the setting is ignored once the database has a position.
+Run only one capture process per archive directory.
+
 `poe-stash-ps raw-archive` runs the seal and upload step once. `poe-stash-ps raw-verify [--from
 YYYY-MM-DDTHH] [--to YYYY-MM-DDTHH]` replays sealed hours. Replay (`replayRawArchive` in
 `src/ps/raw-archive.ts`) checks each file's SHA-256 against its manifest before reading it, so a

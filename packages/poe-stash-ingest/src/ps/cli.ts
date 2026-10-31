@@ -303,6 +303,38 @@ program
     });
 
 program
+    .command("capture")
+    .description(
+        "Fetch psapi pages into $PS_RAW_ARCHIVE_DIR without a database, sealing and uploading finished hours; a worker with PS_SEPARATE_CAPTURE reads them.",
+    )
+    .action(async () => {
+        const { createPoeClient, REALM } = await import("#src/shared/auth.ts");
+        if (REALM === "poe2") throw new Error("PoE 2 has no public stash stream to capture.");
+        const { rawArchiveSettings } = await import("#src/ps/raw-archive.ts");
+        const archive = rawArchiveSettings();
+        if (!archive) throw new Error("Set PS_RAW_ARCHIVE_DIR to the raw page archive directory.");
+        const { runCapture } = await import("#src/ps/capture.ts");
+        const { createStatusReporter } = await import("#src/shared/status.ts");
+        const status = createStatusReporter({
+            workerId: `${process.env.INGEST_WORKER_ID || `${REALM ?? "pc"}`}-capture`,
+            realm: REALM ?? "pc",
+            league: "all",
+        });
+        const stop = new AbortController();
+        process.once("SIGTERM", () => stop.abort());
+        process.once("SIGINT", () => stop.abort());
+        await runCapture(createPoeClient(), {
+            archive,
+            realm: REALM,
+            signal: stop.signal,
+            onStatus: status.update,
+        });
+        await status.close();
+        // A seal in progress restarts from its spool, and must not hold up the replacement.
+        process.exit(0);
+    });
+
+program
     .command("process")
     .description("Ingest, evaluate sales, and retry all pending completed hours.")
     .option("-p, --pages <n>", "maximum stash pages per cycle", positiveInteger, 50)
@@ -315,6 +347,11 @@ program
         positiveInteger,
     )
     .option("--currency-hours <n>", "maximum exchange hours per cycle", positiveInteger, 1)
+    .option(
+        "--raw-from <hour>",
+        "with PS_SEPARATE_CAPTURE, the UTC hour (YYYY-MM-DDTHH) a new database starts reading the raw archive; default, after everything archived",
+        process.env.PS_RAW_FROM,
+    )
     .option("--watch", "continue processing every minute; Ctrl+C to stop")
     .action(async (opts) => {
         const { runPipeline } = await import("#src/pipeline.ts");
@@ -330,6 +367,9 @@ program
         const archive = archiveSettings();
         const { rawArchiveSettings } = await import("#src/ps/raw-archive.ts");
         const rawArchive = rawArchiveSettings();
+        const separateCapture = process.env.PS_SEPARATE_CAPTURE === "true";
+        if (separateCapture && !rawArchive)
+            throw new Error("PS_SEPARATE_CAPTURE needs PS_RAW_ARCHIVE_DIR.");
         const { createStatusReporter } = await import("#src/shared/status.ts");
         const { createEquipmentDiagnosticsLoader } = await import(
             "#src/ps/equipment-diagnostics-request.ts"
@@ -350,6 +390,17 @@ program
         process.once("SIGTERM", shutdown);
         process.once("SIGINT", shutdown);
         try {
+            const spool =
+                separateCapture && rawArchive
+                    ? await (await import("#src/ps/capture.ts")).openCaptureSource(
+                          db.conn,
+                          rawArchive.dir,
+                          {
+                              cursor: opts.cursor,
+                              fromHour: opts.rawFrom,
+                          },
+                      )
+                    : undefined;
             const cycle = async () => {
                 let rollbackFailed = false;
                 try {
@@ -361,7 +412,9 @@ program
                         currency: opts.currency,
                         currencyHours: Number(opts.currencyHours),
                         archive,
-                        rawArchive,
+                        // The capture process owns sealing and uploading when it is separate.
+                        rawArchive: spool ? undefined : rawArchive,
+                        spool,
                         leagues: true,
                         currencyFromHour: (await getCursor(db.conn, "cxapi"))
                             ? undefined
@@ -370,7 +423,7 @@ program
                         equipmentDiagnostics: await loadEquipmentDiagnostics(),
                     });
                     console.log(JSON.stringify(result));
-                    return { caughtUp: result.stash?.caughtUp ?? true };
+                    return { caughtUp: result.stash?.drained ?? result.stash?.caughtUp ?? true };
                 } catch (error) {
                     rollbackFailed = error instanceof TransactionRollbackError;
                     try {

@@ -12,14 +12,14 @@ import type {
     EquipmentDiagnosticFixture,
     EquipmentDiagnostics,
 } from "#src/ps/equipment-diagnostics.ts";
-import { appendRawPage } from "#src/ps/raw-archive.ts";
+import { appendRawPage, RAW_POSITION_STREAM, type RawPageReader } from "#src/ps/raw-archive.ts";
 import { params, stashRounds } from "#src/ps/rounds.ts";
 import { evaluateSales, recordRemovals } from "#src/ps/sales.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { learnBasemap } from "#src/shared/basemap.ts";
 import { isMapItem, shouldCapture } from "#src/shared/capture.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
-import { queryAll, withTransaction } from "#src/shared/db.ts";
+import { queryAll, sqlTimestamp, withTransaction } from "#src/shared/db.ts";
 import { decodeIconAsset } from "#src/shared/icon.ts";
 import { itemKey, itemLinks } from "#src/shared/item-key.ts";
 import { extractModSignature, signatureValue } from "#src/shared/mod-extractors/index.ts";
@@ -43,6 +43,8 @@ export interface PsIngestResult {
     leagues: Map<string, { stashes: number; items: number }>;
     finalCursor: string;
     caughtUp: boolean;
+    /** Reading a capture process's archive: whether every archived page has been read. */
+    drained?: boolean;
 }
 
 interface ListingRow {
@@ -141,10 +143,12 @@ function listingRows(change: PublicStashChange, accountName: string, league: str
 export async function applyStashChanges(
     conn: DuckDBConnection,
     changes: readonly PublicStashChange[],
+    /** When the page was captured; by default, now. */
+    observedAt?: Date,
 ): Promise<{ inserted: number; updated: number; removed: number }> {
     const totals = { inserted: 0, updated: 0, removed: 0 };
     for (const round of stashRounds(changes)) {
-        const result = await applyRound(conn, round);
+        const result = await applyRound(conn, round, observedAt);
         totals.inserted += result.inserted;
         totals.updated += result.updated;
         totals.removed += result.removed;
@@ -152,7 +156,12 @@ export async function applyStashChanges(
     return totals;
 }
 
-async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashChange[]) {
+async function applyRound(
+    conn: DuckDBConnection,
+    changes: readonly PublicStashChange[],
+    observedAt?: Date,
+) {
+    const seenAt = sqlTimestamp(observedAt);
     const stashIds = changes.map((change) => change.id);
     const known = await queryAll<{
         rowId: string;
@@ -209,12 +218,12 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
     // Removals first: updates may rewrite their rows under new row IDs.
     if (removedRows.length) {
         await conn.run(
-            `UPDATE ps_listing SET removed_at = current_timestamp
+            `UPDATE ps_listing SET removed_at = ${seenAt}
             WHERE rowid IN (SELECT value::BIGINT FROM json_each($1::JSON))`,
             [JSON.stringify(removedRows)],
         );
     }
-    if (removals.length) await recordRemovals(conn, removals);
+    if (removals.length) await recordRemovals(conn, removals, observedAt);
     if (updates.length) {
         await conn.run(
             `UPDATE ps_listing SET
@@ -237,7 +246,7 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
                 mod_signature = v.mod_signature,
                 signature_value = v.signature_value,
                 raw_item = v.raw_item,
-                last_seen_at = current_timestamp,
+                last_seen_at = ${seenAt},
                 removed_at = NULL
             FROM (
                 SELECT (value->>'rowId')::BIGINT AS row_id, ${LISTING_VALUES} FROM json_each($1::JSON)
@@ -249,8 +258,8 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
     if (inserts.length) {
         await conn.run(
             `INSERT INTO ps_listing BY NAME
-            SELECT ${LISTING_VALUES}, current_timestamp AS first_seen_at,
-                current_timestamp AS last_seen_at
+            SELECT ${LISTING_VALUES}, ${seenAt} AS first_seen_at,
+                ${seenAt} AS last_seen_at
             FROM json_each($1::JSON)`,
             [JSON.stringify(inserts)],
         );
@@ -272,10 +281,10 @@ async function applyRound(conn: DuckDBConnection, changes: readonly PublicStashC
             AND stash.account_name = (j.value->>'accountName')
         -- An item still listed but no longer captured stays active with its old last_seen_at;
         -- it was not observed now, so its earlier hour stays as it was.
-        WHERE stash.removed_at IS NULL AND stash.last_seen_at = current_timestamp::TIMESTAMP`,
+        WHERE stash.removed_at IS NULL AND stash.last_seen_at = ${seenAt}`,
         [JSON.stringify(listed), ...listedIds],
     );
-    const sameRow = `h.observed_hour = epoch(date_trunc('hour', current_timestamp))::BIGINT
+    const sameRow = `h.observed_hour = epoch(date_trunc('hour', ${seenAt}))::BIGINT
         AND h.stash_id = l.stash_id AND h.account_name = l.account_name AND h.item_id = l.item_id`;
     await conn.run(
         `UPDATE ps_listing_hour h SET
@@ -323,6 +332,8 @@ export async function ingestPs(
         observedAt?: Date;
         /** Directory that keeps every fetched page unfiltered; see `raw-archive.ts`. */
         rawArchiveDir?: string;
+        /** Reads pages a capture process archived, at their capture times, instead of fetching. */
+        spool?: RawPageReader;
     },
 ): Promise<PsIngestResult> {
     if (!Number.isSafeInteger(opts.pages) || opts.pages < 1)
@@ -344,9 +355,14 @@ export async function ingestPs(
         leagues: new Map(),
         finalCursor: opts.cursor ?? "",
         caughtUp: false,
+        ...(opts.spool ? { drained: false } : {}),
     };
 
-    let cursor: string | undefined = opts.cursor ?? (await getCursor(conn, STREAM));
+    let cursor: string | undefined = opts.spool
+        ? undefined
+        : (opts.cursor ?? (await getCursor(conn, STREAM)));
+    let lastCapturedAt: number | undefined;
+    let streamHeadAt: number | undefined;
 
     for (let i = 0; i < opts.pages; i++) {
         if (i > 0) {
@@ -354,13 +370,20 @@ export async function ingestPs(
             // database each checkpoint rewrites gigabytes of index, so with memory to spare
             // PS_CHECKPOINT_THRESHOLD leaves checkpoints to DuckDB once the WAL reaches it.
             if (!process.env.PS_CHECKPOINT_THRESHOLD) await conn.run("CHECKPOINT");
-            await sleep(PAGE_DELAY_MS);
+            if (!opts.spool) await sleep(PAGE_DELAY_MS);
         }
-        const requestCursor = cursor;
-        const page = await client.public.stashTabs(
-            requestCursor ? { realm: REALM, id: requestCursor } : { realm: REALM },
-        );
-        const capturedAt = Date.now();
+        const captured = await opts.spool?.peek();
+        if (opts.spool && !captured) {
+            result.drained = true;
+            break;
+        }
+        const requestCursor = captured ? (captured.cursor ?? undefined) : cursor;
+        const page =
+            captured?.page ??
+            (await client.public.stashTabs(
+                requestCursor ? { realm: REALM, id: requestCursor } : { realm: REALM },
+            ));
+        const capturedAt = captured?.capturedAt ?? Date.now();
         // Written before processing, so a failure refetches the page; replays may see it twice.
         if (opts.rawArchiveDir)
             await appendRawPage(opts.rawArchiveDir, { capturedAt, cursor: requestCursor, page });
@@ -382,7 +405,8 @@ export async function ingestPs(
                 conn,
                 "SELECT epoch_ms(current_timestamp) AS millis",
             );
-            const observedAt = opts.observedAt ?? new Date(Number(clock!.millis));
+            const pageTime = captured ? new Date(captured.capturedAt) : undefined;
+            const observedAt = opts.observedAt ?? pageTime ?? new Date(Number(clock!.millis));
             const changes = page.stashes.filter(
                 (change) => !change.public || !opts.league || change.league === opts.league,
             );
@@ -397,7 +421,7 @@ export async function ingestPs(
                     result.leagues.set(lg, acc);
                 }
             }
-            const r = await applyStashChanges(conn, changes);
+            const r = await applyStashChanges(conn, changes, pageTime);
             result.equipmentObserved += await captureEquipmentPage(
                 conn,
                 changes,
@@ -424,6 +448,7 @@ export async function ingestPs(
                 capturedAt: observedAt.getTime(),
             });
             await setCursor(conn, STREAM, page.next_change_id);
+            if (captured) await setCursor(conn, RAW_POSITION_STREAM, JSON.stringify(captured.end));
             if (captureId)
                 await conn.run(
                     "UPDATE ps_capture_page SET processed_at = current_timestamp, equipment_revision = $2 WHERE id = $1",
@@ -431,6 +456,8 @@ export async function ingestPs(
                 );
         });
         if (fixtures.length) await opts.equipmentDiagnostics?.flush(fixtures);
+        opts.spool?.advance();
+        lastCapturedAt = capturedAt;
 
         cursor = page.next_change_id;
         result.pages++;
@@ -448,12 +475,18 @@ export async function ingestPs(
         // refetching would burn rate-limit budget for identical content.
         if (requestCursor !== undefined && page.next_change_id === requestCursor) {
             result.caughtUp = true;
+            streamHeadAt = capturedAt;
+            // More archived pages may follow; capture has already waited before fetching them.
+            if (opts.spool) continue;
             console.log("psapi: caught up; stopping early");
             break;
         }
     }
 
-    await evaluateSales(conn, result.caughtUp);
+    // Sales follow the capture clock, so a database that fell behind judges them as if it had not.
+    if (!opts.spool) await evaluateSales(conn, result.caughtUp);
+    else if (lastCapturedAt !== undefined)
+        await evaluateSales(conn, result.caughtUp, new Date(streamHeadAt ?? lastCapturedAt));
 
     return result;
 }

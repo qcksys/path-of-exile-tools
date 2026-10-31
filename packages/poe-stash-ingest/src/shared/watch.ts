@@ -3,7 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { setTimeout } from "node:timers/promises";
 import { TransactionRollbackError } from "#src/shared/db.ts";
 
-function failureMessage(error: unknown, depth = 0): string {
+export function failureMessage(error: unknown, depth = 0): string {
     if (!(error instanceof Error)) return "Unknown error";
     const nested =
         depth >= 3
