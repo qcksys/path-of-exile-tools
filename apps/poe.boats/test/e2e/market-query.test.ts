@@ -28,11 +28,11 @@ import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
-import { tStashMarketPrice } from "~/db/schema/stash.market-price";
 import {
     type TStashUniqueHourlyI,
     tStashMarket,
     tStashMarketHour,
+    tStashUniqueHourly,
 } from "~/db/schema/stash.unique-hourly";
 import { yellowBeastMarket } from "~/lib/crafting-yellow-beasts";
 import { marketExchangeItemId } from "~/lib/market-exchange.server";
@@ -1478,21 +1478,56 @@ describe("prices locked when a stash hour is written", () => {
                 prices: { divine: summary(2, 5) },
             }),
         ]);
+        const hourly = tStashUniqueHourly.poe1;
         const rows = await db
             .select()
-            .from(tStashMarketPrice.poe1)
-            .where(
-                and(
-                    eq(tStashMarketPrice.poe1.league, league),
-                    eq(tStashMarketPrice.poe1.itemKey, yellowBeastMarket),
-                ),
-            );
-        expect(rows.map((row) => [row.tab, row.priceDivine, row.priceChaos])).toEqual(
-            expect.arrayContaining([
-                ["all", 2, 400],
-                ["merchant", 2, 400],
-            ]),
-        );
+            .from(hourly)
+            .where(and(eq(hourly.league, league), eq(hourly.itemKey, yellowBeastMarket)));
+        expect(rows.map((row) => [row.priceDivine, row.priceChaos])).toEqual([[2, 400]]);
+    });
+
+    it("keeps a locked price when its hour is re-delivered, until its listings change", async () => {
+        const league = "LockedRedelivery";
+        const hourly = tStashUniqueHourly.poe1;
+        const stored = async () => {
+            const [row] = await db.select().from(hourly).where(eq(hourly.league, league));
+            return row?.priceChaos;
+        };
+        const row = (median: number, overrides: Partial<TStashUniqueHourlyI> = {}) =>
+            observation({
+                league,
+                itemKey: "Example",
+                prices: { divine: summary(median, 5) },
+                ...overrides,
+            });
+        await upsertStashCurrencyHourly(db as unknown as TDatabase, [rate(league, hour, 100)]);
+        await ingest([row(2)]);
+        expect(await stored()).toBe(200);
+        // A repaired exchange hour does not move a price already locked, even when re-delivered.
+        await upsertStashCurrencyHourly(db as unknown as TDatabase, [rate(league, hour, 900)]);
+        await ingest([row(2, { likelySales: 1, removedCount: 1 })]);
+        expect(await stored()).toBe(200);
+        // Changed listings are a new price, at the rates stored by then.
+        await ingest([row(3)]);
+        expect(await stored()).toBe(2700);
+    });
+
+    it("re-delivering a priced hour reads no rates", async () => {
+        const league = "LockedNoRead";
+        await upsertStashCurrencyHourly(db as unknown as TDatabase, [rate(league, hour, 100)]);
+        const row = observation({
+            league,
+            itemKey: "Example",
+            prices: { divine: summary(2, 5) },
+        });
+        await ingest([row]);
+        statements.length = 0;
+        await ingest([row]);
+        expect(
+            statements.filter(({ sql: query }) =>
+                query.includes(getTableName(tStashCurrencyHourly.poe1)),
+            ),
+        ).toEqual([]);
     });
 });
 

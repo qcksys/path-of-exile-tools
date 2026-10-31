@@ -3,8 +3,8 @@ import { STASH_GAMES } from "../app/db/helpers/stash-game";
 import { refreshStashMarketPrices } from "../app/db/queries/stash-market-price.queries";
 
 /**
- * Writes the locked market list prices of a league's hours stored before ingest locked them, each
- * at its own hour's exchange rates. Run it after the market daily rollup. Usage: <league>.
+ * Locks the market list prices of a league's market hours stored before ingest locked them, each at
+ * its own hour's exchange rates. Usage: <league>.
  */
 const [league] = process.argv.slice(2);
 if (!league) throw new Error("Provide the league.");

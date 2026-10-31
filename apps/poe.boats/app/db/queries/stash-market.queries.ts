@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { inArray, sql } from "drizzle-orm";
+import type { MySqlColumn } from "drizzle-orm/mysql-core";
 import type { TDatabase } from "~/db/client.ts";
 import type { StashGame } from "~/db/helpers/stash-game";
 import {
@@ -129,6 +130,9 @@ export async function writeStashUniqueHourly(
     const normalized = rows.map(withMarketDefaults);
     const ids = await storeStashMarkets(db, game, normalized);
     const table = tStashMarketHour[game];
+    // Locked prices stand until the hour's listings change; `prices` is assigned after them.
+    const lockedUnlessRepriced = (column: MySqlColumn) =>
+        sql`if(values(${table.prices}) <=> ${table.prices}, ${column}, null)`;
     await db
         .insert(table)
         .values(
@@ -162,6 +166,10 @@ export async function writeStashUniqueHourly(
                 pendingCount: sql`values(${table.pendingCount})`,
                 salesPrices: sql`values(${table.salesPrices})`,
                 delistedPrices: sql`values(${table.delistedPrices})`,
+                priceChaos: lockedUnlessRepriced(table.priceChaos),
+                priceDivine: lockedUnlessRepriced(table.priceDivine),
+                allTabsPriceChaos: lockedUnlessRepriced(table.allTabsPriceChaos),
+                allTabsPriceDivine: lockedUnlessRepriced(table.allTabsPriceDivine),
                 prices: sql`values(${table.prices})`,
                 firstSeenAt: sql`values(${table.firstSeenAt})`,
                 lastSeenAt: sql`values(${table.lastSeenAt})`,

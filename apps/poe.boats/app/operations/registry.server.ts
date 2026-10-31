@@ -75,8 +75,15 @@ const shared = {
     method: "get",
 } as const;
 // List rows and history merge or filter link counts, and the `tab` filter picks or merges stash
-// tab kinds, so a market row has neither.
-const marketRow = sStashUniqueHourlyS.omit({ links: true, tab: true });
+// tab kinds, so a market row has neither. Its locked prices only order and filter the list.
+const marketRow = sStashUniqueHourlyS.omit({
+    links: true,
+    tab: true,
+    priceChaos: true,
+    priceDivine: true,
+    allTabsPriceChaos: true,
+    allTabsPriceDivine: true,
+});
 const priceRates = (when: string) =>
     z
         .record(z.string(), z.number())

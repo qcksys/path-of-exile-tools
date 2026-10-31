@@ -35,7 +35,6 @@ import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
-import { tStashMarketPrice } from "~/db/schema/stash.market-price";
 import { type TStashUniqueHourlyS, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
 import { rankMarketBases } from "~/lib/market-bases";
 import { isMarketBaseCategory, MARKET_FORBIDDEN_CATEGORY } from "~/lib/market-categories";
@@ -99,7 +98,6 @@ function marketTables(realm: string) {
     return {
         market: tStashUniqueHourly[game],
         daily: tStashMarketDaily[game],
-        marketPrice: tStashMarketPrice[game],
         currencyHourly: tStashCurrencyHourly[game],
         currencyDaily: tStashCurrencyDaily[game],
         currencyMarket: tStashCurrencyMarket[game],
@@ -155,7 +153,15 @@ function tabMatch(table: MarketTable | DailyTable, filters: Pick<MarketFilters, 
  * stash tab kinds under `all`, so the result has neither.
  */
 function mergeMarket(rows: TStashUniqueHourlyS[]) {
-    const { links: _links, tab: _tab, ...row } = mergeMarketRows(rows);
+    const {
+        links: _links,
+        tab: _tab,
+        priceChaos: _priceChaos,
+        priceDivine: _priceDivine,
+        allTabsPriceChaos: _allTabsPriceChaos,
+        allTabsPriceDivine: _allTabsPriceDivine,
+        ...row
+    } = mergeMarketRows(rows);
     return row;
 }
 
@@ -346,7 +352,7 @@ export function getMarketData(db: TDatabase, input: MarketFilters, view: MarketV
 }
 
 async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketView, span: Span) {
-    const { market, daily, marketPrice } = marketTables(input.realm);
+    const { market, daily } = marketTables(input.realm);
     const exchangeHour = marketObservationRange().latestHour;
     const [stashSeasons, exchangeSeasons, ended] = await Promise.all([
         marketStashSeasons(db, input.realm),
@@ -461,12 +467,14 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         filters.currency === "divine"
             ? undefined
             : await marketDisplayCurrencyRate(db, filters, latestHour);
+    const lockedChaos = filters.tab === "all" ? market.allTabsPriceChaos : market.priceChaos;
+    const lockedDivine = filters.tab === "all" ? market.allTabsPriceDivine : market.priceDivine;
     const price =
         filters.currency === "divine"
-            ? sql`max(${marketPrice.priceDivine})`
+            ? sql`max(${lockedDivine})`
             : filters.currency === "chaos"
-              ? sql`max(${marketPrice.priceChaos})`
-              : sql`max(${marketPrice.priceChaos}) / ${priceDivisor ?? null}`;
+              ? sql`max(${lockedChaos})`
+              : sql`max(${lockedChaos}) / ${priceDivisor ?? null}`;
     const listings = sql`sum(${market.listingCount})`;
     const sellers = sql`sum(${market.uniqueSellers})`;
     const latestRowOrders: Partial<Record<MarketOrder, SQL>> = {
@@ -585,20 +593,6 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 eq(market.corrupted, page.corrupted),
                 eq(market.signatureKind, page.signatureKind),
                 eq(market.signatureValue, page.signatureValue),
-            ),
-        )
-        .leftJoin(
-            marketPrice,
-            and(
-                eq(marketPrice.realm, filters.realm),
-                eq(marketPrice.league, filters.league),
-                eq(marketPrice.itemKey, page.itemKey),
-                eq(marketPrice.identified, page.identified),
-                eq(marketPrice.corrupted, page.corrupted),
-                eq(marketPrice.tab, filters.tab),
-                eq(marketPrice.signatureKind, page.signatureKind),
-                eq(marketPrice.signatureValue, page.signatureValue),
-                gte(marketPrice.hour, windowStart),
             ),
         )
         .groupBy(

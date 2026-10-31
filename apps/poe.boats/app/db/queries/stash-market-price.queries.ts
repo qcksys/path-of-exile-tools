@@ -1,38 +1,22 @@
 import { exchangeSnapshotSchema } from "@poe-tools/market";
-import { and, eq, inArray, isNotNull, max, min, notInArray, or, sql } from "drizzle-orm";
-import type { MySqlColumn } from "drizzle-orm/mysql-core";
+import { and, eq, inArray, isNotNull, max, notInArray, or, sql } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
 import type { StashGame } from "~/db/helpers/stash-game";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
-import { type TStashMarketPriceI, tStashMarketPrice } from "~/db/schema/stash.market-price";
-import { type TStashUniqueHourlyI, tStashUniqueHourly } from "~/db/schema/stash.unique-hourly";
+import {
+    type TStashUniqueHourlyI,
+    tStashMarket,
+    tStashMarketHour,
+} from "~/db/schema/stash.unique-hourly";
 import { marketLockedPrice } from "~/lib/market-listing-prices";
 import { chaosRatesByHour, marketDisplayRate, mergePriceSummaries } from "~/lib/market-price-merge";
 import { MOD_POOL_KINDS } from "~/lib/mod-pools";
-import type { MarketTab } from "~/schemas/market";
 import { marketRateSnapshots } from "./market-rates.queries";
 
 const UPSERT_CHUNK = 200;
 const ITEM_CHUNK = 1000;
 
-type MarketKey = {
-    itemKey: string;
-    identified: boolean;
-    corrupted: boolean;
-    signatureKind: string;
-    signatureValue: string;
-};
 type PriceScope = { game: StashGame; realm: string; league: string; hour: number };
-
-function marketKey(row: MarketKey) {
-    return JSON.stringify([
-        row.itemKey,
-        Boolean(row.identified),
-        Boolean(row.corrupted),
-        row.signatureKind,
-        row.signatureValue,
-    ]);
-}
 
 function chunks<T>(values: T[], size: number) {
     return Array.from({ length: Math.ceil(values.length / size) }, (_, index) =>
@@ -60,129 +44,125 @@ async function chaosRatesAt(db: TDatabase, scope: PriceScope, currencies: string
     );
 }
 
-/** The columns an upsert replaces only when the incoming hour is at least as new as the stored one. */
-function newestHourSet(table: (typeof tStashMarketPrice)[StashGame]) {
-    const newer = sql`values(${table.hour}) >= ${table.hour}`;
-    const newest = (column: MySqlColumn) => sql`if(${newer}, values(${column}), ${column})`;
-    return {
-        priceChaos: newest(table.priceChaos),
-        priceDivine: newest(table.priceDivine),
-        hour: sql`greatest(${table.hour}, values(${table.hour}))`,
-    };
-}
-
 /**
- * Locks the prices of the items' markets listed in the hour, for each tab kind and for all tabs,
- * merging their rows as the market list does. An hour without listings leaves a market's price.
+ * Locks the prices of the items' markets listed in the hour with a row not yet priced, merging each
+ * market's rows as the market list does. Markets whose rows are all priced keep their prices, so
+ * re-delivering an hour reads no rates and writes nothing.
  */
 async function lockMarketPrices(db: TDatabase, scope: PriceScope, itemKeys: string[]) {
     const { game, realm, league, hour } = scope;
-    const hourly = tStashUniqueHourly[game];
-    const listed = (
-        await db
-            .select({
-                itemKey: hourly.itemKey,
-                identified: hourly.identified,
-                corrupted: hourly.corrupted,
-                tab: hourly.tab,
-                signatureKind: hourly.signatureKind,
-                signatureValue: hourly.signatureValue,
-                listingCount: hourly.listingCount,
-                prices: hourly.prices,
-            })
-            .from(hourly)
-            .where(
-                and(
-                    eq(hourly.realm, realm),
-                    eq(hourly.league, league),
-                    eq(hourly.hour, hour),
-                    inArray(hourly.itemKey, itemKeys),
-                    // A mod pool unique's per-mod markets are not listed.
-                    or(
-                        notInArray(hourly.signatureKind, [...MOD_POOL_KINDS]),
-                        eq(hourly.signatureValue, ""),
-                    ),
+    const market = tStashMarket[game];
+    const table = tStashMarketHour[game];
+    const rows = await db
+        .select({
+            marketId: table.marketId,
+            itemKey: market.itemKey,
+            identified: market.identified,
+            corrupted: market.corrupted,
+            tab: market.tab,
+            signatureKind: market.signatureKind,
+            signatureValue: market.signatureValue,
+            prices: table.prices,
+            priceChaos: table.priceChaos,
+            priceDivine: table.priceDivine,
+            allTabsPriceChaos: table.allTabsPriceChaos,
+            allTabsPriceDivine: table.allTabsPriceDivine,
+        })
+        .from(market)
+        .innerJoin(table, and(eq(table.marketId, market.id), eq(table.hour, hour)))
+        .where(
+            and(
+                eq(market.realm, realm),
+                eq(market.league, league),
+                inArray(market.itemKey, itemKeys),
+                sql`${table.listingCount} > 0`,
+                // A mod pool unique's per-mod markets are not listed.
+                or(
+                    notInArray(market.signatureKind, [...MOD_POOL_KINDS]),
+                    eq(market.signatureValue, ""),
                 ),
-            )
-    ).filter((row) => row.listingCount > 0);
-    if (!listed.length) return;
+            ),
+        );
+    const markets = [
+        ...Map.groupBy(rows, (row) =>
+            JSON.stringify([
+                row.itemKey,
+                Boolean(row.identified),
+                Boolean(row.corrupted),
+                row.signatureKind,
+                row.signatureValue,
+            ]),
+        ).values(),
+    ].filter((group) =>
+        group.some(
+            (row) =>
+                Object.keys(row.prices ?? {}).length > 0 &&
+                row.priceChaos === null &&
+                row.priceDivine === null &&
+                row.allTabsPriceChaos === null &&
+                row.allTabsPriceDivine === null,
+        ),
+    );
+    if (!markets.length) return;
     const chaosRates = await chaosRatesAt(
         db,
         scope,
-        listed.flatMap((row) => Object.keys(row.prices ?? {})),
+        markets.flat().flatMap((row) => Object.keys(row.prices ?? {})),
     );
-    const prices: TStashMarketPriceI[] = [...Map.groupBy(listed, marketKey).values()].flatMap(
-        (rows) => {
-            const { itemKey, signatureKind, signatureValue } = rows[0]!;
-            const tabs: MarketTab[] = ["all", "merchant", "other"];
-            return tabs.flatMap((tab) => {
-                const scoped = tab === "all" ? rows : rows.filter((row) => row.tab === tab);
-                if (!scoped.length) return [];
-                return {
-                    realm,
-                    league,
-                    itemKey,
-                    identified: Boolean(rows[0]!.identified),
-                    corrupted: Boolean(rows[0]!.corrupted),
-                    tab,
-                    signatureKind,
-                    signatureValue,
-                    hour,
-                    ...marketLockedPrice(
-                        mergePriceSummaries(scoped.map((row) => row.prices)),
-                        chaosRates,
-                    ),
-                };
-            });
-        },
-    );
-    const table = tStashMarketPrice[game];
-    for (const batch of chunks(prices, UPSERT_CHUNK))
+    const locked = markets.flatMap((group) => {
+        const merged = (scoped: typeof group) =>
+            marketLockedPrice(mergePriceSummaries(scoped.map((row) => row.prices)), chaosRates);
+        const allTabs = merged(group);
+        return [...Map.groupBy(group, (row) => row.tab).values()].flatMap((tabRows) => {
+            const price = merged(tabRows);
+            return tabRows.map((row) => ({
+                hour,
+                marketId: row.marketId,
+                // The hour's rows are stored by now, so these only satisfy the insert's columns.
+                listingCount: 0,
+                uniqueSellers: 0,
+                firstSeenAt: "",
+                lastSeenAt: "",
+                ...price,
+                allTabsPriceChaos: allTabs.priceChaos,
+                allTabsPriceDivine: allTabs.priceDivine,
+            }));
+        });
+    });
+    for (const batch of chunks(locked, UPSERT_CHUNK))
         await db
             .insert(table)
             .values(batch)
-            .onDuplicateKeyUpdate({ set: newestHourSet(table) });
+            .onDuplicateKeyUpdate({
+                set: {
+                    priceChaos: sql`values(${table.priceChaos})`,
+                    priceDivine: sql`values(${table.priceDivine})`,
+                    allTabsPriceChaos: sql`values(${table.allTabsPriceChaos})`,
+                    allTabsPriceDivine: sql`values(${table.allTabsPriceDivine})`,
+                },
+            });
 }
 
-/**
- * Locks the prices of delivered market hours, reading each hour's stored rows and exchange rates.
- * An item whose every market is priced from a newer hour is skipped: re-delivering a past hour, as
- * sale status changes do, cannot change what the list shows.
- */
+/** Locks the prices of delivered market hours, reading each hour's stored rows and exchange rates. */
 export async function lockDeliveredMarketPrices(
     db: TDatabase,
     game: StashGame,
     rows: Pick<TStashUniqueHourlyI, "realm" | "league" | "hour" | "itemKey" | "listingCount">[],
 ) {
-    const table = tStashMarketPrice[game];
     const listed = rows.filter((row) => row.listingCount > 0);
     for (const group of Map.groupBy(listed, (row) =>
-        JSON.stringify([row.realm, row.league]),
+        JSON.stringify([row.realm, row.league, row.hour]),
     ).values()) {
-        const { realm, league } = group[0]!;
-        const stored = await db
-            .select({ itemKey: table.itemKey, oldest: min(table.hour) })
-            .from(table)
-            .where(
-                and(
-                    eq(table.realm, realm),
-                    eq(table.league, league),
-                    inArray(table.itemKey, [...new Set(group.map((row) => row.itemKey))]),
-                ),
-            )
-            .groupBy(table.itemKey);
-        const oldest = new Map(stored.map((row) => [row.itemKey, Number(row.oldest)]));
-        const current = group.filter((row) => (oldest.get(row.itemKey) ?? 0) <= row.hour);
-        for (const hourRows of Map.groupBy(current, (row) => row.hour).values())
-            await lockMarketPrices(db, { game, realm, league, hour: hourRows[0]!.hour }, [
-                ...new Set(hourRows.map((row) => row.itemKey)),
-            ]);
+        const { realm, league, hour } = group[0]!;
+        await lockMarketPrices(db, { game, realm, league, hour }, [
+            ...new Set(group.map((row) => row.itemKey)),
+        ]);
     }
 }
 
 /**
- * Rebuilds the game's market prices from stored hours, each at its own hour's rates: every market's
- * newest listed hour, oldest hour first, so a market's newest hour is the one that stays.
+ * Locks the prices of stored hours written before ingest locked them, each at its own hour's rates:
+ * every market's newest listed hour, which is the one the market list reads.
  */
 export async function refreshStashMarketPrices(
     db: TDatabase,
@@ -214,9 +194,9 @@ export async function refreshStashMarketPrices(
             daily.signatureKind,
             daily.signatureValue,
         );
-    const hours = Map.groupBy(latest, (row) => JSON.stringify([row.realm, row.league, row.hour]));
-    const ordered = [...hours.values()].sort((a, b) => Number(a[0]!.hour) - Number(b[0]!.hour));
-    for (const rows of ordered) {
+    for (const rows of Map.groupBy(latest, (row) =>
+        JSON.stringify([row.realm, row.league, row.hour]),
+    ).values()) {
         const { realm, league, hour } = rows[0]!;
         const itemKeys = [...new Set(rows.map((row) => row.itemKey))];
         for (const keys of chunks(itemKeys, ITEM_CHUNK))

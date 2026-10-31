@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import {
     boolean,
     char,
+    double,
     index,
     int,
     json,
@@ -110,6 +111,12 @@ export const tStashMarket = { poe1: tStashPoe1Market, poe2: tStashPoe2Market };
  * for hours without likely sales and hours ingested before it was recorded. `delistedPrices` is the
  * last asks of removals that are not likely sales, relists or undecided; it is null for hours
  * ingested before it was recorded.
+ *
+ * `priceChaos` and `priceDivine` are what the market list's price cell shows for this row's stash
+ * tab kind: the most listed currency's median across the market's link counts, converted at the
+ * hour's exchange rates when first written, so they never follow later rates. `allTabs*` are the
+ * same across every tab kind. They stay null on a row without listings, and are written before
+ * `prices` in the table's column order, so an upsert can clear them when `prices` changes.
  */
 function stashMarketHour(game: StashGame) {
     return mysqlTable(
@@ -127,6 +134,10 @@ function stashMarketHour(game: StashGame) {
             pendingCount: int().notNull().default(0),
             salesPrices: json().$type<Record<string, MarketPriceSummary>>(),
             delistedPrices: json().$type<Record<string, MarketPriceSummary>>(),
+            priceChaos: double(),
+            priceDivine: double(),
+            allTabsPriceChaos: double(),
+            allTabsPriceDivine: double(),
             prices: json().$type<Record<string, MarketPriceSummary>>(),
             firstSeenAt: varchar({ length: 32 }).notNull(),
             lastSeenAt: varchar({ length: 32 }).notNull(),
@@ -172,6 +183,10 @@ function stashUniqueHourly(game: StashGame) {
                 pendingCount: hour.pendingCount,
                 salesPrices: hour.salesPrices,
                 delistedPrices: hour.delistedPrices,
+                priceChaos: hour.priceChaos,
+                priceDivine: hour.priceDivine,
+                allTabsPriceChaos: hour.allTabsPriceChaos,
+                allTabsPriceDivine: hour.allTabsPriceDivine,
                 prices: hour.prices,
                 signatureData: market.signatureData,
                 firstSeenAt: hour.firstSeenAt,
