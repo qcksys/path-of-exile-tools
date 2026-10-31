@@ -142,7 +142,7 @@ describe("gem split in ingest", () => {
                     accountName: "seller-a",
                     league: "Standard",
                     stash: "",
-                    stashType: "PremiumStash",
+                    stashType: "TradeStash",
                     items,
                 },
             ],

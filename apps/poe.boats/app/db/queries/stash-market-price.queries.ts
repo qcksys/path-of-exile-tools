@@ -59,14 +59,11 @@ async function lockMarketPrices(db: TDatabase, scope: PriceScope, itemKeys: stri
             itemKey: market.itemKey,
             identified: market.identified,
             corrupted: market.corrupted,
-            tab: market.tab,
             signatureKind: market.signatureKind,
             signatureValue: market.signatureValue,
             prices: table.prices,
             priceChaos: table.priceChaos,
             priceDivine: table.priceDivine,
-            allTabsPriceChaos: table.allTabsPriceChaos,
-            allTabsPriceDivine: table.allTabsPriceDivine,
         })
         .from(market)
         .innerJoin(table, and(eq(table.marketId, market.id), eq(table.hour, hour)))
@@ -74,6 +71,7 @@ async function lockMarketPrices(db: TDatabase, scope: PriceScope, itemKeys: stri
             and(
                 eq(market.realm, realm),
                 eq(market.league, league),
+                eq(market.tab, "merchant"),
                 inArray(market.itemKey, itemKeys),
                 sql`${table.listingCount} > 0`,
                 // A mod pool unique's per-mod markets are not listed.
@@ -98,9 +96,7 @@ async function lockMarketPrices(db: TDatabase, scope: PriceScope, itemKeys: stri
             (row) =>
                 Object.keys(row.prices ?? {}).length > 0 &&
                 row.priceChaos === null &&
-                row.priceDivine === null &&
-                row.allTabsPriceChaos === null &&
-                row.allTabsPriceDivine === null,
+                row.priceDivine === null,
         ),
     );
     if (!markets.length) return;
@@ -110,24 +106,20 @@ async function lockMarketPrices(db: TDatabase, scope: PriceScope, itemKeys: stri
         markets.flat().flatMap((row) => Object.keys(row.prices ?? {})),
     );
     const locked = markets.flatMap((group) => {
-        const merged = (scoped: typeof group) =>
-            marketLockedPrice(mergePriceSummaries(scoped.map((row) => row.prices)), chaosRates);
-        const allTabs = merged(group);
-        return [...Map.groupBy(group, (row) => row.tab).values()].flatMap((tabRows) => {
-            const price = merged(tabRows);
-            return tabRows.map((row) => ({
-                hour,
-                marketId: row.marketId,
-                // The hour's rows are stored by now, so these only satisfy the insert's columns.
-                listingCount: 0,
-                uniqueSellers: 0,
-                firstSeenAt: "",
-                lastSeenAt: "",
-                ...price,
-                allTabsPriceChaos: allTabs.priceChaos,
-                allTabsPriceDivine: allTabs.priceDivine,
-            }));
-        });
+        const price = marketLockedPrice(
+            mergePriceSummaries(group.map((row) => row.prices)),
+            chaosRates,
+        );
+        return group.map((row) => ({
+            hour,
+            marketId: row.marketId,
+            // The hour's rows are stored by now, so these only satisfy the insert's columns.
+            listingCount: 0,
+            uniqueSellers: 0,
+            firstSeenAt: "",
+            lastSeenAt: "",
+            ...price,
+        }));
     });
     for (const batch of chunks(locked, UPSERT_CHUNK))
         await db
@@ -137,8 +129,6 @@ async function lockMarketPrices(db: TDatabase, scope: PriceScope, itemKeys: stri
                 set: {
                     priceChaos: sql`values(${table.priceChaos})`,
                     priceDivine: sql`values(${table.priceDivine})`,
-                    allTabsPriceChaos: sql`values(${table.allTabsPriceChaos})`,
-                    allTabsPriceDivine: sql`values(${table.allTabsPriceDivine})`,
                 },
             });
 }
@@ -181,6 +171,7 @@ export async function refreshStashMarketPrices(
             and(
                 scope.realm === undefined ? undefined : eq(daily.realm, scope.realm),
                 scope.league === undefined ? undefined : eq(daily.league, scope.league),
+                eq(daily.tab, "merchant"),
                 isNotNull(daily.listedHour),
             ),
         )
@@ -190,7 +181,6 @@ export async function refreshStashMarketPrices(
             daily.itemKey,
             daily.identified,
             daily.corrupted,
-            daily.tab,
             daily.signatureKind,
             daily.signatureValue,
         );

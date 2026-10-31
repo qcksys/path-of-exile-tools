@@ -155,16 +155,12 @@ describe("market browsing", () => {
         expect(params().has("links")).toBe(false);
         expect(marketFiltersSchema.safeParse({ links: "4" }).success).toBe(false);
     });
-    it("defaults to merchant tabs and puts only another tab choice in links", () => {
-        const params = (input: Record<string, string>) =>
-            new URL(marketLink(marketFiltersSchema.parse(input)), "https://example.invalid")
-                .searchParams;
-        expect(marketFiltersSchema.parse({}).tab).toBe("merchant");
-        expect(params({}).has("tab")).toBe(false);
-        expect(params({ tab: "merchant" }).has("tab")).toBe(false);
-        expect(params({ tab: "other" }).get("tab")).toBe("other");
-        expect(params({ tab: "all" }).get("tab")).toBe("all");
-        expect(marketFiltersSchema.safeParse({ tab: "" }).success).toBe(false);
+    it("ignores a stash tab choice from an older link", () => {
+        const filters = marketFiltersSchema.parse({ tab: "other" });
+        expect(filters).not.toHaveProperty("tab");
+        expect(
+            new URL(marketLink(filters), "https://example.invalid").searchParams.has("tab"),
+        ).toBe(false);
     });
     it("defaults unique equipment searches to uncorrupted and leaves the URL to an explicit choice", () => {
         const corruption = (input: Record<string, string>) =>
@@ -562,6 +558,7 @@ describe("market browsing", () => {
             "Chaos per unit",
             "Units traded",
         )!;
+        expect(option.dataZoom).toMatchObject([{ type: "inside" }, { type: "slider" }]);
         expect((option.legend as { data: unknown[] }).data).toMatchObject([
             "Chaos per unit",
             "Lowest rate",

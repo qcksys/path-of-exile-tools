@@ -1,244 +1,35 @@
-import { readFileSync } from "node:fs";
+// biome-ignore-all lint/style/useNamingConvention: Fixtures preserve upstream field names.
+import { normalizeApiItem } from "@poe-tools/item-query";
+import {
+    marketBaseEntry,
+    marketBaseFromCohortId,
+    marketBaseItemValue,
+    marketBaseListSchema,
+    marketBaseMarketCategory,
+    marketBaseVariantValues,
+} from "@poe-tools/market";
 import data from "@poe-tools/market/market-bases-poe1.json";
 import { describe, expect, it } from "vite-plus/test";
 import {
     MARKET_BASE_ATTRIBUTE_SETS,
     MARKET_BASE_CLASSES,
     MARKET_BASE_LINK_CLASSES,
-    type MarketBaseRow,
     marketBaseClass,
     marketBaseDescription,
-    marketBaseDetails,
-    marketBasesSchema,
-    marketBaseVariant,
-    rankMarketBases,
 } from "~/lib/market-bases";
-import { marketFiltersSchema } from "~/schemas/market";
 
-const chaosRates = { chaos: 1, divine: 150 };
+const { bases, clusters } = marketBaseListSchema.parse(data);
+const names = (itemClass: string) =>
+    bases.filter((entry) => entry.itemClass === itemClass).map((entry) => entry.baseType);
 
-function base(id: string, overrides: Partial<MarketBaseRow> = {}): MarketBaseRow {
-    return {
-        id,
-        baseType: "Titan Plate",
-        category: "armour-bases",
-        itemClass: "Body Armour",
-        attributes: ["str"],
-        level: 68,
-        ilvl: { min: 86, max: 100 },
-        links: "1-5",
-        quality: null,
-        hour: 3600,
-        listingCount: 1,
-        uniqueSellers: 1,
-        unknownCount: 0,
-        prices: { chaos: { count: 1, min: 1, median: 1, max: 1 } },
-        ...overrides,
-    };
-}
-
-const rows = [
-    base("cheap", { listingCount: 30, prices: { chaos: { count: 3, min: 5, median: 5, max: 5 } } }),
-    base("dear", {
-        links: "6",
-        listingCount: 2,
-        prices: { divine: { count: 2, min: 1, median: 2, max: 3 } },
-    }),
-    base("unpriced", { baseType: "Astral Plate", listingCount: 10, prices: {} }),
-    base("quality", {
-        links: null,
-        quality: 30,
-        listingCount: 5,
-        prices: { chaos: { count: 5, min: 80, median: 90, max: 99 } },
-    }),
-];
-const rank = (input: Record<string, unknown>, pageSize = 50) =>
-    rankMarketBases(
-        rows,
-        marketFiltersSchema.parse({ category: "armour-bases", ...input }),
-        chaosRates,
-        pageSize,
-    );
-const ids = (input: Record<string, unknown>, pageSize?: number) =>
-    rank(input, pageSize).rows.map((row) => row.id);
-
-describe("crafting base market rows", () => {
-    it("orders by chaos value across currencies with unpriced bases last", () => {
-        expect(ids({ order: "price-desc" })).toEqual(["dear", "quality", "cheap", "unpriced"]);
-        expect(ids({ order: "price-asc" })).toEqual(["cheap", "quality", "dear", "unpriced"]);
-    });
-
-    it("ranks a base by its most listed currency, as the price column shows it", () => {
-        const mixed = base("mixed", {
-            prices: {
-                chaos: { count: 1, min: 1, median: 1, max: 1 },
-                divine: { count: 9, min: 2, median: 2, max: 2 },
-            },
-        });
-        const steady = base("steady", {
-            prices: { chaos: { count: 5, min: 100, median: 100, max: 100 } },
-        });
-        const filters = marketFiltersSchema.parse({
-            category: "armour-bases",
-            order: "price-desc",
-        });
+describe("crafting base descriptions", () => {
+    it("describes a base by its class, attributes and level", () => {
         expect(
-            rankMarketBases([steady, mixed], filters, chaosRates, 50).rows.map((row) => row.id),
-        ).toEqual(["mixed", "steady"]);
-    });
-
-    it("falls back to listings for the likely-sales orders, which bases do not have", () => {
-        expect(ids({})).toEqual(["cheap", "unpriced", "quality", "dear"]);
-        expect(ids({ salesMin: 1 })).toEqual([]);
-    });
-
-    it("searches the base and variant and filters prices in the display currency", () => {
-        expect(ids({ q: "astral" })).toEqual(["unpriced"]);
-        expect(ids({ q: "30%+ quality" })).toEqual(["quality"]);
-        expect(ids({ q: "6 links" })).toEqual(["dear"]);
-        expect(ids({ currency: "divine", priceMin: 1 })).toEqual(["dear"]);
-        expect(ids({ currency: "chaos", priceMax: 100, order: "name-asc" })).toEqual([
-            "quality",
-            "cheap",
-        ]);
-        expect(ids({ listingsMin: 5, sellersMax: 1 })).toEqual(["cheap", "unpriced", "quality"]);
-    });
-
-    it("pages after ordering and has no corrupted bases", () => {
-        expect(rank({ page: 2 }, 3)).toEqual({ rows: [rows[1]], hasMore: false });
-        expect(rank({}, 3).hasMore).toBe(true);
-        expect(rank({ corruption: "true" })).toEqual({ rows: [], hasMore: false });
-    });
-
-    it("filters by type, attributes, item level band, links and quality", () => {
-        const mixed = [
-            base("titan", { ilvl: { min: 84, max: 85 } }),
-            base("regalia", {
-                baseType: "Vaal Regalia",
-                attributes: ["int"],
-                ilvl: { min: 78, max: 83 },
-            }),
-            base("hubris", {
-                baseType: "Hubris Circlet",
-                itemClass: "Helmet",
-                attributes: ["int"],
-                links: null,
-            }),
-            base("necrotic", { baseType: "Necrotic Armour", attributes: ["dex", "int"] }),
-            base("q25", { links: null, quality: 25 }),
-            base("garb", {
-                baseType: "Sacrificial Garb",
-                attributes: ["str", "dex", "int"],
-                links: null,
-            }),
-        ];
-        const matching = (input: Record<string, unknown>) =>
-            rankMarketBases(
-                mixed,
-                marketFiltersSchema.parse({
-                    category: "armour-bases",
-                    order: "name-asc",
-                    ...input,
-                }),
-                chaosRates,
-                50,
-            ).rows.map((row) => row.id);
-        expect(matching({ baseClass: "Helmet" })).toEqual(["hubris"]);
-        expect(matching({ attributes: "int" })).toEqual(["hubris", "regalia"]);
-        expect(matching({ attributes: "dex-int" })).toEqual(["necrotic"]);
-        expect(matching({ attributes: "str-dex-int" })).toEqual(["garb"]);
-        expect(matching({ ilvl: "84" })).toEqual(["titan"]);
-        expect(matching({ ilvl: "80" })).toEqual(["regalia"]);
-        expect(matching({ baseLinks: "1-5", baseClass: "Body Armour" })).toEqual([
-            "necrotic",
-            "titan",
-            "regalia",
-        ]);
-        expect(matching({ quality: "25" })).toEqual(["q25"]);
-        expect(marketFiltersSchema.safeParse({ baseClass: "Sword" }).success).toBe(false);
-        expect(marketFiltersSchema.safeParse({ ilvl: "73" }).success).toBe(false);
-    });
-
-    it("describes each variant by item level, links and quality", () => {
-        expect(marketBaseVariant(rows[0]!)).toBe("ilvl 86–100 · 1–5 links");
-        expect(marketBaseVariant(rows[3]!)).toBe("ilvl 86–100 · 30%+ quality");
-        expect(marketBaseDescription(rows[0]!)).toBe("Body Armour · Str · Level 68");
+            marketBaseDescription({ itemClass: "Body Armour", attributes: ["str"], level: 68 }),
+        ).toBe("Body Armour · Str · Level 68");
         expect(marketBaseDescription({ itemClass: "Ring", attributes: [] })).toBe("Ring");
         expect(marketBaseDescription({ itemClass: "Helmet", attributes: ["dex", "int"] })).toBe(
             "Helmet · Dex/Int",
-        );
-        expect(
-            marketBaseDescription({ itemClass: "Two Hand Axe", attributes: ["str"], level: 64 }),
-        ).toBe("Two Hand Axe · Str · Level 64");
-    });
-});
-
-describe("generated crafting base list", () => {
-    const { revision, bases } = marketBasesSchema.parse(data);
-    const manifest: { revision: string; cohorts: Array<{ id: string }> } = JSON.parse(
-        readFileSync("../../packages/poe-market/data/cohorts-poe1.json", "utf8"),
-    );
-    const cohorts = new Set(manifest.cohorts.map((cohort) => cohort.id));
-
-    it("lists existing cohorts of the current manifest, equipment from item level 74", () => {
-        expect(revision).toBe(manifest.revision);
-        for (const entry of bases) {
-            expect(cohorts.has(entry.id), entry.id).toBe(true);
-            if (!entry.cluster) expect(entry.ilvl.max).toBeGreaterThanOrEqual(74);
-        }
-    });
-
-    it("splits six-socket bases by links and adds ilvl 86 quality tiers to armour", () => {
-        expect(
-            bases
-                .filter((entry) => entry.baseType === "Titan Plate" && entry.ilvl.min === 86)
-                .map((entry) => entry.id),
-        ).toEqual([
-            "base:titan-plate:86-100:6-link",
-            "base:titan-plate:86-100:1-5-link",
-            "base:titan-plate:86-100:any-links:q25",
-            "base:titan-plate:86-100:any-links:q30",
-        ]);
-        expect(
-            bases
-                .filter((entry) => entry.baseType === "Onyx Amulet")
-                .every((entry) => entry.links === null && entry.quality === null),
-        ).toBe(true);
-        // Other equipment cannot reach six sockets, so its links are not split.
-        expect(
-            new Set(bases.filter((entry) => entry.links).map((entry) => entry.itemClass)),
-        ).toEqual(new Set(MARKET_BASE_LINK_CLASSES));
-        expect(new Set(bases.map((entry) => entry.category))).toEqual(
-            new Set([
-                "armour-bases",
-                "weapon-bases",
-                "accessory-bases",
-                "flask-bases",
-                "cluster-jewel-bases",
-            ]),
-        );
-    });
-
-    it("lists utility flasks by their key modifier levels and other flasks from ilvl 83", () => {
-        const flasks = bases.filter((entry) => entry.category === "flask-bases");
-        const names = (itemClass: string) =>
-            new Set(flasks.filter((entry) => entry.itemClass === itemClass).map((e) => e.baseType));
-        expect(names("Utility Flask").size).toBe(18);
-        expect(names("Life Flask")).toEqual(
-            new Set(["Eternal Life Flask", "Divine Life Flask", "Sanctified Life Flask"]),
-        );
-        expect(names("Mana Flask").has("Eternal Mana Flask")).toBe(true);
-        expect(names("Hybrid Flask").has("Hallowed Hybrid Flask")).toBe(true);
-        expect(
-            flasks
-                .filter((entry) => entry.baseType === "Quicksilver Flask")
-                .map((entry) => `${entry.ilvl.min}-${entry.ilvl.max}`),
-        ).toEqual(["74-79", "80-83", "84-84", "85-100"]);
-        for (const entry of flasks.filter((entry) => entry.itemClass !== "Utility Flask"))
-            expect(entry.ilvl, entry.id).toEqual({ min: 83, max: 100 });
-        expect(flasks.every((entry) => entry.links === null && entry.quality === null)).toBe(true);
-        expect(marketBaseDetails(flasks.find((e) => e.baseType === "Quicksilver Flask")!)).toBe(
-            "ilvl 74–79 · Utility Flask",
         );
     });
 
@@ -247,86 +38,254 @@ describe("generated crafting base list", () => {
         expect(marketBaseClass("UtilityFlask")).toBe("Utility Flask");
         expect(marketBaseClass("Body Armour")).toBe("Body Armour");
     });
+});
 
-    it("lists each base under a type of its category, with its attribute requirements", () => {
-        for (const entry of bases)
+describe("generated crafting base list", () => {
+    it("keeps the two newest armour bases of each defence type and implicit", () => {
+        const body = names("Body Armour");
+        expect(body).toContain("Twilight Regalia");
+        expect(body).toContain("Nightweave Robe");
+        for (const third of ["Arcane Vestment", "Vaal Regalia"]) expect(body).not.toContain(third);
+        // An implicit is its own group, so it does not push out a plain base.
+        const boots = names("Boots");
+        for (const name of ["Velour Boots", "Harpyskin Boots", "Stormrider Boots"])
+            expect(boots).toContain(name);
+    });
+
+    it("keeps each weapon that wins on a stat or an implicit", () => {
+        expect(names("Two Hand Axe").sort()).toEqual([
+            "Apex Cleaver",
+            "Despot Axe",
+            "Ezomyte Axe",
+            "Fleshripper",
+            "Sundering Axe",
+            "Vaal Axe",
+            "Void Axe",
+        ]);
+        // Its implicit's largest roll, though newer rune daggers share the effect.
+        expect(names("Rune Dagger")).toContain("Platinum Kris");
+        expect(names("Rune Dagger")).not.toContain("Ezomyte Dagger");
+        expect(names("Wand")).not.toContain("Opal Wand");
+    });
+
+    it("keeps accessories and flasks on their own lists", () => {
+        for (const name of ["Onyx Amulet", "Stygian Vise", "Two-Stone Ring", "Cryonic Ring"])
+            expect(marketBaseEntry(name)?.category, name).toBe("accessory-bases");
+        expect(names("Utility Flask")).toHaveLength(18);
+        expect(new Set(names("Life Flask"))).toEqual(
+            new Set(["Eternal Life Flask", "Divine Life Flask", "Sanctified Life Flask"]),
+        );
+        expect(marketBaseEntry("Quicksilver Flask")?.bands).toEqual([
+            { min: 74, max: 79 },
+            { min: 80, max: 83 },
+            { min: 84, max: 84 },
+            { min: 85, max: 100 },
+        ]);
+        expect(marketBaseEntry("Eternal Life Flask")?.bands).toEqual([{ min: 83, max: 100 }]);
+    });
+
+    it("lists each base under a type of its category, with a filterable attribute set", () => {
+        for (const entry of bases) {
             expect(
                 (
                     MARKET_BASE_CLASSES[
                         entry.category as keyof typeof MARKET_BASE_CLASSES
                     ] as readonly string[]
                 ).includes(entry.itemClass),
-                entry.id,
+                entry.baseType,
             ).toBe(true);
-        const find = (name: string) => bases.find((entry) => entry.baseType === name)!;
-        expect(find("Titan Plate").attributes).toEqual(["str"]);
-        expect(find("Necrotic Armour").attributes).toEqual(["dex", "int"]);
-        expect(find("Focused Amulet").attributes).toEqual([]);
-        for (const name of [
-            "Cryonic Ring",
-            "Enthalpic Ring",
-            "Synaptic Ring",
-            "Organic Ring",
-            "Fugitive Ring",
-            "Formless Ring",
+            if (entry.attributes.length)
+                expect(Object.keys(MARKET_BASE_ATTRIBUTE_SETS)).toContain(
+                    entry.attributes.join("-"),
+                );
+        }
+        expect(marketBaseEntry("Twilight Regalia")?.attributes).toEqual(["int"]);
+        expect(marketBaseEntry("Twilight Regalia")?.level).toBe(84);
+    });
+
+    it("splits only six-socket classes by links, and only armour by quality", () => {
+        expect(
+            new Set(bases.filter((entry) => entry.links).map((entry) => entry.itemClass)),
+        ).toEqual(new Set(MARKET_BASE_LINK_CLASSES));
+        expect(
+            new Set(bases.filter((entry) => entry.quality).map((entry) => entry.itemClass)),
+        ).toEqual(new Set(MARKET_BASE_CLASSES["armour-bases"]));
+    });
+
+    it("lists at most three item level bands from level 74 per equipment base", () => {
+        for (const entry of bases.filter((base) => base.category !== "flask-bases")) {
+            expect(entry.bands.length, entry.baseType).toBeLessThanOrEqual(3);
+            expect(entry.bands.length, entry.baseType).toBeGreaterThan(0);
+            expect(entry.bands[0]!.max, entry.baseType).toBeGreaterThanOrEqual(74);
+        }
+    });
+
+    it("fits every market value in the signature column", () => {
+        for (const filter of ["armour-bases", "weapon-bases", "cluster-jewel-bases"])
+            for (const value of marketBaseVariantValues({
+                category: filter,
+                ilvl: filter === "cluster-jewel-bases" ? "84" : "86",
+                baseLinks: "",
+                quality: "",
+            }) ?? [])
+                expect(value.length, value).toBeLessThanOrEqual(255);
+    });
+
+    it("lists Cluster Jewels by size with their skills and passive counts", () => {
+        expect(clusters.map((entry) => entry.baseType).sort()).toEqual([
+            "Large Cluster Jewel",
+            "Medium Cluster Jewel",
+            "Small Cluster Jewel",
+        ]);
+        expect(marketBaseMarketCategory("Large Cluster Jewel")).toBe("cluster-jewel-bases");
+        const large = clusters.find((entry) => entry.baseType === "Large Cluster Jewel")!;
+        expect([large.minPassives, large.maxPassives]).toEqual([8, 12]);
+    });
+});
+
+function item(fields: Record<string, unknown>) {
+    return normalizeApiItem("poe1", "stash", {
+        id: "x",
+        icon: "",
+        w: 2,
+        h: 3,
+        identified: true,
+        name: "",
+        typeLine: "Twilight Regalia",
+        baseType: "Twilight Regalia",
+        rarity: "Normal",
+        frameType: 0,
+        ilvl: 86,
+        ...fields,
+    });
+}
+
+const linked = (count: number) =>
+    Array.from({ length: count }, () => ({ group: 0, attr: "I", sColour: "B" }));
+const quality = (percent: number) => ({
+    properties: [{ name: "Quality", values: [[`+${percent}%`, 1]], displayMode: 0 }],
+});
+
+describe("crafting base markets of an item", () => {
+    it("reads item level, links and quality into exactly one market", () => {
+        expect(marketBaseItemValue(item({ ilvl: 80 }))).toBe("ilvl 74–83 · 1–5 links");
+        expect(marketBaseItemValue(item({ ilvl: 85 }))).toBe("ilvl 84–85 · 1–5 links");
+        expect(marketBaseItemValue(item({ sockets: linked(6) }))).toBe("ilvl 86+ · 6 links");
+        expect(marketBaseItemValue(item(quality(24)))).toBe("ilvl 86+ · 1–5 links");
+        expect(marketBaseItemValue(item(quality(25)))).toBe(
+            "ilvl 86+ · 1–5 links · Quality 25–29%",
+        );
+        expect(marketBaseItemValue(item({ ...quality(30), sockets: linked(6) }))).toBe(
+            "ilvl 86+ · 6 links · Quality 30%+",
+        );
+        // Quality splits only item level 86 and up.
+        expect(marketBaseItemValue(item({ ...quality(30), ilvl: 85 }))).toBe(
+            "ilvl 84–85 · 1–5 links",
+        );
+    });
+
+    it("leaves out items that are not clean, below the bands or not listed", () => {
+        for (const fields of [
+            { rarity: "Unique", frameType: 3 },
+            { corrupted: true },
+            { duplicated: true },
+            { fractured: true },
+            { synthesised: true },
+            { influences: { shaper: true } },
+            { identified: false, corrupted: true },
+            { ilvl: 73 },
+            { baseType: "Vaal Regalia", typeLine: "Vaal Regalia" },
         ])
-            expect(find(name)?.category, name).toBe("accessory-bases");
-        expect(find("Runic Helm").attributes).toEqual(["str", "dex", "int"]);
-        expect(find("Titan Plate").level).toBe(73);
-        expect(find("Large Cluster Jewel").level).toBeNull();
-    });
-
-    it("offers an attributes filter option for every attribute set the catalog lists", () => {
-        for (const entry of bases.filter((entry) => entry.attributes.length))
-            expect(Object.keys(MARKET_BASE_ATTRIBUTE_SETS), entry.id).toContain(
-                entry.attributes.join("-"),
-            );
-    });
-
-    it("groups lower item levels into at most three equipment bands per base", () => {
-        const bands = (name: string) =>
-            bases
-                .filter((entry) => entry.baseType === name && !entry.quality && entry.links !== "6")
-                .map((entry) => `${entry.ilvl.min}-${entry.ilvl.max}`);
-        expect(bands("Focused Amulet")).toEqual(["74-83", "84-84", "85-100"]);
-        expect(bands("Stygian Vise")).toEqual(["74-84", "85-85", "86-100"]);
-        expect(bands("Imperial Staff")).toEqual(["74-81", "82-82", "83-100"]);
-        // Flasks have fixed bands; see the flask test.
-        for (const name of new Set(
-            bases
-                .filter((entry) => !entry.cluster && entry.category !== "flask-bases")
-                .map((entry) => entry.baseType),
-        ))
-            expect(bands(name).length, name).toBeLessThanOrEqual(3);
-    });
-
-    it("splits Cluster Jewels by size, skill, passive count and poe.ninja's item level bands", () => {
-        const large = bases.filter(
-            (entry) =>
-                entry.baseType === "Large Cluster Jewel" &&
-                entry.cluster?.skill === "12% increased Chaos Damage",
+            expect(marketBaseItemValue(item(fields)), JSON.stringify(fields)).toBeNull();
+        expect(marketBaseItemValue(item({ rarity: "Rare", frameType: 2 }))).toBe(
+            "ilvl 86+ · 1–5 links",
         );
-        expect(new Set(large.map((entry) => entry.cluster?.passives))).toEqual(
-            new Set([8, 9, 10, 11, 12]),
+    });
+
+    it("reads an unidentified rare into the same market as an identified one", () => {
+        const rare = { rarity: "Rare", frameType: 2, identified: false, ...quality(30) };
+        expect(marketBaseItemValue(item({ ...rare, sockets: linked(6) }))).toBe(
+            "ilvl 86+ · 6 links · Quality 30%+",
         );
+    });
+
+    it("reads a Cluster Jewel's skill, passive count and band from its enchantments", () => {
+        const large = clusters.find((entry) => entry.baseType === "Large Cluster Jewel")!;
+        const skill = large.skills[0]!;
+        const jewel = {
+            baseType: "Large Cluster Jewel",
+            typeLine: "Large Cluster Jewel",
+            ilvl: 84,
+            enchantMods: [
+                "Adds 8 Passive Skills",
+                "2 Added Passive Skills are Jewel Sockets",
+                `Added Small Passive Skills grant: ${skill.line}`,
+            ],
+        };
+        expect(marketBaseItemValue(item(jewel))).toBe(`${skill.label} · 8 passives · ilvl 84+`);
         expect(
-            large
-                .filter((entry) => entry.cluster?.passives === 8)
-                .map((entry) => `${entry.ilvl.min}-${entry.ilvl.max}`),
-        ).toEqual(["1-49", "50-67", "68-74", "75-83", "84-100"]);
-        const small = bases.filter((entry) => entry.baseType === "Small Cluster Jewel");
-        expect(new Set(small.map((entry) => entry.cluster?.passives))).toEqual(new Set([2, 3]));
-        expect(
-            bases.every(
-                (entry) =>
-                    (entry.category === "cluster-jewel-bases") === (entry.cluster !== undefined),
+            marketBaseItemValue(
+                item({ ...jewel, rarity: "Rare", frameType: 2, identified: false }),
             ),
-        ).toBe(true);
-        expect(marketBaseVariant(large[0]!)).toBe(
-            "12% increased Chaos Damage · 8 passives · ilvl 1–49",
-        );
-        expect(marketBaseDetails(large[0]!)).toBe(
-            "12% increased Chaos Damage · 8 passives · ilvl 1–49",
-        );
+        ).toBe(`${skill.label} · 8 passives · ilvl 84+`);
+        expect(marketBaseItemValue(item({ ...jewel, enchantMods: [] }))).toBeNull();
+    });
+});
+
+describe("crafting base market filters", () => {
+    const values = (filters: Partial<Parameters<typeof marketBaseVariantValues>[0]>) =>
+        marketBaseVariantValues({
+            category: "armour-bases",
+            ilvl: "",
+            baseLinks: "",
+            quality: "",
+            ...filters,
+        });
+
+    it("filters nothing until one is set", () => {
+        expect(values({})).toBeUndefined();
+    });
+
+    it("matches the band including a level, and its quality bands from 86", () => {
+        const at86 = values({ ilvl: "86" })!;
+        expect(at86).toContain("ilvl 86+ · 6 links");
+        expect(at86).toContain("ilvl 86+ · 6 links · Quality 30%+");
+        expect(at86).not.toContain("ilvl 74–83 · 1–5 links");
+        expect(values({ ilvl: "84" })).not.toContain("ilvl 86+ · 6 links · Quality 30%+");
+    });
+
+    it("keeps links and treats quality as that band and better", () => {
+        const six = values({ baseLinks: "6" })!;
+        expect(six.every((value) => value.includes("6 links"))).toBe(true);
+        const q25 = values({ quality: "25" })!;
+        expect(q25).toContain("ilvl 86+ · 1–5 links · Quality 25–29%");
+        expect(q25).toContain("ilvl 86+ · 1–5 links · Quality 30%+");
+        const q30 = values({ quality: "30" })!;
+        expect(q30).not.toContain("ilvl 86+ · 1–5 links · Quality 25–29%");
+    });
+
+    it("gives Cluster Jewels no link or quality markets", () => {
+        expect(values({ category: "cluster-jewel-bases", baseLinks: "6" })).toEqual([]);
+        expect(values({ category: "cluster-jewel-bases", ilvl: "84" })!.length).toBeGreaterThan(0);
+    });
+});
+
+describe("old crafting base page IDs", () => {
+    it("finds the market an old cohort ID now lists under", () => {
+        expect(marketBaseFromCohortId("base:twilight-regalia:86-100:1-5-link")).toEqual({
+            baseType: "Twilight Regalia",
+            category: "armour-bases",
+            value: "ilvl 86+ · 1–5 links",
+        });
+        expect(marketBaseFromCohortId("base:vaal-regalia:86-100:1-5-link")).toBeUndefined();
+        const large = clusters.find((entry) => entry.baseType === "Large Cluster Jewel")!;
+        const skill = large.skills[0]!;
+        expect(
+            marketBaseFromCohortId(`base:large-cluster-jewel:${skill.id}:8-passives:84-100`),
+        ).toEqual({
+            baseType: "Large Cluster Jewel",
+            category: "cluster-jewel-bases",
+            value: `${skill.label} · 8 passives · ilvl 84+`,
+        });
     });
 });

@@ -95,7 +95,83 @@ describe("stash tab split in ingest", () => {
         vi.unstubAllEnvs();
     });
 
-    it("rolls up merchant and other tabs as separate markets", async () => {
+    it("rolls up clean crafting bases as their own markets, without a rare's random name", async () => {
+        const regalia = (id: string, fields: Partial<Item> = {}): Item => ({
+            ...belt(id, "~b/o 5 chaos"),
+            name: "Doom Shell",
+            typeLine: "Twilight Regalia",
+            baseType: "Twilight Regalia",
+            rarity: "Rare",
+            frameType: 2,
+            ilvl: 86,
+            ...fields,
+        });
+        await capture([
+            {
+                account: "merchant-a",
+                stashType: "TradeStash",
+                items: [
+                    regalia("clean"),
+                    regalia("unidentified", { identified: false, name: "" }),
+                    regalia("corrupted", { corrupted: true }),
+                    regalia("low", { ilvl: 60 }),
+                    regalia("unlisted", { baseType: "Vaal Regalia", typeLine: "Vaal Regalia" }),
+                ],
+            },
+        ]);
+        expect(
+            await queryAll(
+                db.conn,
+                "SELECT item_id, item_key, identified FROM ps_listing ORDER BY item_id",
+            ),
+        ).toEqual([
+            { item_id: "clean", item_key: "Twilight Regalia", identified: true },
+            { item_id: "unidentified", item_key: "Twilight Regalia", identified: true },
+        ]);
+        await rollup();
+        expect(deliveries.flatMap((delivery) => delivery.rows)).toMatchObject([
+            {
+                itemKey: "Twilight Regalia",
+                identified: true,
+                name: null,
+                baseType: "Twilight Regalia",
+                links: 0,
+                signatureKind: "base",
+                signatureValue: "ilvl 86+ · 1–5 links",
+                listingCount: 2,
+            },
+        ]);
+    });
+
+    it("compares an unidentified base's sale with identified sellers of its market", async () => {
+        const regalia = (id: string, fields: Partial<Item> = {}): Item => ({
+            ...belt(id, "~b/o 100 chaos"),
+            name: "Doom Shell",
+            typeLine: "Twilight Regalia",
+            baseType: "Twilight Regalia",
+            rarity: "Rare",
+            frameType: 2,
+            ilvl: 86,
+            ...fields,
+        });
+        await capture([
+            {
+                account: "seller-a",
+                stashType: "TradeStash",
+                items: [regalia("sold", { identified: false, name: "" })],
+            },
+            { account: "seller-b", stashType: "TradeStash", items: [regalia("peer")] },
+        ]);
+        await capture([{ account: "seller-a", stashType: "TradeStash", items: [] }]);
+        expect(
+            await queryAll(
+                db.conn,
+                "SELECT item_id, market_price, market_sellers::INTEGER AS market_sellers FROM ps_sale",
+            ),
+        ).toEqual([{ item_id: "sold", market_price: 100, market_sellers: 1 }]);
+    });
+
+    it("keeps every tab's listings but delivers only merchant tabs", async () => {
         await capture([
             {
                 account: "merchant-a",
@@ -115,13 +191,45 @@ describe("stash tab split in ingest", () => {
             { item_id: "b", tab: "merchant" },
             { item_id: "c", tab: "other" },
         ]);
-        expect(await rollup()).toEqual([
-            ["merchant", 2, 110],
-            ["other", 1, 60],
-        ]);
+        expect(await rollup()).toEqual([["merchant", 2, 110]]);
     });
 
-    it("rolls up listings from before tabs were recorded with an empty tab", async () => {
+    it("marks an hour with only other tabs' listings delivered without sending it", async () => {
+        await capture([
+            {
+                account: "other-a",
+                stashType: "PremiumStash",
+                items: [belt("c", "~price 60 chaos")],
+            },
+        ]);
+        expect(await rollup()).toEqual([]);
+        const delivered = () =>
+            queryAll<{ row_count: number; delivered: boolean }>(
+                db.conn,
+                `SELECT r.row_count::INTEGER AS row_count, l.last_seen_at <= r.pushed_at AS delivered
+                FROM rollup_state r JOIN ps_listing_hour l
+                    ON l.league = r.league AND l.observed_hour = r.hour
+                WHERE r.stream_name = 'psapi'`,
+            );
+        expect(await delivered()).toEqual([{ row_count: 0, delivered: true }]);
+        // A later change in that tab also stays out of the app and clears the hour.
+        await capture([
+            {
+                account: "other-a",
+                stashType: "PremiumStash",
+                items: [belt("c", "~price 50 chaos")],
+            },
+        ]);
+        const [{ hour }] = await queryAll<{ hour: number }>(
+            db.conn,
+            "SELECT MAX(observed_hour)::DOUBLE AS hour FROM ps_listing_hour",
+        );
+        await rollupPs(db.conn, { hour, league: "Standard", changedOnly: true });
+        expect(deliveries).toEqual([]);
+        expect(await delivered()).toEqual([{ row_count: 0, delivered: true }]);
+    });
+
+    it("does not deliver listings from before tabs were recorded", async () => {
         await capture([
             {
                 account: "merchant-a",
@@ -130,7 +238,7 @@ describe("stash tab split in ingest", () => {
             },
         ]);
         await db.conn.run("UPDATE ps_listing_hour SET tab = NULL");
-        expect(await rollup()).toEqual([["", 1, 100]]);
+        expect(await rollup()).toEqual([]);
     });
 
     it("gives a removed listing from before tabs its stash's tab and prices it against that tab", async () => {

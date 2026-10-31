@@ -35,7 +35,7 @@ const stash = (id: string, ...items: ReturnType<typeof item>[]) =>
             public: true,
             accountName: `seller-${id}`,
             league: LEAGUE,
-            stashType: "PremiumStash",
+            stashType: "TradeStash",
             items,
         },
     ] as unknown as Changes;

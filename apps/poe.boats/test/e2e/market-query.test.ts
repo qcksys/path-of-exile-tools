@@ -9,7 +9,6 @@ import type { TDatabase } from "~/db/client";
 import { stashGame, stashTableName } from "~/db/helpers/stash-game";
 import { findCraftingRecipeListings } from "~/db/queries/crafting-recipes.queries";
 import {
-    getMarketBase,
     getMarketData,
     getMarketExchangeItem,
     getMarketExchangeLeagues,
@@ -22,7 +21,6 @@ import {
 } from "~/db/queries/stash-ingest.queries";
 import { writeStashUniqueHourly } from "~/db/queries/stash-market.queries";
 import { refreshStashRollups, utcDay } from "~/db/queries/stash-rollups.queries";
-import { tStashCohortHourly } from "~/db/schema/stash.cohort-hourly";
 import { tStashCurrencyDaily } from "~/db/schema/stash.currency-daily";
 import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
@@ -480,7 +478,7 @@ function observation(overrides: Partial<TStashUniqueHourlyI>): TStashUniqueHourl
     };
 }
 
-it("shows merchant tabs by default and merges every tab, including untabbed rows, only under all", async () => {
+it("shows only merchant tabs, leaving other and untabbed rows unread", async () => {
     const chaos = (count: number, median: number) => ({
         chaos: { count, min: median, median, max: median },
     });
@@ -520,19 +518,6 @@ it("shows merchant tabs by default and merges every tab, including untabbed rows
         sales: [2],
         listings: [3],
         history: [[hour, 3, 2]],
-    });
-    expect(await read({ tab: "other" })).toEqual({
-        sales: [5],
-        listings: [1],
-        history: [[hour, 1, 5]],
-    });
-    expect(await read({ tab: "all" })).toEqual({
-        sales: [14],
-        listings: [4],
-        history: [
-            [hour - 3600, 2, 7],
-            [hour, 4, 7],
-        ],
     });
 });
 
@@ -1425,7 +1410,7 @@ describe("prices locked when a stash hour is written", () => {
         expect(await names(league, { currency: "chaos" })).toEqual(["Example", "Middle"]);
     });
 
-    it("a re-delivered hour with only removals leaves the price, and tabs price separately", async () => {
+    it("a re-delivered hour with only removals leaves the price, and other tabs do not affect it", async () => {
         const league = "LockedTabs";
         await upsertStashCurrencyHourly(db as unknown as TDatabase, [rate(league, hour, 200)]);
         await ingest([
@@ -1449,8 +1434,6 @@ describe("prices locked when a stash hour is written", () => {
             }),
         ]);
         expect(await names(league, { currency: "chaos" })).toEqual(["Steady", "Split"]);
-        // Under all tabs Split's merged median is nearer its 15 other-tab listings.
-        expect(await names(league, { currency: "chaos", tab: "all" })).toEqual(["Split", "Steady"]);
         await ingest([
             observation({
                 league,
@@ -1945,6 +1928,7 @@ it("lists exchange-only PoE 2 leagues in exalted, from the latest completed hour
         itemId: runeId,
     });
     expect(item).toMatchObject({ unit: "exalted", divine: 400, item: { price: 40 } });
+    expect(item.seasons.map((season) => season.league)).toContain("Forbidden Rites");
     expect(item.history.prices).toEqual([
         { hour, price: 40, low: null, high: null, p25: null, p75: null, via: divineId, units: 10 },
     ]);
@@ -2172,100 +2156,78 @@ it("orders names in both directions and uses the latest observation for recency"
     }
 });
 
-it("lists each crafting base cohort's latest hour in the period", async () => {
-    const cohort = (cohortId: string, at: number, listingCount: number) => ({
-        realm: "pc",
-        league: "Bases",
-        hour: at,
-        revisionSeq: 1,
-        cohortId,
-        listingCount,
-        uniqueSellers: listingCount,
-        unknownCount: 0,
-        prices: {
-            chaos: {
-                count: listingCount,
-                sellers: listingCount,
-                min: 10,
-                median: 10 * listingCount,
-                max: 100,
-                confidence: 0.5,
-            },
-        },
-        confidenceMethod: "asking-sellers-coverage-v1",
-        firstSeenAt: null,
-        lastSeenAt: null,
-    });
-    await insertMarket(observation({ league: "Bases" }));
-    await db
-        .insert(tStashCohortHourly)
-        .values([
-            cohort("base:titan-plate:86-100:6-link", hour - 3600, 1),
-            cohort("base:titan-plate:86-100:6-link", hour, 3),
-            cohort("base:titan-plate:86-100:any-links:q30", hour - 7200, 2),
-            cohort("base:titan-plate:86-100:1-5-link", hour - 10 * 86400, 5),
-            cohort("base:titan-plate:1-2:any-links", hour, 4),
-            cohort("base:titan-plate:86-100:any-links", hour, 6),
-        ]);
-    const result = await marketData(
-        db as unknown as TDatabase,
-        marketFiltersSchema.parse({ league: "Bases", category: "armour-bases", currency: "chaos" }),
-        "list",
-    );
-    expect(result.rows).toEqual([]);
-    expect(result.exchange).toEqual([]);
-    expect(
-        result.bases.map((row) => [row.id, row.hour, row.listingCount, row.prices.chaos?.median]),
-    ).toEqual([
-        ["base:titan-plate:86-100:6-link", hour, 3, 30],
-        ["base:titan-plate:86-100:any-links:q30", hour - 7200, 2, 20],
+it("lists crafting base markets apart from uniques of the same base type", async () => {
+    const league = "BaseMarkets";
+    const base = (signatureValue: string, likelySales: number, median: number) =>
+        observation({
+            league,
+            itemKey: "Twilight Regalia",
+            name: null,
+            baseType: "Twilight Regalia",
+            frameType: 2,
+            signatureKind: "base",
+            signatureValue,
+            likelySales,
+            prices: { chaos: { count: 3, min: median, median, max: median } },
+        });
+    await insertMarket([
+        base("ilvl 86+ · 6 links", 4, 30),
+        base("ilvl 86+ · 1–5 links · Quality 30%+", 2, 20),
+        base("ilvl 74–83 · 1–5 links", 1, 10),
+        observation({
+            league,
+            itemKey: "Example Unique",
+            name: "Example Unique",
+            baseType: "Twilight Regalia",
+        }),
     ]);
-    const weapons = await marketData(
-        db as unknown as TDatabase,
-        marketFiltersSchema.parse({ league: "Bases", category: "weapon-bases" }),
-        "list",
-    );
-    expect(weapons.bases).toEqual([]);
-    const unique = await marketData(
-        db as unknown as TDatabase,
-        marketFiltersSchema.parse({ league: "Bases", category: "accessories" }),
-        "list",
-    );
-    expect(unique.bases).toEqual([]);
-    expect(unique.rows.map((row) => row.itemKey)).toEqual(["Example"]);
-    const input = {
-        realm: "pc",
-        league: "Bases",
-        days: "7",
-        currency: "chaos",
-        baseId: "base:titan-plate:86-100:6-link",
-    } as const;
-    const page = await getMarketBase(db as unknown as TDatabase, input);
-    expect(page.latestHour).toBe(hour);
-    expect(page.base?.baseType).toBe("Titan Plate");
-    expect(page.history.map((row) => [row.hour, row.listingCount, row.merged?.median])).toEqual([
-        [hour - 3600, 1, 10],
-        [hour, 3, 30],
+    const list = (input: Record<string, unknown>) =>
+        marketData(
+            db as unknown as TDatabase,
+            marketFiltersSchema.parse({ league, currency: "chaos", ...input }),
+            "list",
+        );
+    const bases = await list({ category: "armour-bases" });
+    // Bases have likely sales and sort by them, like any other market.
+    expect(bases.rows.map((row) => [row.signatureValue, row.periodSales, row.category])).toEqual([
+        ["ilvl 86+ · 6 links", 4, "armour-bases"],
+        ["ilvl 86+ · 1–5 links · Quality 30%+", 2, "armour-bases"],
+        ["ilvl 74–83 · 1–5 links", 1, "armour-bases"],
     ]);
-    // Base history is in the game's exchange unit whatever `currency` is.
-    const inDivine = await getMarketBase(db as unknown as TDatabase, {
-        ...input,
-        currency: "divine",
-    });
-    expect(inDivine.historyUnit).toBe("chaos");
-    expect(inDivine.history.map((row) => row.merged?.median)).toEqual([10, 30]);
-    expect(inDivine.history.every((row) => row.priceRates.chaos === 1)).toBe(true);
-    // The 1–5 link cohort was last seen before the period and the 1–2 band is not listed.
-    expect(page.variants.map((row) => [row.id, row.listingCount])).toEqual([
-        ["base:titan-plate:86-100:any-links:q30", 2],
-        ["base:titan-plate:86-100:6-link", 3],
+    expect(bases.rows[0]?.baseDescription).toBe("Body Armour · Int · Level 84");
+    const values = async (input: Record<string, unknown>) =>
+        (await list({ category: "armour-bases", ...input })).rows.map((row) => row.signatureValue);
+    expect(await values({ baseLinks: "6" })).toEqual(["ilvl 86+ · 6 links"]);
+    expect(await values({ quality: "25" })).toEqual(["ilvl 86+ · 1–5 links · Quality 30%+"]);
+    expect(await values({ ilvl: "80" })).toEqual(["ilvl 74–83 · 1–5 links"]);
+    expect(await values({ baseClass: "Helmet" })).toEqual([]);
+    expect(await values({ attributes: "int", order: "price-desc" })).toEqual([
+        "ilvl 86+ · 6 links",
+        "ilvl 86+ · 1–5 links · Quality 30%+",
+        "ilvl 74–83 · 1–5 links",
     ]);
-    expect(page.chaosRates.chaos).toBe(1);
-    const missing = await getMarketBase(db as unknown as TDatabase, {
-        ...input,
-        baseId: "base:titan-plate:1-2:any-links",
-    });
-    expect([missing.base, missing.history, missing.variants]).toEqual([null, [], []]);
+    const unique = await list({ category: "armour" });
+    expect(unique.rows.map((row) => row.itemKey)).toEqual(["Example Unique"]);
+    expect(unique.rows[0]?.baseDescription).toBeNull();
+    const page = await marketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({
+            league,
+            currency: "chaos",
+            category: "armour-bases",
+            item: "Twilight Regalia",
+            kind: "base",
+            value: "ilvl 86+ · 6 links",
+        }),
+        "history",
+    );
+    expect(page.baseDescription).toBe("Body Armour · Int · Level 84");
+    expect(page.history.map((row) => row.merged?.median)).toEqual([30]);
+    expect(page.variants.map((row) => row.signatureValue).sort()).toEqual([
+        "ilvl 74–83 · 1–5 links",
+        "ilvl 86+ · 1–5 links · Quality 30%+",
+        "ilvl 86+ · 6 links",
+    ]);
 });
 
 it("prices requested exchange items as the list does, bridging through divine and stale days", async () => {

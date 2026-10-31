@@ -1,29 +1,23 @@
 import { type ReactNode, useCallback, useMemo } from "react";
 import { Link, redirect, useNavigate } from "react-router";
-import { DataTable, type DataTableServerState, dataTableColumns } from "~/components/data-table";
-import { CatalogItemArt, ItemArt } from "~/components/item-art";
+import { DataTable, type DataTableServerState } from "~/components/data-table";
+import { ItemArt } from "~/components/item-art";
 import { ExchangeDisplayPicker } from "~/components/market-exchange";
 import { MarketExchangeTable } from "~/components/market-exchange-table";
 import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
 import { MarketForbiddenJewels } from "~/components/market-forbidden-jewels";
-import { MarketListingPrices } from "~/components/market-listing-price";
-import { MarketRecentSales } from "~/components/market-recent-sales";
+import { type MarketListPrices, marketListColumns } from "~/components/market-list-table";
 import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import { marketItemArtUrl } from "~/lib/item-presentation";
-import { type MarketBaseRow, marketBaseDetails, marketBaseVariant } from "~/lib/market-bases";
-import {
-    MARKET_CATEGORIES,
-    MARKET_FORBIDDEN_CATEGORY,
-    type MarketCategory,
-} from "~/lib/market-categories";
-import { marketNumber as number } from "~/lib/market-number";
+import { MARKET_BASE_NOTE } from "~/lib/market-bases";
+import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
+import { marketSettings } from "~/lib/market-kinds";
 import type { MarketPriceRates } from "~/lib/market-price-currencies";
 import { marketTableState } from "~/lib/market-table";
 import {
     type MarketFilters,
-    marketBaseLink,
     marketCategorySchema,
     marketExchangeLink,
     marketLink,
@@ -70,9 +64,6 @@ type MarketRow = Awaited<ReturnType<typeof getMarketData>>["rows"][number];
 type ExchangeRow = Awaited<ReturnType<typeof getMarketData>>["exchange"][number];
 type Game = "poe1" | "poe2";
 
-const column = dataTableColumns<MarketRow>();
-const baseColumn = dataTableColumns<MarketBaseRow>();
-
 function ExchangeTable({
     label,
     rows,
@@ -102,184 +93,31 @@ function ExchangeTable({
     );
 }
 
-type Prices = { chaosRates: Record<string, number>; rates: MarketPriceRates };
-
-function baseColumns(filters: MarketFilters, game: Game, { chaosRates, rates }: Prices) {
-    return baseColumn.columns([
-        baseColumn.accessor((row) => `${row.baseType} ${marketBaseVariant(row)}`, {
-            id: "item",
-            header: "Base / variant",
-            sortDescFirst: false,
-            meta: { filter: "text" },
-            cell: ({ row: { original: row } }) => (
-                <div className="flex items-center gap-3">
-                    <CatalogItemArt name={row.baseType} game={game} className="size-16" />
-                    <div className="min-w-0">
-                        <Link
-                            to={marketBaseLink(filters, row.id)}
-                            className="font-medium text-primary hover:underline"
-                        >
-                            {row.baseType}
-                        </Link>
-                        <p className="mt-1 max-w-md break-words text-xs text-muted-foreground">
-                            {marketBaseDetails(row)}
-                        </p>
-                    </div>
-                </div>
-            ),
-        }),
-        baseColumn.accessor((row) => row.prices[filters.currency]?.median, {
-            id: "price",
-            header: "Median asking price",
-            sortDescFirst: true,
-            meta: { filter: "range", className: "tabular-nums" },
-            cell: ({ row: { original: row } }) => (
-                <MarketListingPrices
-                    prices={row.prices}
-                    game={game}
-                    chaosRates={chaosRates}
-                    rates={rates}
-                />
-            ),
-        }),
-        baseColumn.accessor("listingCount", {
-            id: "listings",
-            header: "Listings",
-            sortDescFirst: true,
-            meta: { filter: "range", className: "tabular-nums" },
-            cell: ({ getValue }) => number(getValue()),
-        }),
-        baseColumn.accessor("uniqueSellers", {
-            id: "sellers",
-            header: "Sellers",
-            sortDescFirst: true,
-            meta: { filter: "range", className: "tabular-nums" },
-            cell: ({ getValue }) => number(getValue()),
-        }),
-        baseColumn.accessor("hour", {
-            id: "observed",
-            header: "Last observed",
-            sortDescFirst: true,
-            enableColumnFilter: false,
-            meta: { className: "whitespace-nowrap text-xs text-muted-foreground" },
-            cell: ({ getValue }) => marketUtc(getValue()),
-        }),
-    ]);
-}
-
-function BaseTable({
-    label,
-    rows,
-    filters,
-    game,
-    prices,
-    server,
-}: {
+type ListTableProps<Row> = {
     label: string;
-    rows: MarketBaseRow[];
+    rows: Row[];
     filters: MarketFilters;
     game: Game;
-    prices: Prices;
+    prices: MarketListPrices;
     server: DataTableServerState;
-}) {
-    const columns = useMemo(() => baseColumns(filters, game, prices), [filters, game, prices]);
-    return (
-        <DataTable
-            label={label}
-            data={rows}
-            columns={columns}
-            getRowId={(row) => row.id}
-            server={server}
-        />
-    );
+    empty?: ReactNode;
+};
+
+/** A crafting base's bands and description, or an item's base type and state. */
+function rowDetails(row: MarketRow) {
+    if (row.signatureKind === "base")
+        return [row.signatureValue, row.baseDescription].filter(Boolean).join(" · ");
+    return [
+        row.baseType,
+        row.identified ? "Identified" : "Unidentified",
+        row.corrupted ? "Corrupted" : "",
+        row.signatureValue,
+    ]
+        .filter(Boolean)
+        .join(" · ");
 }
 
-function marketColumns(filters: MarketFilters, game: Game, { chaosRates, rates }: Prices) {
-    return column.columns([
-        column.accessor((row) => row.name || row.itemKey, {
-            id: "item",
-            header: "Item / variant",
-            sortDescFirst: false,
-            meta: { filter: "text" },
-            cell: ({ row: { original: row } }) => (
-                <div className="flex items-center gap-3">
-                    <ItemArt
-                        src={marketItemArtUrl(row.iconAsset, game)}
-                        name={row.name || row.baseType}
-                        className="size-16"
-                        decorative
-                    />
-                    <div className="min-w-0">
-                        <Link
-                            to={marketLink(filters, row)}
-                            className="font-medium text-primary hover:underline"
-                        >
-                            {row.name || row.itemKey}
-                        </Link>
-                        <p className="mt-1 max-w-md break-words text-xs text-muted-foreground">
-                            {row.baseType} · {row.identified ? "Identified" : "Unidentified"}
-                            {row.corrupted ? " · Corrupted" : ""}
-                            {row.signatureValue ? ` · ${row.signatureValue}` : ""}
-                        </p>
-                    </div>
-                </div>
-            ),
-        }),
-        column.accessor((row) => row.prices?.[filters.currency]?.median, {
-            id: "price",
-            header: "Median asking price",
-            sortDescFirst: true,
-            meta: { filter: "range", className: "tabular-nums" },
-            cell: ({ row: { original: row } }) => (
-                <MarketListingPrices
-                    prices={row.prices}
-                    game={game}
-                    chaosRates={chaosRates}
-                    rates={rates}
-                />
-            ),
-        }),
-        column.accessor("listingCount", {
-            id: "listings",
-            header: "Listings",
-            sortDescFirst: true,
-            meta: { filter: "range", className: "tabular-nums" },
-            cell: ({ getValue }) => number(getValue()),
-        }),
-        column.accessor("uniqueSellers", {
-            id: "sellers",
-            header: "Sellers",
-            sortDescFirst: true,
-            meta: { filter: "range", className: "tabular-nums" },
-            cell: ({ getValue }) => number(getValue()),
-        }),
-        column.accessor("periodSales", {
-            id: "sales",
-            header: "Likely sales",
-            sortDescFirst: true,
-            meta: { filter: "range", className: "tabular-nums" },
-            cell: ({ row: { original: row } }) => (
-                <>
-                    <MarketRecentSales sales={row.recentSales} />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                        {number(row.periodSales)} in {filters.days} days ·{" "}
-                        {number(row.periodPending)} pending
-                    </p>
-                </>
-            ),
-        }),
-        column.accessor("hour", {
-            id: "observed",
-            header: "Last observed",
-            sortDescFirst: true,
-            enableColumnFilter: false,
-            meta: { className: "whitespace-nowrap text-xs text-muted-foreground" },
-            cell: ({ getValue }) => marketUtc(getValue()),
-        }),
-    ]);
-}
-
-function MarketTable({
+function StashTable({
     label,
     rows,
     filters,
@@ -287,16 +125,32 @@ function MarketTable({
     prices,
     server,
     empty,
-}: {
-    label: string;
-    rows: MarketRow[];
-    filters: MarketFilters;
-    game: Game;
-    prices: Prices;
-    server: DataTableServerState;
-    empty?: ReactNode;
-}) {
-    const columns = useMemo(() => marketColumns(filters, game, prices), [filters, game, prices]);
+}: ListTableProps<MarketRow>) {
+    const columns = useMemo(
+        () =>
+            marketListColumns<MarketRow>(filters, game, prices, {
+                itemText: (row) => row.name || row.itemKey,
+                item: (row) => ({
+                    name: row.name || row.itemKey,
+                    to: marketLink(filters, row),
+                    art: (
+                        <ItemArt
+                            src={marketItemArtUrl(row.iconAsset, game)}
+                            name={row.name || row.baseType}
+                            className="size-16"
+                            decorative
+                        />
+                    ),
+                    details: rowDetails(row),
+                }),
+                sales: (row) => ({
+                    period: row.periodSales,
+                    pending: row.periodPending,
+                    recent: row.recentSales,
+                }),
+            }),
+        [filters, game, prices],
+    );
     return (
         <DataTable
             label={label}
@@ -310,13 +164,27 @@ function MarketTable({
 }
 
 export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
-    const { filters, seasons, season, rows, bases, hasMore, chaosRates, priceRates, exchange } =
+    const { filters, seasons, season, rows, hasMore, chaosRates, priceRates, exchange } =
         loaderData;
     const navigate = useNavigate();
     const categories = Object.keys(MARKET_CATEGORIES) as MarketCategory[];
-    const game = filters.realm === "poe2" ? "poe2" : "poe1";
+    const game: Game = filters.realm === "poe2" ? "poe2" : "poe1";
     const server = marketTableState(filters, (to) => navigate(to, { preventScrollReset: true }));
     const prices = useMemo(() => ({ chaosRates, rates: priceRates }), [chaosRates, priceRates]);
+    const settings = marketSettings(filters.category);
+    const table = { filters, game, prices, server };
+    const empty = (
+        <div role="status" className="py-6">
+            <h3 className="text-lg font-medium text-foreground">
+                {seasons.length ? "No markets match these filters" : "No season data yet"}
+            </h3>
+            <p className="mt-2 text-sm">
+                {seasons.length
+                    ? "Try another category, season, search term or column filter."
+                    : "Markets appear after the first completed hour is ingested."}
+            </p>
+        </div>
+    );
     return (
         <>
             <MarketFiltersForm filters={filters} seasons={seasons} />
@@ -329,8 +197,7 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                                 : MARKET_CATEGORIES[filters.category].label}
                         </h2>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            {filters.league || "Season"} · {rows.length + bases.length} variants on
-                            this page
+                            {filters.league || "Season"} · {rows.length} variants on this page
                         </p>
                     </div>
                     <div className="grid justify-items-end gap-1">
@@ -342,114 +209,71 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                         <ExchangeDisplayPicker game={game} />
                     </div>
                 </header>
-                {filters.category === MARKET_FORBIDDEN_CATEGORY && rows.length ? (
-                    <MarketForbiddenJewels
-                        rows={rows}
-                        filters={filters}
-                        game={game}
-                        prices={prices}
-                        server={server}
-                    />
-                ) : null}
-                {categories.map((category) => {
-                    if (filters.category === MARKET_FORBIDDEN_CATEGORY) return null;
-                    const entries = rows.filter((row) => row.category === category);
-                    const traded = exchange.filter((row) => row.category === category);
-                    if (!entries.length && !traded.length) return null;
-                    const { label } = MARKET_CATEGORIES[category];
-                    return (
-                        <section
-                            key={category}
-                            aria-label={label}
-                            className="overflow-hidden rounded-xl border border-border bg-card"
-                        >
-                            <h3 className="flex items-center justify-between border-b border-border px-4 py-3 text-sm font-semibold">
-                                {label}
-                                <span className="text-xs font-normal text-muted-foreground">
-                                    {[
-                                        traded.length ? `${traded.length} on the exchange` : "",
-                                        entries.length ? `${entries.length} variants` : "",
-                                    ]
-                                        .filter(Boolean)
-                                        .join(" · ")}
-                                </span>
-                            </h3>
-                            {traded.length ? (
-                                <ExchangeTable
-                                    label={`${label} exchange`}
-                                    rows={traded}
-                                    filters={filters}
-                                    game={game}
-                                    rates={priceRates}
-                                />
-                            ) : null}
-                            {entries.length ? (
-                                <MarketTable
-                                    label={`${label} markets`}
-                                    rows={entries}
-                                    filters={filters}
-                                    game={game}
-                                    prices={prices}
-                                    server={server}
-                                />
-                            ) : null}
-                        </section>
-                    );
-                })}
-                {bases.length > 0 && filters.category !== "all" ? (
-                    <section
-                        aria-label={MARKET_CATEGORIES[filters.category].label}
-                        className="overflow-hidden rounded-xl border border-border bg-card"
-                    >
-                        <header className="border-b border-border px-4 py-3">
-                            <h3 className="flex items-center justify-between text-sm font-semibold">
-                                {MARKET_CATEGORIES[filters.category].label}
-                                <span className="text-xs font-normal text-muted-foreground">
-                                    {bases.length} variants
-                                </span>
-                            </h3>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                Normal, magic and rare items together; uncorrupted, unfractured,
-                                uninfluenced and not intangible. Crafting bases have no likely-sale
-                                estimates.
-                            </p>
-                        </header>
-                        <BaseTable
-                            label={`${MARKET_CATEGORIES[filters.category].label} markets`}
-                            rows={bases}
+                {settings.layout === "pairs" ? (
+                    rows.length ? (
+                        <MarketForbiddenJewels
+                            rows={rows}
                             filters={filters}
                             game={game}
                             prices={prices}
                             server={server}
                         />
-                    </section>
-                ) : null}
-                {!rows.length &&
-                !bases.length &&
-                (!exchange.length || server.columnFilters.length) ? (
-                    <div className="overflow-hidden rounded-xl border border-border bg-card">
-                        <MarketTable
-                            label="Item markets"
-                            rows={[]}
-                            filters={filters}
-                            game={game}
-                            prices={prices}
-                            server={server}
-                            empty={
-                                <div role="status" className="py-6">
-                                    <h3 className="text-lg font-medium text-foreground">
-                                        {seasons.length
-                                            ? "No markets match these filters"
-                                            : "No season data yet"}
+                    ) : null
+                ) : (
+                    categories.map((category) => {
+                        const entries = rows.filter((row) => row.category === category);
+                        const traded = exchange.filter((row) => row.category === category);
+                        if (!entries.length && !traded.length) return null;
+                        const { label } = MARKET_CATEGORIES[category];
+                        return (
+                            <section
+                                key={category}
+                                aria-label={label}
+                                className="overflow-hidden rounded-xl border border-border bg-card"
+                            >
+                                <header className="border-b border-border px-4 py-3">
+                                    <h3 className="flex items-center justify-between text-sm font-semibold">
+                                        {label}
+                                        <span className="text-xs font-normal text-muted-foreground">
+                                            {[
+                                                traded.length
+                                                    ? `${traded.length} on the exchange`
+                                                    : "",
+                                                entries.length ? `${entries.length} variants` : "",
+                                            ]
+                                                .filter(Boolean)
+                                                .join(" · ")}
+                                        </span>
                                     </h3>
-                                    <p className="mt-2 text-sm">
-                                        {seasons.length
-                                            ? "Try another category, season, search term or column filter."
-                                            : "Markets appear after the first completed hour is ingested."}
-                                    </p>
-                                </div>
-                            }
-                        />
+                                    {settings.kind === "base" ? (
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            {MARKET_BASE_NOTE}
+                                        </p>
+                                    ) : null}
+                                </header>
+                                {traded.length ? (
+                                    <ExchangeTable
+                                        label={`${label} exchange`}
+                                        rows={traded}
+                                        filters={filters}
+                                        game={game}
+                                        rates={priceRates}
+                                    />
+                                ) : null}
+                                {entries.length ? (
+                                    <StashTable
+                                        label={`${label} markets`}
+                                        rows={entries}
+                                        {...table}
+                                    />
+                                ) : null}
+                            </section>
+                        );
+                    })
+                )}
+                {!rows.length && (!exchange.length || server.columnFilters.length) ? (
+                    <div className="overflow-hidden rounded-xl border border-border bg-card">
+                        <StashTable label="Item markets" rows={[]} {...table} empty={empty} />
                     </div>
                 ) : null}
                 <nav

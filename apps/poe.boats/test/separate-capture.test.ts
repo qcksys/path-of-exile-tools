@@ -48,7 +48,7 @@ const page = (next: string, ...items: string[]) =>
                 public: true,
                 accountName: "seller",
                 league: "Standard",
-                stashType: "PremiumStash",
+                stashType: "TradeStash",
                 items: items.map(item),
             },
         ],

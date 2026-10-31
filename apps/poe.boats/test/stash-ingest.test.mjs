@@ -54,7 +54,7 @@ const stash = {
     accountName: "seller-1",
     league: "Standard",
     stash: "~price 12 divine",
-    stashType: "PremiumStash",
+    stashType: "TradeStash",
     items: [item],
 };
 const market = {

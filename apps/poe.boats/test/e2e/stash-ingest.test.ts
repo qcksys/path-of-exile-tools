@@ -1741,9 +1741,14 @@ it("replays broad equipment prices through capture, retry and history without pr
     });
     expect(secondPage.history[0]?.prices.chaos?.median).toBe(20);
     expect(secondPage.nextBefore).toBeNull();
-    expect(await queryAll(local.conn, "SELECT count(*)::INTEGER AS n FROM ps_listing")).toEqual([
-        { n: 0 },
-    ]);
+    // Clean equipment of a listed base is also a stash market; nothing else is captured.
+    expect(
+        await queryAll(
+            local.conn,
+            `SELECT count(*)::INTEGER AS n FROM ps_listing
+            WHERE coalesce(mod_signature->>'kind', '') <> 'base'`,
+        ),
+    ).toEqual([{ n: 0 }]);
     // Correcting a past hour to no matching listings must remove its old remote price.
     upstreamResponses.push({
         body: {

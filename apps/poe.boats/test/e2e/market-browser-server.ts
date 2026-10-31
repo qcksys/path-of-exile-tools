@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import { createConnection } from "mysql2/promise";
 import type { TDatabase } from "../../app/db/client";
+import { upsertStashCurrencyHourly } from "../../app/db/queries/stash-ingest.queries";
 import { writeStashUniqueHourly } from "../../app/db/queries/stash-market.queries";
 import { refreshStashRollups } from "../../app/db/queries/stash-rollups.queries";
 import type { TStashUniqueHourlyI } from "../../app/db/schema/stash.unique-hourly";
@@ -17,7 +18,7 @@ await migrate(db, {
 });
 const insertMarket = (rows: TStashUniqueHourlyI[]) =>
     writeStashUniqueHourly(db as unknown as TDatabase, "poe1", rows);
-// The market shows merchant tab listings by default.
+// The market shows merchant tab listings only.
 const row = { ...marketFixture().rows[0]!, tab: "merchant" as const };
 await insertMarket([
     row,
@@ -32,7 +33,37 @@ await insertMarket([
     { ...row, itemKey: "Headhunter", name: "Headhunter", baseType: "Leather Belt" },
     { ...row, itemKey: "Divine Orb", name: "", baseType: "Divine Orb", frameType: 5 },
     { ...row, itemKey: "Jagged Fossil", name: "", baseType: "Jagged Fossil", frameType: 5 },
+    ...["ilvl 86+ · 6 links", "ilvl 84–85 · 1–5 links"].map((signatureValue) => ({
+        ...row,
+        itemKey: "Twilight Regalia",
+        name: null,
+        baseType: "Twilight Regalia",
+        frameType: 2,
+        signatureKind: "base",
+        signatureValue,
+    })),
 ]);
+// Exchange pages read hours up to now, so these leagues trade recently, apart from the fixed hour
+// of the stash rows.
+const latestHour = Math.floor(Date.now() / 3_600_000) * 3600 - 3600;
+const wisdom = "Metadata/Items/Currency/CurrencyIdentification";
+const chaos = "Metadata/Items/Currency/CurrencyRerollRare";
+await upsertStashCurrencyHourly(
+    db as unknown as TDatabase,
+    ["Exchange One", "Exchange Two"].flatMap((league) =>
+        Array.from({ length: 72 }, (_, index) => ({
+            realm: "pc",
+            league,
+            marketId: `${wisdom}|${chaos}`,
+            hour: latestHour - index * 3600,
+            volumeTraded: { [wisdom]: 400 + index, [chaos]: 40 + index },
+            lowestRatio: null,
+            highestRatio: null,
+            lowestStock: null,
+            highestStock: null,
+        })),
+    ),
+);
 await refreshStashRollups(db as unknown as TDatabase);
 await connection.end();
 process.env.PLAYWRIGHT_MARKET_DATABASE_URL = container.getConnectionUri();

@@ -43,9 +43,11 @@ interface AggregateRow {
 }
 
 /**
+ * Only merchant tab listings reach the app. Other tabs stay in this database and its archive.
+ *
  * Two-stage aggregate:
  *
- *   1. `windowed` — every captured listing observed in the target hour,
+ *   1. `windowed` — every merchant tab listing observed in the target hour,
  *      enriched with the resolved name (basemap join) and a deterministic
  *      `signature_value` projection of `mod_signature` keyed by `kind`.
  *   2. `markets` — `windowed` with each mod pool unique's listing counted once in
@@ -60,12 +62,14 @@ const ROLLUP_SQL = /* sql */ `
 WITH observations AS (
     SELECT * EXCLUDE (observed_hour), observed_hour AS hour, 'listing' AS status
     FROM ps_listing_hour WHERE observed_hour = $1 AND ($2 IS NULL OR league = $2)
+        AND tab = 'merchant'
         AND ($3::VARCHAR IS NULL OR list_contains($3::JSON::VARCHAR[], item_key))
     UNION ALL BY NAME
     SELECT * EXCLUDE (eligible_since, market_price, market_sellers, updated_at),
         epoch(date_trunc('hour', removed_at))::BIGINT AS hour
     FROM ps_sale WHERE epoch(date_trunc('hour', removed_at))::BIGINT = $1
         AND ($2 IS NULL OR league = $2)
+        AND tab = 'merchant'
         AND ($3::VARCHAR IS NULL OR list_contains($3::JSON::VARCHAR[], item_key))
 ), windowed AS (
     SELECT
@@ -84,7 +88,7 @@ WITH observations AS (
         -- Listings stored before maps dropped their names still carry a rare map's name. A rare
         -- beast's name is random, and every beast shares the Bestiary Orb icon a spirit beast
         -- teaches the basemap.
-        CASE WHEN json_extract_string(l.mod_signature, '$.kind') IN ('map', 'beast') THEN NULL
+        CASE WHEN json_extract_string(l.mod_signature, '$.kind') IN ('map', 'beast', 'base') THEN NULL
             ELSE COALESCE(l.name, b.name) END AS resolved_name,
         l.frame_type,
         l.identified,
@@ -244,10 +248,11 @@ async function changedItemKeys(conn: DuckDBConnection, hour: number, league: str
             WHERE stream_name = '${STREAM}' AND league = $2 AND hour = $1
         ), observations AS (
             SELECT item_key, icon_asset, last_seen_at AS changed_at FROM ps_listing_hour
-            WHERE observed_hour = $1 AND league = $2
+            WHERE observed_hour = $1 AND league = $2 AND tab = 'merchant'
             UNION ALL
             SELECT item_key, icon_asset, updated_at FROM ps_sale
             WHERE epoch(date_trunc('hour', removed_at))::BIGINT = $1 AND league = $2
+                AND tab = 'merchant'
         )
         SELECT o.item_key AS "itemKey", bool_or(b.first_seen_at > s.pushed_at) AS basemap,
             bool_or(o.changed_at > s.pushed_at) AS changed
@@ -317,7 +322,7 @@ export async function rollupPs(
     }));
 
     // `row_count` stays the whole hour's. This hour must also stop being pending when its changed
-    // items have no market, such as a corrupted Watcher's Eye.
+    // items have no market, such as a corrupted Watcher's Eye, or are only in other tabs.
     const markDelivered = async () => {
         if (!opts.dryRun)
             await conn.run(
@@ -328,6 +333,16 @@ export async function rollupPs(
     };
     if (rows.length === 0) {
         if (itemKeys) await markDelivered();
+        // An hour with only other tabs' listings sends nothing, but archiving and pruning its rows
+        // need it marked delivered.
+        else if (league !== null && !opts.dryRun)
+            await conn.run(
+                `INSERT INTO rollup_state (stream_name, league, hour, pushed_at, row_count)
+                 VALUES ('${STREAM}', $1, $2, current_timestamp, 0)
+                 ON CONFLICT (stream_name, league, hour) DO UPDATE
+                 SET pushed_at = now(), row_count = 0`,
+                [league, hour],
+            );
         console.log(
             `psapi rollup hour=${hour} league=${league ?? "all"}: no rows; nothing to push.`,
         );

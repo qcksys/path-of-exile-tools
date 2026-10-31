@@ -2,11 +2,10 @@ import { Outlet, useParams, useSearchParams } from "react-router";
 import { MarketCategoryNav, MarketPageContent } from "~/components/market-category-nav";
 import { MarketDisplayProvider } from "~/components/market-exchange";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
+import { MARKET_AXIS_DEFAULTS } from "~/lib/market-kinds";
 import type { SiteHandle } from "~/routes/layouts/site";
 import {
-    MARKET_BASE_FILTERS,
     MARKET_DEFAULT_CATEGORY,
-    type MarketFilters,
     marketCorruption,
     marketFiltersSchema,
     marketLink,
@@ -31,10 +30,6 @@ export default function Market() {
         filters.corruption === marketCorruption({ category: filters.category })
             ? undefined
             : filters.corruption;
-    const unfiltered = Object.fromEntries(MARKET_BASE_FILTERS.map((param) => [param, ""])) as Pick<
-        MarketFilters,
-        (typeof MARKET_BASE_FILTERS)[number]
-    >;
     return (
         <main className="container mx-auto flex-1 space-y-6 px-4 py-8">
             <header>
@@ -55,7 +50,7 @@ export default function Market() {
                     link={(category: MarketCategory) =>
                         marketLink({
                             ...filters,
-                            ...unfiltered,
+                            ...MARKET_AXIS_DEFAULTS,
                             category,
                             page: 1,
                             q: "",

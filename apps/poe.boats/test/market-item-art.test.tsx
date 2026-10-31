@@ -61,7 +61,7 @@ function showMarket(
         exchangeUnit: "chaos",
         historyUnit: "chaos",
         variants: [],
-        bases: [],
+        baseDescription: null,
         modValues: null,
         rows: [
             {
@@ -71,6 +71,7 @@ function showMarket(
                 periodSales: 2,
                 periodRemovals: 2,
                 periodPending: 0,
+                baseDescription: null,
                 recentSales: { hourly: Array<number>(24).fill(0), daily: Array<number>(7).fill(0) },
             },
         ],

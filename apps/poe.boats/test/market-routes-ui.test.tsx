@@ -11,19 +11,18 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { dbContext } from "~/context";
 import { createDbConnection } from "~/db/client";
-import { getMarketBase, getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
+import { getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
 import Market from "~/routes/market";
-import MarketBase, { loader as baseLoader } from "~/routes/market/base";
+import { loader as baseLoader } from "~/routes/market/base";
 import MarketExchangeItem, { loader as exchangeLoader } from "~/routes/market/exchange";
 import MarketIndex, { loader as listLoader } from "~/routes/market/index";
 import MarketItem, { loader as itemLoader, shouldRevalidate } from "~/routes/market/item";
 import { changeControl, expectControlValue } from "./control-helpers";
-import { marketBaseFixture, marketExchangeFixture, marketFixture } from "./market-fixtures";
+import { marketExchangeFixture, marketFixture } from "./market-fixtures";
 
 vi.mock("~/components/app-header", () => ({ AppHeader: () => null }));
 vi.mock("~/components/app-footer", () => ({ AppFooter: () => null }));
 vi.mock("~/db/queries/market.queries", () => ({
-    getMarketBase: vi.fn(),
     getMarketData: vi.fn(),
     getMarketExchangeItem: vi.fn(),
 }));
@@ -47,7 +46,6 @@ beforeEach(() => {
     vi.mocked(getMarketExchangeItem).mockImplementation(async (_db, input) =>
         marketExchangeFixture(input),
     );
-    vi.mocked(getMarketBase).mockImplementation(async (_db, input) => marketBaseFixture(input));
 });
 afterEach(() => {
     cleanup();
@@ -114,7 +112,6 @@ function showMarket(path = "/1/market/armour?league=Allflame&order=name-asc&page
                             unstable_pattern: "/1/market/bases/:base",
                             unstable_url: new URL(request.url),
                         }),
-                    Component: () => <MarketBase loaderData={useLoaderData()} />,
                 },
             ],
         },
@@ -262,6 +259,10 @@ it("opens an exchange item's page with its history and returns to the list", asy
     expect(
         within(page).getByRole("heading", { level: 3, name: /Hourly price history/ }).textContent,
     ).toContain("last 30 days");
+    expectControlValue(screen.getByRole("combobox", { name: "Period" }), "30");
+    expectControlValue(screen.getByRole("combobox", { name: "Season" }), "Allflame");
+    expect(screen.getByRole("combobox", { name: "Realm" })).toBeTruthy();
+    expect(screen.queryByRole("combobox", { name: "Price currency" })).toBeNull();
     const pairs = within(page).getByRole("region", { name: "Exchange pairs" });
     expect(
         within(pairs)
@@ -434,32 +435,48 @@ it("searches unique equipment uncorrupted by default and carries only a changed 
     expect(screen.queryByRole("combobox", { name: "Identification" })).toBeNull();
 });
 
-it("shows merchant tabs by default, keeps another tab choice on item links, and hides it for crafting bases", async () => {
-    showMarket("/1/market/armour?league=Allflame");
+it("offers no stash tab choice and drops one from an older link", async () => {
+    showMarket("/1/market/armour?league=Allflame&tab=other");
     const url = () => screen.getByLabelText("Current URL").textContent;
-    const tabs = await screen.findByRole("combobox", { name: "Stash tabs" });
-    expectControlValue(tabs, "merchant");
+    await screen.findByRole("combobox", { name: "Period" });
+    expect(screen.queryByRole("combobox", { name: "Stash tabs" })).toBeNull();
     expect(getMarketData).toHaveBeenLastCalledWith(
         expect.anything(),
-        expect.objectContaining({ tab: "merchant" }),
-        "list",
-    );
-    changeControl(tabs, { target: { value: "other" } });
-    await waitFor(() => expect(url()).toContain("tab=other"));
-    expect(getMarketData).toHaveBeenLastCalledWith(
-        expect.anything(),
-        expect.objectContaining({ tab: "other" }),
+        expect.not.objectContaining({ tab: expect.anything() }),
         "list",
     );
     fireEvent.click(await screen.findByRole("link", { name: "Abberath's Hooves" }));
     await screen.findByRole("heading", { name: "Abberath's Hooves" });
-    expect(url()).toContain("tab=other");
-    expectControlValue(screen.getByRole("combobox", { name: "Stash tabs" }), "other");
+    expect(url()).not.toContain("tab=");
+});
 
-    cleanup();
-    showMarket("/1/market/armour-bases?league=Allflame");
-    await screen.findByRole("combobox", { name: "Period" });
-    expect(screen.queryByRole("combobox", { name: "Stash tabs" })).toBeNull();
+it("changes an exchange item's season and period and keeps the way back to the list", async () => {
+    showMarket(
+        "/1/market/exchange/Currency/CurrencyIdentification?league=Allflame&category=armour&order=name-asc",
+    );
+    await screen.findByRole("region", { name: "Exchange item" });
+    const url = () => screen.getByLabelText("Current URL").textContent;
+    changeControl(screen.getByRole("combobox", { name: "Period" }), { target: { value: "90" } });
+    await waitFor(() =>
+        expect(getMarketExchangeItem).toHaveBeenLastCalledWith(expect.anything(), {
+            realm: "pc",
+            league: "Allflame",
+            days: "90",
+            itemId: "Metadata/Items/Currency/CurrencyIdentification",
+        }),
+    );
+    changeControl(await screen.findByRole("combobox", { name: "Season" }), {
+        target: { value: "Standard" },
+    });
+    await waitFor(() =>
+        expect(getMarketExchangeItem).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ league: "Standard", days: "90" }),
+        ),
+    );
+    expect(url()).toMatch(/^\/1\/market\/exchange\/Currency\/CurrencyIdentification\?/);
+    expect(url()).toContain("category=armour");
+    expect(url()).toContain("order=name-asc");
 });
 
 it("redirects category query links to the category path", async () => {
@@ -1247,42 +1264,25 @@ it("shows one merged price history in the value display at each hour's rate", as
     );
 });
 
-it("opens a crafting base's history and variants and returns to the filtered list", async () => {
+it("opens a crafting base's item page and returns to the filtered list", async () => {
     showMarket("/1/market/armour-bases?league=Allflame&baseClass=Body%20Armour&ilvl=86");
     const url = () => screen.getByLabelText("Current URL").textContent;
     const table = await screen.findByRole("table", { name: "Armour bases markets" });
     expect(
-        within(table).getByText("ilvl 86–100 · 6 links · Body Armour · Str · Level 73"),
+        within(table).getByText("ilvl 86+ · 6 links · Body Armour · Str · Level 73"),
     ).toBeTruthy();
-    const art = (root: HTMLElement) =>
-        root.querySelector('[data-item-art="Titan Plate"] img')?.getAttribute("src");
-    expect(art(within(table).getByRole("link", { name: "Titan Plate" }).closest("td")!)).toBe(
-        "titan-plate.png",
-    );
+    expect(within(table).getByRole("columnheader", { name: /Likely sales/ })).toBeTruthy();
     fireEvent.click(within(table).getByRole("link", { name: "Titan Plate" }));
-    const page = await screen.findByRole("region", { name: "Crafting base" });
-    expect(art(within(page).getByRole("heading", { name: "Titan Plate" }))).toBe("titan-plate.png");
-    expect(url()).toMatch(/^\/1\/market\/bases\/base%3Atitan-plate%3A86-100%3A6-link\?/);
-    expect(getMarketBase).toHaveBeenLastCalledWith(expect.anything(), {
-        realm: "pc",
-        league: "Allflame",
-        days: "7",
-        currency: "divine",
-        baseId: "base:titan-plate:86-100:6-link",
-    });
-    expect(within(page).getByRole("heading", { name: "Titan Plate" })).toBeTruthy();
-    expect(within(page).getByText(/11 listings from 8 sellers/)).toBeTruthy();
-    const variants = within(page).getByRole("navigation", { name: "Base variants" });
-    expect(
-        within(variants)
-            .getAllByRole("link")
-            .map((link) => [link.textContent, link.getAttribute("aria-current")]),
-    ).toEqual([
-        ["ilvl 86–100 · 6 links60 chaos · 12 listed", "page"],
-        ["ilvl 86–100 · 1–5 links5 chaos · 12 listed", null],
-    ]);
-    fireEvent.click(within(variants).getByRole("link", { name: /1–5 links/ }));
-    await waitFor(() => expect(url()).toContain("1-5-link"));
+    const page = await screen.findByRole("region", { name: "Item price history" });
+    expect(url()).toMatch(/^\/1\/market\/items\/Titan%20Plate\?/);
+    expect(getMarketData).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({ item: "Titan Plate", kind: "base", value: "ilvl 86+ · 6 links" }),
+        "history",
+    );
+    expect(page.textContent).toContain("ilvl 86+ · 6 links · Body Armour · Str · Level 73");
+    expect(page.textContent).not.toContain("Identified");
+    expect(page.textContent).toContain("Normal, magic and rare items together");
     fireEvent.click(within(page).getByRole("link", { name: /Back to markets/ }));
     await screen.findByRole("table", { name: "Armour bases markets" });
     expect(url()).toMatch(/^\/1\/market\/armour-bases\?/);
@@ -1319,23 +1319,36 @@ it("filters Cluster Jewel bases by size and poe.ninja's item level bands", async
     );
 });
 
-it("answers 404 for an unknown crafting base", async () => {
-    await expect(
-        baseLoader({
-            request: new Request("https://example.invalid/1/market/bases/base%3Amissing"),
+it("redirects an old crafting base page to its market, or to the list when it is not listed", () => {
+    const redirectFor = (id: string, query = "") => {
+        const url = `https://example.invalid/1/market/bases/${encodeURIComponent(id)}?${query}`;
+        const response = baseLoader({
+            request: new Request(url),
             context,
-            params: { base: "base:missing" },
+            params: { base: id },
             unstable_pattern: "/1/market/bases/:base",
-            unstable_url: new URL("https://example.invalid/1/market/bases/base%3Amissing"),
-        }),
-    ).rejects.toMatchObject({ status: 404 });
+            unstable_url: new URL(url),
+        });
+        expect(response.status).toBe(308);
+        return new URL(response.headers.get("Location")!, "https://example.invalid");
+    };
+    const market = redirectFor("base:twilight-regalia:86-100:6-link", "league=Allflame&days=30");
+    expect(market.pathname).toBe("/1/market/items/Twilight%20Regalia");
+    expect(market.searchParams.get("kind")).toBe("base");
+    expect(market.searchParams.get("value")).toBe("ilvl 86+ · 6 links");
+    expect(market.searchParams.get("category")).toBe("armour-bases");
+    expect(market.searchParams.get("days")).toBe("30");
+    const quality = redirectFor("base:twilight-regalia:86-100:any-links:q30");
+    expect(quality.searchParams.get("value")).toBe("ilvl 86+ · 1–5 links · Quality 30%+");
+    const unlisted = redirectFor("base:missing:86-100:6-link", "category=armour-bases");
+    expect(unlisted.pathname).toBe("/1/market/armour-bases");
 });
 
 it("lists crafting bases apart from uniques without unique-only filters", async () => {
     showMarket("/1/market/armour-bases?league=Allflame");
     const table = await screen.findByRole("table", { name: "Armour bases markets" });
     const row = within(table).getByText("Titan Plate").closest("tr")!;
-    expect(row.textContent).toContain("ilvl 86–100 · 6 links");
+    expect(row.textContent).toContain("ilvl 86+ · 6 links");
     expect(row.textContent).toContain("60 chaos");
     expect(screen.queryByRole("link", { name: "Abberath's Hooves" })).toBeNull();
     expect(screen.queryByRole("combobox", { name: "Identification" })).toBeNull();

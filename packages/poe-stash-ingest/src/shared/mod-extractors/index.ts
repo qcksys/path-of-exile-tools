@@ -9,6 +9,7 @@ import { gemExtractor } from "#src/shared/mod-extractors/gem.ts";
 import { heistExtractor } from "#src/shared/mod-extractors/heist.ts";
 import { impossibleEscapeExtractor } from "#src/shared/mod-extractors/impossible-escape.ts";
 import { mapExtractor } from "#src/shared/mod-extractors/map.ts";
+import { marketBaseExtractor } from "#src/shared/mod-extractors/market-base.ts";
 import { MOD_POOL_EXTRACTORS } from "#src/shared/mod-extractors/mod-pools.ts";
 import { scryingOrbExtractor } from "#src/shared/mod-extractors/scrying-orb.ts";
 import { templeExtractor } from "#src/shared/mod-extractors/temple.ts";
@@ -31,6 +32,7 @@ export const EXTRACTORS: readonly ModExtractor[] = [
     scryingOrbExtractor,
     heistExtractor,
     wombgiftExtractor,
+    marketBaseExtractor,
 ];
 
 export function extractModSignature(item: Item): ModSignature | null {

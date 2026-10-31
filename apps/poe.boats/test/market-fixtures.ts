@@ -1,12 +1,7 @@
-import type {
-    getMarketBase,
-    getMarketData,
-    getMarketExchangeItem,
-} from "~/db/queries/market.queries";
+import type { getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
 import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
 import { isModPool, modPoolValues } from "~/lib/mod-pools";
 import {
-    type MarketBaseInput,
     type MarketExchangeItemInput,
     marketCorruption,
     marketFiltersSchema,
@@ -47,6 +42,15 @@ export function marketFixture(
         delistedPrices: null,
         firstSeenAt: "2026-10-24T00:00:00Z",
         lastSeenAt: "2026-10-24T01:00:00Z",
+        ...(filters.kind === "base"
+            ? {
+                  itemKey: filters.item ?? "",
+                  name: null,
+                  baseType: filters.item ?? "",
+                  signatureKind: "base",
+                  signatureValue: filters.value,
+              }
+            : {}),
     };
     const season = { league: filters.league, firstHour: row.hour, latestHour: row.hour };
     const variant = {
@@ -102,42 +106,38 @@ export function marketFixture(
                       },
                   ]
                 : [],
-        rows: bases
-            ? []
-            : [
-                  {
-                      ...row,
-                      category: "armour",
-                      rank: 1,
-                      periodSales: 2,
-                      periodRemovals: 2,
-                      periodPending: 1,
-                      recentSales: {
-                          hourly: [...Array<number>(22).fill(0), 1, 0],
-                          daily: [0, 0, 0, 0, 0, 1, 1],
-                      },
-                  },
-              ],
-        bases: bases
-            ? [
-                  {
-                      id: "base:titan-plate:86-100:6-link",
-                      baseType: "Titan Plate",
-                      category: "armour-bases",
-                      itemClass: "Body Armour",
-                      attributes: ["str"],
-                      level: 73,
-                      ilvl: { min: 86, max: 100 },
-                      links: "6",
-                      quality: null,
-                      hour: row.hour,
-                      listingCount: 12,
-                      uniqueSellers: 9,
-                      unknownCount: 0,
-                      prices: { chaos: { count: 12, min: 40, median: 60, max: 90 } },
-                  },
-              ]
-            : [],
+        rows: [
+            {
+                ...row,
+                category: "armour",
+                rank: 1,
+                periodSales: 2,
+                periodRemovals: 2,
+                periodPending: 1,
+                baseDescription: null,
+                recentSales: {
+                    hourly: [...Array<number>(22).fill(0), 1, 0],
+                    daily: [0, 0, 0, 0, 0, 1, 1],
+                },
+                ...(bases
+                    ? {
+                          category: "armour-bases" as const,
+                          itemKey: "Titan Plate",
+                          name: null,
+                          baseType: "Titan Plate",
+                          iconAsset: "2DItems/Armours/BodyArmours/TitanPlate",
+                          frameType: 2,
+                          signatureKind: "base",
+                          signatureValue: "ilvl 86+ · 6 links",
+                          baseDescription: "Body Armour · Str · Level 73",
+                          listingCount: 12,
+                          uniqueSellers: 9,
+                          prices: { chaos: { count: 12, min: 40, median: 60, max: 90 } },
+                      }
+                    : {}),
+            },
+        ],
+        baseDescription: filters.kind === "base" ? "Body Armour · Str · Level 73" : null,
         variants:
             filters.item === "Loreweave"
                 ? [null, 6, 0].map((links) => ({
@@ -225,6 +225,10 @@ export function marketExchangeFixture(
     return {
         realm: input.realm ?? "pc",
         league: input.league || "Allflame",
+        seasons: [
+            { league: "Allflame", firstHour: hour - 86400, latestHour: hour },
+            { league: "Standard", firstHour: hour - 86400, latestHour: hour },
+        ],
         latestHour: hour,
         historyStart: hour - 7 * 86400 + 3600,
         item: input.itemId === wisdom ? exchange : null,
@@ -296,73 +300,5 @@ export function marketExchangeFixture(
                 },
             ],
         },
-    };
-}
-
-export function marketBaseFixture(
-    input: Partial<MarketBaseInput> = {},
-): Awaited<ReturnType<typeof getMarketBase>> {
-    const hour = 1_792_836_000;
-    const variant = (id: string, links: "1-5" | "6", median: number) => ({
-        id,
-        baseType: "Titan Plate",
-        category: "armour-bases" as const,
-        itemClass: "Body Armour" as const,
-        attributes: ["str" as const],
-        level: 73,
-        ilvl: { min: 86, max: 100 },
-        links,
-        quality: null,
-        hour,
-        listingCount: 12,
-        uniqueSellers: 9,
-        unknownCount: 0,
-        prices: { chaos: { count: 12, min: median, median, max: median } },
-    });
-    const variants = [
-        variant("base:titan-plate:86-100:6-link", "6", 60),
-        variant("base:titan-plate:86-100:1-5-link", "1-5", 5),
-    ];
-    const baseId = input.baseId ?? variants[0]!.id;
-    const base = variants.find((entry) => entry.id === baseId);
-    const {
-        hour: _hour,
-        listingCount: _l,
-        uniqueSellers: _u,
-        unknownCount: _n,
-        prices: _p,
-        ...definition
-    } = base ?? variants[0]!;
-    return {
-        realm: input.realm ?? "pc",
-        league: input.league || "Allflame",
-        days: input.days ?? "7",
-        currency: input.currency ?? "divine",
-        baseId,
-        latestHour: hour,
-        base: base ? definition : null,
-        historyUnit: "chaos",
-        history: [hour - 3600, hour].map((at, index) => ({
-            hour: at,
-            listingCount: 10 + index,
-            uniqueSellers: 8,
-            unknownCount: 0,
-            merged: {
-                count: 10,
-                unconverted: 0,
-                mean: 0.4,
-                min: 0.3,
-                p10: 0.3,
-                p25: 0.35,
-                median: 0.4,
-                p75: 0.45,
-                p90: 0.5,
-                max: 0.6,
-            },
-            priceRates: { chaos: 1, divine: 1 / 150 },
-        })),
-        variants,
-        chaosRates: { chaos: 1, divine: 150 },
-        priceRates: { chaos: 1, divine: 1 / 150 },
     };
 }

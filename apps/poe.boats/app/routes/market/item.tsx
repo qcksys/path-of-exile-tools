@@ -14,17 +14,19 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Link, type ShouldRevalidateFunctionArgs, useSearchParams } from "react-router";
 import { DataTable, dataTableColumns } from "~/components/data-table";
 import { ItemArt } from "~/components/item-art";
-import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
-import { FlagToggle } from "~/components/market-gem-filters";
+import { MarketAxisToggles } from "~/components/market-axis-filters";
+import { marketUtc } from "~/components/market-filters";
+import { FlagToggle, MarketDetailFilters } from "~/components/market-form";
 import { MarketHistory, MarketHistoryPrice } from "~/components/market-history";
 import { MarketListingPrice } from "~/components/market-listing-price";
-import { MarketMapFilters } from "~/components/market-map-filters";
 import { MarketModValues } from "~/components/market-mod-values";
 import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import { forbiddenJewelGroup } from "~/lib/forbidden-jewels";
 import { marketItemArtUrl } from "~/lib/item-presentation";
+import { MARKET_BASE_NOTE } from "~/lib/market-bases";
+import { MARKET_MAP_AXES } from "~/lib/market-kinds";
 import { marketListingPrices, marketMostListedPrice } from "~/lib/market-listing-prices";
 import { marketNumber as number } from "~/lib/market-number";
 import type { MarketPriceRates } from "~/lib/market-price-currencies";
@@ -94,6 +96,8 @@ function variantLabel(variant: VariantRow, linkSplit: boolean) {
 
 /** The variant table's group: a Forbidden jewel's class and ascendancy, else its state. */
 function variantGroup(variant: VariantRow) {
+    // A crafting base's first band: its item level, or a Cluster Jewel's skill.
+    if (variant.signatureKind === "base") return variant.signatureValue.split(" · ")[0]!;
     return (
         forbiddenJewelGroup(variant) ??
         [variant.identified ? "Identified" : "Unidentified", variant.corrupted ? "Corrupted" : ""]
@@ -374,7 +378,12 @@ function MapVariantTable({
     const rows = useMemo(() => variants.filter(mapVariantMatcher(filters)), [variants, filters]);
     return (
         <>
-            <MarketMapFilters filters={filters} shown={shown} onChange={onFilter}>
+            <MarketAxisToggles
+                filters={filters}
+                axes={MARKET_MAP_AXES}
+                shown={shown}
+                onChange={onFilter}
+            >
                 <FlagToggle
                     name="identification"
                     legend="Identification"
@@ -389,7 +398,7 @@ function MapVariantTable({
                     value={filters.corruption ?? "all"}
                     onChange={(value) => onFilter("corruption", value)}
                 />
-            </MarketMapFilters>
+            </MarketAxisToggles>
             {rows.length < variants.length ? (
                 <p role="status" className="text-xs text-muted-foreground">
                     {rows.length} of {variants.length} variants match these filters
@@ -475,7 +484,8 @@ function HourlyTable({ rows, game }: { rows: HistoryRow[]; game: "poe1" | "poe2"
 }
 
 export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
-    const { seasons, history, variants, modValues, chaosRates, priceRates } = loaderData;
+    const { seasons, history, variants, modValues, chaosRates, priceRates, baseDescription } =
+        loaderData;
     const [searchParams, setSearchParams] = useSearchParams();
     const filters = useMemo(
         () => ({ ...loaderData.filters, ...marketItemViewFilters(searchParams) }),
@@ -548,7 +558,14 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
     const periodSales = history.reduce((sum, row) => sum + row.likelySales, 0);
     return (
         <>
-            <MarketFiltersForm filters={filters} seasons={seasons} />
+            <MarketDetailFilters
+                league={filters.league}
+                days={filters.days}
+                seasons={seasons}
+                realm={filters.realm}
+                currency={filters.currency}
+                game={game}
+            />
             {!selected ? (
                 <Link to={marketLink(filters)} className="text-sm text-primary">
                     ← Back to markets
@@ -615,18 +632,26 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                             <p className="text-sm text-muted-foreground">
                                 {/* A map's signature already says it is unidentified. */}
                                 {[
-                                    selected.identified
-                                        ? "Identified"
-                                        : selected.signatureKind === "map"
-                                          ? ""
-                                          : "Unidentified",
+                                    selected.signatureKind === "base"
+                                        ? ""
+                                        : selected.identified
+                                          ? "Identified"
+                                          : selected.signatureKind === "map"
+                                            ? ""
+                                            : "Unidentified",
                                     selected.corrupted ? "Corrupted" : "",
                                     selected.signatureValue,
                                     selectedLinks !== null ? linksLabel(selectedLinks) : "",
+                                    baseDescription,
                                 ]
                                     .filter(Boolean)
                                     .join(" · ")}
                             </p>
+                            {selected.signatureKind === "base" ? (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {MARKET_BASE_NOTE}
+                                </p>
+                            ) : null}
                         </div>
                         <div className="text-right">
                             <p className="text-3xl font-semibold tabular-nums">
