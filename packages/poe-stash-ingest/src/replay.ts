@@ -67,6 +67,9 @@ function stashPage(phase: number): PublicStashPage {
 }
 
 export async function replayFixtures() {
+    // The cycles' listings are stamped within this hour, so the rollup finds them all even when
+    // the wall-clock hour ends during the replay.
+    const hour = Math.floor(Date.now() / 3_600_000) * 3600;
     Object.assign(process.env, {
         APP_ENV: "test",
         POE_CLIENT_ID: "fixture-client",
@@ -143,9 +146,9 @@ export async function replayFixtures() {
                     observedAt: new Date(
                         (equipmentHour + (cycle === 0 ? 0 : 21 * 24 * 3600)) * 1000,
                     ),
+                    listingsObservedAt: new Date((hour + cycle) * 1000),
                 });
             assert.deepEqual(requestedCursors, [previousCursor ?? null, "fixture-1", "fixture-2"]);
-            const hour = Math.floor(Date.now() / 3_600_000) * 3600;
             await rollupPs(db.conn, { hour, league });
             const exchangeHour = Number(await getCursor(db.conn, "cxapi"));
             assert(Number.isSafeInteger(exchangeHour));

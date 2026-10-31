@@ -278,6 +278,7 @@ export function marketExchangeFixture(
                             units: 2_000,
                         },
                     ],
+                    lowVolume: false,
                 },
                 {
                     quoteId: divine,
@@ -293,6 +294,7 @@ export function marketExchangeFixture(
                             units: 1_000,
                         },
                     ],
+                    lowVolume: false,
                 },
             ],
         },

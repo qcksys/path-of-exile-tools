@@ -87,6 +87,7 @@ beforeEach(() => {
                     hours: [
                         { hour, rate: 2, low: 1.9, high: 2.1, p25: 1.95, p75: 2.05, units: 30 },
                     ],
+                    lowVolume: false,
                 },
             ],
         },

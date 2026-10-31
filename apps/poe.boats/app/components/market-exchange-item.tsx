@@ -41,8 +41,12 @@ export function MarketExchangeItem({
     backTo: string;
 }) {
     const [series, setSeries] = useState(PRICE_SERIES);
+    const [showLowVolume, setShowLowVolume] = useState(false);
     const unitName = EXCHANGE_UNIT_NAMES[unit].replace(/ Orb$/, "");
-    const pair = history.pairs.find((entry) => entry.quoteId === series);
+    const lowVolumeCount = history.pairs.filter((entry) => entry.lowVolume).length;
+    const pairs = showLowVolume ? history.pairs : history.pairs.filter((entry) => !entry.lowVolume);
+    const pair = pairs.find((entry) => entry.quoteId === series);
+    const shownSeries = pair?.quoteId ?? PRICE_SERIES;
     const points = pair
         ? pair.hours.map(({ rate, ...point }) => ({ ...point, value: rate }))
         : history.prices.map(({ price, ...point }) => ({ ...point, value: price }));
@@ -129,7 +133,7 @@ export function MarketExchangeItem({
                 <div className="flex flex-wrap gap-2 text-sm">
                     {[
                         { id: PRICE_SERIES, label: `${unitName} value` },
-                        ...history.pairs.map((entry) => ({
+                        ...pairs.map((entry) => ({
                             id: entry.quoteId,
                             label: `${entry.name} per ${item.name}`,
                         })),
@@ -138,8 +142,8 @@ export function MarketExchangeItem({
                             key={option.id}
                             type="button"
                             size="sm"
-                            variant={series === option.id ? "secondary" : "outline"}
-                            aria-pressed={series === option.id}
+                            variant={shownSeries === option.id ? "secondary" : "outline"}
+                            aria-pressed={shownSeries === option.id}
                             onClick={() => setSeries(option.id)}
                             className="rounded-full"
                         >
@@ -155,7 +159,21 @@ export function MarketExchangeItem({
             </section>
             {history.pairs.length ? (
                 <section aria-label="Exchange pairs" className="space-y-2">
-                    <h3 className="text-sm font-semibold">Pairs</h3>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold">Pairs</h3>
+                        {lowVolumeCount ? (
+                            <Button
+                                type="button"
+                                size="xs"
+                                variant={showLowVolume ? "secondary" : "ghost"}
+                                aria-pressed={showLowVolume}
+                                title="Pairs traded in under a tenth of the hours of this item's busiest pair"
+                                onClick={() => setShowLowVolume(!showLowVolume)}
+                            >
+                                Show low volume pairs ({lowVolumeCount})
+                            </Button>
+                        ) : null}
+                    </div>
                     <table className="w-full text-sm">
                         <thead className="text-left text-xs text-muted-foreground">
                             <tr>
@@ -166,7 +184,7 @@ export function MarketExchangeItem({
                             </tr>
                         </thead>
                         <tbody>
-                            {history.pairs.map((entry) => {
+                            {pairs.map((entry) => {
                                 const newest = entry.hours.at(-1)!;
                                 return (
                                     <tr key={entry.quoteId} className="border-t border-border">
