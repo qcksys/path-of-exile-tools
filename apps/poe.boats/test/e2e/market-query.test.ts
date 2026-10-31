@@ -2153,6 +2153,48 @@ it("limits Divine Orb's history to its anchor and most traded pairs", async () =
     );
 });
 
+it("prices an exchange item without its low volume pair, from the stored traded hours", async () => {
+    const chaosId = "Metadata/Items/Currency/CurrencyRerollRare";
+    const divineId = "Metadata/Items/Currency/CurrencyModValues";
+    const mirrorId = "Metadata/Items/Currency/CurrencyDuplicate";
+    const snapshot = (marketId: string, at: number, volumeTraded: Record<string, number>) => ({
+        realm: "pc",
+        league: "ExchangeThin",
+        marketId,
+        hour: at,
+        volumeTraded,
+    });
+    const thinHour = hour - 3600;
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, [
+        ...Array.from({ length: 20 }, (_, index) => hour - index * 3600).flatMap((at) => [
+            snapshot(`${mirrorId}|${divineId}`, at, { [mirrorId]: 1, [divineId]: 1000 }),
+            snapshot(`${divineId}|${chaosId}`, at, { [divineId]: 1, [chaosId]: 400 }),
+        ]),
+        snapshot(`${mirrorId}|${chaosId}`, thinHour, { [mirrorId]: 2, [chaosId]: 130_000 }),
+    ]);
+    const input = { realm: "pc" as const, league: "ExchangeThin" };
+    const result = await getMarketExchangeItem(db as unknown as TDatabase, {
+        ...input,
+        days: "7",
+        itemId: mirrorId,
+    });
+    expect(result.item).toMatchObject({ price: 400_000, via: { itemId: divineId } });
+    expect(result.item?.history.filter((price) => price !== null)).not.toContain(65_000);
+    expect(result.history.prices.find((point) => point.hour === thinHour)).toMatchObject({
+        price: 400_000,
+        via: divineId,
+    });
+    expect(result.history.pairs.map(({ quoteId, lowVolume }) => ({ quoteId, lowVolume }))).toEqual([
+        { quoteId: divineId, lowVolume: false },
+        { quoteId: chaosId, lowVolume: true },
+    ]);
+    const { prices } = await getMarketExchangePrices(db as unknown as TDatabase, {
+        ...input,
+        itemIds: [mirrorId],
+    });
+    expect(prices.get(mirrorId)?.price).toBe(400_000);
+});
+
 it("orders names in both directions and uses the latest observation for recency", async () => {
     await insertMarket([
         observation({ league: "Ordering", itemKey: "Alpha", hour: hour - 3600 }),

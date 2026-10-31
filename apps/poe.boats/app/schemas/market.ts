@@ -276,7 +276,7 @@ export const marketExchangeRowSchema = z.object({
         .number()
         .nullable()
         .describe(
-            "Units of the exchange unit per unit from the latest completed hour's trades, or else from the newest of the last 7 UTC days that traded (`current` false); null without a path through chaos, divine, exalted or another traded item",
+            "Units of the exchange unit per unit from the latest completed hour's trades, or else from the newest of the last 7 UTC days that traded (`current` false); null without a path through chaos, divine, exalted or another traded item. A pair traded in under a tenth of the hours of the item's busiest pair over those days does not set it",
         ),
     via: z
         .object({ itemId: z.string(), name: z.string() })

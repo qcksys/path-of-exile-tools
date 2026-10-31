@@ -55,12 +55,39 @@ export type MarketExchangeDaily = {
     day: number;
     firstVolume: number;
     secondVolume: number;
+    tradedHours: number;
     latestHour: number | null;
 };
 
 type Describe = (itemId: string) => { name: string; category: MarketExchangeCategory } | undefined;
 type Quote = (itemId: string, quoteId: string) => number | undefined;
 type AnchorRate = { price: number; via: string };
+type IsLowVolume = (itemId: string, otherId: string) => boolean;
+
+/**
+ * A pair trading in under this share of the hours of an item's busiest pair is low volume for that
+ * item. Hours rather than units, since a pair's units are not comparable: Divine Orb's Exalted Orb
+ * pair trades every hour with under 1% of its units, while Mirror of Kalandra's Chaos Orb pair
+ * traded once.
+ */
+export const MARKET_EXCHANGE_LOW_VOLUME_SHARE = 0.1;
+
+/**
+ * Whether a pair is low volume for one of its items, from each pair's traded hours. A pair without
+ * counted hours is not. An item's busiest pair never is, so every item that traded keeps a pair.
+ */
+function lowVolumeCheck(pairHours: Map<string, number>): IsLowVolume {
+    const busiest = new Map<string, number>();
+    for (const [key, hours] of pairHours)
+        for (const id of key.split("|")) busiest.set(id, Math.max(busiest.get(id) ?? 0, hours));
+    return (itemId, otherId) => {
+        const hours = pairHours.get([itemId, otherId].sort().join("|"));
+        return (
+            hours !== undefined &&
+            hours < (busiest.get(itemId) ?? 0) * MARKET_EXCHANGE_LOW_VOLUME_SHARE
+        );
+    };
+}
 
 /** The day's markets with trades, one per pair: a pair stored under both orders keeps its first ID. */
 function tradedDays(daily: MarketExchangeDaily[]) {
@@ -95,13 +122,14 @@ function dailyQuote(pairs: Map<string, MarketExchangeDaily>): Quote {
 
 /**
  * Units of `anchor` per unit of every item with a usable path: its own anchor pair, or else a
- * pair with an item that has one (divine first, then chaos or exalted, then by ID).
+ * pair with an item that has one (divine first, then chaos or exalted, then by ID). A pair that is
+ * low volume for an item never prices it, even as its only path in that period.
  */
-function anchorRates(pairs: string[][], quote: Quote, anchor: string) {
+function anchorRates(pairs: string[][], quote: Quote, anchor: string, isLowVolume: IsLowVolume) {
     const rates = new Map<string, AnchorRate>();
     for (const ids of pairs) {
         const item = ids.find((id) => id !== anchor);
-        if (!item || !ids.includes(anchor)) continue;
+        if (!item || !ids.includes(anchor) || isLowVolume(item, anchor)) continue;
         const amount = quote(item, anchor);
         if (amount) rates.set(item, { price: amount, via: anchor });
     }
@@ -109,8 +137,10 @@ function anchorRates(pairs: string[][], quote: Quote, anchor: string) {
     const candidates = new Map<string, string[]>();
     for (const [a, b] of pairs) {
         if (!a || !b || a === anchor || b === anchor) continue;
-        if (direct.has(b)) candidates.set(a, [...(candidates.get(a) ?? []), b]);
-        if (direct.has(a)) candidates.set(b, [...(candidates.get(b) ?? []), a]);
+        if (direct.has(b) && !isLowVolume(a, b))
+            candidates.set(a, [...(candidates.get(a) ?? []), b]);
+        if (direct.has(a) && !isLowVolume(b, a))
+            candidates.set(b, [...(candidates.get(b) ?? []), a]);
     }
     const priority = (id: string) => (id === DIVINE ? 0 : id === CHAOS || id === EXALTED ? 1 : 2);
     for (const [item, bridges] of candidates) {
@@ -133,7 +163,12 @@ function anchorRates(pairs: string[][], quote: Quote, anchor: string) {
  * Anchor rates from one hour's snapshots, where both orders of a pair must agree, and the items
  * of every pair in which both sides traded.
  */
-function hourRates(snapshots: ExchangeSnapshot[], hour: number, anchor: string) {
+function hourRates(
+    snapshots: ExchangeSnapshot[],
+    hour: number,
+    anchor: string,
+    isLowVolume: IsLowVolume,
+) {
     const pairs = new Map<string, ExchangeSnapshot[]>();
     const traded = new Set<string>();
     for (const snapshot of snapshots) {
@@ -159,6 +194,7 @@ function hourRates(snapshots: ExchangeSnapshot[], hour: number, anchor: string) 
             [...pairs.keys()].map((key) => key.split("|")),
             quote,
             anchor,
+            isLowVolume,
         ),
         quote,
         full,
@@ -167,18 +203,43 @@ function hourRates(snapshots: ExchangeSnapshot[], hour: number, anchor: string) 
 }
 
 /** Each day's anchor rates from that day's volume-weighted pair prices. */
-function exchangeDailyRates(daily: MarketExchangeDaily[], anchor: string) {
+function exchangeDailyRates(
+    days: Map<number, Map<string, MarketExchangeDaily>>,
+    anchor: string,
+    isLowVolume: IsLowVolume,
+) {
     const result = new Map<number, Map<string, AnchorRate>>();
-    for (const [day, pairs] of tradedDays(daily))
+    for (const [day, pairs] of days)
         result.set(
             day,
             anchorRates(
                 [...pairs.keys()].map((key) => key.split("|")),
                 dailyQuote(pairs),
                 anchor,
+                isLowVolume,
             ),
         );
     return result;
+}
+
+/** Each pair's traded hours over the given days. */
+function dailyPairHours(days: Map<number, Map<string, MarketExchangeDaily>>) {
+    const hours = new Map<string, number>();
+    for (const pairs of days.values())
+        for (const [key, row] of pairs) hours.set(key, (hours.get(key) ?? 0) + row.tradedHours);
+    return hours;
+}
+
+/** Each pair's hours in which both sides traded, counting both orders of a pair once. */
+function snapshotPairHours(snapshots: ExchangeSnapshot[]) {
+    const traded = new Map<string, Set<number>>();
+    for (const snapshot of snapshots) {
+        const ids = snapshot.marketId.split("|");
+        if (ids.length !== 2 || !ids.every((id) => snapshot.volumeTraded?.[id])) continue;
+        const key = ids.toSorted().join("|");
+        traded.set(key, (traded.get(key) ?? new Set()).add(snapshot.hour));
+    }
+    return new Map([...traded].map(([key, hours]) => [key, hours.size]));
 }
 
 /** Hours of exchange volume the list charts, with MARKET_EXCHANGE_DAYS days. */
@@ -264,6 +325,7 @@ export type MarketExchangeListRow = MarketExchangeRow & {
  * are the latest hour's markets and `daily` the last MARKET_EXCHANGE_DAYS days of daily totals.
  * Items without trades get a row without a price. Volumes average over the hours since the
  * window's first day, or since `leagueStart` (the league's first exchange hour) when that is later.
+ * Pairs low volume for an item over `daily` do not price it, in the latest hour or on any day.
  */
 export function marketExchangeRows(
     snapshots: ExchangeSnapshot[],
@@ -275,13 +337,15 @@ export function marketExchangeRows(
     unit: MarketExchangeUnit = "chaos",
 ): MarketExchangeRow[] {
     const anchor = marketExchangeUnitId(unit);
+    const days = tradedDays(daily);
+    const isLowVolume = lowVolumeCheck(dailyPairHours(days));
     const current = hourRates(
         snapshots.filter((snapshot) => snapshot.hour === latestHour),
         latestHour,
         anchor,
+        isLowVolume,
     );
-    const days = tradedDays(daily);
-    const dayRates = exchangeDailyRates(daily, anchor);
+    const dayRates = exchangeDailyRates(days, anchor, isLowVolume);
     const lastDay = Math.floor(latestHour / DAY) * DAY;
     const window = Array.from(
         { length: MARKET_EXCHANGE_DAYS },
@@ -433,12 +497,15 @@ export type MarketExchangePairHistory = {
     name: string;
     /** Units of the other item per unit, per traded hour. */
     hours: MarketExchangePoint[];
+    /** Traded in under MARKET_EXCHANGE_LOW_VOLUME_SHARE of the hours of the item's busiest pair. */
+    lowVolume: boolean;
 };
 
 /**
  * An item's hourly history: its price in `unit` (directly or through another item, whose own price
  * scales the pair's lowest and highest rates) and units traded per hour, and each pair's hourly
  * rates. `snapshots` hold the item's markets and the `unit` markets of the items it trades against.
+ * Pairs low volume for the item over `snapshots` keep their rates but do not price it.
  */
 export function marketExchangeHistory(
     snapshots: ExchangeSnapshot[],
@@ -447,6 +514,7 @@ export function marketExchangeHistory(
     unit: MarketExchangeUnit = "chaos",
 ) {
     const anchor = marketExchangeUnitId(unit);
+    const isLowVolume = lowVolumeCheck(snapshotPairHours(snapshots));
     const pairs = new Map<string, MarketExchangePairHistory>();
     const prices: (Omit<MarketExchangePoint, "rate"> & {
         price: number | null;
@@ -454,7 +522,7 @@ export function marketExchangeHistory(
     })[] = [];
     const hours = Map.groupBy(snapshots, (snapshot) => snapshot.hour);
     for (const [hour, rows] of [...hours].sort(([a], [b]) => a - b)) {
-        const { rates, full } = hourRates(rows, hour, anchor);
+        const { rates, full } = hourRates(rows, hour, anchor, isLowVolume);
         let units = 0;
         for (const key of new Set(
             rows.map((row) => row.marketId.split("|").toSorted().join("|")),
@@ -467,7 +535,12 @@ export function marketExchangeHistory(
             units += quote.itemVolume;
             const name = describe(quoteId)?.name;
             if (!name) continue;
-            const pair = pairs.get(quoteId) ?? { quoteId, name, hours: [] };
+            const pair = pairs.get(quoteId) ?? {
+                quoteId,
+                name,
+                hours: [],
+                lowVolume: isLowVolume(itemId, quoteId),
+            };
             pair.hours.push({
                 hour,
                 rate: quote.amount,
