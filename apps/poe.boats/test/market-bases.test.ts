@@ -68,6 +68,25 @@ describe("crafting base market rows", () => {
         expect(ids({ order: "price-asc" })).toEqual(["cheap", "quality", "dear", "unpriced"]);
     });
 
+    it("ranks a base by its most listed currency, as the price column shows it", () => {
+        const mixed = base("mixed", {
+            prices: {
+                chaos: { count: 1, min: 1, median: 1, max: 1 },
+                divine: { count: 9, min: 2, median: 2, max: 2 },
+            },
+        });
+        const steady = base("steady", {
+            prices: { chaos: { count: 5, min: 100, median: 100, max: 100 } },
+        });
+        const filters = marketFiltersSchema.parse({
+            category: "armour-bases",
+            order: "price-desc",
+        });
+        expect(
+            rankMarketBases([steady, mixed], filters, chaosRates, 50).rows.map((row) => row.id),
+        ).toEqual(["mixed", "steady"]);
+    });
+
     it("falls back to listings for the likely-sales orders, which bases do not have", () => {
         expect(ids({})).toEqual(["cheap", "unpriced", "quality", "dear"]);
         expect(ids({ salesMin: 1 })).toEqual([]);

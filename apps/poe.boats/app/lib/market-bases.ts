@@ -5,7 +5,7 @@ import {
     MARKET_CLUSTER_BASE_CATEGORY,
     type MarketCategory,
 } from "./market-categories";
-import { marketListingPrices } from "./market-listing-prices";
+import { marketListingPrices, marketMostListedPrice } from "./market-listing-prices";
 
 /** Crafting base cohorts from this item level up are listed on the market. */
 export const MARKET_BASE_MIN_LEVEL = 74;
@@ -153,9 +153,9 @@ function variantName(base: MarketBaseRow) {
     return `${base.baseType} ${marketBaseVariant(base)}`;
 }
 
-/** The cheapest non-outlier asking price in chaos, as the price column shows it first. */
+/** The most listed currency's asking price in chaos, as the price column shows it. */
 function chaosPrice(base: MarketBaseRow, chaosRates: Record<string, number>) {
-    return marketListingPrices(base.prices, chaosRates).find((price) => !price.outlier)?.chaos;
+    return marketMostListedPrice(marketListingPrices(base.prices, chaosRates))?.chaos;
 }
 
 /**

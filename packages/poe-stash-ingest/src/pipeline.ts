@@ -16,6 +16,7 @@ import {
 import { rollupPs } from "#src/ps/rollup.ts";
 import { type ArchiveOptions, archiveOldData } from "#src/shared/archive.ts";
 import { REALM } from "#src/shared/auth.ts";
+import { getCursor } from "#src/shared/cursor.ts";
 import { queryAll, TransactionRollbackError } from "#src/shared/db.ts";
 import { deliverLeagues } from "#src/shared/leagues.ts";
 import { configureSource } from "#src/shared/source.ts";
@@ -57,6 +58,22 @@ function operationFailure(operation: string, error: unknown) {
         : new Error(`${operation} failed`, { cause: error });
 }
 
+/**
+ * Exchange hours before this one have been captured: the cursor passed them, or, as the feed's
+ * tail can name its own hour as the next, they have stored markets.
+ */
+async function exchangeCapturedBeforeHour(conn: DuckDBConnection) {
+    const cursor = Number(await getCursor(conn, "cxapi"));
+    const [stored] = await queryAll<{ hour: number | null }>(
+        conn,
+        "SELECT max(observed_hour)::BIGINT AS hour FROM cx_market_hour",
+    );
+    return Math.max(
+        Number.isFinite(cursor) ? cursor : 0,
+        stored?.hour === null || stored?.hour === undefined ? 0 : Number(stored.hour) + 3600,
+    );
+}
+
 export async function flushRollups(
     conn: DuckDBConnection,
     opts: {
@@ -65,6 +82,8 @@ export async function flushRollups(
         limit?: number;
         /** Hold back stash hours from this one on; by default, the current hour. */
         stashBeforeHour?: number;
+        /** Hold back market hours from this one on: the receiver prices them at their exchange. */
+        exchangeBeforeHour?: number;
         onProgress?: (hours: number, rows: number) => Promise<void>;
         onBatch?: () => Promise<void>;
     } = {},
@@ -95,11 +114,18 @@ export async function flushRollups(
         -- The exchange is captured for every league, whatever the database's season.
         WHERE hour < epoch(date_trunc('hour', current_timestamp))
             AND (stream = 'cxapi' OR $3 IS NULL OR hour < $3)
+            AND (stream <> 'psapi' OR $4 IS NULL OR hour < $4)
             AND ($1 IS NULL OR league = $1 OR stream = 'cxapi')
+        -- The receiver prices a stash hour at that hour's exchange, so the exchange goes first.
         -- Equipment reclassification re-dirties days of hours; it must not hold back market hours.
-        ORDER BY CASE stream WHEN 'psapi' THEN 0 WHEN 'cxapi' THEN 1 ELSE 2 END, hour, league
+        ORDER BY CASE stream WHEN 'cxapi' THEN 0 WHEN 'psapi' THEN 1 ELSE 2 END, hour, league
         LIMIT $2`,
-        [opts.league ?? null, opts.limit ?? 168, opts.stashBeforeHour ?? null],
+        [
+            opts.league ?? null,
+            opts.limit ?? 168,
+            opts.stashBeforeHour ?? null,
+            opts.exchangeBeforeHour ?? null,
+        ],
     ).catch((error: unknown) => {
         throw operationFailure("Pending rollup discovery", error);
     });
@@ -265,19 +291,31 @@ export async function runPipeline(
     await flushCheckpoints(conn).catch((error: unknown) =>
         failStage("delivery", "Checkpoint delivery", error),
     );
-    const delivered = await flushRollups(conn, {
-        ...opts,
-        stashBeforeHour,
-        onBatch: async () => {
-            await update({ progressAt: Date.now() });
-        },
-        onProgress: async (hours, rows) => {
-            await update({ deliveredHours: hours, deliveredRows: rows, progressAt: Date.now() });
-        },
-    }).catch(async (error: unknown) => {
-        await failStage("delivery", "Rollup delivery", error);
-        return null;
-    });
+    const delivered = await (opts.currency === false
+        ? Promise.resolve(undefined)
+        : exchangeCapturedBeforeHour(conn)
+    )
+        .then((exchangeBeforeHour) =>
+            flushRollups(conn, {
+                ...opts,
+                stashBeforeHour,
+                exchangeBeforeHour,
+                onBatch: async () => {
+                    await update({ progressAt: Date.now() });
+                },
+                onProgress: async (hours, rows) => {
+                    await update({
+                        deliveredHours: hours,
+                        deliveredRows: rows,
+                        progressAt: Date.now(),
+                    });
+                },
+            }),
+        )
+        .catch(async (error: unknown) => {
+            await failStage("delivery", "Rollup delivery", error);
+            return null;
+        });
     if (opts.leagues && Date.now() - leaguesDeliveredAt >= LEAGUE_INTERVAL_MS) {
         await deliverLeagues(client).then(
             () => {

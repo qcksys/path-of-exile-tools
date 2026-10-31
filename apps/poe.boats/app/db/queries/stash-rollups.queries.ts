@@ -15,6 +15,7 @@ import { yellowBeastMarket, yellowBeastNames } from "~/lib/crafting-yellow-beast
 import { mergeMarketRows } from "~/lib/market-price-merge";
 import { MOD_POOL_KINDS } from "~/lib/mod-pools";
 import { writeStashUniqueHourly } from "./stash-market.queries";
+import { refreshStashMarketPrices } from "./stash-market-price.queries";
 
 // Every rollup is recomputed from the hourly rows it summarises: the ingester re-pushes whole
 // hours (sale corrections, late unid resolutions), so increments would double count.
@@ -317,6 +318,7 @@ export async function refreshStashRollups(
         const scoped = { ...scope, game };
         await refreshYellowBeastHourly(db, scoped);
         await refreshStashMarketDaily(db, scoped);
+        await refreshStashMarketPrices(db, scoped);
         await refreshStashCurrencyDaily(db, scoped);
         await refreshStashCurrencyMarkets(db, scoped);
         for (const stream of COVERAGE_STREAMS[game])
