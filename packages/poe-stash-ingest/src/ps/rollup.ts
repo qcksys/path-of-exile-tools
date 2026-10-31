@@ -33,6 +33,7 @@ interface AggregateRow {
     soldAgeSeconds: number | null;
     pricesJson: string;
     salesPricesJson: string;
+    delistedPricesJson: string;
     removedCount: number;
     likelySales: number;
     relistedCount: number;
@@ -143,7 +144,9 @@ markets AS (
 prices AS (
     SELECT
         league, hour, item_key, corrupted, links, tab,
-        signature_kind, signature_value, price_currency, status,
+        signature_kind, signature_value, price_currency,
+        -- Delisted: every removal that is not a likely sale, relist or undecided.
+        CASE WHEN status IN ('listing', 'likely-sold') THEN status ELSE 'delisted' END AS price_kind,
         COUNT(*) AS price_count,
         MIN(price_amount) AS min,
         AVG(price_amount) AS mean,
@@ -154,14 +157,14 @@ prices AS (
         QUANTILE_CONT(price_amount, 0.9) AS p90,
         MAX(price_amount) AS max
     FROM markets
-    WHERE price_amount > 0 AND price_currency IS NOT NULL AND status IN ('listing', 'likely-sold')
+    WHERE price_amount > 0 AND price_currency IS NOT NULL AND status NOT IN ('relisted', 'pending')
     GROUP BY league, hour, item_key, corrupted, links, tab,
-             signature_kind, signature_value, price_currency, status
+             signature_kind, signature_value, price_currency, price_kind
 ),
 prices_agg AS (
     SELECT
         league, hour, item_key, corrupted, links, tab,
-        signature_kind, signature_value, status,
+        signature_kind, signature_value, price_kind,
         json_group_object(
             price_currency,
             json_object(
@@ -171,7 +174,7 @@ prices_agg AS (
         ) AS prices_json
     FROM prices
     GROUP BY league, hour, item_key, corrupted, links, tab,
-             signature_kind, signature_value, status
+             signature_kind, signature_value, price_kind
 )
 SELECT
     w.league,
@@ -202,20 +205,25 @@ SELECT
     COUNT(*) FILTER (WHERE w.status = 'pending') AS "pendingCount",
     COALESCE(p.prices_json, '{}') AS "pricesJson",
     COALESCE(s.prices_json, '{}') AS "salesPricesJson",
+    COALESCE(d.prices_json, '{}') AS "delistedPricesJson",
     MIN(w.first_seen_at)::VARCHAR AS "firstSeenAt",
     MAX(w.last_seen_at)::VARCHAR AS "lastSeenAt"
 FROM markets w
-LEFT JOIN (SELECT * FROM prices_agg WHERE status = 'listing') p USING (
+LEFT JOIN (SELECT * FROM prices_agg WHERE price_kind = 'listing') p USING (
     league, hour, item_key, corrupted, links, tab,
     signature_kind, signature_value
 )
-LEFT JOIN (SELECT * FROM prices_agg WHERE status = 'likely-sold') s USING (
+LEFT JOIN (SELECT * FROM prices_agg WHERE price_kind = 'likely-sold') s USING (
+    league, hour, item_key, corrupted, links, tab,
+    signature_kind, signature_value
+)
+LEFT JOIN (SELECT * FROM prices_agg WHERE price_kind = 'delisted') d USING (
     league, hour, item_key, corrupted, links, tab,
     signature_kind, signature_value
 )
 GROUP BY
     w.league, w.hour, w.item_key, w.corrupted, w.links, w.tab,
-    w.signature_kind, w.signature_value, p.prices_json, s.prices_json
+    w.signature_kind, w.signature_value, p.prices_json, s.prices_json, d.prices_json
 ORDER BY w.league, w.item_key, w.signature_kind, w.signature_value
 `;
 
@@ -299,6 +307,7 @@ export async function rollupPs(
         soldAgeSeconds: a.soldAgeSeconds === null ? undefined : Number(a.soldAgeSeconds),
         prices: JSON.parse(a.pricesJson) as UniqueHourlyRow["prices"],
         salesPrices: JSON.parse(a.salesPricesJson) as UniqueHourlyRow["prices"],
+        delistedPrices: JSON.parse(a.delistedPricesJson) as UniqueHourlyRow["prices"],
         removedCount: Number(a.removedCount),
         likelySales: Number(a.likelySales),
         relistedCount: Number(a.relistedCount),

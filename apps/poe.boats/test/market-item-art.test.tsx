@@ -40,6 +40,7 @@ function showMarket(
         pendingCount: 0,
         prices: { divine: { count: 5, min: 1, median: 2, max: 3 } },
         salesPrices: null,
+        delistedPrices: null,
         firstSeenAt: "2026-10-08T00:00:00Z",
         lastSeenAt: "2026-10-08T01:00:00Z",
         rowCreatedAt: new Date(),
@@ -73,7 +74,15 @@ function showMarket(
                 recentSales: { hourly: Array<number>(24).fill(0), daily: Array<number>(7).fill(0) },
             },
         ],
-        history: [{ ...row, merged: null, mergedSales: null, priceRates: { chaos: 1 } }],
+        history: [
+            {
+                ...row,
+                merged: null,
+                mergedSales: null,
+                mergedDelisted: null,
+                priceRates: { chaos: 1 },
+            },
+        ],
     };
     const Routes = createRoutesStub([
         {

@@ -212,10 +212,13 @@ hourly table searches, filters and sorts its loaded rows in the browser. Categor
 [poe.ninja's economy navigation](https://poe.ninja/poe1/economy); unknown bases remain in Other items.
 Price ordering compares only the selected original currency, with missing quotes last.
 The item chart plots each hour's min, interquartile (above 8 observations) and average asks and
-likely sales, total, new, likely sold and delisted listings (removals that are not likely sales,
-relists or pending), and `soldAgeSeconds`, the likely sales' average time from first seen to removed.
+likely sales, the delisted listings' interquartile range (above 8 observations), total, new, likely
+sold and delisted listings (removals that are not likely sales, relists or pending), and
+`soldAgeSeconds`, the likely sales' average time from first seen to removed. Its tooltip shows one
+hour across all panels, with that hour's prices in one currency.
 Item history keeps the per-currency hourly summaries (count, min, mean, p10–p90 quantiles, max;
-older rows lack mean and quantiles) and adds `merged`/`mergedSales`: each listing currency
+older rows lack mean and quantiles; `delistedPrices` is null for hours ingested before it was
+recorded) and adds `merged`/`mergedSales`/`mergedDelisted`: each listing currency
 converted to chaos at read time with that hour's same-league exchange rate (direct, or via divine),
 reusing the latest rate up to 24 hours old, then into `historyUnit` (the game's first price
 currency: chaos for PoE 1, exalted for PoE 2), whatever the display currency. The merged

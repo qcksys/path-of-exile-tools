@@ -130,6 +130,37 @@ it("matches what a whole-hour rollup sends for the changed item", async () => {
     }
 });
 
+it("prices a removal as delisted only while it is not a sale, relist or undecided", async () => {
+    const { db } = await deliveredHour();
+    const prices = { divine: { count: 1, min: 10, median: 10, p25: 10, p75: 10 } };
+    const headhunter = async (status: string) => {
+        await db.conn.run("UPDATE ps_sale SET status = $1", [status]);
+        pushed.length = 0;
+        await rollupPs(db.conn, { hour: HOUR, league: LEAGUE });
+        return pushed.find((row) => row.itemKey === "Headhunter");
+    };
+    try {
+        for (const status of ["withdrawn", "unobserved", "insufficient-market", "outside-market"])
+            expect(await headhunter(status)).toMatchObject({
+                removedCount: 1,
+                salesPrices: {},
+                delistedPrices: prices,
+            });
+        expect(await headhunter("likely-sold")).toMatchObject({
+            salesPrices: prices,
+            delistedPrices: {},
+        });
+        for (const status of ["relisted", "pending"])
+            expect(await headhunter(status)).toMatchObject({
+                removedCount: 1,
+                salesPrices: {},
+                delistedPrices: {},
+            });
+    } finally {
+        await db.close();
+    }
+});
+
 it("stops re-delivering when the changed item has no market", async () => {
     const { db, flush } = await deliveredHour();
     try {

@@ -4,25 +4,27 @@ import { CurrencyLabel } from "~/components/currency-label";
 import { EChart } from "~/components/echart";
 import {
     type ExchangeDisplay,
+    exchangePrice,
     exchangePriceText,
     useMarketDisplay,
 } from "~/components/market-exchange";
 import type { ChartOption } from "~/lib/echarts";
 import { MARKET_IQR_MIN_COUNT } from "~/lib/market-exchange";
-import { marketNumber } from "~/lib/market-number";
+import { marketCompactNumber, marketNumber } from "~/lib/market-number";
 import { MARKET_PRICE_CURRENCIES, type MarketPriceRates } from "~/lib/market-price-currencies";
 import type { MergedMarketPrice } from "~/schemas/market";
 
 type Game = "poe1" | "poe2";
 /**
  * An hour's merged prices in the game's exchange unit, with its price currency rates and counts.
- * Markets without sale estimates omit the sale and removal counts; `newCount` and `soldAgeSeconds`
- * are null for hours ingested before they were recorded.
+ * Markets without sale estimates omit the sale and removal counts and delisted prices; `newCount`,
+ * `soldAgeSeconds` and `mergedDelisted` are null for hours ingested before they were recorded.
  */
 type Point = {
     hour: number;
     merged: MergedMarketPrice | null;
     mergedSales: MergedMarketPrice | null;
+    mergedDelisted?: MergedMarketPrice | null;
     priceRates: MarketPriceRates;
     listingCount: number;
     newCount?: number | null;
@@ -36,9 +38,9 @@ type Row = {
     at: number;
     ask: MergedMarketPrice | null;
     sales: MergedMarketPrice | null;
+    delisted: MergedMarketPrice | null;
     rates: MarketPriceRates;
 };
-type Format = (value: number) => string;
 
 const ASK_COLOR = "var(--primary)";
 const SALE_COLOR = "var(--chart-2)";
@@ -74,34 +76,68 @@ function count(value: unknown) {
     return value === null || value === undefined ? "Not recorded" : marketNumber(Number(value));
 }
 
-function unconverted(price: MergedMarketPrice) {
-    return price.unconverted ? `, ${price.unconverted} without an exchange rate` : "";
-}
-
 /** The price when the hour has enough observations for its interquartile range to mean something. */
 function withIqr(price: MergedMarketPrice | null) {
     return price && price.count > MARKET_IQR_MIN_COUNT ? price : null;
 }
 
-function iqrSummary(price: MergedMarketPrice, format: Format) {
-    return withIqr(price) ? `, interquartile ${format(price.p25)}–${format(price.p75)}` : "";
-}
-
-function priceSummary(price: MergedMarketPrice, format: Format, observations: string) {
-    return `${format(price.min)} (lowest of ${price.count} ${observations}, median ${format(price.median)}${iqrSummary(price, format)}${unconverted(price)})`;
-}
-
-function askSummary(price: MergedMarketPrice | null, format: Format) {
-    return price ? priceSummary(price, format, "listings") : "No listings";
-}
-
-function saleSummary(price: MergedMarketPrice | null, format: Format) {
-    return price ? priceSummary(price, format, "likely sales") : "No observations";
-}
-
 /** The currency the chart plots: the exchange unit for adaptive values, otherwise the display's. */
 function plottedCurrency(game: Game, display: ExchangeDisplay) {
     return display === "adaptive" ? MARKET_PRICE_CURRENCIES[game][0] : display;
+}
+
+function marker(color: string) {
+    return `<span style="display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%;background:${color}"></span>`;
+}
+
+function tooltipRow(cells: string[]) {
+    return `<tr>${cells
+        .map(
+            (cell, index) =>
+                `<td style="padding:1px 0 1px ${index ? 6 : 0}px;text-align:${index ? "right" : "left"}">${cell}</td>`,
+        )
+        .join("")}</tr>`;
+}
+
+function tooltipTable(rows: string[][]) {
+    return `<table style="border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums">${rows.map(tooltipRow).join("")}</table>`;
+}
+
+/**
+ * An hour's prices in one currency, so they read as a table. Adaptive picks it from the hour's
+ * typical price, as it would for that value alone.
+ */
+function hourPrices(point: Point, game: Game, display: ExchangeDisplay) {
+    const prices = [
+        { label: "Ask", color: ASK_COLOR, price: point.merged },
+        { label: "Sold", color: SALE_COLOR, price: point.mergedSales },
+        { label: "Delisted", color: DELISTED_COLOR, price: point.mergedDelisted ?? null },
+    ].flatMap(({ price, ...row }) => (price ? [{ ...row, price }] : []));
+    const [first] = prices;
+    if (!first) return "";
+    const rates = point.priceRates;
+    const { currency } = exchangePrice(first.price.median, rates, display, game);
+    const amount = (value: number) => marketCompactNumber(value * (rates[currency] ?? 1));
+    const missing = prices.reduce((total, { price }) => total + price.unconverted, 0);
+    const notes = [
+        `Prices in ${currency}`,
+        ...(rates.divine ? [exchangePriceText(1 / rates.divine, rates, "adaptive", game)] : []),
+        ...(missing ? [`${missing} without an exchange rate`] : []),
+    ];
+    return `${tooltipTable([
+        ["", "Min", "Median", "IQR", "Avg", "Count"],
+        ...prices.map(({ label, color, price }) => {
+            const iqr = withIqr(price);
+            return [
+                `${marker(color)}${label}`,
+                amount(price.min),
+                amount(price.median),
+                iqr ? `${amount(iqr.p25)}–${amount(iqr.p75)}` : "—",
+                price.mean === null ? "—" : amount(price.mean),
+                marketNumber(price.count),
+            ];
+        }),
+    ])}<div style="margin:4px 0 8px;font-size:11px;opacity:.7">${notes.join(" · ")}</div>`;
 }
 
 export function marketPriceChartOption(
@@ -112,15 +148,22 @@ export function marketPriceChartOption(
     const rows: Row[] = [];
     let previous = -Infinity;
     for (const point of points) {
-        if (!point.merged && !point.mergedSales) continue;
+        if (!point.merged && !point.mergedSales && !point.mergedDelisted) continue;
         // A row without prices breaks every line and the band, so hours without observations stay unconnected.
         if (rows.length && point.hour - previous > 3600)
-            rows.push({ at: (previous + 3600) * 1000, ask: null, sales: null, rates: {} });
+            rows.push({
+                at: (previous + 3600) * 1000,
+                ask: null,
+                sales: null,
+                delisted: null,
+                rates: {},
+            });
         previous = point.hour;
         rows.push({
             at: point.hour * 1000,
             ask: point.merged,
             sales: point.mergedSales,
+            delisted: point.mergedDelisted ?? null,
             rates: point.priceRates,
         });
     }
@@ -133,12 +176,8 @@ export function marketPriceChartOption(
         const rate = row.rates[display];
         return rate ? value * rate : null;
     };
-    const format =
-        (row: Row | undefined): Format =>
-        (value) =>
-            exchangePriceText(value, row?.rates ?? {}, display, game);
     // Sales are sparse, so sale prices connect across observed hours without a sale.
-    const saleRows = rows.filter((row) => row.sales || !row.ask);
+    const saleRows = rows.filter((row) => row.sales || !(row.ask || row.delisted));
     // Counts cover every observed hour, priced or not; the listings line breaks at gaps too.
     const countRows: { at: number; point: Point | null }[] = [];
     let counted = -Infinity;
@@ -151,6 +190,7 @@ export function marketPriceChartOption(
     const hasNew = points.some((point) => point.newCount !== null && point.newCount !== undefined);
     const hasSales = points.some((point) => point.likelySales !== undefined);
     const hasDelisted = points.some((point) => point.removedCount !== undefined);
+    const hasDelistedIqr = rows.some((row) => withIqr(row.delisted));
     const hasAge = hasSoldAge(points);
     const askName = `Min ask (${currency})`;
     const askIqrName = "IQR ask";
@@ -158,6 +198,7 @@ export function marketPriceChartOption(
     const saleName = `Min sold (${currency})`;
     const saleIqrName = "IQR sold";
     const avgSaleName = `Avg sold (${currency})`;
+    const delistedIqrName = "IQR delisted";
     const listingsName = "Total listings";
     const newName = "New listings";
     const salesName = "Likely sold listings";
@@ -193,22 +234,46 @@ export function marketPriceChartOption(
     const askIqr = iqrData(rows, (row) => row.ask);
     // Few hours have enough sales, so the band connects across them, as sale prices do.
     const saleIqr = iqrData(
-        saleRows.filter((row) => withIqr(row.sales) || !row.ask),
+        saleRows.filter((row) => withIqr(row.sales) || !(row.ask || row.delisted)),
         (row) => row.sales,
     );
+    // Delisted prices are sparse too, so their band connects the same way.
+    const delistedIqr = iqrData(
+        rows.filter((row) => withIqr(row.delisted) || !(row.ask || row.sales || row.delisted)),
+        (row) => row.delisted,
+    );
     const average = (price: MergedMarketPrice | null) => price?.mean ?? undefined;
-    const averageSummary = (list: Row[], price: (row: Row) => MergedMarketPrice | null) => ({
-        valueFormatter: (_value: unknown, dataIndex: number) => {
-            const row = list[dataIndex];
-            const value = row && average(price(row));
-            return value === undefined ? "—" : format(row)(value);
-        },
-    });
-    const counts = {
-        xAxisIndex: 1,
-        yAxisIndex: 1,
-        tooltip: { valueFormatter: count },
-    } as const;
+    const counts = { xAxisIndex: 1, yAxisIndex: 1 } as const;
+    const byHour = new Map(points.map((point) => [point.hour * 1000, point]));
+    const hourTooltip = (at: number) => {
+        const time = `${new Date(at).toISOString().slice(0, 16).replace("T", " ")} UTC`;
+        const point = byHour.get(at);
+        const body = point
+            ? `${hourPrices(point, game, display)}${tooltipTable([
+                  [`${marker(ASK_COLOR)}${listingsName}`, count(point.listingCount)],
+                  ...(hasNew
+                      ? [[`${marker(NEW_LISTINGS_COLOR)}${newName}`, count(point.newCount)]]
+                      : []),
+                  ...(hasSales
+                      ? [[`${marker(SALE_COLOR)}${salesName}`, count(point.likelySales ?? 0)]]
+                      : []),
+                  ...(hasDelisted
+                      ? [[`${marker(DELISTED_COLOR)}${delistedName}`, count(delisted(point))]]
+                      : []),
+                  ...(hasAge
+                      ? [
+                            [
+                                `${marker(SOLD_AGE_COLOR)}Avg sold age`,
+                                typeof point.soldAgeSeconds === "number"
+                                    ? soldAge(point.soldAgeSeconds / 3600)
+                                    : "No likely sales",
+                            ],
+                        ]
+                      : []),
+              ])}`
+            : "No observations";
+        return `<div style="margin-bottom:6px;font-weight:600">${time}</div>${body}`;
+    };
     const time = {
         type: "time",
         min: points[0]!.hour * 1000,
@@ -256,6 +321,15 @@ export function marketPriceChartOption(
                 saleName,
                 { name: saleIqrName, icon: "rect", itemStyle: { color: SALE_COLOR, opacity: 0.3 } },
                 avgSaleName,
+                ...(hasDelistedIqr
+                    ? [
+                          {
+                              name: delistedIqrName,
+                              icon: "rect",
+                              itemStyle: { color: DELISTED_COLOR, opacity: 0.3 },
+                          },
+                      ]
+                    : []),
                 listingsName,
                 ...(hasNew ? [newName] : []),
                 ...(hasSales ? [salesName] : []),
@@ -263,7 +337,18 @@ export function marketPriceChartOption(
                 ...(hasAge ? [ageName] : []),
             ],
         },
-        tooltip: { trigger: "axis" },
+        tooltip: {
+            trigger: "axis",
+            confine: true,
+            padding: 8,
+            // Each panel snaps to its own nearest data, so one hour is read for all of them: the
+            // count panel's, which has every observed hour.
+            formatter: (params) => {
+                const axes = [params].flat() as { axisIndex?: number; axisValue?: number }[];
+                const axis = axes.find(({ axisIndex }) => axisIndex === 1) ?? axes[0];
+                return hourTooltip(Number(axis?.axisValue));
+            },
+        },
         axisPointer: { link: [{ xAxisIndex: "all" }] },
         // The date range: drag the slider's handles, or scroll and drag on the chart.
         dataZoom: [
@@ -303,6 +388,9 @@ export function marketPriceChartOption(
                 : []),
         ],
         series: [
+            ...(hasDelistedIqr
+                ? iqrBand(delistedIqrName, DELISTED_COLOR, delistedIqr.low, delistedIqr.width)
+                : []),
             ...iqrBand(saleIqrName, SALE_COLOR, saleIqr.low, saleIqr.width),
             ...iqrBand(askIqrName, ASK_COLOR, askIqr.low, askIqr.width),
             {
@@ -312,7 +400,6 @@ export function marketPriceChartOption(
                 data: saleRows.map((row) => [row.at, plot(row, average(row.sales))]),
                 symbolSize: 4,
                 lineStyle: { width: 1.5, type: "dashed" },
-                tooltip: averageSummary(saleRows, (row) => row.sales),
             },
             {
                 type: "line",
@@ -321,7 +408,6 @@ export function marketPriceChartOption(
                 data: rows.map((row) => [row.at, plot(row, average(row.ask))]),
                 symbolSize: 4,
                 lineStyle: { width: 1.5, type: "dashed" },
-                tooltip: averageSummary(rows, (row) => row.ask),
             },
             {
                 type: "line",
@@ -330,13 +416,6 @@ export function marketPriceChartOption(
                 data: saleRows.map((row) => [row.at, plot(row, row.sales?.min)]),
                 symbolSize: 6,
                 lineStyle: { width: 1.5 },
-                tooltip: {
-                    valueFormatter: (_value, dataIndex) =>
-                        saleSummary(
-                            saleRows[dataIndex]?.sales ?? null,
-                            format(saleRows[dataIndex]),
-                        ),
-                },
             },
             {
                 type: "line",
@@ -345,10 +424,6 @@ export function marketPriceChartOption(
                 data: rows.map((row) => [row.at, plot(row, row.ask?.min)]),
                 symbolSize: 5,
                 lineStyle: { width: 2.5 },
-                tooltip: {
-                    valueFormatter: (_value, dataIndex) =>
-                        askSummary(rows[dataIndex]?.ask ?? null, format(rows[dataIndex])),
-                },
             },
             {
                 ...counts,
@@ -409,12 +484,6 @@ export function marketPriceChartOption(
                               at,
                               point ? point.soldAgeSeconds! / 3600 : null,
                           ]),
-                          tooltip: {
-                              valueFormatter: (value: unknown) =>
-                                  value === null || value === undefined
-                                      ? "No likely sales"
-                                      : soldAge(Number(value)),
-                          },
                       } as const,
                   ]
                 : []),
@@ -440,7 +509,7 @@ export function MarketPriceChart({ points, game }: { points: Point[]; game: Game
     return (
         <EChart
             option={option}
-            label={`Hourly lowest and average asking and likely sale prices in ${currency} across all listing currencies, with their interquartile ranges shaded in hours with more than ${MARKET_IQR_MIN_COUNT} observations. Below, total, new, likely sold and delisted listings per hour, and the average age of likely sales. Gaps indicate no observations.`}
+            label={`Hourly lowest and average asking and likely sale prices in ${currency} across all listing currencies, with their and delisted listings' interquartile ranges shaded in hours with more than ${MARKET_IQR_MIN_COUNT} observations. Below, total, new, likely sold and delisted listings per hour, and the average age of likely sales. Gaps indicate no observations.`}
             className={hasSoldAge(points) ? "h-[36rem]" : "h-[26rem]"}
         />
     );

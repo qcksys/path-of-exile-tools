@@ -2025,9 +2025,11 @@ it("delivers inferred sales through HTTP and exposes season-isolated price histo
         likelySales: 1,
         prices: { divine: { count: 4, median: 10, mean: 10, p10: 10, p90: 10 } },
         salesPrices: { divine: { median: 10 } },
+        delistedPrices: {},
         // History merges into chaos, and this league has no divine exchange rate to convert at.
         merged: null,
         mergedSales: null,
+        mergedDelisted: null,
         priceRates: { chaos: 1 },
     });
     expect((await getMarketData(database, { ...filters, league: "Other Season" })).rows).toEqual(

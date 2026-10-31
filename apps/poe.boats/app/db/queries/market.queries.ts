@@ -775,6 +775,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 ...row,
                 merged: mergeMarketPrices(row.prices, rate),
                 mergedSales: mergeMarketPrices(row.salesPrices, rate),
+                mergedDelisted: mergeMarketPrices(row.delistedPrices, rate),
                 priceRates: marketPriceRates(rates, game, row.hour),
             };
         }),
@@ -1589,7 +1590,8 @@ async function marketDisplayCurrencyRate(
 async function marketChaosRates(
     db: TDatabase,
     filters: Pick<MarketFilters, "realm" | "league" | "currency">,
-    observations: Pick<TStashUniqueHourlyS, "prices" | "salesPrices">[],
+    observations: (Pick<TStashUniqueHourlyS, "prices" | "salesPrices"> &
+        Partial<Pick<TStashUniqueHourlyS, "delistedPrices">>)[],
     hours: number[],
 ) {
     if (!hours.length) return new Map<number, Map<string, number>>();
@@ -1601,6 +1603,7 @@ async function marketChaosRates(
             ...observations.flatMap((row) => [
                 ...Object.keys(row.prices ?? {}),
                 ...Object.keys(row.salesPrices ?? {}),
+                ...Object.keys(row.delistedPrices ?? {}),
             ]),
         ]),
     ];

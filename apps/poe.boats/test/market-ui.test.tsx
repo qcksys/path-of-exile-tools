@@ -61,6 +61,22 @@ function tooltipValue(option: ChartOption, index: number, value: number | null, 
     return valueFormatter!(value as number, dataIndex);
 }
 
+/** A price chart's tooltip as text for the hovered hour, with its cells split by ` | `. */
+function hourTooltip(option: ChartOption, hour: number) {
+    const { formatter } = option.tooltip as unknown as {
+        formatter: (params: { axisIndex: number; axisValue: number }[]) => string;
+    };
+    return formatter([
+        // Other panels snap to their own nearest data, which must not change the hour shown.
+        { axisIndex: 2, axisValue: 1 },
+        { axisIndex: 1, axisValue: hour * 1000 },
+    ])
+        .replace(/<\/(td|div|tr)>/g, " | ")
+        .replace(/<[^>]+>/g, "")
+        .replace(/( \| )+/g, " | ")
+        .replace(/ \| $/, "");
+}
+
 /** A price chart's numeric axis labels above its count panel, which starts at 70% of the height. */
 function axisLabels(svg: string) {
     return [...svg.matchAll(/<text[^>]*translate\([\d.]+ ([\d.]+)\)[^>]*>([\d.,]+)<\/text>/g)]
@@ -215,10 +231,6 @@ describe("market browsing", () => {
         ]);
         const line = renderSvg(option).match(/<path d="([^"]*)"[^>]*stroke-width="2.5"/)![1]!;
         expect(line.match(/M/g)).toHaveLength(2);
-        expect(tooltipValue(option, lowestAsk, 15, 1)).toBe(
-            "15 chaos (lowest of 1 listings, median 30 chaos)",
-        );
-        expect(tooltipValue(option, lowestAsk, null, 2)).toBe("No listings");
         expect(
             renderToStaticMarkup(<MarketPriceChart points={[point(3600, flat(10))]} game="poe1" />),
         ).toContain("Hourly lowest and average asking and likely sale prices in chaos");
@@ -246,8 +258,96 @@ describe("market browsing", () => {
         expect(Math.min(...labels)).toBeLessThanOrEqual(4);
         expect(Math.max(...labels)).toBeGreaterThanOrEqual(15);
         expect(Math.max(...labels)).toBeLessThan(100);
-        expect(tooltipValue(option, lowestSale, 10, 0)).toBe(
-            "10 chaos (lowest of 9 likely sales, median 10 chaos, interquartile 5 chaos–15 chaos, 2 without an exchange rate)",
+    });
+    it("shows one hour's prices and counts in one compact tooltip", () => {
+        const sale = many({ ...flat(10), p25: 5, p75: 15, mean: 11 });
+        const option = marketPriceChartOption(
+            [
+                {
+                    ...point(3600, many({ ...flat(20), p25: 18, p75: 30, mean: 24 }, 40), {
+                        ...sale,
+                        unconverted: 2,
+                    }),
+                    mergedDelisted: many(flat(50), 8),
+                    listingCount: 40,
+                    newCount: null,
+                    likelySales: 9,
+                    removedCount: 13,
+                    relistedCount: 1,
+                    pendingCount: 1,
+                    soldAgeSeconds: 345_600,
+                    priceRates: { chaos: 1, divine: 1 / 200 },
+                },
+                {
+                    ...point(7200, null),
+                    newCount: 3,
+                    likelySales: 0,
+                    removedCount: 0,
+                    soldAgeSeconds: null,
+                },
+                point(14400, flat(5)),
+            ],
+            "poe1",
+        )!;
+        expect(hourTooltip(option, 3600)).toBe(
+            [
+                "1970-01-01 01:00 UTC",
+                "Min | Median | IQR | Avg | Count",
+                "Ask | 20 | 20 | 18–30 | 24 | 40",
+                "Sold | 10 | 10 | 5–15 | 11 | 9",
+                // Too few observations for an interquartile range.
+                "Delisted | 50 | 50 | — | 50 | 8",
+                "Prices in chaos · 1 divine ≈ 200 chaos · 2 without an exchange rate",
+                "Total listings | 40",
+                "New listings | Not recorded",
+                "Likely sold listings | 9",
+                "Delisted | 2",
+                "Avg sold age | 4 days",
+            ].join(" | "),
+        );
+        // An hour with counts but no prices has no price table.
+        expect(hourTooltip(option, 7200)).toBe(
+            [
+                "1970-01-01 02:00 UTC",
+                "Total listings | 1",
+                "New listings | 3",
+                "Likely sold listings | 0",
+                "Delisted | 0",
+                "Avg sold age | No likely sales",
+            ].join(" | "),
+        );
+        // The row that breaks the lines across hours without observations.
+        expect(hourTooltip(option, 10800)).toBe("1970-01-01 03:00 UTC | No observations");
+        expect(option.tooltip).toMatchObject({ trigger: "axis", confine: true });
+    });
+    it("reads an hour's tooltip prices in the value display", () => {
+        const points = [
+            point(3600, flat(5), null, { chaos: 1 }),
+            point(7200, flat(500), flat(50), { chaos: 1, divine: 0.01 }),
+            point(10800, flat(5), null, { chaos: 1, divine: 0.005 }),
+        ];
+        const adaptive = marketPriceChartOption(points, "poe1")!;
+        expect(hourTooltip(adaptive, 3600)).toContain(
+            "Ask | 5 | 5 | — | 5 | 1 | Prices in chaos |",
+        );
+        // One currency for the whole hour, chosen from its typical price.
+        expect(hourTooltip(adaptive, 7200)).toContain(
+            "Ask | 5 | 5 | — | 5 | 1 | Sold | 0.5 | 0.5 | — | 0.5 | 1 | Prices in divine · 1 divine ≈ 100 chaos |",
+        );
+        expect(hourTooltip(adaptive, 10800)).toContain("Prices in chaos · 1 divine ≈ 200 chaos |");
+        const divine = marketPriceChartOption(points, "poe1", "divine")!;
+        expect(hourTooltip(divine, 10800)).toContain(
+            "Ask | 0.025 | 0.025 | — | 0.025 | 1 | Prices in divine · 1 divine ≈ 200 chaos |",
+        );
+        // Without a rate to the display, the hour stays in the exchange unit.
+        expect(hourTooltip(divine, 3600)).toContain("Prices in chaos |");
+        // Large prices shorten, so the table still fits a phone.
+        const large = marketPriceChartOption(
+            [point(3600, many({ ...flat(276_069.85), p25: 335_227.68, p75: 473_262.6 }))],
+            "poe1",
+        )!;
+        expect(hourTooltip(large, 3600)).toContain(
+            "Ask | 276.1K | 276.1K | 335.2K–473.3K | 276.1K | 9",
         );
     });
     it("shades an ask interquartile range only above 8 listings", () => {
@@ -274,12 +374,8 @@ describe("market browsing", () => {
                 [10800_000, 6],
             ],
         });
-        expect(tooltipValue(option, lowestAsk, 10, 0)).toBe(
-            "10 chaos (lowest of 8 listings, median 10 chaos)",
-        );
-        expect(tooltipValue(option, lowestAsk, 10, 1)).toBe(
-            "10 chaos (lowest of 9 listings, median 10 chaos, interquartile 8 chaos–14 chaos)",
-        );
+        expect(hourTooltip(option, 3600)).toContain("Ask | 10 | 10 | — | 10 | 8");
+        expect(hourTooltip(option, 7200)).toContain("Ask | 10 | 10 | 8–14 | 10 | 9");
     });
     it("connects the sold interquartile band across hours with too few sales", () => {
         const sale = many({ ...flat(10), p25: 8, p75: 14 });
@@ -318,8 +414,8 @@ describe("market browsing", () => {
                 [7200_000, null],
             ],
         });
-        expect(tooltipValue(option, 5, 30, 0)).toBe("30 chaos");
-        expect(tooltipValue(option, 5, null, 1)).toBe("—");
+        expect(hourTooltip(option, 3600)).toContain("Ask | 10 | 10 | — | 30 | 1");
+        expect(hourTooltip(option, 7200)).toContain("Ask | 10 | 10 | — | — | 1");
         expect((option.legend as { selected: unknown }).selected).toEqual({
             "Avg ask (chaos)": false,
         });
@@ -341,6 +437,88 @@ describe("market browsing", () => {
             (entry) => entry.name === "Delisted",
         )!;
         expect(delisted).toMatchObject({ yAxisIndex: 2, data: [[3600_000, 4]] });
+    });
+    it("shades a delisted interquartile range only above 8 delisted listings", () => {
+        const price = { ...flat(10), p25: 8, p75: 14 };
+        const option = marketPriceChartOption(
+            [
+                { ...point(3600, flat(5)), mergedDelisted: many(price, 9), removedCount: 9 },
+                // Too few to shade, so the band connects across this hour.
+                { ...point(7200, flat(5)), mergedDelisted: many(price, 8), removedCount: 8 },
+                { ...point(10800, flat(5)), mergedDelisted: many(price, 12), removedCount: 12 },
+                // Hours without observations still break the band.
+                { ...point(18000, flat(5)), mergedDelisted: many(price, 9), removedCount: 9 },
+            ],
+            "poe1",
+        )!;
+        expect(series(option, 0)).toMatchObject({
+            name: "IQR delisted",
+            color: "var(--chart-5)",
+            data: [
+                [3600_000, 8],
+                [10800_000, 8],
+                [14400_000, null],
+                [18000_000, 8],
+            ],
+        });
+        expect(series(option, 1)).toMatchObject({
+            name: "IQR delisted",
+            stack: series(option, 0).stack,
+            data: [
+                [3600_000, 6],
+                [10800_000, 6],
+                [14400_000, null],
+                [18000_000, 6],
+            ],
+        });
+        expect((option.legend as { data: unknown[] }).data).toContainEqual(
+            expect.objectContaining({
+                name: "IQR delisted",
+                itemStyle: { color: "var(--chart-5)", opacity: 0.3 },
+            }),
+        );
+        expect(hourTooltip(option, 3600)).toContain("Delisted | 10 | 10 | 8–14 | 10 | 9");
+        expect(hourTooltip(option, 7200)).toContain("Delisted | 10 | 10 | — | 10 | 8");
+    });
+    it("leaves out the delisted band when no hour has enough delisted listings", () => {
+        const option = marketPriceChartOption(
+            [{ ...point(3600, flat(5)), mergedDelisted: many(flat(10), 8) }],
+            "poe1",
+        )!;
+        expect((option.series as LineSeriesOption[]).map((entry) => entry.name)).not.toContain(
+            "IQR delisted",
+        );
+        expect((option.legend as { data: unknown[] }).data).not.toContainEqual(
+            expect.objectContaining({ name: "IQR delisted" }),
+        );
+    });
+    it("charts an hour whose only prices are delisted without breaking the sold line", () => {
+        const option = marketPriceChartOption(
+            [
+                point(3600, flat(5), flat(6)),
+                { ...point(7200, null), mergedDelisted: many(flat(10), 9) },
+                point(10800, flat(5), flat(7)),
+            ],
+            "poe1",
+        )!;
+        const named = (name: string) =>
+            (option.series as LineSeriesOption[]).find((entry) => entry.name === name)!;
+        expect(named("Min sold (chaos)").data).toEqual([
+            [3600_000, 6],
+            [10800_000, 7],
+        ]);
+        expect(named("Min ask (chaos)").data).toEqual([
+            [3600_000, 5],
+            [7200_000, null],
+            [10800_000, 5],
+        ]);
+        expect(series(option, 0).data).toEqual([[7200_000, 10]]);
+        expect(
+            marketPriceChartOption(
+                [{ ...point(3600, null), mergedDelisted: many(flat(10), 9) }],
+                "poe1",
+            ),
+        ).not.toBeNull();
     });
     it("plots the likely sales' average age in hours in its own panel", () => {
         const option = marketPriceChartOption(
@@ -370,8 +548,8 @@ describe("market browsing", () => {
                 [18000_000, 1],
             ],
         });
-        expect(tooltipValue(option, index, 2)).toBe("2 hours");
-        expect(tooltipValue(option, index, 96)).toBe("4 days");
+        expect(hourTooltip(option, 3600)).toContain("Avg sold age | 2 hours");
+        expect(hourTooltip(option, 10800)).toContain("Avg sold age | 4 days");
         expect(renderSvg(option)).toContain("<path");
     });
     it("charts an exchange item's lowest rate and estimated IQR beside its value", () => {
@@ -446,11 +624,8 @@ describe("market browsing", () => {
             [14400_000, null],
             [18000_000, 14],
         ]);
-        expect(tooltipValue(option, lowestSale, 12, 1)).toBe(
-            "12 chaos (lowest of 1 likely sales, median 12 chaos)",
-        );
     });
-    it("shows each hour's prices in the value display at that hour's rates", () => {
+    it("plots each hour's prices in the value display at that hour's rates", () => {
         const points = [
             point(3600, flat(5), null, { chaos: 1 }),
             point(7200, flat(500), null, { chaos: 1, divine: 0.01 }),
@@ -462,15 +637,6 @@ describe("market browsing", () => {
             [7200_000, 500],
             [10800_000, 5],
         ]);
-        expect(tooltipValue(adaptive, lowestAsk, 5, 0)).toBe(
-            "5 chaos (lowest of 1 listings, median 5 chaos)",
-        );
-        expect(tooltipValue(adaptive, lowestAsk, 5, 1)).toBe(
-            "5 divine ≈ 500 chaos (lowest of 1 listings, median 5 divine ≈ 500 chaos)",
-        );
-        expect(tooltipValue(adaptive, lowestAsk, 5, 2)).toBe(
-            "5 chaos ≈ 0.025 divine (lowest of 1 listings, median 5 chaos ≈ 0.025 divine)",
-        );
         // In divine, each hour converts at its own rate; an hour without one leaves a gap.
         const divine = marketPriceChartOption(points, "poe1", "divine")!;
         expect(series(divine, lowestAsk)).toMatchObject({
@@ -481,9 +647,6 @@ describe("market browsing", () => {
                 [10800_000, 0.025],
             ],
         });
-        expect(tooltipValue(divine, lowestAsk, 0.025, 2)).toBe(
-            "0.025 divine (lowest of 1 listings, median 0.025 divine)",
-        );
     });
     it("colours likely sales apart from the lowest ask", () => {
         const option = marketPriceChartOption([point(3600, flat(5), flat(6))], "poe1")!;
@@ -586,8 +749,7 @@ describe("market browsing", () => {
                 [18000_000, 0],
             ],
         });
-        expect(tooltipValue(option, 9, null)).toBe("Not recorded");
-        expect(tooltipValue(option, 10, 1200)).toBe("1,200");
+        expect(hourTooltip(option, 3600)).toContain("New listings | Not recorded");
         expect(renderSvg(option)).toContain("<path");
     });
     it("leaves out new listings and likely sales a market does not record", () => {

@@ -1640,6 +1640,8 @@ it("merges every listing currency into chaos through same-league rates, whatever
                 },
                 fragment: { count: 4, min: 1, median: 1, max: 1 },
             },
+            // No listing or sale is in divine this hour, so only delisted prices ask for its rate.
+            delistedPrices: { divine: { count: 9, min: 1, median: 1, max: 1 } },
         }),
         observation({
             league: "Merged",
@@ -1657,6 +1659,10 @@ it("merges every listing currency into chaos through same-league rates, whatever
         { count: 2, unconverted: 4, min: 300, median: 300, max: 300, mean: null },
         // An hour without its own exchange observation reuses the previous hour's rate.
         { count: 1, unconverted: 0, median: 450 },
+    ]);
+    expect(inChaos.history.map((row) => row.mergedDelisted)).toMatchObject([
+        { count: 9, unconverted: 0, median: 150 },
+        null,
     ]);
     expect(inChaos.history.map((row) => row.priceRates)).toEqual([
         { chaos: 1, divine: 1 / 150 },
