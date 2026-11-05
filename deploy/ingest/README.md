@@ -90,6 +90,10 @@ B2_PREFIX=psapi/pc/
 The secret file must exist before this Compose file is installed, even while upload is off.
 Without `B2_KEY_ID` the worker still archives raw pages locally.
 
+Both workers also archive every exchange digest they fetch in `/backups/raw/cxapi`, uploaded below
+`$B2_PREFIX` as `cxapi/<YYYY>/<MM>/<DD>/<HH>.ndjson.zst`. The `poe2` worker reads the same key file;
+give `config/poe2.env` the same `B2_*` lines with its own prefix, such as `B2_PREFIX=poe2/`.
+
 The `pc-capture` service runs the [separate capture process](../../packages/poe-stash-ingest/README.md#separate-capture-process).
 It holds the stream cursor and seals and uploads raw hours; the `pc` worker reads the archive with
 `PS_SEPARATE_CAPTURE=true`. The updater replaces it with the other services and `--wait` checks its

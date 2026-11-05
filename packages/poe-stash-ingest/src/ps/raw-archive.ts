@@ -16,13 +16,15 @@ import { createInterface } from "node:readline";
 import { pipeline } from "node:stream/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 import { constants, createZstdCompress, createZstdDecompress } from "node:zlib";
-import type { PublicStashPage } from "@poe-tools/api-client";
+import type { CurrencyExchangeSnapshot, PublicStashPage } from "@poe-tools/api-client";
 
 /**
  * Every fetched psapi page, unfiltered, as one NDJSON line per page:
  * `{"capturedAt":<ms>,"cursor":<requested id>,"sha256":<of page JSON>,"page":<page>}`.
  * Lines append to `spool/<hour>.ndjson`; each finished UTC hour is sealed into
  * `<YYYY>/<MM>/<DD>/<HH>.ndjson.zst` with a `.json` manifest, then uploaded to B2.
+ * Exchange digests use the same format in the `cxapi` subdirectory, with the digest's hour as the
+ * cursor and the digest as the page.
  */
 
 export interface B2Options {
@@ -74,6 +76,7 @@ export class RawArchiveError extends Error {}
 export const RAW_POSITION_STREAM = "psapi-raw";
 
 const SPOOL = "spool";
+const EXCHANGE_DIR = "cxapi";
 const PAGE_FIELD = ',"page":';
 // Level 19 with a 128 MB window measured within 3% of a 2 GB window, and default decoders
 // accept a 128 MB window without extra flags.
@@ -98,6 +101,14 @@ export function rawArchiveSettings(env = process.env): RawArchiveOptions | undef
             bucketName: env.B2_BUCKET,
             prefix: env.B2_PREFIX ?? "",
         },
+    };
+}
+
+/** The exchange digest archive: a subdirectory of the raw archive, uploaded below its prefix. */
+export function exchangeArchiveOptions(raw: RawArchiveOptions): RawArchiveOptions {
+    return {
+        dir: join(raw.dir, EXCHANGE_DIR),
+        ...(raw.b2 && { b2: { ...raw.b2, prefix: `${raw.b2.prefix}${EXCHANGE_DIR}/` } }),
     };
 }
 
@@ -146,17 +157,25 @@ async function trimPartialLine(path: string) {
 }
 
 /** Appends one fetched page and syncs it to disk before returning. */
-export async function appendRawPage(
+export function appendRawPage(
     dir: string,
     entry: { capturedAt: number; cursor?: string; page: PublicStashPage },
 ) {
-    const pageJson = JSON.stringify(entry.page);
-    const header = JSON.stringify({
-        capturedAt: entry.capturedAt,
-        cursor: entry.cursor ?? null,
-        sha256: digest("sha256", pageJson),
-    });
-    const path = join(dir, SPOOL, `${hourKey(entry.capturedAt)}.ndjson`);
+    return appendRecord(dir, entry.capturedAt, entry.cursor ?? null, entry.page);
+}
+
+/** Appends one fetched exchange digest to the archive `exchangeArchiveOptions` names. */
+export function appendExchangeDigest(
+    dir: string,
+    entry: { capturedAt: number; hour: number; digest: CurrencyExchangeSnapshot },
+) {
+    return appendRecord(dir, entry.capturedAt, String(entry.hour), entry.digest);
+}
+
+async function appendRecord(dir: string, capturedAt: number, cursor: string | null, page: object) {
+    const pageJson = JSON.stringify(page);
+    const header = JSON.stringify({ capturedAt, cursor, sha256: digest("sha256", pageJson) });
+    const path = join(dir, SPOOL, `${hourKey(capturedAt)}.ndjson`);
     await mkdir(dirname(path), { recursive: true });
     await trimPartialLine(path);
     const fh = await open(path, "a");
@@ -309,10 +328,11 @@ export async function sealRawHours(dir: string, now = Date.now()): Promise<RawMa
     return sealed;
 }
 
+/** Sealed hours directly below `dir`; the exchange archive's subdirectory is not one of them. */
 async function sealedHours(dir: string) {
     const names = await readdir(dir, { recursive: true }).catch(() => [] as string[]);
     return names
-        .filter((name) => name.endsWith(".ndjson.zst.json") && !name.startsWith(SPOOL))
+        .filter((name) => /^\d{4}[\\/]\d{2}[\\/]\d{2}[\\/]\d{2}\.ndjson\.zst\.json$/.test(name))
         .map((name) => join(dir, name.slice(0, -".json".length)))
         .sort();
 }

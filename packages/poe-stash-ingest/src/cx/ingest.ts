@@ -1,6 +1,7 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import type { PoeApiClient } from "@poe-tools/api-client";
 import { exchangeMarketTracked, marketLeagueTracked } from "@poe-tools/market";
+import { appendExchangeDigest } from "#src/ps/raw-archive.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
 import { withTransaction } from "#src/shared/db.ts";
@@ -33,6 +34,8 @@ export async function ingestCx(
         catchUp: boolean;
         league?: string | null;
         maxHours?: number;
+        /** Keeps every fetched digest, unfiltered, in this exchange archive directory. */
+        archiveDir?: string;
         onProgress?: (result: CxIngestResult) => Promise<void>;
     },
 ): Promise<CxIngestResult[]> {
@@ -50,6 +53,12 @@ export async function ingestCx(
     while (true) {
         if (id > previousHour()) break;
         const snap = await client.public.currencyExchange({ realm: REALM, id });
+        if (opts.archiveDir)
+            await appendExchangeDigest(opts.archiveDir, {
+                capturedAt: Date.now(),
+                hour: id,
+                digest: snap,
+            });
         // Every league is kept, whatever the database's season, so the feed's history survives here.
         const markets = snap.markets.filter(
             (market) =>

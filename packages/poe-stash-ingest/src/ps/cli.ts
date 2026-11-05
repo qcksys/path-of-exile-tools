@@ -267,13 +267,20 @@ program
 program
     .command("raw-archive")
     .description(
-        "Seal finished hours of raw pages in $PS_RAW_ARCHIVE_DIR and upload unsent hours to B2.",
+        "Seal finished hours of raw pages and exchange digests in $PS_RAW_ARCHIVE_DIR and upload unsent hours to B2.",
     )
     .action(async () => {
-        const { maintainRawArchive, rawArchiveSettings } = await import("#src/ps/raw-archive.ts");
+        const { exchangeArchiveOptions, maintainRawArchive, rawArchiveSettings } = await import(
+            "#src/ps/raw-archive.ts"
+        );
         const settings = rawArchiveSettings();
         if (!settings) throw new Error("Set PS_RAW_ARCHIVE_DIR to the raw page archive directory.");
-        console.log(JSON.stringify(await maintainRawArchive(settings)));
+        console.log(
+            JSON.stringify({
+                pages: await maintainRawArchive(settings),
+                exchange: await maintainRawArchive(exchangeArchiveOptions(settings)),
+            }),
+        );
     });
 
 program
@@ -281,14 +288,18 @@ program
     .description("Replay sealed raw pages, checking every file and page checksum.")
     .option("--from <hour>", "first UTC hour, YYYY-MM-DDTHH")
     .option("--to <hour>", "last UTC hour, YYYY-MM-DDTHH")
+    .option("--exchange", "replay the exchange digest archive instead of stash pages")
     .action(async (opts) => {
-        const { replayRawArchive, rawArchiveSettings } = await import("#src/ps/raw-archive.ts");
+        const { exchangeArchiveOptions, replayRawArchive, rawArchiveSettings } = await import(
+            "#src/ps/raw-archive.ts"
+        );
         const settings = rawArchiveSettings();
         if (!settings) throw new Error("Set PS_RAW_ARCHIVE_DIR to the raw page archive directory.");
+        const { dir } = opts.exchange ? exchangeArchiveOptions(settings) : settings;
         let pages = 0;
         let first: number | undefined;
         let last: number | undefined;
-        for await (const record of replayRawArchive(settings.dir, opts)) {
+        for await (const record of replayRawArchive(dir, opts)) {
             pages++;
             first ??= record.capturedAt;
             last = record.capturedAt;
@@ -365,7 +376,9 @@ program
         const { REALM } = await import("#src/shared/auth.ts");
         const { archiveSettings } = await import("#src/shared/archive.ts");
         const archive = archiveSettings();
-        const { rawArchiveSettings } = await import("#src/ps/raw-archive.ts");
+        const { exchangeArchiveOptions, rawArchiveSettings } = await import(
+            "#src/ps/raw-archive.ts"
+        );
         const rawArchive = rawArchiveSettings();
         const separateCapture = process.env.PS_SEPARATE_CAPTURE === "true";
         if (separateCapture && !rawArchive)
@@ -414,6 +427,8 @@ program
                         archive,
                         // The capture process owns sealing and uploading when it is separate.
                         rawArchive: spool ? undefined : rawArchive,
+                        // This worker fetches exchange digests, so it always keeps their archive.
+                        exchangeArchive: rawArchive && exchangeArchiveOptions(rawArchive),
                         spool,
                         leagues: true,
                         currencyFromHour: (await getCursor(db.conn, "cxapi"))

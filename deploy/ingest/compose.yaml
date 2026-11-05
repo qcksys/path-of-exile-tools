@@ -71,6 +71,8 @@ services:
     env_file: ./config/poe2.env
     environment:
       PS_ARCHIVE_DIR: /backups
+      # PoE 2 has no stash stream; this keeps its exchange digests.
+      PS_RAW_ARCHIVE_DIR: /backups/raw
     volumes:
       - ./data/poe2:/data
       - ./backups/poe2:/backups
@@ -79,6 +81,9 @@ services:
         target: poe_client_secret
       - source: poe2_ingest_token
         target: poe_boats_ingest_token
+      # One key per environment's bucket; B2_PREFIX in poe2.env keeps the realms apart.
+      - source: pc_b2_application_key
+        target: b2_application_key
 
 secrets:
   pc_client_secret:

@@ -393,6 +393,15 @@ its SHA-1 (`X-Bz-Content-Sha1`); the file's SHA-256 travels as file info `sha256
 upload URLs are retried with a new one. The manifest records the B2 file ID, so each hour uploads
 once. The local copy is kept; nothing deletes sealed hours.
 
+### Exchange digest archive
+
+With `PS_RAW_ARCHIVE_DIR` set, the `process` worker also keeps every exchange digest it fetches,
+unfiltered, before writing it to DuckDB. Digests use the same line format in `$PS_RAW_ARCHIVE_DIR/cxapi`:
+`cursor` is the digest's unix hour and `page` is the digest. The worker that fetches them seals and
+uploads them with the same step, named `$B2_PREFIXcxapi/<YYYY>/<MM>/<DD>/<HH>.ndjson.zst`, also
+when a separate capture process owns the stash pages. Lines go to the spool hour they were fetched
+in, not the digest's hour, so a backfill lands in the hour it ran.
+
 ### Separate capture process
 
 The stream cannot be read again: an old cursor returns each stash once at its current state, so a
@@ -416,8 +425,9 @@ A new database starts after everything archived. To rebuild one from the archive
 `--raw-from`) to the first UTC hour to read; the setting is ignored once the database has a position.
 Run only one capture process per archive directory.
 
-`poe-stash-ps raw-archive` runs the seal and upload step once. `poe-stash-ps raw-verify [--from
-YYYY-MM-DDTHH] [--to YYYY-MM-DDTHH]` replays sealed hours. Replay (`replayRawArchive` in
+`poe-stash-ps raw-archive` runs the seal and upload step once for both archives. `poe-stash-ps
+raw-verify [--from YYYY-MM-DDTHH] [--to YYYY-MM-DDTHH] [--exchange]` replays sealed hours of stash
+pages, or of exchange digests with `--exchange`. Replay (`replayRawArchive` in
 `src/ps/raw-archive.ts`) checks each file's SHA-256 against its manifest before reading it, so a
 damaged file yields no pages, and then checks every page's SHA-256 and the page count.
 
@@ -448,7 +458,7 @@ poe-stash-ps basemap                                  # rebuild icon → name fr
 poe-stash-ps cursor   [--set <id>]                    # show or overwrite the saved cursor
 poe-stash-ps prune    [--max-rows N] [--keep-days N] [--dry-run]
 poe-stash-ps raw-archive                              # seal finished raw hours, upload to B2
-poe-stash-ps raw-verify [--from <hour>] [--to <hour>] # replay and check sealed raw hours
+poe-stash-ps raw-verify [--from <hour>] [--to <hour>] [--exchange] # replay and check sealed raw hours
 ```
 
 #### Capture rule
