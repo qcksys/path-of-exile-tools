@@ -4,9 +4,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { createClient } from "../../../packages/poe-api-client/src/client";
+import type { CurrencyExchangeSnapshot } from "../../../packages/poe-api-client/src/types";
+import { ingestCx } from "../../../packages/poe-stash-ingest/src/cx/ingest";
 import { ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest";
 import {
+    appendExchangeDigest,
     appendRawPage,
+    exchangeArchiveOptions,
     RawArchiveError,
     type RawManifest,
     replayRawArchive,
@@ -226,4 +230,78 @@ it("keeps every fetched page, unfiltered, before live capture processes it", asy
     const record = JSON.parse(line!);
     expect(record).toMatchObject({ cursor: "start", page: fetched });
     expect(record.capturedAt).toBeGreaterThan(Date.now() - 60_000);
+});
+
+const exchangeHour = Date.UTC(2026, 9, 28, 9) / 1000;
+const digest = (league: string): CurrencyExchangeSnapshot => ({
+    next_change_id: exchangeHour + 3600,
+    markets: [
+        {
+            league,
+            market_id: "chaos|divine",
+            lowest_ratio: { chaos: 100, divine: 1 },
+            highest_ratio: { chaos: 110, divine: 1 },
+            volume_traded: { chaos: 1000, divine: 10 },
+            lowest_stock: { chaos: 100, divine: 1 },
+            highest_stock: { chaos: 1000, divine: 10 },
+        },
+    ],
+});
+
+it("keeps every fetched exchange digest, unfiltered, before writing it to the database", async () => {
+    const db = await openDb(":memory:");
+    const client = createClient({ userAgent: "raw-archive-test", token: "inert" });
+    const fetched = {
+        ...digest("Standard"),
+        markets: [...digest("Standard").markets, ...digest("Other").markets],
+    };
+    vi.spyOn(client.public, "currencyExchange").mockResolvedValue(fetched);
+    const exchange = exchangeArchiveOptions({ dir });
+    try {
+        await ingestCx(db.conn, client, {
+            fromHour: exchangeHour,
+            catchUp: false,
+            league: "Standard",
+            archiveDir: exchange.dir,
+        });
+    } finally {
+        await db.close();
+    }
+    await sealRawHours(exchange.dir, Date.now() + 2 * 3_600_000);
+    const records = [];
+    for await (const record of replayRawArchive(exchange.dir)) records.push(record);
+    expect(records).toEqual([
+        { capturedAt: expect.any(Number), cursor: String(exchangeHour), page: fetched },
+    ]);
+});
+
+it("seals and uploads exchange digests below the raw archive, apart from its stash pages", async () => {
+    const exchange = exchangeArchiveOptions({ dir, b2 });
+    expect(exchange).toEqual({
+        dir: join(dir, "cxapi"),
+        b2: { ...b2, prefix: "psapi/pc/cxapi/" },
+    });
+    await appendRawPage(dir, { capturedAt: hour(10), page: page("a") });
+    await appendExchangeDigest(exchange.dir, {
+        capturedAt: hour(10, 5),
+        hour: exchangeHour,
+        digest: digest("Standard"),
+    });
+    expect((await sealRawHours(exchange.dir, hour(11))).map((m) => m.hour)).toEqual([
+        "2026-10-28T10",
+    ]);
+    await sealRawHours(dir, hour(11));
+
+    expect((await collect()).map((r) => r.page)).toEqual([page("a")]);
+    const names: string[] = [];
+    const fetchFn = fakeB2((headers) => {
+        names.push(headers.get("x-bz-file-name")!);
+        return Response.json({ fileId: "file", contentSha1: headers.get("x-bz-content-sha1") });
+    });
+    await uploadRawHours(dir, b2, { fetch: fetchFn, retryDelayMs: 0 });
+    await uploadRawHours(exchange.dir, exchange.b2!, { fetch: fetchFn, retryDelayMs: 0 });
+    expect(names).toEqual([
+        "psapi/pc/2026/10/28/10.ndjson.zst",
+        "psapi/pc/cxapi/2026/10/28/10.ndjson.zst",
+    ]);
 });

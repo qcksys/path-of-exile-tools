@@ -174,6 +174,8 @@ export async function runPipeline(
         currencyHours?: number;
         archive?: ArchiveOptions;
         rawArchive?: RawArchiveOptions;
+        /** Keeps, seals and uploads every fetched exchange digest, like `rawArchive` pages. */
+        exchangeArchive?: RawArchiveOptions;
         /** Deliver the realm's league list to poe.boats, at most hourly. */
         leagues?: boolean;
         /** Read pages a capture process archived instead of fetching them. */
@@ -249,6 +251,7 @@ export async function runPipeline(
                   maxHours: opts.currencyHours,
                   fromHour: opts.currencyFromHour,
                   league: opts.league,
+                  archiveDir: opts.exchangeArchive?.dir,
                   onProgress: async (result) => {
                       await update({ currencyNextHour: result.nextHour, progressAt: Date.now() });
                   },
@@ -339,27 +342,35 @@ export async function runPipeline(
             (error: unknown) => failStage("delivery", "Archive", error),
         );
     }
-    if (opts.rawArchive) {
+    const rawArchives = [
+        { name: "Raw page archive", archive: opts.rawArchive },
+        { name: "Exchange digest archive", archive: opts.exchangeArchive },
+    ].flatMap(({ name, archive }) => (archive ? [{ name, archive }] : []));
+    if (rawArchives.length) {
         if (rawMaintenanceError !== undefined) {
             const error = rawMaintenanceError;
             rawMaintenanceError = undefined;
-            await failStage("delivery", "Raw page archive", error);
+            await failStage("delivery", "Raw archive", error);
         }
         if (!rawMaintenanceRunning) {
             rawMaintenanceRunning = true;
-            void maintainRawArchive(opts.rawArchive)
-                .then((result) => {
-                    if (result.sealed.length || result.uploaded)
-                        console.log(
-                            `raw archive: sealed ${result.sealed.join(", ") || "none"}; uploaded ${result.uploaded}`,
-                        );
-                })
-                .catch((error: unknown) => {
-                    rawMaintenanceError = error;
-                })
-                .finally(() => {
-                    rawMaintenanceRunning = false;
-                });
+            void (async () => {
+                // One archive's failure must not stop the other's sealing and upload.
+                for (const { name, archive } of rawArchives) {
+                    await maintainRawArchive(archive).then(
+                        (result) => {
+                            if (result.sealed.length || result.uploaded)
+                                console.log(
+                                    `${name}: sealed ${result.sealed.join(", ") || "none"}; uploaded ${result.uploaded}`,
+                                );
+                        },
+                        (error: unknown) => {
+                            rawMaintenanceError ??= new Error(`${name} failed`, { cause: error });
+                        },
+                    );
+                }
+                rawMaintenanceRunning = false;
+            })();
         }
     }
     await update({

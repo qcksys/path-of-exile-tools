@@ -1,9 +1,13 @@
 // biome-ignore-all lint/style/useNamingConvention: Fixtures preserve the upstream API field names.
+import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, it, vi } from "vite-plus/test";
 import { createClient } from "../../../packages/poe-api-client/src/client";
 import { runPipeline } from "../../../packages/poe-stash-ingest/src/pipeline";
 import { reclassifyArchivedEquipment } from "../../../packages/poe-stash-ingest/src/ps/equipment-reclassify";
 import { ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest";
+import { exchangeArchiveOptions } from "../../../packages/poe-stash-ingest/src/ps/raw-archive";
 import { openDb, queryAll } from "../../../packages/poe-stash-ingest/src/shared/db";
 import { push } from "../../../packages/poe-stash-ingest/src/shared/remote/push";
 
@@ -44,10 +48,23 @@ it("processes PoE 2 exchange history without calling the unavailable equipment s
                 },
             ],
         }));
+    const archiveDir = await mkdtemp(join(tmpdir(), "poe2-exchange-archive-"));
+    const exchangeArchive = exchangeArchiveOptions({ dir: archiveDir });
     try {
-        const result = await runPipeline(db.conn, client, { pages: 1, league: "Standard" });
+        const result = await runPipeline(db.conn, client, {
+            pages: 1,
+            league: "Standard",
+            exchangeArchive,
+        });
         expect(result.stash).toBeNull();
         expect(result.currency).toHaveLength(1);
+        const spool = await readdir(join(exchangeArchive.dir, "spool"));
+        const lines = (await readFile(join(exchangeArchive.dir, "spool", spool[0]!), "utf8"))
+            .trim()
+            .split("\n");
+        expect(lines.map((line) => JSON.parse(line).cursor)).toEqual([
+            String(result.currency[0]!.hour),
+        ]);
         expect(stash).not.toHaveBeenCalled();
         expect(reclassifyArchivedEquipment).not.toHaveBeenCalled();
         expect(exchange).toHaveBeenCalledWith({ realm: "poe2", id: expect.any(Number) });
@@ -73,5 +90,6 @@ it("processes PoE 2 exchange history without calling the unavailable equipment s
         expect(stash).not.toHaveBeenCalled();
     } finally {
         await db.close();
+        await rm(archiveDir, { recursive: true, force: true });
     }
 });
