@@ -74,14 +74,37 @@ it("uses existing modifiers' added tags and exclusion groups", () => {
     expect(modPool(base, { candidate: { ...candidate, maximum_level: 10 } }, 20, [])).toEqual([]);
 });
 
-it("handles fragmented discovery data and rejects another game's CDN", () => {
-    const url = "https://patch.poecdn.com/3.29.3.3/";
-    const header = Buffer.alloc(35);
+function handshake(...urls: string[]) {
+    const header = Buffer.alloc(33);
     header[0] = 2;
-    header.writeUInt16BE(url.length, 33);
-    const bytes = Buffer.concat([header, Buffer.from(url, "utf16le")]);
+    return Buffer.concat([
+        header,
+        ...urls.flatMap((url) => {
+            const length = Buffer.alloc(2);
+            length.writeUInt16BE(url.length);
+            return [length, Buffer.from(url, "utf16le")];
+        }),
+    ]);
+}
+
+it("handles fragmented discovery data and rejects another game's CDN", () => {
+    const bytes = handshake("https://patch.poecdn.com/3.29.3.3/");
     for (let size = 0; size < bytes.length; size++)
         expect(parseVersion("poe1", bytes.subarray(0, size))).toBeNull();
     expect(parseVersion("poe1", bytes)).toBe("3.29.3.3");
     expect(() => parseVersion("poe2", bytes)).toThrow("CDN");
+});
+
+it("accepts PoE 2's 0.x and 4.x builds and rejects builds numbered for the other game", () => {
+    const url = "https://patch-poe2.poecdn.com/0.5.5.8/";
+    expect(parseVersion("poe2", handshake(url, url))).toBe("0.5.5.8");
+    expect(parseVersion("poe2", handshake("https://patch-poe2.poecdn.com/4.5.5.4/"))).toBe(
+        "4.5.5.4",
+    );
+    expect(() =>
+        parseVersion("poe2", handshake("https://patch-poe2.poecdn.com/3.29.3.6/")),
+    ).toThrow("Invalid patch version: 3.29.3.6");
+    expect(() => parseVersion("poe1", handshake("https://patch.poecdn.com/0.5.5.8/"))).toThrow(
+        "Invalid patch version: 0.5.5.8",
+    );
 });

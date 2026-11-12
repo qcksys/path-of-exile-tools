@@ -193,6 +193,7 @@ it.each([
     ["3.29.3.3", "3.29.3-build.3"],
     ["4.5.5.4", "4.5.5-build.4"],
     ["4.5.5.4.10", "4.5.5-build.4.10"],
+    ["0.5.5.8", "0.5.5-build.8"],
 ])("maps build %s to version %s", (build, version) =>
     expect(packageVersionForBuild(build)).toBe(version));
 

@@ -28,8 +28,9 @@ export const configSchema = z
     });
 export type Config = z.infer<typeof configSchema>;
 
+// PoE 2 builds were numbered 4.x until GGG switched to the public 0.x version (0.5.5.8, November 2026).
 export function validPatch(game: Game, patch: string) {
-    return new RegExp(`^${game === "poe1" ? 3 : 4}(?:\\.\\d+){2,5}$`).test(patch);
+    return new RegExp(`^${game === "poe1" ? "3" : "[04]"}(?:\\.\\d+){2,5}$`).test(patch);
 }
 
 export async function loadConfig(path: string): Promise<Config> {
