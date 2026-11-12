@@ -2,7 +2,6 @@ import { stat } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { z } from "zod";
 import { readJson } from "./io.ts";
-import { clientBuildMatchesGame } from "./model.ts";
 
 export const gameSchema = z.enum(["poe1", "poe2"]);
 export type Game = z.infer<typeof gameSchema>;
@@ -29,8 +28,9 @@ export const configSchema = z
     });
 export type Config = z.infer<typeof configSchema>;
 
+// PoE 2 builds were numbered 4.x until GGG switched to the public 0.x version (0.5.5.8, November 2026).
 export function validPatch(game: Game, patch: string) {
-    return /^\d+(?:\.\d+){2,5}$/.test(patch) && clientBuildMatchesGame(game, patch);
+    return new RegExp(`^${game === "poe1" ? "3" : "[04]"}(?:\\.\\d+){2,5}$`).test(patch);
 }
 
 export async function loadConfig(path: string): Promise<Config> {

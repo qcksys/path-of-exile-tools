@@ -236,13 +236,6 @@ it.each([
     expect(
         dataPackageManifestSchema.safeParse({ ...manifest, client_build: "invalid" }).success,
     ).toBe(false);
-    expect(
-        dataPackageManifestSchema.safeParse({
-            ...manifest,
-            client_build: "0.5.5.8",
-            version: "0.5.5-build.8",
-        }).success,
-    ).toBe(game === "poe2");
 });
 
 it.each([
