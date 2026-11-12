@@ -132,6 +132,10 @@ export function schemaForDataFile(path: string): z.ZodType {
     throw new Error(`No schema for data file: ${path}`);
 }
 export const clientBuildSchema = z.string().regex(/^(0|[1-9]\d*)(?:\.(0|[1-9]\d*)){2,5}$/);
+// PoE 2 builds were numbered 4.x until GGG switched to the public 0.x version (0.5.5.8, November 2026).
+export function clientBuildMatchesGame(game: "poe1" | "poe2", build: string): boolean {
+    return game === "poe1" ? build.startsWith("3.") : /^[04]\./.test(build);
+}
 export function packageVersionForBuild(build: string): string {
     clientBuildSchema.parse(build);
     const parts = build.split(".");
@@ -181,7 +185,7 @@ export const dataPackageManifestSchema = z
                 path: ["version"],
                 message: "Package version must match the client build",
             });
-        if (!manifest.client_build.startsWith(manifest.game === "poe1" ? "3." : "4."))
+        if (!clientBuildMatchesGame(manifest.game, manifest.client_build))
             ctx.addIssue({
                 code: "custom",
                 path: ["client_build"],

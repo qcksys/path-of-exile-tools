@@ -90,6 +90,9 @@ describe("sources", () => {
             configSchema.safeParse({ poe1: { patch: "3.29.3.3" }, poe2: { patch: "4.5.5.4" } })
                 .success,
         ).toBe(true);
+        expect(configSchema.safeParse({ poe2: { patch: "0.5.5.8" } }).success).toBe(true);
+        expect(configSchema.safeParse({ poe1: { patch: "0.5.5.8" } }).success).toBe(false);
+        expect(configSchema.safeParse({ poe2: { patch: "3.29.3.3" } }).success).toBe(false);
     });
     it("merges inherited tags and rejects cycles", async () => {
         const files: Record<string, string> = {

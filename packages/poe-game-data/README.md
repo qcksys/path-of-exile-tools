@@ -19,7 +19,7 @@ vp run @poe-tools/game-data#extract run --config pipeline.example.json
 
 Use `--help` on any command or add `--interactive` to enter omitted values with Clack. Explicit flags remain suitable for automation; `--no-interactive` disables prompts. See [repository CLI conventions](../poe-cli/README.md).
 
-Vite+ runs this package's scripts from `packages/poe-game-data`, so command paths and the default `data/` output are relative to that directory. `versions` performs a read-only handshake with GGG's patch servers. Copy its result into a config before a new extraction. The example pins the builds verified on 2026-10-02; old CDN versions can disappear.
+Vite+ runs this package's scripts from `packages/poe-game-data`, so command paths and the default `data/` output are relative to that directory. `versions` performs a read-only handshake with GGG's patch servers. Copy its result into a config before a new extraction. The example pins the builds verified on 2026-10-02; old CDN versions can disappear. PoE 2 builds were numbered `4.x` until November 2026, when the patch server switched to the public `0.x` version (for example `0.5.5.8`); both forms are accepted for PoE 2.
 
 Append `--game poe1` or `--game poe2` to select one game. The default processes every configured game, in order. After extraction succeeds for all selected games, `run` updates their tracked data packages. A failure stops the command; a game already published keeps its snapshot. Progress goes to stderr; snapshot paths and package results are JSON on stdout. Bundles download on demand and are cached by game and patch under `.cache/bundles/`. Allow several gigabytes of disk space for cached bundles, raw assets, and images.
 

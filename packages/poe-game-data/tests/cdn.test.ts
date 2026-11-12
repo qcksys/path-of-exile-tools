@@ -10,7 +10,7 @@ it.skipIf(!process.env.POE_CDN_PATCH)(
     async () => {
         const patch = process.env.POE_CDN_PATCH;
         if (!patch) return;
-        const game = patch.startsWith("4.") ? "poe2" : "poe1";
+        const game = patch.startsWith("3.") ? "poe1" : "poe2";
         const raw = await mkdtemp(join(tmpdir(), "poe-cdn-"));
         const source = await Source.open(game, { patch }, raw, ".cache/bundles");
         try {

@@ -2,6 +2,7 @@ import { stat } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { z } from "zod";
 import { readJson } from "./io.ts";
+import { clientBuildMatchesGame } from "./model.ts";
 
 export const gameSchema = z.enum(["poe1", "poe2"]);
 export type Game = z.infer<typeof gameSchema>;
@@ -29,7 +30,7 @@ export const configSchema = z
 export type Config = z.infer<typeof configSchema>;
 
 export function validPatch(game: Game, patch: string) {
-    return new RegExp(`^${game === "poe1" ? 3 : 4}(?:\\.\\d+){2,5}$`).test(patch);
+    return /^\d+(?:\.\d+){2,5}$/.test(patch) && clientBuildMatchesGame(game, patch);
 }
 
 export async function loadConfig(path: string): Promise<Config> {

@@ -6,7 +6,7 @@
   "source_manifest_sha256": "a9d2155a604cec8775de338e9b01f2f92014662ef568d0d6b898103101fff1ba",
   "dat_schema_sha256": "4b51063be32f2a66c1047bf455784d2e85411bed401ffdee380c8603399b9656",
   "extractor_sha256": "ed2986ea76b8dba4948460a403cc199ee5444c2a06c8b3845756871b87ceb123",
-  "zod_schema_sha256": "56d1438e3d4fc42b403281e32971f4617e82caa33332642f283f02b2062e6966",
+  "zod_schema_sha256": "da1de23889944565606698b761b0dbef1c6cf89a18d2a634cd4d9279bf1eca95",
   "crafting_data_sha256": "5dac6135acc38d7886f18c91deddac716ecb61a8b90f0309a194a75d0021facf",
   "weight_provenance": "client-extracted; PoE 2 values are not Craft of Exile empirical weights",
   "files": {
