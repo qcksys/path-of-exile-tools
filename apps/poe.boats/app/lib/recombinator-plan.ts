@@ -247,6 +247,7 @@ export function parseRecombinatorDraft(
 ): RecombinatorPlan {
     try {
         return recombinatorPlanSchema.parse({
+            ...(catalog ? { patch: catalog.patch } : {}),
             items: draft.items.map(
                 ({ id, name, prefixes, suffixes, catalog: selection }, index) => {
                     let chosen: ReturnType<typeof resolveCatalogAffixes>;

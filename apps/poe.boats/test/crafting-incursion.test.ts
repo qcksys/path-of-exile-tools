@@ -1,6 +1,11 @@
 import { expect, it } from "vite-plus/test";
-import { seededRandom } from "../app/lib/crafting-engine";
-import { incursionGloveModifiers, incursionModifierPool } from "../app/lib/crafting-incursion";
+import { CraftingEngine, seededRandom } from "../app/lib/crafting-engine";
+import {
+    incursionGloveModifiers,
+    incursionModifierPool,
+    isIncursionModifier,
+    offersIncursionModifiers,
+} from "../app/lib/crafting-incursion";
 import { recombinationOutcomes } from "../app/lib/crafting-recombination";
 import { rulesetReference } from "../app/lib/crafting-rulesets";
 import { engine } from "./crafting-fixtures";
@@ -27,6 +32,22 @@ it.each(
             .reduce((sum, outcome) => sum + outcome.weight, 0),
     ).toBeCloseTo(0.59);
     for (const { value } of outcomes) expect(engine.validateItem(value)).toEqual(value);
+});
+
+it("drops the Temple-only glove suffixes from 3.30.0", () => {
+    const engine330 = new CraftingEngine({ ...engine.catalog, patch: "3.30.0.1" });
+    const gloves = nnnBase("Slink Gloves");
+    expect(offersIncursionModifiers(engine.catalog, gloves)).toBe(true);
+    expect(offersIncursionModifiers(engine330.catalog, gloves)).toBe(false);
+    expect(incursionModifierPool(engine330.catalog, gloves)).toEqual([]);
+    for (const id of incursionGloveModifiers) {
+        expect(isIncursionModifier(engine330.catalog, gloves, id)).toBe(false);
+        expect(() => engine330.addStartingMod(gloves, id, seededRandom(1))).toThrow();
+        const prepared = engine.addStartingMod(gloves, id, seededRandom(1));
+        expect(() =>
+            recombinationOutcomes(engine330, prepared, nnnBase("Sorcerer Gloves")),
+        ).toThrow("not available");
+    }
 });
 
 it("keeps the r3 refusal while r4 can calculate a purchased Temple donor", async () => {

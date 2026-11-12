@@ -18,7 +18,8 @@ const EvidenceSchema = z.object({
             output: z.string(),
             quantity: z.number(),
             outputQuantity: z.number().optional(),
-            revision: z.number(),
+            // Absent while a row cites patch notes because the wiki does not show the change yet.
+            revision: z.number().optional(),
             source: z.string(),
             wikiRow: z.array(z.string()).optional(),
         }),
@@ -40,10 +41,13 @@ async function main(options: { resume: boolean }) {
         entry.output === recipe.output.name &&
         entry.quantity === recipe.input.quantity &&
         (entry.outputQuantity ?? 1) === recipe.output.quantity;
-    const results = options.resume
+    let results = options.resume
         ? previous.recipes.filter((entry) => recipes.some((recipe) => matches(entry, recipe)))
         : [];
-    const pending = recipes.filter((recipe) => !results.some((entry) => matches(entry, recipe)));
+    const pending = recipes.filter(
+        (recipe) =>
+            !results.some((entry) => entry.revision !== undefined && matches(entry, recipe)),
+    );
     const failures: string[] = [];
     const pages = new Map<string, { title: string; revision: number; rows: string[][] }>();
 
@@ -118,6 +122,7 @@ async function main(options: { resume: boolean }) {
             });
             if (!row || page.title !== title)
                 throw new Error("No matching wiki recipe or purchase row");
+            results = results.filter((entry) => entry.id !== recipe.id);
             results.push({
                 id: recipe.id,
                 input: recipe.input.name,

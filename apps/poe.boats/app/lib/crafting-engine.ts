@@ -89,6 +89,7 @@ import {
 } from "./crafting-memory";
 import { omenEffects } from "./crafting-omens";
 import { grantedPassive, grantedPassiveStat, passiveAllocationMod } from "./crafting-passives";
+import { isPoe1From330 } from "./crafting-patch";
 import { matchesItemProperties } from "./crafting-properties";
 import {
     availableBaseQuality,
@@ -4759,7 +4760,8 @@ export class CraftingEngine {
                     break;
                 case "remove_random_mod":
                     requireRarity("magic", "rare");
-                    this.remove(item, random, true, {
+                    // From 3.30.0, "Cannot roll Attack/Caster Modifiers" no longer stops Annulment.
+                    this.remove(item, random, !isPoe1From330(this.catalog), {
                         side: omens.removeSide,
                         desecrated: omens.removeDesecrated,
                         count: omens.removeCount,

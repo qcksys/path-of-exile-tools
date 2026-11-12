@@ -167,6 +167,33 @@ describe("recombinator probabilities", () => {
         expect(matchesTarget(result, [], true)).toBe(false);
         expect(matchesTarget(item(), [], true)).toBe(true);
     });
+
+    it("from 3.30.0 counts only prefixes that can roll on the chosen base", () => {
+        const base = { id: "vest", name: "Vest", itemClass: "Body Armour", tags: ["dex_armour"] };
+        const affix = (id: string, tag: string) => ({
+            id,
+            group: id,
+            exclusive: false,
+            nonNative: false,
+            spawn: [[tag, 1000]] as [string, number][],
+        });
+        const left = { base, prefixes: [affix("Evasion", "dex_armour")], suffixes: [] };
+        const right = {
+            base: { ...base, id: "jerkin" },
+            prefixes: [affix("Armour", "str_armour")],
+            suffixes: [],
+        };
+        const evasionKept = (patch?: string) =>
+            calculateRecombinatorPlan({ ...plan(left, right), ...(patch ? { patch } : {}) })[0]
+                .outcomes.filter(({ item }) =>
+                    item.prefixes.some((entry) => entry.id === "Evasion"),
+                )
+                .reduce((sum, outcome) => sum + outcome.probability, 0);
+        // Two prefixes keep at least one (67/33); one legal prefix is kept 59% of the time.
+        expect(evasionKept()).toBeCloseTo(1, 12);
+        expect(evasionKept("3.29.3.3")).toBeCloseTo(1, 12);
+        expect(evasionKept("3.30.0.1")).toBeCloseTo(0.59, 12);
+    });
 });
 
 describe("recombinator validation", () => {

@@ -33,14 +33,26 @@ describe("PoE 1 currency exchanges", () => {
         ).toMatchObject({ cost: 1.5, revenue: 3, profit: 1.5, roi: 100 });
     });
     it("includes the requested currencies using exchange identifiers, only in PoE 1", () => {
-        for (const id of ["wisdom", "portal", "alch", "chance", "scour", "transmute"])
+        for (const id of ["wisdom", "portal", "alch", "scour", "transmute"])
             expect(CURRENCY_VENDOR_RECIPES.some((recipe) => recipe.output.id === id)).toBe(true);
         expect(
             CURRENCY_VENDOR_RECIPES.filter((recipe) => recipe.method === "purchase"),
-        ).toHaveLength(12);
+        ).toHaveLength(11);
         expect(getVendorRecipes("2").some((recipe) => recipe.category === "currency")).toBe(false);
         const url = new URL(buildRecipeTradeUrl("1", "Standard", "transmute"));
         expect(JSON.parse(url.searchParams.get("q")!).exchange.want).toEqual(["transmute"]);
+    });
+    it("follows 3.30.0: no Orbs of Chance or scarab recipe, Scouring for 4 Fusing", () => {
+        expect(MANUAL_VENDOR_RECIPES.some((recipe) => /scarab/i.test(recipe.name))).toBe(false);
+        expect(CURRENCY_VENDOR_RECIPES.some((recipe) => recipe.output.id === "chance")).toBe(false);
+        expect(CURRENCY_VENDOR_RECIPES.some((recipe) => recipe.input.id === "chance")).toBe(false);
+        expect(
+            CURRENCY_VENDOR_RECIPES.find((recipe) => recipe.output.id === "scour"),
+        ).toMatchObject({
+            id: "1:purchase:fusing:scour",
+            input: { name: "Orb of Fusing", quantity: 4 },
+            source: "https://www.pathofexile.com/forum/view-thread/4013680",
+        });
     });
     it("never invents a price for missing low-value currencies", () => {
         const result = findArbitrage(

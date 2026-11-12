@@ -26,7 +26,6 @@ const recipeArtwork: Record<string, string> = {
     "1:manual:mana-flasks": "Small Mana Flask",
     "1:manual:hybrid-flasks": "Small Hybrid Flask",
     "1:manual:maps": "Dunes Map",
-    "1:manual:scarabs": "Cartography Scarab of Escalation",
     "1:manual:catalysts": "Fertile Catalyst",
     "1:manual:ultimatums": "Inscribed Ultimatum",
     "1:manual:tattoos": "Tattoo of the Ngamahu Firewalker",

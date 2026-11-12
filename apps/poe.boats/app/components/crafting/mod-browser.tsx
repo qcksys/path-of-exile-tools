@@ -7,7 +7,7 @@ import { Label } from "~/components/ui/label";
 import { eldritchFamilyKey, eldritchLabel } from "~/lib/crafting-eldritch";
 import { type CraftingEngine, eldritchTier } from "~/lib/crafting-engine";
 import { graspingMailBase, graspingPool } from "~/lib/crafting-grasping";
-import { incursionModifierPool } from "~/lib/crafting-incursion";
+import { incursionModifierPool, offersIncursionModifiers } from "~/lib/crafting-incursion";
 import { modifierLevelText, modifierTiers } from "~/lib/crafting-modifier-details";
 import { omenEffects } from "~/lib/crafting-omens";
 import { replaceTarget, targetEntries } from "~/lib/crafting-targets";
@@ -67,8 +67,7 @@ export function ModBrowser({
         (selectedSource.startsWith("influence:") && !selectedInfluence) ||
         (selectedSource === "breach" &&
             (engine.catalog.game !== "poe1" || engine.base(item).item_class !== "Body Armour")) ||
-        (selectedSource === "incursion" &&
-            (engine.catalog.game !== "poe1" || engine.base(item).item_class !== "Gloves"))
+        (selectedSource === "incursion" && !offersIncursionModifiers(engine.catalog, item))
             ? "natural"
             : selectedSource;
     const influence = selectedInfluence?.influence;
@@ -343,12 +342,11 @@ export function ModBrowser({
                             </FormSelectItem>
                         ))}
                         <FormSelectItem value="essence">Essence guarantees</FormSelectItem>
-                        {engine.catalog.game === "poe1" &&
-                            engine.base(item).item_class === "Gloves" && (
-                                <FormSelectItem value="incursion">
-                                    Incursion glove suffixes (prepared items)
-                                </FormSelectItem>
-                            )}
+                        {offersIncursionModifiers(engine.catalog, item) && (
+                            <FormSelectItem value="incursion">
+                                Incursion glove suffixes (prepared items)
+                            </FormSelectItem>
+                        )}
                         {engine.catalog.game === "poe2" ? (
                             <FormSelectItem value="emotion">
                                 Liquid Emotion guarantees

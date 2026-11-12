@@ -8,7 +8,6 @@ const currency = {
     alt: "Orb of Alteration",
     jewellers: "Jeweller's Orb",
     fusing: "Orb of Fusing",
-    chance: "Orb of Chance",
     scour: "Orb of Scouring",
     regret: "Orb of Regret",
     alch: "Orb of Alchemy",
@@ -16,15 +15,18 @@ const currency = {
     whetstone: "Blacksmith's Whetstone",
 };
 
-const purchases: [keyof typeof currency, number, keyof typeof currency, string][] = [
+/** The 3.30.0 patch notes, the source for prices the wiki does not show yet. */
+const PATCH_3_30_NOTES = "https://www.pathofexile.com/forum/view-thread/4013680";
+
+const purchases: [keyof typeof currency, number, keyof typeof currency, string, string?][] = [
     ["wisdom", 3, "portal", "Nessa, Act 1"],
     ["portal", 7, "transmute", "Nessa, Act 1"],
     ["transmute", 4, "aug", "Nessa, Act 1"],
     ["aug", 4, "alt", "Nessa, Act 1"],
     ["alt", 2, "jewellers", "Yeena, Act 2"],
     ["jewellers", 4, "fusing", "Yeena, Act 2"],
-    ["fusing", 1, "chance", "Clarissa, Act 3"],
-    ["chance", 4, "scour", "Yeena, Act 2"],
+    // Vendors stopped selling Orbs of Chance in 3.30.0, and Scouring moved from 4 Chance to 4 Fusing.
+    ["fusing", 4, "scour", "Yeena, Act 2", PATCH_3_30_NOTES],
     ["scour", 2, "regret", "Yeena, Act 2"],
     ["regret", 1, "alch", "Clarissa, Act 3"],
     ["whetstone", 1, "scrap", "Tarkleigh, Act 1"],
@@ -35,7 +37,7 @@ const wisdomExchanges: [keyof typeof currency, number][] = [
 ];
 
 export const CURRENCY_VENDOR_RECIPES: VendorRecipe[] = [
-    ...purchases.map(([input, quantity, output, vendor]): VendorRecipe => ({
+    ...purchases.map(([input, quantity, output, vendor, source]): VendorRecipe => ({
         id: `1:purchase:${input}:${output}`,
         game: "1",
         category: "currency",
@@ -43,7 +45,7 @@ export const CURRENCY_VENDOR_RECIPES: VendorRecipe[] = [
         input: { id: input, name: currency[input], quantity },
         output: { id: output, name: currency[output], quantity: 1 },
         notes: `Purchase Items at ${vendor} or a later vendor. Do not use the sell window.`,
-        source: "https://www.poewiki.net/wiki/Vendor#Prices",
+        source: source ?? "https://www.poewiki.net/wiki/Vendor#Prices",
     })),
     ...wisdomExchanges.map(([input, quantity]): VendorRecipe => ({
         id: `1:sell:${input}:wisdom`,
