@@ -6,6 +6,7 @@ import {
     recombinatorPlanSchema,
     sharesAffixGroup,
 } from "~/schemas/recombinator";
+import { isPoe1From330 } from "./crafting-patch";
 
 export const RECOMBINATOR_GUIDE_URL =
     "https://codeberg.org/poe_notes/poe_notes/src/branch/main/Recombinators-dark-images.md";
@@ -87,8 +88,13 @@ function sideOutcomes(
     base?: RecombinatorItem["base"],
     excludeExclusive = false,
     weighted = false,
+    countLegalOnly = false,
 ): Selection[] {
-    const weights = AFFIX_COUNT_WEIGHTS[pool.length];
+    // From 3.30.0 the count ignores modifiers that cannot appear on the chosen base.
+    const counted = countLegalOnly
+        ? pool.filter((affix) => nativeWeight({ ...affix, nonNative: false }, base) > 0)
+        : pool;
+    const weights = AFFIX_COUNT_WEIGHTS[counted.length];
     const total = weights.reduce((sum, weight) => sum + weight, 0);
     return weights.flatMap((weight, count) =>
         weight === 0
@@ -122,6 +128,7 @@ export function recombineOnBase(
     left: RecombinatorItem,
     right: RecombinatorItem,
     base?: RecombinatorItem["base"],
+    countLegalOnly = false,
 ): RecombinatorOutcome[] {
     const prefixes = [...left.prefixes, ...right.prefixes];
     const suffixes = [...left.suffixes, ...right.suffixes];
@@ -179,12 +186,13 @@ export function recombineOnBase(
     for (const first of orders) {
         const second = first === "prefixes" ? "suffixes" : "prefixes";
         const pools = { prefixes, suffixes };
-        for (const a of sideOutcomes(pools[first], base, false, weighted)) {
+        for (const a of sideOutcomes(pools[first], base, false, weighted, countLegalOnly)) {
             for (const b of sideOutcomes(
                 pools[second],
                 base,
                 a.affixes.some((affix) => affix.exclusive),
                 weighted,
+                countLegalOnly,
             )) {
                 const item: RecombinatorItem = {
                     prefixes: [],
@@ -200,7 +208,11 @@ export function recombineOnBase(
     return [...results.values()];
 }
 
-function recombine(left: RecombinatorItem, right: RecombinatorItem): RecombinatorOutcome[] {
+function recombine(
+    left: RecombinatorItem,
+    right: RecombinatorItem,
+    countLegalOnly: boolean,
+): RecombinatorOutcome[] {
     if (!left.base && !right.base) return recombineOnBase(left, right);
     if (!left.base || !right.base)
         throw new Error("Choose a base for both inputs to model base transfer.");
@@ -208,7 +220,7 @@ function recombine(left: RecombinatorItem, right: RecombinatorItem): Recombinato
         throw new Error("Choose inputs from the same item class for base transfer.");
     const results = new Map<string, RecombinatorOutcome>();
     for (const base of [left.base, right.base]) {
-        for (const outcome of recombineOnBase(left, right, base))
+        for (const outcome of recombineOnBase(left, right, base, countLegalOnly))
             mergeOutcome(results, outcome.item, outcome.probability / 2);
     }
     return [...results.values()];
@@ -247,6 +259,9 @@ export function prepareRecombinatorItem(
 
 export function calculateRecombinatorPlan(input: RecombinatorPlan): RecombinatorStepResult[] {
     const plan = recombinatorPlanSchema.parse(input);
+    const countLegalOnly = Boolean(
+        plan.patch && isPoe1From330({ game: "poe1", patch: plan.patch }),
+    );
     const sources = new Map<string, RecombinatorOutcome[]>(
         plan.items.map(({ id, item }) => [id, [{ item, probability: 1 }]]),
     );
@@ -268,7 +283,7 @@ export function calculateRecombinatorPlan(input: RecombinatorPlan): Recombinator
                     );
                     let combined = cache.get(key);
                     if (!combined) {
-                        combined = recombine(preparedLeft, preparedRight);
+                        combined = recombine(preparedLeft, preparedRight, countLegalOnly);
                         cache.set(key, combined);
                     }
                     work += combined.length;

@@ -5,6 +5,7 @@ import type { CraftingEngine } from "./crafting-engine";
 import { isBreachModifier } from "./crafting-grasping";
 import { isIncursionModifier } from "./crafting-incursion";
 import { isJanusRarityModifier } from "./crafting-janus";
+import { isPoe1From330 } from "./crafting-patch";
 import { recombineOnBase } from "./recombinator";
 
 export function supportsRecombination(engine: CraftingEngine, item: Pick<CraftingItem, "baseId">) {
@@ -143,12 +144,15 @@ export function recombinationOutcomes(
     }
     if (engine.base(left).item_class !== engine.base(right).item_class)
         throw new Error("Recombination inputs must have the same item class.");
-    const level = Math.min(
+    const rules330 = isPoe1From330(engine.catalog);
+    const averageLevel = Math.min(
         Math.max(left.level, right.level),
         Math.floor((left.level + right.level) / 2) + 2,
     );
     const outcomes: { value: CraftingItem; weight: number }[] = [];
     for (const [baseIndex, chosen] of [left, right].entries()) {
+        // From 3.30.0 the result keeps the chosen base's item level instead of an average.
+        const level = rules330 ? chosen.level : averageLevel;
         const base = engine.base(chosen);
         const tags = recombinationTags(engine, chosen);
         const records = new Map<string, RolledMod>();
@@ -203,12 +207,12 @@ export function recombinationOutcomes(
         };
         const a = input(left, 0);
         const b = input(right, 1);
-        for (const outcome of recombineOnBase(a, b, {
-            id: chosen.baseId,
-            name: base.name,
-            itemClass: base.item_class,
-            tags,
-        })) {
+        for (const outcome of recombineOnBase(
+            a,
+            b,
+            { id: chosen.baseId, name: base.name, itemClass: base.item_class, tags },
+            rules330,
+        )) {
             const item = {
                 ...chosen,
                 level,

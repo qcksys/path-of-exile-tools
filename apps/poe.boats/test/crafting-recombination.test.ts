@@ -308,6 +308,55 @@ describe("crafting workbench recombination", () => {
         }
     });
 
+    it("from 3.30.0 counts only modifiers that can roll on the chosen base", () => {
+        const intBase = Object.entries(catalog.bases).find(
+            ([, entry]) =>
+                entry.item_class === "Body Armour" &&
+                entry.tags.includes("int_armour") &&
+                !entry.implicits.length,
+        )![0];
+        const armour = engine
+            .pool({ ...empty(), rarity: "rare" })
+            .find((entry) =>
+                entry.mod.stats.some(
+                    (stat) => stat.id === "local_base_physical_damage_reduction_rating",
+                ),
+            )!;
+        const left = engine.addStartingMod(
+            { ...withMod(life), rarity: "rare" },
+            armour.id,
+            seededRandom(42),
+        );
+        const right = engine.createItem(intBase);
+        const lifeKeptOnInt = (crafter: CraftingEngine) => {
+            const onInt = recombinationOutcomes(crafter, left, right).filter(
+                ({ value }) => value.baseId === intBase,
+            );
+            const total = onInt.reduce((sum, entry) => sum + entry.weight, 0);
+            return (
+                onInt
+                    .filter(({ value }) => value.mods.some((entry) => entry.id === life))
+                    .reduce((sum, entry) => sum + entry.weight, 0) / total
+            );
+        };
+        // Two prefixes keep at least one (67/33); one legal prefix is kept 59% of the time.
+        expect(lifeKeptOnInt(engine)).toBeCloseTo(1);
+        expect(lifeKeptOnInt(new CraftingEngine({ ...catalog, patch: "3.30.0.1" }))).toBeCloseTo(
+            0.59,
+        );
+    });
+
+    it("from 3.30.0 keeps the chosen base's item level instead of averaging", () => {
+        const high = { ...withMod(life, engine.createItem(baseId, 86)) };
+        const low = engine.createItem(baseId, 1);
+        const levels = (crafter: CraftingEngine) =>
+            new Set(recombinationOutcomes(crafter, low, high).map(({ value }) => value.level));
+        expect(levels(engine)).toEqual(new Set([45]));
+        expect(levels(new CraftingEngine({ ...catalog, patch: "3.30.0.1" }))).toEqual(
+            new Set([1, 86]),
+        );
+    });
+
     it("retains transferred high-level tiers at the averaged level through subsequent crafts and text/JSON", () => {
         const high = engine.createItem(baseId, 86);
         const highLife = engine

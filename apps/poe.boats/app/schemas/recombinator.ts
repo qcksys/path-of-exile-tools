@@ -50,6 +50,8 @@ export const recombinatorItemSchema = z
 
 export const recombinatorPlanSchema = z
     .object({
+        // The client build whose recombination rules apply; omitted means the 3.29 rules.
+        patch: z.string().trim().min(1).max(32).optional(),
         items: z
             .array(z.object({ id: labelSchema, name: labelSchema, item: recombinatorItemSchema }))
             .min(2)

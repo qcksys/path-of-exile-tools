@@ -20,7 +20,12 @@ describe("wiki-verified recipe coverage", () => {
             quantity: recipe.input.quantity,
         });
         expect(entry?.outputQuantity ?? 1).toBe(recipe.output.quantity);
-        expect(entry?.revision).toBeGreaterThan(0);
-        expect(new URL(entry!.source).hostname).toBe(new URL(recipe.source).hostname);
+        if (new URL(recipe.source).hostname.endsWith("wiki.net")) {
+            expect(entry && "revision" in entry && entry.revision).toBeGreaterThan(0);
+            expect(new URL(entry!.source).hostname).toBe(new URL(recipe.source).hostname);
+        } else {
+            // A change the wiki does not show yet cites the patch notes that made it.
+            expect(entry?.source).toBe(recipe.source);
+        }
     });
 });

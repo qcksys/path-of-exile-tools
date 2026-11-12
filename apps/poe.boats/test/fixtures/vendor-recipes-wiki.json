@@ -186,20 +186,6 @@
             "wikiRow": ["1x random runegraft", "3x runegraft, any", ""]
         },
         {
-            "id": "1:manual:scarabs",
-            "input": "scarabs (any type)",
-            "output": "random scarab of a different type",
-            "quantity": 3,
-            "outputQuantity": 1,
-            "revision": 1702238,
-            "source": "https://www.poewiki.net/w/index.php?title=Vendor%20recipe%20system&oldid=1702238",
-            "wikiRow": [
-                "1x random scarab of a different type",
-                "3x scarabs (any type)",
-                "The random scarab will be of a different type from the scarabs used for the recipe."
-            ]
-        },
-        {
             "id": "1:manual:tattoos",
             "input": "tattoos from same tribe",
             "output": "random tattoo from same tribe",
@@ -348,24 +334,12 @@
             "wikiRow": ["Orb of Alteration", "4x Orb of Augmentation", "Act 1 (Nessa)"]
         },
         {
-            "id": "1:purchase:chance:scour",
-            "input": "Orb of Chance",
+            "id": "1:purchase:fusing:scour",
+            "input": "Orb of Fusing",
             "output": "Orb of Scouring",
             "quantity": 4,
             "outputQuantity": 1,
-            "revision": 1699119,
-            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
-            "wikiRow": ["Orb of Scouring", "4x Orb of Chance", "Act 2 (Yeena)"]
-        },
-        {
-            "id": "1:purchase:fusing:chance",
-            "input": "Orb of Fusing",
-            "output": "Orb of Chance",
-            "quantity": 1,
-            "outputQuantity": 1,
-            "revision": 1699119,
-            "source": "https://www.poewiki.net/w/index.php?title=Vendor&oldid=1699119",
-            "wikiRow": ["Orb of Chance", "1x Orb of Fusing", "Act 3 (Clarissa)"]
+            "source": "https://www.pathofexile.com/forum/view-thread/4013680"
         },
         {
             "id": "1:purchase:jewellers:fusing",

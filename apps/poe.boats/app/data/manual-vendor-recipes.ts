@@ -17,8 +17,6 @@ const recipes: [string, string, 3 | 5, string, string, string, string][] = [
         "Use uncorrupted copies of the same unique variant, including matching variable explicit modifier types. Foulborn uniques are excluded. Values are rerolled; synthesised implicits can also reroll."],
     ["maps", "3-for-1 maps", 3, "map of the same tier", "map, one tier higher", "Atlas_of_Worlds_utility",
         "Use three maps of the same tier. The output is a normal map one tier higher; Blighted inputs still return a regular map. Inspect the vendor preview to price the actual output."],
-    ["scarabs", "3-for-1 scarabs", 3, "scarabs (any type)", "random scarab of a different type", "Atlas_of_Worlds_utility",
-        "The random result is a different type from the input scarabs. Output probabilities are not assumed."],
     ["catalysts", "3-for-1 catalysts", 3, "Catalysts, all of same type", "random Catalyst", "Ultimatum",
         "Use three of the same catalyst. Cannot return Tainted, Sinistral, or Dextral Catalysts. Output probabilities are not assumed."],
     ["ultimatums", "5-for-1 Inscribed Ultimatums", 5, "Inscribed Ultimatum, any reward or encounter type", "random Inscribed Ultimatum", "Ultimatum",
