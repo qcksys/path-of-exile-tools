@@ -42,22 +42,22 @@ export function validateSourcePreparationRevision(
     if (!source) return;
     if (source.kind === "influence-ready-v1") {
         if (
-            !["crafting-graph-15", "crafting-graph-16"].includes(engine) ||
+            !["crafting-graph-15", "crafting-graph-16", "crafting-graph-17"].includes(engine) ||
             !influenceReadyBases.has(baseId) ||
             (baseId === "Metadata/Items/Armours/Shields/ShieldStrE3" &&
-                engine !== "crafting-graph-16")
+                !["crafting-graph-16", "crafting-graph-17"].includes(engine))
         )
             throw new Error(
-                "Influence-ready shield sources require crafting engine 15 or 16; Heat-attuned sources require engine 16.",
+                "Influence-ready shield sources require crafting engine 15, 16 or 17; Heat-attuned sources require engine 16 or 17.",
             );
         return;
     }
     if (source.kind === "scour-v1") {
         if (
             baseId === "Metadata/Items/Armours/BodyArmours/BodyInt17" &&
-            engine !== "crafting-graph-16"
+            !["crafting-graph-16", "crafting-graph-17"].includes(engine)
         )
-            throw new Error("Scouring Vaal Regalia sources requires crafting engine 16.");
+            throw new Error("Scouring Vaal Regalia sources requires crafting engine 16 or 17.");
         if (
             ![
                 "crafting-graph-12",
@@ -65,10 +65,11 @@ export function validateSourcePreparationRevision(
                 "crafting-graph-14",
                 "crafting-graph-15",
                 "crafting-graph-16",
+                "crafting-graph-17",
             ].includes(engine)
         )
             throw new Error(
-                "Scouring source preparation requires crafting engine 12, 13, 14, 15 or 16.",
+                "Scouring source preparation requires crafting engine 12, 13, 14, 15, 16 or 17.",
             );
         if (
             additionalScouringBases.has(baseId) &&
@@ -77,10 +78,11 @@ export function validateSourcePreparationRevision(
                 "crafting-graph-14",
                 "crafting-graph-15",
                 "crafting-graph-16",
+                "crafting-graph-17",
             ].includes(engine)
         )
             throw new Error(
-                "Scouring these boots or body armour requires crafting engine 13, 14, 15 or 16.",
+                "Scouring these boots or body armour requires crafting engine 13, 14, 15, 16 or 17.",
             );
     } else if (
         ![
@@ -90,9 +92,12 @@ export function validateSourcePreparationRevision(
             "crafting-graph-14",
             "crafting-graph-15",
             "crafting-graph-16",
+            "crafting-graph-17",
         ].includes(engine)
     )
-        throw new Error("Source preparation requires crafting engine 11, 12, 13, 14, 15 or 16.");
+        throw new Error(
+            "Source preparation requires crafting engine 11, 12, 13, 14, 15, 16 or 17.",
+        );
 }
 
 export function sourcePreparationMethodList(source: SourcePreparation): CraftingMethod[] {
