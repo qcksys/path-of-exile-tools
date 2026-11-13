@@ -13,7 +13,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 import { vendorOutputId, vendorQuote } from "./crafting-vendor-upgrade-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r7",
+    (entry) => entry.game === "poe1" && entry.revision === "r17",
 )!;
 function project() {
     return craftingProjectSchema.parse({

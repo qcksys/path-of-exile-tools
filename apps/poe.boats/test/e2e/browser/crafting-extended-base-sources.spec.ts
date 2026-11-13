@@ -37,7 +37,7 @@ for (const [presetId, sourceId] of [
         page,
     }, testInfo) => {
         const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === "r16",
+            (entry) => entry.game === "poe1" && entry.revision === "r17",
         )!;
         const catalog = craftingCatalogSchema.parse((await retainedRevision(ruleset)).catalog);
         const engine = new CraftingEngine(catalog);
