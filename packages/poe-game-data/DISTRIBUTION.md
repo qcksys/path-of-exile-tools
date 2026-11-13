@@ -48,6 +48,8 @@ vp run --filter '@qcksys/poe-*-data' test
 
 Command paths resolve from `packages/poe-game-data`. `run` generates tracked packages after extraction succeeds for all selected games. Omit `--commit` to leave generated files as a working-tree diff. `--commit` refuses an occupied Git index, verifies packages again, and stages only the selected `packages/poe-1-data` / `packages/poe-2-data` directories. It never pushes or publishes to npm. Repeating the same generation is deterministic; unchanged packages produce no new commit.
 
+The [game data refresh workflow](../../.github/workflows/game-data-refresh.yml) runs this sequence every six hours, or on demand from the Actions tab. For each game whose current build differs from the package on `dev` and has no pull request yet, it extracts the build, regenerates the package and the app's crafting catalogs, and opens a draft pull request to `dev` from `game-data/<game>-<build>`. Publishing the crafting history revision stays a reviewed step on that branch. The repository must allow GitHub Actions to create pull requests (Settings → Actions → General → Workflow permissions).
+
 If extraction succeeds but packaging fails, fix the error and retry `package` using the saved snapshot. A write interrupted partway through is detected by verification; rerun generation from the snapshot. `replay` remains an extraction-only operation.
 
 ## Integrity and schema maintenance

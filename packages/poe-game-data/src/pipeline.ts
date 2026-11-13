@@ -11,7 +11,7 @@ import { assetPath, digest, readJson, writeBytes, writeJson } from "./io.ts";
 import { Metadata } from "./metadata.ts";
 import { type Dataset, datasetSchema, validateDataset } from "./model.ts";
 import { normalize } from "./normalize.ts";
-import { Source } from "./source.ts";
+import { type Evidence, Source } from "./source.ts";
 import { datSchema, Tables } from "./tables.ts";
 import { Translations } from "./translations.ts";
 
@@ -32,6 +32,24 @@ export const manifestSchema = z.strictObject({
     ),
     files: z.record(z.string(), sha).refine((files) => Object.keys(files).length > 0),
 });
+
+// The crafting supplement records the tables and tree assets it reads, not the run's images.
+export function craftingSourceTables(
+    inputs: Evidence,
+    trees: { passiveTree?: { asset: string } | null; genesis?: { asset: string } | null },
+) {
+    return Object.fromEntries(
+        Object.entries(inputs)
+            .filter(
+                ([path]) =>
+                    path.endsWith(".datc64") ||
+                    path === trees.passiveTree?.asset ||
+                    path === trees.genesis?.asset ||
+                    path.includes("/StatDescriptions/"),
+            )
+            .map(([path, evidence]) => [path, evidence.sha256]),
+    );
+}
 
 async function filesUnder(root: string, prefix = ""): Promise<string[]> {
     const files: string[] = [];
@@ -248,16 +266,7 @@ export async function run(config: Config, output: string, selected: Game[], sche
                             basesSha256: provenance.basesSha256,
                             modsSha256: provenance.modsSha256,
                             schemaSha256: provenance.schemaSha256,
-                            tables: Object.fromEntries(
-                                Object.entries(source.inputs)
-                                    .filter(
-                                        ([path]) =>
-                                            path.endsWith(".datc64") ||
-                                            path === crafting.passiveTree?.asset ||
-                                            path.includes("/StatDescriptions/"),
-                                    )
-                                    .map(([path, evidence]) => [path, evidence.sha256]),
-                            ),
+                            tables: craftingSourceTables(source.inputs, crafting),
                         },
                         ...crafting,
                         ...craftingText,

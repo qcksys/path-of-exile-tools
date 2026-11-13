@@ -4,7 +4,14 @@ import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vite-plus/test";
 import { digest, readJson, writeJson } from "../src/io.ts";
 import { datasetSchema, validateDataset } from "../src/model.ts";
-import { manifestSchema, publish, replay, run, verify } from "../src/pipeline.ts";
+import {
+    craftingSourceTables,
+    manifestSchema,
+    publish,
+    replay,
+    run,
+    verify,
+} from "../src/pipeline.ts";
 
 const temporary: string[] = [];
 async function directory() {
@@ -132,6 +139,25 @@ it("retains failure evidence without advancing latest and stays offline with loc
     expect(await readFile(join(root, "poe1/snapshots", failed!, "extract.log"), "utf8")).toContain(
         "Missing poe1 schema",
     );
+});
+
+it("records crafting tables and both passive tree assets, but not images", () => {
+    const paths = [
+        "Data/Mods.datc64",
+        "Metadata/StatDescriptions/stat_descriptions.txt",
+        "Metadata/PassiveSkillGraph.psg",
+        "Metadata/Genesis/GenesisTree.psg",
+        "Art/2DItems/Belts/Belt3.dds",
+    ];
+    const inputs = Object.fromEntries(
+        paths.map((path, index) => [path, { sha256: String(index).repeat(64), bytes: 1 }]),
+    );
+    expect(
+        craftingSourceTables(inputs, {
+            passiveTree: { asset: "Metadata/PassiveSkillGraph.psg" },
+            genesis: { asset: "Metadata/Genesis/GenesisTree.psg" },
+        }),
+    ).toEqual(Object.fromEntries(paths.slice(0, 4).map((path) => [path, inputs[path]!.sha256])));
 });
 
 it("rejects dangling normalized references and mismatched stat ranges", () => {
