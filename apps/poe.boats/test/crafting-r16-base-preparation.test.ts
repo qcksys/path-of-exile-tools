@@ -12,7 +12,9 @@ import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r15",
 )!;
-const ruleset = { ...prior, revision: "r16", engine: "crafting-graph-16" };
+const ruleset = historyIndex.revisions.find(
+    (entry) => entry.game === "poe1" && entry.revision === "r17",
+)!;
 const sourceId = "shield-make-heat-influence-base";
 const targetIds = ["block-make-base", "max-res-make-base"] as const;
 const transmute = currency("transmute_to_magic").id;

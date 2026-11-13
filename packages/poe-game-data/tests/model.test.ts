@@ -1,5 +1,12 @@
 import { expect, it } from "vite-plus/test";
-import { baseSchema, modPool, modSchema, propertiesSchema } from "../src/model.ts";
+import {
+    baseSchema,
+    dataPackageManifestSchema,
+    modPool,
+    modSchema,
+    packageVersionForBuild,
+    propertiesSchema,
+} from "../src/model.ts";
 import { parseVersion } from "../src/versions.ts";
 
 const base = baseSchema.parse({
@@ -107,4 +114,34 @@ it("accepts PoE 2's 0.x and 4.x builds and rejects builds numbered for the other
     expect(() => parseVersion("poe1", handshake("https://patch.poecdn.com/0.5.5.8/"))).toThrow(
         "Invalid patch version: 0.5.5.8",
     );
+});
+
+it("packages PoE 2's 0.x and 4.x builds and rejects builds numbered for the other game", () => {
+    const hash = "0".repeat(64);
+    const packages = (game: "poe1" | "poe2", build: string) =>
+        dataPackageManifestSchema.safeParse({
+            format: 1,
+            game,
+            version: packageVersionForBuild(build),
+            client_build: build,
+            source_manifest_sha256: hash,
+            dat_schema_sha256: hash,
+            extractor_sha256: hash,
+            zod_schema_sha256: hash,
+            weight_provenance:
+                "client-extracted; PoE 2 values are not Craft of Exile empirical weights",
+            files: {
+                "data/mods.json": {
+                    sha256: hash,
+                    bytes: 1,
+                    schema: "json-schema/mods.schema.json",
+                },
+            },
+        }).success;
+    expect(packages("poe2", "0.5.5.8")).toBe(true);
+    expect(packages("poe2", "4.5.5.4")).toBe(true);
+    expect(packages("poe1", "3.29.3.6")).toBe(true);
+    expect(packages("poe2", "3.29.3.6")).toBe(false);
+    expect(packages("poe1", "0.5.5.8")).toBe(false);
+    expect(packages("poe1", "4.5.5.4")).toBe(false);
 });

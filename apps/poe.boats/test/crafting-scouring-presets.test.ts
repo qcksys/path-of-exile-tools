@@ -11,6 +11,9 @@ const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
 const ruleset = { ...prior, revision: "r14", engine: "crafting-graph-14" };
+const current = historyIndex.revisions.find(
+    (entry) => entry.game === "poe1" && entry.revision === "r17",
+)!;
 const sources: [CraftingPresetId, string, string][] = [
     ["life-block-shield", "block-make-base", "Heat-attuned Tower Shield"],
     ["life-block-shield", "max-res-make-base", "Heat-attuned Tower Shield"],
@@ -54,11 +57,7 @@ it.each(
 it.each(
     sources,
 )("charges cleanup once before the existing Transmutation in %s/%s", (preset, id) => {
-    const graph = projectFromPreset(
-        engine,
-        { ...ruleset, revision: "r16", engine: "crafting-graph-16" },
-        preset,
-    );
+    const graph = projectFromPreset(engine, current, preset);
     const node = graph.nodes.find((entry) => entry.id === id)!;
     if (node.kind !== "acquire") throw new Error("Expected base acquisition.");
     const source = node.alternatives.find((entry) => entry.id === "buy-scour-crafted-enchanted")!;

@@ -20,11 +20,9 @@ import { quote } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
 
-const ruleset = {
-    ...historyIndex.revisions.find((entry) => entry.game === "poe1" && entry.revision === "r15")!,
-    engine: "crafting-graph-16",
-    revision: "r16",
-};
+const ruleset = historyIndex.revisions.find(
+    (entry) => entry.game === "poe1" && entry.revision === "r17",
+)!;
 const manifest = marketCohortManifestSchema.parse(
     JSON.parse(readFileSync("../../packages/poe-market/data/cohorts-poe1.json", "utf8")),
 );

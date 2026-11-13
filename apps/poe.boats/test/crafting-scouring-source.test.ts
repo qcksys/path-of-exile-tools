@@ -28,7 +28,9 @@ const scour = currency("convert_to_normal").id;
 const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
-const ruleset = { ...prior, revision: "r16", engine: "crafting-graph-16" };
+const ruleset = historyIndex.revisions.find(
+    (entry) => entry.game === "poe1" && entry.revision === "r17",
+)!;
 const scopes = [
     "Heat-attuned Tower Shield",
     "Pinnacle Tower Shield",
@@ -390,10 +392,7 @@ it("accepts only guaranteed output requirements and rejects Scouring under retai
     expect(() => validateCraftingGraph(catalog, graph)).not.toThrow();
     expect(() => validateRulesetGraph(ruleset, graph)).not.toThrow();
     expect(() =>
-        validateRulesetGraph(prior, {
-            ...graph,
-            ruleset: { ...graph.ruleset, revision: "r11", engine: "crafting-graph-11" },
-        }),
+        validateRulesetGraph(prior, { ...graph, ruleset: rulesetReference(prior) }),
     ).toThrow("engine 12");
     for (const field of ["quality", "sockets", "links", "memoryStrands"])
         expect(() =>

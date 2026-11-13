@@ -181,7 +181,8 @@ export const dataPackageManifestSchema = z
                 path: ["version"],
                 message: "Package version must match the client build",
             });
-        if (!manifest.client_build.startsWith(manifest.game === "poe1" ? "3." : "4."))
+        // PoE 2 builds were numbered 4.x until GGG switched to the public 0.x version (0.5.5.8, November 2026).
+        if (!(manifest.game === "poe1" ? /^3\./ : /^[04]\./).test(manifest.client_build))
             ctx.addIssue({
                 code: "custom",
                 path: ["client_build"],

@@ -178,9 +178,12 @@ it("preserves retained r8 eager estimates and accepts its original result schema
         expectedCost: null,
     });
     expect(current.work).toBeLessThan(old.work);
-    expect(() => calculateCraftingGraph(catalog, oldGraph)).toThrow(
-        "different crafting engine revision",
-    );
+    expect(() =>
+        calculateCraftingGraph(catalog, {
+            ...graph,
+            ruleset: { ...graph.ruleset, revision: ruleset.revision, engine: ruleset.engine },
+        }),
+    ).toThrow("different crafting engine revision");
 
     acquisition(graph, "prepared").choice = { mode: "pinned", alternativeId: "craft" };
     const newProduced = calculateCraftingGraph(catalog, graph, { estimateIterations: 2 });

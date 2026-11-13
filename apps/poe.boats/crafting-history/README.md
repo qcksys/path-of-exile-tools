@@ -57,13 +57,19 @@ To publish a new era or correction, from this app directory:
    4.5 rather than guessing a public league/version name.
 3. If executable behavior or the implementation bundle changes, assign a new `CRAFTING_GRAPH_ENGINE`
    identifier in `app/lib/crafting-graph-validation.ts`. Retain all existing bundles. Data-only
-   corrections can reuse an unchanged implementation.
+   corrections can reuse an unchanged implementation. The bundle includes the game-data model and
+   the market reference data, so it often changes between publications; the publisher refuses to
+   reuse an engine name for different bytes. Add the new engine wherever the previous one enables
+   a feature in `app/lib/crafting-rulesets.ts`, `crafting-presets.ts` and
+   `crafting-source-preparation.ts`.
 4. Run `vp run game-data:publish-history`. It builds a standalone engine, validates the catalog,
    writes new immutable artifacts, advances the selected eras' latest pointers, and regenerates
    materialized assets and static imports. Re-publishing identical inputs is idempotent. Reusing a
    revision for different data/configuration or an engine name for different bytes is refused.
 5. Review and commit the archive/index changes with the source changes. Run the ruleset, graph,
    transport-parity tests, typecheck and app build. Keep regression fixtures for historical behavior.
+   Tests that run current code on the current catalog must use the latest revision: each revision
+   pins the catalog it was published with, and a new extraction changes the catalog.
 
 Run one publisher at a time. The index is replaced atomically after artifacts have been written.
 Materialization verifies hashes and refuses altered files. A missing/corrupt artifact or unsupported

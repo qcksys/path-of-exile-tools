@@ -18,6 +18,9 @@ const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r13",
 )!;
 const ruleset = { ...prior, revision: "r14", engine: "crafting-graph-14" };
+const current = historyIndex.revisions.find(
+    (entry) => entry.game === "poe1" && entry.revision === "r17",
+)!;
 const donorId = "donor-0-0";
 
 function purchase(graph: CraftingGraph, id = donorId, alternativeId = "buy") {
@@ -94,11 +97,7 @@ it.each([
 });
 
 it("preserves every immediate outcome and the full seeded craft when using Magic Janus", () => {
-    const graph = projectFromPreset(
-        engine,
-        { ...ruleset, revision: "r16", engine: "crafting-graph-16" },
-        "rarity-helmet",
-    );
+    const graph = projectFromPreset(engine, current, "rarity-helmet");
     for (const node of graph.nodes)
         if (node.kind === "acquire")
             for (const alternative of node.alternatives)

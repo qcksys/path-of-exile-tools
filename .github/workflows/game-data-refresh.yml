@@ -1,0 +1,135 @@
+name: Game data refresh
+
+on:
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: game-data-refresh
+  cancel-in-progress: false
+
+env:
+  APP_ENV: test
+  VP_GIT_HOOKS: "0"
+  VARLOCK_TELEMETRY_DISABLED: "1"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      updates: ${{ steps.compare.outputs.updates }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: dev
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - name: Compare GGG's current client builds with the committed packages
+        id: compare
+        working-directory: packages/poe-game-data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current=$(vp exec tsx src/cli.ts versions)
+          updates='[]'
+          for game in poe1 poe2; do
+            patch=$(jq -r --arg game "$game" '.[$game].patch' <<<"$current")
+            committed=$(jq -r .client_build "../poe-${game#poe}-data/manifest.json")
+            branch="game-data/${game}-${patch}"
+            pulls=$(gh pr list --head "$branch" --state all --json number --jq length)
+            if [ "$patch" = "$committed" ]; then
+              echo "$game: $committed is current"
+            elif [ "$pulls" != 0 ]; then
+              echo "$game: $patch already has a pull request from $branch"
+            else
+              echo "$game: $committed -> $patch"
+              updates=$(jq -c --arg game "$game" --arg patch "$patch" --arg committed "$committed" \
+                --arg branch "$branch" '. + [{game: $game, patch: $patch, committed: $committed, branch: $branch}]' \
+                <<<"$updates")
+            fi
+          done
+          echo "updates=$updates" >> "$GITHUB_OUTPUT"
+
+  refresh:
+    needs: check
+    if: needs.check.outputs.updates != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.check.outputs.updates) }}
+    env:
+      GAME: ${{ matrix.game }}
+      PATCH: ${{ matrix.patch }}
+      COMMITTED: ${{ matrix.committed }}
+      BRANCH: ${{ matrix.branch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: dev
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - name: Extract the client build and regenerate its data package
+        working-directory: packages/poe-game-data
+        run: |
+          jq -n --arg game "$GAME" --arg patch "$PATCH" '{($game): {patch: $patch}}' > "$RUNNER_TEMP/pipeline.json"
+          vp exec tsx src/cli.ts run --config "$RUNNER_TEMP/pipeline.json" --game "$GAME"
+          vp exec tsx src/cli.ts crafting-data --game "$GAME"
+          if [ "$GAME" = poe1 ]; then vp exec tsx src/cli.ts crafting; fi
+          vp exec tsx src/cli.ts verify-packages --game "$GAME"
+      - name: Regenerate the app's crafting catalogs
+        run: |
+          vp run --filter './packages/*' build
+          vp run poe-boats#game-data:recombinator
+          vp run poe-boats#game-data:crafting
+      - name: Commit, push and open a pull request to dev
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          label="PoE ${GAME#poe}"
+          title="Update ${label} client data to ${PATCH}"
+          printf -- '---\n"poe-boats": patch\n---\n\n%s.\n' "$title" > ".changeset/game-data-${GAME}-${PATCH//./-}.md"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --create "$BRANCH"
+          git add "packages/poe-${GAME#poe}-data" apps/poe.boats/public/game-data .changeset
+          git status --short
+          git commit --message "$title"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/${BRANCH}"
+          cat > "$RUNNER_TEMP/body.md" <<EOF
+          GGG's patch server reports ${label} build \`${PATCH}\`; dev's package has \`${COMMITTED}\`.
+
+          The [game data refresh workflow](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) extracted the build from GGG's patch CDN and regenerated:
+
+          - \`packages/poe-${GAME#poe}-data\`, including its crafting supplement
+          - the app's crafting catalogs in \`apps/poe.boats/public/game-data\`
+
+          The published crafting history still pins the previous catalog, so the crafting ruleset tests fail until this branch publishes a new revision. Before merging:
+
+          - [ ] Review the data diff.
+          - [ ] Give ${label} a new revision (or a new era, if this build starts one) in \`apps/poe.boats/crafting-history/releases.json\`, run \`vp run game-data:publish-history\` in \`apps/poe.boats\`, and commit the result. If the publisher says one engine revision cannot refer to different implementations, the engine bundle changed since the last publication and needs a new \`CRAFTING_GRAPH_ENGINE\` identifier. \`apps/poe.boats/crafting-history/README.md\` describes the steps.
+          - [ ] Approve the CI runs. A pull request opened with the workflow token waits for approval before CI runs.
+          EOF
+          gh pr create --draft --base dev --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
