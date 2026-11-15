@@ -12,7 +12,6 @@ import {
     writeFile,
 } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { createInterface } from "node:readline";
 import { pipeline } from "node:stream/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 import { constants, createZstdCompress, createZstdDecompress } from "node:zlib";
@@ -215,6 +214,23 @@ function parseRawLine(path: string, line: string, record: number | string) {
 }
 
 /**
+ * Yields each complete line, reading only as lines are taken; an unfinished last line is dropped.
+ * readline instead reads up to 1,024 lines ahead, gigabytes when pages are several megabytes.
+ */
+async function* streamLines(chunks: AsyncIterable<Buffer>) {
+    let partial: Buffer[] = [];
+    for await (const chunk of chunks) {
+        let from = 0;
+        for (let newline = chunk.indexOf(0x0a); newline >= 0; newline = chunk.indexOf(0x0a, from)) {
+            yield Buffer.concat([...partial, chunk.subarray(from, newline)]).toString();
+            partial = [];
+            from = newline + 1;
+        }
+        if (from < chunk.length) partial.push(chunk.subarray(from));
+    }
+}
+
+/**
  * Streams one sealed hour's records, checking each page against its recorded SHA-256. With a
  * manifest, the whole file's SHA-256 is checked first, so a damaged file yields no records.
  */
@@ -222,11 +238,7 @@ async function* readRawFile(path: string, manifest?: RawManifest) {
     if (manifest && (await fileDigests(path)).sha256 !== manifest.sha256)
         throw new RawArchiveError(`${path} does not match its manifest checksum.`);
     let pages = 0;
-    const lines = createInterface({
-        input: createReadStream(path).pipe(createZstdDecompress()),
-        crlfDelay: Number.POSITIVE_INFINITY,
-    });
-    for await (const line of lines) {
+    for await (const line of streamLines(createReadStream(path).pipe(createZstdDecompress()))) {
         const { header, pageJson } = parseRawLine(path, line, pages + 1);
         pages++;
         yield { line, header, pageJson };
@@ -384,18 +396,8 @@ export async function rawEndPosition(dir: string): Promise<Omit<RawPosition, "ca
 }
 
 /** Yields the complete lines of a file being appended to, from a byte offset. */
-async function* spoolLines(path: string, start: number) {
-    let partial: Buffer[] = [];
-    for await (const chunk of createReadStream(path, { start }) as AsyncIterable<Buffer>) {
-        let from = 0;
-        for (let newline = chunk.indexOf(0x0a); newline >= 0; newline = chunk.indexOf(0x0a, from)) {
-            yield Buffer.concat([...partial, chunk.subarray(from, newline)]).toString();
-            partial = [];
-            from = newline + 1;
-        }
-        if (from < chunk.length) partial.push(chunk.subarray(from));
-    }
-}
+const spoolLines = (path: string, start: number) =>
+    streamLines(createReadStream(path, { start }) as AsyncIterable<Buffer>);
 
 /**
  * Reads pages in capture order from a position, following the spool as capture appends to it and
