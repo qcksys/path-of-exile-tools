@@ -11,6 +11,61 @@ import { extractListingPrice } from "#src/shared/price.ts";
 import { assertSourceRealm } from "#src/shared/source.ts";
 import { listingTab } from "#src/shared/stash-tab.ts";
 
+/**
+ * The latest hour of the day before `cutoff` whose archived pages were processed under another
+ * equipment revision and that this revision has not finished reclassifying.
+ */
+async function pendingHour(
+    conn: DuckDBConnection,
+    opts: { realm: string; league: string; revision: string; cutoff: number },
+) {
+    const [row] = await queryAll<{ hour: number }>(
+        conn,
+        `
+        WITH hours AS (
+            SELECT (floor(captured_at / 3600000) * 3600)::DOUBLE AS hour
+            FROM ps_capture_page
+            WHERE realm = $1 AND league = $2 AND processed_at IS NOT NULL
+                AND captured_at >= $3 AND captured_at < $4
+            GROUP BY hour HAVING bool_or(equipment_revision IS DISTINCT FROM $5)
+        ) SELECT h.hour FROM hours h LEFT JOIN ps_equipment_reclassify s
+            ON s.revision = $5 AND s.league = $2 AND s.hour = h.hour
+        WHERE NOT coalesce(s.completed, FALSE) ORDER BY h.hour DESC LIMIT 1`,
+        [
+            opts.realm,
+            opts.league,
+            Math.max(0, opts.cutoff - 24 * 3600) * 1000,
+            opts.cutoff * 1000,
+            opts.revision,
+        ],
+    );
+    return row?.hour;
+}
+
+/**
+ * Whether `reclassifyArchivedEquipment` has anything to replay. Pages processed by the running
+ * classifier never need it, so after a catalog change this turns false and stays false.
+ */
+export async function hasPendingReclassification(
+    conn: DuckDBConnection,
+    opts: {
+        realm: string;
+        league: string;
+        classifier?: EquipmentClassifier;
+        completedBefore?: number;
+    },
+) {
+    const classifier = opts.classifier ?? (await defaultEquipmentClassifier());
+    const cutoff = opts.completedBefore ?? Math.floor(Date.now() / 3_600_000) * 3600;
+    const hour = await pendingHour(conn, {
+        realm: opts.realm,
+        league: opts.league,
+        revision: classifier.manifest.revision,
+        cutoff,
+    });
+    return hour !== undefined;
+}
+
 export async function reclassifyArchivedEquipment(
     conn: DuckDBConnection,
     opts: {
@@ -57,29 +112,8 @@ export async function reclassifyArchivedEquipment(
             [...scope, Math.max(0, cutoff - 24 * 3600)],
         );
     });
-    async function nextHour() {
-        const [row] = await queryAll<{ hour: number }>(
-            conn,
-            `
-            WITH hours AS (
-                SELECT (floor(captured_at / 3600000) * 3600)::DOUBLE AS hour
-                FROM ps_capture_page
-                WHERE realm = $1 AND league = $2 AND processed_at IS NOT NULL
-                    AND captured_at >= $3 AND captured_at < $4
-                GROUP BY hour HAVING bool_or(equipment_revision IS DISTINCT FROM $5)
-            ) SELECT h.hour FROM hours h LEFT JOIN ps_equipment_reclassify s
-                ON s.revision = $5 AND s.league = $2 AND s.hour = h.hour
-            WHERE NOT coalesce(s.completed, FALSE) ORDER BY h.hour DESC LIMIT 1`,
-            [
-                opts.realm,
-                opts.league,
-                Math.max(0, cutoff - 24 * 3600) * 1000,
-                cutoff * 1000,
-                revision,
-            ],
-        );
-        return row?.hour;
-    }
+    const nextHour = () =>
+        pendingHour(conn, { realm: opts.realm, league: opts.league, revision, cutoff });
     let pages = 0;
     const completedHours: number[] = [];
     while (pages < limit) {

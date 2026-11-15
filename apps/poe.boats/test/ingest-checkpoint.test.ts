@@ -36,6 +36,7 @@ vi.mock("../../../packages/poe-stash-ingest/src/cx/ingest.ts", () => ({
     },
 }));
 vi.mock("../../../packages/poe-stash-ingest/src/ps/equipment-reclassify.ts", () => ({
+    hasPendingReclassification: async () => true,
     reclassifyArchivedEquipment: async () => {
         fixture.visit("reclassify");
         return { pages: 0, hours: 0, completedHours: [], pending: false };

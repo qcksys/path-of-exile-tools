@@ -8,6 +8,7 @@ const fixture = vi.hoisted(() => ({
     events: [] as string[],
     ingest: vi.fn(),
     reclassify: vi.fn(),
+    pending: vi.fn(async () => true),
 }));
 vi.mock("../../../packages/poe-stash-ingest/src/shared/auth.ts", () => ({ REALM: "pc" }));
 vi.mock("../../../packages/poe-stash-ingest/src/ps/ingest.ts", () => ({
@@ -23,6 +24,7 @@ vi.mock("../../../packages/poe-stash-ingest/src/cx/ingest.ts", () => ({
     },
 }));
 vi.mock("../../../packages/poe-stash-ingest/src/ps/equipment-reclassify.ts", () => ({
+    hasPendingReclassification: fixture.pending,
     reclassifyArchivedEquipment: fixture.reclassify,
 }));
 vi.mock("../../../packages/poe-stash-ingest/src/ps/checkpoints.ts", () => ({
@@ -100,6 +102,31 @@ it("reclassifies only what PS_RECLASSIFY_PAGES_PER_HOUR allows and skips its che
     } finally {
         vi.useRealTimers();
         vi.unstubAllEnvs();
+        run.mockRestore();
+        log.mockRestore();
+        await db.close();
+    }
+});
+
+it("skips the checkpoint and the replay while no archived hour awaits reclassification", async () => {
+    const db = await openDb(":memory:");
+    const client = createClient({ userAgent: "pipeline-test", token: "inert" });
+    fixture.events.length = 0;
+    fixture.reclassify.mockReset();
+    fixture.pending.mockResolvedValueOnce(false);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const run = vi.spyOn(db.conn, "run");
+    try {
+        await runPipeline(db.conn, client, { pages: 50, league: "Allflame" });
+        expect(fixture.pending).toHaveBeenLastCalledWith(db.conn, {
+            realm: "pc",
+            league: "Allflame",
+            completedBefore: undefined,
+        });
+        expect(fixture.events).toEqual(["capture", "exchange", "delivery"]);
+        expect(fixture.reclassify).not.toHaveBeenCalled();
+        expect(run.mock.calls.filter(([sql]) => sql === "CHECKPOINT")).toEqual([]);
+    } finally {
         run.mockRestore();
         log.mockRestore();
         await db.close();
