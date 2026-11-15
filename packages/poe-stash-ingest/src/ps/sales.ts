@@ -122,8 +122,15 @@ export async function recordRemovals(
              UNION SELECT unnest($2::JSON::VARCHAR[]) WHERE EXISTS (
                  SELECT 1 FROM removed WHERE market_key = $3)
          ), market AS MATERIALIZED (
-             SELECT *, ${marketKey("ps_listing")} AS market_key FROM ps_listing
+             -- Only the columns and listings the comparison can use: this scans every listing of
+             -- the removed items, and a whole row carries the item's JSON.
+             SELECT league, ${marketKey("ps_listing")} AS market_key, identified, corrupted,
+                 foil_variation, links, tab, signature_value, mod_signature->>'kind' AS kind,
+                 account_name, price_amount, price_currency
+             FROM ps_listing
              WHERE item_key IN (SELECT item_key FROM market_items)
+                 AND removed_at IS NULL AND price_amount > 0
+                 AND last_seen_at >= ${seenAt} - INTERVAL ${SALE_POLICY.marketWindowSeconds} SECOND
          )
          SELECT l.* EXCLUDE (raw_item, withdrawn, market_key),
             CASE WHEN l.withdrawn THEN 'withdrawn'
@@ -146,11 +153,9 @@ export async function recordRemovals(
                      AND coalesce(p.links, 0) = coalesce(l.links, 0)
                      AND coalesce(p.tab, '') = coalesce(l.tab, '')
                      AND p.signature_value = l.signature_value
-                     AND coalesce(p.mod_signature->>'kind', '') = coalesce(l.mod_signature->>'kind', '')
+                     AND coalesce(p.kind, '') = coalesce(l.mod_signature->>'kind', '')
                      AND lower(p.account_name) <> lower(l.account_name)
-                     AND p.removed_at IS NULL AND p.price_currency = l.price_currency
-                     AND p.price_amount > 0
-                     AND p.last_seen_at >= ${seenAt} - INTERVAL ${SALE_POLICY.marketWindowSeconds} SECOND
+                     AND p.price_currency = l.price_currency
                  GROUP BY lower(p.account_name)
              ) peers
          ) m ON TRUE`,
