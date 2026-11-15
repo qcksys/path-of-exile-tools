@@ -5,7 +5,10 @@ import { ingestCx } from "#src/cx/ingest.ts";
 import { rollupCx } from "#src/cx/rollup.ts";
 import { flushCheckpoints } from "#src/ps/checkpoints.ts";
 import type { EquipmentDiagnostics } from "#src/ps/equipment-diagnostics.ts";
-import { reclassifyArchivedEquipment } from "#src/ps/equipment-reclassify.ts";
+import {
+    hasPendingReclassification,
+    reclassifyArchivedEquipment,
+} from "#src/ps/equipment-reclassify.ts";
 import { rollupEquipment } from "#src/ps/equipment-rollup.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
 import {
@@ -262,9 +265,20 @@ export async function runPipeline(
     if (REALM !== "poe2") {
         await update({ stage: "stash", failedStages: [...failedStages], progressAt: Date.now() });
         const limitPages = reclassifyAllowance(Math.min(opts.pages, 5));
+        // A checkpoint of a large database takes tens of seconds, so look for work first.
+        const pending =
+            limitPages > 0 &&
+            (await hasPendingReclassification(conn, {
+                realm: REALM ?? "pc",
+                league: opts.league ?? "all",
+                completedBefore: stashBeforeHour,
+            }).catch(async (error: unknown) => {
+                await failStage("stash", "Archived equipment replay", error);
+                return false;
+            }));
         // Release capture indexes before replay publication loads its own indexes.
         const checkpointed =
-            limitPages > 0 &&
+            pending &&
             (await conn.run("CHECKPOINT").then(
                 () => true,
                 async (error: unknown) => {
