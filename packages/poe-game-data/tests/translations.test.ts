@@ -1,15 +1,26 @@
 import { expect, it } from "vite-plus/test";
+import { AssetNotFound } from "../src/source.ts";
 import { Tables } from "../src/tables.ts";
 import { parseDescriptions, Translations } from "../src/translations.ts";
 
-it("resolves includes, local overrides, signed ranges and numeric handlers", async () => {
+// PoE 1 builds before 3.30 ship .txt description files; 3.30 ships .csd files that include .csd.
+it.each([
+    ".txt",
+    ".csd",
+])("resolves includes, local overrides, signed ranges and numeric handlers from PoE 1 %s files", async (extension) => {
+    const files: Record<string, string> = {
+        [`Metadata/StatDescriptions/map_stat_descriptions${extension}`]: `include "Metadata/StatDescriptions/stat_descriptions${extension}"\ndescription\n1 life\n1\n# "Map life {0}"`,
+        [`Metadata/StatDescriptions/stat_descriptions${extension}`]:
+            'description\n1 life\n1\n# "{0:+d} to maximum Life"\ndescription\n1 duration\n1\n# "Lasts {0} seconds" milliseconds_to_seconds 1',
+    };
+    const reads: string[] = [];
     const source = {
-        get: async (name: string) =>
-            Buffer.from(
-                name.endsWith("map_stat_descriptions.txt")
-                    ? 'include "Metadata/StatDescriptions/stat_descriptions.txt"\ndescription\n1 life\n1\n# "Map life {0}"'
-                    : 'description\n1 life\n1\n# "{0:+d} to maximum Life"\ndescription\n1 duration\n1\n# "Lasts {0} seconds" milliseconds_to_seconds 1',
-            ),
+        get: async (name: string) => {
+            const text = files[name];
+            if (text === undefined) throw new AssetNotFound(`Missing asset: ${name}`);
+            reads.push(name);
+            return Buffer.from(text);
+        },
     };
     const translations = new Translations(
         source,
@@ -28,6 +39,7 @@ it("resolves includes, local overrides, signed ranges and numeric handlers", asy
             "duration",
         ),
     ).toBe("Lasts (1-2.5) seconds");
+    expect(reads.sort()).toEqual(Object.keys(files).sort());
 });
 
 it("rejects malformed description arity", () => {

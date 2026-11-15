@@ -60,6 +60,57 @@ it.each([
     ).rejects.toThrow("schema row size");
 });
 
+it("reads PoE 2 ItemVisualIdentity rows with the three strings 0.5.5.8 appended to the schema", async () => {
+    // Each row holds Id and DDSFile, then `extra` unknown bytes; strings are UTF-16 offsets into
+    // the variable section, which starts with its 8-byte marker.
+    const visuals = (extra: number) => {
+        const strings = Buffer.from("A\0\0\0B\0\0\0", "utf16le");
+        const row = 16 + extra;
+        const bytes = Buffer.alloc(4 + row + 8 + strings.length);
+        bytes.writeUInt32LE(1);
+        bytes.writeBigUInt64LE(8n, 4);
+        bytes.writeBigUInt64LE(16n, 12);
+        bytes.fill(0xbb, 4 + row, 4 + row + 8);
+        strings.copy(bytes, 4 + row + 8);
+        return bytes;
+    };
+    const string = { type: "string", array: false, interval: false, references: null };
+    const load = async (game: "poe1" | "poe2", extra: number, unnamedStrings = 0) => {
+        const tables = new Tables(
+            game,
+            { get: async () => visuals(extra) },
+            {
+                version: 8,
+                tables: [
+                    {
+                        name: "ItemVisualIdentity",
+                        validFor: 3,
+                        columns: [
+                            { name: "Id", ...string },
+                            { name: "DDSFile", ...string },
+                            ...Array.from({ length: unnamedStrings }, () => ({
+                                name: null,
+                                ...string,
+                            })),
+                        ],
+                    },
+                ],
+            },
+        );
+        await tables.load(["ItemVisualIdentity"]);
+        const [row] = tables.rows("ItemVisualIdentity");
+        return [row!.id(), row!.string("DDSFile")];
+    };
+    expect(await load("poe2", 24)).toEqual(["A", "B"]);
+    // A schema that already describes the columns is used as published.
+    expect(await load("poe2", 24, 3)).toEqual(["A", "B"]);
+    await expect(load("poe2", 24, 1)).rejects.toThrow(
+        "schema row size 24 differs from client row size 40",
+    );
+    await expect(load("poe2", 16)).rejects.toThrow("schema row size 16 differs");
+    await expect(load("poe1", 24)).rejects.toThrow("schema row size 16 differs");
+});
+
 it("rejects unsupported schemas and malformed DAT files", async () => {
     const source = { get: async () => Buffer.alloc(10) };
     expect(() => new Tables("poe1", source, { version: 9, tables: [] })).toThrow(

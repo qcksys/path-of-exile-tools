@@ -20,6 +20,22 @@ export const datSchema = z.object({
 type Column = z.infer<typeof columnSchema>;
 type Schema = z.infer<typeof datSchema>;
 
+const unnamedString: Column = {
+    name: null,
+    type: "string",
+    array: false,
+    interval: false,
+    references: null,
+};
+// Columns a client build appended after the last column the community schema describes, checked
+// against the client's rows: every schema column still reads at its schema offset. A table gets
+// them only while its schema row is shorter than the client row by exactly these columns, so they
+// stop applying once the schema describes the client.
+export const appendedColumns: Partial<Record<Game, Record<string, Column[]>>> = {
+    // PoE 2 0.5.5.8 added three animated-object (.ao) paths after SheathAnimatedObject.
+    poe2: { ItemVisualIdentity: [unnamedString, unnamedString, unnamedString] },
+};
+
 function headerType(column: Column): Header["type"] {
     const type: Header["type"] = { array: column.array, interval: column.interval };
     if (/^[ui](8|16|32|64)$/.test(column.type))
@@ -115,10 +131,26 @@ export class Table {
         private tables: Tables,
     ) {
         const dat = readDatFile(".datc64", bytes);
-        let offset = 0;
-        for (const [index, column] of columns.entries()) {
-            const header = { offset, type: headerType(column) };
-            offset += getHeaderLength(header, dat);
+        const layout = (list: Column[]) => {
+            let size = 0;
+            const fields = list.map((column) => {
+                const header = { offset: size, type: headerType(column) };
+                size += getHeaderLength(header, dat);
+                return { column, header };
+            });
+            return { fields, size };
+        };
+        let rowLayout = layout(columns);
+        const appended = appendedColumns[tables.game]?.[name];
+        if (dat.rowCount && rowLayout.size !== dat.rowLength && appended) {
+            const supplemented = layout([...columns, ...appended]);
+            if (supplemented.size === dat.rowLength) rowLayout = supplemented;
+        }
+        if (dat.rowCount && rowLayout.size !== dat.rowLength)
+            throw new Error(
+                `${name}: schema row size ${rowLayout.size} differs from client row size ${dat.rowLength}`,
+            );
+        for (const [index, { column, header }] of rowLayout.fields.entries()) {
             if (column.name) {
                 if (this.columns.has(column.name))
                     throw new Error(`${name}: duplicate schema column ${column.name}`);
@@ -134,10 +166,6 @@ export class Table {
                 this.unnamedForeignKeys.set(index, getFieldReader(header, dat));
             }
         }
-        if (dat.rowCount && offset !== dat.rowLength)
-            throw new Error(
-                `${name}: schema row size ${offset} differs from client row size ${dat.rowLength}`,
-            );
         this.rows = Array.from({ length: dat.rowCount }, (_, index) => new Row(this, index));
     }
     resolve(name: string, value: unknown): Row | null {

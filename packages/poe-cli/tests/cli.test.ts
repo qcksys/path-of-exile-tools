@@ -97,6 +97,21 @@ it.each([
     expect(errors.length).toBeGreaterThan(0);
     expect(action).not.toHaveBeenCalled();
 });
+it("prints the errors a failure wraps, with their stacks", async () => {
+    const { program, action, errors } = fixture();
+    const original = new Error("ItemVisualIdentity: schema row size 968 differs");
+    action.mockRejectedValue(
+        new Error("Extraction failed; evidence retained at data", {
+            cause: new Error("Decoding failed", { cause: original }),
+        }),
+    );
+    expect(await runCli(program, ["ingest"])).toBe(1);
+    const lines = errors.join("").split("\n");
+    expect(lines[0]).toBe("Extraction failed; evidence retained at data");
+    expect(lines[1]).toBe("Caused by: Error: Decoding failed");
+    expect(lines).toContain(`Caused by: Error: ${original.message}`);
+    expect(errors.join("")).toContain("cli.test.ts");
+});
 it("prompts for omitted values without overwriting explicit CLI values", async () => {
     tty(true);
     const { program, action } = fixture();
