@@ -90,6 +90,23 @@ async function promptCommand(command: Command) {
         throw new Cancelled();
 }
 
+// A command that wraps a failure keeps it in `cause`; print the chain so logs show the original error.
+function describeFailure(error: unknown): string {
+    const lines = [error instanceof Error ? error.message : String(error)];
+    const seen = new Set<unknown>([error]);
+    for (
+        let cause = error instanceof Error ? error.cause : undefined;
+        cause !== undefined && !seen.has(cause);
+        cause = cause instanceof Error ? cause.cause : undefined
+    ) {
+        seen.add(cause);
+        lines.push(
+            `Caused by: ${cause instanceof Error ? (cause.stack ?? cause.message) : String(cause)}`,
+        );
+    }
+    return lines.join("\n");
+}
+
 export async function runCli(program: Command, argv = process.argv.slice(2)): Promise<number> {
     program
         .option("--interactive", "prompt for omitted arguments and options")
@@ -144,7 +161,7 @@ export async function runCli(program: Command, argv = process.argv.slice(2)): Pr
             return 130;
         }
         if (error instanceof CommanderError) return error.exitCode;
-        const message = error instanceof Error ? error.message : String(error);
+        const message = describeFailure(error);
         if (interactive) prompts.log.error(message, { output: process.stderr });
         else program.configureOutput().writeErr?.(`${message}\n`);
         return 1;

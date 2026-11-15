@@ -36,7 +36,7 @@ it.each(["poe1", "poe2"] as const)("renders all eight stats from %s descriptions
     );
     expect(paths).toEqual([
         game === "poe1"
-            ? "Metadata/StatDescriptions/stat_descriptions.txt"
+            ? "Metadata/StatDescriptions/stat_descriptions.csd"
             : "Data/StatDescriptions/stat_descriptions.csd",
     ]);
 });

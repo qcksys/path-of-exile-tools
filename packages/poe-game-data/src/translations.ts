@@ -191,18 +191,31 @@ export class Translations {
         return { statDescriptions, modDescriptions, modTexts, statLookups, additionalDescriptions };
     }
 
+    // PoE 1 3.30 replaced the .txt description files with .csd files, which include each other by
+    // their .csd names. Both names share one cache entry; earlier builds have only the .txt file.
+    private async read(path: string): Promise<Uint8Array> {
+        if (this.tables.game === "poe2") return this.source.get(path);
+        try {
+            return await this.source.get(path.replace(/\.txt$/, ".csd"));
+        } catch (error) {
+            if (!(error instanceof AssetNotFound)) throw error;
+            return this.source.get(path);
+        }
+    }
+
     private async load(path: string): Promise<Descriptions> {
         if (this.tables.game === "poe2")
             path = path
                 .replace("Metadata/StatDescriptions/", "Data/StatDescriptions/")
                 .replace(/\.txt$/, ".csd");
+        else path = path.replace(/\.csd$/, ".txt");
         const cached = this.cache.get(path);
         if (cached) return cached;
         if (this.failed.has(path)) throw this.failed.get(path);
         if (this.loading.has(path)) throw new Error(`Cyclic stat description include: ${path}`);
         this.loading.add(path);
         try {
-            const parsed = parseDescriptions(decodeText(await this.source.get(path)));
+            const parsed = parseDescriptions(decodeText(await this.read(path)));
             const result: Descriptions = new Map();
             for (const entry of parsed.entries) {
                 if ("include" in entry)
