@@ -97,6 +97,53 @@ const LISTING_VALUES = `
     (value->>'rawItem')::JSON AS raw_item,
     value->>'signatureValue' AS signature_value`;
 
+const UPDATED_COLUMNS = [
+    "league",
+    "item_key",
+    "icon_asset",
+    "identified",
+    "frame_type",
+    "type_line",
+    "base_type",
+    "name",
+    "rarity",
+    "corrupted",
+    "foil_variation",
+    "links",
+    "tab",
+    "price_amount",
+    "price_currency",
+    "stack_size",
+    "mod_signature",
+    "signature_value",
+    "raw_item",
+];
+/**
+ * `ps_listing`'s indexed columns. DuckDB rewrites a row when an UPDATE sets one, even to its own
+ * value, and keeps the old copy for every later scan to read; leaving them out updates in place.
+ */
+const INDEXED_COLUMNS = new Set(["item_key", "icon_asset"]);
+
+async function updateListings(
+    conn: DuckDBConnection,
+    rows: readonly (ListingRow & { rowId: string })[],
+    seenAt: string,
+    keysChanged: boolean,
+) {
+    const columns = UPDATED_COLUMNS.filter((column) => keysChanged || !INDEXED_COLUMNS.has(column));
+    await conn.run(
+        `UPDATE ps_listing SET
+            ${columns.map((column) => `${column} = v.${column}`).join(", ")},
+            last_seen_at = ${seenAt},
+            removed_at = NULL
+        FROM (
+            SELECT (value->>'rowId')::BIGINT AS row_id, ${LISTING_VALUES} FROM json_each($1::JSON)
+        ) v
+        WHERE ps_listing.rowid = v.row_id`,
+        [JSON.stringify(rows)],
+    );
+}
+
 function listingRows(change: PublicStashChange, accountName: string, league: string) {
     const rows: ListingRow[] = [];
     const tab = listingTab(change);
@@ -172,11 +219,14 @@ async function applyRound(
         accountName: string;
         stashId: string;
         itemId: string;
+        itemKey: string;
+        iconAsset: string | null;
         active: boolean;
     }>(
         conn,
         `SELECT rowid::VARCHAR AS "rowId", account_name AS "accountName", stash_id AS "stashId",
-            item_id AS "itemId", removed_at IS NULL AS active
+            item_id AS "itemId", item_key AS "itemKey", icon_asset AS "iconAsset",
+            removed_at IS NULL AS active
         FROM ps_listing WHERE stash_id IN (${params(stashIds)})`,
         stashIds,
     );
@@ -185,6 +235,7 @@ async function applyRound(
     const removedRows: string[] = [];
     const removals: Parameters<typeof recordRemovals>[1][number][] = [];
     const updates: (ListingRow & { rowId: string })[] = [];
+    const rekeyed: (ListingRow & { rowId: string })[] = [];
     const inserts: ListingRow[] = [];
     const listed: { stashId: string; accountName: string }[] = [];
     for (const change of changes) {
@@ -206,8 +257,10 @@ async function applyRound(
             const existing = owned.get(row.itemId);
             if (existing?.active) result.updated++;
             else result.inserted++;
-            if (existing) updates.push({ ...row, rowId: existing.rowId });
-            else inserts.push(row);
+            if (!existing) inserts.push(row);
+            else if (existing.itemKey === row.itemKey && existing.iconAsset === row.iconAsset)
+                updates.push({ ...row, rowId: existing.rowId });
+            else rekeyed.push({ ...row, rowId: existing.rowId });
         }
         const gone = [...owned.values()].filter((row) => row.active && !current.has(row.itemId));
         if (gone.length) {
@@ -218,8 +271,8 @@ async function applyRound(
         listed.push({ stashId: change.id, accountName });
     }
 
-    await learnBasemap(conn, [...updates, ...inserts]);
-    // Removals first: updates may rewrite their rows under new row IDs.
+    await learnBasemap(conn, [...updates, ...rekeyed, ...inserts]);
+    // Removals first: rekeyed updates rewrite their rows under new row IDs.
     if (removedRows.length) {
         await conn.run(
             `UPDATE ps_listing SET removed_at = ${seenAt}
@@ -228,37 +281,8 @@ async function applyRound(
         );
     }
     if (removals.length) await recordRemovals(conn, removals, observedAt);
-    if (updates.length) {
-        await conn.run(
-            `UPDATE ps_listing SET
-                league = v.league,
-                item_key = v.item_key,
-                icon_asset = v.icon_asset,
-                identified = v.identified,
-                frame_type = v.frame_type,
-                type_line = v.type_line,
-                base_type = v.base_type,
-                name = v.name,
-                rarity = v.rarity,
-                corrupted = v.corrupted,
-                foil_variation = v.foil_variation,
-                links = v.links,
-                tab = v.tab,
-                price_amount = v.price_amount,
-                price_currency = v.price_currency,
-                stack_size = v.stack_size,
-                mod_signature = v.mod_signature,
-                signature_value = v.signature_value,
-                raw_item = v.raw_item,
-                last_seen_at = ${seenAt},
-                removed_at = NULL
-            FROM (
-                SELECT (value->>'rowId')::BIGINT AS row_id, ${LISTING_VALUES} FROM json_each($1::JSON)
-            ) v
-            WHERE ps_listing.rowid = v.row_id`,
-            [JSON.stringify(updates)],
-        );
-    }
+    if (updates.length) await updateListings(conn, updates, seenAt, false);
+    if (rekeyed.length) await updateListings(conn, rekeyed, seenAt, true);
     if (inserts.length) {
         await conn.run(
             `INSERT INTO ps_listing BY NAME
