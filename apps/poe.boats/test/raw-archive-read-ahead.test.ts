@@ -1,5 +1,6 @@
 // biome-ignore-all lint/style/useNamingConvention: Fixtures preserve upstream field names.
 import { randomBytes } from "node:crypto";
+import { once } from "node:events";
 import { createReadStream, type ReadStream } from "node:fs";
 import { mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -57,6 +58,6 @@ it("reads a sealed hour only as far as the pages taken from it", async () => {
     const pages = vi.mocked(createReadStream).mock.results.at(-1)!.value as ReadStream;
     const bytesRead = pages.bytesRead;
     // Windows cannot remove the directory while the file is open.
-    if (!pages.closed) await new Promise((resolve) => pages.destroy().once("close", resolve));
+    if (!pages.closed) await once(pages.destroy(), "close");
     expect(bytesRead).toBeLessThan(sealed / 4);
 }, 30_000);
