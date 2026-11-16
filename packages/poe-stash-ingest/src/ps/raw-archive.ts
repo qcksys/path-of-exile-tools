@@ -1,3 +1,4 @@
+import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
 import {
@@ -14,6 +15,7 @@ import {
 import { dirname, join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { setTimeout as sleep } from "node:timers/promises";
+import { promisify } from "node:util";
 import { constants, createZstdCompress, createZstdDecompress } from "node:zlib";
 import type { CurrencyExchangeSnapshot, PublicStashPage } from "@poe-tools/api-client";
 
@@ -37,6 +39,8 @@ export interface B2Options {
 export interface RawArchiveOptions {
     dir: string;
     b2?: B2Options;
+    /** Above 1, hours are sealed by the `zstd` command on this many threads; otherwise by Node on one. */
+    sealThreads?: number;
 }
 
 export interface RawManifest {
@@ -85,15 +89,20 @@ const ZSTD_PARAMS = {
     [constants.ZSTD_c_windowLog]: 27,
     [constants.ZSTD_c_checksumFlag]: 1,
 };
+const execFileAsync = promisify(execFile);
 
 /** Raw archiving is off unless `PS_RAW_ARCHIVE_DIR` is set; B2 upload is off unless `B2_KEY_ID` is. */
 export function rawArchiveSettings(env = process.env): RawArchiveOptions | undefined {
     if (!env.PS_RAW_ARCHIVE_DIR) return undefined;
-    if (!env.B2_KEY_ID) return { dir: env.PS_RAW_ARCHIVE_DIR };
+    const threads = env.PS_RAW_SEAL_THREADS ? Number(env.PS_RAW_SEAL_THREADS) : undefined;
+    if (threads !== undefined && !(Number.isSafeInteger(threads) && threads >= 1))
+        throw new Error("PS_RAW_SEAL_THREADS must be a positive integer.");
+    const local = { dir: env.PS_RAW_ARCHIVE_DIR, ...(threads ? { sealThreads: threads } : {}) };
+    if (!env.B2_KEY_ID) return local;
     if (!env.B2_APPLICATION_KEY || !env.B2_BUCKET)
         throw new Error("B2_KEY_ID needs B2_APPLICATION_KEY and B2_BUCKET.");
     return {
-        dir: env.PS_RAW_ARCHIVE_DIR,
+        ...local,
         b2: {
             keyId: env.B2_KEY_ID,
             applicationKey: env.B2_APPLICATION_KEY,
@@ -265,7 +274,34 @@ async function writeManifest(path: string, manifest: RawManifest) {
     await rename(`${path}.tmp`, path);
 }
 
-async function sealHour(dir: string, hour: string): Promise<RawManifest> {
+/**
+ * Compresses with `ZSTD_PARAMS`. On one thread, an hour of league-start pages takes over an hour.
+ * Node's zstd stream crashed with worker threads (ERR_STREAM_PUSH_AFTER_EOF), so threads use
+ * the `zstd` command with the same settings, which writes the same single frame.
+ */
+async function compressHour(spool: string, temp: string, threads: number) {
+    if (threads > 1) {
+        await execFileAsync("zstd", [
+            "-q",
+            "-f",
+            "-19",
+            "--long=27",
+            "--check",
+            `-T${threads}`,
+            "-o",
+            temp,
+            spool,
+        ]);
+        return;
+    }
+    await pipeline(
+        createReadStream(spool),
+        createZstdCompress({ params: ZSTD_PARAMS }),
+        createWriteStream(temp),
+    );
+}
+
+async function sealHour(dir: string, hour: string, threads: number): Promise<RawManifest> {
     const spool = join(dir, SPOOL, `${hour}.ndjson`);
     const target = sealedPath(dir, hour);
     if (await stat(`${target}.json`).catch(() => undefined))
@@ -273,11 +309,7 @@ async function sealHour(dir: string, hour: string): Promise<RawManifest> {
     await trimPartialLine(spool);
     await mkdir(dirname(target), { recursive: true });
     const temp = `${target}.tmp`;
-    await pipeline(
-        createReadStream(spool),
-        createZstdCompress({ params: ZSTD_PARAMS }),
-        createWriteStream(temp),
-    );
+    await compressHour(spool, temp, threads);
 
     // Decompress what was written and compare it with the spool before the spool is removed.
     const expected = createHash("sha256");
@@ -327,8 +359,12 @@ async function sealHour(dir: string, hour: string): Promise<RawManifest> {
     return sealed;
 }
 
-/** Seals every spooled hour before the current UTC hour. */
-export async function sealRawHours(dir: string, now = Date.now()): Promise<RawManifest[]> {
+/** Seals every spooled hour before the current UTC hour; see `RawArchiveOptions.sealThreads`. */
+export async function sealRawHours(
+    dir: string,
+    now = Date.now(),
+    threads = 1,
+): Promise<RawManifest[]> {
     const current = hourKey(now);
     const hours = (await readdir(join(dir, SPOOL)).catch(() => [] as string[]))
         .filter((name) => name.endsWith(".ndjson"))
@@ -336,7 +372,7 @@ export async function sealRawHours(dir: string, now = Date.now()): Promise<RawMa
         .filter((hour) => hour < current)
         .sort();
     const sealed: RawManifest[] = [];
-    for (const hour of hours) sealed.push(await sealHour(dir, hour));
+    for (const hour of hours) sealed.push(await sealHour(dir, hour, threads));
     return sealed;
 }
 
@@ -619,7 +655,7 @@ export async function uploadRawHours(
 
 /** Seals finished hours, then uploads any sealed hour without a B2 copy. */
 export async function maintainRawArchive(opts: RawArchiveOptions, now = Date.now()) {
-    const sealed = await sealRawHours(opts.dir, now);
+    const sealed = await sealRawHours(opts.dir, now, opts.sealThreads);
     const uploaded = opts.b2 ? await uploadRawHours(opts.dir, opts.b2) : 0;
     return { sealed: sealed.map((m) => m.hour), uploaded };
 }
