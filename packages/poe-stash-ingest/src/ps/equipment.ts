@@ -233,29 +233,49 @@ async function captureRound(
     const itemIds = all.map((row) => row.id);
     const existing = new Map(
         (
-            await queryAll<{ rowId: string; account: string; itemId: string }>(
+            await queryAll<{
+                rowId: string;
+                account: string;
+                itemId: string;
+                stashId: string;
+                league: string;
+            }>(
                 conn,
-                `SELECT rowid::VARCHAR AS "rowId", account_name AS account, item_id AS "itemId"
+                `SELECT rowid::VARCHAR AS "rowId", account_name AS account, item_id AS "itemId",
+                    stash_id AS "stashId", league
                 FROM ps_equipment_listing WHERE item_id IN (${params(itemIds)})`,
                 itemIds,
             )
-        ).map((row) => [`${row.account}\n${row.itemId}`, row.rowId]),
+        ).map((row) => [`${row.account}\n${row.itemId}`, row]),
     );
-    const updates = all.flatMap((row) => {
-        const rowId = existing.get(`${row.account}\n${row.id}`);
-        return rowId ? [{ ...row, rowId }] : [];
-    });
+    const stayed: (EquipmentRow & { rowId: string })[] = [];
+    const moved: (EquipmentRow & { rowId: string })[] = [];
+    // Hour rows are copied from their listing, so an hour row's league can only differ when its
+    // listing's league just changed.
+    let leagueChanged = false;
+    for (const row of all) {
+        const known = existing.get(`${row.account}\n${row.id}`);
+        if (!known) continue;
+        if (known.league !== row.league) leagueChanged = true;
+        (known.stashId === row.stashId ? stayed : moved).push({ ...row, rowId: known.rowId });
+    }
     const inserts = all.filter((row) => !existing.has(`${row.account}\n${row.id}`));
-    if (updates.length) {
+    // `stash_id` is indexed (ps_equipment_stash), and setting an indexed column rewrites the row
+    // even when its value is unchanged, so only items that moved set it.
+    for (const [rows, stashColumn] of [
+        [stayed, ""],
+        [moved, "stash_id = v.value->>'stashId',"],
+    ] as const) {
+        if (!rows.length) continue;
         await conn.run(
             `UPDATE ps_equipment_listing SET
-                stash_id = v.value->>'stashId', league = v.value->>'league', revision = $2,
+                ${stashColumn} league = v.value->>'league', revision = $2,
                 matches = v.value->'matches', unknown_matches = v.value->'unknown',
                 price_amount = (v.value->>'amount')::DOUBLE, price_currency = v.value->>'currency',
                 raw_item = v.value->'item', last_seen_at = $1::TIMESTAMP, removed_at = NULL
             FROM (SELECT (value->>'rowId')::BIGINT AS row_id, value FROM json_each($3::JSON)) v
             WHERE ps_equipment_listing.rowid = v.row_id`,
-            [time, revision, JSON.stringify(updates)],
+            [time, revision, JSON.stringify(rows)],
         );
     }
     if (inserts.length) {
@@ -286,14 +306,22 @@ async function captureRound(
     );
     const sameRow = `h.observed_hour = $1 AND h.account_name = e.account_name
         AND h.item_id = e.item_id AND h.revision = e.revision`;
-    await conn.run(
-        `UPDATE ps_equipment_hour h SET
-            stash_id = e.stash_id, league = e.league, matches = e.matches,
+    // `league` is indexed (ps_equipment_hour_time); set it only on rows whose league changed.
+    const hourColumns = `stash_id = e.stash_id, matches = e.matches,
             unknown_matches = e.unknown_matches, price_amount = e.price_amount,
-            price_currency = e.price_currency, last_seen_at = e.last_seen_at
-        FROM page_equipment e WHERE ${sameRow}`,
+            price_currency = e.price_currency, last_seen_at = e.last_seen_at`;
+    await conn.run(
+        `UPDATE ps_equipment_hour h SET ${hourColumns}
+        FROM page_equipment e WHERE ${sameRow} AND h.league IS NOT DISTINCT FROM e.league`,
         [hour],
     );
+    if (leagueChanged) {
+        await conn.run(
+            `UPDATE ps_equipment_hour h SET league = e.league, ${hourColumns}
+            FROM page_equipment e WHERE ${sameRow} AND h.league IS DISTINCT FROM e.league`,
+            [hour],
+        );
+    }
     await conn.run(
         `INSERT INTO ps_equipment_hour BY NAME
         SELECT * EXCLUDE (row_id), epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
