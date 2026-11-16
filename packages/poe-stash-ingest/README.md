@@ -386,6 +386,11 @@ content checksum). It decompresses the result and compares it with the spool, th
 only then deletes the spool. Sealing an hour already sealed fails and keeps the spool. Failures
 report as the `delivery` stage on the next cycle. On a 3 GB sample this format compressed 18×.
 
+Node compresses on one thread, about 2 MB/s at this level, which is too slow for a busy hour. With
+`PS_RAW_SEAL_THREADS` above 1, the `zstd` command (installed in the image) seals each hour with the same
+settings on that many threads and writes the same single frame. Node's own zstd stream crashed with
+worker threads, so it is not used for them. Each thread needs a few hundred MB of memory.
+
 When `B2_KEY_ID` is set, sealed hours without a B2 copy upload to the Backblaze B2 bucket named by
 `B2_BUCKET` through the native API, oldest first, named `$B2_PREFIX<YYYY>/<MM>/<DD>/<HH>.ndjson.zst`.
 The application key needs `listBuckets` (to find the bucket's ID) and `writeFiles`. B2 checks the upload against

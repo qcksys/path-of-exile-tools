@@ -1,4 +1,5 @@
 // biome-ignore-all lint/style/useNamingConvention: Fixtures preserve upstream field names.
+import { execFileSync } from "node:child_process";
 import { appendFile, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,6 +14,7 @@ import {
     exchangeArchiveOptions,
     RawArchiveError,
     type RawManifest,
+    rawArchiveSettings,
     replayRawArchive,
     sealRawHours,
     uploadRawHours,
@@ -107,6 +109,42 @@ it("rejects a damaged file before replaying any of its pages", async () => {
     ).rejects.toThrow(RawArchiveError);
     expect(seen).toEqual([]);
 });
+
+it("reads the seal thread count from PS_RAW_SEAL_THREADS", () => {
+    // The app types process.env with every variable it requires.
+    const env = (values: Record<string, string>) => values as unknown as NodeJS.ProcessEnv;
+    expect(
+        rawArchiveSettings(env({ PS_RAW_ARCHIVE_DIR: "/raw", PS_RAW_SEAL_THREADS: "8" })),
+    ).toEqual({ dir: "/raw", sealThreads: 8 });
+    expect(rawArchiveSettings(env({ PS_RAW_ARCHIVE_DIR: "/raw" }))).toEqual({ dir: "/raw" });
+    for (const value of ["0", "2.5", "eight"])
+        expect(() =>
+            rawArchiveSettings(env({ PS_RAW_ARCHIVE_DIR: "/raw", PS_RAW_SEAL_THREADS: value })),
+        ).toThrow("PS_RAW_SEAL_THREADS");
+});
+
+const hasZstdCommand = (() => {
+    try {
+        execFileSync("zstd", ["--version"], { stdio: "ignore" });
+        return true;
+    } catch {
+        return false;
+    }
+})();
+
+it.skipIf(!hasZstdCommand)(
+    "seals with the zstd command's threads into an hour that replays like any other",
+    async () => {
+        for (let n = 0; n < 20; n++)
+            await appendRawPage(dir, { capturedAt: hour(10, n), page: page(`p${n}`, `note ${n}`) });
+        const [sealed] = await sealRawHours(dir, hour(11), 2);
+        expect(sealed).toMatchObject({ hour: "2026-10-28T10", pages: 20 });
+        expect(await readdir(join(dir, "spool"))).toEqual([]);
+        expect((await collect()).map((r) => r.page.next_change_id)).toEqual(
+            Array.from({ length: 20 }, (_, n) => `p${n}`),
+        );
+    },
+);
 
 it("refuses to seal over an hour that is already sealed", async () => {
     await appendRawPage(dir, { capturedAt: hour(10), page: page("a") });

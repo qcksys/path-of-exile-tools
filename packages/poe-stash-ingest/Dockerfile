@@ -1,5 +1,7 @@
 FROM node:24-bookworm-slim
 
+# Sealing raw hours on several threads runs the zstd command (PS_RAW_SEAL_THREADS).
+RUN apt-get update && apt-get install -y --no-install-recommends zstd && rm -rf /var/lib/apt/lists/*
 RUN npm install --global pnpm@10.32.1
 WORKDIR /workspace
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

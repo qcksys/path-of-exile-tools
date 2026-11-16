@@ -52,12 +52,15 @@ services:
   pc-capture:
     <<: *worker
     command: [capture]
-    # Sealing an hour at zstd level 19 takes one core beside fetching.
-    cpus: 2.0
+    # On one thread, sealing a league-start hour took longer than the hour. Eight zstd threads
+    # use about eight cores and 1.5 GB while an hour seals, beside fetching.
+    cpus: 9.0
+    mem_limit: 4g
     env_file: ./config/pc.env
     environment:
       PS_RAW_ARCHIVE_DIR: /backups/raw
       INGEST_STATUS_FILE: /backups/raw/capture-status.json
+      PS_RAW_SEAL_THREADS: "8"
     volumes:
       - ./backups/pc:/backups
     secrets:
