@@ -302,9 +302,10 @@ async function applyRound(
     await conn.run(
         `CREATE OR REPLACE TEMP TABLE page_listing AS
         WITH stash AS MATERIALIZED (
-            SELECT * FROM ps_listing WHERE stash_id IN (${params(listedIds, 2)})
+            -- The hour rows keep no item JSON, so it is not copied here either.
+            SELECT * EXCLUDE (raw_item) FROM ps_listing WHERE stash_id IN (${params(listedIds, 2)})
         )
-        SELECT stash.* EXCLUDE (raw_item, removed_at) FROM stash
+        SELECT stash.* EXCLUDE (removed_at) FROM stash
         JOIN json_each($1::JSON) j ON stash.stash_id = (j.value->>'stashId')
             AND stash.account_name = (j.value->>'accountName')
         -- An item still listed but no longer captured stays active with its old last_seen_at;

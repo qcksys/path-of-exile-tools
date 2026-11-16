@@ -5,6 +5,7 @@ import { normalizeApiItem } from "@poe-tools/item-query";
 import { compileMarketCohorts, marketCohortManifestSchema } from "@poe-tools/market";
 import { params, stashRounds } from "#src/ps/rounds.ts";
 import { queryAll } from "#src/shared/db.ts";
+import { memoizeByItem } from "#src/shared/item-memo.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
 import { listingTab } from "#src/shared/stash-tab.ts";
 
@@ -25,6 +26,23 @@ interface EquipmentRow {
     amount: number | null;
     currency: string | null;
     item: Item;
+}
+
+// About 670k distinct equipment items appear in a league-start hour.
+const CLASSIFY_CACHE_SIZE = 500_000;
+const classifiers = new WeakMap<EquipmentClassifier, (item: Item) => Classification>();
+type Classification = ReturnType<EquipmentClassifier["classify"]>;
+
+function classifyItem(classifier: EquipmentClassifier, item: Item) {
+    let classify = classifiers.get(classifier);
+    if (!classify) {
+        classify = memoizeByItem(
+            (value) => classifier.classify(normalizeApiItem("poe1", "stash", value)),
+            CLASSIFY_CACHE_SIZE,
+        );
+        classifiers.set(classifier, classify);
+    }
+    return classify(item);
 }
 
 let defaults: Promise<EquipmentClassifier> | undefined;
@@ -108,9 +126,7 @@ async function captureRound(
         const stashRows: EquipmentRow[] = [];
         for (const item of items) {
             if (!item.id || !classifier.acceptsBase(item.baseType)) continue;
-            const { matches, unknown } = classifier.classify(
-                normalizeApiItem("poe1", "stash", item),
-            );
+            const { matches, unknown } = classifyItem(classifier, item);
             if (unknown.length) onClassified?.(item, { matches, unknown });
             if (!matches.length && !unknown.length) continue;
             const price = extractListingPrice(item, change.stash);

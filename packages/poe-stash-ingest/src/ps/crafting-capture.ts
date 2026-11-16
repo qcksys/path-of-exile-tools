@@ -2,6 +2,9 @@ import { readFile } from "node:fs/promises";
 import type { Item } from "@poe-tools/api-client";
 import type { MarketCohortManifest } from "@poe-tools/market";
 import { isCapturedBeast, isUniqueItem } from "#src/shared/capture.ts";
+import { memoizeByItem } from "#src/shared/item-memo.ts";
+
+const CAPTURE_CACHE_SIZE = 500_000;
 
 interface CapturePolicy {
     equipmentBaseTypes: string[];
@@ -58,18 +61,8 @@ export function compileCraftingCapture(manifest: MarketCohortManifest, policy: C
     const patterns = [
         ...new Set(policy.specialModifiers.flatMap((mod) => (mod.text?.trim() ? [mod.text] : []))),
     ].map((text) => text.split("\n").map(modifierLine));
-    return (item: Item): boolean => {
-        if (
-            isUniqueItem(item) ||
-            isCapturedBeast(item) ||
-            item.frameType === 9 ||
-            item.rarity === "Currency" ||
-            item.frameType === 5 ||
-            item.frameType === 6
-        )
-            return true;
-        if (goodBases.has(item.baseType)) return true;
-        if (!equipmentBases.has(item.baseType)) return false;
+    // Only equipment bases reach the modifier tests, and re-sent stashes repeat them item by item.
+    const retainedByModifiers = memoizeByItem((item: Item): boolean => {
         if (
             item.fractured ||
             item.fracturedMods?.length ||
@@ -100,6 +93,20 @@ export function compileCraftingCapture(manifest: MarketCohortManifest, policy: C
         if (lines.some((line) => distinctive.has(line.replace(/[+-]?\d+(?:\.\d+)?/g, "#"))))
             return true;
         return patterns.some((group) => group.every((matches) => lines.some(matches)));
+    }, CAPTURE_CACHE_SIZE);
+    return (item: Item): boolean => {
+        if (
+            isUniqueItem(item) ||
+            isCapturedBeast(item) ||
+            item.frameType === 9 ||
+            item.rarity === "Currency" ||
+            item.frameType === 5 ||
+            item.frameType === 6
+        )
+            return true;
+        if (goodBases.has(item.baseType)) return true;
+        if (!equipmentBases.has(item.baseType)) return false;
+        return retainedByModifiers(item);
     };
 }
 
