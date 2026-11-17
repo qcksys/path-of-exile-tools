@@ -281,7 +281,7 @@ async function captureRound(
         else stayed.push({ ...row, rowId: known.rowId });
     }
     if (seen.length) {
-        // Rewriting the matches and item JSON of an unchanged item costs many times this.
+        // Rewriting the matches and item JSON of an unchanged item costs far more.
         await conn.run(
             `UPDATE ps_equipment_listing SET last_seen_at = $1::TIMESTAMP, removed_at = NULL
             WHERE rowid IN (SELECT value::BIGINT FROM json_each($2::JSON))`,

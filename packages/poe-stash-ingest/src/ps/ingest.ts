@@ -296,7 +296,7 @@ async function applyRound(
     }
     if (removals.length) await recordRemovals(conn, removals, observedAt);
     if (seen.length) {
-        // Rewriting every column of an unchanged listing costs about 40 times this.
+        // Rewriting every column, item JSON included, of an unchanged listing costs far more.
         await conn.run(
             `UPDATE ps_listing SET last_seen_at = ${seenAt}, removed_at = NULL
             WHERE rowid IN (SELECT value::BIGINT FROM json_each($1::JSON))`,
