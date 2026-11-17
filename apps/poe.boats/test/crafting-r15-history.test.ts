@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { expect, it } from "vite-plus/test";
+import { CraftingEngine } from "../app/lib/crafting-engine";
 import { craftingPresets, projectFromPreset } from "../app/lib/crafting-presets";
 import {
     rulesetAllowsConditionalSteps,
@@ -11,12 +12,16 @@ import {
     purchaseSourceProfile,
     validateSourcePreparationRevision,
 } from "../app/lib/crafting-source-preparation";
-import { engine } from "./crafting-fixtures";
-import { historyIndex } from "./crafting-history-fixtures";
+import { craftingCatalogSchema } from "../app/schemas/crafting";
+import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const r14 = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r14",
 )!;
+// r14 graphs are projected with the catalog r14 was published with.
+const engine = new CraftingEngine(
+    craftingCatalogSchema.parse((await retainedRevision(r14)).catalog),
+);
 const r14Hashes = {
     "life-block-shield": "47323596ff7bf3185b87736636bde7aa41e0ff25b0b392f2dad5eac85ac0437c",
     "es-block-shield": "bb49b4ed8b5653151fd137ac62334983128ff5184bc601e6bbb51213c7729b53",

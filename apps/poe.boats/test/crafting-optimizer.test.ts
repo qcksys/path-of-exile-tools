@@ -13,7 +13,7 @@ import {
     craftingProjectSchema,
     craftingTargetSchema,
 } from "../app/schemas/crafting";
-import { baseId, catalog, currency, engine } from "./crafting-fixtures";
+import { baseId, catalog, currency, engine, lockRecipe } from "./crafting-fixtures";
 
 it("accepts stat-only and other item targets consistently, including zero-valued bounds", () => {
     expect(hasCraftingRequirements(craftingTargetSchema.parse({ groups: [] }))).toBe(false);
@@ -380,13 +380,7 @@ it("rejects invalid fossils and excludes failed combinations from rankings", () 
                 fossils: [fossil.id, fossil.id],
             }),
     ).toThrow("once");
-    const prefixLock = catalog.crafting.bench.find(
-        (entry) =>
-            entry.mod &&
-            engine
-                .mod(entry.mod)
-                .stats.some((stat) => stat.id === "item_generation_cannot_change_prefixes"),
-    )!;
+    const prefixLock = lockRecipe("prefixes", item);
     const locked = engine.apply(
         { ...item, rarity: "rare" },
         { kind: "bench", id: prefixLock.id },

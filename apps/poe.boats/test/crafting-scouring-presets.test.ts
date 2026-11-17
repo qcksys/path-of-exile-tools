@@ -12,7 +12,7 @@ const prior = historyIndex.revisions.find(
 )!;
 const ruleset = { ...prior, revision: "r14", engine: "crafting-graph-14" };
 const current = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r17",
+    (entry) => entry.game === "poe1" && entry.revision === "r18",
 )!;
 const sources: [CraftingPresetId, string, string][] = [
     ["life-block-shield", "block-make-base", "Heat-attuned Tower Shield"],

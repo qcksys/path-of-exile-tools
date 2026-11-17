@@ -1,10 +1,11 @@
 import { expect, it } from "vite-plus/test";
 import { discoverCraftingCosts } from "../app/lib/crafting-cost-inputs";
-import { type CraftingRandom, seededRandom } from "../app/lib/crafting-engine";
+import { CraftingEngine, type CraftingRandom, seededRandom } from "../app/lib/crafting-engine";
 import { calculateCraftingGraph } from "../app/lib/crafting-graph-simulation";
 import { CraftingGraphTrial } from "../app/lib/crafting-graph-trial";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
 import { craftingPresets, projectFromPreset } from "../app/lib/crafting-presets";
+import { craftingCatalogSchema } from "../app/schemas/crafting";
 import type { CraftingGraph, GraphCraftNode } from "../app/schemas/crafting-graph";
 import type { CraftingPresetId } from "../app/schemas/crafting-presets";
 import { catalog, engine } from "./crafting-fixtures";
@@ -12,7 +13,7 @@ import { quote, runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r17",
+    (entry) => entry.game === "poe1" && entry.revision === "r18",
 )!;
 const donors: [CraftingPresetId, string[]][] = [
     ["life-block-shield", ["block", "max-res", "recovery"]],
@@ -301,8 +302,8 @@ it.each([
     expect(result.missingPrices).toEqual([missing]);
 });
 
-function pricedHunterPreparation(selected = ruleset) {
-    const graph = projectFromPreset(engine, selected, "tailwind-boots");
+function pricedHunterPreparation(selected = ruleset, model = engine) {
+    const graph = projectFromPreset(model, selected, "tailwind-boots");
     purchase(graph, "tailwind-base").node.choice = { mode: "pinned", alternativeId: "make-hunter" };
     purchase(graph, "tailwind-base-make-base").alternative.price = quote(11);
     hunterPreparation.forEach(([, id], index) => {
@@ -366,7 +367,12 @@ it.each([
     const selected = historyIndex.revisions.find(
         (entry) => entry.game === "poe1" && entry.revision === revision,
     )!;
-    const graph = pricedHunterPreparation(selected);
+    // Retained revisions run 3.29 graphs, built with the catalog they published.
+    const retained = await retainedRevision(selected);
+    const graph = pricedHunterPreparation(
+        selected,
+        new CraftingEngine(craftingCatalogSchema.parse(retained.catalog)),
+    );
     const any = purchase(graph, "tailwind-base").node.output;
     graph.nodes.push({
         kind: "craft",
@@ -386,7 +392,6 @@ it.each([
     graph.outcomes = [{ ...graph.outcomes[0]!, id: "ready", name: "Ready", query: any }];
     graph.iterations = 1;
     graph.prices["service:recombine"] = quote(3);
-    const retained = await retainedRevision(selected);
     const simulation = retained.runtime.createSimulation(retained.catalog, graph, {
         estimateIterations: 1,
         workLimit: 1000,

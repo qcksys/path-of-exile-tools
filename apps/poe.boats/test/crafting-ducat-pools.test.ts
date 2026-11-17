@@ -15,7 +15,7 @@ import {
     craftingModSchema,
     craftingProjectSchema,
 } from "../app/schemas/crafting";
-import { baseId, catalog, currency, engine } from "./crafting-fixtures";
+import { baseId, catalog, currency, engine, lockRecipe } from "./crafting-fixtures";
 
 const cyaxan = "reroll_rare_infamous";
 const rotmother = "add_deepwater_hazard_belt_mod";
@@ -185,13 +185,7 @@ describe("extracted Ducat modifier pools", () => {
         item.memoryStrands = 82;
         item.mods = [engine.rollMod("IncreasedLife1", first, { fractured: true })];
         item.mods.push(engine.rollMod(engine.pool(item, { side: "prefix" })[0]!.id, first));
-        const lock = catalog.crafting.bench.find(
-            (entry) =>
-                entry.mod &&
-                engine
-                    .mod(entry.mod)
-                    .stats.some((stat) => stat.id === "item_generation_cannot_change_prefixes"),
-        )!;
+        const lock = lockRecipe("prefixes", item);
         const locked = engine.apply(item, { kind: "bench", id: lock.id }, first).item;
         const before = structuredClone(locked);
         for (let seed = 0; seed < 30; seed++) {

@@ -6,7 +6,7 @@ import {
     type CraftingMethod,
     craftingItemSchema,
 } from "../app/schemas/crafting";
-import { baseId, catalog, currency, engine } from "./crafting-fixtures";
+import { baseId, catalog, currency, engine, lockRecipe } from "./crafting-fixtures";
 
 const beast = (id: string, level: number): CraftingMethod => ({ kind: "beast", id, level });
 const swap = beast("EinharMasterCraft31", 86);
@@ -103,13 +103,7 @@ describe("level-aware beastcrafting", () => {
         const pick = vi.spyOn(random, "pick");
         expect(() => engine.apply(fractured, swap, random)).toThrow("No unprotected suffix");
         expect(pick).not.toHaveBeenCalled();
-        const lock = catalog.crafting.bench.find(
-            (entry) =>
-                entry.mod &&
-                engine
-                    .mod(entry.mod)
-                    .stats.some((stat) => stat.id === "item_generation_cannot_change_suffixes"),
-        )!;
+        const lock = lockRecipe("suffixes", item);
         const locked = engine.apply(item, { kind: "bench", id: lock.id }, seededRandom(1)).item;
         expect(() => engine.apply(locked, swap, seededRandom(2))).toThrow("No unprotected suffix");
         let full = item;
@@ -139,9 +133,11 @@ describe("level-aware beastcrafting", () => {
         expect(result.mods[0]!.id).toBe(recipe.mod);
         expect(result.mods[0]!.crafted).toBe(false);
         expect(() => engine.apply(result, method, seededRandom(2))).toThrow("open suffix");
-        expect(() =>
-            engine.apply(item, beast("EinharMasterCraftFlask6", 19), seededRandom(1)),
-        ).toThrow("at least 20");
+        // 3.30 flask beastcrafts take any Red Beast; 3.29 needed a level 20+ rare beast.
+        expect(
+            engine.apply(item, beast("EinharMasterCraftFlask6", 19), seededRandom(1)).item.mods[0]!
+                .id,
+        ).toBe(recipe.mod);
         expect(() =>
             engine.apply(item, beast("EinharMasterCraftFlask7", 20), seededRandom(1)),
         ).toThrow("type");

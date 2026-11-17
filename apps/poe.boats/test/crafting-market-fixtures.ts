@@ -1,7 +1,9 @@
 import { itemQuerySchema } from "@poe-tools/item-query";
-import { seededRandom } from "../app/lib/crafting-engine";
+import { type CraftingEngine, seededRandom } from "../app/lib/crafting-engine";
+import { rulesetReference } from "../app/lib/crafting-rulesets";
 import { craftingGraphSchema } from "../app/schemas/crafting-graph";
 import { craftingMarketCandidateSchema } from "../app/schemas/crafting-market";
+import type { CraftingRuleset } from "../app/schemas/crafting-rulesets";
 import { baseId, engine } from "./crafting-fixtures";
 import { graphFixture } from "./crafting-graph-fixtures";
 
@@ -102,12 +104,14 @@ export function adaptiveMarketCandidate(median = 21) {
     return candidate;
 }
 
-export function donorFamilyMarketFixture() {
+// A prepared Temple suffix priced from its display-equivalent family. 3.30 removed these suffixes,
+// so callers pass the 3.29 engine and ruleset the committed market cohorts were built from.
+export function donorFamilyMarketFixture(engine: CraftingEngine, ruleset: CraftingRuleset) {
     const id = "ColdResistEnhancedModAilments__";
     const base = Object.entries(engine.catalog.bases).find(
         ([, base]) => base.name === "Slink Gloves",
     )![0];
-    const graph = marketGraph();
+    const graph = { ...marketGraph(), ruleset: rulesetReference(ruleset) };
     const node = graph.nodes[0]!;
     if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
         throw new Error("Fixture");

@@ -11,7 +11,7 @@ import { type CraftingGraph, craftingGraphSchema } from "../app/schemas/crafting
 import index from "../crafting-history/index.json";
 import { byText } from "./control-helpers";
 import { exchangeGraph, transmuteId } from "./crafting-exchange-fixtures";
-import { baseId, catalog, engine } from "./crafting-fixtures";
+import { baseId, benchId, catalog, engine } from "./crafting-fixtures";
 import { graphFixture } from "./crafting-graph-fixtures";
 
 const historyIndex = validateRulesetIndex(index);
@@ -75,10 +75,10 @@ it("lets the graph price bench replacement fees and includes them in exchange lo
         throw new Error("Fixture");
     acquire.alternatives[0].item = engine.apply(
         { ...engine.createItem(baseId), rarity: "rare" },
-        { kind: "bench", id: "bench:77" },
+        { kind: "bench", id: benchId("HelenaMasterIncreasedLife1") },
         seededRandom(1),
     ).item;
-    craft.method = { kind: "bench", id: "bench:78" };
+    craft.method = { kind: "bench", id: benchId("HelenaMasterFireResist1") };
     graph.prices[transmuteId] = {
         amount: 1,
         currency: "chaos",

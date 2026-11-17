@@ -18,6 +18,11 @@ import { modText } from "./item-card";
 import { controlClass } from "./method-picker";
 import { initialModifierPages, ModifierPoolLayout } from "./modifier-pool-layout";
 
+// An Aspect's level is its granted skill's level; before 3.30 it was also the display stat's value.
+function aspectLevel(engine: CraftingEngine, id: string) {
+    return engine.catalog.crafting.grantedEffects?.[id]?.[0]?.level ?? engine.mod(id).stats[0]!.min;
+}
+
 export function ModBrowser({
     engine,
     item,
@@ -675,8 +680,8 @@ export function ModBrowser({
                                                               eldritchTier(entry.mod) >=
                                                                   eldritchTier(mod)
                                                             : source === "aspect"
-                                                              ? entry.mod.stats[0]!.min >=
-                                                                mod.stats[0]!.min
+                                                              ? aspectLevel(engine, entry.id) >=
+                                                                aspectLevel(engine, id)
                                                               : entry.mod.required_level >=
                                                                 mod.required_level),
                                                 )

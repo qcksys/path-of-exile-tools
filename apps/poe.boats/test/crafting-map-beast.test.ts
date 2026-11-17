@@ -66,8 +66,10 @@ describe("PoE 1 map implicit beastcraft", () => {
     });
 
     it("renders and imports every extracted map corruption outcome, including stats hidden in area descriptions", () => {
+        // 3.30 gives Item Quantity, Scarab, Vaal Side Area, free craft and quality-to-pack-size
+        // corruptions no weight, leaving eight outcomes.
         const pool = engine.corruptedModifiers(blank());
-        expect(pool).toHaveLength(11);
+        expect(pool).toHaveLength(8);
         for (const entry of pool) {
             const result = engine.apply(blank(), method, force(entry.id)).item;
             const implicit = result.implicits[0]!;
@@ -108,26 +110,22 @@ describe("PoE 1 map implicit beastcraft", () => {
     it("keeps level, class, mode and ordered tag restrictions for map implicits", () => {
         const changed = structuredClone(catalog);
         changed.bases[mapBase]!.tags.unshift("infected_map");
-        const quantity = changed.crafting.modRules.MapCorruptionItemQuantity!;
-        quantity.spawnLevel = 87;
-        changed.crafting.modRules.MapCorruptionItemRarity!.itemClasses = ["Ring"];
-        changed.crafting.modRules.MapCorruptionPackSize!.gameMode = 2;
+        changed.crafting.modRules.MapCorruptionItemRarity!.spawnLevel = 87;
+        changed.crafting.modRules.MapCorruptionPackSize!.itemClasses = ["Ring"];
+        changed.crafting.modRules.MapCorruptionModEffect!.gameMode = 2;
         const model = new CraftingEngine(changed);
         const pool = model.corruptedModifiers(blank());
-        expect(pool.map((entry) => entry.id)).toEqual([
-            "MapCorruptionModEffect",
-            "MapCorruptionSoulGainPrevention",
-        ]);
+        expect(pool.map((entry) => entry.id)).toEqual(["MapCorruptionSoulGainPrevention"]);
         expect(
             model.corruptedModifiers({ ...blank(), level: 87 }).map((entry) => entry.id),
-        ).toContain("MapCorruptionItemQuantity");
+        ).toContain("MapCorruptionItemRarity");
     });
 
     it("calculates weighted and numeric targets with matching simulation and conditional process costs", () => {
         const item = blank();
         const pool = engine.corruptedModifiers(item);
         const total = pool.reduce((sum, entry) => sum + entry.weight, 0);
-        const entry = pool.find((entry) => entry.id === "MapCorruptionItemQuantity")!;
+        const entry = pool.find((entry) => entry.id === "MapCorruptionItemRarity")!;
         const target = engine.validateTarget({ groups: [{ mods: [entry.id] }], corrupted: true });
         const probability = entry.weight / total;
         expect(calculateExact(engine, item, method, target).probability).toBeCloseTo(probability);

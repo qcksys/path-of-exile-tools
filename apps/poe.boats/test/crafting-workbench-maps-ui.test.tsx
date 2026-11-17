@@ -450,7 +450,7 @@ describe("crafting workbench", () => {
         changeControl(screen.getByLabelText("Search modifiers"), {
             target: { value: "Item Rarity" },
         });
-        expect(screen.getAllByText("+(8-12)% Item Rarity").length).toBeGreaterThan(0);
+        expect(screen.getAllByText("+(10-20)% Item Rarity").length).toBeGreaterThan(0);
         expect(
             screen.getByRole("region", { name: "Map corruption beastcraft" }).textContent,
         ).toContain("Guarantees one corrupted implicit");
@@ -464,10 +464,10 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Apply craft"));
         expect(screen.queryByRole("alert")).toBeNull();
         const card = screen.getByRole("region", { name: "Current item" });
-        expect(card.textContent).toContain("+8% Item Rarity");
+        expect(card.textContent).toContain("+10% Item Rarity");
         expect(card.textContent).toContain("Corrupted");
         fireEvent.click(button("Undo"));
-        expect(card.textContent).not.toContain("+8% Item Rarity");
+        expect(card.textContent).not.toContain("+10% Item Rarity");
         fireEvent.click(button("Redo"));
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
@@ -478,7 +478,7 @@ describe("crafting workbench", () => {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        expect(card.textContent).toContain("+8% Item Rarity");
+        expect(card.textContent).toContain("+10% Item Rarity");
     });
 
     it("targets an extracted Waystone tier, updates area level and keeps tier changes through history and saves", () => {

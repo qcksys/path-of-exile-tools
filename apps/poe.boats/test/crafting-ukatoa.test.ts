@@ -17,6 +17,7 @@ import {
     craftingCatalogSchema,
     craftingProjectSchema,
 } from "../app/schemas/crafting";
+import { engine329 } from "./crafting-329-fixtures";
 import { baseId, catalog, currency, engine } from "./crafting-fixtures";
 
 const ducat = catalog.crafting.currencies.find(
@@ -270,7 +271,13 @@ describe("Ukatoa's Allflame implicit replacement", () => {
         expect(engine.apply(rare, currency("restore_imprint"), first).item).toEqual(crafted);
     });
 
+    // Recombination lowers the item level only under 3.29 averaging; 3.30 keeps the chosen base's.
     it("retains crafted implicit eligibility after recombination lowers the item level", () => {
+        const engine = engine329;
+        const start = (level = 86): CraftingItem => ({
+            ...engine.createItem(base, level),
+            intangibility: 100,
+        });
         const item = engine.apply({ ...start(), rarity: "rare" }, method, first).item;
         const other = { ...start(1), rarity: "rare" as const };
         const outcomes = recombinationOutcomes(engine, item, other);

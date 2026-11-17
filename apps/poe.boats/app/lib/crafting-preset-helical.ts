@@ -52,9 +52,7 @@ export function helicalRingPreset({
         "LightRadiusAndAccuracyNew2",
     ];
     const chaos = ["ChaosResist4", "ChaosResist5", "ChaosResist6"];
-    const lock = engine.catalog.crafting.bench.find(
-        (entry) => entry.mod === "DexMasterItemGenerationCannotChangeSuffixes",
-    )!;
+    const lock = engine.benchRecipeFor("DexMasterItemGenerationCannotChangeSuffixes", "Ring")!;
     const bench: CraftingMethod = { kind: "bench", id: lock.id };
     const step = (id: string, name: string, source: string, method: CraftingMethod) =>
         craft(id, name, [source], method);
@@ -95,9 +93,7 @@ export function helicalRingPreset({
     );
     branch(strands, query(range("memoryStrands", 70)), recover(strands.id));
     strands.output = query(range("memoryStrands", 70));
-    const seedCraft = engine.catalog.crafting.bench.find(
-        (entry) => entry.mod === "HelenaMasterStrength1",
-    )!;
+    const seedCraft = engine.benchRecipeFor("HelenaMasterStrength1", "Ring")!;
     const seed = step("seed", "Craft a suffix to make a magic imprint base", strands.id, {
         kind: "bench",
         id: seedCraft.id,

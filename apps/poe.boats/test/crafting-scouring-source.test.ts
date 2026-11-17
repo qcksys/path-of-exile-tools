@@ -19,7 +19,15 @@ import {
     type GraphPurchase,
     graphPurchaseSchema,
 } from "../app/schemas/crafting-graph";
-import { baseId as bodyArmourId, catalog, currency, engine } from "./crafting-fixtures";
+import { engine329 } from "./crafting-329-fixtures";
+import {
+    benchId,
+    baseId as bodyArmourId,
+    catalog,
+    currency,
+    engine,
+    lockRecipe,
+} from "./crafting-fixtures";
 import { anyItem, graphFixture, quote, runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
@@ -29,7 +37,7 @@ const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r17",
+    (entry) => entry.game === "poe1" && entry.revision === "r18",
 )!;
 const scopes = [
     "Heat-attuned Tower Shield",
@@ -44,13 +52,15 @@ const partitions = [
     [true, true],
 ] as const;
 
-function fixture(name = scopes[0]!, crafted = true, enchanted = true) {
-    const baseId = Object.entries(catalog.bases).find(
+function fixture(name = scopes[0]!, crafted = true, enchanted = true, model = engine) {
+    const baseId = Object.entries(model.catalog.bases).find(
         ([id, base]) => base.name === name && !id.includes("Royale"),
     )![0];
-    const item = engine.createItem(baseId, 86);
-    if (engine.base(item).item_class === "Shield")
-        item.influences = [catalog.crafting.modRules.RecoverLifePercentOnBlockUber1_!.influence!];
+    const item = model.createItem(baseId, 86);
+    if (model.base(item).item_class === "Shield")
+        item.influences = [
+            model.catalog.crafting.modRules.RecoverLifePercentOnBlockUber1_!.influence!,
+        ];
     const source: ScourSourcePreparation = { kind: "scour-v1", crafted, enchanted };
     const purchase: GraphPurchase = {
         kind: "purchase",
@@ -97,9 +107,7 @@ function actualSource(purchase: GraphPurchase, rarity: "magic" | "rare") {
     }
     if (source.crafted) {
         item.rarity = "rare";
-        const recipe = catalog.crafting.bench.find(
-            (entry) => entry.mod === "DexMasterItemGenerationCannotChangeSuffixes",
-        )!;
+        const recipe = lockRecipe("suffixes", item);
         item = engine.apply(item, { kind: "bench", id: recipe.id }, seededRandom(2)).item;
     }
     if (source.enchanted)
@@ -134,7 +142,8 @@ it.each([
             expect(prepared.costs).toEqual(costs);
         }
         expect(
-            catalog.crafting.bench.find((entry) => entry.id === "bench:373")!.itemClasses,
+            catalog.crafting.bench.find((entry) => entry.name === "Remove Enchantments")!
+                .itemClasses,
         ).toContain(engine.base(purchase.item).item_class);
         expect(prepared.costs.every((cost) => cost.id === scour)).toBe(true);
         expect(prepared.costs.reduce((sum, cost) => sum + cost.amount, 0)).toBe(
@@ -158,8 +167,9 @@ it("keeps the two new bases out of retained r12 validation, binding and executio
         (entry) => entry.game === "poe1" && entry.revision === "r12",
     )!;
     const loaded = await retainedRevision(retained);
+    // r12 runs 3.29 data, so its graphs hold items built from the 3.29 catalog.
     for (const name of ["Two-Toned Boots", "Zodiac Leather"]) {
-        const { graph, node, purchase } = fixture(name);
+        const { graph, node, purchase } = fixture(name, true, true, engine329);
         graph.ruleset = rulesetReference(retained);
         expect(() => validateRulesetGraph(retained, graph)).toThrow("engine 13");
         expect(() =>
@@ -169,7 +179,7 @@ it("keeps the two new bases out of retained r12 validation, binding and executio
             "shield or helmet",
         );
     }
-    const { graph } = fixture();
+    const { graph } = fixture(undefined, true, true, engine329);
     graph.ruleset = rulesetReference(retained);
     expect(() => validateRulesetGraph(retained, graph)).not.toThrow();
     expect(() => loaded.runtime.createSimulation(loaded.catalog, graph)).not.toThrow();
@@ -216,20 +226,27 @@ it.each(
     }
 });
 
+const prefixLock = "StrMasterItemGenerationCannotChangePrefixes";
+const suffixLock = "DexMasterItemGenerationCannotChangeSuffixes";
 it.each([
-    ["prefix lock", ["bench:824"]],
-    ["suffix lock", ["bench:825"]],
-    ["attack restriction", ["bench:827"]],
-    ["caster restriction", ["bench:828"]],
-    ["multicraft and both locks", ["bench:826", "bench:824", "bench:825"]],
-] as const)("removes actual %s before Scouring without retaining protected affixes", (_name, recipes) => {
+    ["prefix lock", [prefixLock]],
+    ["suffix lock", [suffixLock]],
+    ["attack restriction", ["IntMasterItemGenerationCannotRollAttackAffixes"]],
+    ["caster restriction", ["StrDexMasterItemGenerationCannotRollCasterAffixes"]],
+    [
+        "multicraft and both locks",
+        ["StrIntMasterItemGenerationCanHaveMultipleCraftedMods", prefixLock, suffixLock],
+    ],
+] as const)("removes actual %s before Scouring without retaining protected affixes", (_name, mods) => {
     for (const name of scopes) {
         const { purchase } = fixture(name, false, false);
         let actual = actualSource(purchase, "rare");
-        for (const id of recipes)
+        for (const mod of mods) {
+            const id = benchId(mod, engine.base(actual).item_class);
             actual = engine.apply(actual, { kind: "bench", id }, seededRandom(1)).item;
+        }
         purchase.sourcePreparation = { kind: "scour-v1", crafted: true, enchanted: false };
-        if (recipes.some((id) => id === "bench:824" || id === "bench:825"))
+        if (mods.some((mod) => mod === prefixLock || mod === suffixLock))
             expect(
                 engine.apply(actual, currency("convert_to_normal"), seededRandom(1)).item.mods
                     .length,
@@ -243,7 +260,7 @@ it.each([
 
 it("proves the shared removal bench with a real supported enchant without inventing a helmet enchant", () => {
     const { purchase, source } = fixture();
-    const removal = catalog.crafting.bench.find((recipe) => recipe.id === "bench:373")!;
+    const removal = catalog.crafting.bench.find((recipe) => recipe.name === "Remove Enchantments")!;
     expect(removal.itemClasses).toEqual(expect.arrayContaining(["Shield", "Helmet"]));
     purchase.item = engine.createItem(bodyArmourId, 86);
     let actual = actualSource(purchase, "rare");
@@ -414,7 +431,11 @@ it("accepts only guaranteed output requirements and rejects Scouring under retai
                 ],
             }),
         ).toThrow("can guarantee only");
-    for (const method of sourcePreparationMethods(engine, purchase.sourcePreparation!))
+    // Bench cleanup IDs are catalog row positions, which a ruleset cannot resolve without its
+    // catalog; the other preparation steps can be disabled by ID.
+    for (const method of sourcePreparationMethods(engine, purchase.sourcePreparation!).filter(
+        (entry) => entry.kind !== "bench",
+    ))
         expect(() =>
             validateRulesetGraph(
                 {

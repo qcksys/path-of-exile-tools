@@ -2,14 +2,26 @@ import { describe, expect, it } from "vite-plus/test";
 import { seededRandom } from "../app/lib/crafting-engine";
 import { graspingMailBase } from "../app/lib/crafting-grasping";
 import { nonNativeEssenceSources, recombinationOutcomes } from "../app/lib/crafting-recombination";
-import { catalog, engine } from "./crafting-fixtures";
-import {
-    nnnBase as base,
-    nnnDonor as donor,
-    rage,
-    strength,
-    suppressionDonor as suppress,
-} from "./crafting-nnn-fixtures";
+import { catalog329 as catalog, engine329 as engine } from "./crafting-329-fixtures";
+
+// NNN relies on 3.29 recombination, where non-native modifiers count toward the affix total;
+// 3.30 counts only modifiers legal on the chosen base. These cases use the 3.29 catalog.
+const base = (name: string, level = 86) =>
+    engine.createItem(
+        Object.entries(catalog.bases).find(([, value]) => value.name === name)![0],
+        level,
+    );
+const rage = catalog.crafting.essences.find((entry) => entry.name === "Screaming Essence of Rage")!;
+const strength = rage.mods["Body Armour"]!;
+const donor = () =>
+    engine.addStartingMod(base("Necrotic Armour"), strength, seededRandom(1), "essence");
+const suppress = (name: string) => {
+    const item = base(name);
+    const mod = engine
+        .pool({ ...item, rarity: "rare" })
+        .find((entry) => entry.mod.name === "of Nullification")!;
+    return engine.addStartingMod(item, mod.id, seededRandom(1));
+};
 
 describe("non-native natural essence recombination", () => {
     it("transfers the requested Grasping Mail crit modifier when the NNN receiver base survives", () => {

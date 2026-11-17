@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vite-plus/test";
 import { CraftingEngine, seededRandom } from "../app/lib/crafting-engine";
 import { type CraftingItem, craftingCatalogSchema } from "../app/schemas/crafting";
-import { catalog, currency, engine } from "./crafting-fixtures";
+import { catalog, currency, engine, lockRecipe } from "./crafting-fixtures";
 
 describe("implicit affix limits", () => {
     it.each([
@@ -32,13 +32,7 @@ describe("implicit affix limits", () => {
         expect(() => engine.validateItem({ ...withSuffix, rarity: "magic" })).toThrow(
             "affix limits",
         );
-        const recipe = catalog.crafting.bench.find(
-            (entry) =>
-                entry.mod &&
-                engine
-                    .mod(entry.mod)
-                    .stats.some((stat) => stat.id === "item_generation_cannot_change_suffixes"),
-        )!;
+        const recipe = lockRecipe("suffixes", withSuffix);
         const locked = engine.apply(
             withSuffix,
             { kind: "bench", id: recipe.id },

@@ -62,6 +62,11 @@ export function modifierEffect(catalog: CraftingCatalog, item: CraftingItem, id:
     );
 }
 
+// PoE 1 3.30+ catalogs give the fixed granted skill and support lines that end a mod's text.
+export function grantedEffectLines(catalog: CraftingCatalog, id: string) {
+    return catalog.crafting.grantedEffects?.[id]?.map((effect) => effect.text) ?? [];
+}
+
 export function rolledModText(
     catalog: CraftingCatalog,
     rolled: RolledMod,
@@ -69,7 +74,9 @@ export function rolledModText(
 ): string | null {
     const references = catalog.crafting.modDescriptions[rolled.id];
     const mod = catalog.mods[rolled.id];
-    if (!references || !mod || rolled.values.length !== mod.stats.length) return null;
+    if (!mod || rolled.values.length !== mod.stats.length) return null;
+    const granted = grantedEffectLines(catalog, rolled.id);
+    if (!references) return granted.length ? granted.join("\n") : null;
     const values = scaledModValues(catalog, rolled, item);
     if (rolled.grantedPassive) {
         const index = mod.stats.findIndex((stat) => stat.id === grantedPassiveStat);
@@ -78,7 +85,8 @@ export function rolledModText(
     const stats = new Map(
         mod.stats.map((stat, index) => [translationStatId(stat.id), values[index]!]),
     );
-    return renderStatText(catalog, references, stats);
+    const text = renderStatText(catalog, references, stats);
+    return text === null || !granted.length ? text : [text, ...granted].filter(Boolean).join("\n");
 }
 
 export function renderStatText(

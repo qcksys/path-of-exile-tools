@@ -42,10 +42,15 @@ export function validateSourcePreparationRevision(
     if (!source) return;
     if (source.kind === "influence-ready-v1") {
         if (
-            !["crafting-graph-15", "crafting-graph-16", "crafting-graph-17"].includes(engine) ||
+            ![
+                "crafting-graph-15",
+                "crafting-graph-16",
+                "crafting-graph-17",
+                "crafting-graph-18",
+            ].includes(engine) ||
             !influenceReadyBases.has(baseId) ||
             (baseId === "Metadata/Items/Armours/Shields/ShieldStrE3" &&
-                !["crafting-graph-16", "crafting-graph-17"].includes(engine))
+                !["crafting-graph-16", "crafting-graph-17", "crafting-graph-18"].includes(engine))
         )
             throw new Error(
                 "Influence-ready shield sources require crafting engine 15, 16 or 17; Heat-attuned sources require engine 16 or 17.",
@@ -55,7 +60,7 @@ export function validateSourcePreparationRevision(
     if (source.kind === "scour-v1") {
         if (
             baseId === "Metadata/Items/Armours/BodyArmours/BodyInt17" &&
-            !["crafting-graph-16", "crafting-graph-17"].includes(engine)
+            !["crafting-graph-16", "crafting-graph-17", "crafting-graph-18"].includes(engine)
         )
             throw new Error("Scouring Vaal Regalia sources requires crafting engine 16 or 17.");
         if (
@@ -66,6 +71,7 @@ export function validateSourcePreparationRevision(
                 "crafting-graph-15",
                 "crafting-graph-16",
                 "crafting-graph-17",
+                "crafting-graph-18",
             ].includes(engine)
         )
             throw new Error(
@@ -79,6 +85,7 @@ export function validateSourcePreparationRevision(
                 "crafting-graph-15",
                 "crafting-graph-16",
                 "crafting-graph-17",
+                "crafting-graph-18",
             ].includes(engine)
         )
             throw new Error(
@@ -93,6 +100,7 @@ export function validateSourcePreparationRevision(
             "crafting-graph-15",
             "crafting-graph-16",
             "crafting-graph-17",
+            "crafting-graph-18",
         ].includes(engine)
     )
         throw new Error(
@@ -100,11 +108,28 @@ export function validateSourcePreparationRevision(
         );
 }
 
-export function sourcePreparationMethodList(source: SourcePreparation): CraftingMethod[] {
+// Bench recipe IDs are client row positions, which move between builds (Remove Crafted Mods was
+// bench:84 in 3.29 and is bench:85 in 3.30), so the cleanup crafts are found by their bench action.
+export const removeCraftedMods = 0;
+const removeEnchantments = 1;
+export function benchActionRecipe(engine: CraftingEngine, action: number) {
+    const recipe = engine.catalog.crafting.bench.find(
+        (entry) => entry.action === action && !entry.mod && !entry.enchantment,
+    );
+    if (!recipe) throw new Error(`This catalog has no bench recipe for action ${action}.`);
+    return recipe.id;
+}
+
+export function sourcePreparationMethodList(
+    source: SourcePreparation,
+    benchRecipe: (action: number) => string,
+): CraftingMethod[] {
     if (source.kind === "influence-ready-v1") return [];
     return [
-        ...(source.crafted ? [{ kind: "bench" as const, id: "bench:84" }] : []),
-        ...(source.enchanted ? [{ kind: "bench" as const, id: "bench:373" }] : []),
+        ...(source.crafted ? [{ kind: "bench" as const, id: benchRecipe(removeCraftedMods) }] : []),
+        ...(source.enchanted
+            ? [{ kind: "bench" as const, id: benchRecipe(removeEnchantments) }]
+            : []),
         ...(source.kind === "scour-v1"
             ? [{ kind: "currency" as const, id: "Metadata/Items/Currency/CurrencyConvertToNormal" }]
             : [
@@ -122,7 +147,9 @@ export function sourcePreparationMethodList(source: SourcePreparation): Crafting
 }
 
 export function sourcePreparationMethods(engine: CraftingEngine, source: SourcePreparation) {
-    return sourcePreparationMethodList(source).map((method) => engine.validateMethod(method));
+    return sourcePreparationMethodList(source, (action) => benchActionRecipe(engine, action)).map(
+        (method) => engine.validateMethod(method),
+    );
 }
 
 export function sourcePreparationCosts(

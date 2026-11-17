@@ -19,7 +19,7 @@ const prior = historyIndex.revisions.find(
 )!;
 const ruleset = { ...prior, revision: "r14", engine: "crafting-graph-14" };
 const current = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r17",
+    (entry) => entry.game === "poe1" && entry.revision === "r18",
 )!;
 const donorId = "donor-0-0";
 

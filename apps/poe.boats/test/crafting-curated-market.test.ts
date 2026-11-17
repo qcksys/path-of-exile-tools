@@ -9,7 +9,8 @@ import { expect, it } from "vite-plus/test";
 import { seededRandom } from "../app/lib/crafting-engine";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
 import { bindCohortPurchasePrice } from "../app/lib/crafting-market";
-import { catalog, engine } from "./crafting-fixtures";
+import { rulesetReference } from "../app/lib/crafting-rulesets";
+import { catalog329 as catalog, engine329 as engine, ruleset329 } from "./crafting-329-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 import { marketCandidate, marketGraph } from "./crafting-market-fixtures";
 
@@ -87,7 +88,7 @@ it.each([
             matchItem(record, cohort.query) === "match",
     )!;
     expect(definition).toBeDefined();
-    const graph = marketGraph();
+    const graph = { ...marketGraph(), ruleset: rulesetReference(ruleset329) };
     const node = graph.nodes[0]!;
     if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
         throw new Error("Fixture");

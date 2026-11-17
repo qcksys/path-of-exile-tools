@@ -35,6 +35,7 @@ import { engine } from "../../crafting-fixtures";
 import { graphFixture } from "../../crafting-graph-fixtures";
 import {
     historyIndex,
+    retainedEngine,
     retainedRevision,
     retainedTransmuteGraph,
 } from "../../crafting-history-fixtures";
@@ -1203,7 +1204,12 @@ test("clicking off a node commits method options and keeps invalid drafts open",
 });
 
 test("donor-family pricing requires a saved representative assumption", async ({ page }) => {
-    const { graph, candidate } = donorFamilyMarketFixture();
+    // The donor family is a 3.29 Temple suffix; the committed cohorts were built from r17.
+    const ruleset329 = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r17",
+    )!;
+    const engine = await retainedEngine(ruleset329);
+    const { graph, candidate } = donorFamilyMarketFixture(engine, ruleset329);
     const node = graph.nodes[0]!;
     if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
         throw new Error("Fixture");
@@ -1776,7 +1782,7 @@ test("prepared Temple gloves pass from the workbench into a saved current projec
     await page.getByRole("button", { name: "Use item in new project", exact: true }).click();
     await expect(page).toHaveURL(/\/1\/crafting\/projects$/);
     const project = (await stored(page)).projects[0]!;
-    expect(project.graph.ruleset.revision).toBe("r17");
+    expect(project.graph.ruleset.revision).toBe("r18");
     const node = project.graph.nodes[0]!;
     expect(node.kind).toBe("acquire");
     if (node.kind === "acquire" && node.alternatives[0]?.kind === "purchase")

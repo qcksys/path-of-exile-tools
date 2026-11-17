@@ -17,13 +17,14 @@ import { rolledModText } from "../app/lib/crafting-text";
 import type { CraftingItem } from "../app/schemas/crafting";
 import { craftingPresetCohorts } from "../scripts/crafting-preset-cohorts";
 import { marketModifierTextModel } from "../scripts/market-modifier-text";
-import { catalog, engine } from "./crafting-fixtures";
+import {
+    catalog329 as catalog,
+    engine329 as engine,
+    ruleset329 as ruleset,
+} from "./crafting-329-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
 
-const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r17",
-)!;
 const cohorts = craftingPresetCohorts(engine, ruleset);
 const manifest = marketCohortManifestSchema.parse(
     JSON.parse(readFileSync("../../packages/poe-market/data/cohorts-poe1.json", "utf8")),

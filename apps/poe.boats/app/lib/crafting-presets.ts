@@ -266,6 +266,7 @@ export function projectFromPreset(
             "crafting-graph-15",
             "crafting-graph-16",
             "crafting-graph-17",
+            "crafting-graph-18",
         ].includes(ruleset.engine);
         ({ entry, target } = spicySushiPreset(
             { engine, base, buy, craft, currency },
@@ -278,6 +279,7 @@ export function projectFromPreset(
                 "crafting-graph-15",
                 "crafting-graph-16",
                 "crafting-graph-17",
+                "crafting-graph-18",
             ].includes(ruleset.engine) &&
             presetId === "sushi-rf-helmet"
         ) {
@@ -594,6 +596,7 @@ export function projectFromPreset(
                 "crafting-graph-15",
                 "crafting-graph-16",
                 "crafting-graph-17",
+                "crafting-graph-18",
             ].includes(ruleset.engine)
         ) {
             const donor = nodes.find((node) => node.id === "donor-0-0");
@@ -1193,14 +1196,20 @@ export function projectFromPreset(
     }
     const influenceSourceIds: string[] = [];
     if (
-        ["crafting-graph-15", "crafting-graph-16", "crafting-graph-17"].includes(ruleset.engine) &&
+        [
+            "crafting-graph-15",
+            "crafting-graph-16",
+            "crafting-graph-17",
+            "crafting-graph-18",
+        ].includes(ruleset.engine) &&
         (presetId === "life-block-shield" || presetId === "es-block-shield")
     ) {
         const targetId = presetId === "life-block-shield" ? "recovery-make-base" : "flat-make-base";
         const sources = [
             { id: targetId, targets: [targetId] },
-            ...(["crafting-graph-16", "crafting-graph-17"].includes(ruleset.engine) &&
-            presetId === "life-block-shield"
+            ...(["crafting-graph-16", "crafting-graph-17", "crafting-graph-18"].includes(
+                ruleset.engine,
+            ) && presetId === "life-block-shield"
                 ? [{ id: "shield-make-heat", targets: ["block-make-base", "max-res-make-base"] }]
                 : []),
         ];
@@ -1263,6 +1272,7 @@ export function projectFromPreset(
             "crafting-graph-15",
             "crafting-graph-16",
             "crafting-graph-17",
+            "crafting-graph-18",
         ].includes(ruleset.engine)
     ) {
         const sourceIds = [
@@ -1273,6 +1283,7 @@ export function projectFromPreset(
                 "crafting-graph-15",
                 "crafting-graph-16",
                 "crafting-graph-17",
+                "crafting-graph-18",
             ].includes(ruleset.engine)
                 ? (extendedScouringSources[presetId] ?? [])
                 : []),
@@ -1281,12 +1292,14 @@ export function projectFromPreset(
                 "crafting-graph-15",
                 "crafting-graph-16",
                 "crafting-graph-17",
+                "crafting-graph-18",
             ].includes(ruleset.engine)
                 ? (rfScouringSources[presetId] ?? [])
                 : []),
             ...influenceSourceIds,
-            ...(["crafting-graph-16", "crafting-graph-17"].includes(ruleset.engine) &&
-            presetId === "energy-shield-chest"
+            ...(["crafting-graph-16", "crafting-graph-17", "crafting-graph-18"].includes(
+                ruleset.engine,
+            ) && presetId === "energy-shield-chest"
                 ? ["donor-0-make-base"]
                 : []),
         ];
@@ -1340,6 +1353,7 @@ export function projectFromPreset(
                     "crafting-graph-15",
                     "crafting-graph-16",
                     "crafting-graph-17",
+                    "crafting-graph-18",
                 ].includes(ruleset.engine) &&
                 rfScouringSources[presetId]?.includes(id)
             ) {

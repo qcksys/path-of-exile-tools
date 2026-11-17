@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vite-plus/test";
 import { discoverCraftingCosts } from "../app/lib/crafting-cost-inputs";
 import { seededRandom } from "../app/lib/crafting-engine";
-import { baseId, engine } from "./crafting-fixtures";
+import { baseId, benchId, engine } from "./crafting-fixtures";
 
 describe("crafting price inputs", () => {
     it("includes the removal fee before replacing a bench craft", () => {
         const input = engine.apply(
             { ...engine.createItem(baseId), rarity: "rare" },
-            { kind: "bench", id: "bench:77" },
+            { kind: "bench", id: benchId("HelenaMasterIncreasedLife1") },
             seededRandom(1),
         ).item;
-        const method = { kind: "bench", id: "bench:78" } as const;
+        const method = { kind: "bench", id: benchId("HelenaMasterFireResist1") } as const;
         const actual = engine.apply(input, method, seededRandom(1)).cost;
         expect(actual.map(({ name }) => name)).toEqual(["Orb of Scouring", "Orb of Transmutation"]);
         const discovered = discoverCraftingCosts(engine, [method]);

@@ -23,7 +23,7 @@ const prior = historyIndex.revisions.find(
 )!;
 const ruleset = { ...prior, revision: "r13", engine: "crafting-graph-13" };
 const current = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r17",
+    (entry) => entry.game === "poe1" && entry.revision === "r18",
 )!;
 const scour = currency("convert_to_normal").id;
 const transmute = currency("transmute_to_magic");

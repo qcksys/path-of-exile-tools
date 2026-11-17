@@ -108,7 +108,7 @@ describe("conditional graph steps", () => {
     ] as const)("applies %s preparation only while needed, preserving ready items and costs", (game) => {
         const data = workbenchCatalog(game);
         const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === game && entry.revision === "r17",
+            (entry) => entry.game === game && entry.revision === "r18",
         )!;
         const graph = retainedTransmuteGraph(
             { ...ruleset, engine: CRAFTING_GRAPH_ENGINE, revision: "r5" },

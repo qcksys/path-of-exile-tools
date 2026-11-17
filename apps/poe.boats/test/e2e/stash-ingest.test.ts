@@ -124,7 +124,7 @@ import {
 } from "../crafting-exchange-fixtures";
 import { baseId, catalog, currency, engine } from "../crafting-fixtures";
 import { quote } from "../crafting-graph-fixtures";
-import { historyIndex, retainedRevision } from "../crafting-history-fixtures";
+import { historyIndex, retainedEngine, retainedRevision } from "../crafting-history-fixtures";
 import {
     adaptiveMarketCandidate,
     donorFamilyMarketFixture,
@@ -1325,7 +1325,12 @@ it("refreshes a saved cohort to its newest revision and recovers earlier prices 
 });
 
 it("offers stored donor-family quotes only under an explicit representative assumption", async () => {
-    const { graph, candidate } = donorFamilyMarketFixture();
+    // The donor family is a 3.29 Temple suffix; the committed cohorts were built from r17.
+    const ruleset329 = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r17",
+    )!;
+    const engine = await retainedEngine(ruleset329);
+    const { graph, candidate } = donorFamilyMarketFixture(engine, ruleset329);
     await mysql.insert(tStashCohort).values([candidate.definition, marketCandidate.definition]);
     await upsertStashCohortHourly(mysql as unknown as TDatabase, [
         candidate.latest,

@@ -1,17 +1,18 @@
 import { expect, it } from "vite-plus/test";
 import { delveMinionModifier } from "../app/lib/crafting-delve";
-import { seededRandom } from "../app/lib/crafting-engine";
+import { CraftingEngine, seededRandom } from "../app/lib/crafting-engine";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
 import { projectFromPreset } from "../app/lib/crafting-presets";
 import { recombinationOutcomes } from "../app/lib/crafting-recombination";
 import { rulesetReference } from "../app/lib/crafting-rulesets";
+import { craftingCatalogSchema } from "../app/schemas/crafting";
 import { catalog, engine } from "./crafting-fixtures";
 import { runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 import { nnnBase } from "./crafting-nnn-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r17",
+    (entry) => entry.game === "poe1" && entry.revision === "r18",
 )!;
 
 it("accepts prepared Delve minion boots without putting their modifier in ordinary rolls", () => {
@@ -162,8 +163,15 @@ it("requires elevated Spectre levels and T2+ resistance, not the weaker preparat
 });
 
 it("retains r9 refusals while r10 executes the new mechanics from its immutable bundle", async () => {
+    // r9 and r10 run 3.29 graphs, projected with the 3.29 catalog r17 published.
+    const r17 = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r17",
+    )!;
+    const engine329 = new CraftingEngine(
+        craftingCatalogSchema.parse((await retainedRevision(r17)).catalog),
+    );
     for (const id of ["sushi-spectre-boots", "sushi-luminary-shield"] as const) {
-        const graph = projectFromPreset(engine, ruleset, id);
+        const graph = projectFromPreset(engine329, r17, id);
         graph.iterations = 1;
         for (const revision of ["r9", "r10"]) {
             const selected = historyIndex.revisions.find(

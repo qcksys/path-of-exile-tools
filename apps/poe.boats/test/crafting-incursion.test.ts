@@ -8,42 +8,56 @@ import {
 } from "../app/lib/crafting-incursion";
 import { recombinationOutcomes } from "../app/lib/crafting-recombination";
 import { rulesetReference } from "../app/lib/crafting-rulesets";
+import { craftingCatalogSchema } from "../app/schemas/crafting";
 import { engine } from "./crafting-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 import { marketGraph } from "./crafting-market-fixtures";
 import { nnnBase } from "./crafting-nnn-fixtures";
 
+// The shared engine uses the 3.30 catalog; prepared Temple suffixes are 3.29 rules, kept by r17.
+const engine329 = new CraftingEngine(
+    craftingCatalogSchema.parse(
+        (
+            await retainedRevision(
+                historyIndex.revisions.find(
+                    (entry) => entry.game === "poe1" && entry.revision === "r17",
+                )!,
+            )
+        ).catalog,
+    ),
+);
+
 it.each(
     incursionGloveModifiers,
 )("accepts prepared %s on gloves without adding it to ordinary rolls", (id) => {
-    const item = engine.addStartingMod(nnnBase("Slink Gloves"), id, seededRandom(1));
+    const item = engine329.addStartingMod(nnnBase("Slink Gloves"), id, seededRandom(1));
     expect(item.mods[0]!.id).toBe(id);
-    expect(engine.pool({ ...item, mods: [] }).some((entry) => entry.id === id)).toBe(false);
-    expect(() => engine.addStartingMod(nnnBase("Necrotic Armour"), id, seededRandom(1))).toThrow(
+    expect(engine329.pool({ ...item, mods: [] }).some((entry) => entry.id === id)).toBe(false);
+    expect(() => engine329.addStartingMod(nnnBase("Necrotic Armour"), id, seededRandom(1))).toThrow(
         "not available",
     );
-    expect(incursionModifierPool(engine.catalog, nnnBase("Slink Gloves"))).toHaveLength(3);
-    expect(incursionModifierPool(engine.catalog, nnnBase("Necrotic Armour"))).toEqual([]);
-    const outcomes = recombinationOutcomes(engine, item, nnnBase("Sorcerer Gloves"));
+    expect(incursionModifierPool(engine329.catalog, nnnBase("Slink Gloves"))).toHaveLength(3);
+    expect(incursionModifierPool(engine329.catalog, nnnBase("Necrotic Armour"))).toEqual([]);
+    const outcomes = recombinationOutcomes(engine329, item, nnnBase("Sorcerer Gloves"));
     expect(outcomes.reduce((sum, outcome) => sum + outcome.weight, 0)).toBeCloseTo(1);
     expect(
         outcomes
             .filter(({ value }) => value.mods.some((mod) => mod.id === id))
             .reduce((sum, outcome) => sum + outcome.weight, 0),
     ).toBeCloseTo(0.59);
-    for (const { value } of outcomes) expect(engine.validateItem(value)).toEqual(value);
+    for (const { value } of outcomes) expect(engine329.validateItem(value)).toEqual(value);
 });
 
 it("drops the Temple-only glove suffixes from 3.30.0", () => {
-    const engine330 = new CraftingEngine({ ...engine.catalog, patch: "3.30.0.1" });
+    const engine330 = engine;
     const gloves = nnnBase("Slink Gloves");
-    expect(offersIncursionModifiers(engine.catalog, gloves)).toBe(true);
+    expect(offersIncursionModifiers(engine329.catalog, gloves)).toBe(true);
     expect(offersIncursionModifiers(engine330.catalog, gloves)).toBe(false);
     expect(incursionModifierPool(engine330.catalog, gloves)).toEqual([]);
     for (const id of incursionGloveModifiers) {
         expect(isIncursionModifier(engine330.catalog, gloves, id)).toBe(false);
         expect(() => engine330.addStartingMod(gloves, id, seededRandom(1))).toThrow();
-        const prepared = engine.addStartingMod(gloves, id, seededRandom(1));
+        const prepared = engine329.addStartingMod(gloves, id, seededRandom(1));
         expect(() =>
             recombinationOutcomes(engine330, prepared, nnnBase("Sorcerer Gloves")),
         ).toThrow("not available");
@@ -51,7 +65,7 @@ it("drops the Temple-only glove suffixes from 3.30.0", () => {
 });
 
 it("keeps the r3 refusal while r4 can calculate a purchased Temple donor", async () => {
-    const item = engine.addStartingMod(
+    const item = engine329.addStartingMod(
         nnnBase("Slink Gloves"),
         incursionGloveModifiers[1],
         seededRandom(1),

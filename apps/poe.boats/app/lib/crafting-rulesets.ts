@@ -92,6 +92,7 @@ export function rulesetAllowsConditionalSteps(ruleset: Pick<CraftingRuleset, "en
         "crafting-graph-15",
         "crafting-graph-16",
         "crafting-graph-17",
+        "crafting-graph-18",
     ].includes(ruleset.engine);
 }
 
@@ -108,6 +109,7 @@ export function rulesetAllowsSimpleCraft(ruleset: Pick<CraftingRuleset, "engine"
         "crafting-graph-15",
         "crafting-graph-16",
         "crafting-graph-17",
+        "crafting-graph-18",
     ].includes(ruleset.engine);
 }
 
@@ -123,6 +125,7 @@ export function rulesetAllowsScopedCraftPrices(ruleset: Pick<CraftingRuleset, "e
         "crafting-graph-15",
         "crafting-graph-16",
         "crafting-graph-17",
+        "crafting-graph-18",
     ].includes(ruleset.engine);
 }
 
@@ -137,6 +140,7 @@ export function rulesetAllowsPresetPreparation(ruleset: Pick<CraftingRuleset, "e
         "crafting-graph-15",
         "crafting-graph-16",
         "crafting-graph-17",
+        "crafting-graph-18",
     ].includes(ruleset.engine);
 }
 
@@ -163,7 +167,8 @@ export function validateRulesetGraph(ruleset: CraftingRuleset, input: unknown) {
                 (alternative) =>
                     alternative.kind === "purchase" &&
                     alternative.sourcePreparation &&
-                    sourcePreparationMethodList(alternative.sourcePreparation).some(
+                    // The ruleset has no catalog to resolve bench IDs; this check needs their kind.
+                    sourcePreparationMethodList(alternative.sourcePreparation, () => "").some(
                         (method) => !rulesetAllowsMethod(ruleset, method),
                     ),
             )

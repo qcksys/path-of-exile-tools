@@ -474,7 +474,7 @@ it("replays a paid Scouring source with native implicit proof at its original pr
         extended: { prefixes: 3, suffixes: 3 },
         explicitMods: [
             { description: "Unresolved disposable affix" },
-            { description: "Prefixes Cannot Be Changed", flags: { crafted: true } },
+            { description: "Prefix Modifiers cannot be changed", flags: { crafted: true } },
         ],
         enchantMods: ["Quality does not increase Defences"],
         implicitMods: ["+30 to maximum Life"],

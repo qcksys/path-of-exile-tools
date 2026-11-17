@@ -1,15 +1,19 @@
 import { expect, it } from "vite-plus/test";
 import { discoverCraftingCosts } from "../app/lib/crafting-cost-inputs";
-import { eldritchTier, seededRandom } from "../app/lib/crafting-engine";
+import { CraftingEngine, eldritchTier, seededRandom } from "../app/lib/crafting-engine";
 import { projectFromPreset } from "../app/lib/crafting-presets";
-import type { CraftingItem } from "../app/schemas/crafting";
-import { currency, engine } from "./crafting-fixtures";
+import { type CraftingItem, craftingCatalogSchema } from "../app/schemas/crafting";
+import { currency } from "./crafting-fixtures";
 import { quote } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r10",
 )!;
+// The recipe is an r10 (3.29) graph, so it is built and priced with the catalog r10 published.
+const engine = new CraftingEngine(
+    craftingCatalogSchema.parse((await retainedRevision(ruleset)).catalog),
+);
 const critical = "BreachBodyCriticalChanceIncreasedByUncappedLightningResistance1";
 const ichor = currency("add_great_tangle_implicit_1");
 const ember = currency("add_cleansing_fire_implicit_2");

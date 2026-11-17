@@ -6,7 +6,7 @@ import {
     calculateProcessExact,
 } from "../app/lib/crafting-simulation";
 import { type CraftingItem, craftingProjectSchema } from "../app/schemas/crafting";
-import { baseId, catalog, engine } from "./crafting-fixtures";
+import { baseId, catalog, engine, lockRecipe } from "./crafting-fixtures";
 
 const conversion = { kind: "harvest" as const, id: "ChangeFireToColdResist" };
 const reforgeInfluence = { kind: "harvest" as const, id: "BossInfluence1" };
@@ -48,7 +48,7 @@ describe("extracted Harvest affinity reforges", () => {
             expected.find((entry) => entry.id === "LocalBaseArmourAndLife1")!.weight,
         );
         expect(result.item.rarity).toBe("rare");
-        expect(result.cost[0]!.amount).toBe(recipe.lifeforce);
+        expect(result.cost).toEqual(recipe.cost);
     });
 
     it("uses a fixed snapshot of starting types throughout one reforge", () => {
@@ -222,12 +222,12 @@ describe("extracted Harvest influence reforges", () => {
             {
                 id: "Metadata/Items/Currency/HarvestSeedBlue",
                 name: "Primal Crystallised Lifeforce",
-                amount: recipe.lifeforce,
+                amount: 5000,
             },
             {
                 id: "Metadata/Items/Currency/HarvestSeedBoss",
                 name: "Sacred Crystallised Lifeforce",
-                amount: recipe.sacred,
+                amount: 1,
             },
         ]);
     });
@@ -442,7 +442,7 @@ describe("extracted Harvest conversions", () => {
             },
         ]);
         const recipe = catalog.crafting.harvest.find((entry) => entry.id === conversion.id)!;
-        expect(result.cost[0]!.amount).toBe(recipe.lifeforce);
+        expect(result.cost).toEqual(recipe.cost);
         expect(engine.harvestSupported(conversion.id)).toBe(true);
     });
 
@@ -474,13 +474,7 @@ describe("extracted Harvest conversions", () => {
         expect(() => engine.apply(fractured, conversion, seededRandom(1))).toThrow("No eligible");
         const blocked = engine.addStartingMod(item, "ColdResist1", seededRandom(1));
         expect(() => engine.apply(blocked, conversion, seededRandom(1))).toThrow("No eligible");
-        const lock = catalog.crafting.bench.find(
-            (entry) =>
-                entry.mod &&
-                engine
-                    .mod(entry.mod)
-                    .stats.some((stat) => stat.id === "item_generation_cannot_change_suffixes"),
-        )!;
+        const lock = lockRecipe("suffixes", item);
         const locked = engine.apply(item, { kind: "bench", id: lock.id }, seededRandom(1)).item;
         expect(() => engine.apply(locked, conversion, seededRandom(1))).toThrow("No eligible");
     });

@@ -52,7 +52,7 @@ describe("build-extracted Harvest enchantments", () => {
                     const source = catalog.crafting.harvest.find(
                         (entry) => entry.id === recipe.recipe,
                     )!;
-                    expect(result.cost[0]!.amount).toBe(source.lifeforce);
+                    expect(result.cost).toEqual(source.cost);
                     expect(engine.harvestSupported(source.id)).toBe(true);
                 }
             }

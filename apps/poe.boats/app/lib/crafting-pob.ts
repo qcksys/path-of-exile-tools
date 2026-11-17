@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { translationStatId } from "../../../../packages/poe-game-data/src/translation-formats";
 import type { CraftingCatalog, CraftingItem, RolledMod } from "../schemas/crafting";
-import { cleanModText, renderStatText, rolledModText } from "./crafting-text";
+import { cleanModText, grantedEffectLines, renderStatText, rolledModText } from "./crafting-text";
 import { matchRolledMod } from "./crafting-text-match";
 
 export const rollFractionSchema = z
@@ -161,7 +161,8 @@ export function verifyBlueprintSummary(
         ...new Set(mods.flatMap((mod) => catalog.crafting.modDescriptions[mod.id] ?? [])),
     ];
     const merged = renderStatText(catalog, references, stats);
-    if (merged !== null && expected === normalized(merged.split("\n"))) return;
+    const granted = mods.flatMap((mod) => grantedEffectLines(catalog, mod.id));
+    if (merged !== null && expected === normalized([...merged.split("\n"), ...granted])) return;
     throw new Error(
         "The explicit modifier summary does not match the PoB blueprint. Check its roll positions and modifiers.",
     );

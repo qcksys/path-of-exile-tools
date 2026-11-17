@@ -15,7 +15,7 @@ import {
     craftingCatalogSchema,
     craftingProjectSchema,
 } from "../app/schemas/crafting";
-import { baseId, catalog, currency, engine } from "./crafting-fixtures";
+import { baseId, catalog, currency, engine, lockRecipe } from "./crafting-fixtures";
 
 const ducat = (action: string) => ({
     kind: "currency" as const,
@@ -266,13 +266,7 @@ describe("Allflame Ducats", () => {
     });
 
     it("does not preserve other modifiers through metamod locks and removes stale reveal state", () => {
-        const lock = catalog.crafting.bench.find(
-            (entry) =>
-                entry.mod &&
-                engine
-                    .mod(entry.mod)
-                    .stats.some((stat) => stat.id === "item_generation_cannot_change_prefixes"),
-        )!;
+        const lock = lockRecipe("prefixes", item());
         const start = engine.apply(
             { ...item(), rarity: "rare", intangibility: 100 },
             { kind: "bench", id: lock.id },
