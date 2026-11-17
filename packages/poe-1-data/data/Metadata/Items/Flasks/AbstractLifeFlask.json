@@ -17,7 +17,7 @@
     "max_charges": 2
   },
   "Mods": {
-    "stat_description_list": "Metadata/StatDescriptions/stat_descriptions.txt",
+    "stat_description_list": "Metadata/StatDescriptions/stat_descriptions.csd",
     "enable_rarity": [
       "normal",
       "magic",

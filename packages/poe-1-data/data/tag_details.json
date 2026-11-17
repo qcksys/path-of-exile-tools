@@ -269,6 +269,9 @@
   "drops_not_dupeable": {
     "name": ""
   },
+  "drops_unaffected_by_rarity": {
+    "name": ""
+  },
   "shore": {
     "name": ""
   },
@@ -1240,6 +1243,9 @@
   },
   "synthesised_monster": {
     "name": "<rgb(175,238,238)>{Synthesised}"
+  },
+  "synthesised_monster_damagable": {
+    "name": ""
   },
   "polished_scarab": {
     "name": ""
@@ -3389,7 +3395,7 @@
   "necropolis_gloves": {
     "name": ""
   },
-  "drops_no_scarabs": {
+  "drops_no_threads": {
     "name": ""
   },
   "elder_nova": {
@@ -3765,6 +3771,9 @@
     "name": ""
   },
   "mercenary_phys_convert_templar_lightning_noble": {
+    "name": ""
+  },
+  "mercenary_abyssal_templar": {
     "name": ""
   },
   "mercenary_non_ele_ranger": {
@@ -4164,6 +4173,153 @@
     "name": ""
   },
   "brequel_encounter_skill_daemon": {
+    "name": ""
+  },
+  "viscera_head": {
+    "name": ""
+  },
+  "viscera_body": {
+    "name": ""
+  },
+  "viscera_leg": {
+    "name": ""
+  },
+  "viscera_arm": {
+    "name": ""
+  },
+  "expedition_starseeing_remnant": {
+    "name": ""
+  },
+  "thread": {
+    "name": ""
+  },
+  "augury_bonfire": {
+    "name": "<rgb(76,111,125)>{Torchbearer}"
+  },
+  "augury_viscera_beam": {
+    "name": "<rgb(76,111,125)>{Deathbringer}"
+  },
+  "augury_blackfire_wall": {
+    "name": "<rgb(76,111,125)>{Wildfire}"
+  },
+  "augury_icicle_fissure": {
+    "name": "<rgb(76,111,125)>{Black Frost}"
+  },
+  "augury_encircling_murder": {
+    "name": "<rgb(76,111,125)>{Crowkeeper}"
+  },
+  "augury_corpse_fissure": {
+    "name": "<rgb(76,111,125)>{Gravewalker}"
+  },
+  "augury_blood_golem": {
+    "name": "<rgb(76,111,125)>{Golemancer}"
+  },
+  "augury_blackfire_blast": {
+    "name": "<rgb(76,111,125)>{Doomsayer}"
+  },
+  "augury_icicle_darts": {
+    "name": "<rgb(76,111,125)>{Avalanche}"
+  },
+  "augury_triggered_blood_geysers": {
+    "name": "<rgb(76,111,125)>{Butcher}"
+  },
+  "augury_blood_donut": {
+    "name": "<rgb(76,111,125)>{Sanguine}"
+  },
+  "augury_cauldron_flip": {
+    "name": "<rgb(76,111,125)>{Alchemist}"
+  },
+  "augury_pinnacle_shaper": {
+    "name": "<rgb(76,111,125)>{Fated}"
+  },
+  "augury_crow_bomb": {
+    "name": "<rgb(76,111,125)>{Murderous}"
+  },
+  "augury_howling_wolves": {
+    "name": "<rgb(76,111,125)>{Houndmaster}"
+  },
+  "augury_lightning_leylines": {
+    "name": "<rgb(76,111,125)>{Stormcaller}"
+  },
+  "augury_lightning_orbs": {
+    "name": "<rgb(76,111,125)>{Tempestuous}"
+  },
+  "augury_blackfire_detonations": {
+    "name": "<rgb(76,111,125)>{Incandescent}"
+  },
+  "augury_corpsethorn": {
+    "name": "<rgb(76,111,125)>{Dryad}"
+  },
+  "augury_crow_tunnel": {
+    "name": "<rgb(76,111,125)>{Conjurer}"
+  },
+  "augury_burrowing_bolt": {
+    "name": "<rgb(76,111,125)>{[DNT] Burrowing Bolt}"
+  },
+  "augury_blood_splashes": {
+    "name": "<rgb(76,111,125)>{Blood Moon}"
+  },
+  "augury_savage_bosses": {
+    "name": "<rgb(76,111,125)>{Savage}"
+  },
+  "augury_filth_bosses": {
+    "name": "<rgb(76,111,125)>{Pestilent}"
+  },
+  "augury_classic_bosses": {
+    "name": "<rgb(76,111,125)>{Sadist}"
+  },
+  "augury_broomsticks": {
+    "name": "<rgb(76,111,125)>{Rotted}"
+  },
+  "augury_pinnacle": {
+    "name": "<rgb(76,111,125)>{Fated}"
+  },
+  "augury_sirus_redeemer": {
+    "name": "<rgb(76,111,125)>{Redeemer's Power}"
+  },
+  "augury_sirus_hunter": {
+    "name": "<rgb(76,111,125)>{Hunter's Power}"
+  },
+  "augury_sirus_warlord": {
+    "name": "<rgb(76,111,125)>{Warlord's Power}"
+  },
+  "augury_sirus_crusader": {
+    "name": "<rgb(76,111,125)>{Crusader's Power}"
+  },
+  "ultimatum_exile_mod": {
+    "name": "<rgb(189,8,20)>{Chaos-Blessed}"
+  },
+  "viscera_low": {
+    "name": ""
+  },
+  "viscera_high": {
+    "name": ""
+  },
+  "viscera_med": {
+    "name": ""
+  },
+  "viscera_endgame": {
+    "name": ""
+  },
+  "strongbox": {
+    "name": ""
+  },
+  "basic_strongbox": {
+    "name": ""
+  },
+  "strongbox_can_roll_contains_wild_mercenaries": {
+    "name": ""
+  },
+  "strongbox_can_roll_contains_tormented_spirits": {
+    "name": ""
+  },
+  "expedition_remnant_special": {
+    "name": ""
+  },
+  "harvest_tier3_monster": {
+    "name": ""
+  },
+  "uber_exarch_minotaur_augury_tag": {
     "name": ""
   }
 }

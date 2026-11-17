@@ -651,7 +651,7 @@
   },
   "Metadata/Items/MapFragments/VoidbornVaultKey": {
     "domain": "undefined",
-    "drop_level": 35,
+    "drop_level": 68,
     "implicits": [],
     "inventory_height": 1,
     "inventory_width": 1,
@@ -703,7 +703,7 @@
   },
   "Metadata/Items/MapFragments/TencentVoidbornVaultKey": {
     "domain": "undefined",
-    "drop_level": 35,
+    "drop_level": 68,
     "implicits": [],
     "inventory_height": 1,
     "inventory_width": 1,
