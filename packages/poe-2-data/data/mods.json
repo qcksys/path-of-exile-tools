@@ -185611,6 +185611,11 @@
         "min": 30,
         "max": 60,
         "id": "map_breach_hiveblood_quantity_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "breach_additional_core_league_level"
       }
     ],
     "text": "(30-60)% increased Quantity of Hiveblood found in Map",
@@ -185646,6 +185651,11 @@
         "min": 30,
         "max": 60,
         "id": "map_breach_wombgift_quantity_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "breach_additional_core_league_level"
       }
     ],
     "text": "(30-60)% increased Quantity of [BreachWombgift|Wombgifts] found in Map",
@@ -185681,6 +185691,11 @@
         "min": 10,
         "max": 30,
         "id": "map_breach_wombgift_additional_item_level_chance_%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "breach_additional_core_league_level"
       }
     ],
     "text": "[BreachWombgift|Wombgifts] have (10-30)% chance to drop one Level higher in Map",
@@ -185716,6 +185731,11 @@
         "min": 20,
         "max": 50,
         "id": "map_chance_for_breaches_to_contain_boss_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "breach_additional_core_league_level"
       }
     ],
     "text": "Unstable [ContainsBreach|Breaches] in Map have (20-50)% increased chance to contain Vruun, Marshal of Xesht",
@@ -185751,6 +185771,11 @@
         "min": 1,
         "max": 2,
         "id": "map_unstable_breach_enrage_x_additional_rare_monsters"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "breach_additional_core_league_level"
       }
     ],
     "text": "Unstable [ContainsBreach|Breaches] in Map spawn (1-2) additional [Rarity|Rare] Monsters when Stabilised",
@@ -185786,6 +185811,11 @@
         "min": 5,
         "max": 20,
         "id": "map_breach_rare_monster_potency_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "breach_additional_core_league_level"
       }
     ],
     "text": "(5-20)% increased [MonsterEffectiveness|Effectiveness] of [Rarity|Rare] [ContainsBreach|Breach] Monsters in Map",
@@ -185821,6 +185851,11 @@
         "min": 5,
         "max": 15,
         "id": "map_breach_monster_quantity_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "breach_additional_core_league_level"
       }
     ],
     "text": "[ContainsBreach|Breaches] in Map have (5-15)% increased Pack Size",
@@ -185856,6 +185891,11 @@
         "min": 5,
         "max": 10,
         "id": "map_expedition_explosion_area_of_effect_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "(5-10)% increased [ContainsExpedition|Expedition] Explosive Area of Effect in Map",
@@ -185926,6 +185966,11 @@
         "min": 15,
         "max": 25,
         "id": "expedition_monsters_logbook_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "(15-25)% increased Quantity of [ContainsExpedition|Expedition] [Logbook|Logbooks] dropped by [Runic] Monsters in Map",
@@ -185996,6 +186041,11 @@
         "min": 15,
         "max": 25,
         "id": "map_expedition_elite_marker_count_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "Map contains (15-25)% increased number of [Runic] Monster Markers",
@@ -186031,6 +186081,11 @@
         "min": 15,
         "max": 25,
         "id": "map_verisium_stack_size_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "Monsters from [ContainsExpedition2|Verisium Remnants] drop (15-25)% increased Verisium",
@@ -186066,6 +186121,11 @@
         "min": 1,
         "max": 2,
         "id": "map_expedition_first_X_unearthed_runic_monsters_are_rare"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "The first (1-2) unearthed [Runic|Runic Monsters] will be [Rarity|Rare] Monsters in Map",
@@ -186101,6 +186161,11 @@
         "min": 1,
         "max": 2,
         "id": "map_expedition_num_sentinels_+"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "[ContainsExpedition|Expeditions] contain (1-2) Additional [ExpeditionSentinel|Verisium Sentries] in Map",
@@ -186141,6 +186206,11 @@
         "min": 20,
         "max": 20,
         "id": "expedition_elite_pack_size_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "(15-25)% increased [ContainsExpedition|Expedition] [MonsterRarity|Monster Rarity] in Map",
@@ -186176,6 +186246,11 @@
         "min": 1,
         "max": 2,
         "id": "map_expedition_num_frozen_bosses_+"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "[ContainsExpedition|Expeditions] contain (1-2) Additional Bosses encased in ice in Map",
@@ -186211,6 +186286,11 @@
         "min": 1,
         "max": 2,
         "id": "map_expedition_num_buried_strongboxes_+"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "[ContainsExpedition|Expeditions] contain (1-2) buried [Strongbox|Strongboxes] in Map",
@@ -186246,6 +186326,11 @@
         "min": 1,
         "max": 2,
         "id": "map_expedition_num_vaal_relics_+"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "[ContainsExpedition|Expeditions] contain (1-2) [ExpeditionVaalRelic|Vaal Relics] in Map",
@@ -186281,6 +186366,11 @@
         "min": 30,
         "max": 40,
         "id": "map_expedition_remnants_surpassing_chance_%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "[ContainsExpedition|Expeditions] have +(30-40)% [SurpassChance|Surpassing] chance to contain an additional [ContainsExpedition2|Verisium Remnant]",
@@ -186316,6 +186406,11 @@
         "min": 30,
         "max": 40,
         "id": "map_expedition_twinned_elites_surpassing_chance_%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "[ContainsExpedition|Expeditions] have +(30-40)% [SurpassChance|Surpassing] chance to Duplicate [Runic] Monsters in Map",
@@ -186351,6 +186446,11 @@
         "min": 25,
         "max": 35,
         "id": "map_expedition_remnants_pass_2_runic_modifiers_chance_%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "expedition_additional_core_league_level"
       }
     ],
     "text": "[ContainsExpedition2|Verisium Remnants] have +(25-35)% chance to add an additional Runic [MonsterModifiers|Modifier] in Map",
@@ -186491,6 +186591,11 @@
         "min": 15,
         "max": 30,
         "id": "map_delirium_splinter_stack_size_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "delirium_additional_core_league_level"
       }
     ],
     "text": "(15-30)% increased Stack size of Simulacrum Splinters found in Map",
@@ -186596,6 +186701,11 @@
         "min": 6,
         "max": 12,
         "id": "map_affliction_secondary_wave_delay_seconds_+"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "delirium_additional_core_league_level"
       }
     ],
     "text": "[ContainsDelirium|Delirium] Fog in Map lasts (6-12) additional seconds before dissipating",
@@ -186631,6 +186741,11 @@
         "min": -30,
         "max": -20,
         "id": "map_affliction_secondary_wave_acceleration_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "delirium_additional_core_league_level"
       }
     ],
     "text": "[ContainsDelirium|Delirium] Fog in Map dissipates (30-20)% slower",
@@ -186666,6 +186781,11 @@
         "min": 15,
         "max": 30,
         "id": "map_affliction_encounter_monster_depth_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "delirium_additional_core_league_level"
       }
     ],
     "text": "[ContainsDelirium|Delirium] Fog in Map applies (15-30)% increased [Delirious|Deliriousness] to Players",
@@ -186701,6 +186821,11 @@
         "min": 15,
         "max": 30,
         "id": "map_affliction_pack_size_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "delirium_additional_core_league_level"
       }
     ],
     "text": "[ContainsDelirium|Delirium] Monsters in Map have (15-30)% increased Pack Size",
@@ -186736,6 +186861,11 @@
         "min": 15,
         "max": 30,
         "id": "map_delirium_doodads_+%_final"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "delirium_additional_core_league_level"
       }
     ],
     "text": "[ContainsDelirium|Delirium Fog] in Map spawns (15-30)% increased [FracturingMirror|Fracturing Mirrors]",
@@ -186771,6 +186901,11 @@
         "min": 3,
         "max": 5,
         "id": "map_killing_rare_monsters_pauses_delirium_mirror_timer_for_x_seconds"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "delirium_additional_core_league_level"
       }
     ],
     "text": "Slaying [Rarity|Rare] Monsters in Map pauses the [ContainsDelirium|Delirium] Mirror Timer for (3-5) seconds",
@@ -186806,6 +186941,11 @@
         "min": 15,
         "max": 30,
         "id": "map_affliction_encounter_boss_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "delirium_additional_core_league_level"
       }
     ],
     "text": "[ContainsDelirium|Delirium] Encounters in Map are (15-30)% more likely to spawn [Rarity|Unique] Bosses",
@@ -186876,6 +187016,11 @@
         "min": 12,
         "max": 26,
         "id": "map_delirium_special_event_all_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "delirium_additional_core_league_level"
       }
     ],
     "text": "[ContainsDelirium|Delirium Fog] in Map spawns (12-26)% increased [FracturingMirrorShard|Mirror Shards]",
@@ -186911,6 +187056,11 @@
         "min": 18,
         "max": 30,
         "id": "map_ritual_tribute_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "Monsters Sacrificed at [ContainsRitual|Ritual Altars] in Map grant (18-30)% increased Tribute",
@@ -186946,6 +187096,11 @@
         "min": -30,
         "max": -20,
         "id": "map_ritual_rewards_reroll_cost_+%_final"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "Rerolling Favours at [ContainsRitual|Ritual Altars] in Map costs (30-20)% reduced Tribute",
@@ -186981,6 +187136,11 @@
         "min": -30,
         "max": -20,
         "id": "map_ritual_defer_reward_tribute_cost_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "Deferring Favours at [ContainsRitual|Ritual Altars] in Map costs (30-20)% reduced Tribute",
@@ -187016,6 +187176,11 @@
         "min": 25,
         "max": 40,
         "id": "map_ritual_deferred_rewards_are_offered_again_+%_sooner"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "Favours Deferred at [ContainsRitual|Ritual Altars] in Map reappear (25-40)% sooner",
@@ -187051,6 +187216,11 @@
         "min": 1,
         "max": 3,
         "id": "map_ritual_additional_reward_rerolls"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "[ContainsRitual|Ritual Altars] in Map allow rerolling Favours (1-3) additional times",
@@ -187086,6 +187256,11 @@
         "min": 300,
         "max": 600,
         "id": "map_ritual_offered_rewards_from_rerolls_have_permyriad_chance_to_cost_no_tribute"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "Favours Rerolled at [ContainsRitual|Ritual Altars] in Map have (3-6)% chance to cost no Tribute",
@@ -187121,6 +187296,11 @@
         "min": 35,
         "max": 70,
         "id": "map_ritual_magic_monsters_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "Revived Monsters from [ContainsRitual|Ritual Altars] in Map have (35-70)% increased chance to be [Rarity|Magic]",
@@ -187156,6 +187336,11 @@
         "min": 25,
         "max": 40,
         "id": "map_ritual_rare_monsters_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "Revived Monsters from [ContainsRitual|Ritual Altars] in Map have (25-40)% increased chance to be [Rarity|Rare]",
@@ -187191,6 +187376,11 @@
         "min": 35,
         "max": 70,
         "id": "map_ritual_omen_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "[ContainsRitual|Ritual] Favours in Map have (35-70)% increased chance to be [Omen|Omens]",
@@ -187226,6 +187416,11 @@
         "min": 1,
         "max": 2,
         "id": "maps_with_powerful_bosses_additional_strongbox_+"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_contains_powerful_map_boss"
       }
     ],
     "text": "Map contains (1-2) additional [Strongbox|Strongboxes]",
@@ -187261,6 +187456,11 @@
         "min": 1,
         "max": 2,
         "id": "maps_with_powerful_bosses_additional_shrine_+"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_contains_powerful_map_boss"
       }
     ],
     "text": "Map contains (1-2) additional [Shrine|Shrines]",
@@ -187296,6 +187496,11 @@
         "min": 1,
         "max": 2,
         "id": "maps_with_powerful_bosses_additional_essence_+"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_contains_powerful_map_boss"
       }
     ],
     "text": "Map contains (1-2) additional [Essence|Essences]",
@@ -187331,6 +187536,11 @@
         "min": 1,
         "max": 2,
         "id": "maps_with_powerful_bosses_additional_spirit_+"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_contains_powerful_map_boss"
       }
     ],
     "text": "Map contains (1-2) additional [AzmeriSpirit|Azmeri Spirits]",
@@ -187366,6 +187576,11 @@
         "min": 18,
         "max": 30,
         "id": "map_map_boss_bonus_map_drop_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_contains_powerful_map_boss"
       }
     ],
     "text": "(18-30)% increased Quantity of [Waystone|Waystones] dropped by [MapBoss|Map Bosses]",
@@ -187401,6 +187616,11 @@
         "min": 40,
         "max": 80,
         "id": "map_boss_experience_+%_final"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_contains_powerful_map_boss"
       }
     ],
     "text": "[MapBoss|Map Bosses] grant (40-80)% increased Experience",
@@ -187436,6 +187656,11 @@
         "min": 35,
         "max": 60,
         "id": "map_boss_item_rarity_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_contains_powerful_map_boss"
       }
     ],
     "text": "(35-60)% increased [Rarity] of Items dropped by [MapBoss|Map Bosses]",
@@ -187471,6 +187696,11 @@
         "min": 13,
         "max": 20,
         "id": "map_boss_dropped_item_quantity_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_contains_powerful_map_boss"
       }
     ],
     "text": "(13-20)% increased Quantity of Items dropped by [MapBoss|Map Bosses]",
@@ -187731,6 +187961,11 @@
         "min": -10,
         "max": 10,
         "id": "map_affliction_encounter_monster_depth_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "delirium_additional_core_league_level"
       }
     ],
     "text": "[ContainsDelirium|Delirium] Fog in Map applies (-10-10)% increased [Delirious|Deliriousness] to Players",
@@ -529701,6 +529936,11 @@
         "min": 20,
         "max": 30,
         "id": "map_abyss_monster_spawn_amount_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "abyss_additional_core_league_level"
       }
     ],
     "text": "[ContainsAbyss|Abysses] in Map spawn (20-30)% increased Monsters",
@@ -529736,6 +529976,11 @@
         "min": 2,
         "max": 3,
         "id": "map_abyss_num_additional_rare_monsters"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "abyss_additional_core_league_level"
       }
     ],
     "text": "(2-3) additional [Rarity|Rare] Monsters are spawned from [ContainsAbyss|Abysses] in Map",
@@ -529806,6 +530051,11 @@
         "min": 8,
         "max": 12,
         "id": "map_abyss_monster_potency_+%_per_chasm_closed"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "abyss_additional_core_league_level"
       }
     ],
     "text": "[ContainsAbyss|Abyssal] Monsters have (8-12)% increased [MonsterEffectiveness|Effectiveness] for each closed Pit, up to 100%",
@@ -529841,6 +530091,11 @@
         "min": 10,
         "max": 20,
         "id": "map_abyss_depths_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "abyss_additional_core_league_level"
       }
     ],
     "text": "[ContainsAbyss|Abysses] in Map have (10-20)% increased chance to lead to an [AbyssalDepths|Abyssal Depths]",
@@ -529876,6 +530131,11 @@
         "min": 1,
         "max": 1,
         "id": "map_num_extra_abysses"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "abyss_additional_core_league_level"
       }
     ],
     "text": "Map contains an additional [ContainsAbyss|Abyss]",
@@ -529911,6 +530171,11 @@
         "min": -50,
         "max": -50,
         "id": "map_abyss_no_reward_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "abyss_additional_core_league_level"
       }
     ],
     "text": "[ContainsAbyss|Abyss] Pits in Map are twice as likely to have Rewards",
@@ -529946,6 +530211,11 @@
         "min": 20,
         "max": 40,
         "id": "map_chance_for_4_additional_abysses_%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "abyss_additional_core_league_level"
       }
     ],
     "text": "Map has (20-40)% chance to contain four additional [ContainsAbyss|Abysses]",
@@ -529981,6 +530251,11 @@
         "min": 20,
         "max": 30,
         "id": "map_abyss_monster_abyssal_modifier_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "abyss_additional_core_league_level"
       }
     ],
     "text": "(20-30)% increased chance for [ContainsAbyss|Abyssal] monsters in Map to have [AbyssalModifiers|Abyssal Modifiers]",
@@ -530016,6 +530291,11 @@
         "min": 20,
         "max": 30,
         "id": "map_abyss_ticket_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "abyss_additional_core_league_level"
       }
     ],
     "text": "(20-30)% increased chance for [Abyssalify|Desecrated] Currency from [ContainsAbyss|Abysses] in Map",
@@ -545966,6 +546246,66 @@
     ],
     "text": null,
     "type": "MapAddEndgameContent",
+    "gold_value": null
+  },
+  "MapPlayerHideoutMod": {
+    "adds_tags": [],
+    "domain": "atlas",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "Nothing"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [],
+    "text": null,
+    "type": "Nothing",
+    "gold_value": null
+  },
+  "MapPlayerHideoutReward": {
+    "adds_tags": [],
+    "domain": "atlas",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "Nothing"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [],
+    "text": null,
+    "type": "Nothing",
+    "gold_value": null
+  },
+  "MapPlayerHideoutOrigin": {
+    "adds_tags": [],
+    "domain": "atlas",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "Nothing"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [],
+    "text": null,
+    "type": "Nothing",
     "gold_value": null
   },
   "StrongboxVaseMonsterMod1": {
@@ -574910,6 +575250,11 @@
         "min": 25,
         "max": 25,
         "id": "other_rite_maps_gain_ritual_tribute_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "[ForetoldProliferation|Foretold Proliferation]: Monsters Sacrificed at [ContainsRitual|Ritual Altars] grant 25% increased Tribute",
@@ -574962,6 +575307,11 @@
         "min": -20,
         "max": -20,
         "id": "other_rite_maps_gain_ritual_rewards_reroll_cost_+%_final"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "[ForetoldProliferation|Foretold Proliferation]: Rerolling Favours at [ContainsRitual|Ritual Altars] in your Maps costs 20% reduced Tribute",
@@ -574988,6 +575338,11 @@
         "min": 1,
         "max": 1,
         "id": "other_rite_maps_gain_ritual_additional_reward_rerolls"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "[ForetoldProliferation|Foretold Proliferation]: [ContainsRitual|Ritual Altars] in Area allow rerolling Favours an additional time",
@@ -576652,6 +577007,11 @@
         "min": 25,
         "max": 25,
         "id": "map_ritual_tribute_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "Monsters Sacrificed at [ContainsRitual|Ritual Altars] in Area grant 25% increased Tribute",
@@ -576704,6 +577064,11 @@
         "min": -20,
         "max": -20,
         "id": "map_ritual_rewards_reroll_cost_+%_final"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "Rerolling Favours at [ContainsRitual|Ritual Altars] in Area costs 20% reduced Tribute",
@@ -576730,6 +577095,11 @@
         "min": 1,
         "max": 1,
         "id": "map_ritual_additional_reward_rerolls"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "ritual_additional_core_league_level"
       }
     ],
     "text": "[ContainsRitual|Ritual Altars] in Area allow rerolling Favours an additional time",
@@ -594643,6 +595013,11 @@
         "min": 10,
         "max": 30,
         "id": "map_incursion_vaal_beacon_pack_size_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "incursion_additional_core_league_level"
       }
     ],
     "text": "(10-30)% increased Pack Size for Monsters around [ContainsIncursion|Vaal Beacons] in Map",
@@ -594678,6 +595053,11 @@
         "min": 1,
         "max": 1,
         "id": "map_incursion_vaal_beacon_extra_packs_+"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "incursion_additional_core_league_level"
       }
     ],
     "text": "1 extra pack of Monsters around [ContainsIncursion|Vaal Beacons] in Map",
@@ -594713,6 +595093,11 @@
         "min": 30,
         "max": 60,
         "id": "map_incursion_vaal_beacon_extra_packs_chance_%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "incursion_additional_core_league_level"
       }
     ],
     "text": "(30-60)% chance for an extra packs of Monsters around [ContainsIncursion|Vaal Beacons] in Map",
@@ -594748,6 +595133,11 @@
         "min": 25,
         "max": 50,
         "id": "map_incursion_vaal_beacon_secondary_encounter_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "incursion_additional_core_league_level"
       }
     ],
     "text": "(25-50)% increased chance [ContainsIncursion|Vaal Beacons] summon additional Monsters in Map",
@@ -594783,6 +595173,11 @@
         "min": 5,
         "max": 10,
         "id": "map_incursion_token_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "incursion_additional_core_league_level"
       }
     ],
     "text": "(5-10)% chance to gain an additional Crystal from [ContainsIncursion|Vaal Beacons] in Map",
@@ -594853,6 +595248,11 @@
         "min": 30,
         "max": 60,
         "id": "map_incursion_vaal_beacon_chest_rare_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "incursion_additional_core_league_level"
       }
     ],
     "text": "(30-60)% increased chance [ContainsIncursion|Vaal Beacon] Chests are [Rarity|Rare] in Map",
@@ -594941,6 +595341,11 @@
         "min": 100,
         "max": 100,
         "id": "map_breach_hiveblood_quantity_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "breach_additional_core_league_level"
       }
     ],
     "text": null,
@@ -594972,6 +595377,11 @@
         "min": 100,
         "max": 100,
         "id": "map_breach_wombgift_quantity_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "breach_additional_core_league_level"
       }
     ],
     "text": null,
@@ -595003,6 +595413,11 @@
         "min": 25,
         "max": 25,
         "id": "map_breach_wombgift_additional_item_level_chance_%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "breach_additional_core_league_level"
       }
     ],
     "text": null,
@@ -595034,6 +595449,11 @@
         "min": 30,
         "max": 30,
         "id": "map_breach_rare_monster_potency_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "breach_additional_core_league_level"
       }
     ],
     "text": null,
@@ -595065,6 +595485,11 @@
         "min": 50,
         "max": 50,
         "id": "map_breach_monster_quantity_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "breach_additional_core_league_level"
       }
     ],
     "text": "[ContainsBreach|Breaches] have 50% increased Monster density",
@@ -597524,6 +597949,4345 @@
     ],
     "text": "Abysses lead to an Abyssal Boss",
     "type": "AtlasAbyssCrackOfThePit6",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericMonsterEffectiveness1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapMonsterEffectiveness"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 10,
+        "max": 15,
+        "id": "map_monster_potency_+%"
+      }
+    ],
+    "text": "Monsters have (10-15)% increased [MonsterEffectiveness|Effectiveness]",
+    "type": "MapMonsterEffectiveness",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericDroppedItemRarityIncrease1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapDroppedItemRarityIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 8,
+        "max": 12,
+        "id": "map_item_drop_rarity_+%"
+      }
+    ],
+    "text": "(8-12)% increased [Rarity] of Items found in this Area",
+    "type": "MapDroppedItemRarityIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericPackSizeIncrease1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapPackSizeIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 5,
+        "max": 7,
+        "id": "map_pack_size_+%"
+      }
+    ],
+    "text": "(5-7)% increased Pack size",
+    "type": "MapPackSizeIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericMagicPackIncrease1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapMagicPackIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 30,
+        "max": 40,
+        "id": "map_number_of_magic_packs_+%"
+      }
+    ],
+    "text": "(30-40)% increased number of [Rarity|Magic] Monsters",
+    "type": "MapMagicPackIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericRarePackIncrease1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapRarePackIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 25,
+        "max": 35,
+        "id": "map_number_of_rare_packs_+%"
+      }
+    ],
+    "text": "(25-35)% increased number of [Rarity|Rare] Monsters",
+    "type": "MapRarePackIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericMonsterRarityIncrease1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapMonsterRarityIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 15,
+        "max": 20,
+        "id": "map_number_of_magic_and_rare_packs_+%_and_rare_monster_modifiers_chance_%"
+      }
+    ],
+    "text": "(15-20)% increased [MonsterRarity|Monster Rarity]",
+    "type": "MapMonsterRarityIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericDroppedGoldIncrease1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapDroppedGoldIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 25,
+        "max": 35,
+        "id": "map_extra_gold_piles_chance_%"
+      }
+    ],
+    "text": "(25-35)% increased Gold found in this Area",
+    "type": "MapDroppedGoldIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericExperienceGainIncrease1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapExperienceGainIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 12,
+        "max": 18,
+        "id": "map_experience_gain_+%"
+      }
+    ],
+    "text": "(12-18)% increased Experience gain",
+    "type": "MapExperienceGainIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericRareChestCount1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalChests"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 2,
+        "max": 3,
+        "id": "map_addtional_rare_chest_amount"
+      }
+    ],
+    "text": "Area contains (2-3) additional [Rarity|Rare] Chests",
+    "type": "MapRareChestCount",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericAdditionalShrine1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalShrine"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_shrines"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_map_item_drop_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_pack_size_+%"
+      }
+    ],
+    "text": "Area contains an additional [Shrine]",
+    "type": "MapAdditionalShrine",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericAdditionalStrongbox1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalStrongbox"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_strongboxes"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_map_item_drop_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_pack_size_+%"
+      }
+    ],
+    "text": "Area contains an additional [Strongbox]",
+    "type": "MapAdditionalStrongbox",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericAdditionalEssence1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalEssence"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_extra_monoliths"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_map_item_drop_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_item_drop_rarity_+%"
+      }
+    ],
+    "text": "Area contains an additional [Essence]",
+    "type": "MapAdditionalEssence",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericAdditionalAzmeriWisp1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalAzmeriWisp"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_torment_spirits"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_map_item_drop_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_item_drop_rarity_+%"
+      }
+    ],
+    "text": "Area contains 1 additional [AzmeriSpirit|Azmeri Spirit]",
+    "type": "MapAdditionalAzmeriWisp",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericAdditionalExile1": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalExile"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_exiles"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_map_item_drop_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_item_drop_rarity_+%"
+      }
+    ],
+    "text": "Area is inhabited by 1 additional Rogue Exile",
+    "type": "MapAdditionalExile",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericAdditionalStoneCircle": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalStoneCircle"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_stone_circles"
+      }
+    ],
+    "text": "Area contains a [StoneSummoningCircle|Summoning Circle]",
+    "type": "MapAdditionalStoneCircle",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericMapAdditionalModifier": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalModifier"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_number_of_additional_mods"
+      }
+    ],
+    "text": "Map has 1 additional random Modifier",
+    "type": "MapAdditionalModifier",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericMapAdditionalModifier2": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalModifier"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 2,
+        "max": 2,
+        "id": "map_number_of_additional_mods"
+      }
+    ],
+    "text": "Map has 2 additional random Modifiers",
+    "type": "MapAdditionalModifier",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutGenericMapAdditionalUniqueMonsterModifier": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalUniqueMonsterModifier"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Generic",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_unique_monster_num_additional_modifiers"
+      }
+    ],
+    "text": "[Rarity|Unique] Monsters have 1 additional Rare [MonsterModifiers|Modifier]",
+    "type": "MapAdditionalUniqueMonsterModifier",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutBreachHivebloodQuantity": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "BreachHivebloodQuantity"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Breach",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 30,
+        "max": 60,
+        "id": "map_breach_hiveblood_quantity_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "breach_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "BreachHivebloodQuantity",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutBreachWombgiftQuantity": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "BreachWombgiftQuantity"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Breach",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 30,
+        "max": 60,
+        "id": "map_breach_wombgift_quantity_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "breach_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "BreachWombgiftQuantity",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutBreachWombgiftLevelChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "BreachWombgiftLevelChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Breach",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_breach_wombgift_additional_item_level_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "breach_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "BreachWombgiftLevelChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutBreachBossChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "BreachBossChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Breach",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_chance_for_breaches_to_contain_boss_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "breach_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "BreachBossChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutBreachAdditionalRares": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "BreachAdditionalRares"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Breach",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 2,
+        "id": "map_unstable_breach_enrage_x_additional_rare_monsters"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "breach_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "BreachAdditionalRares",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutBreachRareMonsterPotency": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "BreachRareMonsterPotency"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Breach",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 5,
+        "max": 20,
+        "id": "map_breach_rare_monster_potency_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "breach_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "BreachRareMonsterPotency",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutBreachMonsterQuantity": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "BreachMonsterQuantity"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Breach",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 5,
+        "max": 15,
+        "id": "map_breach_monster_quantity_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "breach_additional_core_league_level"
+      }
+    ],
+    "text": "[ContainsBreach|Breaches] have (5-15)% increased Monster density",
+    "type": "BreachMonsterQuantity",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpeditionExplosionRadius": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ExpeditionExplosionRadius"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 5,
+        "max": 10,
+        "id": "map_expedition_explosion_area_of_effect_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "ExpeditionExplosionRadius",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpeditionLogbookIncrease": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ExpeditionLogbookIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "expedition_monsters_logbook_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": "100% increased Quantity of [ContainsExpedition|Expedition] [Logbook|Logbooks] dropped by [Runic] Monsters",
+    "type": "ExpeditionLogbookIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpeditionRunicMonsters": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ExpeditionRunicMonsters"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 15,
+        "max": 25,
+        "id": "map_expedition_elite_marker_count_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": "Area contains (15-25)% increased number of [Runic] Monster Markers",
+    "type": "ExpeditionRunicMonsters",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpeditionIncreasedVerisium": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ExpeditionIncreasedVerisium"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 15,
+        "max": 25,
+        "id": "map_verisium_stack_size_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": "Monsters from [ContainsExpedition2|Verisium Remnants] drop (15-25)% increased Verisium",
+    "type": "ExpeditionIncreasedVerisium",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpeditionUnearthedRares": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ExpeditionUnearthedRares"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 2,
+        "id": "map_expedition_first_X_unearthed_runic_monsters_are_rare"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "ExpeditionUnearthedRares",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpeditionAdditionalSentinels": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ExpeditionAdditionalSentinels"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 2,
+        "id": "map_expedition_num_sentinels_+"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "ExpeditionAdditionalSentinels",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpeditionIncreasedMonsterRarity": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ExpeditionIncreasedMonsterRarity"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 15,
+        "max": 25,
+        "id": "map_expedition_number_of_magic_and_rare_packs_+%_and_rare_monster_modifiers_chance_%"
+      },
+      {
+        "min": 20,
+        "max": 20,
+        "id": "expedition_elite_pack_size_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "ExpeditionIncreasedMonsterRarity",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpeditionFrozenBosses": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ExpeditionFrozenBosses"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 2,
+        "id": "map_expedition_num_frozen_bosses_+"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "ExpeditionFrozenBosses",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpeditionBuriedStrongboxes": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ExpeditionBuriedStrongboxes"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 2,
+        "id": "map_expedition_num_buried_strongboxes_+"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "ExpeditionBuriedStrongboxes",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpeditionVaalRemnants": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ExpeditionVaalRemnants"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 2,
+        "id": "map_expedition_num_vaal_relics_+"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "ExpeditionVaalRemnants",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpeditionChanceForVerisiumRemnant": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ExpeditionChanceForVerisiumRemnant"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_expedition_remnants_surpassing_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "ExpeditionChanceForVerisiumRemnant",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpeditionChanceForTwinnedElites": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "ExpeditionChanceForTwinnedElites"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_expedition_twinned_elites_surpassing_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "ExpeditionChanceForTwinnedElites",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutExpedition2RunicModPassoverChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "Expedition2RunicModPassoverChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Expedition",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 25,
+        "max": 35,
+        "id": "map_expedition_remnants_pass_2_runic_modifiers_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "expedition_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "Expedition2RunicModPassoverChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutDeliriumMonsterSplinterIncrease": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "DeliriumMonsterSplinterIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Delirium",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 15,
+        "max": 30,
+        "id": "map_delirium_splinter_stack_size_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "delirium_additional_core_league_level"
+      }
+    ],
+    "text": "(15-30)% increased Stack size of Simulacrum Splinters found in Area",
+    "type": "DeliriumMonsterSplinterIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutDeliriumFogDissipationDelayNew": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "DeliriumFogDissipationDelay"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Delirium",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 6,
+        "max": 12,
+        "id": "map_affliction_secondary_wave_delay_seconds_+"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "delirium_additional_core_league_level"
+      }
+    ],
+    "text": "Delirium Fog in Area lasts (6-12) additional seconds before dissipating",
+    "type": "DeliriumFogDissipationDelayNew",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutDeliriumFogPersistence": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "DeliriumFogPersistence"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Delirium",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": -30,
+        "max": -20,
+        "id": "map_affliction_secondary_wave_acceleration_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "delirium_additional_core_league_level"
+      }
+    ],
+    "text": "[ContainsDelirium|Delirium] Fog in Area dissipates (30-20)% slower",
+    "type": "DeliriumFogPersistence",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutDeliriumDifficultyIncrease": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "DeliriumDifficultyIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Delirium",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 15,
+        "max": 30,
+        "id": "map_affliction_encounter_monster_depth_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "delirium_additional_core_league_level"
+      }
+    ],
+    "text": "[ContainsDelirium|Delirium] Fog in Area applies (15-30)% increased [Delirious|Deliriousness] to Players",
+    "type": "DeliriumDifficultyIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutDeliriumPackSizeIncrease": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "DeliriumPackSizeIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Delirium",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 15,
+        "max": 30,
+        "id": "map_affliction_pack_size_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "delirium_additional_core_league_level"
+      }
+    ],
+    "text": "Delirium Monsters in Area have (15-30)% increased Pack Size",
+    "type": "DeliriumPackSizeIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutDeliriumDoodadsIncrease": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "DeliriumDoodadsIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Delirium",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 15,
+        "max": 30,
+        "id": "map_delirium_doodads_+%_final"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "delirium_additional_core_league_level"
+      }
+    ],
+    "text": "[ContainsDelirium|Delirium Fog] in Area spawns (15-30)% increased [FracturingMirror|Fracturing Mirrors]",
+    "type": "DeliriumDoodadsIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutDeliriumRareMonsterPause": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "DeliriumRareMonsterPause"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Delirium",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 3,
+        "max": 5,
+        "id": "map_killing_rare_monsters_pauses_delirium_mirror_timer_for_x_seconds"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "delirium_additional_core_league_level"
+      }
+    ],
+    "text": "Slaying [Rarity|Rare] Monsters in Area pauses the [ContainsDelirium|Delirium] Mirror Timer for (3-5) seconds",
+    "type": "DeliriumRareMonsterPause",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutDeliriumBossChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "DeliriumBossChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Delirium",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_affliction_encounter_boss_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "delirium_additional_core_league_level"
+      }
+    ],
+    "text": "[ContainsDelirium|Delirium] Encounters in Area are 100% more likely to spawn [Rarity|Unique] Bosses",
+    "type": "DeliriumBossChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutDeliriumAdditionalShardsChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "DeliriumAdditionalShardsChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Delirium",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_delirium_special_event_all_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "delirium_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "DeliriumAdditionalShardsChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRitualTributeIncrease": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RitualTributeIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Ritual",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 18,
+        "max": 30,
+        "id": "map_ritual_tribute_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "ritual_additional_core_league_level"
+      }
+    ],
+    "text": "Monsters Sacrificed at [ContainsRitual|Ritual Altars] in Area grant (18-30)% increased Tribute",
+    "type": "RitualTributeIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRitualRerollCostIncrease": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RitualRerollCostIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Ritual",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": -30,
+        "max": -20,
+        "id": "map_ritual_rewards_reroll_cost_+%_final"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "ritual_additional_core_league_level"
+      }
+    ],
+    "text": "Rerolling Favours at [ContainsRitual|Ritual Altars] in Area costs (30-20)% reduced Tribute",
+    "type": "RitualRerollCostIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRitualDeferCostIncrease": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RitualDeferCostIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Ritual",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": -30,
+        "max": -20,
+        "id": "map_ritual_defer_reward_tribute_cost_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "ritual_additional_core_league_level"
+      }
+    ],
+    "text": "Deferring Favours at [ContainsRitual|Ritual Altars] in Area costs (30-20)% reduced Tribute",
+    "type": "RitualDeferCostIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRitualDeferSpeed": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RitualDeferSpeed"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Ritual",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 25,
+        "max": 40,
+        "id": "map_ritual_deferred_rewards_are_offered_again_+%_sooner"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "ritual_additional_core_league_level"
+      }
+    ],
+    "text": "Favours Deferred at [ContainsRitual|Ritual Altars] in Area reappear (25-40)% sooner",
+    "type": "RitualDeferSpeed",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRitualAdditionalReroll": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RitualAdditionalReroll"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Ritual",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 3,
+        "id": "map_ritual_additional_reward_rerolls"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "ritual_additional_core_league_level"
+      }
+    ],
+    "text": "[ContainsRitual|Ritual Altars] in Area allow rerolling Favours (1-3) additional times",
+    "type": "RitualAdditionalReroll",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRitualChanceForNoCost": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RitualChanceForNoCost"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Ritual",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 300,
+        "max": 600,
+        "id": "map_ritual_offered_rewards_from_rerolls_have_permyriad_chance_to_cost_no_tribute"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "ritual_additional_core_league_level"
+      }
+    ],
+    "text": "Favours Rerolled at [ContainsRitual|Ritual Altars] in Area have (3-6)% chance to cost no Tribute",
+    "type": "RitualChanceForNoCost",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRitualRareMonsters": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RitualRareMonsters"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Ritual",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 35,
+        "max": 70,
+        "id": "map_ritual_magic_monsters_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "ritual_additional_core_league_level"
+      }
+    ],
+    "text": "Revived Monsters from [ContainsRitual|Ritual Altars] in Area have (35-70)% increased chance to be [Rarity|Magic]",
+    "type": "RitualRareMonsters",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRitualMagicMonsters": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RitualMagicMonsters"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Ritual",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 25,
+        "max": 40,
+        "id": "map_ritual_rare_monsters_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "ritual_additional_core_league_level"
+      }
+    ],
+    "text": "Revived Monsters from [ContainsRitual|Ritual Altars] in Area have (25-40)% increased chance to be [Rarity|Rare]",
+    "type": "RitualMagicMonsters",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRitualOmenChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RitualOmenChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Ritual",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_ritual_omen_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "ritual_additional_core_league_level"
+      }
+    ],
+    "text": "[ContainsRitual|Ritual] Favours in Area have 100% increased chance to be [Omen|Omens]",
+    "type": "RitualOmenChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutMapBossAdditionalStrongbox": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapBossAdditionalStrongbox"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Powerful Boss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 2,
+        "id": "maps_with_powerful_bosses_additional_strongbox_+"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_contains_powerful_map_boss"
+      }
+    ],
+    "text": "Areas with [PowerfulMapBoss|Powerful Map Bosses] contain (1-2) additional [Strongbox|Strongboxes]",
+    "type": "MapBossAdditionalStrongbox",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutMapBossAdditionalShrine": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapBossAdditionalShrine"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Powerful Boss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 2,
+        "id": "maps_with_powerful_bosses_additional_shrine_+"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_contains_powerful_map_boss"
+      }
+    ],
+    "text": "Areas with [PowerfulMapBoss|Map Powerful Map Bosses] contain (1-2) additional [Shrine|Shrines]",
+    "type": "MapBossAdditionalShrine",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutMapBossAdditionalEssence": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapBossAdditionalEssence"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Powerful Boss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 2,
+        "id": "maps_with_powerful_bosses_additional_essence_+"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_contains_powerful_map_boss"
+      }
+    ],
+    "text": "Areas with [PowerfulMapBoss|Powerful Map Bosses] contain (1-2) additional [Essence|Essences]",
+    "type": "MapBossAdditionalEssence",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutMapBossAdditionalSpirit": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapBossAdditionalSpirit"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Powerful Boss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 2,
+        "id": "maps_with_powerful_bosses_additional_spirit_+"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_contains_powerful_map_boss"
+      }
+    ],
+    "text": "Areas with [PowerfulMapBoss|Powerful Map Bosses] contain (1-2) additional [AzmeriSpirit|Azmeri Spirits]",
+    "type": "MapBossAdditionalSpirit",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutMapBossWaystoneChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapBossWaystoneChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Powerful Boss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 18,
+        "max": 30,
+        "id": "map_map_boss_bonus_map_drop_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_contains_powerful_map_boss"
+      }
+    ],
+    "text": "(18-30)% increased Quantity of [Waystone|Waystones] dropped by [MapBoss|Map Bosses] in Area",
+    "type": "MapBossWaystoneChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutMapBossExperience": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapBossExperience"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Powerful Boss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 40,
+        "max": 80,
+        "id": "map_boss_experience_+%_final"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_contains_powerful_map_boss"
+      }
+    ],
+    "text": "[MapBoss|Map Bosses] grant (40-80)% increased Experience",
+    "type": "MapBossExperience",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutMapBossRarity": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapBossRarity"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Powerful Boss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 35,
+        "max": 60,
+        "id": "map_boss_item_rarity_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_contains_powerful_map_boss"
+      }
+    ],
+    "text": "(35-60)% increased [Rarity] of Items dropped by [MapBoss|Map Bosses]",
+    "type": "MapBossRarity",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutMapBossQuantity": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapBossQuantity"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Powerful Boss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 13,
+        "max": 20,
+        "id": "map_boss_dropped_item_quantity_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_contains_powerful_map_boss"
+      }
+    ],
+    "text": "(13-20)% increased Quantity of Items dropped by [MapBoss|Map Bosses]",
+    "type": "MapBossQuantity",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAbyssMonsterIncrease": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AbyssMonsterIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Abyss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 20,
+        "max": 30,
+        "id": "map_abyss_monster_spawn_amount_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "abyss_additional_core_league_level"
+      }
+    ],
+    "text": "[ContainsAbyss|Abysses] spawn (20-30)% increased Monsters",
+    "type": "AbyssMonsterIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAbyssRareMonsterIncrease": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AbyssRareMonsterIncrease"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Abyss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 2,
+        "max": 3,
+        "id": "map_abyss_num_additional_rare_monsters"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "abyss_additional_core_league_level"
+      }
+    ],
+    "text": "(2-3) additional [Rarity|Rare] Monsters are spawned from [ContainsAbyss|Abysses]",
+    "type": "AbyssRareMonsterIncrease",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAbyssEffectivenessPerChasm": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AbyssEnhancedMonstersPerChasm"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Abyss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 8,
+        "max": 12,
+        "id": "map_abyss_monster_potency_+%_per_chasm_closed"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "abyss_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "AbyssEffectivenessPerChasm",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAbyssDepthsChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AbyssDepthsChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Abyss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 10,
+        "max": 20,
+        "id": "map_abyss_depths_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "abyss_additional_core_league_level"
+      }
+    ],
+    "text": "[ContainsAbyss|Abysses] in Area have (10-20)% increased chance to lead to an [AbyssalDepths|Abyssal Depths]",
+    "type": "AbyssDepthsChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAbyssAdditionalChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AbyssAdditionalChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Abyss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_abysses"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "abyss_additional_core_league_level"
+      }
+    ],
+    "text": "Area contains an additional [ContainsAbyss|Abyss]",
+    "type": "AbyssAdditionalChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAbyssIncreasedRewards": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AbyssIncreasedRewards"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Abyss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": -50,
+        "max": -50,
+        "id": "map_abyss_no_reward_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "abyss_additional_core_league_level"
+      }
+    ],
+    "text": "[ContainsAbyss|Abyss] Pits in Area are twice as likely to have Rewards",
+    "type": "AbyssIncreasedRewards",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAbyss4AdditionalChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "Abyss4AdditionalChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Abyss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_chance_for_4_additional_abysses_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "abyss_additional_core_league_level"
+      }
+    ],
+    "text": "Area contains four additional [ContainsAbyss|Abysses]",
+    "type": "Abyss4AdditionalChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAbyssExtraModifiers": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AbyssExtraModifiers"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Abyss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_abyss_monster_abyssal_modifier_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "abyss_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "AbyssExtraModifiers",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAbyssExtraTickets": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AbyssExtraTickets"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Abyss",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_abyss_ticket_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "abyss_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "AbyssExtraTickets",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutIncursionPackSize": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "IncursionPackSize"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Fate of the Vaal",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 10,
+        "max": 30,
+        "id": "map_incursion_vaal_beacon_pack_size_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "incursion_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "IncursionPackSize",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutIncursionExtraPacks": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "IncursionExtraPacks"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Fate of the Vaal",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_incursion_vaal_beacon_extra_packs_+"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "incursion_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "IncursionExtraPacks",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutIncursionExtraPacksChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "IncursionExtraPacks"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Fate of the Vaal",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_incursion_vaal_beacon_extra_packs_chance_%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "incursion_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "IncursionExtraPacksChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutIncursionSecondaryEncounters": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "IncursionSecondaryEncounters"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Fate of the Vaal",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_incursion_vaal_beacon_secondary_encounter_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "incursion_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "IncursionSecondaryEncounters",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutIncursionTokenChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "IncursionTokenChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Fate of the Vaal",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 5,
+        "max": 10,
+        "id": "map_incursion_token_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "incursion_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "IncursionTokenChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutIncursionBossChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "IncursionBossChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Fate of the Vaal",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_incursion_vaal_beacon_boss_added_to_area_chance_%"
+      }
+    ],
+    "text": null,
+    "type": "IncursionBossChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutIncursionRareChestChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "IncursionRareChestChance"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Fate of the Vaal",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_incursion_vaal_beacon_chest_rare_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "incursion_additional_core_league_level"
+      }
+    ],
+    "text": null,
+    "type": "IncursionRareChestChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutStrongboxCorruptedRareMaxMods": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Strongbox",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_strongboxes_have_%_chance_to_be_rare_corrupted_max_mods"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_strongboxes"
+      }
+    ],
+    "text": "Area contains an additional [Strongbox]",
+    "type": "EndgamePlayerHideoutMapStrongboxCorruptedRareMax",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutStrongboxMonsterMagicChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Strongbox",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_strongbox_monsters_chance_to_be_magic_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_strongboxes"
+      }
+    ],
+    "text": "Area contains an additional [Strongbox]",
+    "type": "EndgamePlayerHideoutMapStrongboxMonsterMagicChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutStrongboxRareChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Strongbox",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 10,
+        "max": 10,
+        "id": "map_strongbox_monsters_chance_to_be_rare_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_strongboxes"
+      }
+    ],
+    "text": "Area contains an additional [Strongbox]",
+    "type": "EndgamePlayerHideoutMapStrongboxMonsterRareChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutStrongboxReCloseChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Strongbox",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 30,
+        "max": 30,
+        "id": "map_strongbox_close_after_opening_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_strongboxes"
+      }
+    ],
+    "text": "Area contains an additional [Strongbox]",
+    "type": "EndgamePlayerHideoutMapStrongboxReCloseChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutStrongboxAdditionalStrongbox": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalStrongbox"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Strongbox",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 2,
+        "max": 2,
+        "id": "map_num_extra_strongboxes"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_map_item_drop_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_pack_size_+%"
+      }
+    ],
+    "text": "Area contains 2 additional [Strongbox|Strongboxes]",
+    "type": "MapAdditionalStrongbox",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutStrongboxAdditionalStrongbox2": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalStrongbox"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Strongbox",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 3,
+        "max": 3,
+        "id": "map_num_extra_strongboxes"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_map_item_drop_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_pack_size_+%"
+      }
+    ],
+    "text": "Area contains 3 additional [Strongbox|Strongboxes]",
+    "type": "MapAdditionalStrongbox",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAzmeriWispReleaseChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Azmeri Wisp",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 25,
+        "max": 25,
+        "id": "map_unique_tormented_spirit_release_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_torment_spirits"
+      }
+    ],
+    "text": "Area contains 1 additional [AzmeriSpirit|Azmeri Spirit]",
+    "type": "EndgamePlayerHideoutMapAzmeriWispReleaseChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAzmeriWispMigrateChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Azmeri Wisp",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_tormented_spirit_migrate_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_torment_spirits"
+      }
+    ],
+    "text": "Area contains 1 additional [AzmeriSpirit|Azmeri Spirit]",
+    "type": "EndgamePlayerHideoutMapAzmeriWispMigrateChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAzmeriWispXSacredWisps": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Azmeri Wisp",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_at_least_sacred_X_spirits"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_torment_spirits"
+      }
+    ],
+    "text": "Area contains 1 additional [AzmeriSpirit|Azmeri Spirit]",
+    "type": "EndgamePlayerHideoutMapAzmeriWispXSacredWisps",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAzmeriWispMaximumPower": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Azmeri Wisp",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_tormented_spirits_maximum_power_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_torment_spirits"
+      }
+    ],
+    "text": "Area contains 1 additional [AzmeriSpirit|Azmeri Spirit]",
+    "type": "EndgamePlayerHideoutMapAzmeriWispMaximumPower",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAzmeriWispAdditionalSpirit": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalAzmeriWisp"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Azmeri Wisp",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 2,
+        "max": 2,
+        "id": "map_spawn_extra_torment_spirits"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_map_item_drop_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_item_drop_rarity_+%"
+      }
+    ],
+    "text": "Area contains 2 additional [AzmeriSpirit|Azmeri Spirits]",
+    "type": "MapAdditionalAzmeriWisp",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutAzmeriWispAdditionalSpirit2": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "MapAdditionalAzmeriWisp"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Azmeri Wisp",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 3,
+        "max": 3,
+        "id": "map_spawn_extra_torment_spirits"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_map_item_drop_chance_+%"
+      },
+      {
+        "min": 0,
+        "max": 0,
+        "id": "map_item_drop_rarity_+%"
+      }
+    ],
+    "text": "Area contains 3 additional [AzmeriSpirit|Azmeri Spirits]",
+    "type": "MapAdditionalAzmeriWisp",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutEssenceGreaterEssenceChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Essence",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_essence_greater_essence_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_extra_monoliths"
+      }
+    ],
+    "text": "Area contains an additional [Essence]",
+    "type": "EndgamePlayerHideoutMapEssenceGreaterEssenceChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutEssenceMonsterEmpowerChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Essence",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_mini_monolith_%_chance_monsters_are_empowered"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_extra_monoliths"
+      }
+    ],
+    "text": "Area contains an additional [Essence]",
+    "type": "EndgamePlayerHideoutMapEssenceMonsterEmpowerChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutEssenceDoubleCorruptedChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Essence",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_essence_%_chance_double_corrupted"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_extra_monoliths"
+      }
+    ],
+    "text": "Area contains an additional [Essence]",
+    "type": "EndgamePlayerHideoutMapEssenceDoubleCorruptedChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutEssenceRareMonsterModChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Essence",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_essence_rare_monster_modifiers_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_extra_monoliths"
+      }
+    ],
+    "text": "Area contains an additional [Essence]",
+    "type": "EndgamePlayerHideoutMapEssenceRareMonsterModChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutEssenceMinionsDropRandomGreaterEssenceChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Essence",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 15,
+        "max": 15,
+        "id": "map_essence_minions_drop_random_greater_essence_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_extra_monoliths"
+      }
+    ],
+    "text": "Area contains an additional [Essence]",
+    "type": "EndgamePlayerHideoutMapEssenceMinionsDropRandomGreaterEssenceChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutEssenceContainsExileChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Essence",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_essences_contains_rogue_exiles_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_extra_monoliths"
+      }
+    ],
+    "text": "Area contains an additional [Essence]",
+    "type": "EndgamePlayerHideoutMapEssenceContainsExileChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutEssenceContainsAdditionalEssence": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Essence",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 2,
+        "max": 2,
+        "id": "map_extra_monoliths"
+      }
+    ],
+    "text": "Area contains 2 additional [Essence|Essences]",
+    "type": "MapEssenceContainsAdditionalEssence",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutEssenceContainsAdditionalEssence2": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Essence",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 3,
+        "max": 3,
+        "id": "map_extra_monoliths"
+      }
+    ],
+    "text": "Area contains 3 additional [Essence|Essences]",
+    "type": "MapEssenceContainsAdditionalEssence",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutShrineEnlighteningShrineChanceAndEffect": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Shrine",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_enlightening_shrine_chance_+%"
+      },
+      {
+        "min": 30,
+        "max": 30,
+        "id": "map_enlightening_shrine_effect_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_shrines"
+      }
+    ],
+    "text": "Area contains an additional [Shrine]",
+    "type": "EndgamePlayerHideoutMapShrineEnlighteningShrineChanceAndEffect",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutShrineBuffEffect": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Shrine",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 50,
+        "max": 50,
+        "id": "map_shrine_granted_player_buff_effect_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_shrines"
+      }
+    ],
+    "text": "Area contains an additional [Shrine]",
+    "type": "EndgamePlayerHideoutMapShrineBuffEffect",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutShrinePacksAreMagicChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Shrine",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_shrines_x%_chance_all_packs_are_magic"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_shrines"
+      }
+    ],
+    "text": "Area contains an additional [Shrine]",
+    "type": "EndgamePlayerHideoutMapShrinePacksAreMagicChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutShrineBuffDuration": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Shrine",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_shrine_granted_player_buff_duration_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_shrines"
+      }
+    ],
+    "text": "Area contains an additional [Shrine]",
+    "type": "EndgamePlayerHideoutMapShrineBuffDuration",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutShrineAdditionalPacks": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Shrine",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_shrines_additional_packs_+"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_shrines"
+      }
+    ],
+    "text": "Area contains an additional [Shrine]",
+    "type": "EndgamePlayerHideoutMapShrineAdditionalPacks",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutShrineMonsterAdditionalRarity": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Shrine",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 50,
+        "max": 50,
+        "id": "map_shrine_monster_dropped_item_rarity_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_shrines"
+      }
+    ],
+    "text": "Area contains an additional [Shrine]",
+    "type": "EndgamePlayerHideoutMapShrineMonsterAdditionalRarity",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutShrineAdditionalShrines": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Shrine",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 2,
+        "max": 2,
+        "id": "map_num_extra_shrines"
+      }
+    ],
+    "text": "Area contains 2 additional [Shrine|Shrines]",
+    "type": "MapShrineAdditionalShrines",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutShrineAdditionalShrines2": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Shrine",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 3,
+        "max": 3,
+        "id": "map_num_extra_shrines"
+      }
+    ],
+    "text": "Area contains 3 additional [Shrine|Shrines]",
+    "type": "MapShrineAdditionalShrines",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutStoneCircleAdditionalStoneCircles": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Stone Circle",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 2,
+        "max": 2,
+        "id": "map_num_extra_stone_circles"
+      }
+    ],
+    "text": "Area contains a [StoneSummoningCircle|Summoning Circle]\nArea contains 1 Reactivation Runes",
+    "type": "MapStoneCircleAdditionalStoneCircles",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutStoneCircleCorruptedCircleChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Stone Circle",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_corrupted_stone_circle_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_stone_circles"
+      }
+    ],
+    "text": "Area contains a [StoneSummoningCircle|Summoning Circle]",
+    "type": "EndgamePlayerHideoutMapStoneCircleCorruptedCircleChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutStoneCircleEssenceEncrustedChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Stone Circle",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_stone_circle_essence_encrusted_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_stone_circles"
+      }
+    ],
+    "text": "Area contains a [StoneSummoningCircle|Summoning Circle]",
+    "type": "EndgamePlayerHideoutMapStoneCircleEssenceEncrustedChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutStoneCircleBossAdditionalModChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Stone Circle",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_stone_circle_boss_additional_modifier_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_stone_circles"
+      }
+    ],
+    "text": "Area contains a [StoneSummoningCircle|Summoning Circle]",
+    "type": "EndgamePlayerHideoutMapStoneCircleBossAdditionalModChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutStoneCircleAzmeriWispReleaseChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Stone Circle",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_stone_circle_summon_tormented_spirit_chance_%"
+      },
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_stone_circle_tormented_spirit_release_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_stone_circles"
+      }
+    ],
+    "text": "Area contains a [StoneSummoningCircle|Summoning Circle]",
+    "type": "EndgamePlayerHideoutMapStoneCircleAzmeriWispReleaseChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutStoneCircleSummonedBossIsPowerful": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Stone Circle",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_stone_circle_bosses_are_powerful"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_num_extra_stone_circles"
+      }
+    ],
+    "text": "Area contains a [StoneSummoningCircle|Summoning Circle]",
+    "type": "EndgamePlayerHideoutMapStoneCircleSummonedBossIsPowerful",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRogueExileUniqueChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Rogue Exiles",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_rogue_exile_unique_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_exiles"
+      }
+    ],
+    "text": "Area is inhabited by 1 additional Rogue Exile",
+    "type": "EndgamePlayerHideoutMapRogueExileUniqueChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRogueExileItemRarityPerMapMod": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Rogue Exiles",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 15,
+        "max": 15,
+        "id": "map_rogue_exile_dropped_item_rarity_+%_per_explicit_map_mod_affecting_area"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_exiles"
+      }
+    ],
+    "text": "Area is inhabited by 1 additional Rogue Exile",
+    "type": "EndgamePlayerHideoutMapRogueExileItemRarityPerMapMod",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRogueExileExceptionalItemChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Rogue Exiles",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_rogue_exile_items_drop_exceptional_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_exiles"
+      }
+    ],
+    "text": "Area is inhabited by 1 additional Rogue Exile",
+    "type": "EndgamePlayerHideoutMapRogueExileExceptionalItemChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRogueExileDoubledExilesChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Rogue Exiles",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_rogue_exiles_are_doubled_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_exiles"
+      }
+    ],
+    "text": "Area is inhabited by 1 additional Rogue Exile",
+    "type": "EndgamePlayerHideoutMapRogueExileDoubledExilesChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRogueExileFleeToAdjacentMapChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Rogue Exiles",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_rogue_exile_flee_to_adjacent_map_on_death_chance_%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_exiles"
+      }
+    ],
+    "text": "Area is inhabited by 1 additional Rogue Exile",
+    "type": "EndgamePlayerHideoutMapRogueExileFleeToAdjacentMapChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRogueExileUniqueWeaponChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Rogue Exiles",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_rogue_exile_unique_weapon_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_exiles"
+      }
+    ],
+    "text": "Area is inhabited by 1 additional Rogue Exile",
+    "type": "EndgamePlayerHideoutMapRogueExileUniqueWeaponChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRogueExileUniqueArmourChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Rogue Exiles",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_rogue_exile_unique_armour_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_exiles"
+      }
+    ],
+    "text": "Area is inhabited by 1 additional Rogue Exile",
+    "type": "EndgamePlayerHideoutMapRogueExileUniqueArmourChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRogueExileUniqueJewelleryChance": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Rogue Exiles",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 100,
+        "max": 100,
+        "id": "map_rogue_exile_unique_jewellery_chance_+%"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_spawn_extra_exiles"
+      }
+    ],
+    "text": "Area is inhabited by 1 additional Rogue Exile",
+    "type": "EndgamePlayerHideoutMapRogueExileUniqueJewelleryChance",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRogueExileAdditionalExiles": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Rogue Exiles",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 2,
+        "max": 2,
+        "id": "map_spawn_extra_exiles"
+      }
+    ],
+    "text": "Area is inhabited by 2 additional Rogue Exiles",
+    "type": "MapRogueExileAdditionalExiles",
+    "gold_value": null
+  },
+  "EndgamePlayerHideoutRogueExileAdditionalExiles2": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "Rogue Exiles",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [
+      {
+        "tag": "default",
+        "weight": 0
+      }
+    ],
+    "stats": [
+      {
+        "min": 3,
+        "max": 3,
+        "id": "map_spawn_extra_exiles"
+      }
+    ],
+    "text": "Area is inhabited by 3 additional Rogue Exiles",
+    "type": "MapRogueExileAdditionalExiles",
     "gold_value": null
   }
 }
