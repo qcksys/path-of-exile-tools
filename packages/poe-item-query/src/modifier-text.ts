@@ -109,7 +109,9 @@ function variants(texts: string[] | null) {
 
 type Candidate = {
     fact: ModifierFact;
-    groups: string[];
+    /** The modifier ID and its groups as small integers; see `idNumbers` and `groupNumbers`. */
+    id: number;
+    groups: number[];
     side: "prefix" | "suffix";
     contributions: Array<{ index: number; min: number; max: number }>;
     unsupported: boolean;
@@ -137,6 +139,12 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
         ]),
     );
     if (definitions.size !== model.modifiers.length) throw new Error("Duplicate modifier text ID.");
+    // The search marks chosen IDs and groups in flag arrays: string sets cost most of its time.
+    const idNumbers = new Map([...definitions.keys()].map((id, index) => [id, index]));
+    const groupNumbers = new Map<string, number>();
+    for (const mod of definitions.values())
+        for (const group of mod.groups)
+            if (!groupNumbers.has(group)) groupNumbers.set(group, groupNumbers.size);
     const affixNames = {
         prefix: new Set(
             model.modifiers.filter((mod) => mod.side === "prefix").map((mod) => mod.name),
@@ -362,7 +370,8 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
             withoutRequiredLine,
         } = context(base.magnitude?.prefix ?? 0, base.magnitude?.suffix ?? 0, catalyst);
         const targets: number[] = [];
-        const dimensions = new Map<string, number>();
+        // Target index by flag key, line key and value position.
+        const dimensions = new Map<string, Map<string, number[]>>();
         const observedLines = new Set<string>();
         const flags = new Map<string, { fractured: boolean; crafted: boolean }>();
         const explicit = [...(item.explicitMods ?? [])];
@@ -398,15 +407,18 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
             flags.set(flagKey, flag);
             const parsed = lines(row.description, false);
             if (!parsed) return record;
+            const byLine = dimensions.get(flagKey) ?? new Map<string, number[]>();
+            dimensions.set(flagKey, byLine);
             for (const line of parsed) {
                 if (model.format < 5 && unsupportedImplicitKeys.has(line.key)) return record;
                 observedLines.add(line.key);
+                const positions = byLine.get(line.key) ?? [];
+                byLine.set(line.key, positions);
                 for (const [position, value] of line.values.entries()) {
-                    const key = JSON.stringify([flagKey, line.key, position]);
-                    let index = dimensions.get(key);
+                    let index = positions[position];
                     if (index === undefined) {
                         index = targets.length;
-                        dimensions.set(key, index);
+                        positions[position] = index;
                         targets.push(0);
                     }
                     targets[index]! += value.min;
@@ -468,9 +480,7 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
                     let possible = true;
                     for (const line of variant)
                         for (const [position, range] of line.values.entries()) {
-                            const index = dimensions.get(
-                                JSON.stringify([flagKey, line.key, position]),
-                            );
+                            const index = dimensions.get(flagKey)?.get(line.key)?.[position];
                             if (index === undefined) {
                                 if (range.min > 0 || range.max < 0) possible = false;
                                 continue;
@@ -490,7 +500,8 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
                             tier: entry.tier ?? base.tiers?.[mod.id],
                             ...flag,
                         },
-                        groups: mod.groups,
+                        id: idNumbers.get(mod.id)!,
+                        groups: mod.groups.map((group) => groupNumbers.get(group)!),
                         side: mod.side,
                         contributions: [...contributions].map(([index, range]) => ({
                             index,
@@ -504,10 +515,19 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
         const frequency = targets.map(() => 0);
         for (const candidate of candidates)
             for (const part of candidate.contributions) frequency[part.index]!++;
-        const rank = (candidate: Candidate) =>
-            Math.min(Infinity, ...candidate.contributions.map((part) => frequency[part.index]!));
+        // Ranked once, not per comparison; the sort is stable, so the order is unchanged.
+        const ranks = new Map(
+            candidates.map((candidate) => [
+                candidate,
+                Math.min(
+                    Infinity,
+                    ...candidate.contributions.map((part) => frequency[part.index]!),
+                ),
+            ]),
+        );
         candidates.sort(
-            (a, b) => rank(a) - rank(b) || b.contributions.length - a.contributions.length,
+            (a, b) =>
+                ranks.get(a)! - ranks.get(b)! || b.contributions.length - a.contributions.length,
         );
         const lower = targets.map(() => 0);
         const upper = targets.map(() => 0);
@@ -531,8 +551,8 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
             }
         }
         const chosen: Candidate[] = [];
-        const groups = new Set<string>();
-        const ids = new Set<string>();
+        const groups = new Uint8Array(groupNumbers.size);
+        const ids = new Uint8Array(idNumbers.size);
         let common: Map<string, ModifierFact> | undefined;
         let visits = 0;
         let exhausted = false;
@@ -572,22 +592,22 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
             const remaining = bounds[start]!;
             const pLeft = expectedPrefixes - p;
             const sLeft = expectedSuffixes - s;
-            if (
-                targets.some(
-                    (value, index) =>
-                        value <
-                            lower[index]! +
-                                pLeft * remaining.prefixMin[index]! +
-                                sLeft * remaining.suffixMin[index]! -
-                                1e-8 ||
-                        value >
-                            upper[index]! +
-                                pLeft * remaining.prefixMax[index]! +
-                                sLeft * remaining.suffixMax[index]! +
-                                1e-8,
+            for (let index = 0; index < targets.length; index++) {
+                const value = targets[index]!;
+                if (
+                    value <
+                        lower[index]! +
+                            pLeft * remaining.prefixMin[index]! +
+                            sLeft * remaining.suffixMin[index]! -
+                            1e-8 ||
+                    value >
+                        upper[index]! +
+                            pLeft * remaining.prefixMax[index]! +
+                            sLeft * remaining.suffixMax[index]! +
+                            1e-8
                 )
-            )
-                return;
+                    return;
+            }
             if (p === expectedPrefixes && s === expectedSuffixes) {
                 if (
                     (magicNames &&
@@ -629,19 +649,19 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
                         : new Map([...common].filter(([key]) => facts.has(key)));
                 return;
             }
-            for (let index = start; index < candidates.length; index++) {
+            next: for (let index = start; index < candidates.length; index++) {
                 const candidate = candidates[index]!;
                 if (
                     (candidate.side === "prefix"
                         ? p === expectedPrefixes
                         : s === expectedSuffixes) ||
-                    ids.has(candidate.fact.id!) ||
-                    candidate.groups.some((group) => groups.has(group))
+                    ids[candidate.id]
                 )
                     continue;
+                for (const group of candidate.groups) if (groups[group]) continue next;
                 chosen.push(candidate);
-                ids.add(candidate.fact.id!);
-                for (const group of candidate.groups) groups.add(group);
+                ids[candidate.id] = 1;
+                for (const group of candidate.groups) groups[group] = 1;
                 for (const part of candidate.contributions) {
                     lower[part.index]! += part.min;
                     upper[part.index]! += part.max;
@@ -655,8 +675,8 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
                     lower[part.index]! -= part.min;
                     upper[part.index]! -= part.max;
                 }
-                for (const group of candidate.groups) groups.delete(group);
-                ids.delete(candidate.fact.id!);
+                for (const group of candidate.groups) groups[group] = 0;
+                ids[candidate.id] = 0;
                 chosen.pop();
                 if (exhausted || unsupported) return;
             }
