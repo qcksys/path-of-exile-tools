@@ -65,6 +65,7 @@ import { bindExchangePrice } from "~/lib/crafting-exchange";
 import { calculateCraftingGraph } from "~/lib/crafting-graph-simulation";
 import { createCraftingItemQuery } from "~/lib/crafting-item-query";
 import { bindCohortPurchasePrice, livePurchasePrices } from "~/lib/crafting-market";
+import { rulesetReference } from "~/lib/crafting-rulesets";
 import {
     assertCraftingSourcePrices,
     bindCraftingSourcePrice,
@@ -1790,6 +1791,21 @@ it("replays broad equipment prices through capture, retry and history without pr
 }, 60_000);
 
 it("prices fractured and isolated donor acquisitions from source observations stored in MySQL", async () => {
+    // The Slink Gloves donor is a 3.29 Temple suffix; the committed cohorts were built from r17.
+    const ruleset329 = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r17",
+    )!;
+    const engine = await retainedEngine(ruleset329);
+    const retained = await retainedRevision(ruleset329);
+    const meanCost = (graph: unknown) => {
+        const simulation = retained.runtime.createSimulation(retained.catalog, graph, {
+            estimateIterations: 3,
+        });
+        while (!simulation.runBatch()) {
+            /* Run the retained engine to completion. */
+        }
+        return simulation.result().meanCost;
+    };
     vi.spyOn(Date, "now").mockReturnValue((HOUR + 30 * 24 * 3600) * 1000);
     const fixtures = [
         {
@@ -1925,7 +1941,7 @@ it("prices fractured and isolated donor acquisitions from source observations st
         await rollupEquipment(local.conn, { hour: HOUR + offset, league: "Standard" });
     }
     for (const fixture of fixtures) {
-        const baseId = Object.entries(catalog.bases).find(
+        const baseId = Object.entries(engine.catalog.bases).find(
             ([, base]) => base.name === fixture.base,
         )![0];
         const prepared = engine.validateItem({
@@ -1944,7 +1960,7 @@ it("prices fractured and isolated donor acquisitions from source observations st
                 },
             ],
         });
-        const graph = marketGraph();
+        const graph = { ...marketGraph(), ruleset: rulesetReference(ruleset329) };
         const acquisition = graph.nodes[0]!;
         if (acquisition.kind !== "acquire" || acquisition.alternatives[0]?.kind !== "purchase")
             throw new Error("Fixture");
@@ -1982,9 +1998,7 @@ it("prices fractured and isolated donor acquisitions from source observations st
                 prices: { chaos: { count: 1, min: price, median: price, max: price } },
             });
             const priced = bindCohortPurchasePrice(graph, engine, "base", "buy", candidate!);
-            expect(
-                calculateCraftingGraph(catalog, priced, { estimateIterations: 3 }).meanCost,
-            ).toBe(price);
+            expect(meanCost(priced)).toBe(price);
             const refreshed = await refreshCraftingMarketPrices(
                 database,
                 priced,
@@ -1992,10 +2006,7 @@ it("prices fractured and isolated donor acquisitions from source observations st
                 HOUR + 21 * 24 * 3600,
             );
             expect(refreshed.issues).toEqual([]);
-            expect(
-                calculateCraftingGraph(catalog, refreshed.graph, { estimateIterations: 3 })
-                    .meanCost,
-            ).toBe(40);
+            expect(meanCost(refreshed.graph)).toBe(40);
         }
         expect(acquisition.alternatives[0].price).toBeNull();
     }

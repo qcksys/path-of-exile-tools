@@ -10,15 +10,18 @@ async function prepareItems(page: Page, bases: string[]) {
     }
 }
 
+// From 3.30 recombination counts only modifiers legal on the chosen base, so a donor modifier
+// excluded on both bases no longer protects the target suffix.
 for (const { donor, chance, warning } of [
     {
         donor: "Zodiac Leather",
-        chance: "100%",
-        warning: "It contributes to the mod count but cannot be selected on either base.",
+        chance: "59%",
+        warning:
+            "It cannot be selected on either base, and from 3.30 it does not count toward the mod count.",
     },
     {
         donor: "Triumphant Lamellar",
-        chance: "83.25%",
+        chance: "62.75%",
         warning: "It can survive on the other base.",
     },
 ]) {
@@ -61,13 +64,13 @@ for (const { donor, chance, warning } of [
         await page
             .getByRole("checkbox", { name: "Exact match (no additional modifiers)", exact: true })
             .check();
-        await expect(page.getByTestId("target-chance")).toHaveText("50%");
+        await expect(page.getByTestId("target-chance")).toHaveText("29.5%");
         const rows = page.getByRole("table").getByRole("row");
         await expect(rows).toHaveCount(2);
         await expect(rows.nth(1)).toContainText("Necrotic Armour");
         await expect(rows.nth(1)).toContainText("of Nullification");
         await expect(rows.nth(1)).not.toContainText("Strength");
-        await expect(rows.nth(1).getByRole("cell").last()).toHaveText("50%");
+        await expect(rows.nth(1).getByRole("cell").last()).toHaveText("29.5%");
     });
 }
 

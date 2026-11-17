@@ -9,8 +9,10 @@ async function prepareAxes(page: Page) {
     }
 }
 
+// From 3.30 recombination counts only modifiers legal on the chosen base, so the spell-damage
+// essence modifier no longer occupies a prefix slot on the axe and the donor does not help.
 for (const suffixCount of [0, 1, 2]) {
-    test(`Flaring plus an essence NNN donor with ${suffixCount} suffixes gives triple T1 prefixes`, async ({
+    test(`Flaring plus an essence NNN donor with ${suffixCount} suffixes keeps the triple T1 prefix chance`, async ({
         page,
     }) => {
         await prepareAxes(page);
@@ -53,7 +55,7 @@ for (const suffixCount of [0, 1, 2]) {
         await keepMods.check();
         await expect(chance).not.toBeVisible();
         await calculate.click();
-        await expect(chance).toHaveText("30.6931%");
+        await expect(chance).toHaveText("9.901%");
 
         await page.getByRole("checkbox", { name: "Matching only", exact: true }).check();
         const outcomes = page.getByRole("table");
