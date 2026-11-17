@@ -1,15 +1,19 @@
-import { readFile } from "node:fs/promises";
 import type { DuckDBConnection } from "@duckdb/node-api";
 import type { PublicStashChange } from "@poe-tools/api-client";
 import { normalizeApiItem } from "@poe-tools/item-query";
-import { compileMarketCohorts, marketCohortManifestSchema } from "@poe-tools/market";
+import type { Classification, EquipmentClassifier } from "#src/ps/default-classifier.ts";
 import { params, stashRounds } from "#src/ps/rounds.ts";
 import { queryAll } from "#src/shared/db.ts";
-import { memoizeByItem, rowDigest } from "#src/shared/item-memo.ts";
+import { type ItemMemo, memoizeByItem, rowDigest } from "#src/shared/item-memo.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
 import { listingTab } from "#src/shared/stash-tab.ts";
 
-export type EquipmentClassifier = ReturnType<typeof compileMarketCohorts>;
+// The classifier loads apart from this module so classification threads need no database code.
+export {
+    defaultEquipmentClassifier,
+    type EquipmentClassifier,
+} from "#src/ps/default-classifier.ts";
+
 type Item = PublicStashChange["items"][number];
 type OnClassified = (
     item: Item,
@@ -37,10 +41,9 @@ function equipmentRow(row: Omit<EquipmentRow, "digest">, revision: string): Equi
 
 // About 670k distinct equipment items appear in a league-start hour.
 const CLASSIFY_CACHE_SIZE = 500_000;
-const classifiers = new WeakMap<EquipmentClassifier, (item: Item) => Classification>();
-type Classification = ReturnType<EquipmentClassifier["classify"]>;
+const classifiers = new WeakMap<EquipmentClassifier, ItemMemo<Classification>>();
 
-function classifyItem(classifier: EquipmentClassifier, item: Item) {
+function classifierMemo(classifier: EquipmentClassifier) {
     let classify = classifiers.get(classifier);
     if (!classify) {
         classify = memoizeByItem(
@@ -49,16 +52,20 @@ function classifyItem(classifier: EquipmentClassifier, item: Item) {
         );
         classifiers.set(classifier, classify);
     }
-    return classify(item);
+    return classify;
 }
 
-let defaults: Promise<EquipmentClassifier> | undefined;
-export function defaultEquipmentClassifier() {
-    defaults ??= readFile(
-        new URL(import.meta.resolve("@poe-tools/market/cohorts-poe1.json")),
-        "utf8",
-    ).then((text) => compileMarketCohorts(marketCohortManifestSchema.parse(JSON.parse(text))));
-    return defaults;
+function classifyItem(classifier: EquipmentClassifier, item: Item) {
+    return classifierMemo(classifier)(item);
+}
+
+/** Caches classifications computed elsewhere (see `classify-pool.ts`) by `stableItemDigest`. */
+export function primeClassifications(
+    classifier: EquipmentClassifier,
+    entries: Iterable<readonly [string, Classification]>,
+) {
+    const memo = classifierMemo(classifier);
+    for (const [key, classification] of entries) memo.prime(key, classification);
 }
 
 export function captureEquipment(

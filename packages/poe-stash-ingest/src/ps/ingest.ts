@@ -2,11 +2,13 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import type { PoeApiClient, PublicStashChange } from "@poe-tools/api-client";
 import { archivePage, recordRawPage } from "#src/ps/capture-archive.ts";
 import { recordCheckpoint } from "#src/ps/checkpoints.ts";
+import { sharedClassifyPool } from "#src/ps/classify-pool.ts";
 import { defaultCraftingCapture } from "#src/ps/crafting-capture.ts";
 import {
     captureEquipmentPage,
     defaultEquipmentClassifier,
     type EquipmentClassifier,
+    primeClassifications,
 } from "#src/ps/equipment.ts";
 import type {
     EquipmentDiagnosticFixture,
@@ -402,6 +404,12 @@ export async function ingestPs(
     await configureSource(conn, REALM ?? "pc", opts.league ?? null);
     const equipment = opts.equipment ?? (await defaultEquipmentClassifier());
     const accepts = await defaultCraftingCapture(equipment.manifest);
+    // Threads compile the bundled catalog, so they serve only the default classifier, and need
+    // the archived page's JSON.
+    const pool =
+        !opts.equipment && opts.spool
+            ? await sharedClassifyPool(equipment.manifest.revision)
+            : undefined;
     const result: PsIngestResult = {
         pages: 0,
         stashes: 0,
@@ -442,6 +450,14 @@ export async function ingestPs(
                 requestCursor ? { realm: REALM, id: requestCursor } : { realm: REALM },
             ));
         const capturedAt = captured?.capturedAt ?? Date.now();
+        // Classified on other threads while this page's listings and sales are written.
+        const classified =
+            pool && captured
+                ? pool.classify(captured.pageJson, opts.league ?? null).catch((error: unknown) => {
+                      console.error("Page classification threads failed; classifying here.", error);
+                      return undefined;
+                  })
+                : undefined;
         // Written before processing, so a failure refetches the page; replays may see it twice.
         if (opts.rawArchiveDir)
             await appendRawPage(opts.rawArchiveDir, { capturedAt, cursor: requestCursor, page });
@@ -484,6 +500,8 @@ export async function ingestPs(
                 }
             }
             const r = await applyStashChanges(conn, changes, opts.listingsObservedAt ?? pageTime);
+            const prepared = await classified;
+            if (prepared) primeClassifications(equipment, prepared);
             result.equipmentObserved += await captureEquipmentPage(
                 conn,
                 changes,
