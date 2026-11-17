@@ -70,8 +70,19 @@ export function compileMarketCohorts(input: MarketCohortManifest) {
         manifest.modifierTextModel && manifest.sourcePreparationModel
             ? compileSourcePreparation(manifest.modifierTextModel, manifest.sourcePreparationModel)
             : (): SourcePreparationResult => ({ status: "unknown" });
-    const byBase = new Map<string, MarketCohort[]>();
-    const general: MarketCohort[] = [];
+    // Split once here: every item is tested against each cohort of its base.
+    const entries = manifest.cohorts.map((cohort) => {
+        const { sourcePreparation, ...query } = cohort.query;
+        return {
+            id: cohort.id,
+            query,
+            sourcePreparation,
+            sourceKey: sourcePreparation && JSON.stringify(sourcePreparation),
+        };
+    });
+    type Entry = (typeof entries)[number];
+    const byBase = new Map<string, Entry[]>();
+    const general: Entry[] = [];
     const definitions = new Map(
         manifest.cohorts.map((cohort) => [
             cohort.id,
@@ -82,15 +93,20 @@ export function compileMarketCohorts(input: MarketCohortManifest) {
             },
         ]),
     );
-    for (const cohort of manifest.cohorts) {
+    for (const [index, cohort] of manifest.cohorts.entries()) {
         const base = cohort.query.groups
             .flatMap((group) => (group.type === "and" ? group.filters : []))
             .find((condition) => condition.kind === "base" && condition.field === "baseType");
         if (base?.kind === "base") {
-            for (const name of new Set(base.values))
-                byBase.set(name, [...(byBase.get(name) ?? []), cohort]);
-        } else general.push(cohort);
+            for (const name of new Set(base.values)) {
+                const list = byBase.get(name) ?? [];
+                list.push(entries[index]!);
+                byBase.set(name, list);
+            }
+        } else general.push(entries[index]!);
     }
+    // In the order classify always used: general cohorts, then the base's own.
+    const candidates = new Map([...byBase].map(([name, own]) => [name, [...general, ...own]]));
     return {
         manifest,
         definition: (id: string) => definitions.get(id),
@@ -102,8 +118,9 @@ export function compileMarketCohorts(input: MarketCohortManifest) {
             const identified = resolve(resolveBase(record));
             const resolved = resolveText(identified);
             const sources = new Map<string, SourcePreparationResult>();
-            for (const cohort of [...general, ...(byBase.get(record.item.baseType) ?? [])]) {
-                const { sourcePreparation, ...query } = cohort.query;
+            for (const { id, query, sourcePreparation, sourceKey } of candidates.get(
+                record.item.baseType,
+            ) ?? general) {
                 let match: ReturnType<typeof matchItem>;
                 if (sourcePreparation) {
                     // Preparation preserves item level, unlike rarity and affix counts.
@@ -133,15 +150,14 @@ export function compileMarketCohorts(input: MarketCohortManifest) {
                         )
                     )
                         continue;
-                    const key = JSON.stringify(sourcePreparation);
-                    if (!sources.has(key))
-                        sources.set(key, resolveSource(identified, sourcePreparation));
-                    const source = sources.get(key)!;
+                    if (!sources.has(sourceKey!))
+                        sources.set(sourceKey!, resolveSource(identified, sourcePreparation));
+                    const source = sources.get(sourceKey!)!;
                     match =
                         source.status === "match" ? matchItem(source.record, query) : source.status;
                 } else match = matchItem(resolved, query);
-                if (match === "match") matches.push(cohort.id);
-                if (match === "unknown") unknown.push(cohort.id);
+                if (match === "match") matches.push(id);
+                if (match === "unknown") unknown.push(id);
             }
             return { matches, unknown };
         },

@@ -189,9 +189,24 @@ export function matchItemCondition(record: ItemRecord, filter: ItemCondition): I
     }
 }
 
+/**
+ * `all` over lazily computed results: any `no-match` decides it, so the rest are skipped. A
+ * classifier tests each item against every cohort of its base, and most fail an early filter.
+ */
+function allOf<T>(entries: readonly T[], match: (entry: T) => ItemMatch): ItemMatch {
+    let unknown = false;
+    for (const entry of entries) {
+        const result = match(entry);
+        if (result === "no-match") return "no-match";
+        if (result === "unknown") unknown = true;
+    }
+    return unknown ? "unknown" : "match";
+}
+
 export function matchItemGroup(record: ItemRecord, group: ItemQueryGroup): ItemMatch {
+    if (group.type === "and")
+        return allOf(group.filters, (filter) => matchItemCondition(record, filter));
     const results = group.filters.map((filter) => matchItemCondition(record, filter));
-    if (group.type === "and") return all(results);
     if (group.type === "or") return countMatches(results, { min: 1 });
     if (group.type === "not") return countMatches(results, { max: 0 });
     return countMatches(results, group.value!);
@@ -200,7 +215,7 @@ export function matchItemGroup(record: ItemRecord, group: ItemQueryGroup): ItemM
 export function matchItem(record: ItemRecord, query: ItemQuery): ItemMatch {
     if (record.game !== query.game) return "no-match";
     if (query.sourcePreparation) return "unknown";
-    return all(query.groups.map((group) => matchItemGroup(record, group)));
+    return allOf(query.groups, (group) => matchItemGroup(record, group));
 }
 
 export function queryConditionCount(query: ItemQuery): number {
