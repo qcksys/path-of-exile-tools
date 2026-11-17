@@ -62,6 +62,40 @@ export async function archivePage(
     return id;
 }
 
+/**
+ * Records a processed page that the raw archive keeps, by its place there (`rawPageLocator`), so
+ * reclassification can replay it. The database stores no copy of the page, which saves
+ * compressing, checksumming and writing one for every page.
+ */
+export async function recordRawPage(
+    conn: DuckDBConnection,
+    page: PublicStashPage,
+    scope: {
+        realm: string;
+        league: string;
+        cursor?: string;
+        capturedAt: number;
+        locator: string;
+        revision: string;
+    },
+) {
+    await conn.run(
+        `INSERT INTO ps_capture_page
+        (id, realm, league, cursor, next_cursor, captured_at, response_hash, processed_at, equipment_revision)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, current_timestamp, $8)`,
+        [
+            randomUUID(),
+            scope.realm,
+            scope.league,
+            scope.cursor ?? null,
+            page.next_change_id,
+            scope.capturedAt,
+            scope.locator,
+            scope.revision,
+        ],
+    );
+}
+
 export async function captureArchiveStatus(conn: DuckDBConnection) {
     const [pages] = await queryAll(
         conn,

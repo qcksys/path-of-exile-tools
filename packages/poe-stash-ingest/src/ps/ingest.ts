@@ -1,6 +1,6 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import type { PoeApiClient, PublicStashChange } from "@poe-tools/api-client";
-import { archivePage } from "#src/ps/capture-archive.ts";
+import { archivePage, recordRawPage } from "#src/ps/capture-archive.ts";
 import { recordCheckpoint } from "#src/ps/checkpoints.ts";
 import { defaultCraftingCapture } from "#src/ps/crafting-capture.ts";
 import {
@@ -12,7 +12,12 @@ import type {
     EquipmentDiagnosticFixture,
     EquipmentDiagnostics,
 } from "#src/ps/equipment-diagnostics.ts";
-import { appendRawPage, RAW_POSITION_STREAM, type RawPageReader } from "#src/ps/raw-archive.ts";
+import {
+    appendRawPage,
+    RAW_POSITION_STREAM,
+    type RawPageReader,
+    rawPageLocator,
+} from "#src/ps/raw-archive.ts";
 import { params, stashRounds } from "#src/ps/rounds.ts";
 import { evaluateSales, recordRemovals } from "#src/ps/sales.ts";
 import { REALM } from "#src/shared/auth.ts";
@@ -453,17 +458,21 @@ export async function ingestPs(
         // Written before processing, so a failure refetches the page; replays may see it twice.
         if (opts.rawArchiveDir)
             await appendRawPage(opts.rawArchiveDir, { capturedAt, cursor: requestCursor, page });
-        const captureId = await archivePage(
-            conn,
-            page,
-            {
-                realm,
-                league: opts.league ?? "all",
-                cursor: requestCursor,
-                capturedAt,
-            },
-            accepts,
-        );
+        // A page read from the raw archive already has its copy there; see `recordRawPage`.
+        const rawLocator = opts.spool && rawPageLocator(opts.spool.position);
+        const captureId = rawLocator
+            ? null
+            : await archivePage(
+                  conn,
+                  page,
+                  {
+                      realm,
+                      league: opts.league ?? "all",
+                      cursor: requestCursor,
+                      capturedAt,
+                  },
+                  accepts,
+              );
 
         const fixtures: EquipmentDiagnosticFixture[] = [];
         await withTransaction(conn, async () => {
@@ -520,6 +529,16 @@ export async function ingestPs(
                     "UPDATE ps_capture_page SET processed_at = current_timestamp, equipment_revision = $2 WHERE id = $1",
                     [captureId, equipment.manifest.revision],
                 );
+            // Reclassification skips private stashes, so a page of only those has nothing to replay.
+            if (rawLocator && changes.some((change) => change.public))
+                await recordRawPage(conn, page, {
+                    realm,
+                    league: opts.league ?? "all",
+                    cursor: requestCursor,
+                    capturedAt,
+                    locator: rawLocator,
+                    revision: equipment.manifest.revision,
+                });
         });
         if (fixtures.length) await opts.equipmentDiagnostics?.flush(fixtures);
         opts.spool?.advance();

@@ -293,6 +293,7 @@ export async function runPipeline(
                 limitPages,
                 completedBefore: stashBeforeHour,
                 equipmentDiagnostics: opts.equipmentDiagnostics,
+                rawArchiveDir: opts.spool?.dir,
             })
                 .then(async (result) => {
                     spendReclassifyAllowance(result.pages);
