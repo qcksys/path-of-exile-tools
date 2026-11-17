@@ -47,9 +47,11 @@ CREATE TABLE IF NOT EXISTS ps_listing_hour AS
            epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
     FROM ps_listing;
 
-CREATE UNIQUE INDEX IF NOT EXISTS ps_listing_hour_pk
-    ON ps_listing_hour(account_name, stash_id, item_id, observed_hour);
-CREATE INDEX IF NOT EXISTS ps_listing_hour_time ON ps_listing_hour(observed_hour, league);
+-- The hour tables keep no indexes. DuckDB never scans them by index (hour filters use zonemaps),
+-- inserts skip existing rows with NOT EXISTS, and an index's memory is never released once
+-- loaded, so on these ever-growing tables it crowded out every query.
+DROP INDEX IF EXISTS ps_listing_hour_pk;
+DROP INDEX IF EXISTS ps_listing_hour_time;
 ALTER TABLE ps_listing_hour ADD COLUMN IF NOT EXISTS signature_value VARCHAR;
 ALTER TABLE ps_listing_hour ADD COLUMN IF NOT EXISTS links INTEGER DEFAULT 0;
 ALTER TABLE ps_listing_hour ADD COLUMN IF NOT EXISTS tab VARCHAR;
@@ -93,9 +95,9 @@ CREATE TABLE IF NOT EXISTS ps_equipment_hour AS
     SELECT * EXCLUDE (raw_item, removed_at),
         epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
     FROM ps_equipment_listing WHERE FALSE;
-CREATE UNIQUE INDEX IF NOT EXISTS ps_equipment_hour_pk
-    ON ps_equipment_hour(account_name, item_id, revision, observed_hour);
-CREATE INDEX IF NOT EXISTS ps_equipment_hour_time ON ps_equipment_hour(observed_hour, league);
+-- No indexes, as for ps_listing_hour.
+DROP INDEX IF EXISTS ps_equipment_hour_pk;
+DROP INDEX IF EXISTS ps_equipment_hour_time;
 -- After ps_equipment_hour copied its columns; see ps_listing.content_digest.
 ALTER TABLE ps_equipment_listing ADD COLUMN IF NOT EXISTS content_digest VARCHAR;
 CREATE TABLE IF NOT EXISTS ps_equipment_cohort_hour (

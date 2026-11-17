@@ -257,9 +257,6 @@ async function applyRound(
     const rekeyed: (ListingRow & { rowId: string })[] = [];
     const inserts: ListingRow[] = [];
     const listed: { stashId: string; accountName: string }[] = [];
-    // Hour rows are copied from their listing, so an hour row's league can only differ when its
-    // listing's league just changed.
-    let leagueChanged = false;
     for (const change of changes) {
         const rows = byStash.get(change.id) ?? [];
         if (!change.public) {
@@ -279,7 +276,6 @@ async function applyRound(
             const existing = owned.get(row.itemId);
             if (existing?.active) result.updated++;
             else result.inserted++;
-            if (existing && existing.league !== row.league) leagueChanged = true;
             if (!existing) inserts.push(row);
             else if (existing.contentDigest === row.contentDigest)
                 seen.push({ ...row, rowId: existing.rowId });
@@ -329,8 +325,7 @@ async function applyRound(
 
     // Active listings were all seen now, so refresh their observations within the current hour
     // instead of merging: zonemaps confine the hour to the newest row groups. Earlier observations
-    // of items removed during this hour stay. Existing rows are updated in place, because DuckDB
-    // rejects reinserting a deleted key whose index entry was loaded from disk.
+    // of items removed during this hour stay. Existing rows are updated in place.
     const listedIds = listed.map((stash) => stash.stashId);
     await conn.run(
         `CREATE OR REPLACE TEMP TABLE page_listing AS
@@ -348,9 +343,9 @@ async function applyRound(
     );
     const sameRow = `h.observed_hour = epoch(date_trunc('hour', ${seenAt}))::BIGINT
         AND h.stash_id = l.stash_id AND h.account_name = l.account_name AND h.item_id = l.item_id`;
-    // `league` is indexed (ps_listing_hour_time), and setting an indexed column rewrites the row
-    // even when its value is unchanged, so it is set only on rows whose league changed.
-    const hourColumns = `item_key = l.item_key,
+    await conn.run(
+        `UPDATE ps_listing_hour h SET league = l.league,
+            item_key = l.item_key,
             icon_asset = l.icon_asset,
             identified = l.identified,
             frame_type = l.frame_type,
@@ -368,17 +363,9 @@ async function applyRound(
             mod_signature = l.mod_signature,
             signature_value = l.signature_value,
             first_seen_at = l.first_seen_at,
-            last_seen_at = l.last_seen_at`;
-    await conn.run(
-        `UPDATE ps_listing_hour h SET ${hourColumns}
-        FROM page_listing l WHERE ${sameRow} AND h.league IS NOT DISTINCT FROM l.league`,
+            last_seen_at = l.last_seen_at
+        FROM page_listing l WHERE ${sameRow}`,
     );
-    if (leagueChanged) {
-        await conn.run(
-            `UPDATE ps_listing_hour h SET league = l.league, ${hourColumns}
-            FROM page_listing l WHERE ${sameRow} AND h.league IS DISTINCT FROM l.league`,
-        );
-    }
     await conn.run(
         `INSERT INTO ps_listing_hour BY NAME
         SELECT *, epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
