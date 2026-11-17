@@ -7,10 +7,29 @@ import type { Item } from "@poe-tools/api-client";
  */
 const RESENT_FIELDS = ["inventoryId", "x", "y", "note"] as const;
 
-function stableItemDigest(item: Item) {
-    const stable: Record<string, unknown> = { ...item };
-    for (const field of RESENT_FIELDS) delete stable[field];
-    return createHash("sha1").update(JSON.stringify(stable)).digest("base64");
+const digests = new WeakMap<Item, string>();
+
+/** A digest of the item apart from `RESENT_FIELDS`, computed once per parsed item. */
+export function stableItemDigest(item: Item) {
+    let digest = digests.get(item);
+    if (digest === undefined) {
+        const stable: Record<string, unknown> = { ...item };
+        for (const field of RESENT_FIELDS) delete stable[field];
+        digest = createHash("sha1").update(JSON.stringify(stable)).digest("base64");
+        digests.set(item, digest);
+    }
+    return digest;
+}
+
+/**
+ * Identifies a stored row's content: the item apart from `RESENT_FIELDS`, and every column
+ * derived from it, so a row whose digest matches needs only its sighting time updated.
+ */
+export function rowDigest(item: Item, derived: unknown) {
+    return createHash("sha1")
+        .update(stableItemDigest(item))
+        .update(JSON.stringify(derived))
+        .digest("base64");
 }
 
 /**
