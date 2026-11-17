@@ -281370,7 +281370,7 @@
         "id": "fishing_lure_type"
       }
     ],
-    "text": null,
+    "text": "&lt;random Fishing Lure&gt;",
     "type": "FishingLureType",
     "gold_value": null
   },
@@ -281396,7 +281396,7 @@
         "id": "fishing_lure_type"
       }
     ],
-    "text": null,
+    "text": "Siren Worm Bait",
     "type": "FishingLureType",
     "gold_value": null
   },
@@ -281422,7 +281422,7 @@
         "id": "fishing_lure_type"
       }
     ],
-    "text": null,
+    "text": "Thaumaturgical Lure",
     "type": "FishingLureType",
     "gold_value": null
   },
@@ -281448,7 +281448,7 @@
         "id": "fishing_lure_type"
       }
     ],
-    "text": null,
+    "text": "Kulemak's Corpsebait",
     "type": "FishingLureType",
     "gold_value": null
   },
@@ -281483,7 +281483,7 @@
         "id": "fishing_hook_type"
       }
     ],
-    "text": null,
+    "text": "&lt;random Fishing Hook&gt;",
     "type": "FishingHookType",
     "gold_value": null
   },
@@ -1564338,7 +1564338,7 @@
         "id": "fishing_lure_type"
       }
     ],
-    "text": null,
+    "text": "Wombgift Bait",
     "type": "FishingLureType",
     "gold_value": null
   },
@@ -1564396,7 +1564396,7 @@
         "id": "fishing_lure_type"
       }
     ],
-    "text": null,
+    "text": "Otherworldly Lure",
     "type": "FishingLureType",
     "gold_value": null
   },

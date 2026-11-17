@@ -8,6 +8,8 @@ export const relationalPlaceholders: Record<string, string> = {
     passive_hash: "&lt;random Passive Skill&gt;",
     passive_keystone_index: "&lt;Keystone Passive Skill&gt;",
     mages_legacy_index: "Legacy of &lt;Utility Flask&gt;",
+    fishing_lure_type: "&lt;random Fishing Lure&gt;",
+    fishing_hook_type: "&lt;random Fishing Hook&gt;",
 };
 
 export function specificity(rule: { conditions: string[] }) {

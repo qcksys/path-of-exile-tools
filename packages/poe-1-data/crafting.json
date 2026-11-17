@@ -4,7 +4,7 @@
   "patch": "3.30.0.2.2",
   "source": {
     "basesSha256": "5fdec2ba6f5124ca1abd7bd2bbe1acb6e1aec7e70a3740a03722f1157e140c05",
-    "modsSha256": "26e7917fef948a03f9bb44c90921d528c422fc8c629dc3d97066c2e0ef668e4e",
+    "modsSha256": "7e9f57aa95a6eb8f0b8c9adb947869ae5b7f39999727e8f076be3f5d691606d9",
     "schemaSha256": "25e17f0463e56a4ed0dcc13a841aeb811012debb23daa9111053aa8157bd7b60",
     "tables": {
       "Data/Essences.datc64": "9fd31967b26f4c70e3e6b07a6847099aa38335123b84e0ae4fd24a75329df30f",

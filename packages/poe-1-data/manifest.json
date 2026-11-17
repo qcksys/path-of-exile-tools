@@ -3,11 +3,11 @@
   "game": "poe1",
   "version": "3.30.0-build.2.2",
   "client_build": "3.30.0.2.2",
-  "source_manifest_sha256": "cfc1e991ee47231212e6fa12db80715a3ee187d10a8ffc36e90facdfd925412a",
+  "source_manifest_sha256": "aeebc2b977b505df2f16492aba8c41def57614d80c15daa59703f0f76130ee9c",
   "dat_schema_sha256": "25e17f0463e56a4ed0dcc13a841aeb811012debb23daa9111053aa8157bd7b60",
-  "extractor_sha256": "746bc69784e5b7203af15c6d1ae004c87169dcd3b95f61eaef2fcd4d90578ace",
+  "extractor_sha256": "2a6f3013a28578ef64ab14fe41bbe28832f738faac98b7d31bcf8dc5ab1d0a8c",
   "zod_schema_sha256": "a02f8ec2a774de489b1c9990bedea17e8e9a82d9edceff56d3fb68a676d28a60",
-  "crafting_data_sha256": "491d1e04d6fc58394c3fac448d5ad14046edcc65de223136a444333048d28460",
+  "crafting_data_sha256": "4be4d153e7273e3b35abb47a4b41035c3fa52bf18bea5bade98822691126363e",
   "weight_provenance": "client-extracted; PoE 2 values are not Craft of Exile empirical weights",
   "files": {
     "Metadata/Items/Amulets/AbstractAmulet.json": {
@@ -896,8 +896,8 @@
       "schema": "json-schema/item_classes.schema.json"
     },
     "mods.json": {
-      "sha256": "26e7917fef948a03f9bb44c90921d528c422fc8c629dc3d97066c2e0ef668e4e",
-      "bytes": 36125296,
+      "sha256": "7e9f57aa95a6eb8f0b8c9adb947869ae5b7f39999727e8f076be3f5d691606d9",
+      "bytes": 36125420,
       "schema": "json-schema/mods.schema.json"
     },
     "stats.json": {
