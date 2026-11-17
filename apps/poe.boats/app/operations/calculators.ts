@@ -2,6 +2,7 @@ import { z } from "zod";
 import { MANUAL_VENDOR_RECIPES } from "~/data/manual-vendor-recipes";
 import { getVendorRecipes } from "~/data/vendor-recipes";
 import { buildRecipeTradeUrl, calculateRecipeScenario, findArbitrage } from "~/lib/arbitrage";
+import { calculateClusterRecipe } from "~/lib/cluster-recipe";
 import { calculateRecombinatorPlan, matchesTarget, summarizeCounts } from "~/lib/recombinator";
 import { availableCatalogMods, catalogBaseOptions } from "~/lib/recombinator-catalog";
 import {
@@ -12,6 +13,9 @@ import {
 import {
     ArbitrageGameSchema,
     ArbitrageOptionsSchema,
+    ClusterRecipeOptionsSchema,
+    ClusterRecipeSizeResultSchema,
+    ClusterRecipeSnapshotSchema,
     ManualVendorRecipeSchema,
     MarketSnapshotSchema,
     RecipeScenarioSchema,
@@ -97,6 +101,21 @@ export const calculatorOperations = [
         input: RecipeScenarioSchema,
         output: z.object({ result: scenarioResult.nullable() }),
         execute: (input) => ({ result: calculateRecipeScenario(input) }),
+    }),
+    defineOperation({
+        ...calculation,
+        family: "arbitrage",
+        path: "/cluster-jewels/calculate",
+        name: "calculate_cluster_recipe",
+        ui: "/1/arbitrage",
+        description:
+            "Calculate each Cluster Jewel size's expected value from selling five for a random one, from a `get_cluster_recipe_market` snapshot. Assumes every rollable enchantment and passive count is equally likely (spawn weights are not published) and counts unpriced outcomes as 0 chaos. Sale values lose the buffer and input costs gain it. Returns the break-even input price, profit against five of the cheapest priced outcome market, the chance an output beats that cost, the break-even price when low outputs go back into the recipe, and every outcome by value.",
+        input: z.object({
+            snapshot: ClusterRecipeSnapshotSchema,
+            options: ClusterRecipeOptionsSchema,
+        }),
+        output: z.object({ sizes: z.array(ClusterRecipeSizeResultSchema) }),
+        execute: ({ snapshot, options }) => calculateClusterRecipe(snapshot, options),
     }),
     defineOperation({
         ...calculation,

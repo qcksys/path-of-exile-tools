@@ -2392,6 +2392,60 @@ it("reads each beast and temple market's latest merchant ask, converting other c
     });
 });
 
+it("reads Cluster Jewel base markets' latest merchant asks by their signature value", async () => {
+    const league = "ClusterRecipes";
+    const minion = "Minions deal 10% increased Damage · 12 passives · ilvl 84+";
+    const cluster = (overrides: Partial<TStashUniqueHourlyI>) =>
+        observation({
+            league,
+            name: null,
+            itemKey: "Large Cluster Jewel",
+            baseType: "Large Cluster Jewel",
+            frameType: 2,
+            signatureKind: "base",
+            signatureValue: minion,
+            listingCount: 4,
+            ...overrides,
+        });
+    const ask = (median: number) => ({ chaos: { count: 1, min: median, median, max: median } });
+    await insertMarket([
+        cluster({ prices: ask(2900) }),
+        cluster({ hour: hour - 3600, prices: ask(2500) }),
+        cluster({ tab: "", prices: ask(1) }),
+        cluster({
+            signatureValue: "Minions deal 10% increased Damage · 12 passives · ilvl 75–83",
+            prices: ask(15),
+        }),
+        cluster({
+            itemKey: "Small Cluster Jewel",
+            baseType: "Small Cluster Jewel",
+            signatureValue: "4% increased maximum Life · 3 passives · ilvl 84+",
+            hour: hour - 7200,
+            listingCount: 2,
+            prices: ask(3),
+        }),
+    ]);
+    const listings = await findCraftingRecipeListings(db as unknown as TDatabase, league, "chaos", [
+        { itemKey: "Large Cluster Jewel", base: minion },
+        {
+            itemKey: "Large Cluster Jewel",
+            base: "10% increased Spell Damage · 12 passives · ilvl 84+",
+        },
+        {
+            itemKey: "Small Cluster Jewel",
+            base: "4% increased maximum Life · 3 passives · ilvl 84+",
+        },
+    ]);
+    expect(Object.fromEntries(listings)).toEqual({
+        [`Large Cluster Jewel|${minion}`]: { unitPrice: 2900, listingCount: 4, hour },
+        "Small Cluster Jewel|4% increased maximum Life · 3 passives · ilvl 84+": {
+            unitPrice: 3,
+            listingCount: 2,
+            hour: hour - 7200,
+        },
+    });
+});
+
 it("lists yellow beast species as one Yellow Beast market, beside red beasts", async () => {
     const league = "Yellow";
     const ask = (median: number, count: number) => ({

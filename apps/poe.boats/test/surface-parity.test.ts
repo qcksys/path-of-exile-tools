@@ -15,8 +15,10 @@ import { createDbConnection } from "~/db/client";
 import * as craftingExchangeQueries from "~/db/queries/crafting-exchange.queries";
 import * as exchangeMembership from "~/db/queries/crafting-exchange-membership.queries";
 import * as craftingMarketQueries from "~/db/queries/crafting-market.queries";
+import * as craftingRecipeQueries from "~/db/queries/crafting-recipes.queries";
 import * as marketQueries from "~/db/queries/market.queries";
 import { calculateRecipeScenario } from "~/lib/arbitrage";
+import { calculateClusterRecipe } from "~/lib/cluster-recipe";
 import { CraftingEngine, seededRandom } from "~/lib/crafting-engine";
 import { bindExchangePrice, markExchangePriceUnavailable } from "~/lib/crafting-exchange";
 import { calculateCraftingGraph } from "~/lib/crafting-graph-simulation";
@@ -42,6 +44,7 @@ import { importPlannerShare } from "~/operations/import-share";
 import type { OperationContext } from "~/operations/operation";
 import { editPlanner, newPlannerSet } from "~/operations/planner";
 import { operations } from "~/operations/registry.server";
+import { ClusterRecipeSnapshotSchema } from "~/schemas/arbitrage";
 import { craftingCatalogSchema, craftingMethodSchema } from "~/schemas/crafting";
 import { craftingGraphSchema } from "~/schemas/crafting-graph";
 import { craftingItemQueryTextResultSchema } from "~/schemas/crafting-item-query-text";
@@ -3034,5 +3037,114 @@ it("reads the PoE 2 exchange market alike over HTTP and MCP", async () => {
         expect(query).toHaveBeenCalledTimes(2);
     } finally {
         query.mockRestore();
+    }
+});
+
+it("reads and calculates the Cluster Jewel recipe alike over HTTP and MCP", async () => {
+    const leagues = vi
+        .spyOn(marketQueries, "getMarketExchangeLeagues")
+        .mockResolvedValue(["Covens", "Standard"]);
+    const listings = vi
+        .spyOn(craftingRecipeQueries, "findCraftingRecipeListings")
+        .mockResolvedValue(
+            new Map([
+                [
+                    "Large Cluster Jewel|Minions deal 10% increased Damage · 12 passives · ilvl 75–83",
+                    { unitPrice: 50, listingCount: 3, hour: 1_792_836_000 },
+                ],
+            ]),
+        );
+    try {
+        const response = await api.request(
+            "https://poe.boats/api/v1/arbitrage/cluster-jewels/market?league=Covens&itemLevel=80",
+            {},
+            { runtime },
+        );
+        expect(response.status).toBe(200);
+        const market = await response.json();
+        expect(market).toMatchObject({
+            league: "Covens",
+            itemLevel: 80,
+            error: null,
+            snapshot: {
+                band: { min: 75, max: 83 },
+                quotes: { "affliction_minion_damage:12": { value: 50, listingCount: 3 } },
+            },
+        });
+        const rpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", {
+                    name: "get_cluster_recipe_market",
+                    arguments: { league: "Covens", itemLevel: 80 },
+                })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(market);
+
+        const invalid = await api.request(
+            "https://poe.boats/api/v1/arbitrage/cluster-jewels/market?itemLevel=0",
+            {},
+            { runtime },
+        );
+        expect(invalid.status).toBe(400);
+        const invalidRpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", {
+                    name: "get_cluster_recipe_market",
+                    arguments: { itemLevel: 101 },
+                })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(invalidRpc.result).isError).toBe(true);
+        expect(listings).toHaveBeenCalledTimes(2);
+
+        const { snapshot } = z.object({ snapshot: ClusterRecipeSnapshotSchema }).parse(market);
+        const input = { snapshot, options: { buffer: 5 } };
+        const expected = JSON.parse(
+            JSON.stringify(calculateClusterRecipe(input.snapshot, input.options)),
+        );
+        const calculated = await api.request(
+            "https://poe.boats/api/v1/arbitrage/cluster-jewels/calculate",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
+            },
+            { runtime },
+        );
+        expect(calculated.status).toBe(200);
+        expect(await calculated.json()).toEqual(expected);
+        const calculatedRpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", { name: "calculate_cluster_recipe", arguments: input })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(calculatedRpc.result).structuredContent).toEqual(
+            expected,
+        );
+
+        const refused = { ...input, options: { buffer: 100 } };
+        const refusedResponse = await api.request(
+            "https://poe.boats/api/v1/arbitrage/cluster-jewels/calculate",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(refused),
+            },
+            { runtime },
+        );
+        expect(refusedResponse.status).toBe(400);
+        const refusedRpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", { name: "calculate_cluster_recipe", arguments: refused })
+            ).json(),
+        );
+        expect(
+            (refusedRpc.result && CallToolResultSchema.parse(refusedRpc.result).isError) ||
+                refusedRpc.error,
+        ).toBeTruthy();
+    } finally {
+        leagues.mockRestore();
+        listings.mockRestore();
     }
 });

@@ -23,6 +23,17 @@ A separate PoE 1 calculator covers 15 recipe types: 5-for-1 magic, rare, and cor
 
 Random outcomes are explicitly labelled and excluded from automatic profit rankings. Flasks and maps require checking the exact input and output items. The calculator accepts the total input batch cost, one specific output sale estimate, and its own price buffer. It reports scenario profit, ROI, and the sale price required to break even. It does not assume output probabilities, average rolls, or guaranteed profit. Changing recipes clears the entered prices.
 
+## 5-for-1 Cluster Jewel expected value
+
+Five Cluster Jewels of the same size and rarity (all magic or all rare) sell for one jewel of that size and rarity with a new enchantment, new modifiers and the lowest input item level ([PoE Wiki](https://www.poewiki.net/wiki/Cluster_jewel#Mechanics)). Five normal jewels return only a Scroll of Wisdom. The PoE 1 page prices every outcome of each size and reports its expected value.
+
+- **Outcomes.** Every rollable enchantment at every passive count: 14 Small × 2–3, 19 Medium × 4–6 and 17 Large × 8–12. The game data still lists five removed enchantments (Medium aura and curse effect, Small +10 Strength, Dexterity and Intelligence); they are excluded in `apps/poe.boats/app/data/cluster-jewel-recipe.ts`.
+- **Odds.** Spawn weights are not published, so every outcome is equally likely.
+- **Prices.** Each outcome's Cluster Jewel base market in the item level band holding the chosen lowest input item level (`ilvl 84+` by default): the latest merchant-tab median ask within 24 completed hours, in chaos or converted at that hour's exchange rate. These markets merge normal, magic and rare jewels. An outcome without an ask counts as 0 chaos, and the page shows how many are priced.
+- **Results.** Per size: expected value per craft, the value without the single best outcome, the median outcome, the break-even price per input (expected value ÷ 5), profit against five of the cheapest priced outcome market, the chance an output is worth at least that cost, and the break-even input price when outputs below an ask go back into the recipe (each craft then needs fewer fresh inputs). The page's own buffer takes from sale values and adds to input costs.
+
+`get_cluster_recipe_market` and `calculate_cluster_recipe` expose the same prices and calculation over HTTP and MCP.
+
 Special oils, Ancient/Potent emotions, multi-ingredient crafting recipes, and upgrades beyond the listed terminal tiers are not covered.
 
 Each result links to the output item's recipe table on [PoE Wiki](https://www.poewiki.net/wiki/Vendor_recipe_system) or [PoE 2 Wiki](https://www.poe2wiki.net/wiki/Reforging_Bench). The catalogue is in `apps/poe.boats/app/data/vendor-recipes.ts`.

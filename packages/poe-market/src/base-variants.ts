@@ -40,7 +40,7 @@ export const marketBaseListSchema = z.strictObject({
 });
 export type MarketBaseList = z.infer<typeof marketBaseListSchema>;
 export type MarketBaseEntry = MarketBaseList["bases"][number];
-type MarketClusterEntry = MarketBaseList["clusters"][number];
+export type MarketClusterEntry = MarketBaseList["clusters"][number];
 type Band = z.infer<typeof bandSchema>;
 
 const list = marketBaseListSchema.parse(data);
@@ -57,6 +57,11 @@ const QUALITY_BAND = { min: MARKET_BASE_QUALITY_LEVEL, max: 100 };
 /** The listed base's category and its fields, for a base type with a crafting base market. */
 export function marketBaseEntry(baseType: string): MarketBaseEntry | undefined {
     return equipment.get(baseType);
+}
+
+/** The listed Cluster Jewel sizes with their passive counts, item level bands and skills. */
+export function marketClusterBases(): readonly MarketClusterEntry[] {
+    return list.clusters;
 }
 
 /** The category a crafting base market of this base type lists under. */

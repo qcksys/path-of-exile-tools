@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Form, Link, useNavigation } from "react-router";
+import { ClusterRecipeCalculator } from "~/components/arbitrage/cluster-recipe-calculator";
 import { ManualRecipeCalculator } from "~/components/arbitrage/manual-recipe-calculator";
 import { RecipeItems } from "~/components/arbitrage/recipe-items";
 import { CurrencyLabel } from "~/components/currency-label";
@@ -36,10 +37,17 @@ import {
     MARKET_CURRENCIES,
 } from "~/schemas/arbitrage";
 import type { ArbitrageMarketData } from "~/services/arbitrage.server";
+import type { ClusterRecipeMarketData } from "~/services/cluster-recipe.server";
 
 const formatNumber = new Intl.NumberFormat("en", { maximumSignificantDigits: 4 });
 
-export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
+export function ArbitragePage({
+    data,
+    clusterRecipe,
+}: {
+    data: ArbitrageMarketData;
+    clusterRecipe?: ClusterRecipeMarketData;
+}) {
     const { game, leagues, league, recipes, snapshot, error } = data;
     const navigation = useNavigation();
     const [options, setOptions] = useState(DEFAULT_ARBITRAGE_OPTIONS);
@@ -111,6 +119,13 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
                 </CardHeader>
                 <CardContent className="flex flex-col gap-6">
                     <Form method="get" className="flex flex-wrap items-end gap-3">
+                        {clusterRecipe ? (
+                            <Input
+                                type="hidden"
+                                name="clusterIlvl"
+                                value={clusterRecipe.itemLevel}
+                            />
+                        ) : null}
                         <Field className="max-w-sm">
                             <FieldLabel htmlFor="league">League</FieldLabel>
                             <Select
@@ -431,6 +446,7 @@ export function ArbitragePage({ data }: { data: ArbitrageMarketData }) {
             ) : null}
 
             {game === "1" ? <ManualRecipeCalculator /> : null}
+            {clusterRecipe ? <ClusterRecipeCalculator data={clusterRecipe} /> : null}
 
             <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                 <p>
