@@ -269,13 +269,9 @@ async function captureRound(
     const seen: string[] = [];
     const stayed: (EquipmentRow & { rowId: string })[] = [];
     const moved: (EquipmentRow & { rowId: string })[] = [];
-    // Hour rows are copied from their listing, so an hour row's league can only differ when its
-    // listing's league just changed.
-    let leagueChanged = false;
     for (const row of all) {
         const known = existing.get(`${row.account}\n${row.id}`);
         if (!known) continue;
-        if (known.league !== row.league) leagueChanged = true;
         if (known.stashId !== row.stashId) moved.push({ ...row, rowId: known.rowId });
         else if (known.contentDigest === row.digest) seen.push(known.rowId);
         else stayed.push({ ...row, rowId: known.rowId });
@@ -319,8 +315,7 @@ async function captureRound(
         );
     }
 
-    // Active rows were all seen now; refresh their observations within this hour in place, since
-    // DuckDB rejects reinserting a deleted key whose index entry was loaded from disk.
+    // Active rows were all seen now; refresh their observations within this hour in place.
     const touchedIds = touched.map((stash) => stash.stashId);
     await conn.run(
         `CREATE OR REPLACE TEMP TABLE page_equipment AS
@@ -336,22 +331,14 @@ async function captureRound(
     );
     const sameRow = `h.observed_hour = $1 AND h.account_name = e.account_name
         AND h.item_id = e.item_id AND h.revision = e.revision`;
-    // `league` is indexed (ps_equipment_hour_time); set it only on rows whose league changed.
-    const hourColumns = `stash_id = e.stash_id, matches = e.matches,
-            unknown_matches = e.unknown_matches, price_amount = e.price_amount,
-            price_currency = e.price_currency, last_seen_at = e.last_seen_at`;
     await conn.run(
-        `UPDATE ps_equipment_hour h SET ${hourColumns}
-        FROM page_equipment e WHERE ${sameRow} AND h.league IS NOT DISTINCT FROM e.league`,
+        `UPDATE ps_equipment_hour h SET league = e.league, stash_id = e.stash_id,
+            matches = e.matches, unknown_matches = e.unknown_matches,
+            price_amount = e.price_amount, price_currency = e.price_currency,
+            last_seen_at = e.last_seen_at
+        FROM page_equipment e WHERE ${sameRow}`,
         [hour],
     );
-    if (leagueChanged) {
-        await conn.run(
-            `UPDATE ps_equipment_hour h SET league = e.league, ${hourColumns}
-            FROM page_equipment e WHERE ${sameRow} AND h.league IS DISTINCT FROM e.league`,
-            [hour],
-        );
-    }
     await conn.run(
         `INSERT INTO ps_equipment_hour BY NAME
         SELECT * EXCLUDE (row_id), epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
