@@ -35,7 +35,7 @@ async function listing(item: string, hour: number, removed: number | null) {
         [item, at(hour + 60), removed === null ? null : at(removed)],
     );
     await db.conn.run(
-        `INSERT INTO ps_listing_hour BY NAME SELECT * EXCLUDE (removed_at, raw_item), $2 AS observed_hour
+        `INSERT INTO ps_listing_hour BY NAME SELECT * EXCLUDE (removed_at, raw_item, content_digest), $2 AS observed_hour
         FROM ps_listing WHERE item_id = $1`,
         [item, hour],
     );
@@ -82,7 +82,7 @@ it("moves old delivered rows to daily Parquet files and keeps what the pipeline 
     const day = at(OLD).slice(0, 10);
     await listing("sold", OLD, OLD + 600);
     await db.conn.run(
-        `INSERT INTO ps_sale BY NAME SELECT * EXCLUDE (raw_item), 'likely-sold' AS status,
+        `INSERT INTO ps_sale BY NAME SELECT * EXCLUDE (raw_item, content_digest), 'likely-sold' AS status,
             NULL::TIMESTAMP AS eligible_since, 10.0 AS market_price, 3 AS market_sellers,
             $1::TIMESTAMP AS updated_at FROM ps_listing WHERE item_id = 'sold'`,
         [at(OLD + 900)],

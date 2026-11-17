@@ -22,6 +22,7 @@ import { getCursor, setCursor } from "#src/shared/cursor.ts";
 import { queryAll, sqlTimestamp, withTransaction } from "#src/shared/db.ts";
 import { decodeIconAsset } from "#src/shared/icon.ts";
 import { itemKey, itemLinks } from "#src/shared/item-key.ts";
+import { rowDigest } from "#src/shared/item-memo.ts";
 import { extractModSignature, signatureValue } from "#src/shared/mod-extractors/index.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
 import { configureSource } from "#src/shared/source.ts";
@@ -70,6 +71,8 @@ interface ListingRow {
     modSignature: string | null;
     signatureValue: string;
     rawItem: string;
+    /** See `rowDigest`; a re-sent listing with the same digest only records the sighting. */
+    contentDigest: string;
 }
 
 /** `ListingRow` JSON from `json_each`, as `ps_listing` columns. */
@@ -95,7 +98,8 @@ const LISTING_VALUES = `
     (value->>'stackSize')::INTEGER AS stack_size,
     (value->>'modSignature')::JSON AS mod_signature,
     (value->>'rawItem')::JSON AS raw_item,
-    value->>'signatureValue' AS signature_value`;
+    value->>'signatureValue' AS signature_value,
+    value->>'contentDigest' AS content_digest`;
 
 const UPDATED_COLUMNS = [
     "league",
@@ -117,6 +121,7 @@ const UPDATED_COLUMNS = [
     "mod_signature",
     "signature_value",
     "raw_item",
+    "content_digest",
 ];
 /**
  * `ps_listing`'s indexed columns. DuckDB rewrites a row when an UPDATE sets one, even to its own
@@ -152,7 +157,7 @@ function listingRows(change: PublicStashChange, accountName: string, league: str
         const iconAsset = decodeIconAsset(item.icon);
         const price = extractListingPrice(item, change.stash);
         const signature = extractModSignature(item);
-        rows.push({
+        const row = {
             accountName,
             stashId: change.id,
             itemId: item.id,
@@ -180,8 +185,8 @@ function listingRows(change: PublicStashChange, accountName: string, league: str
             stackSize: item.stackSize ?? null,
             modSignature: signature ? JSON.stringify(signature) : null,
             signatureValue: signatureValue(signature),
-            rawItem: JSON.stringify(item),
-        });
+        };
+        rows.push({ ...row, rawItem: JSON.stringify(item), contentDigest: rowDigest(item, row) });
     }
     return rows;
 }
@@ -222,12 +227,13 @@ async function applyRound(
         league: string;
         itemKey: string;
         iconAsset: string | null;
+        contentDigest: string | null;
         active: boolean;
     }>(
         conn,
         `SELECT rowid::VARCHAR AS "rowId", account_name AS "accountName", stash_id AS "stashId",
             item_id AS "itemId", league, item_key AS "itemKey", icon_asset AS "iconAsset",
-            removed_at IS NULL AS active
+            content_digest AS "contentDigest", removed_at IS NULL AS active
         FROM ps_listing WHERE stash_id IN (${params(stashIds)})`,
         stashIds,
     );
@@ -235,6 +241,7 @@ async function applyRound(
     const result = { inserted: 0, updated: 0, removed: 0 };
     const removedRows: string[] = [];
     const removals: Parameters<typeof recordRemovals>[1][number][] = [];
+    const seen: (ListingRow & { rowId: string })[] = [];
     const updates: (ListingRow & { rowId: string })[] = [];
     const rekeyed: (ListingRow & { rowId: string })[] = [];
     const inserts: ListingRow[] = [];
@@ -263,6 +270,8 @@ async function applyRound(
             else result.inserted++;
             if (existing && existing.league !== row.league) leagueChanged = true;
             if (!existing) inserts.push(row);
+            else if (existing.contentDigest === row.contentDigest)
+                seen.push({ ...row, rowId: existing.rowId });
             else if (existing.itemKey === row.itemKey && existing.iconAsset === row.iconAsset)
                 updates.push({ ...row, rowId: existing.rowId });
             else rekeyed.push({ ...row, rowId: existing.rowId });
@@ -276,7 +285,7 @@ async function applyRound(
         listed.push({ stashId: change.id, accountName });
     }
 
-    await learnBasemap(conn, [...updates, ...rekeyed, ...inserts]);
+    await learnBasemap(conn, [...seen, ...updates, ...rekeyed, ...inserts]);
     // Removals first: rekeyed updates rewrite their rows under new row IDs.
     if (removedRows.length) {
         await conn.run(
@@ -286,6 +295,14 @@ async function applyRound(
         );
     }
     if (removals.length) await recordRemovals(conn, removals, observedAt);
+    if (seen.length) {
+        // Rewriting every column, item JSON included, of an unchanged listing costs far more.
+        await conn.run(
+            `UPDATE ps_listing SET last_seen_at = ${seenAt}, removed_at = NULL
+            WHERE rowid IN (SELECT value::BIGINT FROM json_each($1::JSON))`,
+            [JSON.stringify(seen.map((row) => row.rowId))],
+        );
+    }
     if (updates.length) await updateListings(conn, updates, seenAt, false);
     if (rekeyed.length) await updateListings(conn, rekeyed, seenAt, true);
     if (inserts.length) {
@@ -307,8 +324,8 @@ async function applyRound(
     await conn.run(
         `CREATE OR REPLACE TEMP TABLE page_listing AS
         WITH stash AS MATERIALIZED (
-            -- The hour rows keep no item JSON, so it is not copied here either.
-            SELECT * EXCLUDE (raw_item) FROM ps_listing WHERE stash_id IN (${params(listedIds, 2)})
+            -- The hour rows keep no item JSON or digest, so neither is copied here.
+            SELECT * EXCLUDE (raw_item, content_digest) FROM ps_listing WHERE stash_id IN (${params(listedIds, 2)})
         )
         SELECT stash.* EXCLUDE (removed_at) FROM stash
         JOIN json_each($1::JSON) j ON stash.stash_id = (j.value->>'stashId')

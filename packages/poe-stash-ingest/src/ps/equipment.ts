@@ -5,7 +5,7 @@ import { normalizeApiItem } from "@poe-tools/item-query";
 import { compileMarketCohorts, marketCohortManifestSchema } from "@poe-tools/market";
 import { params, stashRounds } from "#src/ps/rounds.ts";
 import { queryAll } from "#src/shared/db.ts";
-import { memoizeByItem } from "#src/shared/item-memo.ts";
+import { memoizeByItem, rowDigest } from "#src/shared/item-memo.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
 import { listingTab } from "#src/shared/stash-tab.ts";
 
@@ -26,6 +26,13 @@ interface EquipmentRow {
     amount: number | null;
     currency: string | null;
     item: Item;
+    /** See `rowDigest`; a re-sent item with the same digest only records the sighting. */
+    digest: string;
+}
+
+function equipmentRow(row: Omit<EquipmentRow, "digest">, revision: string): EquipmentRow {
+    const derived = [row.league, revision, row.matches, row.unknown, row.amount, row.currency];
+    return { ...row, digest: rowDigest(row.item, derived) };
 }
 
 // About 670k distinct equipment items appear in a league-start hour.
@@ -130,17 +137,22 @@ async function captureRound(
             if (unknown.length) onClassified?.(item, { matches, unknown });
             if (!matches.length && !unknown.length) continue;
             const price = extractListingPrice(item, change.stash);
-            stashRows.push({
-                account,
-                stashId: change.id,
-                league,
-                id: item.id,
-                matches,
-                unknown,
-                amount: price?.amount ?? null,
-                currency: price?.currency ?? null,
-                item,
-            });
+            stashRows.push(
+                equipmentRow(
+                    {
+                        account,
+                        stashId: change.id,
+                        league,
+                        id: item.id,
+                        matches,
+                        unknown,
+                        amount: price?.amount ?? null,
+                        currency: price?.currency ?? null,
+                        item,
+                    },
+                    revision,
+                ),
+            );
         }
         captured += stashRows.length;
         const ids = new Set(items.flatMap((item) => (item.id ? [item.id] : [])));
@@ -152,17 +164,22 @@ async function captureRound(
                 // A changed item which no longer belongs to a captured base must also leave its
                 // old cohorts.
                 const item = items.find((candidate) => candidate.id === row.itemId)!;
-                stashRows.push({
-                    account,
-                    stashId: change.id,
-                    league,
-                    id: row.itemId,
-                    matches: [],
-                    unknown: [],
-                    amount: null,
-                    currency: null,
-                    item,
-                });
+                stashRows.push(
+                    equipmentRow(
+                        {
+                            account,
+                            stashId: change.id,
+                            league,
+                            id: row.itemId,
+                            matches: [],
+                            unknown: [],
+                            amount: null,
+                            currency: null,
+                            item,
+                        },
+                        revision,
+                    ),
+                );
             }
         }
         if (!stashRows.length) continue;
@@ -239,15 +256,17 @@ async function captureRound(
                 itemId: string;
                 stashId: string;
                 league: string;
+                contentDigest: string | null;
             }>(
                 conn,
                 `SELECT rowid::VARCHAR AS "rowId", account_name AS account, item_id AS "itemId",
-                    stash_id AS "stashId", league
+                    stash_id AS "stashId", league, content_digest AS "contentDigest"
                 FROM ps_equipment_listing WHERE item_id IN (${params(itemIds)})`,
                 itemIds,
             )
         ).map((row) => [`${row.account}\n${row.itemId}`, row]),
     );
+    const seen: string[] = [];
     const stayed: (EquipmentRow & { rowId: string })[] = [];
     const moved: (EquipmentRow & { rowId: string })[] = [];
     // Hour rows are copied from their listing, so an hour row's league can only differ when its
@@ -257,7 +276,17 @@ async function captureRound(
         const known = existing.get(`${row.account}\n${row.id}`);
         if (!known) continue;
         if (known.league !== row.league) leagueChanged = true;
-        (known.stashId === row.stashId ? stayed : moved).push({ ...row, rowId: known.rowId });
+        if (known.stashId !== row.stashId) moved.push({ ...row, rowId: known.rowId });
+        else if (known.contentDigest === row.digest) seen.push(known.rowId);
+        else stayed.push({ ...row, rowId: known.rowId });
+    }
+    if (seen.length) {
+        // Rewriting the matches and item JSON of an unchanged item costs far more.
+        await conn.run(
+            `UPDATE ps_equipment_listing SET last_seen_at = $1::TIMESTAMP, removed_at = NULL
+            WHERE rowid IN (SELECT value::BIGINT FROM json_each($2::JSON))`,
+            [time, JSON.stringify(seen)],
+        );
     }
     const inserts = all.filter((row) => !existing.has(`${row.account}\n${row.id}`));
     // `stash_id` is indexed (ps_equipment_stash), and setting an indexed column rewrites the row
@@ -272,7 +301,8 @@ async function captureRound(
                 ${stashColumn} league = v.value->>'league', revision = $2,
                 matches = v.value->'matches', unknown_matches = v.value->'unknown',
                 price_amount = (v.value->>'amount')::DOUBLE, price_currency = v.value->>'currency',
-                raw_item = v.value->'item', last_seen_at = $1::TIMESTAMP, removed_at = NULL
+                raw_item = v.value->'item', content_digest = v.value->>'digest',
+                last_seen_at = $1::TIMESTAMP, removed_at = NULL
             FROM (SELECT (value->>'rowId')::BIGINT AS row_id, value FROM json_each($3::JSON)) v
             WHERE ps_equipment_listing.rowid = v.row_id`,
             [time, revision, JSON.stringify(rows)],
@@ -283,7 +313,7 @@ async function captureRound(
             `INSERT INTO ps_equipment_listing
             SELECT value->>'account', value->>'id', value->>'stashId', value->>'league', $2,
                 value->'matches', value->'unknown', (value->>'amount')::DOUBLE,
-                value->>'currency', value->'item', $1::TIMESTAMP, NULL
+                value->>'currency', value->'item', $1::TIMESTAMP, NULL, value->>'digest'
             FROM json_each($3::JSON)`,
             [time, revision, JSON.stringify(inserts)],
         );
@@ -298,7 +328,7 @@ async function captureRound(
             SELECT rowid AS row_id, * FROM ps_equipment_listing
             WHERE stash_id IN (${params(touchedIds, 2)})
         )
-        SELECT stash.* EXCLUDE (raw_item, removed_at) FROM stash
+        SELECT stash.* EXCLUDE (raw_item, removed_at, content_digest) FROM stash
         JOIN json_each($1::JSON) j ON stash.stash_id = (j.value->>'stashId')
             AND stash.account_name = (j.value->>'account')
         WHERE stash.removed_at IS NULL`,
