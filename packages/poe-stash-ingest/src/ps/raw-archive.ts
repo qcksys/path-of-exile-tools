@@ -444,7 +444,8 @@ export class RawPageReader {
     position: RawPosition;
     private readonly dir: string;
     private lines?: AsyncGenerator<{ header: RawLineHeader; pageJson: string; bytes: number }>;
-    private current?: RawRecord & { end: RawPosition };
+    /** `bytes` is the size of the page's archived line. */
+    private current?: RawRecord & { end: RawPosition; bytes: number };
 
     constructor(dir: string, position: RawPosition) {
         this.dir = dir;
@@ -491,6 +492,7 @@ export class RawPageReader {
                     capturedAt: next.value.header.capturedAt,
                     cursor: next.value.header.cursor,
                     page: JSON.parse(next.value.pageJson) as PublicStashPage,
+                    bytes: next.value.bytes,
                     end: {
                         hour,
                         offset: offset + next.value.bytes,

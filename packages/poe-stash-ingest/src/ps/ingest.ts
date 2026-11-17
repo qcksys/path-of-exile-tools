@@ -30,6 +30,12 @@ import { type ListingTab, listingTab } from "#src/shared/stash-tab.ts";
 
 const STREAM = "psapi";
 const PAGE_DELAY_MS = 1200;
+/**
+ * The API ends a page once it holds about 5 MB of JSON (as of 3.30), so a smaller page holds every
+ * change published by the time it was requested: the stream's head. In a busy stream this is the
+ * only sign of the head, because each request finds new changes and the cursor is never echoed.
+ */
+export const HEAD_PAGE_BYTES = 3_000_000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -531,11 +537,15 @@ export async function ingestPs(
                 `next=${cursor.slice(0, 12)}…`,
         );
 
+        if (requestCursor !== undefined) {
+            const bytes = captured?.bytes ?? Buffer.byteLength(JSON.stringify(page));
+            if (bytes < HEAD_PAGE_BYTES) streamHeadAt = capturedAt;
+        }
+
         // Caught up: API echoed the cursor we sent. No new pages exist;
         // refetching would burn rate-limit budget for identical content.
         if (requestCursor !== undefined && page.next_change_id === requestCursor) {
             result.caughtUp = true;
-            streamHeadAt = capturedAt;
             // More archived pages may follow; capture has already waited before fetching them.
             if (opts.spool) continue;
             console.log("psapi: caught up; stopping early");
@@ -544,9 +554,10 @@ export async function ingestPs(
     }
 
     // Sales follow the capture clock, so a database that fell behind judges them as if it had not.
-    if (!opts.spool) await evaluateSales(conn, result.caughtUp);
+    const reachedHead = streamHeadAt !== undefined;
+    if (!opts.spool) await evaluateSales(conn, reachedHead);
     else if (lastCapturedAt !== undefined)
-        await evaluateSales(conn, result.caughtUp, new Date(streamHeadAt ?? lastCapturedAt));
+        await evaluateSales(conn, reachedHead, new Date(streamHeadAt ?? lastCapturedAt));
 
     return result;
 }
