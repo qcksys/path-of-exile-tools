@@ -436,6 +436,13 @@ only after reading a page from a later hour. It stores no copy of the pages in D
 page's `ps_capture_page` row holds `raw:<hour>:<offset>` in `response_hash`, its place in the raw
 archive, and reclassification reads it from there, keeping the items the database archive would have kept.
 
+With `PS_CLASSIFY_THREADS` above 0, such a worker classifies each page's merchant-tab equipment on that
+many threads while the main thread writes the page's listings and sales. Each thread compiles the
+bundled cohort catalog; the results are the main thread's own, cached under the same item digests, and
+anything the threads miss is classified on the main thread. Give the worker a core for each thread
+besides `PS_THREADS` and the main thread: under a tighter CPU quota every thread is throttled and pages
+get slower.
+
 A new database starts after everything archived. To rebuild one from the archive, set `PS_RAW_FROM` (or
 `--raw-from`) to the first UTC hour to read; the setting is ignored once the database has a position.
 Run only one capture process per archive directory.

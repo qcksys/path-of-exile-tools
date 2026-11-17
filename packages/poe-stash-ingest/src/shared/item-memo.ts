@@ -32,23 +32,33 @@ export function rowDigest(item: Item, derived: unknown) {
         .digest("base64");
 }
 
+export interface ItemMemo<T> {
+    (item: Item): T;
+    /** Stores a result computed elsewhere for the item whose `stableItemDigest` is `key`. */
+    prime(key: string, value: T): void;
+}
+
 /**
  * Memoizes `fn` for items that are the same apart from `RESENT_FIELDS`, which `fn` must not read.
  * Re-sent stashes repeat most of their items. Keeps the `capacity` most recently used results.
  */
-export function memoizeByItem<T>(fn: (item: Item) => T, capacity: number): (item: Item) => T {
+export function memoizeByItem<T>(fn: (item: Item) => T, capacity: number): ItemMemo<T> {
     const cache = new Map<string, T>();
-    return (item) => {
+    const store = (key: string, value: T) => {
+        cache.delete(key);
+        cache.set(key, value);
+        if (cache.size > capacity) cache.delete(cache.keys().next().value as string);
+    };
+    const memo = (item: Item) => {
         const key = stableItemDigest(item);
         if (cache.has(key)) {
             const value = cache.get(key) as T;
-            cache.delete(key);
-            cache.set(key, value);
+            store(key, value);
             return value;
         }
         const value = fn(item);
-        cache.set(key, value);
-        if (cache.size > capacity) cache.delete(cache.keys().next().value as string);
+        store(key, value);
         return value;
     };
+    return Object.assign(memo, { prime: store });
 }

@@ -21,8 +21,9 @@ x-worker: &worker
 services:
   pc:
     <<: *worker
-    # Two cores fell behind league-start pages: the worker's own work holds one, DuckDB the rest.
-    cpus: 4.0
+    # The main thread, four DuckDB threads and three classification threads run together while a
+    # page's SQL runs; with fewer cores the CPU quota throttles them all and pages slow down.
+    cpus: 8.0
     # The PC database is large; enough memory lets DuckDB checkpoint by WAL size, not per page.
     # Index memory is not bounded by PS_MEMORY_LIMIT, hence the headroom above it.
     mem_limit: 16g
@@ -38,6 +39,8 @@ services:
       INGEST_PAGES: "50"
       PS_MEMORY_LIMIT: 10GB
       PS_THREADS: "4"
+      # Classifies each page's equipment while its listings and sales are written.
+      PS_CLASSIFY_THREADS: "3"
       PS_CHECKPOINT_THRESHOLD: 1GB
       # Each reclassified hour re-delivers 24 hours of cohort rows; this keeps the pre-#76 pace.
       PS_RECLASSIFY_PAGES_PER_HOUR: "120"
