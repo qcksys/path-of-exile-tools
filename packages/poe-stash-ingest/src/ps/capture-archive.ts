@@ -64,8 +64,8 @@ export async function archivePage(
 
 /**
  * Records a processed page that the raw archive keeps, by its place there (`rawPageLocator`), so
- * reclassification can replay it. The database stores no copy of the page: compressing,
- * checksumming and writing one cost about a tenth of each page's processing.
+ * reclassification can replay it. The database stores no copy of the page, which saves
+ * compressing, checksumming and writing one for every page.
  */
 export async function recordRawPage(
     conn: DuckDBConnection,
