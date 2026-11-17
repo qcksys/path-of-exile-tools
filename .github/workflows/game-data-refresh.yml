@@ -117,7 +117,12 @@ jobs:
           git add "packages/poe-${GAME#poe}-data" apps/poe.boats/public/game-data .changeset
           git status --short
           git commit --message "$title"
-          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/${BRANCH}"
+          # check skips a branch that has a pull request, so an existing branch here was left by a
+          # run whose pull request step failed. Replace it, unless it moves while this run pushes.
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          stale=$(git ls-remote "$remote" "refs/heads/${BRANCH}" | cut -f1)
+          if [ -n "$stale" ]; then echo "Replacing ${BRANCH} at ${stale}, which has no pull request"; fi
+          git push --force-with-lease="refs/heads/${BRANCH}:${stale}" "$remote" "HEAD:refs/heads/${BRANCH}"
           cat > "$RUNNER_TEMP/body.md" <<EOF
           GGG's patch server reports ${label} build \`${PATCH}\`; dev's package has \`${COMMITTED}\`.
 
@@ -132,4 +137,7 @@ jobs:
           - [ ] Give ${label} a new revision (or a new era, if this build starts one) in \`apps/poe.boats/crafting-history/releases.json\`, run \`vp run game-data:publish-history\` in \`apps/poe.boats\`, and commit the result. If the publisher says one engine revision cannot refer to different implementations, the engine bundle changed since the last publication and needs a new \`CRAFTING_GRAPH_ENGINE\` identifier. \`apps/poe.boats/crafting-history/README.md\` describes the steps.
           - [ ] Approve the CI runs. A pull request opened with the workflow token waits for approval before CI runs.
           EOF
-          gh pr create --draft --base dev --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          gh pr create --draft --base dev --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md" || {
+            echo "::error title=Pull request not created::${BRANCH} was pushed, but gh could not open its pull request. If gh says GitHub Actions is not permitted to create pull requests, a repository admin must turn on Settings > Actions > General > Workflow permissions > \"Allow GitHub Actions to create and approve pull requests\". Until a pull request exists, each run replaces the branch and tries again."
+            exit 1
+          }
