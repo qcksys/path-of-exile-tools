@@ -1,7 +1,7 @@
 import { compileModifierTextModel, normalizeApiItem } from "@poe-tools/item-query";
 import { expect, it } from "vite-plus/test";
 import { marketModifierTextModel } from "../scripts/market-modifier-text";
-import { engine329 as engine } from "./crafting-329-fixtures";
+import { engine } from "./crafting-fixtures";
 
 const samples = [
     {

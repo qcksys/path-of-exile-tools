@@ -17,14 +17,13 @@ import { rolledModText } from "../app/lib/crafting-text";
 import type { CraftingItem } from "../app/schemas/crafting";
 import { craftingPresetCohorts } from "../scripts/crafting-preset-cohorts";
 import { marketModifierTextModel } from "../scripts/market-modifier-text";
-import {
-    catalog329 as catalog,
-    engine329 as engine,
-    ruleset329 as ruleset,
-} from "./crafting-329-fixtures";
+import { catalog, engine } from "./crafting-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
 
+const ruleset = historyIndex.revisions.find(
+    (entry) => entry.game === "poe1" && entry.revision === "r18",
+)!;
 const cohorts = craftingPresetCohorts(engine, ruleset);
 const manifest = marketCohortManifestSchema.parse(
     JSON.parse(readFileSync("../../packages/poe-market/data/cohorts-poe1.json", "utf8")),
@@ -435,7 +434,7 @@ it("prices the uninfluenced Hunter preparation base under the ordinary purchase 
         (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
     )!;
     expect(item.influences).toEqual([]);
-    for (const value of [8, 10, 12]) {
+    for (const value of [16, 18, 20]) {
         const listed = {
             ...item,
             sockets: 2,

@@ -10,7 +10,8 @@ import { seededRandom } from "../app/lib/crafting-engine";
 import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
 import { bindCohortPurchasePrice } from "../app/lib/crafting-market";
 import { rulesetReference } from "../app/lib/crafting-rulesets";
-import { catalog329 as catalog, engine329 as engine, ruleset329 } from "./crafting-329-fixtures";
+import { catalog329, engine329, ruleset329 } from "./crafting-329-fixtures";
+import { catalog, engine } from "./crafting-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 import { marketCandidate, marketGraph } from "./crafting-market-fixtures";
 
@@ -19,7 +20,18 @@ const classifier = compileMarketCohorts(
         JSON.parse(readFileSync("../../packages/poe-market/data/cohorts-poe1.json", "utf8")),
     ),
 );
+const current = {
+    catalog,
+    engine,
+    ruleset: historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r18",
+    )!,
+};
+// 3.30 removed the Temple glove suffixes, so their purchases are built from 3.29 rules.
+const temple = { catalog: catalog329, engine: engine329, ruleset: ruleset329 };
+
 it("does not silently price an exact crafting modifier from a display-equivalent family", () => {
+    const { catalog, engine } = temple;
     const baseId = Object.entries(catalog.bases).find(
         ([, base]) => base.name === "Slink Gloves",
     )![0];
@@ -74,6 +86,7 @@ it.each([
         false,
     ],
 ] as const)("keeps the %s broad modifier pool from becoming a complete prepared acquisition price", async (name, modId, fractured, family) => {
+    const { catalog, engine, ruleset } = name === "Slink Gloves" ? temple : current;
     const baseId = Object.entries(catalog.bases).find(([, base]) => base.name === name)![0];
     const item = engine.validateItem({
         ...engine.createItem(baseId, 86),
@@ -88,7 +101,7 @@ it.each([
             matchItem(record, cohort.query) === "match",
     )!;
     expect(definition).toBeDefined();
-    const graph = { ...marketGraph(), ruleset: rulesetReference(ruleset329) };
+    const graph = { ...marketGraph(), ruleset: rulesetReference(ruleset) };
     const node = graph.nodes[0]!;
     if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
         throw new Error("Fixture");

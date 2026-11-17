@@ -119,7 +119,9 @@ describe("market cohorts", () => {
         const sourceIds = new Set(sources.map((source) => source.id));
         const nativeRolls =
             baseType === "Two-Toned Boots"
-                ? [8, 9, 10, 11, 12].map((roll) => [`+${roll}% to Cold and Lightning Resistances`])
+                ? [16, 17, 18, 19, 20].map((roll) => [
+                      `+${roll}% to Cold and Lightning Resistances`,
+                  ])
                 : [[]];
         for (const source of sources) {
             const profile = source.query.sourcePreparation!;
@@ -146,10 +148,10 @@ describe("market cohorts", () => {
         }
         for (const implicitMods of baseType === "Two-Toned Boots"
             ? [
-                  ["+10% to Fire and Cold Resistances"],
-                  ["+10% to Fire and Lightning Resistances"],
-                  ["+7% to Cold and Lightning Resistances"],
-                  ["+13% to Cold and Lightning Resistances"],
+                  ["+18% to Fire and Cold Resistances"],
+                  ["+18% to Fire and Lightning Resistances"],
+                  ["+15% to Cold and Lightning Resistances"],
+                  ["+21% to Cold and Lightning Resistances"],
                   [],
               ]
             : [["An extra persistent implicit"]]) {
