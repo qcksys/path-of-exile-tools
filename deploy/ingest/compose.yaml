@@ -29,6 +29,9 @@ services:
     env_file: ./config/pc.env
     environment:
       PS_ARCHIVE_DIR: /backups
+      # Keeps only the day the worker still needs behind its stream position, so its tables and
+      # their indexes stop growing with the league however far behind it falls.
+      PS_ARCHIVE_KEEP_HOURS: "26"
       PS_RAW_ARCHIVE_DIR: /backups/raw
       # pc-capture fetches the stream; this worker reads the archive and can fall behind safely.
       PS_SEPARATE_CAPTURE: "true"

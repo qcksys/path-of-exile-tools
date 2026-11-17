@@ -3,9 +3,12 @@ import { join } from "node:path";
 import type { DuckDBConnection } from "@duckdb/node-api";
 import { queryAll, withTransaction } from "#src/shared/db.ts";
 
+const HOUR = 3600;
 const DAY = 86400;
 /** A size-triggered archive never takes the latest days, which sale and rollup corrections use. */
 export const MIN_ARCHIVE_AGE_DAYS = 3;
+/** Reclassification replays the last day's pages, and equipment summaries reach 24 hours back. */
+export const MIN_ARCHIVE_KEEP_HOURS = 25;
 
 export interface ArchiveOptions {
     /** Directory that receives one folder of Parquet files per archived UTC day. */
@@ -16,6 +19,11 @@ export interface ArchiveOptions {
     maxBytes: number;
     /** Most days to archive in one call, so a backlog cannot stall a capture cycle. */
     maxDays?: number;
+    /**
+     * Where the worker knows its stream position (it reads a capture process's raw archive), keep
+     * this many hours behind it instead, with `archiveBehindStream`.
+     */
+    keepHours?: number;
     now?: Date;
 }
 
@@ -107,7 +115,15 @@ export function archiveSettings(env = process.env): ArchiveOptions | undefined {
         throw new Error(
             `PS_ARCHIVE_KEEP_DAYS must be at least ${MIN_ARCHIVE_AGE_DAYS} and PS_ARCHIVE_MAX_GB positive.`,
         );
-    return { dir: env.PS_ARCHIVE_DIR, keepDays, maxBytes: maxGb * 1024 ** 3 };
+    const keepHours = env.PS_ARCHIVE_KEEP_HOURS ? Number(env.PS_ARCHIVE_KEEP_HOURS) : undefined;
+    if (
+        keepHours !== undefined &&
+        !(Number.isSafeInteger(keepHours) && keepHours >= MIN_ARCHIVE_KEEP_HOURS)
+    )
+        throw new Error(
+            `PS_ARCHIVE_KEEP_HOURS must be a whole number of at least ${MIN_ARCHIVE_KEEP_HOURS}.`,
+        );
+    return { dir: env.PS_ARCHIVE_DIR, keepDays, maxBytes: maxGb * 1024 ** 3, keepHours };
 }
 
 export async function databaseBytes(conn: DuckDBConnection): Promise<number> {
@@ -137,45 +153,93 @@ export async function archiveOldData(
                 ? Math.min(opts.keepDays, MIN_ARCHIVE_AGE_DAYS)
                 : opts.keepDays;
         await conn.run(DELIVERED_HOURS);
-        const start = await oldestDay(conn, today - Math.ceil(ageDays) * DAY);
-        if (start === undefined) break;
+        const time = await oldestTime(conn, today - Math.ceil(ageDays) * DAY);
+        if (time === undefined) break;
+        const start = time - (((time % DAY) + DAY) % DAY);
         const day = new Date(start * 1000).toISOString().slice(0, 10);
-        const dir = join(opts.dir, day);
-        await mkdir(dir, { recursive: true });
-        const window = `BETWEEN ${start} AND ${start + DAY - 1}`;
-        for (const target of TARGETS) {
-            const rows = `SELECT t.rowid FROM ${target.table} t
-                WHERE ${target.time} ${window} AND ${target.guard}`;
-            if (target.table === "ps_capture_page") {
-                await conn.run(`CREATE OR REPLACE TEMP TABLE archive_hash AS
-                    SELECT DISTINCT response_hash FROM ps_capture_page WHERE rowid IN (${rows})`);
-            }
-            await move(
-                conn,
-                target.table,
-                rows,
-                join(dir, `${target.table}-${run}.parquet`),
-                result,
-            );
-        }
-        // Payloads are shared by checksum, so one leaves with the last page that references it.
-        for (const table of PAYLOADS) {
-            await move(
-                conn,
-                table,
-                `SELECT rowid FROM ${table} WHERE response_hash IN (SELECT response_hash FROM archive_hash)
-                    AND response_hash NOT IN (SELECT response_hash FROM ps_capture_page)`,
-                join(dir, `${table}-${run}.parquet`),
-                result,
-            );
-        }
+        await archiveWindow(conn, start, start + DAY - 1, join(opts.dir, day), run, result);
         result.days.push(day);
     }
     if (result.days.length) await conn.run("CHECKPOINT");
     return result;
 }
 
-async function oldestDay(conn: DuckDBConnection, before: number) {
+export interface StreamArchiveResult {
+    /** Archived hours, as `YYYY-MM-DDTHH`. */
+    hours: string[];
+    rows: Record<string, number>;
+    files: string[];
+}
+
+/**
+ * Moves whole hours more than `keepHours` before `streamHour`, the hour the worker is reading,
+ * into the same Parquet files as `archiveOldData`, oldest first. A worker reading a capture
+ * process's archive then keeps only what delivery, sales and reclassification still need, however
+ * far behind the stream it is: the tables, and with them their indexes' memory, stop growing with
+ * the league.
+ */
+export async function archiveBehindStream(
+    conn: DuckDBConnection,
+    opts: { dir: string; keepHours: number; streamHour: number; maxHours?: number; now?: Date },
+): Promise<StreamArchiveResult> {
+    const result: StreamArchiveResult = { hours: [], rows: {}, files: [] };
+    const run = (opts.now ?? new Date()).toISOString().replace(/[-:]|\.\d+/g, "");
+    const before = opts.streamHour - opts.keepHours * HOUR;
+    while (result.hours.length < (opts.maxHours ?? 1)) {
+        await conn.run(DELIVERED_HOURS);
+        const time = await oldestTime(conn, before);
+        if (time === undefined) break;
+        const start = time - (((time % HOUR) + HOUR) % HOUR);
+        const hour = new Date(start * 1000).toISOString().slice(0, 13);
+        const dir = join(opts.dir, hour.slice(0, 10));
+        await archiveWindow(conn, start, start + HOUR - 1, dir, `${run}-${hour.slice(11)}`, result);
+        result.hours.push(hour);
+    }
+    if (result.hours.length) await conn.run("CHECKPOINT");
+    return result;
+}
+
+/** Moves every target's rows of one window that its guard releases into `dir`. */
+async function archiveWindow(
+    conn: DuckDBConnection,
+    start: number,
+    end: number,
+    dir: string,
+    suffix: string,
+    result: { rows: Record<string, number>; files: string[] },
+) {
+    await mkdir(dir, { recursive: true });
+    const window = `BETWEEN ${start} AND ${end}`;
+    for (const target of TARGETS) {
+        const rows = `SELECT t.rowid FROM ${target.table} t
+            WHERE ${target.time} ${window} AND ${target.guard}`;
+        if (target.table === "ps_capture_page") {
+            await conn.run(`CREATE OR REPLACE TEMP TABLE archive_hash AS
+                SELECT DISTINCT response_hash FROM ps_capture_page WHERE rowid IN (${rows})`);
+        }
+        await move(
+            conn,
+            target.table,
+            rows,
+            join(dir, `${target.table}-${suffix}.parquet`),
+            result,
+        );
+    }
+    // Payloads are shared by checksum, so one leaves with the last page that references it.
+    for (const table of PAYLOADS) {
+        await move(
+            conn,
+            table,
+            `SELECT rowid FROM ${table} WHERE response_hash IN (SELECT response_hash FROM archive_hash)
+                AND response_hash NOT IN (SELECT response_hash FROM ps_capture_page)`,
+            join(dir, `${table}-${suffix}.parquet`),
+            result,
+        );
+    }
+}
+
+/** The earliest time before `before` of a row some target would release. */
+async function oldestTime(conn: DuckDBConnection, before: number) {
     const candidates = TARGETS.map(
         (target) =>
             `SELECT min(${target.time}) AS time FROM ${target.table} t
@@ -186,8 +250,7 @@ async function oldestDay(conn: DuckDBConnection, before: number) {
         `SELECT min(time) AS time FROM (${candidates})`,
     );
     if (row?.time === null || row?.time === undefined) return undefined;
-    const time = Number(row.time);
-    return time - (((time % DAY) + DAY) % DAY);
+    return Number(row.time);
 }
 
 async function move(
@@ -195,7 +258,7 @@ async function move(
     table: string,
     rows: string,
     file: string,
-    result: ArchiveResult,
+    result: { rows: Record<string, number>; files: string[] },
 ) {
     await withTransaction(conn, async () => {
         await conn.run(`CREATE OR REPLACE TEMP TABLE archive_row AS ${rows}`);

@@ -17,7 +17,7 @@ import {
     type RawPageReader,
 } from "#src/ps/raw-archive.ts";
 import { rollupPs } from "#src/ps/rollup.ts";
-import { type ArchiveOptions, archiveOldData } from "#src/shared/archive.ts";
+import { type ArchiveOptions, archiveBehindStream, archiveOldData } from "#src/shared/archive.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { getCursor } from "#src/shared/cursor.ts";
 import { queryAll, TransactionRollbackError } from "#src/shared/db.ts";
@@ -25,6 +25,9 @@ import { deliverLeagues } from "#src/shared/leagues.ts";
 import { configureSource } from "#src/shared/source.ts";
 
 const ARCHIVE_INTERVAL_MS = 3_600_000;
+// A worker reading a backlog advances less than an hour of stream per cycle; two hours a cycle
+// also clears the hours that build up before this archive is first enabled.
+const ARCHIVE_HOURS_PER_CYCLE = 2;
 const LEAGUE_INTERVAL_MS = 3_600_000;
 let leaguesDeliveredAt = 0;
 // Each reclassified hour re-delivers the 24 hours whose windows include it, so with fast cycles
@@ -344,7 +347,25 @@ export async function runPipeline(
         );
     }
     // Archive failures report as delivery so workers need no receiver schema change.
-    if (opts.archive && (archiveBacklog || Date.now() - archiveCheckedAt >= ARCHIVE_INTERVAL_MS)) {
+    if (opts.archive?.keepHours !== undefined && stashBeforeHour !== undefined) {
+        await archiveBehindStream(conn, {
+            dir: opts.archive.dir,
+            keepHours: opts.archive.keepHours,
+            streamHour: stashBeforeHour,
+            maxHours: ARCHIVE_HOURS_PER_CYCLE,
+        }).then(
+            (result) => {
+                if (result.hours.length)
+                    console.log(
+                        `archived ${result.hours.join(", ")}: ${JSON.stringify(result.rows)}`,
+                    );
+            },
+            (error: unknown) => failStage("delivery", "Archive", error),
+        );
+    } else if (
+        opts.archive &&
+        (archiveBacklog || Date.now() - archiveCheckedAt >= ARCHIVE_INTERVAL_MS)
+    ) {
         archiveCheckedAt = Date.now();
         await archiveOldData(conn, opts.archive).then(
             (result) => {

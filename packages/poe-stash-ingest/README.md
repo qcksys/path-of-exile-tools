@@ -296,6 +296,14 @@ per check, and keeps going every cycle while a backlog remains. `archive [--days
 once. A day leaves once it is older than `PS_ARCHIVE_KEEP_DAYS` (default 30). While the database uses
 more than `PS_ARCHIVE_MAX_GB` (default 100), days down to three days old leave too, oldest first.
 
+A worker reading a separate capture process's archive (`PS_SEPARATE_CAPTURE`) can instead keep a
+fixed window behind its stream position: with `PS_ARCHIVE_KEEP_HOURS` set (at least 25, because
+reclassification replays the last day and equipment summaries reach 24 hours back), each cycle moves up
+to two whole hours older than that window out of DuckDB, oldest first, whatever the date. The window
+follows the pages the worker reads, so a worker far behind the stream keeps no more than one on time,
+and the tables, with their indexes, stop growing with the league. An hourly archive becomes
+`<PS_ARCHIVE_DIR>/<YYYY-MM-DD>/<table>-<run>-<HH>.parquet`.
+
 Each archived day becomes `<PS_ARCHIVE_DIR>/<YYYY-MM-DD>/<table>-<run>.parquet` (zstd). Every file's
 row count is checked before its rows are deleted. Rows a day still needs stay in DuckDB until a later
 check: unprocessed captured pages, hours whose rollup has not been delivered since their last listing or
