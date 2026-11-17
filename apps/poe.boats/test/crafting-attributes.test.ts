@@ -19,7 +19,7 @@ import {
     craftingCatalogSchema,
     craftingProjectSchema,
 } from "../app/schemas/crafting";
-import { baseId, catalog, currency, engine } from "./crafting-fixtures";
+import { baseId, catalog, currency, engine, lockRecipe } from "./crafting-fixtures";
 
 const record = catalog.crafting.currencies.find(
     (entry) => entry.action === "reroll_single_attribute_modifier",
@@ -116,13 +116,7 @@ describe("Genteel attribute conversion", () => {
     it("replaces fractures despite suffix locks and keeps the other modifiers unchanged", () => {
         const item = start();
         item.mods[0]!.fractured = true;
-        const lock = catalog.crafting.bench.find(
-            (entry) =>
-                entry.mod &&
-                engine
-                    .mod(entry.mod)
-                    .stats.some((stat) => stat.id === "item_generation_cannot_change_suffixes"),
-        )!;
+        const lock = lockRecipe("suffixes", item);
         const locked = engine.apply(item, { kind: "bench", id: lock.id }, seededRandom(2)).item;
         const result = engine.apply(locked, method, force("Dexterity1")).item;
         expect(result.mods.find((entry) => entry.id === lock.mod)).toEqual(

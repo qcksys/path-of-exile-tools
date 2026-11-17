@@ -1,7 +1,7 @@
 import type { Game } from "./config.ts";
 
 const poe1Domains =
-    "undefined item flask monster chest area unknown1 templar_relic unknown3 crafted misc atlas leaguestone abyss_jewel map_device dummy delve delve_area synthesis_a synthesis_globals synthesis_bonus affliction_jewel heist_area heist_npc heist_trinket watchstone veiled expedition_relic unveiled primordial_altar sentinel memory_lines sanctum_relic crucible_remnant tincture affliction_charm necropolis_monster map_relic brequel_graft deepwater_chart deepwater_border mercenary ducat_crafted".split(
+    "undefined item flask monster chest area unknown1 templar_relic unknown3 crafted misc atlas leaguestone abyss_jewel map_device dummy delve delve_area synthesis_a synthesis_globals synthesis_bonus affliction_jewel heist_area heist_npc heist_trinket watchstone veiled expedition_relic unveiled primordial_altar sentinel memory_lines sanctum_relic crucible_remnant tincture affliction_charm necropolis_monster map_relic brequel_graft deepwater_chart deepwater_border mercenary ducat_crafted harvest_tree legion_monolith".split(
         " ",
     );
 const poe2Domains =

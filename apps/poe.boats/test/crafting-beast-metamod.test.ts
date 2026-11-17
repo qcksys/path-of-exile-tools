@@ -11,7 +11,16 @@ import { baseId, catalog, currency, engine } from "./crafting-fixtures";
 
 const method = { kind: "beast" as const, id: "EinharMasterCraftMemoryLine1" };
 const recipe = catalog.crafting.beasts.find((entry) => entry.id === method.id)!;
-const suffixLock = "DexMasterItemGenerationCannotChangeSuffixes";
+// 3.30 has a weapon, an armour and a jewellery variant of each lock; the base is body armour.
+const bodyArmourMetamods = recipe.metamods.filter((id) =>
+    catalog.crafting.bench.some(
+        (entry) => entry.mod === id && entry.itemClasses.includes("Body Armour"),
+    ),
+);
+const suffixLock = engine.benchRecipeFor(
+    "DexMasterItemGenerationCannotChangeSuffixes",
+    "Body Armour",
+)!.mod!;
 const multimod = "StrIntMasterItemGenerationCanHaveMultipleCraftedMods";
 const blank = (rarity: CraftingItem["rarity"] = "rare", level = 86): CraftingItem => ({
     ...engine.createItem(baseId, level),
@@ -37,7 +46,8 @@ describe("random metamod beastcraft", () => {
     it("uses five extracted metamods with equal probabilities at any item level", () => {
         expect(engine.beastOperation(method.id)).toBe("metamod");
         expect(engine.beastRequiresLevel(method.id)).toBe(false);
-        expect(recipe.metamods).toHaveLength(5);
+        expect(recipe.metamods).toHaveLength(9);
+        expect(bodyArmourMetamods).toHaveLength(5);
         for (const rarity of ["normal", "magic", "rare"] as const) {
             const item = { ...blank(rarity, 1), memoryStrands: 82, quality: 20, sockets: 6 };
             expect(
@@ -45,8 +55,8 @@ describe("random metamod beastcraft", () => {
                     .beastMetamodPool(item, method.id)
                     .map((entry) => entry.id)
                     .sort(),
-            ).toEqual([...recipe.metamods].sort());
-            for (const id of recipe.metamods) {
+            ).toEqual([...bodyArmourMetamods].sort());
+            for (const id of bodyArmourMetamods) {
                 const target = engine.validateTarget({ groups: [{ mods: [id] }] });
                 expect(calculateExact(engine, item, method, target).probability).toBeCloseTo(
                     0.2,
@@ -93,7 +103,7 @@ describe("random metamod beastcraft", () => {
             ).probability,
         ).toBe(1);
         const text = exportCraftingItemText(engine, result);
-        expect(text).toContain("Suffixes Cannot Be Changed");
+        expect(text).toContain("Suffix Modifiers cannot be changed");
         const imported = importCraftingItemText(engine, text)[0]!.item;
         expect(imported.mods.map((entry) => entry.id)).toEqual(
             result.mods.map((entry) => entry.id),
@@ -197,7 +207,7 @@ describe("random metamod beastcraft", () => {
         )![0];
         const singleSuffix = fillSide({ ...engine.createItem(simplex), rarity: "rare" }, "suffix");
         expect(engine.beastMetamodPool(singleSuffix, method.id).map((entry) => entry.id)).toEqual([
-            suffixLock,
+            engine.benchRecipeFor(suffixLock, "Amulet")!.mod,
         ]);
     });
 

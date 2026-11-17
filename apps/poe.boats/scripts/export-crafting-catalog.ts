@@ -42,6 +42,18 @@ function catalogRank(base: { release_state: string; item_class: string }) {
     );
 }
 
+// Only builds that write granted skill lines from client strings (PoE 1 3.30+) carry the field,
+// so earlier catalogs keep their bytes.
+function grantedEffects(
+    crafting: { grantedEffects?: Record<string, { text: string; level: number }[]> },
+    selectedMods: Record<string, unknown>,
+) {
+    const lines = Object.fromEntries(
+        Object.entries(crafting.grantedEffects ?? {}).filter(([id]) => selectedMods[id]),
+    );
+    return Object.keys(lines).length ? { grantedEffects: lines } : {};
+}
+
 export function parseSocketInfo(value: unknown) {
     if (value === undefined) return [];
     if (typeof value !== "string" || !/^\d+:\d+:\d+(?: \d+:\d+:\d+)*$/.test(value))
@@ -372,6 +384,7 @@ export async function exportCraftingCatalog(directory: string, output: string) {
             modTexts: Object.fromEntries(
                 Object.entries(crafting.modTexts).filter(([id]) => selectedMods[id]),
             ),
+            ...grantedEffects(crafting, selectedMods),
             statDescriptions: descriptionIndices.map((index) => crafting.statDescriptions[index]),
             currencies: crafting.currencies.filter((currency) => currency.name),
             fossils: crafting.fossils.filter(

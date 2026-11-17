@@ -12,7 +12,7 @@ import {
     craftingCatalogSchema,
     craftingProjectSchema,
 } from "../app/schemas/crafting";
-import { baseId, catalog, currency, engine } from "./crafting-fixtures";
+import { baseId, catalog, currency, engine, lockRecipe } from "./crafting-fixtures";
 
 const talismanId = "Metadata/Items/Amulets/Talismans/Talisman1_2";
 const imprint = { kind: "beast" as const, id: "EinharMasterCraft32" };
@@ -98,14 +98,8 @@ describe("Talisman beastcrafting", () => {
     });
 
     it("chooses distinct modifiers uniformly and includes crafted modifiers despite affix locks", () => {
-        const lock = catalog.crafting.bench.find(
-            (recipe) =>
-                recipe.mod &&
-                engine
-                    .mod(recipe.mod)
-                    .stats.some((stat) => stat.id === "item_generation_cannot_change_suffixes"),
-        )!;
         const item = talisman(2);
+        const lock = lockRecipe("suffixes", item);
         const crafted = engine.apply(item, { kind: "bench", id: lock.id }, seededRandom(1)).item;
         let prepared = crafted;
         while (prepared.mods.length < 6)

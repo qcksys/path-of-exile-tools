@@ -278,6 +278,9 @@ export class Translations {
                 value: "DisplayText",
             },
             mages_legacy_index: { table: "UniqueMagesLegacy", start: 1, value: "DisplayText" },
+            // PoE 1 3.30 names fishing rod lures and hooks through these tables, in value order.
+            fishing_lure_type: { table: "FishingLureTypes", start: 1 },
+            fishing_hook_type: { table: "FishingHookTypes", start: 1 },
             specific_skill: { table: "SkillGemsForUniqueStat", index: "Index", value: "SkillGems" },
         };
         const definition = definitions[name];

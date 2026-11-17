@@ -18,12 +18,15 @@ for (const preset of craftingPresets) {
         page,
         request,
     }) => {
+        // The Luminary shield is a 3.29 recombination preset; under 3.30 rules its recombinations
+        // fail far more often, so one sampled trial takes about 30 seconds.
         if (
             [
                 "strength-helical-ring",
                 "tailwind-boots",
                 "sushi-rf-helmet",
                 "sushi-mercenary-chest",
+                "sushi-luminary-shield",
             ].includes(preset.id)
         )
             test.setTimeout(90_000);
@@ -63,9 +66,12 @@ for (const preset of craftingPresets) {
         const trials =
             preset.id === "tailwind-boots"
                 ? 1
-                : ["strength-helical-ring", "sushi-rf-helmet", "sushi-mercenary-chest"].includes(
-                        preset.id,
-                    )
+                : [
+                        "strength-helical-ring",
+                        "sushi-rf-helmet",
+                        "sushi-mercenary-chest",
+                        "sushi-luminary-shield",
+                    ].includes(preset.id)
                   ? 2
                   : 8;
         await page.getByRole("button", { name: "Prices & calculation", exact: true }).click();
@@ -90,6 +96,7 @@ for (const preset of craftingPresets) {
                     "tailwind-boots",
                     "sushi-rf-helmet",
                     "sushi-mercenary-chest",
+                    "sushi-luminary-shield",
                 ].includes(preset.id)
                     ? 60_000
                     : preset.id === "sushi-rf-totem-shield"

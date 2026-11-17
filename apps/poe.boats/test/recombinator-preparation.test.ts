@@ -292,7 +292,9 @@ describe("generated preparation recipes", () => {
         draft.steps[0].rightKeepInputMods = true;
         const parsed = parseRecombinatorDraft(draft, catalog);
         const result = calculateRecombinatorPlan(parsed)[0];
-        expect(chance(result, required)).toBeCloseTo(31 / 101);
+        // From 3.30 the affix count uses only modifiers legal on the chosen base, so the prepared
+        // Torment modifier no longer improves the chance (3.29: 31 / 101).
+        expect(chance(result, required)).toBeCloseTo(10 / 101);
         expect(chance(result, [parsed.steps[0].rightPreparation!.affix.id])).toBe(0);
         expect(result.outcomes.every(({ item }) => item.suffixes.length <= suffixCount)).toBe(true);
         draft.steps[0].rightKeepInputMods = false;

@@ -232,8 +232,9 @@ it("ignores future-only observations, keeps resonator IDs distinct, and fails cl
     expect(result.missing[essenceId]).toMatch(/safe lookup limit/);
 });
 
-it("verifies all 106 essence identities and refuses duplicated names and other currency variants", () => {
-    expect(catalog.crafting.essences).toHaveLength(106);
+it("verifies all 107 essence identities and refuses duplicated names and other currency variants", () => {
+    // 3.30 added Essence of Trickery.
+    expect(catalog.crafting.essences).toHaveLength(107);
     for (const essence of catalog.crafting.essences)
         expect(craftingCommodityIdentity(engine, essence.id)).toEqual({
             id: essence.id,

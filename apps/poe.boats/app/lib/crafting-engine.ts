@@ -199,6 +199,10 @@ const metaStats = {
     caster: "item_generation_cannot_roll_caster_affixes",
     multiple: "item_generation_can_have_multiple_crafted_mods",
 };
+const countedMetaStats = new Set([
+    "item_generation_cannot_change_x_prefixes",
+    "item_generation_cannot_change_x_suffixes",
+]);
 const directionalDesecrationOmen = /\/OmenOnAbyssAdd(?:Prefixes|Suffixes)$/;
 export const supportedCurrencyActions = new Set([
     "identify",
@@ -568,6 +572,23 @@ export class CraftingEngine {
         );
     }
 
+    // 3.30 splits some bench crafts, such as the prefix and suffix locks, into one modifier per
+    // group of item classes, each with its own cost. This finds the recipe for the given modifier,
+    // or for its same-effect variant, that the bench offers on the item class.
+    benchRecipeFor(modId: string, itemClass: string) {
+        const effect = (id: string) => {
+            const mod = this.mod(id);
+            return JSON.stringify([mod.type, mod.generation_type, mod.stats]);
+        };
+        const offered = this.catalog.crafting.bench.filter(
+            (entry) => entry.mod && entry.itemClasses.includes(itemClass),
+        );
+        return (
+            offered.find((entry) => entry.mod === modId) ??
+            offered.find((entry) => effect(entry.mod!) === effect(modId))
+        );
+    }
+
     beastMetamodPool(item: CraftingItem, id: string): PoolEntry[] {
         const recipe = this.catalog.crafting.beasts.find((entry) => entry.id === id);
         if (this.beastOperation(id) !== "metamod" || !recipe) return [];
@@ -852,6 +873,12 @@ export class CraftingEngine {
                       ![0, 1, 8, 9].includes(recipe.action ?? -1)
             )
                 throw new Error("This bench action is not supported.");
+            // 3.30's "1 (2) Prefix (Suffix) Modifiers cannot be changed" crafts are not modelled.
+            if (
+                recipe.mod &&
+                this.mod(recipe.mod).stats.some((stat) => countedMetaStats.has(stat.id))
+            )
+                throw new Error("This bench craft is not supported yet.");
         } else if (method.kind === "beast") {
             const operation = this.beastOperation(method.id);
             if (!operation) throw new Error("This beastcraft is not supported.");
@@ -3710,20 +3737,7 @@ export class CraftingEngine {
         if (method.kind === "harvest") {
             const harvest = data.harvest.find((entry) => entry.id === method.id);
             if (!harvest) throw new Error("Unknown Harvest recipe.");
-            // LifeforceType is the client enum; names and currency IDs come from extracted bases.
-            const suffix = ["", "Red", "Green", "Blue"][harvest.lifeforceType];
-            const currency = data.currencies.find((entry) =>
-                entry.id.endsWith(`HarvestSeed${suffix}`),
-            );
-            const sacred = data.currencies.find((entry) => entry.id.endsWith("HarvestSeedBoss"));
-            if (!currency || (harvest.sacred && !sacred))
-                throw new Error("Lifeforce currency is missing from the build.");
-            return [
-                { id: currency.id, name: currency.name, amount: harvest.lifeforce },
-                ...(harvest.sacred && sacred
-                    ? [{ id: sacred.id, name: sacred.name, amount: harvest.sacred }]
-                    : []),
-            ];
+            return harvest.cost;
         }
         return [{ id: method.id, name: this.baseMethodName(method), amount: 1 }];
     }

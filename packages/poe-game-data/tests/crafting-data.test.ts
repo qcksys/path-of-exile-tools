@@ -151,7 +151,7 @@ describe.each(["poe1", "poe2"] as const)("%s crafting extraction", (game) => {
             name: "Hollow Palm Technique",
         });
         expect(input.source.tables["Data/PassiveTreeExpansionSpecialSkills.datc64"]).toBe(
-            "32282e5a65e7699407bab4b2a54de51611b81d8fe845a9ad586f6e684a76462f",
+            "f0a925ae7931d663bab8204764337acf4c8daed6e7b63cb8202f755d468f24d6",
         );
     });
 
@@ -228,18 +228,18 @@ describe.each(["poe1", "poe2"] as const)("%s crafting extraction", (game) => {
             "Shield",
         ]);
         expect(tree.passives.EquipmentNode4?.stats).toEqual([
-            { id: "brequel_equipment_fruit_physical_modifier_chance_+%", min: 300, max: 300 },
+            { id: "brequel_equipment_fruit_physical_modifier_chance_+%", min: 200, max: 200 },
         ]);
-        expect(tree.passives.EquipmentNode4neg?.text).toContain("60% reduced chance");
+        expect(tree.passives.EquipmentNode4neg?.text).toContain("50% reduced chance");
         expect(tree.passives.EquipmentNode23).toBeUndefined();
         expect(tree.passives.EquipmentNode29_).toBeUndefined();
         const rating = Object.values(tree.passives)
             .flatMap((node) => node.stats)
             .filter((stat) => stat.id === "brequel_equipment_fruit_mod_tier_rating_+");
         expect(rating).toHaveLength(3);
-        expect(rating.every((stat) => stat.min === 20)).toBe(true);
+        expect(rating.every((stat) => stat.min === 10)).toBe(true);
         expect(tree.passives.EquipmentNode2?.text).toBe(
-            "Birthed Equipment has +20 to Modifier Tier Rating",
+            "Birthed Equipment has +10 to Modifier Tier Rating",
         );
         expect(result.source.tables[tree.asset]).toMatch(/^[a-f0-9]{64}$/);
     });
@@ -616,7 +616,7 @@ describe.each(["poe1", "poe2"] as const)("%s crafting extraction", (game) => {
             "UtilityFlask",
             "UtilityFlaskCritical",
         ]);
-        expect(result.bench.find((entry) => entry.id === "bench:360")).toMatchObject({
+        expect(result.bench.find((entry) => entry.id === "bench:361")).toMatchObject({
             enchantment: {
                 mod: "FlaskEnchantmentInjectorOnFullCharges__",
                 itemClasses: ["UtilityFlask"],
@@ -785,7 +785,7 @@ describe.each(["poe1", "poe2"] as const)("%s crafting extraction", (game) => {
             "Quality (Rarity)",
             "Quality (Pack Size)",
             "Quality (Divination Cards)",
-            "Quality (Scarabs)",
+            "Quality ([Thread|Threads])",
             "Quality (Currency)",
         ]);
         for (const recipe of result.mapQuality) {
@@ -1076,15 +1076,17 @@ describe.each(["poe1", "poe2"] as const)("%s crafting extraction", (game) => {
         if (game !== "poe1") return;
         const recipe = recipes[0]!;
         expect(recipe.id).toBe("EinharMasterCraftMemoryLine1");
-        expect(recipe.metamods).toHaveLength(5);
-        for (const id of recipe.metamods) {
-            expect(data.mods[id].domain).toBe("crafted");
+        // 3.30 splits the prefix and suffix locks into weapon, armour and jewellery modifiers.
+        expect(recipe.metamods).toHaveLength(9);
+        for (const id of recipe.metamods) expect(data.mods[id].domain).toBe("crafted");
+        for (const itemClass of ["Body Armour", "Two Hand Sword", "Ring"])
             expect(
-                result.bench.some(
-                    (entry) => entry.mod === id && entry.itemClasses.includes("Body Armour"),
+                recipe.metamods.filter((id) =>
+                    result.bench.some(
+                        (entry) => entry.mod === id && entry.itemClasses.includes(itemClass),
+                    ),
                 ),
-            ).toBe(true);
-        }
+            ).toHaveLength(5);
         expect(() => resolveBeastMetamods(recipe.category, recipe.description, {})).toThrow(
             "Unresolved beast metamod",
         );
@@ -1233,19 +1235,25 @@ describe.each(["poe1", "poe2"] as const)("%s crafting extraction", (game) => {
             "Unrecognized map corruption",
         );
         if (game !== "poe1") return;
+        // 3.30 retired the Scarab and Vaal Side Area corruptions with zero weights and no text.
         for (const [id, mod] of Object.entries(modsSchema.parse(data.mods))) {
-            if (mod.domain !== "area" || mod.generation_type !== "corrupted") continue;
+            if (
+                mod.domain !== "area" ||
+                mod.generation_type !== "corrupted" ||
+                !mod.spawn_weights.some((rule) => rule.weight > 0)
+            )
+                continue;
             expect(result.modDescriptions[id]?.length, id).toBeGreaterThan(0);
         }
         const quantity = result.modDescriptions.MapCorruptionItemQuantity!;
         expect(result.modTexts.MapCorruptionItemQuantity).toBe("+(10-20)% Item Quantity");
-        expect(result.modTexts.MapCorruptionItemRarity).toBe("+(8-12)% Item Rarity");
+        expect(result.modTexts.MapCorruptionItemRarity).toBe("+(10-20)% Item Rarity");
         expect(result.modTexts.MapCorruptionPackSize).toBe("+(5-10)% Pack Size");
         expect(result.modTexts.MapCorruptionModEffect).toBe(
             "(10-20)% increased Explicit Modifier magnitudes",
         );
         expect(result.statDescriptions[quantity[0]!]!.rules[0]!.text).toBe("{0:+d}% Item Quantity");
-        expect(result.source.tables["Metadata/StatDescriptions/stat_descriptions.txt"]).toMatch(
+        expect(result.source.tables["Metadata/StatDescriptions/stat_descriptions.csd"]).toMatch(
             /^[a-f0-9]{64}$/,
         );
         const changed = structuredClone(result);
@@ -1565,6 +1573,7 @@ describe.each(["poe1", "poe2"] as const)("%s crafting extraction", (game) => {
             "Essence of Insanity",
             "Essence of Horror",
             "Essence of Delirium",
+            "Essence of Trickery",
         ]);
         expect(
             Object.keys(result.source.tables).some((path) => path.endsWith("/EssenceType.datc64")),
@@ -1683,6 +1692,62 @@ describe.each(["poe1", "poe2"] as const)("%s crafting extraction", (game) => {
             "random value ranging from 130% to 120% for each modifier.",
         ])
             expect(() => resolveSanctification(definition)).toThrow("Unrecognized");
+    });
+
+    it("records the granted skill and support lines that end each modifier's text", () => {
+        const result = validateCraftingData(input, expected, data);
+        if (game !== "poe1") return expect(result.grantedEffects).toBeUndefined();
+        expect(result.grantedEffects?.GrantsCatAspectCrafted).toEqual([
+            { text: "Grants Level 20 Aspect of the Cat", level: 20 },
+        ]);
+        expect(result.grantedEffects?.TotemDamageSpellUber1).toEqual([
+            { text: "Socketed Gems are Supported by Level 18 Spell Totem Support", level: 18 },
+        ]);
+        expect(data.mods.TotemDamageSpellUber1.text).toBe(
+            "(20-25)% increased Totem Damage\nSocketed Gems are Supported by Level 18 Spell Totem Support",
+        );
+        const changed = structuredClone(result);
+        changed.grantedEffects!.GrantsCatAspectCrafted = [
+            { text: "Grants Level 30 Aspect of the Cat", level: 30 },
+        ];
+        expect(() => validateCraftingData(changed, expected, data)).toThrow(
+            "Granted effect lines differ from the modifier text: GrantsCatAspectCrafted",
+        );
+    });
+
+    it("charges every lifeforce type a Harvest craft lists", () => {
+        const result = validateCraftingData(input, expected, data);
+        if (game !== "poe1") return expect(result.harvest).toEqual([]);
+        const cost = (id: string) =>
+            result.harvest
+                .find((recipe) => recipe.id === id)!
+                .cost.map((entry) => [
+                    entry.id.replace("Metadata/Items/Currency/", ""),
+                    entry.amount,
+                ]);
+        expect(cost("DivinationCardGamble")).toEqual([
+            ["HarvestSeedRed", 1000],
+            ["HarvestSeedGreen", 1000],
+            ["HarvestSeedBlue", 1000],
+        ]);
+        expect(cost("ChangeColdToFireDamage")).toEqual([
+            ["HarvestSeedBlue", 300],
+            ["HarvestSeedRed", 300],
+            ["HarvestSeedFaridun", 1],
+        ]);
+        expect(cost("AugmentFire")).toEqual([
+            ["HarvestSeedRed", 15000],
+            ["HarvestSeedBoss", 1],
+        ]);
+        expect(result.harvest.find((recipe) => recipe.id === "AugmentFire")!.cost[1]!.name).toBe(
+            "Sacred Crystallised Lifeforce",
+        );
+        const changed = structuredClone(result);
+        changed.harvest[0]!.cost[0]!.id = "Metadata/Items/Currency/Missing";
+        expect(() => validateCraftingData(changed, expected, data)).toThrow();
+        const empty = structuredClone(result);
+        empty.harvest[0]!.cost = [];
+        expect(() => validateCraftingData(empty, expected, data)).toThrow();
     });
 
     it("extracts and validates Harvest affinity percentages", () => {

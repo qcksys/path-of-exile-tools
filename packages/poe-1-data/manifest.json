@@ -1,17 +1,17 @@
 {
   "format": 1,
   "game": "poe1",
-  "version": "3.29.3-build.3",
-  "client_build": "3.29.3.3",
-  "source_manifest_sha256": "a9d2155a604cec8775de338e9b01f2f92014662ef568d0d6b898103101fff1ba",
-  "dat_schema_sha256": "4b51063be32f2a66c1047bf455784d2e85411bed401ffdee380c8603399b9656",
-  "extractor_sha256": "ed2986ea76b8dba4948460a403cc199ee5444c2a06c8b3845756871b87ceb123",
+  "version": "3.30.0-build.2.2",
+  "client_build": "3.30.0.2.2",
+  "source_manifest_sha256": "aeebc2b977b505df2f16492aba8c41def57614d80c15daa59703f0f76130ee9c",
+  "dat_schema_sha256": "25e17f0463e56a4ed0dcc13a841aeb811012debb23daa9111053aa8157bd7b60",
+  "extractor_sha256": "2a6f3013a28578ef64ab14fe41bbe28832f738faac98b7d31bcf8dc5ab1d0a8c",
   "zod_schema_sha256": "a02f8ec2a774de489b1c9990bedea17e8e9a82d9edceff56d3fb68a676d28a60",
-  "crafting_data_sha256": "5dac6135acc38d7886f18c91deddac716ecb61a8b90f0309a194a75d0021facf",
+  "crafting_data_sha256": "4be4d153e7273e3b35abb47a4b41035c3fa52bf18bea5bade98822691126363e",
   "weight_provenance": "client-extracted; PoE 2 values are not Craft of Exile empirical weights",
   "files": {
     "Metadata/Items/Amulets/AbstractAmulet.json": {
-      "sha256": "6e826888593c7e62920dd3d32cbf2fff4b53d766cef9027656f18f0f39c72b37",
+      "sha256": "6797e0ff4a2796d64716c1b77e1c99df51ff79d644b4cef0c6e26d88cee9273b",
       "bytes": 441,
       "schema": "json-schema/item_metadata.schema.json"
     },
@@ -21,42 +21,42 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Armours/AbstractArmour.json": {
-      "sha256": "d19b29cafc60761c54f79aca3111c1b1342d26a30ad314a882afb88118bd7ad9",
+      "sha256": "906dc0a4d3a1a1aa061971b6670495b5619b27cc9a8d9bf58f6f2c610f907986",
       "bytes": 507,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Armours/BodyArmours/AbstractBodyArmour.json": {
-      "sha256": "4588f5e2b81977bbc0fcb28abc9529b5d46319eb848ff007e123cb7611c3f304",
+      "sha256": "21cf6f1256eab471191a6334d0df028b0e6c7312da339baefb3199a79976c59d",
       "bytes": 560,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Armours/Boots/AbstractBoots.json": {
-      "sha256": "32cc0ca99b4e2508a4de5434cb41bb8f2d03f92c9a174d6d884e9f1183be3ea0",
+      "sha256": "a9204e7aaf56ed9b463e6baa588531748674e9f1e7dca571e80822c5fc34d5fb",
       "bytes": 587,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Armours/Gloves/AbstractGloves.json": {
-      "sha256": "059e57e701fb8bf0f1fbef992d1fafaac953eda124a693877e3e995d4c73ac05",
+      "sha256": "220be2b80ee730aa41682a59e587ce58391a48327bd4fd9a49e4e58e7e517357",
       "bytes": 589,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Armours/Helmets/AbstractHelmet.json": {
-      "sha256": "cfe5621e4bfc06505bf7903bee037518a5270c03b2c716847c6adc78e500aa24",
+      "sha256": "78be931ea1e174f0b1b1c762ec02d7a09a3aa4ac9d5bcc891b77bda7e380877c",
       "bytes": 587,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Armours/Shields/AbstractShield.json": {
-      "sha256": "d71b392ba3c966eae995c12d6a8e14192e0c563b61031879559efb1caf5b20fb",
+      "sha256": "0583c6743b9fba4248206bfc812fc82e128241269092ea938620f4374aedb4ed",
       "bytes": 638,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/AtlasUpgrades/AtlasRegionUpgrade.json": {
-      "sha256": "2ab1571194310bc5a7b12e8f4699b3fb3adb1ab313b5d62a664c127304d6b025",
+      "sha256": "4eaab4f284303ef4c10232dc348ece96e995fa587bbcad66d4995b329ba6b14a",
       "bytes": 355,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Belts/AbstractBelt.json": {
-      "sha256": "1e233f946e47fccd3f47c63d514b8e874e4813ba5a2efca2145471040cbd5a1f",
+      "sha256": "2d7f4acba2c5e0d5c57e426e429eae8dbb75d9927c5328badccef548be99e59c",
       "bytes": 437,
       "schema": "json-schema/item_metadata.schema.json"
     },
@@ -66,7 +66,7 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Classic/Leaguestone.json": {
-      "sha256": "1a3dbdae6d70d9421f2b1b915a60e3723bf6fc102219b21b4e09f4e593169e6c",
+      "sha256": "27314fe52b67f8015d61d7c02f6e5c23de846fbd2962dcb2af8cdee4a57f722a",
       "bytes": 448,
       "schema": "json-schema/item_metadata.schema.json"
     },
@@ -86,12 +86,12 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Deepwater/CursedDucat.json": {
-      "sha256": "6d59fc515d3ec7e2f91c6d246243e1986e1243baba2a5efa6284638591b4eb72",
+      "sha256": "d7cc7f9e134ba866b0c2f117f5fc71f12f058b800108c9697c38710fb60fd11b",
       "bytes": 242,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Deepwater/DeepwaterChart.json": {
-      "sha256": "91a7a967aa1d5b0e389ae1cd9252ddb4334df2d9eb6c8f34854962911e10f88d",
+      "sha256": "56ebaafbac22653d0e23ebbede5561c7714d3fcae37bda4d55f0ef853a874766",
       "bytes": 642,
       "schema": "json-schema/item_metadata.schema.json"
     },
@@ -111,37 +111,37 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Equipment.json": {
-      "sha256": "f156245282b4472e82d95364079c664bb191359268a9284b27a2a4cf0918df71",
+      "sha256": "c4b26e91ee4bd4b4e406e974059bff5172c9362ac7394d42b0a630eb85a03378",
       "bytes": 359,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Expedition/ExpeditionSaga.json": {
-      "sha256": "9378757892aa2cebed0366b4786cd277d052220746f99abe81fa7223dfbb36c2",
+      "sha256": "4d13f2bc4f2399a9bc2701b448d1560df245d0bdcf22e02fa46b0dd98af516a0",
       "bytes": 447,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Flasks/AbstractFlask.json": {
-      "sha256": "4948a0e852b369d2b7a2adae72c850a7aa758d9a2a1d6986be3a27dcde93f646",
+      "sha256": "1e49ce588176433a1bc648de17f002e43349c7b7b2e38d2946c1853daaac2def",
       "bytes": 556,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Flasks/AbstractHybridFlask.json": {
-      "sha256": "11d33bd0b9bae475aedbe2724895b75afea3b660ef7705152d52b00c76627ff1",
+      "sha256": "9b8f7c2a92eb687620be0dc69e7b53867184c45fbb56a2e7cb85968902cbbec5",
       "bytes": 578,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Flasks/AbstractLifeFlask.json": {
-      "sha256": "20fbbf364481d3fe93b4f3aaa2bd735e5f5f4fa0a8e3f6099abd7651caedda23",
+      "sha256": "3108bc93ef0adfeb1808c54fe1f9c12648bc3901729073de86bd69e95a0f83e8",
       "bytes": 576,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Flasks/AbstractManaFlask.json": {
-      "sha256": "9a1079bb690aa50dd9f3b3b9a2cef0b0134b34a0c318eb1991b42d75084ba976",
+      "sha256": "84745ab752750379d607b04bb22a828c8b028bafafb4317c24964f8eeda1da33",
       "bytes": 576,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Flasks/AbstractUtilityFlask.json": {
-      "sha256": "2dd5b1f867a16e049be0db06124b308c5ddde6fb21485a99a59686e888736a45",
+      "sha256": "1c71f50c712e55bb3a6d6a04eb8b9a05ce7fe6a1042d47ace62d027af3e8498d",
       "bytes": 579,
       "schema": "json-schema/item_metadata.schema.json"
     },
@@ -166,17 +166,17 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Heist/AbstractHeistEquipment.json": {
-      "sha256": "072ad0b45bafcf70b1e7effab7394f3a2447a6e69c6d571dcfc172606fcd33aa",
+      "sha256": "a3005c4376a9a6b1f191516d6a0460e40f89e6978be703f006cc10fc724b147d",
       "bytes": 495,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Heist/HeistBlueprint.json": {
-      "sha256": "7cec198e7abc7eccb5649e5aa2523d296ccc98b12f4e4b21273315f4de436842",
+      "sha256": "390cc831c6b71408e4b67fb1bfa3d1a382979033921c5626e714c6370d91035a",
       "bytes": 416,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Heist/HeistContract.json": {
-      "sha256": "5583ef65bca74c6a5c81952945c5fe2cffad82374edef51bd822059ede26631c",
+      "sha256": "43208ef212d4172e11d51fc348cbb5d56d71da9601d020c1699f1fcfaad649bf",
       "bytes": 415,
       "schema": "json-schema/item_metadata.schema.json"
     },
@@ -196,17 +196,17 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Jewels/AbstractAbyssJewel.json": {
-      "sha256": "9e26dba53821effb4df69e8142b9c6b129938b38a51380ab73d726c2f0aa998a",
+      "sha256": "552281425a6d97aa184df37480373e3a62728366f505b1540ac5408c334defc7",
       "bytes": 372,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Jewels/AbstractAnimalCharm.json": {
-      "sha256": "1c6578bc9a2f53e0849801c33bac63aa3a68ad04af08bf30466f042e0d8bd54b",
+      "sha256": "c424fa53ad11e16d7b080b413f2ede6f4fe2f2126c3f75352f07a8eb460c2ca7",
       "bytes": 417,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Jewels/AbstractJewel.json": {
-      "sha256": "429330e049ab947e11dad714fcd156453a70ec5e923d0e51e21115ea4f45595e",
+      "sha256": "9559492dc48003e48df73c57140eb7897eab293868e4273ca53f22389164b86b",
       "bytes": 471,
       "schema": "json-schema/item_metadata.schema.json"
     },
@@ -221,17 +221,17 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Labyrinth/OfferingToTheGoddess.json": {
-      "sha256": "4a1ec4121af805b8d4c605d4557519a0e2636f46e6f87e2ecb4d94ca3c32fe3c",
+      "sha256": "873036501f07790a6e280e29462220eb6e810386bc55f84f0984857d97575926",
       "bytes": 260,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Legion/CocoonedItem.json": {
-      "sha256": "1ab0840d6440f9abb19151e399e7649306629a1f1056f67db7b0e543f8c721b0",
+      "sha256": "91c7eb20eb36b724cb335d39ef2399c16304484eedb0dd8ec0b0a34659d0342a",
       "bytes": 414,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Legion/Incubator.json": {
-      "sha256": "8bdbe050683340debbac0cbd00ebd48fe3c592f55290b6c70ccc1146a8dc8965",
+      "sha256": "b813889da98d5c418f41fc14c37ed0d6a748c162b19bf2e1b7d62468c5758852",
       "bytes": 217,
       "schema": "json-schema/item_metadata.schema.json"
     },
@@ -256,22 +256,22 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Maps/AbstractMap.json": {
-      "sha256": "d03abbda8cfbce257b1e9a788d61b912550d6e521e2b5a72ee05de7d42e7618b",
+      "sha256": "9b8151cf8188e630ae1a5030ae042a97653af694d7abf00e87cb364857a8d1f3",
       "bytes": 460,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Maps/AbstractMapKey.json": {
-      "sha256": "9c52644669752cff59be160c68243820f9804eb463aecfce090fb29c3645bd5d",
+      "sha256": "947169a1834f7dbb55efeded157be4b36c088f79fd09209c7334567b4c0dac65",
       "bytes": 418,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/MemoryLines/MemoryLineBase.json": {
-      "sha256": "0869cd70427dd4b726329f7df44a8466f736f012ac5e26370ae224b02c2fed93",
+      "sha256": "ca11d7ea08f5aa8c801806452c917c1d19a8eab0b949e189f418331379b5d14d",
       "bytes": 389,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Metamorphosis/MetamorphosisDNA.json": {
-      "sha256": "279bcc4d1e4b5e21505d25835d5d3c2749dfcc41f1cc6896a68a9fcb8a3954e8",
+      "sha256": "86a13d27075ca4ceb6f00ea93ca982ddc241adccae6cfd33bb50535eaf9b2c4a",
       "bytes": 228,
       "schema": "json-schema/item_metadata.schema.json"
     },
@@ -296,163 +296,168 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Quivers/AbstractQuiver.json": {
-      "sha256": "efbbcb6f34d92143a3b173ad0c913505c812b37c06e72ca428c65b3ba30735ef",
+      "sha256": "df6f4f3891c48c4057f9a7f908009341965ea9d56355738b78a72fcfaa256891",
       "bytes": 442,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Relics/AbstractAtlasRelic.json": {
-      "sha256": "8804dbf869cdd0c7c82c28a032a86a20ab335f0ca25a2314b0ec1fa15ef68532",
+      "sha256": "f08a69a8887372bc850d247f2b9a6c983d2b5328db98183ddb715f260f0f3e76",
       "bytes": 382,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Relics/AbstractRelic.json": {
-      "sha256": "c78cf471523d0d6497debdb4041820acc8a30d41c12e11cd9989442857d0ca91",
+      "sha256": "fd69f7a53e6a64cd3e7ee05f328d7d7a958d31eb4e16fe1400b665575fa22ae3",
       "bytes": 369,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Relics/AbstractSpecialRelic.json": {
-      "sha256": "364a2db296f6910e5dfebf40b17d0344e3b0fa5a07a7ae9a592451ed8cd42442",
+      "sha256": "eb3f26abc697c7dd4bdfe63a4dbfe1190a8ed784049c15bd3b9cdd69a579e58a",
       "bytes": 462,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Rings/AbstractRing.json": {
-      "sha256": "9267e57689901e8fdea4e1407d6facbd5e9f2c99193016ef7ecfa8d42ed9b0a1",
+      "sha256": "26cda859cc54c70d8a7a3395d1a62c3ea6e8c66e03dd72deaed8188188a74d8e",
       "bytes": 437,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Sanctum/SanctumFloorBase.json": {
-      "sha256": "fd814f74f3617b75586d25a9bef9aeebf0b7f25c4c9cb794d6a8160aabe33470",
+      "sha256": "27efc92f12ed1dd8698e755aebaf65477b6a7714b090f2ae7a50e46deeb574eb",
       "bytes": 322,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Sentinel/SentinelDroneBase.json": {
-      "sha256": "5b8d24b085f687de5e77f1143bb24843d3ae8b4aea2a00ea882f311ce2afaa9c",
+      "sha256": "63ea2bdffc85052116f0167a3a0cd855cb81d482d21d323f3e5003f13ab5b6af",
       "bytes": 413,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Tinctures/AbstractTincture.json": {
-      "sha256": "2c2c66fc0662763df3079c58f90ca389bcb45110efde336adbed1e100ac69b2d",
+      "sha256": "f87d65e3066eca2b876896bb683c7e6e14d4a67e0e2da3c60da86d07ac6ef8c2",
       "bytes": 533,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Trinkets/AbstractTrinket.json": {
-      "sha256": "0eeef2e48264a0606d217ad5b68742c8415c0e5404abe53128270e912ae100c8",
+      "sha256": "597c2b1136497471c5045cbdad5d83280ba8ca3e6bb24850e9f6297a2125eb8d",
       "bytes": 496,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/UniqueFragments/AbstractUniqueFragment.json": {
-      "sha256": "a450fd7d3bc4755f67818cbfb64becb53cf44d53991717abd78066f3fc306641",
+      "sha256": "3b1654b9c17711f4e0b7e6895f4866ee3f4cdaa1ac2884aeafa64f1607d45b2b",
       "bytes": 313,
       "schema": "json-schema/item_metadata.schema.json"
     },
+    "Metadata/Items/Viscera/VisceraBase.json": {
+      "sha256": "bf12297aef9d22b722be5b34729ec8d7e761da02d2d9a821a664133c5e628c4c",
+      "bytes": 397,
+      "schema": "json-schema/item_metadata.schema.json"
+    },
     "Metadata/Items/Weapons/AbstractWeapon.json": {
-      "sha256": "1c908acda91c24ef1a995aefe9d7e7c6cc5d7a34a7e9c19eaad0e14fd7a036f7",
+      "sha256": "d0d1560740dfc788074fb2dcfc26010a263c3db7c7230ac81c286d24be98efbe",
       "bytes": 892,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/OneHandWeapons/AbstractOneHandWeapon.json": {
-      "sha256": "5cd349865625be014112166308d77c214410c98616e0f4c0d0055e2a6af2d838",
+      "sha256": "4f2cbc10d4af758d850e800dfc334f7231026ba23875d9cfef059273a1a4a10c",
       "bytes": 909,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/OneHandWeapons/Claws/AbstractClaw.json": {
-      "sha256": "a1698fda3c9f1b1306b8f5518a14453f1eeb95f12e97303471bec09902128826",
+      "sha256": "826e6a72ac94c214fe02347f078aafa204036ebcd2926bfcbd9394e31cb254d9",
       "bytes": 976,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/OneHandWeapons/Daggers/AbstractDagger.json": {
-      "sha256": "9a287475dbbbf5bb54b0ef0fcdc3ebb2c36e104ad3b3b754a437cc4c024b9960",
+      "sha256": "72e22f44d9643a3030e069adc376d672fdaea39b02011395d4bd71125460cac3",
       "bytes": 1003,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/OneHandWeapons/Daggers/AbstractRuneDagger.json": {
-      "sha256": "472945979ed77d44126020ffaeb191ad4bf18d69ac012f9c1cedcbcbf05a1418",
+      "sha256": "682ed9e19fb51afb4983476de864c9f06d7def3ccfd08369e6d8028fc8665af0",
       "bytes": 984,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/OneHandWeapons/OneHandAxes/AbstractOneHandAxe.json": {
-      "sha256": "16ea2eacb9b92bbb78e80ebe0f3458a546f31a38713fd8b4a28467f3f6768049",
+      "sha256": "142c9940414b81cbb67dbf3f8ca8e155c55c119fd776d97cf6d6b5f3f796478f",
       "bytes": 981,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/OneHandWeapons/OneHandMaces/AbstractOneHandMace.json": {
-      "sha256": "e64278c08e87ad549dcbd8d72e809a874a86c6ffd3943df10417fd5b036123cb",
+      "sha256": "8d01ca82c513d05813a2395441a610b98a074458721c7762953dd431235ddb27",
       "bytes": 983,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/OneHandWeapons/OneHandMaces/AbstractSceptre.json": {
-      "sha256": "49e48f596c5932166224e5ab2fdffc771e4d70220a64e8ff0f83f79a44a36e77",
+      "sha256": "0b22d74366a8007e54c15edf85f09db6fbbda8c18b18de1773f85bb9a9daee14",
       "bytes": 982,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/OneHandWeapons/OneHandSwords/AbstractOneHandSword.json": {
-      "sha256": "44e1ddcc75a953aa7468ade48ff22a6bbe3f4af28e1b2073ea45620e5858ccee",
+      "sha256": "8feebf629e09acfbfd561cf8e006118ffff21308e7e36fa5a38aa7b60735edc5",
       "bytes": 985,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/OneHandWeapons/OneHandSwords/AbstractOneHandSwordThrusting.json": {
-      "sha256": "f87229d2c89ef6ebbfce843e3b26b73b31b628dc82c0d3f45c034bbfa0b24835",
+      "sha256": "2e7c31fd423ebff89cc9e7fa469637d51d90df69c44d48a5a916fef70269f37b",
       "bytes": 994,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/OneHandWeapons/Wands/AbstractWand.json": {
-      "sha256": "49cc2b269720b7c10eefd83d4277ef72426e7b530ca995ef8ec6fcace811a19b",
+      "sha256": "c68768f17f83e07fad6b412c29e108d3507c10eb76fd4b87f3938560132fb584",
       "bytes": 992,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/TwoHandWeapons/AbstractTwoHandWeapon.json": {
-      "sha256": "5d47e070d898975e0ef545893343380b99720eb51ad0fb1e1c44afc977779346",
+      "sha256": "8e88efc7a2ecfade6e91374006c4d59c50436e8e29eaa36a259b7e79258b57a5",
       "bytes": 902,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/TwoHandWeapons/Bows/AbstractBow.json": {
-      "sha256": "adf7214edfeec7a3db076eef8026d1bc6533973b943b777d0ee6504c22f58013",
+      "sha256": "f5f61a79dc4925edbf8ce6bab98f7a3cae381b4077749c7386cc1dc684a79260",
       "bytes": 983,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/TwoHandWeapons/FishingRods/AbstractFishingRod.json": {
-      "sha256": "8282d522b11f2b9d9687a2c2033100a95135a39001c69efa2f7f4e634fde1e35",
+      "sha256": "ab61a75ad9e054807d181f8c3ab14c39fbf35dbc81bbef6b55447fb945b6dc02",
       "bytes": 990,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/TwoHandWeapons/Staves/AbstractStaff.json": {
-      "sha256": "5df44d13ad223739db260ab20682be157ca459346a2b287a5f09e05ad90a09ce",
+      "sha256": "c52843b796c10b500dbfa4848ab8964408ada4c5cea3d98cc31421822ded6a97",
       "bytes": 971,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/TwoHandWeapons/Staves/AbstractWarstaff.json": {
-      "sha256": "d6e3acc6a7e635a2ce9eadcd99e063a9c2dfe687cfb7fd7bafb899c57c5892e5",
+      "sha256": "40ffcfeec01dfa4d25817c1ad2b808641e5366d246a9ea48e3691bcdc77c380a",
       "bytes": 996,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/TwoHandWeapons/TwoHandAxes/AbstractTwoHandAxe.json": {
-      "sha256": "134a96bc72c8021395b1128b75162d6c857cc946c248b9c7428fec981a0ccef9",
+      "sha256": "5a4e26df157c587c5095ad6feb9cfc9af881526c5ecccd9789d10d65e7c71d4e",
       "bytes": 974,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/TwoHandWeapons/TwoHandMaces/AbstractTwoHandMace.json": {
-      "sha256": "810f1fb6925fa93e146ae72e429ef0fdd92e1cc23f38f893ddab7c42f1c716c2",
+      "sha256": "775bbb8f291f4a45fb4ce7b36cee01caca9f6c2acf4b5d007e7311a8348f0462",
       "bytes": 976,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "Metadata/Items/Weapons/TwoHandWeapons/TwoHandSwords/AbstractTwoHandSword.json": {
-      "sha256": "90f6e1f34bfc43ea86e614b7a9c6887a3342dadd48715ae437b34a1787daf6f5",
+      "sha256": "ce8564637054887ead8413062e642169f22adb9b1e607ac2879bfba7dde8b8d8",
       "bytes": 978,
       "schema": "json-schema/item_metadata.schema.json"
     },
     "base_items.json": {
-      "sha256": "160581ed74394bd8b21885e217be021d684680c04eb13826c60eb7638f81a08c",
-      "bytes": 8172791,
+      "sha256": "5fdec2ba6f5124ca1abd7bd2bbe1acb6e1aec7e70a3740a03722f1157e140c05",
+      "bytes": 8468643,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/AbyssJewel.json": {
-      "sha256": "c64c6edda2d22ed98ea8a82286e4de717fcfd2cb794420e7b79f13d3a54775df",
-      "bytes": 7226,
+      "sha256": "9e7b55490cd0ecf8e97b0b3680fea1b027b79529a0d9979eaa9961d34da790d4",
+      "bytes": 7228,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Active Skill Gem.json": {
-      "sha256": "33a55f05794b53ea642ff2ce484dba0532455f7f92e2fa4a7fea394eb63b5729",
-      "bytes": 739549,
+      "sha256": "238e3a21e56be8d7ee313eb0f240f6195764f36581b4ca61bb07c644e21cf5fe",
+      "bytes": 740934,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Amulet.json": {
@@ -481,8 +486,8 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Belt.json": {
-      "sha256": "41ec22799dafbefc9e7ac0b6a45fe271c531f17ed64ba852bb176618e535efe5",
-      "bytes": 23806,
+      "sha256": "647a975510fb66a2444e6009808e17d8c01073a05d80cc47a84fa2ec93a0224b",
+      "bytes": 23808,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Body Armour.json": {
@@ -516,8 +521,8 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/CocoonedItem.json": {
-      "sha256": "b64aeedd1e17730d2d415cdc75661894cee78f77d0903c8437c9e2fe228c7a67",
-      "bytes": 6946,
+      "sha256": "a2354a956dab1a9392af4f1c2dd291a98ccd35872de1654e30abf8db94eb0f02",
+      "bytes": 8333,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Currency.json": {
@@ -551,8 +556,8 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/DivinationCard.json": {
-      "sha256": "8c7232785a69e1272e0e1f9d6a65566896e3b5bd707d814b8c017580b9a86a3c",
-      "bytes": 730767,
+      "sha256": "c305599d2d9d8c8a7d6368662fb30812fc943d5953386a5d7a0e8467c157a815",
+      "bytes": 730137,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/ExpeditionLogbook.json": {
@@ -636,13 +641,13 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Incubator.json": {
-      "sha256": "5eaaf61f81443355d028a33bfb5ef96fa81e30b93fde3ef86be8c7c38cd9ad88",
-      "bytes": 48466,
+      "sha256": "ae4233bc49ab830edd69befe7b4a8006393ff461a022e56aa97a33f036b51a38",
+      "bytes": 48468,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/IncubatorStackable.json": {
-      "sha256": "8e969541dde692c804648790cfe70af0a037a99c9075e390e195b80a6c2f2136",
-      "bytes": 54968,
+      "sha256": "f7e855d2367caa04313d78c396c6ec70cbcd88ef661bccd9a73fe4b02cd9d5ed",
+      "bytes": 54970,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/IncursionItem.json": {
@@ -656,8 +661,8 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/ItemisedCorpse.json": {
-      "sha256": "817436986ce8653a5e70576e0582eb916a11e4feb56d890c73b1c5f04bc71bcd",
-      "bytes": 180639,
+      "sha256": "96eb1fb68601b3a999f61e2cc0a91a2f50dabee0a4e3b8b2263f2c595de8cfe7",
+      "bytes": 180641,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/ItemisedSanctum.json": {
@@ -666,8 +671,8 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Jewel.json": {
-      "sha256": "1151520e2c5073fc9702d79c0d0d97fe27d286a701ec2df233c31dc2e9207ea8",
-      "bytes": 11483,
+      "sha256": "a76e414ef4d81421a32d308635bb962bd7a62810f08407a5bd2410a0a975e9cf",
+      "bytes": 12866,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/LabyrinthItem.json": {
@@ -706,8 +711,8 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/MapFragment.json": {
-      "sha256": "82584cde7856e37ecb73afcc9f7b39d56443406db639eac1736aa3208c8e2ab0",
-      "bytes": 476040,
+      "sha256": "9608d9ed3f914b9ffa5afbd4d25709de2650416c89309f54c383d0838086895e",
+      "bytes": 475670,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/MapKey.json": {
@@ -756,8 +761,8 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/PantheonSoul.json": {
-      "sha256": "920b9ed5a95197560c1291c5484f337263c8ed62b2d465ad639ea8e3a5f552a1",
-      "bytes": 28536,
+      "sha256": "fa47b576e38a2d40e977917de30758562c82279094811b806fbccff46ff829bf",
+      "bytes": 28533,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/QuestItem.json": {
@@ -766,8 +771,8 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Quiver.json": {
-      "sha256": "dd33e7601c0bccc2ac349cf40fc1b6b11d1d13acee1070fabed5a8be3ff31bd8",
-      "bytes": 41317,
+      "sha256": "3d878de5a6cd54539f5ec99e26a7231f809d7290814b1d4fccee417580b24205",
+      "bytes": 41319,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Relic.json": {
@@ -811,8 +816,8 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/StackableCurrency.json": {
-      "sha256": "45d910a3ea712827cb57d0e7bc2d800a5b761ca825ac7308371de2f452bc8586",
-      "bytes": 1627055,
+      "sha256": "e66eaa96200e7d169eb6bf1498f5d2dac7d02393ef5734ab14a2129eb42886b9",
+      "bytes": 1670400,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Staff.json": {
@@ -821,8 +826,8 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Support Skill Gem.json": {
-      "sha256": "457ce3cdbba2bb05a8710b36fdbbebf6b43f6a42e46ec576c94938e02d2adfbe",
-      "bytes": 449743,
+      "sha256": "1df3f7263c50fdba1aac01fa58dbf83f5afc9c55892d785183cd75d2cd38ff31",
+      "bytes": 466731,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Thrusting One Hand Sword.json": {
@@ -866,8 +871,13 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/VaultKey.json": {
-      "sha256": "9821f6e1678e376b7c2277e97a3b5426035ede82203e8f510bff68a9ef29e378",
+      "sha256": "9f1f62983bab4c6093e4f4410253db9a156402c876a2bb362c6a9dc10ba28721",
       "bytes": 20890,
+      "schema": "json-schema/base_items.schema.json"
+    },
+    "base_items/Viscera.json": {
+      "sha256": "ed8aa87dbd187b077c6711a4d018e2f330d61fa34cdb1e02b0e5521f82a5711f",
+      "bytes": 232358,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Wand.json": {
@@ -881,28 +891,28 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "item_classes.json": {
-      "sha256": "b9ac0bf6a92d67b03a94448ddd399758033f4446dffa84db3f50f1991e11540c",
-      "bytes": 17660,
+      "sha256": "8fc8d5bc0ff17dac0a0a6cf47f97b6119d5791d797f239db24747918dd915235",
+      "bytes": 17904,
       "schema": "json-schema/item_classes.schema.json"
     },
     "mods.json": {
-      "sha256": "3ef5cb632f21d391a0644c8b7d0a48394a211fa3e20bfdc99cb625d8080edfcc",
-      "bytes": 35329233,
+      "sha256": "7e9f57aa95a6eb8f0b8c9adb947869ae5b7f39999727e8f076be3f5d691606d9",
+      "bytes": 36125420,
       "schema": "json-schema/mods.schema.json"
     },
     "stats.json": {
-      "sha256": "88759fae3f08e59440d1534c560ac555e28f984cd5b9dd96c5507e91e7143275",
-      "bytes": 4372584,
+      "sha256": "d4517ab1372173c46bd7f2b955457b1cf5ed69b84d88db0e5a665d736b627aaa",
+      "bytes": 4424485,
       "schema": "json-schema/stats.schema.json"
     },
     "tag_details.json": {
-      "sha256": "60bff1ca826e5ef26cb483d935709aba4a31ab9d6be961e0970bda8cbd76d722",
-      "bytes": 63290,
+      "sha256": "02c5871118a3213c74ff88719ca9dc6f77fe13fdc54e2d5b15f77f01273f1657",
+      "bytes": 66727,
       "schema": "json-schema/tag_details.schema.json"
     },
     "tags.json": {
-      "sha256": "9f1be0a6910a8b15016c260722bb9cdda1da5aa109897434c62f2f068dbc1c62",
-      "bytes": 32004,
+      "sha256": "aefcb3b96ab371a0b556f25d83433d65a00aeba0754f34dc837263574b66f857",
+      "bytes": 33368,
       "schema": "json-schema/tags.schema.json"
     }
   }

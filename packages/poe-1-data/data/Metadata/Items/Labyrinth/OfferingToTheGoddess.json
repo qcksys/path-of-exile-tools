@@ -7,7 +7,7 @@
     "description_text": "ItemDescriptionLabyrinthMapItem"
   },
   "Mods": {
-    "stat_description_list": "Metadata/StatDescriptions/stat_descriptions.txt",
+    "stat_description_list": "Metadata/StatDescriptions/stat_descriptions.csd",
     "inventory_type": "Map"
   }
 }

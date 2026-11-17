@@ -168,8 +168,9 @@ it("charges influence and Horror misses while reusing one base", () => {
     expect(result).toMatchObject({
         actions: 11,
         purchases: 1,
-        cost: 4031,
+        cost: 4043,
         missingPrices: [],
+        // 3.30's armour suffix lock costs 4 Divine and 4 Blessed Orbs (3.29: 2 Divine).
         spending: {
             [`purchase:${sourceId}:buy-scour`]: 1,
             [transmute]: 1,
@@ -177,7 +178,8 @@ it("charges influence and Horror misses while reusing one base", () => {
             [hunter]: 1,
             [primal]: 2000,
             [horror]: 3,
-            [divine]: 2,
+            [divine]: 4,
+            "Metadata/Items/Currency/CurrencyRerollImplicit": 4,
             [scour]: 2,
         },
     });

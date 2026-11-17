@@ -75,7 +75,7 @@ function fixture(presetId: (typeof sources)[number][0], nodeId: string, alternat
             rolledModText(catalog, mod, purchase.item)!.split("\n"),
         ),
         explicitMods: cleanup ? ["Unresolved disposable affix"] : [],
-        craftedMods: cleanup?.crafted ? ["Prefixes Cannot Be Changed"] : [],
+        craftedMods: cleanup?.crafted ? ["Prefix Modifiers cannot be changed"] : [],
         enchantMods: cleanup?.enchanted
             ? [
                   "Quality does not increase Defences",

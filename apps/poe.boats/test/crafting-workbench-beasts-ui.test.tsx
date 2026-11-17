@@ -89,7 +89,16 @@ describe("crafting workbench", () => {
         for (const id of ["FireResist1", "ColdResist1", "LightningResist1"])
             item = engine.addStartingMod(item, id, seededRandom(1));
         const recipe = catalog.crafting.beasts.find((entry) => entry.metamods.length)!;
-        const lock = recipe.metamods.find((id) => engine.mod(id).generation_type === "prefix")!;
+        // 3.30 has a lock modifier per group of item classes; use the one offered on this item.
+        const lock = recipe.metamods.find(
+            (id) =>
+                engine.mod(id).generation_type === "prefix" &&
+                catalog.crafting.bench.some(
+                    (entry) =>
+                        entry.mod === id &&
+                        entry.itemClasses.includes(engine.base(item).item_class),
+                ),
+        )!;
         const project = craftingProjectSchema.parse({
             format: 1,
             game: catalog.game,
@@ -132,7 +141,7 @@ describe("crafting workbench", () => {
         fireEvent.click(button("Apply craft"));
         expect(screen.queryByRole("alert")).toBeNull();
         const card = screen.getByRole("region", { name: "Current item" });
-        expect(card.textContent).toContain("Suffixes Cannot Be Changed");
+        expect(card.textContent).toContain("Suffix Modifiers cannot be changed");
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.item.mods.slice(0, 3)).toEqual(item.mods);
@@ -143,32 +152,40 @@ describe("crafting workbench", () => {
             `${recipe.description}1`,
         );
         fireEvent.click(button("Undo"));
-        expect(card.textContent).not.toContain("Suffixes Cannot Be Changed");
+        expect(card.textContent).not.toContain("Suffix Modifiers cannot be changed");
         fireEvent.click(button("Redo"));
-        expect(card.textContent).toContain("Suffixes Cannot Be Changed");
+        expect(card.textContent).toContain("Suffix Modifiers cannot be changed");
         changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        expect(card.textContent).toContain("Suffixes Cannot Be Changed");
+        expect(card.textContent).toContain("Suffix Modifiers cannot be changed");
         fireEvent.click(button("Apply craft"));
         expect(screen.getByRole("alert").textContent).toContain(
             "Remove existing crafted modifiers",
         );
-        expect(card.textContent).toContain("Suffixes Cannot Be Changed");
+        expect(card.textContent).toContain("Suffix Modifiers cannot be changed");
     });
 
     it.each([
-        { base: baseId, influences: [0], recipe: "EinharMasterCraft42" },
+        {
+            base: baseId,
+            influences: [0],
+            recipe: "EinharMasterCraft42",
+            affixes: "0/3 prefixes · 1/3 suffixes",
+        },
         {
             base: "Metadata/Items/Maps/MapAtlasBeach",
             influences: [],
             recipe: "EinharMasterCraft49",
+            // The seeded 3.30 map modifier is a prefix.
+            affixes: "1/3 prefixes · 0/3 suffixes",
         },
     ])("selects $recipe and retains its result through history and project saves", async ({
         base,
         influences,
         recipe,
+        affixes,
     }) => {
         const item = { ...engine.createItem(base), rarity: "rare" as const, influences };
         const project = craftingProjectSchema.parse({
@@ -212,7 +229,7 @@ describe("crafting workbench", () => {
         expect(screen.queryByRole("alert")).toBeNull();
         const card = screen.getByRole("region", { name: "Current item" });
         const result = card.textContent;
-        expect(result).toContain("0/3 prefixes · 1/3 suffixes");
+        expect(result).toContain(affixes);
         fireEvent.click(button("Save project"));
         const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
         expect(saved.item.mods).toHaveLength(1);
@@ -341,13 +358,13 @@ describe("crafting workbench", () => {
         });
         const pool = screen.getByRole("region", { name: "Modifier pool" });
         expect(within(pool).getAllByRole("button", { name: "Require" })).toHaveLength(8);
-        const row = within(pool).getByText("Grants Level 30 Aspect of the Spider Skill")
-            .parentElement!.parentElement!;
+        const row = within(pool).getByText("Grants Level 30 Aspect of the Spider").parentElement!
+            .parentElement!;
         fireEvent.click(within(row).getByRole("button", { name: "Tier or better" }));
         fireEvent.click(button("Apply craft"));
         expect(screen.queryByRole("alert")).toBeNull();
         const card = screen.getByRole("region", { name: "Current item" });
-        expect(card.textContent).toContain("Grants Level 30 Aspect of the Spider Skill");
+        expect(card.textContent).toContain("Grants Level 30 Aspect of the Spider");
         expect(card.textContent).toContain("0/1 prefixes · 1/1 suffixes");
         fireEvent.click(screen.getByText("Save, load, and export"));
         fireEvent.click(button("Save project"));
@@ -370,7 +387,7 @@ describe("crafting workbench", () => {
         expect(card.textContent).not.toContain("Aspect of the Spider");
         expect(screen.queryByText("Emulator spending")).toBeNull();
         fireEvent.click(button("Redo"));
-        expect(card.textContent).toContain("Grants Level 30 Aspect of the Spider Skill");
+        expect(card.textContent).toContain("Grants Level 30 Aspect of the Spider");
         expect(screen.getByText("Emulator spending")).toBeDefined();
     });
 

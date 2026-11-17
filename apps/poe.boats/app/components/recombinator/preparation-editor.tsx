@@ -10,6 +10,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "~/components/ui/select";
+import { isPoe1From330 } from "~/lib/crafting-patch";
 import { nativeWeight } from "~/lib/recombinator";
 import { catalogModAffix } from "~/lib/recombinator-catalog";
 import { availablePreparationRecipes } from "~/lib/recombinator-plan";
@@ -146,7 +147,9 @@ export function PreparationEditor({
                             .
                             {excluded.length < outputBases.length
                                 ? " It can survive on the other base."
-                                : " It contributes to the mod count but cannot be selected on either base."}
+                                : isPoe1From330({ game: "poe1", patch: catalog.patch })
+                                  ? " It cannot be selected on either base, and from 3.30 it does not count toward the mod count."
+                                  : " It contributes to the mod count but cannot be selected on either base."}
                         </p>
                     ) : null}
                 </>

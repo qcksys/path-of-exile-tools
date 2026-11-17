@@ -72,8 +72,9 @@ export function rfHelmetPreparation(builder: PresetBuilder, prepared: CraftingIt
         },
     ];
     roll.fallback = presetRecover(roll.id);
-    const lock = engine.catalog.crafting.bench.find(
-        (entry) => entry.mod === "DexMasterItemGenerationCannotChangeSuffixes",
+    const lock = engine.benchRecipeFor(
+        "DexMasterItemGenerationCannotChangeSuffixes",
+        engine.base(prepared).item_class,
     )!;
     const protect = craft("suffixes-make-lock", "Suffixes cannot be changed", [roll.id], {
         kind: "bench",

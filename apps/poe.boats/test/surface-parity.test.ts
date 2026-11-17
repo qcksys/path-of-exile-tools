@@ -53,6 +53,7 @@ import type { CraftingItemEdit } from "~/schemas/crafting-workbench";
 import { STORAGE_VERSION, type StorageData } from "~/schemas/storage";
 import * as craftingSources from "~/services/crafting-sources.server";
 import { ServerTiming } from "~/services/server-timing.server";
+import { engine329, ruleset329 } from "./crafting-329-fixtures";
 import {
     commodityQuote,
     convertedCommodityQuote,
@@ -73,6 +74,7 @@ import { catalog as craftingCatalog, engine as fixtureEngine } from "./crafting-
 import { firstItem, graphFixture, quote } from "./crafting-graph-fixtures";
 import {
     historyIndex,
+    retainedEngine,
     retainedRevision,
     retainedTransmuteGraph,
 } from "./crafting-history-fixtures";
@@ -114,6 +116,8 @@ const context: OperationContext = {
     caller: null,
 };
 const runtime = async () => context;
+// Graphs for a retained revision are built from the catalog that revision published.
+const publishedEngine = retainedEngine;
 const workspaceFixture = () =>
     parseCraftingWorkspace({
         format: 1,
@@ -197,7 +201,10 @@ function cohortPricingFixture(policy: (typeof cohortPolicies)[number]) {
         return { ...sourceMarketFixture(true, true, rulesetReference(ruleset)), window: undefined };
     }
     const window = policy === "adaptive-v1" ? policy : undefined;
-    const family = policy === "display-equivalent-v1" ? donorFamilyMarketFixture() : undefined;
+    const family =
+        policy === "display-equivalent-v1"
+            ? donorFamilyMarketFixture(engine329, ruleset329)
+            : undefined;
     const candidate = structuredClone(
         family?.candidate ?? (window ? adaptiveMarketCandidate() : marketCandidate),
     );
@@ -340,7 +347,7 @@ describe("transport parity", () => {
             (entry) => entry.game === "poe1" && entry.revision === "r11",
         )!;
         const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId: preset.id };
-        const expected = projectFromPreset(fixtureEngine, ruleset, preset.id);
+        const expected = projectFromPreset(await publishedEngine(ruleset), ruleset, preset.id);
         const response = await api.request(
             "https://poe.boats/api/v1/crafting/graph/from-preset",
             {
@@ -385,7 +392,7 @@ describe("transport parity", () => {
             ruleset: rulesetReference(ruleset),
             presetId,
         };
-        const expected = projectFromPreset(fixtureEngine, ruleset, input.presetId);
+        const expected = projectFromPreset(await publishedEngine(ruleset), ruleset, input.presetId);
         const production = expected.nodes.flatMap((node) =>
             node.kind === "acquire"
                 ? node.alternatives.filter((alternative) => alternative.kind === "production")
@@ -485,7 +492,7 @@ describe("transport parity", () => {
         "energy-shield-chest",
     ] as const)("preserves r16 %s extended base sources over HTTP and MCP", async (presetId) => {
         const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === "r17",
+            (entry) => entry.game === "poe1" && entry.revision === "r18",
         )!;
         const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId };
         const expected = projectFromPreset(fixtureEngine, ruleset, presetId);

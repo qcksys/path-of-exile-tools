@@ -784,5 +784,17 @@
     "category": "Cursed Ducat",
     "category_id": "DeepwaterCursedDucat",
     "influence_tags": null
+  },
+  "Viscera": {
+    "name": "Viscera",
+    "category": "Viscera",
+    "category_id": "Viscera",
+    "influence_tags": null
+  },
+  "VisualBowArrow": {
+    "name": "",
+    "category": null,
+    "category_id": null,
+    "influence_tags": null
   }
 }

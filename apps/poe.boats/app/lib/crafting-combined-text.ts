@@ -3,7 +3,13 @@ import {
     translationStatId,
 } from "../../../../packages/poe-game-data/src/translation-formats";
 import type { CraftingCatalog, CraftingItem } from "../schemas/crafting";
-import { cleanModText, renderStatText, rolledModText, scaledModValues } from "./crafting-text";
+import {
+    cleanModText,
+    grantedEffectLines,
+    renderStatText,
+    rolledModText,
+    scaledModValues,
+} from "./crafting-text";
 
 type Line = { key: string; text: string; fractured: boolean };
 
@@ -52,6 +58,8 @@ export function combinedExplicitText(catalog: CraftingCatalog, item: CraftingIte
             });
             continue;
         }
+        for (const [line, text] of grantedEffectLines(catalog, rolled.id).entries())
+            separate.push({ key: `granted:${index}:${line}`, text, fractured: rolled.fractured });
         const values = scaledModValues(catalog, rolled, item);
         const stats = new Map(ids.map((id, index) => [id, values[index]!]));
         for (const reference of new Set(references)) {

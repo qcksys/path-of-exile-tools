@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { CraftingEngine, eldritchTier, seededRandom } from "../app/lib/crafting-engine";
 import type { CraftingItem, CraftingMethod } from "../app/schemas/crafting";
-import { baseId, catalog, currency, engine } from "./crafting-fixtures";
+import { baseId, catalog, currency, engine, lockRecipe } from "./crafting-fixtures";
 
 const blank = (rarity: CraftingItem["rarity"] = "normal") => ({
     ...engine.createItem(baseId),
@@ -225,11 +225,7 @@ describe("build-backed crafting engine", () => {
         const prefix = engine
             .pool(blank("rare"))
             .find((entry) => entry.mod.generation_type === "prefix")!;
-        const lock = Object.entries(catalog.mods).find(
-            ([, mod]) =>
-                mod.domain === "crafted" &&
-                mod.stats.some((stat) => stat.id === "item_generation_cannot_change_prefixes"),
-        )![0];
+        const lock = lockRecipe("prefixes", blank("rare")).mod!;
         const item = { ...blank("rare"), mods: [roll(prefix.id)] };
         const locked = engine.apply(item, bench(lock), seededRandom(1)).item;
         const scoured = engine.apply(locked, currency("convert_to_normal"), seededRandom(2)).item;
@@ -330,7 +326,7 @@ describe("build-backed crafting engine", () => {
         expect(
             result.item.mods.some((entry) => engine.mod(entry.id).implicit_tags.includes("life")),
         ).toBe(true);
-        expect(result.cost[0]?.amount).toBe(recipe.lifeforce);
+        expect(result.cost).toEqual(recipe.cost);
         expect(result.cost[0]?.name).toBe("Wild Crystallised Lifeforce");
     });
 

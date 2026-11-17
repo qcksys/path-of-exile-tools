@@ -7,7 +7,7 @@
     "description_text": "ItemDescriptionAtlasRelic"
   },
   "Mods": {
-    "stat_description_list": "Metadata/StatDescriptions/atlas_relic_stat_descriptions.txt",
+    "stat_description_list": "Metadata/StatDescriptions/atlas_relic_stat_descriptions.csd",
     "inventory_type": "MapRelics",
     "enable_rarity": [
       "magic",

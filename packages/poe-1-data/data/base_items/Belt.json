@@ -648,7 +648,7 @@
   },
   "Metadata/Items/Belts/BeltAbyss": {
     "domain": "item",
-    "drop_level": 1,
+    "drop_level": 75,
     "implicits": [
       "AbyssJewelSocketImplicit"
     ],
@@ -702,7 +702,7 @@
   },
   "Metadata/Items/Belts/BeltFaridun": {
     "domain": "item",
-    "drop_level": 1,
+    "drop_level": 75,
     "implicits": [
       "BeltEnchantImplicit"
     ],

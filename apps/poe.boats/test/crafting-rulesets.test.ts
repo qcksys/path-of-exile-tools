@@ -36,10 +36,18 @@ afterEach(async () => {
     for (const directory of directories.splice(0))
         await rm(directory, { recursive: true, force: true });
 });
+// PoE 1 has an era per league; the current revision is the latest one for the current catalog.
 const current = historyIndex.revisions.find(
     (entry) =>
         entry.game === "poe1" &&
-        entry.revision === historyIndex.latest.find((latest) => latest.game === "poe1")!.revision,
+        entry.manifestSha256 === catalog.manifestSha256 &&
+        entry.craftingSha256 === catalog.craftingSha256 &&
+        historyIndex.latest.some(
+            (latest) =>
+                latest.game === entry.game &&
+                latest.era === entry.era &&
+                latest.revision === entry.revision,
+        ),
 )!;
 const metadata = (entry: CraftingRuleset) => ({
     era: entry.era,

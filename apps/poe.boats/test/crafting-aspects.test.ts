@@ -35,9 +35,11 @@ describe("Aspect beastcrafting", () => {
         expect(rolledModText(catalog, result.item.mods[0]!, result.item)).toBe(
             engine.mod(recipe.aspectMod!).text,
         );
-        expect(result.item.mods[0]!.values[0]).toBe(
-            recipe.description.startsWith("Level 30") ? 30 : 20,
+        // 3.30 takes the level from the granted skill; the display stat is 0.
+        expect(engine.mod(recipe.aspectMod!).text).toMatch(
+            new RegExp(`^Grants Level ${recipe.description.startsWith("Level 30") ? 30 : 20} `),
         );
+        expect(result.item.mods[0]!.values).toEqual([0]);
         expect(result.cost).toEqual([
             {
                 id: recipe.id,
@@ -128,7 +130,7 @@ describe("Aspect beastcrafting", () => {
         const result = engine.apply({ ...item, rarity: "rare" }, spider, seededRandom(1)).item;
         expect(engine.counts(result).suffixes).toBe(1);
         expect(rolledModText(catalog, result.mods[0]!, result)).toBe(
-            "Grants Level 30 Aspect of the Spider Skill",
+            "Grants Level 30 Aspect of the Spider",
         );
         expect(engine.recipePool(item, "aspect")).toHaveLength(8);
         expect(

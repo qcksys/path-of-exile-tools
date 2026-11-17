@@ -39,14 +39,18 @@ const engine = new CraftingEngine(catalog);
 const history = validateRulesetIndex(
     JSON.parse(await readFile("crafting-history/index.json", "utf8")),
 );
-const current = history.revisions.find((entry) =>
-    history.latest.some(
-        (latest) =>
-            latest.game === catalog.game &&
-            entry.game === latest.game &&
-            entry.era === latest.era &&
-            entry.revision === latest.revision,
-    ),
+// Each era has a latest revision; the current one is published with this catalog.
+const current = history.revisions.find(
+    (entry) =>
+        entry.game === catalog.game &&
+        entry.manifestSha256 === catalog.manifestSha256 &&
+        entry.craftingSha256 === catalog.craftingSha256 &&
+        history.latest.some(
+            (latest) =>
+                entry.game === latest.game &&
+                entry.era === latest.era &&
+                entry.revision === latest.revision,
+        ),
 );
 if (!current) throw new Error("The crafting presets require a current ruleset.");
 const presetCohorts = craftingPresetCohorts(engine, current);

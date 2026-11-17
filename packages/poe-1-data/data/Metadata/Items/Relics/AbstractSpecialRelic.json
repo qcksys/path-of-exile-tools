@@ -11,7 +11,7 @@
     "propagates_account_bound_when_vendored": "false"
   },
   "Mods": {
-    "stat_description_list": "Metadata/StatDescriptions/sanctum_relic_stat_descriptions.txt",
+    "stat_description_list": "Metadata/StatDescriptions/sanctum_relic_stat_descriptions.csd",
     "enable_rarity": [
       "magic"
     ],

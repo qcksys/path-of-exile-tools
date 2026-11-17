@@ -9,6 +9,7 @@ import {
     craftingMarketSnapshots,
     refreshCraftingMarketPrices,
 } from "../app/operations/crafting-market.server";
+import { engine329, ruleset329 } from "./crafting-329-fixtures";
 import { engine } from "./crafting-fixtures";
 import { firstItem, firstMod, graphFixture, secondMod } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
@@ -147,7 +148,8 @@ describe("crafting market price bindings", () => {
 
     it("binds the saved cohort's observations at a historical snapshot hour", async () => {
         const db = createDbConnection("mysql://test:test@localhost/poe_test");
-        const { graph, candidate: original } = donorFamilyMarketFixture();
+        const engine = engine329;
+        const { graph, candidate: original } = donorFamilyMarketFixture(engine329, ruleset329);
         original.assumption = "display-equivalent-v1";
         const current = structuredClone(original);
         current.definition.revision = "current";
@@ -255,7 +257,8 @@ describe("crafting market price bindings", () => {
         });
     });
     it("requires and retains the representative assumption through refresh and historical snapshots", async () => {
-        const { graph, candidate } = donorFamilyMarketFixture();
+        const engine = engine329;
+        const { graph, candidate } = donorFamilyMarketFixture(engine329, ruleset329);
         expect(() => bindCohortPurchasePrice(graph, engine, "base", "buy", candidate)).toThrow(
             "explicit modifier",
         );
@@ -288,7 +291,8 @@ describe("crafting market price bindings", () => {
         }
     });
     it("does not let a representative assumption bypass eligibility or unrelated requirements", () => {
-        const { graph, candidate } = donorFamilyMarketFixture();
+        const engine = engine329;
+        const { graph, candidate } = donorFamilyMarketFixture(engine329, ruleset329);
         candidate.assumption = "display-equivalent-v1";
         for (const [replacement, message] of [
             ["missing-modifier", "absent from this crafting revision"],

@@ -21,7 +21,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r17",
+    (entry) => entry.game === "poe1" && entry.revision === "r18",
 )!;
 const manifest = marketCohortManifestSchema.parse(
     JSON.parse(readFileSync("../../packages/poe-market/data/cohorts-poe1.json", "utf8")),
@@ -97,7 +97,7 @@ function fixture(source: Source, alternativeId: string) {
             rolledModText(catalog, mod, purchase.item)!.split("\n"),
         ),
         explicitMods: cleanup ? ["Unresolved disposable affix"] : [],
-        craftedMods: cleanup?.crafted ? ["Prefixes Cannot Be Changed"] : [],
+        craftedMods: cleanup?.crafted ? ["Prefix Modifiers cannot be changed"] : [],
         enchantMods: cleanup?.enchanted ? ["Quality does not increase Defences"] : [],
     };
     const candidate = structuredClone(marketCandidate);
@@ -206,7 +206,7 @@ it.each(cases)("refuses incompatible captured state and mismatched prices for $l
         { ilvl: raw.ilvl - 1 },
         { ilvl: raw.ilvl + 1 },
         { identified: false },
-        { craftedMods: raw.craftedMods.length ? [] : ["Prefixes Cannot Be Changed"] },
+        { craftedMods: raw.craftedMods.length ? [] : ["Prefix Modifiers cannot be changed"] },
         { enchantMods: raw.enchantMods.length ? [] : ["Unremoved enchantment"] },
     ]) {
         const result = classifier.classify(

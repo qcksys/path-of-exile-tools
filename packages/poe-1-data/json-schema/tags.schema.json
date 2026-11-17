@@ -5,6 +5,6 @@
   "items": {
     "type": "string"
   },
-  "$id": "urn:qcksys:poe1:3.29.3-build.3:tags.schema.json",
+  "$id": "urn:qcksys:poe1:3.30.0-build.2.2:tags.schema.json",
   "$comment": "Generated from Zod. Cross-field refinements (such as min <= max) and dataset reference checks remain in the Zod validators."
 }

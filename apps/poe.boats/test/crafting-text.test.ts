@@ -60,6 +60,7 @@ describe.each(["poe1", "poe2"])("%s extracted stat formatting", (game) => {
             const recipe = catalog.crafting.bench.find(
                 (entry) =>
                     entry.mod &&
+                    entry.itemClasses.includes(engine.base(item).item_class) &&
                     engine
                         .mod(entry.mod)
                         .stats.some((stat) => stat.id === "item_generation_cannot_change_prefixes"),
@@ -70,7 +71,7 @@ describe.each(["poe1", "poe2"])("%s extracted stat formatting", (game) => {
                 seededRandom(1),
             ).item;
             expect(rolledModText(catalog, crafted.mods[0]!, crafted)).toBe(
-                "Prefixes Cannot Be Changed",
+                "Prefix Modifiers cannot be changed",
             );
         });
     }

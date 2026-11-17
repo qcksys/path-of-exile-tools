@@ -15,7 +15,10 @@ import {
     craftingProjectSchema,
     craftingTargetSchema,
 } from "../app/schemas/crafting";
-import { baseId, catalog, currency, engine } from "./crafting-fixtures";
+import { catalog329 as catalog, engine329 as engine } from "./crafting-329-fixtures";
+import { baseId, currency } from "./crafting-fixtures";
+
+// The 3.29 rules are the baseline; the from-3.30.0 cases build a 3.30 engine from the same data.
 
 const empty = () => engine.createItem(baseId);
 const life = "IncreasedLife1";

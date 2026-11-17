@@ -18,12 +18,13 @@ import { createCraftingItemQuery } from "../app/lib/crafting-item-query";
 import { projectFromPreset } from "../app/lib/crafting-presets";
 import { recombinationOutcomes } from "../app/lib/crafting-recombination";
 import { craftingGraphResultSchema } from "../app/schemas/crafting-graph-result";
+import { engine329, ruleset329 } from "./crafting-329-fixtures";
 import { engine } from "./crafting-fixtures";
 import { graphFixture } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r17",
+    (entry) => entry.game === "poe1" && entry.revision === "r18",
 )!;
 describe("crafting graph presentation", () => {
     it("shows one-attempt recombination odds even when retries finish every ES chest", () => {
@@ -227,8 +228,10 @@ describe("crafting graph presentation", () => {
             "second-pair",
         ]);
     });
+    // NNN improves recombination under 3.29 rules only; 3.30 counts modifiers legal on the base.
     it("uses NNN prefixes to improve pair preparation without retaining them on the ES base", () => {
-        const graph = projectFromPreset(engine, ruleset, "energy-shield-chest");
+        const engine = engine329;
+        const graph = projectFromPreset(engine, ruleset329, "energy-shield-chest");
         const donors = graph.nodes.flatMap((node) =>
             node.kind === "acquire"
                 ? node.alternatives.flatMap((option) =>

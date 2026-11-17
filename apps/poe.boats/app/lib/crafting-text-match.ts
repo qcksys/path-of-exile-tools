@@ -11,7 +11,7 @@ import {
     supportsJewelCorruption,
 } from "./crafting-corruption";
 import { extractedGrantedPassives, grantedPassiveStat } from "./crafting-passives";
-import { cleanModText, modifierEffect, rolledModText } from "./crafting-text";
+import { cleanModText, grantedEffectLines, modifierEffect, rolledModText } from "./crafting-text";
 
 type Description = CraftingCatalog["crafting"]["statDescriptions"][number];
 type Rule = Description["rules"][number];
@@ -271,8 +271,22 @@ function matchValues(
 ): { mod: RolledMod; ambiguous: boolean } | undefined {
     const mod = catalog.mods[id]!;
     const references = catalog.crafting.modDescriptions[id];
+    // Granted skill and support lines are fixed text after the described lines.
+    const granted = normalize(grantedEffectLines(catalog, id).join("\n"));
+    let expected = normalize(text);
+    if (granted) {
+        if (expected !== granted && !expected.endsWith(` ${granted}`)) return;
+        expected = expected.slice(0, expected.length - granted.length).trim();
+        if (!references?.length) {
+            if (expected || factor !== 100) return;
+            const values = mod.stats.map((stat) => stat.min);
+            return {
+                mod: { id, values, crafted: mod.domain === "crafted", fractured: false },
+                ambiguous: mod.stats.some((stat) => stat.min !== stat.max),
+            };
+        }
+    }
     if (!references?.length || !mod.stats.length) return;
-    const expected = normalize(text);
     const effect = unscaled ? 0 : modifierEffect(catalog, item, id);
     const statIds = mod.stats.map((stat) => translationStatId(stat.id));
     const constraints: Constraint[][] = mod.stats.map(() => []);
@@ -321,7 +335,7 @@ function matchValues(
                 rolled,
                 unscaled ? undefined : { ...item, mods: [...item.mods, rolled] },
             );
-            if (rendered == null || normalize(rendered) !== resolved) return;
+            if (rendered == null || normalize(rendered) !== `${resolved} ${granted}`.trim()) return;
             return { mod: rolled, ambiguous: values.some((entry) => entry!.ambiguous) };
         }
         const description = catalog.crafting.statDescriptions[references![index]!]!;

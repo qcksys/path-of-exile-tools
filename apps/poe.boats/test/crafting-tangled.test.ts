@@ -129,9 +129,10 @@ describe("Tangled Fossil revealed effects", () => {
     });
 
     it("shares the selected pair with Glyphic guarantees, exact odds, saved processes and sampled trials", () => {
+        // 3.30 Essence of Trickery is corrupted but has no Body Armour modifier.
         const bodyMods = catalog.crafting.essences
             .filter((entry) => entry.corrupted)
-            .map((entry) => entry.mods["Body Armour"]!);
+            .flatMap((entry) => entry.mods["Body Armour"] ?? []);
         const critical = bodyMods.find((id) => engine.mod(id).implicit_tags.includes("critical"))!;
         const ids = [
             ...bodyMods,

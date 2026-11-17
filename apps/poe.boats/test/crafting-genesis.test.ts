@@ -23,23 +23,24 @@ const method = (nodes: string[] = []): Extract<CraftingMethod, { kind: "genesis"
 const item = () => ({ ...engine.createItem(baseId), rarity: "rare" as const });
 
 describe("Genesis equipment modifier calculation", () => {
+    // 3.30 values: +200% (x3) and -50% (x0.5) per node, combined additively per tag.
     it("uses the current build's increases and reductions, combining matching tags and separating cached pools", () => {
         const base = item();
         const ordinary = engine.pool(base);
         const boosted = engine.genesisModifiers(base, ["EquipmentNode9"]);
         for (const entry of ordinary)
             expect(boosted.find((row) => row.id === entry.id)?.weight).toBe(
-                Math.round(entry.weight * (entry.mod.implicit_tags.includes("life") ? 4 : 1)),
+                Math.round(entry.weight * (entry.mod.implicit_tags.includes("life") ? 3 : 1)),
             );
         const reduced = engine.genesisModifiers(base, ["EquipmentNode9neg"]);
-        expect(reduced.find((row) => row.id === "IncreasedLife1")?.weight).toBe(400);
+        expect(reduced.find((row) => row.id === "IncreasedLife1")?.weight).toBe(500);
         const mixed = engine.genesisModifiers(base, ["EquipmentNode9", "EquipmentNode9neg"]);
-        expect(mixed.find((row) => row.id === "IncreasedLife1")?.weight).toBe(3400);
+        expect(mixed.find((row) => row.id === "IncreasedLife1")?.weight).toBe(2500);
         const hybrid = engine.genesisModifiers(base, ["EquipmentNode5", "EquipmentNode13"]);
-        expect(hybrid.find((row) => row.id === "FireResist1")?.weight).toBe(7000);
+        expect(hybrid.find((row) => row.id === "FireResist1")?.weight).toBe(5000);
         const blocked = engine.genesisModifiers(base, ["EquipmentNode5neg", "EquipmentNode13neg"]);
         expect(blocked.some((row) => row.id === "FireResist1")).toBe(false);
-        expect(blocked.find((row) => row.id === "ColdResist1")?.weight).toBe(400);
+        expect(blocked.find((row) => row.id === "ColdResist1")?.weight).toBe(500);
         expect(engine.genesisModifiers(base, ["EquipmentNode9"])).toEqual(boosted);
         expect(engine.pool(base)).toEqual(ordinary);
     });
@@ -52,7 +53,8 @@ describe("Genesis equipment modifier calculation", () => {
             const tiers = ordinary
                 .filter((entry) => modifierFamily(entry.mod) === family)
                 .sort((a, b) => a.mod.required_level - b.mod.required_level);
-            const cutoff = Math.floor((tiers.length * 60) / 160);
+            // Three +10 Modifier Tier Rating nodes in 3.30: a rating of 30 of 100 + 30.
+            const cutoff = Math.floor((tiers.length * 30) / 130);
             const enhanced = engine.genesisModifiers(base, [
                 "EquipmentNode2",
                 "EquipmentNode3b",

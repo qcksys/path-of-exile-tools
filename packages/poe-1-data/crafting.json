@@ -1,18 +1,18 @@
 {
   "format": 1,
   "game": "poe1",
-  "patch": "3.29.3.3",
+  "patch": "3.30.0.2.2",
   "source": {
-    "basesSha256": "160581ed74394bd8b21885e217be021d684680c04eb13826c60eb7638f81a08c",
-    "modsSha256": "3ef5cb632f21d391a0644c8b7d0a48394a211fa3e20bfdc99cb625d8080edfcc",
-    "schemaSha256": "4b51063be32f2a66c1047bf455784d2e85411bed401ffdee380c8603399b9656",
+    "basesSha256": "5fdec2ba6f5124ca1abd7bd2bbe1acb6e1aec7e70a3740a03722f1157e140c05",
+    "modsSha256": "7e9f57aa95a6eb8f0b8c9adb947869ae5b7f39999727e8f076be3f5d691606d9",
+    "schemaSha256": "25e17f0463e56a4ed0dcc13a841aeb811012debb23daa9111053aa8157bd7b60",
     "tables": {
-      "Data/Essences.datc64": "3fabf5bcb98f7b15abe743e5e3206800ab11dfa761aa6fb5074bb265f61b394e",
-      "Data/CraftingBenchOptions.datc64": "c15eb4c29db1e061ca0e2891663d26124a256954aef7cebaa33135350357b62a",
+      "Data/Essences.datc64": "9fd31967b26f4c70e3e6b07a6847099aa38335123b84e0ae4fd24a75329df30f",
+      "Data/CraftingBenchOptions.datc64": "1ce14270c9d87c9879ed2d9a5a8aedb967656b38775740889c1b88d225f608a2",
       "Data/CraftingItemClassCategories.datc64": "2e36ddd886a34b9faaa7334d9e8132e2418f824024ebbeaeb078382dee880e83",
-      "Data/BaseItemTypes.datc64": "0109e38c7598368e95fa9b7dfe67728168c3a370570dfc79ec83040b550eb7da",
-      "Data/Mods.datc64": "163f2d3d9b8b3d5fc1045cf78b23d2ffe4d0ae303cc201b89e2bd4bc158400de",
-      "Data/ItemClasses.datc64": "b4cc75e5747229a8dc692475b5e01e887409d1a749b0b345ec8c9ad6df85cf6d"
+      "Data/BaseItemTypes.datc64": "e67c5a990f46fe329c404f95c1a08eff239fbaad7925f7b543c26f6c3deec774",
+      "Data/Mods.datc64": "f8140153d7333a6a5aa3ef407d467a0245d46eb4d620ddfc06e8198069976742",
+      "Data/ItemClasses.datc64": "aa63d34e43ed7dbf0fbad5272bc5a235a70bdd6246bd8234fe2c62ec542b0038"
     }
   },
   "recipes": [
@@ -33302,7 +33302,22 @@
       ]
     },
     {
-      "id": "bench:77",
+      "id": "Metadata/Items/Currency/CurrencyEssenceUber1:Belt",
+      "name": "Essence of Trickery",
+      "kind": "essence",
+      "mod": "PlayerIsDeliriousEssence1",
+      "itemClasses": [
+        "Belt"
+      ],
+      "cost": [
+        {
+          "name": "Essence of Trickery",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "bench:78",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "HelenaMasterIncreasedLife1",
@@ -33325,7 +33340,7 @@
       ]
     },
     {
-      "id": "bench:78",
+      "id": "bench:79",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "HelenaMasterFireResist1",
@@ -33348,7 +33363,7 @@
       ]
     },
     {
-      "id": "bench:79",
+      "id": "bench:80",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "HelenaMasterColdResist1_",
@@ -33371,7 +33386,7 @@
       ]
     },
     {
-      "id": "bench:80",
+      "id": "bench:81",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "HelenaMasterLightningResist1",
@@ -33394,7 +33409,7 @@
       ]
     },
     {
-      "id": "bench:81",
+      "id": "bench:82",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "HelenaMasterStrength1",
@@ -33432,7 +33447,7 @@
       ]
     },
     {
-      "id": "bench:82",
+      "id": "bench:83",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "HelenaMasterDexterity1",
@@ -33469,7 +33484,7 @@
       ]
     },
     {
-      "id": "bench:83",
+      "id": "bench:84",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "HelenaMasterIntelligence1",
@@ -33506,7 +33521,7 @@
       ]
     },
     {
-      "id": "bench:85",
+      "id": "bench:86",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterFireResist2",
@@ -33529,7 +33544,7 @@
       ]
     },
     {
-      "id": "bench:86",
+      "id": "bench:87",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterFireResist3_",
@@ -33550,7 +33565,7 @@
       ]
     },
     {
-      "id": "bench:87",
+      "id": "bench:88",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterColdResist2",
@@ -33573,7 +33588,7 @@
       ]
     },
     {
-      "id": "bench:88",
+      "id": "bench:89",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterColdResist3__",
@@ -33594,7 +33609,7 @@
       ]
     },
     {
-      "id": "bench:89",
+      "id": "bench:90",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLightningResist2",
@@ -33617,7 +33632,7 @@
       ]
     },
     {
-      "id": "bench:90",
+      "id": "bench:91",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLightningResist3_",
@@ -33638,7 +33653,7 @@
       ]
     },
     {
-      "id": "bench:91",
+      "id": "bench:92",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterFireAndColdResist1",
@@ -33661,7 +33676,7 @@
       ]
     },
     {
-      "id": "bench:92",
+      "id": "bench:93",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterFireAndColdResist2",
@@ -33684,7 +33699,7 @@
       ]
     },
     {
-      "id": "bench:93",
+      "id": "bench:94",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterFireAndColdResist3",
@@ -33705,7 +33720,7 @@
       ]
     },
     {
-      "id": "bench:94",
+      "id": "bench:95",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterColdAndLightningResist1_",
@@ -33728,7 +33743,7 @@
       ]
     },
     {
-      "id": "bench:95",
+      "id": "bench:96",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterColdAndLightningResist2",
@@ -33751,7 +33766,7 @@
       ]
     },
     {
-      "id": "bench:96",
+      "id": "bench:97",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterColdAndLightningResist3_",
@@ -33772,7 +33787,7 @@
       ]
     },
     {
-      "id": "bench:97",
+      "id": "bench:98",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterFireAndLightningResist1",
@@ -33795,7 +33810,7 @@
       ]
     },
     {
-      "id": "bench:98",
+      "id": "bench:99",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterFireAndLightningResist2",
@@ -33818,7 +33833,7 @@
       ]
     },
     {
-      "id": "bench:99",
+      "id": "bench:100",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterFireAndLightningResist3_",
@@ -33839,7 +33854,7 @@
       ]
     },
     {
-      "id": "bench:100",
+      "id": "bench:101",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAllResist1",
@@ -33855,7 +33870,7 @@
       ]
     },
     {
-      "id": "bench:101",
+      "id": "bench:102",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAllResist2",
@@ -33871,7 +33886,7 @@
       ]
     },
     {
-      "id": "bench:102",
+      "id": "bench:103",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAllResistMinionResist1_",
@@ -33887,7 +33902,7 @@
       ]
     },
     {
-      "id": "bench:103",
+      "id": "bench:104",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAllResistMinionResist2",
@@ -33903,7 +33918,7 @@
       ]
     },
     {
-      "id": "bench:104",
+      "id": "bench:105",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterStrength2",
@@ -33941,7 +33956,7 @@
       ]
     },
     {
-      "id": "bench:105",
+      "id": "bench:106",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterStrength3",
@@ -33979,7 +33994,7 @@
       ]
     },
     {
-      "id": "bench:106",
+      "id": "bench:107",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterDexterity2",
@@ -34016,7 +34031,7 @@
       ]
     },
     {
-      "id": "bench:107",
+      "id": "bench:108",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterDexterity3",
@@ -34053,7 +34068,7 @@
       ]
     },
     {
-      "id": "bench:108",
+      "id": "bench:109",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterIntelligence2__",
@@ -34090,7 +34105,7 @@
       ]
     },
     {
-      "id": "bench:109",
+      "id": "bench:110",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterIntelligence3",
@@ -34127,7 +34142,7 @@
       ]
     },
     {
-      "id": "bench:110",
+      "id": "bench:111",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAllAttributes1",
@@ -34158,13 +34173,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 3
         }
       ]
     },
     {
-      "id": "bench:111",
+      "id": "bench:112",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAllAttributes2",
@@ -34195,13 +34210,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 6
         }
       ]
     },
     {
-      "id": "bench:112",
+      "id": "bench:113",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterMovementVelocity1",
@@ -34216,7 +34231,7 @@
       ]
     },
     {
-      "id": "bench:113",
+      "id": "bench:114",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterMovementVelocity2",
@@ -34231,7 +34246,7 @@
       ]
     },
     {
-      "id": "bench:114",
+      "id": "bench:115",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterMovementVelocity3",
@@ -34246,7 +34261,7 @@
       ]
     },
     {
-      "id": "bench:115",
+      "id": "bench:116",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterIncreasedLife2",
@@ -34269,7 +34284,7 @@
       ]
     },
     {
-      "id": "bench:116",
+      "id": "bench:117",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterIncreasedLife3",
@@ -34292,7 +34307,7 @@
       ]
     },
     {
-      "id": "bench:117",
+      "id": "bench:118",
       "name": "Crafting bench rank 4",
       "kind": "bench",
       "mod": "EinharMasterIncreasedLife4",
@@ -34311,7 +34326,7 @@
       ]
     },
     {
-      "id": "bench:118",
+      "id": "bench:119",
       "name": "Crafting bench rank 5",
       "kind": "bench",
       "mod": "EinharMasterIncreasedLife5_",
@@ -34326,7 +34341,7 @@
       ]
     },
     {
-      "id": "bench:119",
+      "id": "bench:120",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLifeLeechFromAttacksPermyriadSuffix1",
@@ -34338,13 +34353,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 3
         }
       ]
     },
     {
-      "id": "bench:120",
+      "id": "bench:121",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLifeLeechFromAttacksPermyriadSuffix2",
@@ -34353,13 +34368,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 4
         }
       ]
     },
     {
-      "id": "bench:121",
+      "id": "bench:122",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalLifeLeechPermyriadNewSuffix1",
@@ -34382,13 +34397,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 3
         }
       ]
     },
     {
-      "id": "bench:122",
+      "id": "bench:123",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalLifeLeechPermyriadNewSuffix2",
@@ -34409,13 +34424,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 4
         }
       ]
     },
     {
-      "id": "bench:123",
+      "id": "bench:124",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "EinharMasterLocalManaLeechPermyriadNewSuffix1",
@@ -34444,7 +34459,7 @@
       ]
     },
     {
-      "id": "bench:124",
+      "id": "bench:125",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterIncreasedManaTwoHandWeapon1___",
@@ -34463,7 +34478,7 @@
       ]
     },
     {
-      "id": "bench:125",
+      "id": "bench:126",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterIncreasedManaTwoHandWeapon2_",
@@ -34482,7 +34497,7 @@
       ]
     },
     {
-      "id": "bench:126",
+      "id": "bench:127",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterIncreasedManaTwoHandWeapon3_",
@@ -34501,7 +34516,7 @@
       ]
     },
     {
-      "id": "bench:127",
+      "id": "bench:128",
       "name": "Crafting bench rank 4",
       "kind": "bench",
       "mod": "EinharMasterIncreasedManaTwoHandWeapon4",
@@ -34520,7 +34535,7 @@
       ]
     },
     {
-      "id": "bench:128",
+      "id": "bench:129",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterIncreasedManaWeapon1__",
@@ -34544,7 +34559,7 @@
       ]
     },
     {
-      "id": "bench:129",
+      "id": "bench:130",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterIncreasedManaWeapon2",
@@ -34568,7 +34583,7 @@
       ]
     },
     {
-      "id": "bench:130",
+      "id": "bench:131",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterIncreasedManaWeapon3_",
@@ -34592,7 +34607,7 @@
       ]
     },
     {
-      "id": "bench:131",
+      "id": "bench:132",
       "name": "Crafting bench rank 4",
       "kind": "bench",
       "mod": "EinharMasterIncreasedManaWeapon4",
@@ -34616,7 +34631,7 @@
       ]
     },
     {
-      "id": "bench:132",
+      "id": "bench:133",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterIncreasedMana1",
@@ -34639,7 +34654,7 @@
       ]
     },
     {
-      "id": "bench:133",
+      "id": "bench:134",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterIncreasedMana2",
@@ -34662,7 +34677,7 @@
       ]
     },
     {
-      "id": "bench:134",
+      "id": "bench:135",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterIncreasedMana3",
@@ -34685,7 +34700,7 @@
       ]
     },
     {
-      "id": "bench:135",
+      "id": "bench:136",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterManaRegeneration1",
@@ -34711,7 +34726,7 @@
       ]
     },
     {
-      "id": "bench:136",
+      "id": "bench:137",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterManaRegeneration2",
@@ -34737,7 +34752,7 @@
       ]
     },
     {
-      "id": "bench:137",
+      "id": "bench:138",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterIncreasedManaRegenerationTwoHandWeapon1",
@@ -34757,7 +34772,7 @@
       ]
     },
     {
-      "id": "bench:138",
+      "id": "bench:139",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterIncreasedManaRegenerationTwoHandWeapon2",
@@ -34777,7 +34792,7 @@
       ]
     },
     {
-      "id": "bench:139",
+      "id": "bench:140",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalIncreasedPhysicalDamage1",
@@ -34806,7 +34821,7 @@
       ]
     },
     {
-      "id": "bench:140",
+      "id": "bench:141",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalIncreasedPhysicalDamage2_",
@@ -34835,7 +34850,7 @@
       ]
     },
     {
-      "id": "bench:141",
+      "id": "bench:142",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalIncreasedPhysicalDamage3",
@@ -34864,7 +34879,7 @@
       ]
     },
     {
-      "id": "bench:142",
+      "id": "bench:143",
       "name": "Crafting bench rank 4",
       "kind": "bench",
       "mod": "EinharMasterLocalIncreasedPhysicalDamage4___",
@@ -34893,7 +34908,7 @@
       ]
     },
     {
-      "id": "bench:143",
+      "id": "bench:144",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterSpellDamageOnTwoHandWeapon1",
@@ -34912,7 +34927,7 @@
       ]
     },
     {
-      "id": "bench:144",
+      "id": "bench:145",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterSpellDamageOnTwoHandWeapon2",
@@ -34931,7 +34946,7 @@
       ]
     },
     {
-      "id": "bench:145",
+      "id": "bench:146",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterSpellDamageOnTwoHandWeapon3",
@@ -34950,7 +34965,7 @@
       ]
     },
     {
-      "id": "bench:146",
+      "id": "bench:147",
       "name": "Crafting bench rank 4",
       "kind": "bench",
       "mod": "EinharMasterSpellDamageOnTwoHandWeapon4_",
@@ -34969,7 +34984,7 @@
       ]
     },
     {
-      "id": "bench:147",
+      "id": "bench:148",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterSpellDamageOnWeapon1_",
@@ -34992,7 +35007,7 @@
       ]
     },
     {
-      "id": "bench:148",
+      "id": "bench:149",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterSpellDamageOnWeapon2",
@@ -35015,7 +35030,7 @@
       ]
     },
     {
-      "id": "bench:149",
+      "id": "bench:150",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterSpellDamageOnWeapon3",
@@ -35038,7 +35053,7 @@
       ]
     },
     {
-      "id": "bench:150",
+      "id": "bench:151",
       "name": "Crafting bench rank 4",
       "kind": "bench",
       "mod": "EinharMasterSpellDamageOnWeapon4",
@@ -35061,7 +35076,7 @@
       ]
     },
     {
-      "id": "bench:151",
+      "id": "bench:152",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterDegenerationDamage1_",
@@ -35090,7 +35105,7 @@
       ]
     },
     {
-      "id": "bench:152",
+      "id": "bench:153",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterDegenerationDamage2",
@@ -35119,7 +35134,7 @@
       ]
     },
     {
-      "id": "bench:153",
+      "id": "bench:154",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterWeaponElementalDamage1_",
@@ -35152,7 +35167,7 @@
       ]
     },
     {
-      "id": "bench:154",
+      "id": "bench:155",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterWeaponElementalDamage2",
@@ -35183,7 +35198,7 @@
       ]
     },
     {
-      "id": "bench:155",
+      "id": "bench:156",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalIncreasedAttackSpeed1__",
@@ -35212,7 +35227,7 @@
       ]
     },
     {
-      "id": "bench:156",
+      "id": "bench:157",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalIncreasedAttackSpeed2_",
@@ -35239,7 +35254,7 @@
       ]
     },
     {
-      "id": "bench:157",
+      "id": "bench:158",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalIncreasedAttackSpeed3",
@@ -35266,7 +35281,7 @@
       ]
     },
     {
-      "id": "bench:158",
+      "id": "bench:159",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalIncreasedAttackSpeedRanged3",
@@ -35282,7 +35297,7 @@
       ]
     },
     {
-      "id": "bench:159",
+      "id": "bench:160",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "EinharMasterAttackSpeed1",
@@ -35299,7 +35314,7 @@
       ]
     },
     {
-      "id": "bench:160",
+      "id": "bench:161",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterIncreasedCastSpeedTwoHand1",
@@ -35318,7 +35333,7 @@
       ]
     },
     {
-      "id": "bench:161",
+      "id": "bench:162",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterIncreasedCastSpeedTwoHand2",
@@ -35337,7 +35352,7 @@
       ]
     },
     {
-      "id": "bench:162",
+      "id": "bench:163",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterIncreasedCastSpeedTwoHand3_",
@@ -35356,7 +35371,7 @@
       ]
     },
     {
-      "id": "bench:163",
+      "id": "bench:164",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterIncreasedCastSpeed1",
@@ -35379,7 +35394,7 @@
       ]
     },
     {
-      "id": "bench:164",
+      "id": "bench:165",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterIncreasedCastSpeed2",
@@ -35402,7 +35417,7 @@
       ]
     },
     {
-      "id": "bench:165",
+      "id": "bench:166",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterIncreasedCastSpeed3",
@@ -35425,7 +35440,7 @@
       ]
     },
     {
-      "id": "bench:166",
+      "id": "bench:167",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterFireDamageTwoHandPrefix1",
@@ -35444,7 +35459,7 @@
       ]
     },
     {
-      "id": "bench:167",
+      "id": "bench:168",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterFireDamageTwoHandPrefix2",
@@ -35463,7 +35478,7 @@
       ]
     },
     {
-      "id": "bench:168",
+      "id": "bench:169",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterFireDamageTwoHandPrefix3",
@@ -35482,7 +35497,7 @@
       ]
     },
     {
-      "id": "bench:169",
+      "id": "bench:170",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterFireDamagePrefix1_",
@@ -35505,7 +35520,7 @@
       ]
     },
     {
-      "id": "bench:170",
+      "id": "bench:171",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterFireDamagePrefix2",
@@ -35528,7 +35543,7 @@
       ]
     },
     {
-      "id": "bench:171",
+      "id": "bench:172",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterFireDamagePrefix3_",
@@ -35551,7 +35566,7 @@
       ]
     },
     {
-      "id": "bench:172",
+      "id": "bench:173",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterFireDamage1",
@@ -35567,7 +35582,7 @@
       ]
     },
     {
-      "id": "bench:173",
+      "id": "bench:174",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterFireDamage2_",
@@ -35583,7 +35598,7 @@
       ]
     },
     {
-      "id": "bench:174",
+      "id": "bench:175",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterColdDamageTwoHandPrefix1",
@@ -35602,7 +35617,7 @@
       ]
     },
     {
-      "id": "bench:175",
+      "id": "bench:176",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterColdDamageTwoHandPrefix2",
@@ -35621,7 +35636,7 @@
       ]
     },
     {
-      "id": "bench:176",
+      "id": "bench:177",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterColdDamageTwoHandPrefix3",
@@ -35640,7 +35655,7 @@
       ]
     },
     {
-      "id": "bench:177",
+      "id": "bench:178",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterColdDamagePrefix1",
@@ -35663,7 +35678,7 @@
       ]
     },
     {
-      "id": "bench:178",
+      "id": "bench:179",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterColdDamagePrefix2__",
@@ -35686,7 +35701,7 @@
       ]
     },
     {
-      "id": "bench:179",
+      "id": "bench:180",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterColdDamagePrefix3_",
@@ -35709,7 +35724,7 @@
       ]
     },
     {
-      "id": "bench:180",
+      "id": "bench:181",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterColdDamage1_",
@@ -35725,7 +35740,7 @@
       ]
     },
     {
-      "id": "bench:181",
+      "id": "bench:182",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterColdDamage2",
@@ -35741,7 +35756,7 @@
       ]
     },
     {
-      "id": "bench:182",
+      "id": "bench:183",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLightningDamageTwoHandPrefix1",
@@ -35760,7 +35775,7 @@
       ]
     },
     {
-      "id": "bench:183",
+      "id": "bench:184",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLightningDamageTwoHandPrefix2",
@@ -35779,7 +35794,7 @@
       ]
     },
     {
-      "id": "bench:184",
+      "id": "bench:185",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLightningDamageTwoHandPrefix3",
@@ -35798,7 +35813,7 @@
       ]
     },
     {
-      "id": "bench:185",
+      "id": "bench:186",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLightningDamagePrefix1",
@@ -35821,7 +35836,7 @@
       ]
     },
     {
-      "id": "bench:186",
+      "id": "bench:187",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLightningDamagePrefix2",
@@ -35844,7 +35859,7 @@
       ]
     },
     {
-      "id": "bench:187",
+      "id": "bench:188",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLightningDamagePrefix3",
@@ -35867,7 +35882,7 @@
       ]
     },
     {
-      "id": "bench:188",
+      "id": "bench:189",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLightningDamage1",
@@ -35883,7 +35898,7 @@
       ]
     },
     {
-      "id": "bench:189",
+      "id": "bench:190",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLightningDamage2_",
@@ -35899,7 +35914,7 @@
       ]
     },
     {
-      "id": "bench:190",
+      "id": "bench:191",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterChaosDamageTwoHandPrefix1",
@@ -35912,13 +35927,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 2
         }
       ]
     },
     {
-      "id": "bench:191",
+      "id": "bench:192",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterChaosDamageTwoHandPrefix2",
@@ -35931,13 +35946,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 4
         }
       ]
     },
     {
-      "id": "bench:192",
+      "id": "bench:193",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterChaosDamageTwoHandPrefix3_",
@@ -35956,7 +35971,7 @@
       ]
     },
     {
-      "id": "bench:193",
+      "id": "bench:194",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterChaosDamagePrefix1",
@@ -35973,13 +35988,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 2
         }
       ]
     },
     {
-      "id": "bench:194",
+      "id": "bench:195",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterChaosDamagePrefix2",
@@ -35996,13 +36011,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 4
         }
       ]
     },
     {
-      "id": "bench:195",
+      "id": "bench:196",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterChaosDamagePrefix3",
@@ -36025,7 +36040,7 @@
       ]
     },
     {
-      "id": "bench:196",
+      "id": "bench:197",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterChaosDamage1",
@@ -36035,13 +36050,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 3
         }
       ]
     },
     {
-      "id": "bench:197",
+      "id": "bench:198",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterChaosDamage2",
@@ -36057,7 +36072,7 @@
       ]
     },
     {
-      "id": "bench:198",
+      "id": "bench:199",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalAccuracyRating1",
@@ -36086,7 +36101,7 @@
       ]
     },
     {
-      "id": "bench:199",
+      "id": "bench:200",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalAccuracyRating2",
@@ -36115,7 +36130,7 @@
       ]
     },
     {
-      "id": "bench:200",
+      "id": "bench:201",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalAccuracyRating3",
@@ -36144,7 +36159,7 @@
       ]
     },
     {
-      "id": "bench:201",
+      "id": "bench:202",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAccuracyRating1",
@@ -36164,7 +36179,7 @@
       ]
     },
     {
-      "id": "bench:202",
+      "id": "bench:203",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAccuracyRating2_",
@@ -36184,7 +36199,7 @@
       ]
     },
     {
-      "id": "bench:203",
+      "id": "bench:204",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterAccuracyRating3",
@@ -36204,7 +36219,7 @@
       ]
     },
     {
-      "id": "bench:204",
+      "id": "bench:205",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterPhysicalDamage1_",
@@ -36214,13 +36229,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 3
         }
       ]
     },
     {
-      "id": "bench:205",
+      "id": "bench:206",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterPhysicalDamage2",
@@ -36236,7 +36251,7 @@
       ]
     },
     {
-      "id": "bench:206",
+      "id": "bench:207",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterArmourPercent1_",
@@ -36255,7 +36270,7 @@
       ]
     },
     {
-      "id": "bench:207",
+      "id": "bench:208",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterArmourPercent2",
@@ -36274,7 +36289,7 @@
       ]
     },
     {
-      "id": "bench:208",
+      "id": "bench:209",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterArmourPercent3_",
@@ -36293,7 +36308,7 @@
       ]
     },
     {
-      "id": "bench:209",
+      "id": "bench:210",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterFlatArmour1",
@@ -36312,7 +36327,7 @@
       ]
     },
     {
-      "id": "bench:210",
+      "id": "bench:211",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterFlatArmour2_",
@@ -36329,7 +36344,7 @@
       ]
     },
     {
-      "id": "bench:211",
+      "id": "bench:212",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterFlatArmour3",
@@ -36345,7 +36360,7 @@
       ]
     },
     {
-      "id": "bench:212",
+      "id": "bench:213",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterEvasionPercent1",
@@ -36364,7 +36379,7 @@
       ]
     },
     {
-      "id": "bench:213",
+      "id": "bench:214",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterEvasionPercent2",
@@ -36383,7 +36398,7 @@
       ]
     },
     {
-      "id": "bench:214",
+      "id": "bench:215",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterEvasionPercent3",
@@ -36402,7 +36417,7 @@
       ]
     },
     {
-      "id": "bench:215",
+      "id": "bench:216",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterFlatEvasion1",
@@ -36421,7 +36436,7 @@
       ]
     },
     {
-      "id": "bench:216",
+      "id": "bench:217",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterFlatEvasion2",
@@ -36438,7 +36453,7 @@
       ]
     },
     {
-      "id": "bench:217",
+      "id": "bench:218",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterFlatEvasion3",
@@ -36454,7 +36469,7 @@
       ]
     },
     {
-      "id": "bench:218",
+      "id": "bench:219",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterEnergyShieldPercent1",
@@ -36473,7 +36488,7 @@
       ]
     },
     {
-      "id": "bench:219",
+      "id": "bench:220",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterEnergyShieldPercent2",
@@ -36492,7 +36507,7 @@
       ]
     },
     {
-      "id": "bench:220",
+      "id": "bench:221",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterEnergyShieldPercent3_",
@@ -36511,7 +36526,7 @@
       ]
     },
     {
-      "id": "bench:221",
+      "id": "bench:222",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterFlatEnergyShield1",
@@ -36530,7 +36545,7 @@
       ]
     },
     {
-      "id": "bench:222",
+      "id": "bench:223",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterFlatEnergyShield2",
@@ -36547,7 +36562,7 @@
       ]
     },
     {
-      "id": "bench:223",
+      "id": "bench:224",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterFlatEnergyShield3",
@@ -36563,7 +36578,7 @@
       ]
     },
     {
-      "id": "bench:224",
+      "id": "bench:225",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterGlobalEnergyShield1",
@@ -36578,7 +36593,7 @@
       ]
     },
     {
-      "id": "bench:225",
+      "id": "bench:226",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterGlobalEnergyShield2",
@@ -36593,7 +36608,7 @@
       ]
     },
     {
-      "id": "bench:226",
+      "id": "bench:227",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterMaximumEnergyShield1_",
@@ -36609,7 +36624,7 @@
       ]
     },
     {
-      "id": "bench:227",
+      "id": "bench:228",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterMaximumEnergyShield2_",
@@ -36625,7 +36640,7 @@
       ]
     },
     {
-      "id": "bench:228",
+      "id": "bench:229",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterArmourAndEvasionPercent1_",
@@ -36644,7 +36659,7 @@
       ]
     },
     {
-      "id": "bench:229",
+      "id": "bench:230",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterArmourAndEvasionPercent2",
@@ -36663,7 +36678,7 @@
       ]
     },
     {
-      "id": "bench:230",
+      "id": "bench:231",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterArmourAndEvasionPercent3",
@@ -36682,7 +36697,7 @@
       ]
     },
     {
-      "id": "bench:231",
+      "id": "bench:232",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterArmourAndEnergyShieldPercent1",
@@ -36701,7 +36716,7 @@
       ]
     },
     {
-      "id": "bench:232",
+      "id": "bench:233",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterArmourAndEnergyShieldPercent2",
@@ -36720,7 +36735,7 @@
       ]
     },
     {
-      "id": "bench:233",
+      "id": "bench:234",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterArmourAndEnergyShieldPercent3_",
@@ -36739,7 +36754,7 @@
       ]
     },
     {
-      "id": "bench:234",
+      "id": "bench:235",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterEvasionAndEnergyShieldPercent1",
@@ -36758,7 +36773,7 @@
       ]
     },
     {
-      "id": "bench:235",
+      "id": "bench:236",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterEvasionAndEnergyShieldPercent2",
@@ -36777,7 +36792,7 @@
       ]
     },
     {
-      "id": "bench:236",
+      "id": "bench:237",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterEvasionAndEnergyShieldPercent3",
@@ -36796,7 +36811,7 @@
       ]
     },
     {
-      "id": "bench:237",
+      "id": "bench:238",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalFireDamageTwoHand1",
@@ -36816,7 +36831,7 @@
       ]
     },
     {
-      "id": "bench:238",
+      "id": "bench:239",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalFireDamageTwoHand2",
@@ -36836,7 +36851,7 @@
       ]
     },
     {
-      "id": "bench:239",
+      "id": "bench:240",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalFireDamageTwoHand3",
@@ -36856,7 +36871,7 @@
       ]
     },
     {
-      "id": "bench:240",
+      "id": "bench:241",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalFireDamage1",
@@ -36879,7 +36894,7 @@
       ]
     },
     {
-      "id": "bench:241",
+      "id": "bench:242",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalFireDamage2",
@@ -36902,7 +36917,7 @@
       ]
     },
     {
-      "id": "bench:242",
+      "id": "bench:243",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalFireDamage3",
@@ -36925,7 +36940,7 @@
       ]
     },
     {
-      "id": "bench:243",
+      "id": "bench:244",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAddedFireDamage1",
@@ -36942,7 +36957,7 @@
       ]
     },
     {
-      "id": "bench:244",
+      "id": "bench:245",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAddedFireDamage2",
@@ -36958,7 +36973,7 @@
       ]
     },
     {
-      "id": "bench:245",
+      "id": "bench:246",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalColdDamageTwoHand1",
@@ -36978,7 +36993,7 @@
       ]
     },
     {
-      "id": "bench:246",
+      "id": "bench:247",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalColdDamageTwoHand2",
@@ -36998,7 +37013,7 @@
       ]
     },
     {
-      "id": "bench:247",
+      "id": "bench:248",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalColdDamageTwoHand3",
@@ -37018,7 +37033,7 @@
       ]
     },
     {
-      "id": "bench:248",
+      "id": "bench:249",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalColdDamage1",
@@ -37041,7 +37056,7 @@
       ]
     },
     {
-      "id": "bench:249",
+      "id": "bench:250",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalColdDamage2",
@@ -37064,7 +37079,7 @@
       ]
     },
     {
-      "id": "bench:250",
+      "id": "bench:251",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalColdDamage3",
@@ -37087,7 +37102,7 @@
       ]
     },
     {
-      "id": "bench:251",
+      "id": "bench:252",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAddedColdDamage1_",
@@ -37104,7 +37119,7 @@
       ]
     },
     {
-      "id": "bench:252",
+      "id": "bench:253",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAddedColdDamage2",
@@ -37120,7 +37135,7 @@
       ]
     },
     {
-      "id": "bench:253",
+      "id": "bench:254",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalLightningDamageTwoHand1_",
@@ -37140,7 +37155,7 @@
       ]
     },
     {
-      "id": "bench:254",
+      "id": "bench:255",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalLightningDamageTwoHand2",
@@ -37160,7 +37175,7 @@
       ]
     },
     {
-      "id": "bench:255",
+      "id": "bench:256",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalLightningDamageTwoHand3",
@@ -37180,7 +37195,7 @@
       ]
     },
     {
-      "id": "bench:256",
+      "id": "bench:257",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalLightningDamage1_",
@@ -37203,7 +37218,7 @@
       ]
     },
     {
-      "id": "bench:257",
+      "id": "bench:258",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalLightningDamage2",
@@ -37226,7 +37241,7 @@
       ]
     },
     {
-      "id": "bench:258",
+      "id": "bench:259",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalLightningDamage3",
@@ -37249,7 +37264,7 @@
       ]
     },
     {
-      "id": "bench:259",
+      "id": "bench:260",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAddedLightningDamage1",
@@ -37266,7 +37281,7 @@
       ]
     },
     {
-      "id": "bench:260",
+      "id": "bench:261",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAddedLightningDamage2",
@@ -37282,7 +37297,7 @@
       ]
     },
     {
-      "id": "bench:261",
+      "id": "bench:262",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalPhysicalDamageTwoHand1",
@@ -37302,7 +37317,7 @@
       ]
     },
     {
-      "id": "bench:262",
+      "id": "bench:263",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalPhysicalDamageTwoHand2",
@@ -37322,7 +37337,7 @@
       ]
     },
     {
-      "id": "bench:263",
+      "id": "bench:264",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalPhysicalDamageTwoHand3",
@@ -37342,7 +37357,7 @@
       ]
     },
     {
-      "id": "bench:264",
+      "id": "bench:265",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalPhysicalDamage1",
@@ -37365,7 +37380,7 @@
       ]
     },
     {
-      "id": "bench:265",
+      "id": "bench:266",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalPhysicalDamage2_",
@@ -37388,7 +37403,7 @@
       ]
     },
     {
-      "id": "bench:266",
+      "id": "bench:267",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalPhysicalDamage3",
@@ -37411,7 +37426,7 @@
       ]
     },
     {
-      "id": "bench:267",
+      "id": "bench:268",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAddedPhysicalDamage1",
@@ -37429,7 +37444,7 @@
       ]
     },
     {
-      "id": "bench:268",
+      "id": "bench:269",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAddedPhysicalDamage2",
@@ -37446,7 +37461,7 @@
       ]
     },
     {
-      "id": "bench:269",
+      "id": "bench:270",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAddedChaosDamage1",
@@ -37464,7 +37479,7 @@
       ]
     },
     {
-      "id": "bench:270",
+      "id": "bench:271",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAddedChaosDamage2",
@@ -37481,7 +37496,7 @@
       ]
     },
     {
-      "id": "bench:271",
+      "id": "bench:272",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedFireDamageTwoHand1",
@@ -37500,7 +37515,7 @@
       ]
     },
     {
-      "id": "bench:272",
+      "id": "bench:273",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedFireDamageTwoHand2",
@@ -37519,7 +37534,7 @@
       ]
     },
     {
-      "id": "bench:273",
+      "id": "bench:274",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedFireDamageTwoHand3",
@@ -37538,7 +37553,7 @@
       ]
     },
     {
-      "id": "bench:274",
+      "id": "bench:275",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedFireDamage1",
@@ -37561,7 +37576,7 @@
       ]
     },
     {
-      "id": "bench:275",
+      "id": "bench:276",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedFireDamage2",
@@ -37584,7 +37599,7 @@
       ]
     },
     {
-      "id": "bench:276",
+      "id": "bench:277",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedFireDamage3",
@@ -37607,7 +37622,7 @@
       ]
     },
     {
-      "id": "bench:277",
+      "id": "bench:278",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedColdDamageTwoHand1",
@@ -37626,7 +37641,7 @@
       ]
     },
     {
-      "id": "bench:278",
+      "id": "bench:279",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedColdDamageTwoHand2_",
@@ -37645,7 +37660,7 @@
       ]
     },
     {
-      "id": "bench:279",
+      "id": "bench:280",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedColdDamageTwoHand3",
@@ -37664,7 +37679,7 @@
       ]
     },
     {
-      "id": "bench:280",
+      "id": "bench:281",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedColdDamage1",
@@ -37687,7 +37702,7 @@
       ]
     },
     {
-      "id": "bench:281",
+      "id": "bench:282",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedColdDamage2",
@@ -37710,7 +37725,7 @@
       ]
     },
     {
-      "id": "bench:282",
+      "id": "bench:283",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedColdDamage3",
@@ -37733,7 +37748,7 @@
       ]
     },
     {
-      "id": "bench:283",
+      "id": "bench:284",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedLightningDamageTwoHand1",
@@ -37752,7 +37767,7 @@
       ]
     },
     {
-      "id": "bench:284",
+      "id": "bench:285",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedLightningDamageTwoHand2",
@@ -37771,7 +37786,7 @@
       ]
     },
     {
-      "id": "bench:285",
+      "id": "bench:286",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedLightningDamageTwoHand3",
@@ -37790,7 +37805,7 @@
       ]
     },
     {
-      "id": "bench:286",
+      "id": "bench:287",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedLightningDamage1",
@@ -37813,7 +37828,7 @@
       ]
     },
     {
-      "id": "bench:287",
+      "id": "bench:288",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedLightningDamage2",
@@ -37836,7 +37851,7 @@
       ]
     },
     {
-      "id": "bench:288",
+      "id": "bench:289",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterSpellAddedLightningDamage3_",
@@ -37859,7 +37874,7 @@
       ]
     },
     {
-      "id": "bench:289",
+      "id": "bench:290",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalCriticalStrikeChance1_",
@@ -37888,7 +37903,7 @@
       ]
     },
     {
-      "id": "bench:290",
+      "id": "bench:291",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalCriticalStrikeChance2",
@@ -37917,7 +37932,7 @@
       ]
     },
     {
-      "id": "bench:291",
+      "id": "bench:292",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterLocalCriticalStrikeChance3_",
@@ -37946,7 +37961,7 @@
       ]
     },
     {
-      "id": "bench:292",
+      "id": "bench:293",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterCriticalStrikeMultiplier1",
@@ -37975,7 +37990,7 @@
       ]
     },
     {
-      "id": "bench:293",
+      "id": "bench:294",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterCriticalStrikeMultiplier2",
@@ -38004,7 +38019,7 @@
       ]
     },
     {
-      "id": "bench:294",
+      "id": "bench:295",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterCriticalStrikeMultiplier3",
@@ -38033,7 +38048,7 @@
       ]
     },
     {
-      "id": "bench:295",
+      "id": "bench:296",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterCriticalStrikeChanceSpells2h1",
@@ -38052,7 +38067,7 @@
       ]
     },
     {
-      "id": "bench:296",
+      "id": "bench:297",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterCriticalStrikeChanceSpells2h2_",
@@ -38071,7 +38086,7 @@
       ]
     },
     {
-      "id": "bench:297",
+      "id": "bench:298",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterCriticalStrikeChanceSpells1",
@@ -38094,7 +38109,7 @@
       ]
     },
     {
-      "id": "bench:298",
+      "id": "bench:299",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterCriticalStrikeChanceSpells2",
@@ -38117,7 +38132,7 @@
       ]
     },
     {
-      "id": "bench:299",
+      "id": "bench:300",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterGlobalCriticalStrikeChance1",
@@ -38133,7 +38148,7 @@
       ]
     },
     {
-      "id": "bench:300",
+      "id": "bench:301",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterGlobalCriticalStrikeChance2",
@@ -38149,7 +38164,7 @@
       ]
     },
     {
-      "id": "bench:301",
+      "id": "bench:302",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterFlaskEffectDuration1",
@@ -38164,7 +38179,7 @@
       ]
     },
     {
-      "id": "bench:302",
+      "id": "bench:303",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterFlaskEffectDuration2",
@@ -38179,7 +38194,7 @@
       ]
     },
     {
-      "id": "bench:303",
+      "id": "bench:304",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAvoidStun1",
@@ -38195,7 +38210,7 @@
       ]
     },
     {
-      "id": "bench:304",
+      "id": "bench:305",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAvoidStun2",
@@ -38211,7 +38226,7 @@
       ]
     },
     {
-      "id": "bench:305",
+      "id": "bench:306",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAvoidElementalAilments1",
@@ -38227,7 +38242,7 @@
       ]
     },
     {
-      "id": "bench:306",
+      "id": "bench:307",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAvoidElementalAilments2_",
@@ -38243,7 +38258,7 @@
       ]
     },
     {
-      "id": "bench:307",
+      "id": "bench:308",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterReducedElementalAilmentEffect1",
@@ -38259,7 +38274,7 @@
       ]
     },
     {
-      "id": "bench:308",
+      "id": "bench:309",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterReducedElementalAilmentEffect2_",
@@ -38275,7 +38290,7 @@
       ]
     },
     {
-      "id": "bench:309",
+      "id": "bench:310",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLocalIncreasedBlockPercentage1",
@@ -38290,7 +38305,7 @@
       ]
     },
     {
-      "id": "bench:310",
+      "id": "bench:311",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLocalIncreasedBlockPercentage2",
@@ -38305,7 +38320,7 @@
       ]
     },
     {
-      "id": "bench:311",
+      "id": "bench:312",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterSpellBlockPercentage1",
@@ -38314,13 +38329,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 4
         }
       ]
     },
     {
-      "id": "bench:312",
+      "id": "bench:313",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterSpellBlockPercentage2",
@@ -38335,7 +38350,7 @@
       ]
     },
     {
-      "id": "bench:313",
+      "id": "bench:314",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterLifeRegenerationRate1",
@@ -38352,7 +38367,7 @@
       ]
     },
     {
-      "id": "bench:314",
+      "id": "bench:315",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterLifeRegenerationRate2_",
@@ -38369,7 +38384,7 @@
       ]
     },
     {
-      "id": "bench:315",
+      "id": "bench:316",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterReducedPhysicalDamageTaken1",
@@ -38385,7 +38400,7 @@
       ]
     },
     {
-      "id": "bench:316",
+      "id": "bench:317",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterReducedPhysicalDamageTaken2___",
@@ -38401,7 +38416,7 @@
       ]
     },
     {
-      "id": "bench:317",
+      "id": "bench:318",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterChanceToSuppressSpells1_",
@@ -38418,7 +38433,7 @@
       ]
     },
     {
-      "id": "bench:318",
+      "id": "bench:319",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterChanceToSuppressSpells2",
@@ -38435,7 +38450,7 @@
       ]
     },
     {
-      "id": "bench:319",
+      "id": "bench:320",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterChanceToSuppressSpellsHigh1",
@@ -38451,7 +38466,7 @@
       ]
     },
     {
-      "id": "bench:320",
+      "id": "bench:321",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterChanceToSuppressSpellsHigh2",
@@ -38467,7 +38482,7 @@
       ]
     },
     {
-      "id": "bench:321",
+      "id": "bench:322",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterEnergyShieldRegeneration1___",
@@ -38484,7 +38499,7 @@
       ]
     },
     {
-      "id": "bench:322",
+      "id": "bench:323",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterEnergyShieldRegeneration2",
@@ -38501,7 +38516,7 @@
       ]
     },
     {
-      "id": "bench:323",
+      "id": "bench:324",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterEnergyShieldDelay1_",
@@ -38517,7 +38532,7 @@
       ]
     },
     {
-      "id": "bench:324",
+      "id": "bench:325",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterEnergyShieldDelay2",
@@ -38533,7 +38548,7 @@
       ]
     },
     {
-      "id": "bench:325",
+      "id": "bench:326",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "EinharMasterReducedDamageOverTimeTaken1",
@@ -38548,7 +38563,7 @@
       ]
     },
     {
-      "id": "bench:326",
+      "id": "bench:327",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "EinharMasterLightRadiusScalesWithEnergyShield1",
@@ -38564,7 +38579,7 @@
       ]
     },
     {
-      "id": "bench:327",
+      "id": "bench:328",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterMinionLife1",
@@ -38580,7 +38595,7 @@
       ]
     },
     {
-      "id": "bench:328",
+      "id": "bench:329",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterMinionLife2",
@@ -38595,7 +38610,7 @@
       ]
     },
     {
-      "id": "bench:329",
+      "id": "bench:330",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "EinharMasterMinionDamage1",
@@ -38610,7 +38625,7 @@
       ]
     },
     {
-      "id": "bench:330",
+      "id": "bench:331",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterMinionMovementSpeed1",
@@ -38626,7 +38641,7 @@
       ]
     },
     {
-      "id": "bench:331",
+      "id": "bench:332",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterMinionMovementSpeed2",
@@ -38642,7 +38657,7 @@
       ]
     },
     {
-      "id": "bench:332",
+      "id": "bench:333",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterMinionDamageOnWeapon2h1_",
@@ -38662,7 +38677,7 @@
       ]
     },
     {
-      "id": "bench:333",
+      "id": "bench:334",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterMinionDamageOnWeapon2h2",
@@ -38682,7 +38697,7 @@
       ]
     },
     {
-      "id": "bench:334",
+      "id": "bench:335",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterMinionDamageOnWeapon2h3",
@@ -38702,7 +38717,7 @@
       ]
     },
     {
-      "id": "bench:335",
+      "id": "bench:336",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterMinionDamageOnWeapon1h1",
@@ -38725,7 +38740,7 @@
       ]
     },
     {
-      "id": "bench:336",
+      "id": "bench:337",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterMinionDamageOnWeapon1h2",
@@ -38748,7 +38763,7 @@
       ]
     },
     {
-      "id": "bench:337",
+      "id": "bench:338",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "EinharMasterMinionDamageOnWeapon1h3",
@@ -38771,7 +38786,7 @@
       ]
     },
     {
-      "id": "bench:338",
+      "id": "bench:339",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterTrapDamageOnWeapon2h1",
@@ -38791,7 +38806,7 @@
       ]
     },
     {
-      "id": "bench:339",
+      "id": "bench:340",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterTrapDamageOnWeapon2h2",
@@ -38811,7 +38826,7 @@
       ]
     },
     {
-      "id": "bench:340",
+      "id": "bench:341",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterTrapDamageOnWeapon1h1",
@@ -38834,7 +38849,7 @@
       ]
     },
     {
-      "id": "bench:341",
+      "id": "bench:342",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterTrapDamageOnWeapon1h2",
@@ -38857,7 +38872,7 @@
       ]
     },
     {
-      "id": "bench:342",
+      "id": "bench:343",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterMineDamageOnWeapon2h1",
@@ -38877,7 +38892,7 @@
       ]
     },
     {
-      "id": "bench:343",
+      "id": "bench:344",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterMineDamageOnWeapon2h2",
@@ -38897,7 +38912,7 @@
       ]
     },
     {
-      "id": "bench:344",
+      "id": "bench:345",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterMineDamageOnWeapon1h1",
@@ -38920,7 +38935,7 @@
       ]
     },
     {
-      "id": "bench:345",
+      "id": "bench:346",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterMineDamageOnWeapon1h2",
@@ -38943,7 +38958,7 @@
       ]
     },
     {
-      "id": "bench:346",
+      "id": "bench:347",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterTrapThrowingSpeed2h1",
@@ -38963,7 +38978,7 @@
       ]
     },
     {
-      "id": "bench:347",
+      "id": "bench:348",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterTrapThrowingSpeed2h2_",
@@ -38983,7 +38998,7 @@
       ]
     },
     {
-      "id": "bench:348",
+      "id": "bench:349",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterTrapThrowingSpeed1",
@@ -39006,7 +39021,7 @@
       ]
     },
     {
-      "id": "bench:349",
+      "id": "bench:350",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterTrapThrowingSpeed2",
@@ -39029,7 +39044,7 @@
       ]
     },
     {
-      "id": "bench:350",
+      "id": "bench:351",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterMineLayingSpeed2h1",
@@ -39049,7 +39064,7 @@
       ]
     },
     {
-      "id": "bench:351",
+      "id": "bench:352",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterMineLayingSpeed2h2_",
@@ -39069,7 +39084,7 @@
       ]
     },
     {
-      "id": "bench:352",
+      "id": "bench:353",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterMineLayingSpeed1",
@@ -39092,7 +39107,7 @@
       ]
     },
     {
-      "id": "bench:353",
+      "id": "bench:354",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterMineLayingSpeed2",
@@ -39115,7 +39130,7 @@
       ]
     },
     {
-      "id": "bench:354",
+      "id": "bench:355",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "EinharMasterAttackSpeedJewelry1",
@@ -39130,7 +39145,7 @@
       ]
     },
     {
-      "id": "bench:355",
+      "id": "bench:356",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterIncreasedCastSpeedJewelry1",
@@ -39146,7 +39161,7 @@
       ]
     },
     {
-      "id": "bench:356",
+      "id": "bench:357",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "EinharMasterWarcrySpeed1",
@@ -39161,7 +39176,7 @@
       ]
     },
     {
-      "id": "bench:357",
+      "id": "bench:358",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "CraftedTravelSkillsCannotBeExerted",
@@ -39178,7 +39193,7 @@
       ]
     },
     {
-      "id": "bench:374",
+      "id": "bench:375",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "EinharMasterNoExtraDamageFromBleedingWhileMoving1",
@@ -39194,7 +39209,7 @@
       ]
     },
     {
-      "id": "bench:375",
+      "id": "bench:376",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterChaosResistanceToDamageOverTime1",
@@ -39209,7 +39224,7 @@
       ]
     },
     {
-      "id": "bench:376",
+      "id": "bench:377",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterChaosResistanceToDamageOverTime2",
@@ -39224,7 +39239,7 @@
       ]
     },
     {
-      "id": "bench:377",
+      "id": "bench:378",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAvoidBleed1",
@@ -39239,7 +39254,7 @@
       ]
     },
     {
-      "id": "bench:378",
+      "id": "bench:379",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAvoidBleed2_",
@@ -39254,7 +39269,7 @@
       ]
     },
     {
-      "id": "bench:379",
+      "id": "bench:380",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterReducedSelfIgniteDuration1",
@@ -39269,7 +39284,7 @@
       ]
     },
     {
-      "id": "bench:380",
+      "id": "bench:381",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterReducedSelfIgniteDuration2",
@@ -39284,7 +39299,7 @@
       ]
     },
     {
-      "id": "bench:381",
+      "id": "bench:382",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterReducedSelfChillEffect1",
@@ -39299,7 +39314,7 @@
       ]
     },
     {
-      "id": "bench:382",
+      "id": "bench:383",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterReducedSelfChillEffect2",
@@ -39314,7 +39329,7 @@
       ]
     },
     {
-      "id": "bench:383",
+      "id": "bench:384",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterReducedSelfShockEffect1",
@@ -39329,7 +39344,7 @@
       ]
     },
     {
-      "id": "bench:384",
+      "id": "bench:385",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterReducedSelfShockEffect2_",
@@ -39344,7 +39359,7 @@
       ]
     },
     {
-      "id": "bench:385",
+      "id": "bench:386",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterReducedSelfCurseEffect1",
@@ -39359,7 +39374,7 @@
       ]
     },
     {
-      "id": "bench:386",
+      "id": "bench:387",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterReducedSelfCurseEffect2",
@@ -39374,7 +39389,7 @@
       ]
     },
     {
-      "id": "bench:387",
+      "id": "bench:388",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterReducedSelfFreezeEffect1",
@@ -39389,7 +39404,7 @@
       ]
     },
     {
-      "id": "bench:388",
+      "id": "bench:389",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterReducedSelfFreezeEffect2_",
@@ -39404,7 +39419,7 @@
       ]
     },
     {
-      "id": "bench:389",
+      "id": "bench:390",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAddedFireDamageQuiver1___",
@@ -39419,7 +39434,7 @@
       ]
     },
     {
-      "id": "bench:390",
+      "id": "bench:391",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAddedFireDamageQuiver2",
@@ -39434,7 +39449,7 @@
       ]
     },
     {
-      "id": "bench:391",
+      "id": "bench:392",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAddedColdDamageQuiver1__",
@@ -39449,7 +39464,7 @@
       ]
     },
     {
-      "id": "bench:392",
+      "id": "bench:393",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAddedColdDamageQuiver2",
@@ -39464,7 +39479,7 @@
       ]
     },
     {
-      "id": "bench:393",
+      "id": "bench:394",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterAddedLightningDamageQuiver1_",
@@ -39479,7 +39494,7 @@
       ]
     },
     {
-      "id": "bench:394",
+      "id": "bench:395",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterAddedLightningDamageQuiver2_",
@@ -39494,7 +39509,7 @@
       ]
     },
     {
-      "id": "bench:395",
+      "id": "bench:396",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterVaalSkillDamage1",
@@ -39509,7 +39524,7 @@
       ]
     },
     {
-      "id": "bench:396",
+      "id": "bench:397",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterFlatLifeAndManaRegeneration1",
@@ -39524,7 +39539,7 @@
       ]
     },
     {
-      "id": "bench:397",
+      "id": "bench:398",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "EinharMasterTriggerSocketedSpellOnSkillUse1",
@@ -39553,7 +39568,7 @@
       ]
     },
     {
-      "id": "bench:398",
+      "id": "bench:399",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedPhysicalDamageAndImpaleCrafted1",
@@ -39582,7 +39597,7 @@
       ]
     },
     {
-      "id": "bench:399",
+      "id": "bench:400",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedPhysicalDamageAndImpaleCrafted2",
@@ -39611,7 +39626,7 @@
       ]
     },
     {
-      "id": "bench:400",
+      "id": "bench:401",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedPhysicalDamageAndImpaleCrafted3",
@@ -39640,7 +39655,7 @@
       ]
     },
     {
-      "id": "bench:401",
+      "id": "bench:402",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedPhysicalDamageAndBleedChanceCrafted1",
@@ -39669,7 +39684,7 @@
       ]
     },
     {
-      "id": "bench:402",
+      "id": "bench:403",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedPhysicalDamageAndBleedChanceCrafted2",
@@ -39698,7 +39713,7 @@
       ]
     },
     {
-      "id": "bench:403",
+      "id": "bench:404",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedPhysicalDamageAndBleedChanceCrafted3",
@@ -39727,7 +39742,7 @@
       ]
     },
     {
-      "id": "bench:404",
+      "id": "bench:405",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedPhysicalDamageAndBlindChanceCrafted1_",
@@ -39756,7 +39771,7 @@
       ]
     },
     {
-      "id": "bench:405",
+      "id": "bench:406",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedPhysicalDamageAndBlindChanceCrafted2",
@@ -39785,7 +39800,7 @@
       ]
     },
     {
-      "id": "bench:406",
+      "id": "bench:407",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedPhysicalDamageAndBlindChanceCrafted3",
@@ -39814,7 +39829,7 @@
       ]
     },
     {
-      "id": "bench:407",
+      "id": "bench:408",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedPhysicalDamageAndPoisonChanceCrafted1",
@@ -39843,7 +39858,7 @@
       ]
     },
     {
-      "id": "bench:408",
+      "id": "bench:409",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedPhysicalDamageAndPoisonChanceCrafted2_",
@@ -39872,7 +39887,7 @@
       ]
     },
     {
-      "id": "bench:409",
+      "id": "bench:410",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedPhysicalDamageAndPoisonChanceCrafted3",
@@ -39901,7 +39916,7 @@
       ]
     },
     {
-      "id": "bench:410",
+      "id": "bench:411",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2FireDamageAndChanceToIgnite2h1",
@@ -39920,7 +39935,7 @@
       ]
     },
     {
-      "id": "bench:411",
+      "id": "bench:412",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2FireDamageAndChanceToIgnite2h2",
@@ -39939,7 +39954,7 @@
       ]
     },
     {
-      "id": "bench:412",
+      "id": "bench:413",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2FireDamageAndChanceToIgnite2h3",
@@ -39958,7 +39973,7 @@
       ]
     },
     {
-      "id": "bench:413",
+      "id": "bench:414",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2FireDamageAndChanceToIgnite1h1",
@@ -39981,7 +39996,7 @@
       ]
     },
     {
-      "id": "bench:414",
+      "id": "bench:415",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2FireDamageAndChanceToIgnite1h2",
@@ -40004,7 +40019,7 @@
       ]
     },
     {
-      "id": "bench:415",
+      "id": "bench:416",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2FireDamageAndChanceToIgnite1h3",
@@ -40027,7 +40042,7 @@
       ]
     },
     {
-      "id": "bench:416",
+      "id": "bench:417",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ColdDamageAndBaseChanceToFreeze2h1",
@@ -40046,7 +40061,7 @@
       ]
     },
     {
-      "id": "bench:417",
+      "id": "bench:418",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ColdDamageAndBaseChanceToFreeze2h2",
@@ -40065,7 +40080,7 @@
       ]
     },
     {
-      "id": "bench:418",
+      "id": "bench:419",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ColdDamageAndBaseChanceToFreeze2h3_",
@@ -40084,7 +40099,7 @@
       ]
     },
     {
-      "id": "bench:419",
+      "id": "bench:420",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ColdDamageAndBaseChanceToFreeze1h1",
@@ -40107,7 +40122,7 @@
       ]
     },
     {
-      "id": "bench:420",
+      "id": "bench:421",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ColdDamageAndBaseChanceToFreeze1h2__",
@@ -40130,7 +40145,7 @@
       ]
     },
     {
-      "id": "bench:421",
+      "id": "bench:422",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ColdDamageAndBaseChanceToFreeze1h3",
@@ -40153,7 +40168,7 @@
       ]
     },
     {
-      "id": "bench:422",
+      "id": "bench:423",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LightningDamageAndChanceToShock2h1",
@@ -40172,7 +40187,7 @@
       ]
     },
     {
-      "id": "bench:423",
+      "id": "bench:424",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LightningDamageAndChanceToShock2h2",
@@ -40191,7 +40206,7 @@
       ]
     },
     {
-      "id": "bench:424",
+      "id": "bench:425",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LightningDamageAndChanceToShock2h3",
@@ -40210,7 +40225,7 @@
       ]
     },
     {
-      "id": "bench:425",
+      "id": "bench:426",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LightningDamageAndChanceToShock1h1_",
@@ -40233,7 +40248,7 @@
       ]
     },
     {
-      "id": "bench:426",
+      "id": "bench:427",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LightningDamageAndChanceToShock1h2",
@@ -40256,7 +40271,7 @@
       ]
     },
     {
-      "id": "bench:427",
+      "id": "bench:428",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LightningDamageAndChanceToShock1h3",
@@ -40279,7 +40294,7 @@
       ]
     },
     {
-      "id": "bench:428",
+      "id": "bench:429",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ChaosDamageAndChaosSkillDuration2h1",
@@ -40298,7 +40313,7 @@
       ]
     },
     {
-      "id": "bench:429",
+      "id": "bench:430",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ChaosDamageAndChaosSkillDuration2h2",
@@ -40317,7 +40332,7 @@
       ]
     },
     {
-      "id": "bench:430",
+      "id": "bench:431",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ChaosDamageAndChaosSkillDuration2h3_",
@@ -40336,7 +40351,7 @@
       ]
     },
     {
-      "id": "bench:431",
+      "id": "bench:432",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ChaosDamageAndChaosSkillDuration1h1",
@@ -40359,7 +40374,7 @@
       ]
     },
     {
-      "id": "bench:432",
+      "id": "bench:433",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ChaosDamageAndChaosSkillDuration1h2",
@@ -40382,7 +40397,7 @@
       ]
     },
     {
-      "id": "bench:433",
+      "id": "bench:434",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ChaosDamageAndChaosSkillDuration1h3",
@@ -40405,7 +40420,7 @@
       ]
     },
     {
-      "id": "bench:434",
+      "id": "bench:435",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2SpellDamageAndManaRegenerationRate2h1_",
@@ -40424,7 +40439,7 @@
       ]
     },
     {
-      "id": "bench:435",
+      "id": "bench:436",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2SpellDamageAndManaRegenerationRate2h2_",
@@ -40443,7 +40458,7 @@
       ]
     },
     {
-      "id": "bench:436",
+      "id": "bench:437",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2SpellDamageAndManaRegenerationRate2h3_",
@@ -40462,7 +40477,7 @@
       ]
     },
     {
-      "id": "bench:437",
+      "id": "bench:438",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2SpellDamageAndManaRegenerationRate1h1",
@@ -40485,7 +40500,7 @@
       ]
     },
     {
-      "id": "bench:438",
+      "id": "bench:439",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2SpellDamageAndManaRegenerationRate1h2",
@@ -40508,7 +40523,7 @@
       ]
     },
     {
-      "id": "bench:439",
+      "id": "bench:440",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2SpellDamageAndManaRegenerationRate1h3",
@@ -40531,7 +40546,7 @@
       ]
     },
     {
-      "id": "bench:440",
+      "id": "bench:441",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2SpellDamageAndNonChaosDamageToAddAsChaosDamage2h1",
@@ -40550,7 +40565,7 @@
       ]
     },
     {
-      "id": "bench:441",
+      "id": "bench:442",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2SpellDamageAndNonChaosDamageToAddAsChaosDamage2h2",
@@ -40569,7 +40584,7 @@
       ]
     },
     {
-      "id": "bench:442",
+      "id": "bench:443",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2SpellDamageAndNonChaosDamageToAddAsChaosDamage2h3",
@@ -40588,7 +40603,7 @@
       ]
     },
     {
-      "id": "bench:443",
+      "id": "bench:444",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2SpellDamageAndNonChaosDamageToAddAsChaosDamage1h1",
@@ -40611,7 +40626,7 @@
       ]
     },
     {
-      "id": "bench:444",
+      "id": "bench:445",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2SpellDamageAndNonChaosDamageToAddAsChaosDamage1h2",
@@ -40634,7 +40649,7 @@
       ]
     },
     {
-      "id": "bench:445",
+      "id": "bench:446",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2SpellDamageAndNonChaosDamageToAddAsChaosDamage1h3",
@@ -40657,7 +40672,7 @@
       ]
     },
     {
-      "id": "bench:446",
+      "id": "bench:447",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2MinionDamageAndMinionMaximumLife2h1",
@@ -40677,7 +40692,7 @@
       ]
     },
     {
-      "id": "bench:447",
+      "id": "bench:448",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2MinionDamageAndMinionMaximumLife2h2_",
@@ -40697,7 +40712,7 @@
       ]
     },
     {
-      "id": "bench:448",
+      "id": "bench:449",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2MinionDamageAndMinionMaximumLife2h3",
@@ -40717,7 +40732,7 @@
       ]
     },
     {
-      "id": "bench:449",
+      "id": "bench:450",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2MinionDamageAndMinionMaximumLife1h1",
@@ -40740,7 +40755,7 @@
       ]
     },
     {
-      "id": "bench:450",
+      "id": "bench:451",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2MinionDamageAndMinionMaximumLife1h2",
@@ -40763,7 +40778,7 @@
       ]
     },
     {
-      "id": "bench:451",
+      "id": "bench:452",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2MinionDamageAndMinionMaximumLife1h3",
@@ -40786,7 +40801,7 @@
       ]
     },
     {
-      "id": "bench:452",
+      "id": "bench:453",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2MinionAttackAndCastSpeedOnWeapon2h1_",
@@ -40806,7 +40821,7 @@
       ]
     },
     {
-      "id": "bench:453",
+      "id": "bench:454",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2MinionAttackAndCastSpeedOnWeapon2h2",
@@ -40826,7 +40841,7 @@
       ]
     },
     {
-      "id": "bench:454",
+      "id": "bench:455",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2MinionAttackAndCastSpeedOnWeapon2h3_",
@@ -40846,7 +40861,7 @@
       ]
     },
     {
-      "id": "bench:455",
+      "id": "bench:456",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2MinionAttackAndCastSpeedOnWeapon1h1",
@@ -40869,7 +40884,7 @@
       ]
     },
     {
-      "id": "bench:456",
+      "id": "bench:457",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2MinionAttackAndCastSpeedOnWeapon1h2",
@@ -40892,7 +40907,7 @@
       ]
     },
     {
-      "id": "bench:457",
+      "id": "bench:458",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2MinionAttackAndCastSpeedOnWeapon1h3",
@@ -40915,7 +40930,7 @@
       ]
     },
     {
-      "id": "bench:458",
+      "id": "bench:459",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ChaosDamageOverTimeMultiplierTwoHand1",
@@ -40934,7 +40949,7 @@
       ]
     },
     {
-      "id": "bench:459",
+      "id": "bench:460",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ChaosDamageOverTimeMultiplierTwoHand2_",
@@ -40953,7 +40968,7 @@
       ]
     },
     {
-      "id": "bench:460",
+      "id": "bench:461",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ChaosDamageOverTimeMultiplierTwoHand3",
@@ -40972,7 +40987,7 @@
       ]
     },
     {
-      "id": "bench:461",
+      "id": "bench:462",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ChaosDamageOverTimeMultiplier1_",
@@ -40996,7 +41011,7 @@
       ]
     },
     {
-      "id": "bench:462",
+      "id": "bench:463",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ChaosDamageOverTimeMultiplier2",
@@ -41020,7 +41035,7 @@
       ]
     },
     {
-      "id": "bench:463",
+      "id": "bench:464",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ChaosDamageOverTimeMultiplier3",
@@ -41044,7 +41059,7 @@
       ]
     },
     {
-      "id": "bench:464",
+      "id": "bench:465",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageOverTimeMultiplierTwoHand1",
@@ -41063,7 +41078,7 @@
       ]
     },
     {
-      "id": "bench:465",
+      "id": "bench:466",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageOverTimeMultiplierTwoHand2",
@@ -41082,7 +41097,7 @@
       ]
     },
     {
-      "id": "bench:466",
+      "id": "bench:467",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageOverTimeMultiplierTwoHand3",
@@ -41101,7 +41116,7 @@
       ]
     },
     {
-      "id": "bench:467",
+      "id": "bench:468",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageOverTimeMultiplier1_",
@@ -41125,7 +41140,7 @@
       ]
     },
     {
-      "id": "bench:468",
+      "id": "bench:469",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageOverTimeMultiplier2",
@@ -41149,7 +41164,7 @@
       ]
     },
     {
-      "id": "bench:469",
+      "id": "bench:470",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageOverTimeMultiplier3",
@@ -41173,7 +41188,7 @@
       ]
     },
     {
-      "id": "bench:470",
+      "id": "bench:471",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ColdDamageOverTimeMultiplierTwoHand1",
@@ -41192,7 +41207,7 @@
       ]
     },
     {
-      "id": "bench:471",
+      "id": "bench:472",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ColdDamageOverTimeMultiplierTwoHand2",
@@ -41211,7 +41226,7 @@
       ]
     },
     {
-      "id": "bench:472",
+      "id": "bench:473",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ColdDamageOverTimeMultiplierTwoHand3",
@@ -41230,7 +41245,7 @@
       ]
     },
     {
-      "id": "bench:473",
+      "id": "bench:474",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ColdDamageOverTimeMultiplier1__",
@@ -41254,7 +41269,7 @@
       ]
     },
     {
-      "id": "bench:474",
+      "id": "bench:475",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ColdDamageOverTimeMultiplier2",
@@ -41278,7 +41293,7 @@
       ]
     },
     {
-      "id": "bench:475",
+      "id": "bench:476",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ColdDamageOverTimeMultiplier3_",
@@ -41302,7 +41317,7 @@
       ]
     },
     {
-      "id": "bench:476",
+      "id": "bench:477",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2FireDamageOverTimeMultiplierTwoHand1_",
@@ -41321,7 +41336,7 @@
       ]
     },
     {
-      "id": "bench:477",
+      "id": "bench:478",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2FireDamageOverTimeMultiplierTwoHand2",
@@ -41340,7 +41355,7 @@
       ]
     },
     {
-      "id": "bench:478",
+      "id": "bench:479",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2FireDamageOverTimeMultiplierTwoHand3",
@@ -41359,7 +41374,7 @@
       ]
     },
     {
-      "id": "bench:479",
+      "id": "bench:480",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2FireDamageOverTimeMultiplier1_",
@@ -41383,7 +41398,7 @@
       ]
     },
     {
-      "id": "bench:480",
+      "id": "bench:481",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2FireDamageOverTimeMultiplier2",
@@ -41407,7 +41422,7 @@
       ]
     },
     {
-      "id": "bench:481",
+      "id": "bench:482",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2FireDamageOverTimeMultiplier3_",
@@ -41431,7 +41446,7 @@
       ]
     },
     {
-      "id": "bench:482",
+      "id": "bench:483",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ElementalPenetrationWithAttacks1",
@@ -41460,7 +41475,7 @@
       ]
     },
     {
-      "id": "bench:483",
+      "id": "bench:484",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ElementalPenetrationWithAttacks2",
@@ -41489,7 +41504,7 @@
       ]
     },
     {
-      "id": "bench:484",
+      "id": "bench:485",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ElementalPenetrationWithAttacks3",
@@ -41518,7 +41533,7 @@
       ]
     },
     {
-      "id": "bench:485",
+      "id": "bench:486",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ChaosPenetrationWithAttacks1",
@@ -41547,7 +41562,7 @@
       ]
     },
     {
-      "id": "bench:486",
+      "id": "bench:487",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ChaosPenetrationWithAttacks2",
@@ -41576,7 +41591,7 @@
       ]
     },
     {
-      "id": "bench:487",
+      "id": "bench:488",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ChaosPenetrationWithAttacks3_",
@@ -41605,7 +41620,7 @@
       ]
     },
     {
-      "id": "bench:488",
+      "id": "bench:489",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2DoubleDamageChance2h1",
@@ -41625,7 +41640,7 @@
       ]
     },
     {
-      "id": "bench:489",
+      "id": "bench:490",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2DoubleDamageChance2h2",
@@ -41645,7 +41660,7 @@
       ]
     },
     {
-      "id": "bench:490",
+      "id": "bench:491",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2DoubleDamageChance1h1",
@@ -41669,7 +41684,7 @@
       ]
     },
     {
-      "id": "bench:491",
+      "id": "bench:492",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2DoubleDamageChance1h2",
@@ -41693,7 +41708,7 @@
       ]
     },
     {
-      "id": "bench:492",
+      "id": "bench:493",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEvasionAndLife1",
@@ -41709,7 +41724,7 @@
       ]
     },
     {
-      "id": "bench:493",
+      "id": "bench:494",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEvasionAndLife2",
@@ -41725,7 +41740,7 @@
       ]
     },
     {
-      "id": "bench:494",
+      "id": "bench:495",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEvasionAndLife3",
@@ -41741,7 +41756,7 @@
       ]
     },
     {
-      "id": "bench:495",
+      "id": "bench:496",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEnergyShieldAndLife1",
@@ -41757,7 +41772,7 @@
       ]
     },
     {
-      "id": "bench:496",
+      "id": "bench:497",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEnergyShieldAndLife2",
@@ -41773,7 +41788,7 @@
       ]
     },
     {
-      "id": "bench:497",
+      "id": "bench:498",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEnergyShieldAndLife3__",
@@ -41789,7 +41804,7 @@
       ]
     },
     {
-      "id": "bench:498",
+      "id": "bench:499",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndEnergyShieldAndLife1",
@@ -41805,7 +41820,7 @@
       ]
     },
     {
-      "id": "bench:499",
+      "id": "bench:500",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndEnergyShieldAndLife2",
@@ -41821,7 +41836,7 @@
       ]
     },
     {
-      "id": "bench:500",
+      "id": "bench:501",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndEnergyShieldAndLife3",
@@ -41837,7 +41852,7 @@
       ]
     },
     {
-      "id": "bench:501",
+      "id": "bench:502",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndLife1",
@@ -41853,7 +41868,7 @@
       ]
     },
     {
-      "id": "bench:502",
+      "id": "bench:503",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndLife2",
@@ -41869,7 +41884,7 @@
       ]
     },
     {
-      "id": "bench:503",
+      "id": "bench:504",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndLife3",
@@ -41885,7 +41900,7 @@
       ]
     },
     {
-      "id": "bench:504",
+      "id": "bench:505",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndLife1",
@@ -41901,7 +41916,7 @@
       ]
     },
     {
-      "id": "bench:505",
+      "id": "bench:506",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndLife2",
@@ -41917,7 +41932,7 @@
       ]
     },
     {
-      "id": "bench:506",
+      "id": "bench:507",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndLife3",
@@ -41933,7 +41948,7 @@
       ]
     },
     {
-      "id": "bench:507",
+      "id": "bench:508",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEnergyShieldAndLife1",
@@ -41949,7 +41964,7 @@
       ]
     },
     {
-      "id": "bench:508",
+      "id": "bench:509",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEnergyShieldAndLife2",
@@ -41965,7 +41980,7 @@
       ]
     },
     {
-      "id": "bench:509",
+      "id": "bench:510",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEnergyShieldAndLife3",
@@ -41981,7 +41996,7 @@
       ]
     },
     {
-      "id": "bench:510",
+      "id": "bench:511",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedDefencesAndLife1_",
@@ -41997,7 +42012,7 @@
       ]
     },
     {
-      "id": "bench:511",
+      "id": "bench:512",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedDefencesAndLife2_",
@@ -42013,7 +42028,7 @@
       ]
     },
     {
-      "id": "bench:512",
+      "id": "bench:513",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedDefencesAndLife3_",
@@ -42029,7 +42044,7 @@
       ]
     },
     {
-      "id": "bench:513",
+      "id": "bench:514",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEvasionAndLifeMed1__",
@@ -42045,7 +42060,7 @@
       ]
     },
     {
-      "id": "bench:514",
+      "id": "bench:515",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEvasionAndLifeMed2_",
@@ -42061,7 +42076,7 @@
       ]
     },
     {
-      "id": "bench:515",
+      "id": "bench:516",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEvasionAndLifeMed3",
@@ -42077,7 +42092,7 @@
       ]
     },
     {
-      "id": "bench:516",
+      "id": "bench:517",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEnergyShieldAndLifeMed1__",
@@ -42093,7 +42108,7 @@
       ]
     },
     {
-      "id": "bench:517",
+      "id": "bench:518",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEnergyShieldAndLifeMed2",
@@ -42109,7 +42124,7 @@
       ]
     },
     {
-      "id": "bench:518",
+      "id": "bench:519",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEnergyShieldAndLifeMed3_",
@@ -42125,7 +42140,7 @@
       ]
     },
     {
-      "id": "bench:519",
+      "id": "bench:520",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndEnergyShieldAndLifeMed1",
@@ -42141,7 +42156,7 @@
       ]
     },
     {
-      "id": "bench:520",
+      "id": "bench:521",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndEnergyShieldAndLifeMed2",
@@ -42157,7 +42172,7 @@
       ]
     },
     {
-      "id": "bench:521",
+      "id": "bench:522",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndEnergyShieldAndLifeMed3",
@@ -42173,7 +42188,7 @@
       ]
     },
     {
-      "id": "bench:522",
+      "id": "bench:523",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndLifeMed1",
@@ -42189,7 +42204,7 @@
       ]
     },
     {
-      "id": "bench:523",
+      "id": "bench:524",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndLifeMed2",
@@ -42205,7 +42220,7 @@
       ]
     },
     {
-      "id": "bench:524",
+      "id": "bench:525",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndLifeMed3",
@@ -42221,7 +42236,7 @@
       ]
     },
     {
-      "id": "bench:525",
+      "id": "bench:526",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndLifeMed1",
@@ -42237,7 +42252,7 @@
       ]
     },
     {
-      "id": "bench:526",
+      "id": "bench:527",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndLifeMed2",
@@ -42253,7 +42268,7 @@
       ]
     },
     {
-      "id": "bench:527",
+      "id": "bench:528",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndLifeMed3_",
@@ -42269,7 +42284,7 @@
       ]
     },
     {
-      "id": "bench:528",
+      "id": "bench:529",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEnergyShieldAndLifeMed1",
@@ -42285,7 +42300,7 @@
       ]
     },
     {
-      "id": "bench:529",
+      "id": "bench:530",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEnergyShieldAndLifeMed2",
@@ -42301,7 +42316,7 @@
       ]
     },
     {
-      "id": "bench:530",
+      "id": "bench:531",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEnergyShieldAndLifeMed3",
@@ -42317,7 +42332,7 @@
       ]
     },
     {
-      "id": "bench:531",
+      "id": "bench:532",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedDefencesAndLifeMed1_",
@@ -42333,7 +42348,7 @@
       ]
     },
     {
-      "id": "bench:532",
+      "id": "bench:533",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedDefencesAndLifeMed2",
@@ -42349,7 +42364,7 @@
       ]
     },
     {
-      "id": "bench:533",
+      "id": "bench:534",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedDefencesAndLifeMed3",
@@ -42365,7 +42380,7 @@
       ]
     },
     {
-      "id": "bench:534",
+      "id": "bench:535",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEvasionAndLifeHigh1",
@@ -42380,7 +42395,7 @@
       ]
     },
     {
-      "id": "bench:535",
+      "id": "bench:536",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEvasionAndLifeHigh2",
@@ -42395,7 +42410,7 @@
       ]
     },
     {
-      "id": "bench:536",
+      "id": "bench:537",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEvasionAndLifeHigh3",
@@ -42410,7 +42425,7 @@
       ]
     },
     {
-      "id": "bench:537",
+      "id": "bench:538",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEnergyShieldAndLifeHigh1",
@@ -42425,7 +42440,7 @@
       ]
     },
     {
-      "id": "bench:538",
+      "id": "bench:539",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEnergyShieldAndLifeHigh2",
@@ -42440,7 +42455,7 @@
       ]
     },
     {
-      "id": "bench:539",
+      "id": "bench:540",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndEnergyShieldAndLifeHigh3",
@@ -42455,7 +42470,7 @@
       ]
     },
     {
-      "id": "bench:540",
+      "id": "bench:541",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndEnergyShieldAndLifeHigh1",
@@ -42470,7 +42485,7 @@
       ]
     },
     {
-      "id": "bench:541",
+      "id": "bench:542",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndEnergyShieldAndLifeHigh2",
@@ -42485,7 +42500,7 @@
       ]
     },
     {
-      "id": "bench:542",
+      "id": "bench:543",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndEnergyShieldAndLifeHigh3",
@@ -42500,7 +42515,7 @@
       ]
     },
     {
-      "id": "bench:543",
+      "id": "bench:544",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndLifeHigh1",
@@ -42515,7 +42530,7 @@
       ]
     },
     {
-      "id": "bench:544",
+      "id": "bench:545",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndLifeHigh2",
@@ -42530,7 +42545,7 @@
       ]
     },
     {
-      "id": "bench:545",
+      "id": "bench:546",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedArmourAndLifeHigh3",
@@ -42545,7 +42560,7 @@
       ]
     },
     {
-      "id": "bench:546",
+      "id": "bench:547",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndLifeHigh1",
@@ -42560,7 +42575,7 @@
       ]
     },
     {
-      "id": "bench:547",
+      "id": "bench:548",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndLifeHigh2",
@@ -42575,7 +42590,7 @@
       ]
     },
     {
-      "id": "bench:548",
+      "id": "bench:549",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEvasionAndLifeHigh3",
@@ -42590,7 +42605,7 @@
       ]
     },
     {
-      "id": "bench:549",
+      "id": "bench:550",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEnergyShieldAndLifeHigh1_",
@@ -42605,7 +42620,7 @@
       ]
     },
     {
-      "id": "bench:550",
+      "id": "bench:551",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEnergyShieldAndLifeHigh2",
@@ -42620,7 +42635,7 @@
       ]
     },
     {
-      "id": "bench:551",
+      "id": "bench:552",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedEnergyShieldAndLifeHigh3_",
@@ -42635,7 +42650,7 @@
       ]
     },
     {
-      "id": "bench:552",
+      "id": "bench:553",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedDefencesAndLifeHigh1",
@@ -42650,7 +42665,7 @@
       ]
     },
     {
-      "id": "bench:553",
+      "id": "bench:554",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedDefencesAndLifeHigh2",
@@ -42665,7 +42680,7 @@
       ]
     },
     {
-      "id": "bench:554",
+      "id": "bench:555",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreasedDefencesAndLifeHigh3_",
@@ -42680,7 +42695,7 @@
       ]
     },
     {
-      "id": "bench:555",
+      "id": "bench:556",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2StrengthAndDexterity1__",
@@ -42703,7 +42718,7 @@
       ]
     },
     {
-      "id": "bench:556",
+      "id": "bench:557",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2StrengthAndDexterity2",
@@ -42726,7 +42741,7 @@
       ]
     },
     {
-      "id": "bench:557",
+      "id": "bench:558",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2StrengthAndDexterity3_",
@@ -42749,7 +42764,7 @@
       ]
     },
     {
-      "id": "bench:558",
+      "id": "bench:559",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2DexterityAndIntelligence1_",
@@ -42772,7 +42787,7 @@
       ]
     },
     {
-      "id": "bench:559",
+      "id": "bench:560",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2DexterityAndIntelligence2",
@@ -42795,7 +42810,7 @@
       ]
     },
     {
-      "id": "bench:560",
+      "id": "bench:561",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2DexterityAndIntelligence3__",
@@ -42818,7 +42833,7 @@
       ]
     },
     {
-      "id": "bench:561",
+      "id": "bench:562",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2StrengthAndIntelligence1",
@@ -42841,7 +42856,7 @@
       ]
     },
     {
-      "id": "bench:562",
+      "id": "bench:563",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2StrengthAndIntelligence2",
@@ -42864,7 +42879,7 @@
       ]
     },
     {
-      "id": "bench:563",
+      "id": "bench:564",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2StrengthAndIntelligence3",
@@ -42887,7 +42902,7 @@
       ]
     },
     {
-      "id": "bench:564",
+      "id": "bench:565",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2MinimumEnduranceCharges1",
@@ -42903,7 +42918,7 @@
       ]
     },
     {
-      "id": "bench:565",
+      "id": "bench:566",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2MinimumFrenzyCharges1_",
@@ -42919,7 +42934,7 @@
       ]
     },
     {
-      "id": "bench:566",
+      "id": "bench:567",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2MinimumPowerCharges1",
@@ -42935,7 +42950,7 @@
       ]
     },
     {
-      "id": "bench:567",
+      "id": "bench:568",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2IncreasedManaAndRegen1",
@@ -42951,7 +42966,7 @@
       ]
     },
     {
-      "id": "bench:568",
+      "id": "bench:569",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2IncreasedManaAndRegen2",
@@ -42967,7 +42982,7 @@
       ]
     },
     {
-      "id": "bench:569",
+      "id": "bench:570",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2IncreasedManaAndRegen3",
@@ -42983,7 +42998,7 @@
       ]
     },
     {
-      "id": "bench:570",
+      "id": "bench:571",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ManaAndManaCostEfficiency1",
@@ -42999,7 +43014,7 @@
       ]
     },
     {
-      "id": "bench:571",
+      "id": "bench:572",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ManaAndManaCostEfficiency2",
@@ -43015,7 +43030,7 @@
       ]
     },
     {
-      "id": "bench:572",
+      "id": "bench:573",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ManaAndManaCostEfficiency3",
@@ -43031,7 +43046,7 @@
       ]
     },
     {
-      "id": "bench:573",
+      "id": "bench:574",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ManaAndDamageTakenGoesToManaPercent1",
@@ -43047,7 +43062,7 @@
       ]
     },
     {
-      "id": "bench:574",
+      "id": "bench:575",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ManaAndDamageTakenGoesToManaPercent2",
@@ -43063,7 +43078,7 @@
       ]
     },
     {
-      "id": "bench:575",
+      "id": "bench:576",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ManaAndDamageTakenGoesToManaPercent3",
@@ -43079,7 +43094,7 @@
       ]
     },
     {
-      "id": "bench:576",
+      "id": "bench:577",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2AttackAndCastSpeed1",
@@ -43095,7 +43110,7 @@
       ]
     },
     {
-      "id": "bench:577",
+      "id": "bench:578",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2AttackAndCastSpeed2_",
@@ -43111,7 +43126,7 @@
       ]
     },
     {
-      "id": "bench:578",
+      "id": "bench:579",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2AttackAndCastSpeed3",
@@ -43127,7 +43142,7 @@
       ]
     },
     {
-      "id": "bench:579",
+      "id": "bench:580",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2MovementVelocityAndMovementVelocityIfNotHitRecently1__",
@@ -43136,13 +43151,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 4
         }
       ]
     },
     {
-      "id": "bench:580",
+      "id": "bench:581",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2MovementVelocityAndMovementVelocityIfNotHitRecently2__",
@@ -43157,7 +43172,7 @@
       ]
     },
     {
-      "id": "bench:581",
+      "id": "bench:582",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2MovementVelocityAndMovementVelocityIfNotHitRecently3",
@@ -43172,7 +43187,7 @@
       ]
     },
     {
-      "id": "bench:582",
+      "id": "bench:583",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2MovementVelocityAndOnslaughtOnKill1",
@@ -43181,13 +43196,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 4
         }
       ]
     },
     {
-      "id": "bench:583",
+      "id": "bench:584",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2MovementVelocityAndOnslaughtOnKill2",
@@ -43202,7 +43217,7 @@
       ]
     },
     {
-      "id": "bench:584",
+      "id": "bench:585",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2MovementVelocityAndOnslaughtOnKill3_",
@@ -43217,7 +43232,7 @@
       ]
     },
     {
-      "id": "bench:585",
+      "id": "bench:586",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2MovementVelocityAndCannotBeChilled1_",
@@ -43226,13 +43241,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 4
         }
       ]
     },
     {
-      "id": "bench:586",
+      "id": "bench:587",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2MovementVelocityAndCannotBeChilled2",
@@ -43247,7 +43262,7 @@
       ]
     },
     {
-      "id": "bench:587",
+      "id": "bench:588",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2MovementVelocityAndCannotBeChilled3",
@@ -43262,7 +43277,7 @@
       ]
     },
     {
-      "id": "bench:588",
+      "id": "bench:589",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ArmourAndEvasionRating1_",
@@ -43278,7 +43293,7 @@
       ]
     },
     {
-      "id": "bench:589",
+      "id": "bench:590",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ArmourAndEvasionRating2",
@@ -43294,7 +43309,7 @@
       ]
     },
     {
-      "id": "bench:590",
+      "id": "bench:591",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ArmourAndEvasionRating3",
@@ -43310,7 +43325,7 @@
       ]
     },
     {
-      "id": "bench:591",
+      "id": "bench:592",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ArmourAndEnergyShield1",
@@ -43325,7 +43340,7 @@
       ]
     },
     {
-      "id": "bench:592",
+      "id": "bench:593",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ArmourAndEnergyShield2__",
@@ -43340,7 +43355,7 @@
       ]
     },
     {
-      "id": "bench:593",
+      "id": "bench:594",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ArmourAndEnergyShield3",
@@ -43355,7 +43370,7 @@
       ]
     },
     {
-      "id": "bench:594",
+      "id": "bench:595",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2EvasionRatingAndEnergyShield1__",
@@ -43371,7 +43386,7 @@
       ]
     },
     {
-      "id": "bench:595",
+      "id": "bench:596",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2EvasionRatingAndEnergyShield2",
@@ -43387,7 +43402,7 @@
       ]
     },
     {
-      "id": "bench:596",
+      "id": "bench:597",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2EvasionRatingAndEnergyShield3",
@@ -43403,7 +43418,7 @@
       ]
     },
     {
-      "id": "bench:597",
+      "id": "bench:598",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2FlaskEffectAndFlaskChargesGained1",
@@ -43418,7 +43433,7 @@
       ]
     },
     {
-      "id": "bench:598",
+      "id": "bench:599",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2FlaskEffectAndFlaskChargesGained2",
@@ -43433,7 +43448,7 @@
       ]
     },
     {
-      "id": "bench:599",
+      "id": "bench:600",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2GlobalCooldownRecovery1",
@@ -43448,7 +43463,7 @@
       ]
     },
     {
-      "id": "bench:600",
+      "id": "bench:601",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2GlobalCooldownRecovery2",
@@ -43463,7 +43478,7 @@
       ]
     },
     {
-      "id": "bench:601",
+      "id": "bench:602",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2DamagePerEnduranceCharge2h1",
@@ -43483,7 +43498,7 @@
       ]
     },
     {
-      "id": "bench:602",
+      "id": "bench:603",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2DamagePerEnduranceCharge1h1_",
@@ -43506,7 +43521,7 @@
       ]
     },
     {
-      "id": "bench:603",
+      "id": "bench:604",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2DamagePerFrenzyCharge2h1",
@@ -43526,7 +43541,7 @@
       ]
     },
     {
-      "id": "bench:604",
+      "id": "bench:605",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2DamagePerFrenzyCharge1h1",
@@ -43549,7 +43564,7 @@
       ]
     },
     {
-      "id": "bench:605",
+      "id": "bench:606",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2DamagePerPowerCharge2h1__",
@@ -43569,7 +43584,7 @@
       ]
     },
     {
-      "id": "bench:606",
+      "id": "bench:607",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2DamagePerPowerCharge1h1",
@@ -43592,7 +43607,7 @@
       ]
     },
     {
-      "id": "bench:607",
+      "id": "bench:608",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageConvertedToFire1",
@@ -43607,7 +43622,7 @@
       ]
     },
     {
-      "id": "bench:608",
+      "id": "bench:609",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageConvertedToCold1",
@@ -43622,7 +43637,7 @@
       ]
     },
     {
-      "id": "bench:609",
+      "id": "bench:610",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageConvertedToLightning1",
@@ -43637,7 +43652,7 @@
       ]
     },
     {
-      "id": "bench:610",
+      "id": "bench:611",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2MaximumZombieAndSkeleton1_",
@@ -43652,7 +43667,7 @@
       ]
     },
     {
-      "id": "bench:611",
+      "id": "bench:612",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2EffectOfAilments1_",
@@ -43662,13 +43677,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 2
         }
       ]
     },
     {
-      "id": "bench:612",
+      "id": "bench:613",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2EffectOfAilments2",
@@ -43684,7 +43699,7 @@
       ]
     },
     {
-      "id": "bench:613",
+      "id": "bench:614",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2CurseEffect1",
@@ -43699,7 +43714,7 @@
       ]
     },
     {
-      "id": "bench:614",
+      "id": "bench:615",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2CurseEffect2",
@@ -43714,7 +43729,7 @@
       ]
     },
     {
-      "id": "bench:615",
+      "id": "bench:616",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2AvoidElementalDamageChanceDuringSoulGainPrevention1",
@@ -43730,7 +43745,7 @@
       ]
     },
     {
-      "id": "bench:616",
+      "id": "bench:617",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2AvoidElementalDamageChanceDuringSoulGainPrevention2",
@@ -43746,7 +43761,7 @@
       ]
     },
     {
-      "id": "bench:617",
+      "id": "bench:618",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageReductionRatingDuringSoulGainPrevention1_",
@@ -43762,7 +43777,7 @@
       ]
     },
     {
-      "id": "bench:618",
+      "id": "bench:619",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageReductionRatingDuringSoulGainPrevention2",
@@ -43778,7 +43793,7 @@
       ]
     },
     {
-      "id": "bench:619",
+      "id": "bench:620",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageReductionRatingDuringSoulGainPrevention3___",
@@ -43794,7 +43809,7 @@
       ]
     },
     {
-      "id": "bench:620",
+      "id": "bench:621",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2GainOnslaughtDuringSoulGainPrevention1",
@@ -43810,7 +43825,7 @@
       ]
     },
     {
-      "id": "bench:621",
+      "id": "bench:622",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2DamageWithNonVaalSkillsDuringSoulGainPrevention1",
@@ -43826,7 +43841,7 @@
       ]
     },
     {
-      "id": "bench:622",
+      "id": "bench:623",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2DamageWithNonVaalSkillsDuringSoulGainPrevention2",
@@ -43842,7 +43857,7 @@
       ]
     },
     {
-      "id": "bench:623",
+      "id": "bench:624",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2DamageWithNonVaalSkillsDuringSoulGainPrevention3",
@@ -43858,7 +43873,7 @@
       ]
     },
     {
-      "id": "bench:624",
+      "id": "bench:625",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2SkillAreaOfEffectPercentAndAreaOfEffectGemLevel1-",
@@ -43873,7 +43888,7 @@
       ]
     },
     {
-      "id": "bench:625",
+      "id": "bench:626",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2ProjectilePierceAndProjectileGemLevel1",
@@ -43888,7 +43903,7 @@
       ]
     },
     {
-      "id": "bench:626",
+      "id": "bench:627",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2MeleeRangeAndMeleeGemLevel1_",
@@ -43903,7 +43918,7 @@
       ]
     },
     {
-      "id": "bench:627",
+      "id": "bench:628",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2CriticalStrikeMultiplierIfRareOrUniqueEnemyNearby2h1_",
@@ -43923,7 +43938,7 @@
       ]
     },
     {
-      "id": "bench:628",
+      "id": "bench:629",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2CriticalStrikeMultiplierIfRareOrUniqueEnemyNearby2h2",
@@ -43943,7 +43958,7 @@
       ]
     },
     {
-      "id": "bench:629",
+      "id": "bench:630",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2CriticalStrikeMultiplierIfRareOrUniqueEnemyNearby2h3",
@@ -43963,7 +43978,7 @@
       ]
     },
     {
-      "id": "bench:630",
+      "id": "bench:631",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2CriticalStrikeMultiplierIfRareOrUniqueEnemyNearby1h1",
@@ -43986,7 +44001,7 @@
       ]
     },
     {
-      "id": "bench:631",
+      "id": "bench:632",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2CriticalStrikeMultiplierIfRareOrUniqueEnemyNearby1h2",
@@ -44009,7 +44024,7 @@
       ]
     },
     {
-      "id": "bench:632",
+      "id": "bench:633",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2CriticalStrikeMultiplierIfRareOrUniqueEnemyNearby1h3",
@@ -44032,7 +44047,7 @@
       ]
     },
     {
-      "id": "bench:633",
+      "id": "bench:634",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2AttackSpeedPercentIfRareOrUniqueEnemyNearby2h1",
@@ -44052,7 +44067,7 @@
       ]
     },
     {
-      "id": "bench:634",
+      "id": "bench:635",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2AttackSpeedPercentIfRareOrUniqueEnemyNearby2h2_",
@@ -44072,7 +44087,7 @@
       ]
     },
     {
-      "id": "bench:635",
+      "id": "bench:636",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2AttackSpeedPercentIfRareOrUniqueEnemyNearby2h3",
@@ -44092,7 +44107,7 @@
       ]
     },
     {
-      "id": "bench:636",
+      "id": "bench:637",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2AttackSpeedPercentIfRareOrUniqueEnemyNearby1h1",
@@ -44115,7 +44130,7 @@
       ]
     },
     {
-      "id": "bench:637",
+      "id": "bench:638",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2AttackSpeedPercentIfRareOrUniqueEnemyNearby1h2_",
@@ -44138,7 +44153,7 @@
       ]
     },
     {
-      "id": "bench:638",
+      "id": "bench:639",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2AttackSpeedPercentIfRareOrUniqueEnemyNearby1h3",
@@ -44161,7 +44176,7 @@
       ]
     },
     {
-      "id": "bench:639",
+      "id": "bench:640",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2EnergyShieldRegenerationRatePerMinuteIfRareOrUniqueEnemyNearby1",
@@ -44177,7 +44192,7 @@
       ]
     },
     {
-      "id": "bench:640",
+      "id": "bench:641",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2EnergyShieldRegenerationRatePerMinuteIfRareOrUniqueEnemyNearby2_",
@@ -44193,7 +44208,7 @@
       ]
     },
     {
-      "id": "bench:641",
+      "id": "bench:642",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2EnergyShieldRegenerationRatePerMinuteIfRareOrUniqueEnemyNearby3_",
@@ -44209,7 +44224,7 @@
       ]
     },
     {
-      "id": "bench:642",
+      "id": "bench:643",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2CriticalChanceAndGainFrenzyChargeOnCriticalStrikePercent1",
@@ -44224,7 +44239,7 @@
       ]
     },
     {
-      "id": "bench:643",
+      "id": "bench:644",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2CriticalChanceAndGainFrenzyChargeOnCriticalStrikePercent2",
@@ -44239,7 +44254,7 @@
       ]
     },
     {
-      "id": "bench:644",
+      "id": "bench:645",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2CriticalChanceAndGainFrenzyChargeOnCriticalStrikePercent3",
@@ -44254,7 +44269,7 @@
       ]
     },
     {
-      "id": "bench:645",
+      "id": "bench:646",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2CriticalChanceAndElementalDamagePercentIfHaveCritRecently1_",
@@ -44270,7 +44285,7 @@
       ]
     },
     {
-      "id": "bench:646",
+      "id": "bench:647",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2CriticalChanceAndElementalDamagePercentIfHaveCritRecently2",
@@ -44286,7 +44301,7 @@
       ]
     },
     {
-      "id": "bench:647",
+      "id": "bench:648",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2CriticalChanceAndElementalDamagePercentIfHaveCritRecently3",
@@ -44302,7 +44317,7 @@
       ]
     },
     {
-      "id": "bench:648",
+      "id": "bench:649",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2CriticalChanceAndAddedChaosDamageIfHaveCritRecently1",
@@ -44318,7 +44333,7 @@
       ]
     },
     {
-      "id": "bench:649",
+      "id": "bench:650",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2CriticalChanceAndAddedChaosDamageIfHaveCritRecently2",
@@ -44334,7 +44349,7 @@
       ]
     },
     {
-      "id": "bench:650",
+      "id": "bench:651",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2CriticalChanceAndAddedChaosDamageIfHaveCritRecently3",
@@ -44350,7 +44365,7 @@
       ]
     },
     {
-      "id": "bench:651",
+      "id": "bench:652",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2BaseLifeAndManaRegen1",
@@ -44371,7 +44386,7 @@
       ]
     },
     {
-      "id": "bench:652",
+      "id": "bench:653",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2BaseLifeAndManaRegen2_",
@@ -44392,7 +44407,7 @@
       ]
     },
     {
-      "id": "bench:653",
+      "id": "bench:654",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2BaseLifeAndManaRegen3",
@@ -44413,7 +44428,7 @@
       ]
     },
     {
-      "id": "bench:654",
+      "id": "bench:655",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2BaseManaAndLifeRegen1",
@@ -44434,7 +44449,7 @@
       ]
     },
     {
-      "id": "bench:655",
+      "id": "bench:656",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2BaseManaAndLifeRegen2",
@@ -44455,7 +44470,7 @@
       ]
     },
     {
-      "id": "bench:656",
+      "id": "bench:657",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2BaseManaAndLifeRegen3",
@@ -44476,7 +44491,7 @@
       ]
     },
     {
-      "id": "bench:657",
+      "id": "bench:658",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2SummonTotemCastSpeed1",
@@ -44492,7 +44507,7 @@
       ]
     },
     {
-      "id": "bench:658",
+      "id": "bench:659",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2SummonTotemCastSpeed2",
@@ -44508,7 +44523,7 @@
       ]
     },
     {
-      "id": "bench:659",
+      "id": "bench:660",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2SummonTotemCastSpeed3",
@@ -44524,7 +44539,7 @@
       ]
     },
     {
-      "id": "bench:660",
+      "id": "bench:661",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2AddedFireAndColdDamage1",
@@ -44542,7 +44557,7 @@
       ]
     },
     {
-      "id": "bench:661",
+      "id": "bench:662",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2AddedFireAndColdDamage2__",
@@ -44560,7 +44575,7 @@
       ]
     },
     {
-      "id": "bench:662",
+      "id": "bench:663",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2AddedFireAndColdDamage3",
@@ -44578,7 +44593,7 @@
       ]
     },
     {
-      "id": "bench:663",
+      "id": "bench:664",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2AddedFireAndLightningDamage1",
@@ -44596,7 +44611,7 @@
       ]
     },
     {
-      "id": "bench:664",
+      "id": "bench:665",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2AddedFireAndLightningDamage2___",
@@ -44614,7 +44629,7 @@
       ]
     },
     {
-      "id": "bench:665",
+      "id": "bench:666",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2AddedFireAndLightningDamage3",
@@ -44632,7 +44647,7 @@
       ]
     },
     {
-      "id": "bench:666",
+      "id": "bench:667",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2AddedColdAndLightningDamage1",
@@ -44650,7 +44665,7 @@
       ]
     },
     {
-      "id": "bench:667",
+      "id": "bench:668",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2AddedColdAndLightningDamage2",
@@ -44668,7 +44683,7 @@
       ]
     },
     {
-      "id": "bench:668",
+      "id": "bench:669",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2AddedColdAndLightningDamage3_",
@@ -44686,7 +44701,7 @@
       ]
     },
     {
-      "id": "bench:669",
+      "id": "bench:670",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2LuckyCriticalsDuringFocus1",
@@ -44701,7 +44716,7 @@
       ]
     },
     {
-      "id": "bench:670",
+      "id": "bench:671",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2DodgeChanceDuringFocus1_",
@@ -44717,7 +44732,7 @@
       ]
     },
     {
-      "id": "bench:671",
+      "id": "bench:672",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2DodgeChanceDuringFocus2",
@@ -44733,7 +44748,7 @@
       ]
     },
     {
-      "id": "bench:672",
+      "id": "bench:673",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2DodgeChanceDuringFocus3",
@@ -44749,7 +44764,7 @@
       ]
     },
     {
-      "id": "bench:673",
+      "id": "bench:674",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageReductionDuringFocus1",
@@ -44765,7 +44780,7 @@
       ]
     },
     {
-      "id": "bench:674",
+      "id": "bench:675",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageReductionDuringFocus2__",
@@ -44781,7 +44796,7 @@
       ]
     },
     {
-      "id": "bench:675",
+      "id": "bench:676",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2PhysicalDamageReductionDuringFocus3_",
@@ -44797,7 +44812,7 @@
       ]
     },
     {
-      "id": "bench:676",
+      "id": "bench:677",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ShockNearbyEnemiesOnFocus1",
@@ -44812,7 +44827,7 @@
       ]
     },
     {
-      "id": "bench:677",
+      "id": "bench:678",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ShockNearbyEnemiesOnFocus2",
@@ -44827,7 +44842,7 @@
       ]
     },
     {
-      "id": "bench:678",
+      "id": "bench:679",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ShockNearbyEnemiesOnFocus3",
@@ -44842,7 +44857,7 @@
       ]
     },
     {
-      "id": "bench:679",
+      "id": "bench:680",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2LifeRegenerationPerEvasionDuringFocus1",
@@ -44857,7 +44872,7 @@
       ]
     },
     {
-      "id": "bench:680",
+      "id": "bench:681",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2RestoreManaAndEnergyShieldOnFocus1",
@@ -44872,7 +44887,7 @@
       ]
     },
     {
-      "id": "bench:681",
+      "id": "bench:682",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2RestoreManaAndEnergyShieldOnFocus2",
@@ -44887,7 +44902,7 @@
       ]
     },
     {
-      "id": "bench:682",
+      "id": "bench:683",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2RestoreManaAndEnergyShieldOnFocus3",
@@ -44902,7 +44917,7 @@
       ]
     },
     {
-      "id": "bench:683",
+      "id": "bench:684",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ChanceToDealDoubleDamageWhileFocused2h1_",
@@ -44922,7 +44937,7 @@
       ]
     },
     {
-      "id": "bench:684",
+      "id": "bench:685",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ChanceToDealDoubleDamageWhileFocused2h2",
@@ -44942,7 +44957,7 @@
       ]
     },
     {
-      "id": "bench:685",
+      "id": "bench:686",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ChanceToDealDoubleDamageWhileFocused2h3",
@@ -44962,7 +44977,7 @@
       ]
     },
     {
-      "id": "bench:686",
+      "id": "bench:687",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ChanceToDealDoubleDamageWhileFocused1h1",
@@ -44986,7 +45001,7 @@
       ]
     },
     {
-      "id": "bench:687",
+      "id": "bench:688",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ChanceToDealDoubleDamageWhileFocused1h2",
@@ -45010,7 +45025,7 @@
       ]
     },
     {
-      "id": "bench:688",
+      "id": "bench:689",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ChanceToDealDoubleDamageWhileFocused1h3",
@@ -45034,7 +45049,7 @@
       ]
     },
     {
-      "id": "bench:689",
+      "id": "bench:690",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2AttackAndCastSpeedWhileFocused1",
@@ -45049,7 +45064,7 @@
       ]
     },
     {
-      "id": "bench:690",
+      "id": "bench:691",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2AttackAndCastSpeedWhileFocused2_",
@@ -45064,7 +45079,7 @@
       ]
     },
     {
-      "id": "bench:691",
+      "id": "bench:692",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2AttackAndCastSpeedWhileFocused3",
@@ -45079,7 +45094,7 @@
       ]
     },
     {
-      "id": "bench:692",
+      "id": "bench:693",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2StatusAilmentsYouInflictDurationWhileFocused1",
@@ -45094,7 +45109,7 @@
       ]
     },
     {
-      "id": "bench:693",
+      "id": "bench:694",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2StatusAilmentsYouInflictDurationWhileFocused2",
@@ -45109,7 +45124,7 @@
       ]
     },
     {
-      "id": "bench:694",
+      "id": "bench:695",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2StatusAilmentsYouInflictDurationWhileFocused3",
@@ -45124,7 +45139,7 @@
       ]
     },
     {
-      "id": "bench:695",
+      "id": "bench:696",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2ImmuneToStatusAilmentsWhileFocused1",
@@ -45139,7 +45154,7 @@
       ]
     },
     {
-      "id": "bench:696",
+      "id": "bench:697",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2LifeLeechFromAnyDamageAndVaalPactWhileFocused1",
@@ -45154,7 +45169,7 @@
       ]
     },
     {
-      "id": "bench:697",
+      "id": "bench:698",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2FortifyEffectWhileFocused1_",
@@ -45169,7 +45184,7 @@
       ]
     },
     {
-      "id": "bench:698",
+      "id": "bench:699",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2FortifyEffectWhileFocused2",
@@ -45184,7 +45199,7 @@
       ]
     },
     {
-      "id": "bench:699",
+      "id": "bench:700",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2FortifyEffectWhileFocused3",
@@ -45199,7 +45214,7 @@
       ]
     },
     {
-      "id": "bench:700",
+      "id": "bench:701",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2TriggerSocketedSpellWhenYouFocus1",
@@ -45214,7 +45229,7 @@
       ]
     },
     {
-      "id": "bench:701",
+      "id": "bench:702",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2DamageRemovedFromManaBeforeLifeWhileFocused1_",
@@ -45229,7 +45244,7 @@
       ]
     },
     {
-      "id": "bench:702",
+      "id": "bench:703",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2MinionsRecoverMaximumLifeWhenYouFocus1_",
@@ -45244,7 +45259,7 @@
       ]
     },
     {
-      "id": "bench:703",
+      "id": "bench:704",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2AllDamage2_",
@@ -45260,7 +45275,7 @@
       ]
     },
     {
-      "id": "bench:704",
+      "id": "bench:705",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2AllDamage3",
@@ -45276,7 +45291,7 @@
       ]
     },
     {
-      "id": "bench:705",
+      "id": "bench:706",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreaseSocketedSupportGemLevel1",
@@ -45306,7 +45321,7 @@
       ]
     },
     {
-      "id": "bench:706",
+      "id": "bench:707",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalIncreaseSocketedSupportGemLevel2",
@@ -45336,7 +45351,7 @@
       ]
     },
     {
-      "id": "bench:707",
+      "id": "bench:708",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ReduceGlobalFlatManaCostChannelling1",
@@ -45352,7 +45367,7 @@
       ]
     },
     {
-      "id": "bench:708",
+      "id": "bench:709",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ReduceGlobalFlatManaCostChannelling2",
@@ -45368,7 +45383,7 @@
       ]
     },
     {
-      "id": "bench:709",
+      "id": "bench:710",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ReduceGlobalFlatManaCostChannelling3",
@@ -45384,7 +45399,7 @@
       ]
     },
     {
-      "id": "bench:710",
+      "id": "bench:711",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ReduceGlobalFlatManaCostNonChannelling1",
@@ -45400,7 +45415,7 @@
       ]
     },
     {
-      "id": "bench:711",
+      "id": "bench:712",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ReduceGlobalFlatManaCostNonChannelling2",
@@ -45416,7 +45431,7 @@
       ]
     },
     {
-      "id": "bench:712",
+      "id": "bench:713",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ReduceGlobalFlatManaCostNonChannelling3",
@@ -45432,7 +45447,7 @@
       ]
     },
     {
-      "id": "bench:713",
+      "id": "bench:714",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2DamageWhileLeeching2",
@@ -45448,7 +45463,7 @@
       ]
     },
     {
-      "id": "bench:714",
+      "id": "bench:715",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2DamageWhileLeeching3",
@@ -45464,7 +45479,7 @@
       ]
     },
     {
-      "id": "bench:715",
+      "id": "bench:716",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2SocketedGemQuality2",
@@ -45494,7 +45509,7 @@
       ]
     },
     {
-      "id": "bench:716",
+      "id": "bench:717",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2SocketedGemQuality3",
@@ -45524,7 +45539,7 @@
       ]
     },
     {
-      "id": "bench:717",
+      "id": "bench:718",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2BleedOnHitGained2h2",
@@ -45544,7 +45559,7 @@
       ]
     },
     {
-      "id": "bench:718",
+      "id": "bench:719",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2BleedOnHitGained2h3_",
@@ -45564,7 +45579,7 @@
       ]
     },
     {
-      "id": "bench:719",
+      "id": "bench:720",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2BleedOnHitGained1h2_",
@@ -45587,7 +45602,7 @@
       ]
     },
     {
-      "id": "bench:720",
+      "id": "bench:721",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2BleedOnHitGained1h3_",
@@ -45610,7 +45625,7 @@
       ]
     },
     {
-      "id": "bench:721",
+      "id": "bench:722",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2AlwaysHits1",
@@ -45637,7 +45652,7 @@
       ]
     },
     {
-      "id": "bench:722",
+      "id": "bench:723",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2DamageDuringFlaskEffect2_",
@@ -45652,7 +45667,7 @@
       ]
     },
     {
-      "id": "bench:723",
+      "id": "bench:724",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2DamageDuringFlaskEffect3",
@@ -45667,7 +45682,7 @@
       ]
     },
     {
-      "id": "bench:724",
+      "id": "bench:725",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ItemRarityFromRareAndUniqueEnemies2",
@@ -45676,13 +45691,13 @@
       ],
       "cost": [
         {
-          "name": "Orb of Chance",
+          "name": "Orb of Alteration",
           "amount": 8
         }
       ]
     },
     {
-      "id": "bench:725",
+      "id": "bench:726",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ItemRarityFromRareAndUniqueEnemies3",
@@ -45697,7 +45712,7 @@
       ]
     },
     {
-      "id": "bench:726",
+      "id": "bench:727",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2FireAddedAsChaos2h2",
@@ -45717,7 +45732,7 @@
       ]
     },
     {
-      "id": "bench:727",
+      "id": "bench:728",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2FireAddedAsChaos2h3_",
@@ -45737,7 +45752,7 @@
       ]
     },
     {
-      "id": "bench:728",
+      "id": "bench:729",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2FireAddedAsChaos1h2",
@@ -45761,7 +45776,7 @@
       ]
     },
     {
-      "id": "bench:729",
+      "id": "bench:730",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2FireAddedAsChaos1h3_",
@@ -45785,7 +45800,7 @@
       ]
     },
     {
-      "id": "bench:730",
+      "id": "bench:731",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ColdAddedAsChaos2h2",
@@ -45805,7 +45820,7 @@
       ]
     },
     {
-      "id": "bench:731",
+      "id": "bench:732",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ColdAddedAsChaos2h3",
@@ -45825,7 +45840,7 @@
       ]
     },
     {
-      "id": "bench:732",
+      "id": "bench:733",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ColdAddedAsChaos1h2",
@@ -45849,7 +45864,7 @@
       ]
     },
     {
-      "id": "bench:733",
+      "id": "bench:734",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ColdAddedAsChaos1h3",
@@ -45873,7 +45888,7 @@
       ]
     },
     {
-      "id": "bench:734",
+      "id": "bench:735",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LightningAddedAsChaos2h2",
@@ -45893,7 +45908,7 @@
       ]
     },
     {
-      "id": "bench:735",
+      "id": "bench:736",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LightningAddedAsChaos2h3___",
@@ -45913,7 +45928,7 @@
       ]
     },
     {
-      "id": "bench:736",
+      "id": "bench:737",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LightningAddedAsChaos1h2__",
@@ -45937,7 +45952,7 @@
       ]
     },
     {
-      "id": "bench:737",
+      "id": "bench:738",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LightningAddedAsChaos1h3",
@@ -45961,7 +45976,7 @@
       ]
     },
     {
-      "id": "bench:738",
+      "id": "bench:739",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2PhysicalAddedAsChaos2h2",
@@ -45981,7 +45996,7 @@
       ]
     },
     {
-      "id": "bench:739",
+      "id": "bench:740",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2PhysicalAddedAsChaos2h3",
@@ -46001,7 +46016,7 @@
       ]
     },
     {
-      "id": "bench:740",
+      "id": "bench:741",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2PhysicalAddedAsChaos1h2_",
@@ -46025,7 +46040,7 @@
       ]
     },
     {
-      "id": "bench:741",
+      "id": "bench:742",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2PhysicalAddedAsChaos1h3",
@@ -46049,7 +46064,7 @@
       ]
     },
     {
-      "id": "bench:742",
+      "id": "bench:743",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2PercentageAllAttributes2",
@@ -46064,7 +46079,7 @@
       ]
     },
     {
-      "id": "bench:743",
+      "id": "bench:744",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2PercentageAllAttributes3",
@@ -46079,7 +46094,7 @@
       ]
     },
     {
-      "id": "bench:744",
+      "id": "bench:745",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2BannerAuraEffect1",
@@ -46094,7 +46109,7 @@
       ]
     },
     {
-      "id": "bench:745",
+      "id": "bench:746",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2BannerAuraEffect2",
@@ -46109,7 +46124,7 @@
       ]
     },
     {
-      "id": "bench:746",
+      "id": "bench:747",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2WolfOnKill1",
@@ -46124,7 +46139,7 @@
       ]
     },
     {
-      "id": "bench:747",
+      "id": "bench:748",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2WarcryBuffEffect1",
@@ -46139,7 +46154,7 @@
       ]
     },
     {
-      "id": "bench:748",
+      "id": "bench:749",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2WarcryBuffEffect2",
@@ -46154,7 +46169,7 @@
       ]
     },
     {
-      "id": "bench:749",
+      "id": "bench:750",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2AvoidFreeze2_",
@@ -46169,7 +46184,7 @@
       ]
     },
     {
-      "id": "bench:750",
+      "id": "bench:751",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2AvoidFreeze3",
@@ -46184,7 +46199,7 @@
       ]
     },
     {
-      "id": "bench:751",
+      "id": "bench:752",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2CriticalMultiplierOnShatter2",
@@ -46199,7 +46214,7 @@
       ]
     },
     {
-      "id": "bench:752",
+      "id": "bench:753",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2CriticalMultiplierOnShatter3",
@@ -46214,7 +46229,7 @@
       ]
     },
     {
-      "id": "bench:753",
+      "id": "bench:754",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2IncreasedChaosAndPhysicalDamage2",
@@ -46229,7 +46244,7 @@
       ]
     },
     {
-      "id": "bench:754",
+      "id": "bench:755",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2IncreasedChaosAndPhysicalDamage3_",
@@ -46244,7 +46259,7 @@
       ]
     },
     {
-      "id": "bench:755",
+      "id": "bench:756",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2IncreasedFireAndLightningDamage2",
@@ -46259,7 +46274,7 @@
       ]
     },
     {
-      "id": "bench:756",
+      "id": "bench:757",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2IncreasedFireAndLightningDamage3_",
@@ -46274,7 +46289,7 @@
       ]
     },
     {
-      "id": "bench:757",
+      "id": "bench:758",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2LocalFlaskLifeRegenerationPerMinuteDuringFlaskEffect1_",
@@ -46293,7 +46308,7 @@
       ]
     },
     {
-      "id": "bench:758",
+      "id": "bench:759",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2LocalFlaskAvoidStunChanceDuringFlaskEffect1",
@@ -46312,7 +46327,7 @@
       ]
     },
     {
-      "id": "bench:759",
+      "id": "bench:760",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2LocalFlaskItemFoundRarityDuringFlaskEffect1",
@@ -46331,7 +46346,7 @@
       ]
     },
     {
-      "id": "bench:760",
+      "id": "bench:761",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2LocalFlaskReducedReflectDuringEffect",
@@ -46350,7 +46365,7 @@
       ]
     },
     {
-      "id": "bench:761",
+      "id": "bench:762",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2LocalFlaskLifeLeechOnDamageTakenPermyriadDuringFlaskEffect1",
@@ -46369,7 +46384,7 @@
       ]
     },
     {
-      "id": "bench:762",
+      "id": "bench:763",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalAttackSpeedDexterityIntelligence1____",
@@ -46398,7 +46413,7 @@
       ]
     },
     {
-      "id": "bench:763",
+      "id": "bench:764",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalAttackSpeedDexterityIntelligence2",
@@ -46425,7 +46440,7 @@
       ]
     },
     {
-      "id": "bench:764",
+      "id": "bench:765",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalCriticalStrikeChanceStrengthIntelligence1",
@@ -46454,7 +46469,7 @@
       ]
     },
     {
-      "id": "bench:765",
+      "id": "bench:766",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalCriticalStrikeChanceStrengthIntelligence2___",
@@ -46483,7 +46498,7 @@
       ]
     },
     {
-      "id": "bench:766",
+      "id": "bench:767",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalAccuracyRatingStrengthDexterity1",
@@ -46512,7 +46527,7 @@
       ]
     },
     {
-      "id": "bench:767",
+      "id": "bench:768",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalAccuracyRatingStrengthDexterity2",
@@ -46541,7 +46556,7 @@
       ]
     },
     {
-      "id": "bench:768",
+      "id": "bench:769",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LocalAttackSpeedAndLocalDisplayTriggerLevel1BloodRageOnKillChance1_",
@@ -46570,7 +46585,7 @@
       ]
     },
     {
-      "id": "bench:769",
+      "id": "bench:770",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LocalAttackSpeedAndLocalDisplayTriggerLevel1BloodRageOnKillChance2",
@@ -46597,7 +46612,7 @@
       ]
     },
     {
-      "id": "bench:770",
+      "id": "bench:771",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2CastSpeedAndGainArcaneSurgeOnKillChance2h1_",
@@ -46617,7 +46632,7 @@
       ]
     },
     {
-      "id": "bench:771",
+      "id": "bench:772",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2CastSpeedAndGainArcaneSurgeOnKillChance2h2_",
@@ -46637,7 +46652,7 @@
       ]
     },
     {
-      "id": "bench:772",
+      "id": "bench:773",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2CastSpeedAndGainArcaneSurgeOnKillChance2h3",
@@ -46657,7 +46672,7 @@
       ]
     },
     {
-      "id": "bench:773",
+      "id": "bench:774",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2CastSpeedAndGainArcaneSurgeOnKillChance1h1",
@@ -46680,7 +46695,7 @@
       ]
     },
     {
-      "id": "bench:774",
+      "id": "bench:775",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2CastSpeedAndGainArcaneSurgeOnKillChance1h2",
@@ -46703,7 +46718,7 @@
       ]
     },
     {
-      "id": "bench:775",
+      "id": "bench:776",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2CastSpeedAndGainArcaneSurgeOnKillChance1h3",
@@ -46726,7 +46741,7 @@
       ]
     },
     {
-      "id": "bench:776",
+      "id": "bench:777",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2FireAndChaosDamageResistance1_",
@@ -46749,7 +46764,7 @@
       ]
     },
     {
-      "id": "bench:777",
+      "id": "bench:778",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2FireAndChaosDamageResistance2_",
@@ -46772,7 +46787,7 @@
       ]
     },
     {
-      "id": "bench:778",
+      "id": "bench:779",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2FireAndChaosDamageResistance3",
@@ -46795,7 +46810,7 @@
       ]
     },
     {
-      "id": "bench:779",
+      "id": "bench:780",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2LightningAndChaosDamageResistance1",
@@ -46818,7 +46833,7 @@
       ]
     },
     {
-      "id": "bench:780",
+      "id": "bench:781",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2LightningAndChaosDamageResistance2_",
@@ -46841,7 +46856,7 @@
       ]
     },
     {
-      "id": "bench:781",
+      "id": "bench:782",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2LightningAndChaosDamageResistance3",
@@ -46864,7 +46879,7 @@
       ]
     },
     {
-      "id": "bench:782",
+      "id": "bench:783",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ColdAndChaosDamageResistance1_",
@@ -46887,7 +46902,7 @@
       ]
     },
     {
-      "id": "bench:783",
+      "id": "bench:784",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ColdAndChaosDamageResistance2_",
@@ -46910,7 +46925,7 @@
       ]
     },
     {
-      "id": "bench:784",
+      "id": "bench:785",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ColdAndChaosDamageResistance3",
@@ -46933,7 +46948,7 @@
       ]
     },
     {
-      "id": "bench:785",
+      "id": "bench:786",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2StrengthAndAvoidIgnite1",
@@ -46949,7 +46964,7 @@
       ]
     },
     {
-      "id": "bench:786",
+      "id": "bench:787",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2StrengthAndAvoidIgnite2_",
@@ -46965,7 +46980,7 @@
       ]
     },
     {
-      "id": "bench:787",
+      "id": "bench:788",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2StrengthAndAvoidIgnite3_",
@@ -46981,7 +46996,7 @@
       ]
     },
     {
-      "id": "bench:788",
+      "id": "bench:789",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2DexterityAndAvoidFreeze1",
@@ -46997,7 +47012,7 @@
       ]
     },
     {
-      "id": "bench:789",
+      "id": "bench:790",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2DexterityAndAvoidFreeze2___",
@@ -47013,7 +47028,7 @@
       ]
     },
     {
-      "id": "bench:790",
+      "id": "bench:791",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2DexterityAndAvoidFreeze3",
@@ -47029,7 +47044,7 @@
       ]
     },
     {
-      "id": "bench:791",
+      "id": "bench:792",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2IntelligenceAndAvoidShock1",
@@ -47045,7 +47060,7 @@
       ]
     },
     {
-      "id": "bench:792",
+      "id": "bench:793",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2IntelligenceAndAvoidShock2",
@@ -47061,7 +47076,7 @@
       ]
     },
     {
-      "id": "bench:793",
+      "id": "bench:794",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2IntelligenceAndAvoidShock3____",
@@ -47077,7 +47092,7 @@
       ]
     },
     {
-      "id": "bench:794",
+      "id": "bench:795",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2TrapThrowSpeed1",
@@ -47093,7 +47108,7 @@
       ]
     },
     {
-      "id": "bench:795",
+      "id": "bench:796",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2TrapThrowSpeed2_",
@@ -47109,7 +47124,7 @@
       ]
     },
     {
-      "id": "bench:796",
+      "id": "bench:797",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2TrapThrowSpeed3",
@@ -47125,7 +47140,7 @@
       ]
     },
     {
-      "id": "bench:797",
+      "id": "bench:798",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2MineLayingSpeed1",
@@ -47141,7 +47156,7 @@
       ]
     },
     {
-      "id": "bench:798",
+      "id": "bench:799",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2MineLayingSpeed2",
@@ -47157,7 +47172,7 @@
       ]
     },
     {
-      "id": "bench:799",
+      "id": "bench:800",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2MineLayingSpeed3",
@@ -47173,7 +47188,7 @@
       ]
     },
     {
-      "id": "bench:800",
+      "id": "bench:801",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2BrandAttachmentRange1",
@@ -47189,7 +47204,7 @@
       ]
     },
     {
-      "id": "bench:801",
+      "id": "bench:802",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2BrandAttachmentRange2_",
@@ -47205,7 +47220,7 @@
       ]
     },
     {
-      "id": "bench:802",
+      "id": "bench:803",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2BrandAttachmentRange3_",
@@ -47221,7 +47236,7 @@
       ]
     },
     {
-      "id": "bench:803",
+      "id": "bench:804",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2PercentageLifeAndMana1",
@@ -47236,7 +47251,7 @@
       ]
     },
     {
-      "id": "bench:804",
+      "id": "bench:805",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2BlockPercent1",
@@ -47251,7 +47266,7 @@
       ]
     },
     {
-      "id": "bench:805",
+      "id": "bench:806",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2SpellBlockPercent1_",
@@ -47266,7 +47281,7 @@
       ]
     },
     {
-      "id": "bench:806",
+      "id": "bench:807",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2AvoidStunAndElementalStatusAilments1__",
@@ -47281,7 +47296,7 @@
       ]
     },
     {
-      "id": "bench:807",
+      "id": "bench:808",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2AreaDamageAndAreaOfEffect1",
@@ -47296,7 +47311,7 @@
       ]
     },
     {
-      "id": "bench:808",
+      "id": "bench:809",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2AreaDamageAndAreaOfEffect2_",
@@ -47311,7 +47326,7 @@
       ]
     },
     {
-      "id": "bench:809",
+      "id": "bench:810",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2AreaDamageAndAreaOfEffect3",
@@ -47326,7 +47341,7 @@
       ]
     },
     {
-      "id": "bench:810",
+      "id": "bench:811",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2ProjectileDamageAndProjectileSpeed1_",
@@ -47341,7 +47356,7 @@
       ]
     },
     {
-      "id": "bench:811",
+      "id": "bench:812",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2ProjectileDamageAndProjectileSpeed2_",
@@ -47356,7 +47371,7 @@
       ]
     },
     {
-      "id": "bench:812",
+      "id": "bench:813",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2ProjectileDamageAndProjectileSpeed3",
@@ -47371,7 +47386,7 @@
       ]
     },
     {
-      "id": "bench:813",
+      "id": "bench:814",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "JunMaster2MeleeDamageAndMeleeRange1",
@@ -47386,7 +47401,7 @@
       ]
     },
     {
-      "id": "bench:814",
+      "id": "bench:815",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "JunMaster2MeleeDamageAndMeleeRange2_",
@@ -47401,7 +47416,7 @@
       ]
     },
     {
-      "id": "bench:815",
+      "id": "bench:816",
       "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "JunMaster2MeleeDamageAndMeleeRange3_",
@@ -47416,7 +47431,7 @@
       ]
     },
     {
-      "id": "bench:816",
+      "id": "bench:817",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "JunMaster2FocusCooldownRecovery1_",
@@ -47431,7 +47446,7 @@
       ]
     },
     {
-      "id": "bench:820",
+      "id": "bench:821",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterStaffAttackBlock1",
@@ -47450,7 +47465,7 @@
       ]
     },
     {
-      "id": "bench:821",
+      "id": "bench:822",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterStaffAttackBlock2",
@@ -47469,7 +47484,7 @@
       ]
     },
     {
-      "id": "bench:822",
+      "id": "bench:823",
       "name": "Crafting bench rank 1",
       "kind": "bench",
       "mod": "EinharMasterStaffSpellBlock1",
@@ -47488,7 +47503,7 @@
       ]
     },
     {
-      "id": "bench:823",
+      "id": "bench:824",
       "name": "Crafting bench rank 2",
       "kind": "bench",
       "mod": "EinharMasterStaffSpellBlock2",
@@ -47507,8 +47522,140 @@
       ]
     },
     {
-      "id": "bench:824",
-      "name": "Crafting bench rank 0",
+      "id": "bench:825",
+      "name": "Crafting bench rank 1",
+      "kind": "bench",
+      "mod": "StrMasterItemGenerationCannotChangeOnePrefixes",
+      "itemClasses": [
+        "Dagger",
+        "Rune Dagger",
+        "One Hand Axe",
+        "One Hand Mace",
+        "One Hand Sword",
+        "Claw",
+        "Sceptre",
+        "Thrusting One Hand Sword",
+        "Two Hand Axe",
+        "Two Hand Mace",
+        "Two Hand Sword",
+        "Staff",
+        "Warstaff",
+        "Wand",
+        "Bow"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "bench:826",
+      "name": "Crafting bench rank 1",
+      "kind": "bench",
+      "mod": "StrMasterItemGenerationCannotChangeOnePrefixesB",
+      "itemClasses": [
+        "Body Armour",
+        "Gloves",
+        "Boots",
+        "Helmet",
+        "Shield",
+        "Quiver"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "bench:827",
+      "name": "Crafting bench rank 1",
+      "kind": "bench",
+      "mod": "StrMasterItemGenerationCannotChangeOnePrefixesC",
+      "itemClasses": [
+        "Ring",
+        "Amulet",
+        "Belt"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "bench:828",
+      "name": "Crafting bench rank 2",
+      "kind": "bench",
+      "mod": "StrMasterItemGenerationCannotChangeTwoPrefixes",
+      "itemClasses": [
+        "Dagger",
+        "Rune Dagger",
+        "One Hand Axe",
+        "One Hand Mace",
+        "One Hand Sword",
+        "Claw",
+        "Sceptre",
+        "Thrusting One Hand Sword",
+        "Two Hand Axe",
+        "Two Hand Mace",
+        "Two Hand Sword",
+        "Staff",
+        "Warstaff",
+        "Wand",
+        "Bow"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "id": "bench:829",
+      "name": "Crafting bench rank 2",
+      "kind": "bench",
+      "mod": "StrMasterItemGenerationCannotChangeTwoPrefixesB",
+      "itemClasses": [
+        "Body Armour",
+        "Gloves",
+        "Boots",
+        "Helmet",
+        "Shield",
+        "Quiver"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "id": "bench:830",
+      "name": "Crafting bench rank 2",
+      "kind": "bench",
+      "mod": "StrMasterItemGenerationCannotChangeTwoPrefixesC",
+      "itemClasses": [
+        "Ring",
+        "Amulet",
+        "Belt"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "id": "bench:831",
+      "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "StrMasterItemGenerationCannotChangePrefixes",
       "itemClasses": [
@@ -47526,15 +47673,170 @@
         "Staff",
         "Warstaff",
         "Wand",
-        "Bow",
+        "Bow"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 4
+        },
+        {
+          "name": "Sacred Orb",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "bench:832",
+      "name": "Crafting bench rank 3",
+      "kind": "bench",
+      "mod": "StrMasterItemGenerationCannotChangePrefixesB",
+      "itemClasses": [
         "Body Armour",
         "Gloves",
         "Boots",
         "Helmet",
         "Shield",
+        "Quiver"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 4
+        },
+        {
+          "name": "Blessed Orb",
+          "amount": 4
+        }
+      ]
+    },
+    {
+      "id": "bench:833",
+      "name": "Crafting bench rank 3",
+      "kind": "bench",
+      "mod": "StrMasterItemGenerationCannotChangePrefixesC",
+      "itemClasses": [
         "Ring",
         "Amulet",
-        "Belt",
+        "Belt"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 4
+        },
+        {
+          "name": "Exalted Orb",
+          "amount": 8
+        }
+      ]
+    },
+    {
+      "id": "bench:834",
+      "name": "Crafting bench rank 1",
+      "kind": "bench",
+      "mod": "DexMasterItemGenerationCannotChangeOneSuffixes",
+      "itemClasses": [
+        "Dagger",
+        "Rune Dagger",
+        "One Hand Axe",
+        "One Hand Mace",
+        "One Hand Sword",
+        "Claw",
+        "Sceptre",
+        "Thrusting One Hand Sword",
+        "Two Hand Axe",
+        "Two Hand Mace",
+        "Two Hand Sword",
+        "Staff",
+        "Warstaff",
+        "Wand",
+        "Bow"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "bench:835",
+      "name": "Crafting bench rank 1",
+      "kind": "bench",
+      "mod": "DexMasterItemGenerationCannotChangeOneSuffixesB",
+      "itemClasses": [
+        "Body Armour",
+        "Gloves",
+        "Boots",
+        "Helmet",
+        "Shield",
+        "Quiver"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "bench:836",
+      "name": "Crafting bench rank 1",
+      "kind": "bench",
+      "mod": "DexMasterItemGenerationCannotChangeOneSuffixesC",
+      "itemClasses": [
+        "Ring",
+        "Amulet",
+        "Belt"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "bench:837",
+      "name": "Crafting bench rank 2",
+      "kind": "bench",
+      "mod": "DexMasterItemGenerationCannotChangeTwoSuffixes",
+      "itemClasses": [
+        "Dagger",
+        "Rune Dagger",
+        "One Hand Axe",
+        "One Hand Mace",
+        "One Hand Sword",
+        "Claw",
+        "Sceptre",
+        "Thrusting One Hand Sword",
+        "Two Hand Axe",
+        "Two Hand Mace",
+        "Two Hand Sword",
+        "Staff",
+        "Warstaff",
+        "Wand",
+        "Bow"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "id": "bench:838",
+      "name": "Crafting bench rank 2",
+      "kind": "bench",
+      "mod": "DexMasterItemGenerationCannotChangeTwoSuffixesB",
+      "itemClasses": [
+        "Body Armour",
+        "Gloves",
+        "Boots",
+        "Helmet",
+        "Shield",
         "Quiver"
       ],
       "cost": [
@@ -47545,8 +47847,25 @@
       ]
     },
     {
-      "id": "bench:825",
-      "name": "Crafting bench rank 0",
+      "id": "bench:839",
+      "name": "Crafting bench rank 2",
+      "kind": "bench",
+      "mod": "DexMasterItemGenerationCannotChangeTwoSuffixesC",
+      "itemClasses": [
+        "Ring",
+        "Amulet",
+        "Belt"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "id": "bench:840",
+      "name": "Crafting bench rank 3",
       "kind": "bench",
       "mod": "DexMasterItemGenerationCannotChangeSuffixes",
       "itemClasses": [
@@ -47564,26 +47883,66 @@
         "Staff",
         "Warstaff",
         "Wand",
-        "Bow",
+        "Bow"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 4
+        },
+        {
+          "name": "Sacred Orb",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "id": "bench:841",
+      "name": "Crafting bench rank 3",
+      "kind": "bench",
+      "mod": "DexMasterItemGenerationCannotChangeSuffixesB",
+      "itemClasses": [
         "Body Armour",
         "Gloves",
         "Boots",
         "Helmet",
         "Shield",
-        "Ring",
-        "Amulet",
-        "Belt",
         "Quiver"
       ],
       "cost": [
         {
           "name": "Divine Orb",
-          "amount": 2
+          "amount": 4
+        },
+        {
+          "name": "Blessed Orb",
+          "amount": 4
         }
       ]
     },
     {
-      "id": "bench:826",
+      "id": "bench:842",
+      "name": "Crafting bench rank 3",
+      "kind": "bench",
+      "mod": "DexMasterItemGenerationCannotChangeSuffixesC",
+      "itemClasses": [
+        "Ring",
+        "Amulet",
+        "Belt"
+      ],
+      "cost": [
+        {
+          "name": "Divine Orb",
+          "amount": 4
+        },
+        {
+          "name": "Exalted Orb",
+          "amount": 8
+        }
+      ]
+    },
+    {
+      "id": "bench:843",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "StrIntMasterItemGenerationCanHaveMultipleCraftedMods",
@@ -47621,7 +47980,7 @@
       ]
     },
     {
-      "id": "bench:827",
+      "id": "bench:844",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "IntMasterItemGenerationCannotRollAttackAffixes",
@@ -47659,7 +48018,7 @@
       ]
     },
     {
-      "id": "bench:828",
+      "id": "bench:845",
       "name": "Crafting bench rank 0",
       "kind": "bench",
       "mod": "StrDexMasterItemGenerationCannotRollCasterAffixes",

@@ -199,7 +199,7 @@ describe("crafting workbench", () => {
             target: { value: "3" },
         });
         expect(effects.getByLabelText("Modifier tier rating bonuses").textContent).toContain(
-            "3 bonuses · +60 rating",
+            "3 bonuses · +30 rating",
         );
         changeControl(screen.getByRole("textbox", { name: "Search modifiers" }), {
             target: { value: "maximum Life" },
@@ -210,8 +210,9 @@ describe("crafting workbench", () => {
         const life = engine
             .genesisModifiers(project.item, nodes)
             .find((entry) => /^IncreasedLife\d+$/.test(entry.id))!;
+        // 3.30: +200% life chance (x3) on a weight of 1,000.
         expect(pool.querySelector(`[data-modifier-id="${life.id}"]`)?.textContent).toContain(
-            "4,000",
+            "3,000",
         );
         fireEvent.click(button("Calculate odds"));
         const worker = CraftingWorker.instances[0]!;

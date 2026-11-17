@@ -109,6 +109,50 @@ export const craftingBaseSchema = baseSchema
             .default([]),
     });
 export const craftingModSchema = modSchema.omit({ grants_effects: true, gold_value: true }).strip();
+
+// Catalogs published before PoE 1 3.30 store a Harvest craft's cost as one lifeforce colour (the
+// client's 1-3) and a Sacred amount. Retained projects still open them, so they are read as the
+// cost list current code uses, priced as the engine priced them then.
+const legacyHarvestCostSchema = z.looseObject({
+    lifeforceType: z.number().int().min(1).max(3),
+    lifeforce: z.number().int().nonnegative(),
+    sacred: z.number().int().nonnegative(),
+});
+const currencyRefSchema = z.looseObject({ id: z.string(), name: z.string() });
+const isLegacyHarvestCost = (entry: unknown) =>
+    typeof entry === "object" && entry !== null && "lifeforceType" in entry;
+function upgradeLegacyHarvestCosts(input: unknown) {
+    // Current catalogs need no upgrade; skip the copy for them, since catalogs are parsed often.
+    const harvest = (input as { harvest?: unknown } | null)?.harvest;
+    if (!Array.isArray(harvest) || !harvest.some(isLegacyHarvestCost)) return input;
+    const crafting = z
+        .looseObject({ harvest: z.array(z.unknown()), currencies: z.array(currencyRefSchema) })
+        .safeParse(input);
+    if (!crafting.success) return input;
+    const lifeforce = (suffix: string) => {
+        const currency = crafting.data.currencies.find((entry) =>
+            entry.id.endsWith(`HarvestSeed${suffix}`),
+        );
+        if (!currency) throw new Error("Lifeforce currency is missing from the build.");
+        return { id: currency.id, name: currency.name };
+    };
+    return {
+        ...crafting.data,
+        harvest: crafting.data.harvest.map((entry) => {
+            const legacy = legacyHarvestCostSchema.safeParse(entry);
+            if (!legacy.success) return entry;
+            const { lifeforceType, lifeforce: amount, sacred, ...recipe } = legacy.data;
+            return {
+                ...recipe,
+                cost: [
+                    { ...lifeforce(["Red", "Green", "Blue"][lifeforceType - 1]!), amount },
+                    ...(sacred ? [{ ...lifeforce("Boss"), amount: sacred }] : []),
+                ],
+            };
+        }),
+    };
+}
+
 export const craftingCatalogSchema = z.object({
     format: z.literal(1),
     game: z.enum(["poe1", "poe2"]),
@@ -117,7 +161,7 @@ export const craftingCatalogSchema = z.object({
     craftingSha256: z.string().regex(/^[a-f0-9]{64}$/),
     bases: z.record(z.string(), craftingBaseSchema),
     mods: z.record(z.string(), craftingModSchema),
-    crafting: craftingDataSchema,
+    crafting: z.preprocess(upgradeLegacyHarvestCosts, craftingDataSchema),
 });
 
 const id = z.string().min(1);

@@ -10,6 +10,7 @@ import {
     presetQuery as query,
     presetRecover as recover,
 } from "./crafting-preset-preparation";
+import { benchActionRecipe, removeCraftedMods } from "./crafting-source-preparation";
 
 const recombination =
     " Recombination assumes self-service at 0 chaos, excluding gold and dust opportunity cost.";
@@ -77,8 +78,8 @@ function helpers(builder: PresetBuilder) {
                 ),
             base(name),
         );
-    const bench = (id: string): CraftingMethod => {
-        const recipe = engine.catalog.crafting.bench.find((entry) => entry.mod === id);
+    const bench = (id: string, itemClass: string): CraftingMethod => {
+        const recipe = engine.benchRecipeFor(id, itemClass);
         if (!recipe) throw new Error(`Preset bench craft is unavailable: ${id}`);
         return { kind: "bench", id: recipe.id };
     };
@@ -153,12 +154,12 @@ function helpers(builder: PresetBuilder) {
                 })),
             ),
         );
-    const lockSuffixes = (id: string, source: string) =>
+    const lockSuffixes = (id: string, source: string, itemClass: string) =>
         step(
             id,
             "Suffixes cannot be changed",
             source,
-            bench("DexMasterItemGenerationCannotChangeSuffixes"),
+            bench("DexMasterItemGenerationCannotChangeSuffixes", itemClass),
         ).id;
     const life = "EinharMasterIncreasedLife4";
     return { ...builder, item, bench, boat, step, keep, trim, purchase, lockSuffixes, life };
@@ -198,7 +199,7 @@ export function spicySushiPreset(
         const reforge = step(
             "totem",
             "Reforge Influence for +1 maximum totem",
-            lockSuffixes("lock", start),
+            lockSuffixes("lock", start, "Shield"),
             { kind: "harvest", id: "BossInfluence1" },
         );
         keep(reforge, query(...[...suffixes, totem].map((id) => mod(id))));
@@ -207,7 +208,7 @@ export function spicySushiPreset(
             "block-armour",
             "Block flat armour before the Foulborn slam",
             clean,
-            bench("EinharMasterFlatArmour1"),
+            bench("EinharMasterFlatArmour1", "Shield"),
         );
         const slam = step(
             "spell-block",
@@ -219,9 +220,9 @@ export function spicySushiPreset(
         keep(slam, query(mod(spellBlock)));
         const remove = step("remove-block", "Remove the temporary armour craft", slam.id, {
             kind: "bench",
-            id: "bench:84",
+            id: benchActionRecipe(engine, removeCraftedMods),
         });
-        const finish = step("life", "Craft maximum life", remove.id, bench(life));
+        const finish = step("life", "Craft maximum life", remove.id, bench(life, "Shield"));
         return {
             entry: finish.id,
             target: query(...[...suffixes, totem, spellBlock, life].map((id) => mod(id))),
@@ -239,7 +240,7 @@ export function spicySushiPreset(
         const influence = step(
             "influence",
             "Protect suffixes and reforge a sacrificial Elder modifier",
-            lockSuffixes("lock-elevate", start),
+            lockSuffixes("lock-elevate", start, "Helmet"),
             { kind: "harvest", id: "BossInfluence1" },
         );
         const sacrifices = engine
@@ -301,7 +302,7 @@ export function spicySushiPreset(
             "protect-cleanup",
             "Protect elevated suffixes before scouring prefixes",
             open.id,
-            bench("DexMasterItemGenerationCannotChangeSuffixes"),
+            bench("DexMasterItemGenerationCannotChangeSuffixes", "Helmet"),
         );
         protect.applyWhen = query({ kind: "range", field: "prefixes", value: { min: 1 } });
         const scour = step(
@@ -316,7 +317,7 @@ export function spicySushiPreset(
         const reforge = step(
             "rarity",
             "Protect suffixes and reforge Drop for T1 prefix rarity",
-            lockSuffixes("lock-rarity", scour.id),
+            lockSuffixes("lock-rarity", scour.id, "Helmet"),
             { kind: "harvest", id: "ReforgeDrop" },
         );
         keep(reforge, query(mod(rarity)), suffixCleanup.id);
@@ -328,7 +329,7 @@ export function spicySushiPreset(
             "block-armour",
             "Block flat armour before the life slam",
             prefix,
-            bench("EinharMasterFlatArmour1"),
+            bench("EinharMasterFlatArmour1", "Helmet"),
         );
         const slam = step(
             "life-slam",
@@ -340,14 +341,14 @@ export function spicySushiPreset(
         keep(slam, query(mod(...lives)));
         const remove = step("remove-block", "Remove the temporary armour craft", slam.id, {
             kind: "bench",
-            id: "bench:84",
+            id: benchActionRecipe(engine, removeCraftedMods),
         });
         const rarityCraft = "JunMaster2ItemRarityFromRareAndUniqueEnemies3";
         const finish = step(
             "crafted-rarity",
             "Craft rarity from slain rare and unique enemies",
             remove.id,
-            bench(rarityCraft),
+            bench(rarityCraft, "Helmet"),
         );
         return {
             entry: finish.id,
@@ -426,7 +427,7 @@ export function spicySushiPreset(
             "life",
             "Craft maximum life",
             clear.id,
-            bench("EinharMasterIncreasedLife5_"),
+            bench("EinharMasterIncreasedLife5_", "Body Armour"),
         );
         return {
             entry: finish.id,
@@ -464,7 +465,7 @@ export function spicySushiPreset(
             "life",
             "Craft life to fill prefixes before the resistance slam",
             elevate.id,
-            bench(life),
+            bench(life, "Boots"),
         );
         const resistances = [
             "FireResist7",

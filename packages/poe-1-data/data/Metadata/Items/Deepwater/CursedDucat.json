@@ -8,7 +8,7 @@
     "y_size": 1
   },
   "Mods": {
-    "stat_description_list": "Metadata/StatDescriptions/map_stat_descriptions.txt",
+    "stat_description_list": "Metadata/StatDescriptions/map_stat_descriptions.csd",
     "disable_rarity": "unique"
   }
 }

@@ -19,6 +19,19 @@ export const retainedRevision = (ruleset: CraftingRuleset) =>
         async (entry) => craftingRuntimeLoaders[entry.engine]!(),
     );
 
+// Revisions share catalogs (r1 to r16 use one), so engines are built once per catalog.
+const retainedEngines = new Map<string, Promise<CraftingEngine>>();
+export const retainedEngine = (ruleset: CraftingRuleset) => {
+    let engine = retainedEngines.get(ruleset.catalog.sha256);
+    if (!engine) {
+        engine = retainedRevision(ruleset).then(
+            (loaded) => new CraftingEngine(craftingCatalogSchema.parse(loaded.catalog)),
+        );
+        retainedEngines.set(ruleset.catalog.sha256, engine);
+    }
+    return engine;
+};
+
 export function retainedTransmuteGraph(ruleset: CraftingRuleset, catalog: unknown) {
     const data = craftingCatalogSchema.parse(catalog);
     const engine = new CraftingEngine(data);

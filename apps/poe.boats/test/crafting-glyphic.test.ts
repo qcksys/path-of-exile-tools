@@ -28,9 +28,10 @@ const craft = (
     logic: "additive",
 });
 const blank = () => ({ ...engine.createItem(baseId), rarity: "rare" as const });
+// 3.30 Essence of Trickery is corrupted but has no Body Armour modifier.
 const bodyMods = catalog.crafting.essences
     .filter((entry) => entry.corrupted)
-    .map((entry) => entry.mods["Body Armour"]!);
+    .flatMap((entry) => entry.mods["Body Armour"] ?? []);
 const critical = bodyMods.find((id) => engine.mod(id).implicit_tags.includes("critical"))!;
 
 describe("Glyphic Fossil", () => {

@@ -12,6 +12,7 @@ import { createCraftingItemQuery } from "../../../app/lib/crafting-item-query";
 import { exportCraftingItemText } from "../../../app/lib/crafting-item-text";
 import { bindCohortPurchasePrice, livePurchasePrices } from "../../../app/lib/crafting-market";
 import { projectFromPreset } from "../../../app/lib/crafting-presets";
+import { rulesetReference } from "../../../app/lib/crafting-rulesets";
 import { bindCraftingSourcePrice, liveSourcePrices } from "../../../app/lib/crafting-sources";
 import { craftingWorkspaceStorageKey } from "../../../app/lib/crafting-workspace-storage";
 import { craftingCatalogSchema, craftingProjectSchema } from "../../../app/schemas/crafting";
@@ -35,6 +36,7 @@ import { engine } from "../../crafting-fixtures";
 import { graphFixture } from "../../crafting-graph-fixtures";
 import {
     historyIndex,
+    retainedEngine,
     retainedRevision,
     retainedTransmuteGraph,
 } from "../../crafting-history-fixtures";
@@ -245,8 +247,14 @@ for (const game of ["poe1", "poe2"] as const) {
         expect(copy.graph.nodes[0]).toMatchObject({
             alternatives: [{ item: result.samples[1].item, price: null }],
         });
+        const latest = historyIndex.latest.find(
+            (entry) => entry.game === game && entry.era === ruleset.era,
+        )!;
         await expect(
-            page.getByRole("button", { name: "Correction available · adopt r17", exact: true }),
+            page.getByRole("button", {
+                name: `Correction available · adopt ${latest.revision}`,
+                exact: true,
+            }),
         ).toBeVisible();
         await page.reload();
         await expect(page.getByRole("tab")).toHaveCount(2);
@@ -1203,7 +1211,12 @@ test("clicking off a node commits method options and keeps invalid drafts open",
 });
 
 test("donor-family pricing requires a saved representative assumption", async ({ page }) => {
-    const { graph, candidate } = donorFamilyMarketFixture();
+    // The donor family is a 3.29 Temple suffix; the committed cohorts were built from r17.
+    const ruleset329 = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r17",
+    )!;
+    const engine = await retainedEngine(ruleset329);
+    const { graph, candidate } = donorFamilyMarketFixture(engine, ruleset329);
     const node = graph.nodes[0]!;
     if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
         throw new Error("Fixture");
@@ -1760,28 +1773,28 @@ test("workbench hands its item to a new saved project", async ({ page }) => {
     await expect(page.getByText("Saved locally in this browser", { exact: true })).toBeVisible();
 });
 
-test("prepared Temple gloves pass from the workbench into a saved current project", async ({
+test("prepared essence gloves pass from the workbench into a saved current project", async ({
     page,
 }) => {
     await page.goto("/1/crafting");
     await choose(page, "Item base", "Slink Gloves", "Slink Gloves · Gloves");
     await selectValue(
         page.getByRole("combobox", { name: "Modifier source", exact: true }),
-        "incursion",
+        "essence",
     );
     await page
-        .locator('[data-modifier-id="ColdResistEnhancedModAilments__"]')
+        .locator('[data-modifier-id="CriticalStrikeChanceEssenceGloves7"]')
         .getByRole("button", { name: "Add to item", exact: true })
         .click();
     await page.getByRole("button", { name: "Use item in new project", exact: true }).click();
     await expect(page).toHaveURL(/\/1\/crafting\/projects$/);
     const project = (await stored(page)).projects[0]!;
-    expect(project.graph.ruleset.revision).toBe("r17");
+    expect(project.graph.ruleset.revision).toBe("r18");
     const node = project.graph.nodes[0]!;
     expect(node.kind).toBe("acquire");
     if (node.kind === "acquire" && node.alternatives[0]?.kind === "purchase")
         expect(node.alternatives[0].item.mods.map((mod) => mod.id)).toEqual([
-            "ColdResistEnhancedModAilments__",
+            "CriticalStrikeChanceEssenceGloves7",
         ]);
     await page.reload();
     expect((await stored(page)).projects[0]!.graph).toEqual(project.graph);
@@ -1928,7 +1941,11 @@ test("historical projects retain their rules until a correction is explicitly ad
 test("NNN recombination preserves suppression and offers eligible essence preparation", async ({
     page,
 }) => {
-    const graph = nnnGraph();
+    // NNN needs 3.29 recombination, where non-native modifiers count toward the affix total.
+    const ruleset329 = historyIndex.revisions.find(
+        (entry) => entry.game === "poe1" && entry.revision === "r17",
+    )!;
+    const graph = { ...nnnGraph(), ruleset: rulesetReference(ruleset329) };
     graph.league = "Standard";
     const essenceQuote = {
         ...exchangeQuote,

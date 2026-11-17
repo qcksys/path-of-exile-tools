@@ -16,7 +16,7 @@ export function elevatedBootsPreset(builder: PresetBuilder) {
         craft(id, name, [source], method);
     const keep = { kind: "return" as const };
     const bench = (mod: string) => {
-        const recipe = engine.catalog.crafting.bench.find((entry) => entry.mod === mod);
+        const recipe = engine.benchRecipeFor(mod, "Boots");
         if (!recipe) throw new Error(`Boots bench craft unavailable: ${mod}`);
         return { kind: "bench" as const, id: recipe.id };
     };

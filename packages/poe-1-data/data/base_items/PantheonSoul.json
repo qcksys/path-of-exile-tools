@@ -7,7 +7,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of Nassar, Lion of the Seas",
+    "name": "Captured Soul of Merveil, the Returned",
     "properties": {
       "armour": null,
       "energy_shield": null,
@@ -57,7 +57,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of Captain Tanner Lightfoot",
+    "name": "Captured Soul of Belcer, the Pirate Lord",
     "properties": {
       "armour": null,
       "energy_shield": null,
@@ -107,7 +107,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of Shock and Horror",
+    "name": "Captured Soul of Nassar, Lion of the Seas",
     "properties": {
       "armour": null,
       "energy_shield": null,
@@ -157,7 +157,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of Maligaro the Mutilator",
+    "name": "Captured Soul of Thraxia",
     "properties": {
       "armour": null,
       "energy_shield": null,
@@ -207,7 +207,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of Armala, the Widow",
+    "name": "Captured Soul of Enticer of Rot",
     "properties": {
       "armour": null,
       "energy_shield": null,
@@ -257,7 +257,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of Drought-Maddened Rhoa",
+    "name": "Captured Soul of Armala, the Widow",
     "properties": {
       "armour": null,
       "energy_shield": null,
@@ -307,7 +307,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of Oak the Mighty",
+    "name": "Captured Soul of Forest of Flames",
     "properties": {
       "armour": null,
       "energy_shield": null,
@@ -357,7 +357,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of Kitava, The Destroyer",
+    "name": "Captured Soul of The Infernal King",
     "properties": {
       "armour": null,
       "energy_shield": null,
@@ -407,7 +407,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of Forest of Flames",
+    "name": "Captured Soul of Jorus, Sky's Edge",
     "properties": {
       "armour": null,
       "energy_shield": null,
@@ -457,7 +457,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of Captain Clayborne, The Accursed",
+    "name": "Captured Soul of Mutewind Leader",
     "properties": {
       "armour": null,
       "energy_shield": null,
@@ -507,7 +507,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of Fragment of Winter",
+    "name": "Captured Soul of Shock and Horror",
     "properties": {
       "armour": null,
       "energy_shield": null,
@@ -557,7 +557,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of Glace",
+    "name": "Captured Soul of Sebbert, Crescent's Point",
     "properties": {
       "armour": null,
       "energy_shield": null,
@@ -907,7 +907,7 @@
     "inventory_width": 1,
     "inherits_from": "Metadata/Items/PantheonSouls/AbstactPantheonSoul",
     "item_class": "PantheonSoul",
-    "name": "Captured Soul of The Blacksmith",
+    "name": "Captured Soul of Stalker of the Endless Dunes",
     "properties": {
       "armour": null,
       "energy_shield": null,

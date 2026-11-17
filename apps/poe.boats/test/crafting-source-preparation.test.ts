@@ -15,7 +15,7 @@ import {
 } from "../app/lib/crafting-source-preparation";
 import type { CraftingItem } from "../app/schemas/crafting";
 import type { GraphPurchase } from "../app/schemas/crafting-graph";
-import { catalog, currency, engine } from "./crafting-fixtures";
+import { catalog, currency, engine, lockRecipe } from "./crafting-fixtures";
 import { quote, runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
@@ -23,7 +23,7 @@ const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r10",
 )!;
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r17",
+    (entry) => entry.game === "poe1" && entry.revision === "r18",
 )!;
 const fractureId = "BreachBodyCriticalChanceIncreasedByUncappedLightningResistance1";
 const scour = currency("convert_to_normal").id;
@@ -59,9 +59,7 @@ function actualSource(purchase: GraphPurchase) {
     const extra = engine.pool(item).find((entry) => entry.mod.generation_type === "prefix")!;
     item = engine.addStartingMod(item, extra.id, seededRandom(1));
     if (source.crafted) {
-        const recipe = engine.catalog.crafting.bench.find(
-            (entry) => entry.mod === "DexMasterItemGenerationCannotChangeSuffixes",
-        )!;
+        const recipe = lockRecipe("suffixes", item);
         item = engine.apply(item, { kind: "bench", id: recipe.id }, seededRandom(2)).item;
     }
     if (source.enchanted)
@@ -316,7 +314,11 @@ it("refuses random-output guarantees and unsupported retained or disabled prepar
             ruleset: projectFromPreset(engine, prior, "sushi-mercenary-chest").ruleset,
         }),
     ).toThrow("engine 11");
-    for (const method of sourcePreparationMethods(engine, purchase.sourcePreparation!)) {
+    // Bench cleanup IDs are catalog row positions, which a ruleset cannot resolve without its
+    // catalog; the other preparation steps can be disabled by ID.
+    for (const method of sourcePreparationMethods(engine, purchase.sourcePreparation!).filter(
+        (entry) => entry.kind !== "bench",
+    )) {
         const availability = {
             ...ruleset.availability,
             ...(method.kind === "fossils"

@@ -37,6 +37,7 @@ import {
     modsSchema,
     tagsSchema,
 } from "./model.ts";
+import { grantedEffects } from "./normalize.ts";
 import { passiveGraphNodes } from "./passive-graph.ts";
 import { packageDirectory, schemaUrl } from "./pipeline.ts";
 import { type AssetSource, Source } from "./source.ts";
@@ -101,6 +102,7 @@ export async function normalizeCraftingData(
             "DelveCraftingTags",
             "DelveCraftingModifierDescriptions",
             "HarvestCraftOptions",
+            "HarvestSeedItems",
             "BestiaryRecipes",
             "BestiaryRecipeComponent",
             "BestiaryRecipeCategories",
@@ -113,6 +115,9 @@ export async function normalizeCraftingData(
             "DeepwaterBalancePerLevel",
             "KeywordPopupItemReference",
             "ClientStrings",
+            "GrantedEffectsPerLevel",
+            "GrantedEffects",
+            "ActiveSkills",
             "KeywordPopups",
             "PassiveSkillTrees",
             "BrequelPassiveSubTrees",
@@ -232,6 +237,7 @@ export async function normalizeCraftingData(
     ]);
     return {
         currencies,
+        ...(poe1 ? { grantedEffects: extractGrantedEffects(tables, mods) } : {}),
         allflame: extractAllflame(tables),
         genesis: await extractGenesis(tables, source),
         clusterJewels: poe1
@@ -883,9 +889,7 @@ export async function normalizeCraftingData(
                       row.string("Command"),
                       row.string("Parameters"),
                   ),
-                  lifeforceType: row.number("LifeforceType"),
-                  lifeforce: row.number("LifeforceCost"),
-                  sacred: row.number("SacredCost"),
+                  cost: harvestCost(tables, row),
                   gameMode: row.value("GameMode") as number | null,
               }))
             : [],
@@ -932,6 +936,38 @@ export async function normalizeCraftingData(
     };
 }
 
+// The granted skill and support lines each mod's text ends with, and their levels, so a crafted
+// item's text can be rendered from its rolled values plus these fixed lines.
+function extractGrantedEffects(tables: Tables, mods: Dataset["mods"]) {
+    const effects = grantedEffects(tables);
+    const result: Record<string, { text: string; level: number }[]> = {};
+    const seen = new Set<string>();
+    for (const row of tables.rows("Mods")) {
+        // normalize keeps the first row of a duplicated mod ID.
+        if (seen.has(row.id()) || !mods[row.id()]) continue;
+        seen.add(row.id());
+        const granted = effects(row);
+        if (granted.length) result[row.id()] = granted;
+    }
+    return result;
+}
+
+// From 3.30 a craft lists each lifeforce type it costs; HarvestSeedItems maps a type to its currency.
+export function harvestCost(tables: Tables, row: Row) {
+    const types = row.numbers("LifeforceTypes");
+    const amounts = row.numbers("LifeforceCosts");
+    if (!types.length || types.length !== amounts.length || new Set(types).size !== types.length)
+        throw new Error(`Unresolved Harvest lifeforce cost: ${row.id()}`);
+    return types.map((type, index) => {
+        const base = tables
+            .rows("HarvestSeedItems")
+            .find((seed) => seed.number("Id") === type)
+            ?.ref("BaseItem");
+        if (!base) throw new Error(`Unknown Harvest lifeforce type ${type}: ${row.id()}`);
+        return { id: base.id(), name: base.string("Name"), amount: amounts[index]! };
+    });
+}
+
 export function resolveHarvestAffinity(command: string, parameters: string) {
     if (command !== "reroll_with_current_tags_affinity_multiplier") return null;
     const increase = Number(parameters);
@@ -964,7 +1000,8 @@ export function resolveAspectModifier(description: string, mods: Dataset["mods"]
     const aspect = /^(?:Level (\d+) )?(Aspect of the .+?) skill$/i.exec(description);
     if (!aspect) return null;
     const candidates = Object.entries(mods).flatMap(([id, mod]) => {
-        const text = /^Grants Level (\d+) (Aspect of the .+?) Skill$/i.exec(mod.text ?? "");
+        // 3.30 dropped the trailing "Skill" from granted skill lines.
+        const text = /^Grants Level (\d+) (Aspect of the .+?)(?: Skill)?$/i.exec(mod.text ?? "");
         if (
             mod.domain !== "item" ||
             mod.generation_type !== "suffix" ||

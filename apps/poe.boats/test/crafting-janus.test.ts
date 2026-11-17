@@ -2,6 +2,7 @@ import { expect, it } from "vite-plus/test";
 import { seededRandom } from "../app/lib/crafting-engine";
 import { janusRarityModifier } from "../app/lib/crafting-janus";
 import { recombinationOutcomes } from "../app/lib/crafting-recombination";
+import { catalog329, engine329 } from "./crafting-329-fixtures";
 import { engine } from "./crafting-fixtures";
 import { nnnBase } from "./crafting-nnn-fixtures";
 
@@ -23,7 +24,15 @@ it("accepts purchased Janus helmets but never rolls the mod from ordinary or gen
         );
 });
 
+// The origin level matters when 3.29 recombination averages the item level; 3.30 keeps the chosen
+// base's level, so this case uses the 3.29 catalog.
 it("transfers Janus to another helmet as an exclusive modifier, retaining its origin level", () => {
+    const engine = engine329;
+    const nnnBase = (name: string) =>
+        engine.createItem(
+            Object.entries(catalog329.bases).find(([, value]) => value.name === name)![0],
+            86,
+        );
     const donor = engine.addStartingMod(
         nnnBase("Hubris Circlet"),
         janusRarityModifier,

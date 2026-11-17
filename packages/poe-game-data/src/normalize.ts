@@ -24,6 +24,41 @@ function weights(row: Row, tagColumn: string, valueColumn: string) {
     return tags.map((tag, index) => ({ tag, weight: values[index] }));
 }
 
+// From 3.30 the PoE 1 client writes a mod's granted skill and support lines from client strings
+// instead of stat descriptions. The unnamed Mods boolean at column 80 marks the mods that show them.
+export function grantedEffects(tables: Tables) {
+    const strings = new Map(tables.rows("ClientStrings").map((row) => [row.id(), row]));
+    const template = (id: string) => {
+        const text = strings.get(id)?.string("Text");
+        if (!text?.includes("{0}") || !text.includes("{1}"))
+            throw new Error(`Missing granted effect client string: ${id}`);
+        return text;
+    };
+    const skill = template("ModGrantsEffectWithLevel");
+    const support = template("ModGrantsSupportEffectWithLevel");
+    return (mod: Row) => {
+        if (!mod.unnamedBoolean(80)) return [];
+        return mod.refs("GrantedEffectsPerLevelKeys").flatMap((level) => {
+            const effect = level.ref("GrantedEffect");
+            const isSupport = effect?.boolean("IsSupport");
+            const name = isSupport
+                ? effect?.string("SupportName")
+                : effect?.ref("ActiveSkill")?.string("DisplayedName");
+            if (!name) return [];
+            const values = [name, String(level.number("Level"))];
+            return [
+                {
+                    text: (isSupport ? support : skill).replace(
+                        /\{([01])\}/g,
+                        (_, index) => values[index]!,
+                    ),
+                    level: level.number("Level"),
+                },
+            ];
+        });
+    };
+}
+
 export async function normalize(tables: Tables, metadata: Metadata, translate: Translate) {
     const game: Game = tables.game;
     const field = (poe1: string, poe2: string) => (game === "poe1" ? poe1 : poe2);
@@ -56,6 +91,8 @@ export async function normalize(tables: Tables, metadata: Metadata, translate: T
                   "MonsterVarieties",
                   "CorpseTypeTags",
                   "InfluenceTags",
+                  "ActiveSkills",
+                  "ClientStrings",
               ]
             : ["AttributeRequirements", "ItemInherentSkills", "SkillGems", "GoldModPrices"],
     );
@@ -96,6 +133,7 @@ export async function normalize(tables: Tables, metadata: Metadata, translate: T
             const mod = row.ref("Mod");
             if (mod && !prices.has(mod.index)) prices.set(mod.index, row.number("Value"));
         }
+    const granted = game === "poe1" ? grantedEffects(tables) : () => [];
     for (const row of tables.rows("Mods")) {
         if (Object.hasOwn(data.mods, row.id())) continue;
         const stats: StatValue[] = [];
@@ -112,11 +150,17 @@ export async function normalize(tables: Tables, metadata: Metadata, translate: T
             stats.push({ id: stat.id(), min, max });
         }
         const domain = domainName(game, row.number("Domain"));
+        const text = [
+            await translate(domain, stats, row.id()),
+            ...granted(row).map((effect) => effect.text),
+        ]
+            .filter(Boolean)
+            .join("\n");
         data.mods[row.id()] = modSchema.parse({
             required_level: row.number("Level"),
             maximum_level: row.number("MaxLevel"),
             stats,
-            text: await translate(domain, stats, row.id()),
+            text: text || null,
             domain: itemDomainCorrections.has(row.id()) ? "item" : domain,
             name: row.string("Name"),
             type: row.ref(field("ModTypeKey", "ModType"))?.string("Name"),

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { seededRandom } from "../app/lib/crafting-engine";
 import { exportCraftingItemText, importCraftingItemText } from "../app/lib/crafting-item-text";
 import type { CraftingItem, CraftingMethod } from "../app/schemas/crafting";
-import { baseId, catalog, currency, engine } from "./crafting-fixtures";
+import { baseId, catalog, currency, engine, lockRecipe } from "./crafting-fixtures";
 
 function influenced(influence: number): CraftingItem {
     const item = { ...engine.createItem(baseId), rarity: "rare" as const, influences: [influence] };
@@ -82,13 +82,7 @@ describe("Awakener donor crafting", () => {
     });
 
     it("ignores target metamods while rerolling and allows influence-only donors", () => {
-        const lock = catalog.crafting.bench.find(
-            (entry) =>
-                entry.mod &&
-                engine
-                    .mod(entry.mod)
-                    .stats.some((stat) => stat.id === "item_generation_cannot_change_suffixes"),
-        )!;
+        const lock = lockRecipe("suffixes", influenced(0));
         const item = engine.apply(
             influenced(0),
             { kind: "bench", id: lock.id },

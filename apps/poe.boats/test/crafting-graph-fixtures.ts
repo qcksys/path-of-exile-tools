@@ -40,8 +40,8 @@ export function graphFixture(): CraftingGraph {
         name: "Two donor recovery",
         game: catalog.game,
         ruleset: {
-            era: "3.29",
-            revision: "r17",
+            era: "3.30",
+            revision: "r18",
             engine: CRAFTING_GRAPH_ENGINE,
             patch: catalog.patch,
             manifestSha256: catalog.manifestSha256,

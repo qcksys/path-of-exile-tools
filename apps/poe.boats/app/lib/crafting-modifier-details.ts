@@ -72,11 +72,14 @@ export function modifierTiers(
             mod.stats.map((stat) => stat.id),
         ]);
         const family = families.get(key) ?? [];
-        // The reference sorts equal-level tiers by power; use extracted range magnitudes.
-        const power = mod.stats.reduce(
-            (sum, stat) => sum + Math.abs(stat.min) + Math.abs(stat.max),
-            0,
-        );
+        // The reference sorts equal-level tiers by power; use extracted range magnitudes. From 3.30
+        // a granted skill's level is no longer a stat value, so it is added from the granted effect.
+        const power =
+            mod.stats.reduce((sum, stat) => sum + Math.abs(stat.min) + Math.abs(stat.max), 0) +
+            (catalog.crafting.grantedEffects?.[id] ?? []).reduce(
+                (sum, effect) => sum + effect.level,
+                0,
+            );
         family.push({ id, mod, power });
         families.set(key, family);
     }

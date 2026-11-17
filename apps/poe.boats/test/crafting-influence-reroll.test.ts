@@ -60,7 +60,7 @@ describe("Harvest influence randomisation", () => {
         expect(result.item.quality).toBe(20);
         expect(result.item.implicits).toEqual(item.implicits);
         expect(item).toEqual(before);
-        expect(result.cost[0]!.amount).toBe(recipe.lifeforce);
+        expect(result.cost).toEqual(recipe.cost);
     });
 
     it.each([

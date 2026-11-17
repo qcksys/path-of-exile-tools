@@ -118,21 +118,23 @@ export function resolveBeastMetamods(category: string, description: string, mods
         description !== "Add a crafted Meta-modifier to a non-Unique Item"
     )
         return [];
+    // From 3.30 a metamod can have one mod per group of item classes, each with its own bench cost.
     return [
         "item_generation_cannot_change_prefixes",
         "item_generation_cannot_change_suffixes",
         "item_generation_cannot_roll_attack_affixes",
         "item_generation_cannot_roll_caster_affixes",
         "item_generation_can_have_multiple_crafted_mods",
-    ].map((stat) => {
+    ].flatMap((stat) => {
         const matches = Object.entries(mods).filter(
             ([, mod]) =>
                 mod.domain === "crafted" &&
                 ["prefix", "suffix"].includes(mod.generation_type) &&
+                mod.stats.length === 1 &&
                 mod.stats.some((entry) => entry.id === stat && entry.min === 1 && entry.max === 1),
         );
-        if (matches.length !== 1) throw new Error(`Unresolved beast metamod: ${stat}`);
-        return matches[0]![0];
+        if (!matches.length) throw new Error(`Unresolved beast metamod: ${stat}`);
+        return matches.map(([id]) => id);
     });
 }
 

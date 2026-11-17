@@ -13,7 +13,7 @@
     "max_quality": 20
   },
   "Mods": {
-    "stat_description_list": "Metadata/StatDescriptions/tincture_stat_descriptions.txt",
+    "stat_description_list": "Metadata/StatDescriptions/tincture_stat_descriptions.csd",
     "enable_rarity": [
       "normal",
       "magic",

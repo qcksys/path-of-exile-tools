@@ -7,13 +7,13 @@ import { rulesetReference, validateRulesetGraph } from "../app/lib/crafting-rule
 import { estimateSourcePurchase } from "../app/lib/crafting-source-preparation";
 import { currency, engine } from "./crafting-fixtures";
 import { quote, runGraphTrial } from "./crafting-graph-fixtures";
-import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
+import { historyIndex, retainedEngine, retainedRevision } from "./crafting-history-fixtures";
 
 const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r15",
 )!;
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r17",
+    (entry) => entry.game === "poe1" && entry.revision === "r18",
 )!;
 const sourceId = "shield-make-heat-influence-base";
 const targetIds = ["block-make-base", "max-res-make-base"] as const;
@@ -46,15 +46,18 @@ const historicalHashes = {
 };
 const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
+// Each revision is projected with the catalog it was published with, so the hashes check current
+// preset code rather than the current build's data.
 it.each(
     Object.entries(historicalHashes),
-)("preserves every %s preset projection", (revision, expected) => {
+)("preserves every %s preset projection", async (revision, expected) => {
     const retained = historyIndex.revisions.find(
         (entry) => entry.game === "poe1" && entry.revision === revision,
     )!;
+    const published = await retainedEngine(retained);
     const projections = craftingPresets.map(({ id: presetId }) => {
         try {
-            const graph = projectFromPreset(engine, retained, presetId);
+            const graph = projectFromPreset(published, retained, presetId);
             return { revision, presetId, sha256: hash({ ...graph, id: "" }) };
         } catch (error) {
             return {
