@@ -70,6 +70,70 @@ export const MarketSnapshotSchema = z.object({
 });
 export type MarketSnapshot = z.infer<typeof MarketSnapshotSchema>;
 
+export const ClusterJewelSizeSchema = z.enum([
+    "Small Cluster Jewel",
+    "Medium Cluster Jewel",
+    "Large Cluster Jewel",
+]);
+export type ClusterJewelSize = z.infer<typeof ClusterJewelSizeSchema>;
+
+/** The lowest input item level, which the 5-for-1 recipe's output keeps; coerced from a query. */
+export const ClusterRecipeItemLevelSchema = z.coerce.number().int().min(1).max(100);
+
+const ClusterRecipeQuoteSchema = z.object({
+    /** Median merchant-tab ask in chaos. */
+    value: z.number().positive(),
+    listingCount: z.number().int().positive(),
+});
+
+export const ClusterRecipeSnapshotSchema = z.object({
+    league: z.string().min(1),
+    /** The market item level band holding the requested item level. */
+    band: z.object({ min: z.number().int(), max: z.number().int() }),
+    /** The newest hour any quote comes from, or null when none is priced. */
+    fetchedAt: z.iso.datetime().nullable(),
+    /** Priced outcomes by `<skill id>:<passive count>`; missing outcomes are unpriced. */
+    quotes: z.record(z.string(), ClusterRecipeQuoteSchema),
+});
+export type ClusterRecipeSnapshot = z.infer<typeof ClusterRecipeSnapshotSchema>;
+
+export const ClusterRecipeOptionsSchema = ArbitrageOptionsSchema.pick({ buffer: true });
+export type ClusterRecipeOptions = z.infer<typeof ClusterRecipeOptionsSchema>;
+
+export const ClusterRecipeOutcomeResultSchema = z.object({
+    id: z.string(),
+    label: z.string(),
+    passives: z.number().int(),
+    /** Median chaos ask, or null when unpriced (counted as 0). */
+    value: z.number().nullable(),
+    listingCount: z.number().int(),
+    /** Share of the size's expected value. */
+    share: z.number(),
+});
+
+export const ClusterRecipeSizeResultSchema = z.object({
+    baseType: ClusterJewelSizeSchema,
+    outcomeCount: z.number().int(),
+    pricedCount: z.number().int(),
+    /** Average sale value per craft after the buffer, unpriced outcomes counting as 0. */
+    expectedValue: z.number(),
+    expectedValueWithoutTop: z.number(),
+    medianValue: z.number(),
+    /** Highest price per input that breaks even, inputs costing the buffer more. */
+    breakEvenInput: z.number(),
+    /** The lowest priced outcome market's ask, as the cheapest input on offer. */
+    cheapestInput: z.number().nullable(),
+    cost: z.number().nullable(),
+    profit: z.number().nullable(),
+    roi: z.number().nullable(),
+    /** Fraction of outcomes worth at least the cost after the buffer. */
+    chanceAboveCost: z.number().nullable(),
+    /** Break-even input price when outcomes asking under `below` go back into the recipe. */
+    recycled: z.object({ below: z.number(), breakEvenInput: z.number() }),
+    outcomes: z.array(ClusterRecipeOutcomeResultSchema),
+});
+export type ClusterRecipeSizeResult = z.infer<typeof ClusterRecipeSizeResultSchema>;
+
 export const MARKET_CURRENCIES = {
     "1": { id: "chaos", name: "Chaos Orb", short: "chaos" },
     "2": { id: "exalted", name: "Exalted Orb", short: "exalted" },

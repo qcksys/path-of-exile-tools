@@ -7,8 +7,11 @@ import { findCraftingExchangePrices } from "./crafting-exchange.queries";
 type Currency = "chaos" | "divine" | "exalted";
 const CURRENCIES: Currency[] = ["chaos", "divine", "exalted"];
 
-/** A captured beast species, or a Chronicle of Atzoatl market by its open tier 3 rooms. */
-export type RecipeMarket = { itemKey: string; rooms?: string };
+/**
+ * A captured beast species, a Chronicle of Atzoatl market by its open tier 3 rooms, or a crafting
+ * base market by its `base` signature value (e.g. a Cluster Jewel's skill, passives and band).
+ */
+export type RecipeMarket = { itemKey: string; rooms?: string; base?: string };
 
 export type RecipeListing = {
     unitPrice: number;
@@ -17,8 +20,9 @@ export type RecipeListing = {
     exchange?: { currency: Currency; unitPrice: number; rate: number };
 };
 
-export function recipeMarketKey({ itemKey, rooms }: RecipeMarket) {
-    return rooms === undefined ? itemKey : `${itemKey}|${rooms}`;
+export function recipeMarketKey({ itemKey, rooms, base }: RecipeMarket) {
+    const signature = rooms ?? base;
+    return signature === undefined ? itemKey : `${itemKey}|${signature}`;
 }
 
 /**
@@ -34,8 +38,14 @@ export async function findCraftingRecipeListings(
     at?: number,
 ) {
     const result = new Map<string, RecipeListing>();
-    const beasts = markets.filter((market) => market.rooms === undefined);
+    const beasts = markets.filter(
+        (market) => market.rooms === undefined && market.base === undefined,
+    );
     const temples = markets.filter((market) => market.rooms !== undefined);
+    const bases = Map.groupBy(
+        markets.filter((market) => market.base !== undefined),
+        (market) => market.itemKey,
+    );
     if (!markets.length) return result;
     const range = marketObservationRange(at);
     const rows = await db
@@ -72,6 +82,17 @@ export async function findCraftingRecipeListings(
                             eq(hourly.signatureValue, market.rooms!),
                         ),
                     ),
+                    // Crafting base markets merge identification, stored as identified.
+                    ...[...bases].map(([itemKey, entries]) =>
+                        and(
+                            eq(hourly.itemKey, itemKey),
+                            eq(hourly.signatureKind, "base"),
+                            inArray(
+                                hourly.signatureValue,
+                                entries.map((market) => market.base!),
+                            ),
+                        ),
+                    ),
                 ),
                 eq(hourly.identified, true),
                 eq(hourly.corrupted, false),
@@ -105,6 +126,7 @@ export async function findCraftingRecipeListings(
         const key = recipeMarketKey({
             itemKey: row.itemKey,
             rooms: row.signatureKind === "temple" ? row.signatureValue : undefined,
+            base: row.signatureKind === "base" ? row.signatureValue : undefined,
         });
         if (result.has(key) || !(row.listingCount > 0)) continue;
         const direct = row.prices?.[currency]?.median;

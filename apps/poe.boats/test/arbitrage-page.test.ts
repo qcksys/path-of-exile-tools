@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 // biome-ignore-all lint/style/useNamingConvention: React component exports and route configuration use PascalCase.
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { createElement } from "react";
 import { createRoutesStub } from "react-router";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { ArbitragePage } from "~/components/arbitrage/arbitrage-page";
 import { getVendorRecipes } from "~/data/vendor-recipes";
 import type { ArbitrageMarketData } from "~/services/arbitrage.server";
+import type { ClusterRecipeMarketData } from "~/services/cluster-recipe.server";
 import { byText } from "./control-helpers";
 
 afterEach(cleanup);
@@ -86,5 +87,70 @@ describe("arbitrage page", () => {
         showPage({ ...data, snapshot: null, error: "Please retry shortly." });
         expect(screen.getByText("Market data unavailable")).toBeTruthy();
         expect(screen.getByRole("button", { name: "Load prices" })).toBeTruthy();
+    });
+});
+
+describe("cluster jewel recipe calculator", () => {
+    const clusterRecipe: ClusterRecipeMarketData = {
+        leagues: ["Standard"],
+        league: "Standard",
+        itemLevel: 84,
+        error: null,
+        snapshot: {
+            league: "Standard",
+            band: { min: 84, max: 100 },
+            fetchedAt: "2026-11-17T03:00:00.000Z",
+            quotes: {
+                "affliction_minion_damage:12": { value: 850, listingCount: 41 },
+                "affliction_wand_damage:8": { value: 2, listingCount: 30 },
+            },
+        },
+    };
+    function showCluster(market = clusterRecipe) {
+        const Component = () => createElement(ArbitragePage, { data, clusterRecipe: market });
+        const Routes = createRoutesStub([{ path: "/1/arbitrage", Component }]);
+        return render(createElement(Routes, { initialEntries: ["/1/arbitrage"] }));
+    }
+
+    it("shows each size's expected value, unpriced outcomes counting as nothing", () => {
+        showCluster();
+        const table = within(screen.getByRole("table", { name: "Cluster Jewel recipe estimates" }));
+        const large = within(table.getByText("Large Cluster Jewel").closest("tr")!);
+        // (850 + 2) / 85 outcomes, against five 2 chaos inputs.
+        expect(large.getByText("2 of 85 outcomes priced")).toBeTruthy();
+        expect(large.getByText(byText("10.02 chaos"))).toBeTruthy();
+        expect(large.getByText(byText("10 chaos for 5 × 2 chaos"))).toBeTruthy();
+        expect(
+            within(table.getByText("Small Cluster Jewel").closest("tr")!).getByText(
+                "0 of 28 outcomes priced",
+            ),
+        ).toBeTruthy();
+        expect(screen.getByRole("table", { name: "Large Cluster Jewel outcomes" })).toBeTruthy();
+        // Both forms carry the other's parameter, so changing one keeps the other.
+        expect(document.querySelector<HTMLInputElement>('input[name="clusterIlvl"]')?.value).toBe(
+            "84",
+        );
+    });
+
+    it("recalculates with the buffer and refuses an invalid one", () => {
+        showCluster();
+        fireEvent.change(screen.getByLabelText("Cluster recipe buffer (%)"), {
+            target: { value: "10" },
+        });
+        expect(screen.getByText(byText("9.021 chaos"))).toBeTruthy();
+        fireEvent.change(screen.getByLabelText("Cluster recipe buffer (%)"), {
+            target: { value: "100" },
+        });
+        expect(screen.queryByRole("table", { name: "Cluster Jewel recipe estimates" })).toBeNull();
+    });
+
+    it("explains when no Cluster Jewel ask was captured", () => {
+        showCluster({
+            ...clusterRecipe,
+            snapshot: { ...clusterRecipe.snapshot!, fetchedAt: null, quotes: {} },
+            error: "No Cluster Jewel asks were captured in this league within the last 24 hours.",
+        });
+        expect(screen.getByText("Cluster Jewel prices unavailable")).toBeTruthy();
+        expect(screen.queryByRole("table", { name: "Cluster Jewel recipe estimates" })).toBeNull();
     });
 });

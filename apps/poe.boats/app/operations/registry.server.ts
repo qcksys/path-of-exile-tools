@@ -5,7 +5,13 @@ import {
     getPoe2MarketExchange,
 } from "~/db/queries/market.queries";
 import { sStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
-import { ArbitrageGameSchema, MarketSnapshotSchema, VendorRecipeSchema } from "~/schemas/arbitrage";
+import {
+    ArbitrageGameSchema,
+    ClusterRecipeItemLevelSchema,
+    ClusterRecipeSnapshotSchema,
+    MarketSnapshotSchema,
+    VendorRecipeSchema,
+} from "~/schemas/arbitrage";
 import {
     marketCategorySchema,
     marketExchangeItemInputSchema,
@@ -20,6 +26,7 @@ import { recombinatorCatalogSchema } from "~/schemas/recombinator-catalog";
 import { ScarabPricesDataSchema } from "~/schemas/scarab";
 import { SharedSetSchema } from "~/schemas/share";
 import { loadArbitrageMarket } from "~/services/arbitrage.server";
+import { loadClusterRecipeMarket } from "~/services/cluster-recipe.server";
 import { calculatorOperations } from "./calculators";
 import { craftingBuyInOperations } from "./crafting-buy-in";
 import { craftingCloudOperations } from "./crafting-cloud";
@@ -269,6 +276,28 @@ export const operations = [
         }),
         execute: ({ game, league }, context) =>
             loadArbitrageMarket(context.db, game, league ?? null),
+    }),
+    defineOperation({
+        ...shared,
+        family: "arbitrage",
+        path: "/cluster-jewels/market",
+        name: "get_cluster_recipe_market",
+        ui: "/1/arbitrage",
+        description:
+            "Read the PoE 1 PC median merchant-tab chaos ask of every outcome of the 5-for-1 Cluster Jewel recipe, each rollable enchantment at each passive count, in the item level band holding `itemLevel` (default 84). Outcomes keyed `<skill id>:<passive count>`; those with no ask in the last 24 completed hours are left out. Leagues are the PoE 1 exchange's, as on the arbitrage page.",
+        input: z.object({
+            league: z.string().max(100).optional(),
+            itemLevel: ClusterRecipeItemLevelSchema.optional(),
+        }),
+        output: z.object({
+            leagues: z.array(z.string()),
+            league: z.string(),
+            itemLevel: ClusterRecipeItemLevelSchema,
+            snapshot: ClusterRecipeSnapshotSchema.nullable(),
+            error: z.string().nullable(),
+        }),
+        execute: ({ league, itemLevel }, context) =>
+            loadClusterRecipeMarket(context.db, league ?? null, itemLevel ?? 84),
     }),
     defineOperation({
         ...shared,
