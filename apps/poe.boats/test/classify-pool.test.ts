@@ -80,87 +80,100 @@ afterEach(async () => {
 beforeEach(() => {
     vi.stubEnv("PS_CLASSIFY_THREADS", "");
 });
+// Each thread compiles the whole cohort catalog before it answers; on a busy CI runner that takes
+// longer than the default timeout, and a timed-out test would go on classifying during the next.
+const THREAD_TEST_TIMEOUT = 60_000;
 
-it("classifies a page's merchant equipment exactly as the worker's own classifier", async () => {
-    const classifier = await defaultEquipmentClassifier();
-    const pool = await startClassifyPool(2);
-    expect(pool.revision).toBe(classifier.manifest.revision);
+it(
+    "classifies a page's merchant equipment exactly as the worker's own classifier",
+    async () => {
+        const classifier = await defaultEquipmentClassifier();
+        const pool = await startClassifyPool(2);
+        expect(pool.revision).toBe(classifier.manifest.revision);
 
-    const results = new Map(await pool.classify(JSON.stringify(firstPage), "Standard"));
-    const parsed = JSON.parse(JSON.stringify(firstPage)) as PublicStashPage;
-    const expected = new Map(
-        parsed.stashes[0]!.items.filter((item) => classifier.acceptsBase(item.baseType)).map(
-            (item) => [
-                stableItemDigest(item),
-                classifier.classify(normalizeApiItem("poe1", "stash", item)),
-            ],
-        ),
-    );
-    expect(results).toEqual(expected);
-    expect(expected.size).toBe(items.length);
-    // The fixture must exercise real cohorts, or the comparison proves little.
-    expect([...expected.values()].some((c) => c.matches.length + c.unknown.length > 0)).toBe(true);
-});
+        const results = new Map(await pool.classify(JSON.stringify(firstPage), "Standard"));
+        const parsed = JSON.parse(JSON.stringify(firstPage)) as PublicStashPage;
+        const expected = new Map(
+            parsed.stashes[0]!.items.filter((item) => classifier.acceptsBase(item.baseType)).map(
+                (item) => [
+                    stableItemDigest(item),
+                    classifier.classify(normalizeApiItem("poe1", "stash", item)),
+                ],
+            ),
+        );
+        expect(results).toEqual(expected);
+        expect(expected.size).toBe(items.length);
+        // The fixture must exercise real cohorts, or the comparison proves little.
+        expect([...expected.values()].some((c) => c.matches.length + c.unknown.length > 0)).toBe(
+            true,
+        );
+    },
+    THREAD_TEST_TIMEOUT,
+);
 
-it("writes the same equipment rows with classification threads as without", async () => {
-    dir = await mkdtemp(join(tmpdir(), "classify-pool-"));
-    await appendRawPage(dir, { capturedAt: HOUR + 1000, cursor: "page-0", page: firstPage });
-    await appendRawPage(dir, {
-        capturedAt: HOUR + 5000,
-        cursor: "page-1",
-        page: page("page-2", [
-            stash("merchant", {}, [
-                ...items.slice(1),
-                rare("ring", "Two-Stone Ring", ["+60 to maximum Life"]),
+it(
+    "writes the same equipment rows with classification threads as without",
+    async () => {
+        dir = await mkdtemp(join(tmpdir(), "classify-pool-"));
+        await appendRawPage(dir, { capturedAt: HOUR + 1000, cursor: "page-0", page: firstPage });
+        await appendRawPage(dir, {
+            capturedAt: HOUR + 5000,
+            cursor: "page-1",
+            page: page("page-2", [
+                stash("merchant", {}, [
+                    ...items.slice(1),
+                    rare("ring", "Two-Stone Ring", ["+60 to maximum Life"]),
+                ]),
             ]),
-        ]),
-    });
-    const rows = async (threads: string, equipment?: EquipmentClassifier) => {
-        vi.stubEnv("PS_CLASSIFY_THREADS", threads);
-        const db = await openDb(":memory:");
-        try {
-            await ingestPs(db.conn, {} as never, {
-                pages: 5,
-                league: "Standard",
-                equipment,
-                spool: new RawPageReader(dir!, {
-                    hour: new Date(HOUR).toISOString().slice(0, 13),
-                    offset: 0,
-                    capturedAt: 0,
-                }),
-            });
-            return {
-                listings: await queryAll(
-                    db.conn,
-                    "SELECT * EXCLUDE (raw_item) FROM ps_equipment_listing ORDER BY item_id",
-                ),
-                hours: await queryAll(
-                    db.conn,
-                    "SELECT * FROM ps_equipment_hour ORDER BY item_id, observed_hour",
-                ),
-            };
-        } finally {
-            await db.close();
-        }
-    };
-    // Every classification of the threaded run comes from the pool, none from this thread.
-    const classifier = await defaultEquipmentClassifier();
-    const classify = vi.spyOn(classifier, "classify");
-    const threaded = await rows("2");
-    expect(classify).not.toHaveBeenCalled();
-    classify.mockRestore();
-    expect(threaded.listings.length).toBeGreaterThan(0);
+        });
+        const rows = async (threads: string, equipment?: EquipmentClassifier) => {
+            vi.stubEnv("PS_CLASSIFY_THREADS", threads);
+            const db = await openDb(":memory:");
+            try {
+                await ingestPs(db.conn, {} as never, {
+                    pages: 5,
+                    league: "Standard",
+                    equipment,
+                    spool: new RawPageReader(dir!, {
+                        hour: new Date(HOUR).toISOString().slice(0, 13),
+                        offset: 0,
+                        capturedAt: 0,
+                    }),
+                });
+                return {
+                    listings: await queryAll(
+                        db.conn,
+                        "SELECT * EXCLUDE (raw_item) FROM ps_equipment_listing ORDER BY item_id",
+                    ),
+                    hours: await queryAll(
+                        db.conn,
+                        "SELECT * FROM ps_equipment_hour ORDER BY item_id, observed_hour",
+                    ),
+                };
+            } finally {
+                await db.close();
+            }
+        };
+        // Every classification of the threaded run comes from the pool, none from this thread.
+        const classifier = await defaultEquipmentClassifier();
+        const classify = vi.spyOn(classifier, "classify");
+        const threaded = await rows("2");
+        expect(classify).not.toHaveBeenCalled();
+        classify.mockRestore();
+        expect(threaded.listings.length).toBeGreaterThan(0);
 
-    // A separately compiled classifier of the same catalog, with its own cache, on this thread.
-    const separate = compileMarketCohorts(
-        marketCohortManifestSchema.parse(
-            JSON.parse(
-                await readFile(
-                    new URL(import.meta.resolve("@poe-tools/market/cohorts-poe1.json")),
-                    "utf8",
+        // A separately compiled classifier of the same catalog, with its own cache, on this thread.
+        const separate = compileMarketCohorts(
+            marketCohortManifestSchema.parse(
+                JSON.parse(
+                    await readFile(
+                        new URL(import.meta.resolve("@poe-tools/market/cohorts-poe1.json")),
+                        "utf8",
+                    ),
                 ),
             ),
-        ),
-    );
-    expect(await rows("", separate)).toEqual(threaded);
-});
+        );
+        expect(await rows("", separate)).toEqual(threaded);
+    },
+    THREAD_TEST_TIMEOUT,
+);
