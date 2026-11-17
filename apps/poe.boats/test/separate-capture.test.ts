@@ -11,7 +11,7 @@ import {
     runCapture,
     writeCaptureState,
 } from "../../../packages/poe-stash-ingest/src/ps/capture";
-import { ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest";
+import { HEAD_PAGE_BYTES, ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest";
 import {
     appendRawPage,
     RawPageReader,
@@ -239,6 +239,59 @@ it("judges sales by the capture clock, so falling behind does not make them unob
     } finally {
         await db.close();
     }
+});
+
+// The seller's stash and three other sellers of the same item at the same price.
+const market = (next: string, ...items: string[]) => {
+    const listed = page(next, ...items);
+    const peers = ["peer-1", "peer-2", "peer-3"].map((peer) => ({
+        ...listed.stashes[0],
+        id: `${peer}-stash`,
+        accountName: peer,
+        items: [item(peer)],
+    }));
+    return { ...listed, stashes: [...listed.stashes, ...peers] } as unknown as Page;
+};
+// A page the API cut off at its size limit: capture was behind the stream's head.
+const cutOff = (listed: Page) =>
+    ({ ...listed, padding: "x".repeat(HEAD_PAGE_BYTES) }) as unknown as Page;
+
+async function saleAfterBusyStream(wrap: (listed: Page) => Page) {
+    // Every request finds new changes, so no page echoes its cursor.
+    await appendRawPage(dir, {
+        capturedAt: at(10, 0),
+        cursor: "z",
+        page: wrap(market("a", "kept", "sold")),
+    });
+    const db = await openDb(":memory:");
+    try {
+        const spool = seeded();
+        await ingestPs(db.conn, inertClient(), { pages: 10, spool });
+        await appendRawPage(dir, {
+            capturedAt: at(10, 1),
+            cursor: "a",
+            page: wrap(page("b", "kept")),
+        });
+        await appendRawPage(dir, {
+            capturedAt: at(11, 2),
+            cursor: "b",
+            page: wrap(page("c", "kept")),
+        });
+        const result = await ingestPs(db.conn, inertClient(), { pages: 10, spool });
+        expect(result.caughtUp).toBe(false);
+        const [sale] = await queryAll<{ status: string }>(db.conn, "SELECT status FROM ps_sale");
+        return sale?.status;
+    } finally {
+        await db.close();
+    }
+}
+
+it("judges sales while capture keeps up with a stream that never echoes its cursor", async () => {
+    expect(await saleAfterBusyStream((listed) => listed)).toBe("likely-sold");
+});
+
+it("does not count a page the API cut off as the stream's head", async () => {
+    expect(await saleAfterBusyStream(cutOff)).toBe("unobserved");
 });
 
 it("does not move past a page that fails, and leaves the position unchanged", async () => {
