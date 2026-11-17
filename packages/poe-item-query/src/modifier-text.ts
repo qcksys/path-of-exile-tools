@@ -529,6 +529,14 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
             (a, b) =>
                 ranks.get(a)! - ranks.get(b)! || b.contributions.length - a.contributions.length,
         );
+        // The next candidate of each side at or after each index.
+        const nextPrefix = new Int32Array(candidates.length + 1).fill(candidates.length);
+        const nextSuffix = new Int32Array(candidates.length + 1).fill(candidates.length);
+        for (let index = candidates.length - 1; index >= 0; index--) {
+            const side = candidates[index]!.side;
+            nextPrefix[index] = side === "prefix" ? index : nextPrefix[index + 1]!;
+            nextSuffix[index] = side === "suffix" ? index : nextSuffix[index + 1]!;
+        }
         const lower = targets.map(() => 0);
         const upper = targets.map(() => 0);
         const bounds = Array.from({ length: candidates.length + 1 }, () => ({
@@ -649,15 +657,17 @@ function compileTextModel(input: ModifierTextModel, visitLimit: number, fracture
                         : new Map([...common].filter(([key]) => facts.has(key)));
                 return;
             }
-            next: for (let index = start; index < candidates.length; index++) {
+            // With one side full, step only through the other side's candidates; the leaf above
+            // has returned when both are.
+            const only =
+                p === expectedPrefixes ? nextSuffix : s === expectedSuffixes ? nextPrefix : null;
+            next: for (
+                let index = only ? only[start]! : start;
+                index < candidates.length;
+                index = only ? only[index + 1]! : index + 1
+            ) {
                 const candidate = candidates[index]!;
-                if (
-                    (candidate.side === "prefix"
-                        ? p === expectedPrefixes
-                        : s === expectedSuffixes) ||
-                    ids[candidate.id]
-                )
-                    continue;
+                if (ids[candidate.id]) continue;
                 for (const group of candidate.groups) if (groups[group]) continue next;
                 chosen.push(candidate);
                 ids[candidate.id] = 1;
