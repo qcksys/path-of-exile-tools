@@ -385,6 +385,10 @@ export const craftingDataSchema = z.object({
     ),
     modDescriptions: z.record(id, z.array(integer.nonnegative())),
     modTexts: z.record(id, id),
+    // PoE 1 3.30+ only; earlier builds and PoE 2 describe granted effects through stat descriptions.
+    grantedEffects: z
+        .record(id, z.array(z.object({ text: id, level: integer.nonnegative() })).min(1))
+        .optional(),
     statLookups: z.record(id, z.record(z.string(), z.string())),
     essences: z.array(
         z.object({
@@ -442,9 +446,7 @@ export const craftingDataSchema = z.object({
             enchantment: z.object({ mod: id, itemClasses: z.array(id).min(1) }).nullable(),
             affinityMultiplier: z.number().finite().positive().nullable(),
             influenceRerollClasses: z.array(id).min(1).nullable(),
-            lifeforceType: integer,
-            lifeforce: integer.nonnegative(),
-            sacred: integer.nonnegative(),
+            cost: z.array(craftingCostSchema).min(1),
             gameMode: integer.nullable(),
         }),
     ),
@@ -1093,6 +1095,13 @@ export function validateCraftingData(
         if (data.mods[id]!.domain !== "area" || data.mods[id]!.generation_type !== "corrupted")
             throw new Error("Supplemental item text requires an area corruption modifier.");
     }
+    for (const [id, effects] of Object.entries(crafting.grantedEffects ?? {})) {
+        mod(id);
+        const text = data.mods[id]!.text ?? "";
+        const lines = effects.map((effect) => effect.text).join("\n");
+        if (text !== lines && !text.endsWith(`\n${lines}`))
+            throw new Error(`Granted effect lines differ from the modifier text: ${id}`);
+    }
     for (const [id, descriptions] of Object.entries(crafting.modDescriptions)) {
         mod(id);
         for (const index of descriptions)
@@ -1284,6 +1293,7 @@ export function validateCraftingData(
             mod(recipe.enchantment.mod);
             recipe.enchantment.itemClasses.forEach(itemClass);
         }
+        for (const entry of recipe.cost) base(entry.id);
     }
     for (const fossil of crafting.fossils) {
         base(fossil.id);
