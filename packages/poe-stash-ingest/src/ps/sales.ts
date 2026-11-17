@@ -106,7 +106,10 @@ export async function recordRemovals(
     await conn.run(
         `INSERT INTO ps_sale BY NAME
          WITH stash AS MATERIALIZED (
-             SELECT * FROM ps_listing WHERE stash_id IN (${params(stashIds, 4)})
+             -- A sale keeps no item JSON, and fetching it for every listing of the stashes cost
+             -- more than the rest of this statement.
+             SELECT * EXCLUDE (raw_item, content_digest) FROM ps_listing
+             WHERE stash_id IN (${params(stashIds, 4)})
          ), removed AS MATERIALIZED (
              -- A stash changed twice in one page repeats its removals; ON CONFLICT would scan
              -- every sale, while this transaction's own sales sit in the newest row groups.
@@ -132,7 +135,7 @@ export async function recordRemovals(
                  AND removed_at IS NULL AND price_amount > 0
                  AND last_seen_at >= ${seenAt} - INTERVAL ${SALE_POLICY.marketWindowSeconds} SECOND
          )
-         SELECT l.* EXCLUDE (raw_item, content_digest, withdrawn, market_key),
+         SELECT l.* EXCLUDE (withdrawn, market_key),
             CASE WHEN l.withdrawn THEN 'withdrawn'
                 -- Far behind the stream (initial catch-up, or a long outage), a removal's time and
                 -- market say little about when or whether it sold.
