@@ -93,6 +93,7 @@ export function rulesetAllowsConditionalSteps(ruleset: Pick<CraftingRuleset, "en
         "crafting-graph-16",
         "crafting-graph-17",
         "crafting-graph-18",
+        "crafting-graph-19",
     ].includes(ruleset.engine);
 }
 
@@ -110,6 +111,7 @@ export function rulesetAllowsSimpleCraft(ruleset: Pick<CraftingRuleset, "engine"
         "crafting-graph-16",
         "crafting-graph-17",
         "crafting-graph-18",
+        "crafting-graph-19",
     ].includes(ruleset.engine);
 }
 
@@ -126,6 +128,7 @@ export function rulesetAllowsScopedCraftPrices(ruleset: Pick<CraftingRuleset, "e
         "crafting-graph-16",
         "crafting-graph-17",
         "crafting-graph-18",
+        "crafting-graph-19",
     ].includes(ruleset.engine);
 }
 
@@ -141,6 +144,7 @@ export function rulesetAllowsPresetPreparation(ruleset: Pick<CraftingRuleset, "e
         "crafting-graph-16",
         "crafting-graph-17",
         "crafting-graph-18",
+        "crafting-graph-19",
     ].includes(ruleset.engine);
 }
 

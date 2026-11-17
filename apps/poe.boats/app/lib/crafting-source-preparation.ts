@@ -47,10 +47,16 @@ export function validateSourcePreparationRevision(
                 "crafting-graph-16",
                 "crafting-graph-17",
                 "crafting-graph-18",
+                "crafting-graph-19",
             ].includes(engine) ||
             !influenceReadyBases.has(baseId) ||
             (baseId === "Metadata/Items/Armours/Shields/ShieldStrE3" &&
-                !["crafting-graph-16", "crafting-graph-17", "crafting-graph-18"].includes(engine))
+                ![
+                    "crafting-graph-16",
+                    "crafting-graph-17",
+                    "crafting-graph-18",
+                    "crafting-graph-19",
+                ].includes(engine))
         )
             throw new Error(
                 "Influence-ready shield sources require crafting engine 15, 16 or 17; Heat-attuned sources require engine 16 or 17.",
@@ -60,7 +66,12 @@ export function validateSourcePreparationRevision(
     if (source.kind === "scour-v1") {
         if (
             baseId === "Metadata/Items/Armours/BodyArmours/BodyInt17" &&
-            !["crafting-graph-16", "crafting-graph-17", "crafting-graph-18"].includes(engine)
+            ![
+                "crafting-graph-16",
+                "crafting-graph-17",
+                "crafting-graph-18",
+                "crafting-graph-19",
+            ].includes(engine)
         )
             throw new Error("Scouring Vaal Regalia sources requires crafting engine 16 or 17.");
         if (
@@ -72,6 +83,7 @@ export function validateSourcePreparationRevision(
                 "crafting-graph-16",
                 "crafting-graph-17",
                 "crafting-graph-18",
+                "crafting-graph-19",
             ].includes(engine)
         )
             throw new Error(
@@ -86,6 +98,7 @@ export function validateSourcePreparationRevision(
                 "crafting-graph-16",
                 "crafting-graph-17",
                 "crafting-graph-18",
+                "crafting-graph-19",
             ].includes(engine)
         )
             throw new Error(
@@ -101,6 +114,7 @@ export function validateSourcePreparationRevision(
             "crafting-graph-16",
             "crafting-graph-17",
             "crafting-graph-18",
+            "crafting-graph-19",
         ].includes(engine)
     )
         throw new Error(

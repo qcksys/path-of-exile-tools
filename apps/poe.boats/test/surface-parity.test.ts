@@ -492,7 +492,7 @@ describe("transport parity", () => {
         "energy-shield-chest",
     ] as const)("preserves r16 %s extended base sources over HTTP and MCP", async (presetId) => {
         const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === "r18",
+            (entry) => entry.game === "poe1" && entry.revision === "r19",
         )!;
         const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId };
         const expected = projectFromPreset(fixtureEngine, ruleset, presetId);

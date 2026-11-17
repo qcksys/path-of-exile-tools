@@ -54,7 +54,9 @@ To publish a new era or correction, from this app directory:
 2. Update `releases.json`: choose the game, era, new revision, client-build prefix, notes and available
    mechanics. Availability is reviewed explicitly; an old record remaining in game files does not
    establish that a mechanic is still usable. PoE 2's initial label deliberately identifies client
-   4.5 rather than guessing a public league/version name.
+   4.5 rather than guessing a public league/version name. GGG later renumbered that client from
+   4.5.5.x to 0.5.5.x with the same content, so r19 continues the `client-4.5` era with patch
+   prefix `0.5`.
 3. If executable behavior or the implementation bundle changes, assign a new `CRAFTING_GRAPH_ENGINE`
    identifier in `app/lib/crafting-graph-validation.ts`. Retain all existing bundles. Data-only
    corrections can reuse an unchanged implementation. The bundle includes the game-data model and

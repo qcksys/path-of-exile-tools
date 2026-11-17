@@ -13,7 +13,7 @@ const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r15",
 )!;
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r18",
+    (entry) => entry.game === "poe1" && entry.revision === "r19",
 )!;
 const sourceId = "shield-make-heat-influence-base";
 const targetIds = ["block-make-base", "max-res-make-base"] as const;
