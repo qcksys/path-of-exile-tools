@@ -4,7 +4,7 @@ import { compileMarketCohorts, marketCohortManifestSchema } from "@poe-tools/mar
 import { expect, it } from "vite-plus/test";
 import { CraftingEngine } from "../app/lib/crafting-engine";
 import { marketModifierIdentities, marketModifierTextModel } from "../scripts/market-modifier-text";
-import { catalog329 as catalog, engine329 as engine } from "./crafting-329-fixtures";
+import { catalog, engine } from "./crafting-fixtures";
 
 const manifest = marketCohortManifestSchema.parse(
     JSON.parse(readFileSync("../../packages/poe-market/data/cohorts-poe1.json", "utf8")),

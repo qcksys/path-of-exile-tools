@@ -105,7 +105,7 @@ export function adaptiveMarketCandidate(median = 21) {
 }
 
 // A prepared Temple suffix priced from its display-equivalent family. 3.30 removed these suffixes,
-// so callers pass the 3.29 engine and ruleset the committed market cohorts were built from.
+// so callers pass the 3.29 engine and the r17 ruleset.
 export function donorFamilyMarketFixture(engine: CraftingEngine, ruleset: CraftingRuleset) {
     const id = "ColdResistEnhancedModAilments__";
     const base = Object.entries(engine.catalog.bases).find(

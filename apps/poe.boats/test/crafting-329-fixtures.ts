@@ -2,8 +2,8 @@ import { CraftingEngine } from "../app/lib/crafting-engine";
 import { craftingCatalogSchema } from "../app/schemas/crafting";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
-// The PoE 1 3.29 catalog, published as r17. Tests of 3.29 mechanics use it, as do market tests:
-// the committed market cohorts, capture policy and captured stash listings were built from it.
+// The PoE 1 3.29 catalog, published as r17. Tests of 3.29 mechanics use it, including market
+// tests of prepared Temple suffixes, which 3.30 removed.
 export const ruleset329 = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r17",
 )!;

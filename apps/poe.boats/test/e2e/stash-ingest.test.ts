@@ -1326,7 +1326,7 @@ it("refreshes a saved cohort to its newest revision and recovers earlier prices 
 });
 
 it("offers stored donor-family quotes only under an explicit representative assumption", async () => {
-    // The donor family is a 3.29 Temple suffix; the committed cohorts were built from r17.
+    // The donor family is a Temple suffix, which 3.30 removed, so the purchase uses r17's catalog.
     const ruleset329 = historyIndex.revisions.find(
         (entry) => entry.game === "poe1" && entry.revision === "r17",
     )!;

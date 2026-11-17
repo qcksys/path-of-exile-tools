@@ -1211,7 +1211,7 @@ test("clicking off a node commits method options and keeps invalid drafts open",
 });
 
 test("donor-family pricing requires a saved representative assumption", async ({ page }) => {
-    // The donor family is a 3.29 Temple suffix; the committed cohorts were built from r17.
+    // The donor family is a Temple suffix, which 3.30 removed, so the purchase uses r17's catalog.
     const ruleset329 = historyIndex.revisions.find(
         (entry) => entry.game === "poe1" && entry.revision === "r17",
     )!;
