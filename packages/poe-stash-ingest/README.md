@@ -424,7 +424,9 @@ A `process` worker with `PS_SEPARATE_CAPTURE=true` reads those pages instead of 
 place in `stream_cursor`, updated in the same transaction as the page. A page that fails is read again
 while capture continues. Listings, removals, sales and equipment use each page's `capturedAt`, so a
 worker that falls behind records what it would have recorded on time. The worker delivers a stash hour
-only after reading a page from a later hour.
+only after reading a page from a later hour. It stores no copy of the pages in DuckDB: each processed
+page's `ps_capture_page` row holds `raw:<hour>:<offset>` in `response_hash`, its place in the raw
+archive, and reclassification reads it from there, keeping the items the database archive would have kept.
 
 A new database starts after everything archived. To rebuild one from the archive, set `PS_RAW_FROM` (or
 `--raw-from`) to the first UTC hour to read; the setting is ignored once the database has a position.

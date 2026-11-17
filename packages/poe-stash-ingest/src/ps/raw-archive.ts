@@ -442,7 +442,7 @@ const spoolLines = (path: string, start: number) =>
  */
 export class RawPageReader {
     position: RawPosition;
-    private readonly dir: string;
+    readonly dir: string;
     private lines?: AsyncGenerator<{ header: RawLineHeader; pageJson: string; bytes: number }>;
     private current?: RawRecord & { end: RawPosition };
 
@@ -517,6 +517,48 @@ export class RawPageReader {
         if (this.current) this.position = this.current.end;
         this.current = undefined;
     }
+
+    /** Stops reading the open hour. */
+    async close() {
+        await this.lines?.return(undefined);
+        this.lines = undefined;
+        this.current = undefined;
+    }
+}
+
+const RAW_PAGE = "raw:";
+
+/** How `ps_capture_page` refers to a page the raw archive keeps in place of the database. */
+export function rawPageLocator({ hour, offset }: Pick<RawPosition, "hour" | "offset">) {
+    return `${RAW_PAGE}${hour}:${offset}`;
+}
+
+export const isRawPageLocator = (value: string) => value.startsWith(RAW_PAGE);
+
+let replay: RawPageReader | undefined;
+
+/**
+ * The page at `locator`. A replay reads an hour's pages in order, so the reader stays open and the
+ * next page's call resumes where this one ended instead of decompressing the hour again.
+ */
+export async function readRawPageAt(dir: string, locator: string) {
+    const [hour = "", offset = ""] = locator.slice(RAW_PAGE.length).split(":");
+    if (
+        replay?.dir !== dir ||
+        replay.position.hour !== hour ||
+        replay.position.offset !== Number(offset)
+    ) {
+        await replay?.close();
+        replay = new RawPageReader(dir, { hour, offset: Number(offset), capturedAt: 0 });
+    }
+    const record = await replay.peek();
+    if (!record || record.end.hour !== hour) {
+        await replay.close();
+        replay = undefined;
+        throw new RawArchiveError(`The raw archive has no page at ${locator}.`);
+    }
+    replay.advance();
+    return record;
 }
 
 // The upload URL's 401, 408, 429 and 5xx responses ask for a new upload URL and a retry.

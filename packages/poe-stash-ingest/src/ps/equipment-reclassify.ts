@@ -1,11 +1,13 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import { normalizeApiItem } from "@poe-tools/item-query";
 import { readArchivedPage } from "#src/ps/archive-payload.ts";
+import { defaultCraftingCapture } from "#src/ps/crafting-capture.ts";
 import { defaultEquipmentClassifier, type EquipmentClassifier } from "#src/ps/equipment.ts";
 import type {
     EquipmentDiagnosticFixture,
     EquipmentDiagnostics,
 } from "#src/ps/equipment-diagnostics.ts";
+import { isRawPageLocator, readRawPageAt } from "#src/ps/raw-archive.ts";
 import { queryAll, withTransaction } from "#src/shared/db.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
 import { assertSourceRealm } from "#src/shared/source.ts";
@@ -75,6 +77,8 @@ export async function reclassifyArchivedEquipment(
         equipmentDiagnostics?: EquipmentDiagnostics;
         completedBefore?: number;
         limitPages?: number;
+        /** Where pages recorded by `recordRawPage` are kept. */
+        rawArchiveDir?: string;
     },
 ) {
     const currentHour = Math.floor(Date.now() / 3_600_000) * 3600;
@@ -164,7 +168,9 @@ export async function reclassifyArchivedEquipment(
                 ],
             );
             if (!page) throw new Error("The archived hour changed during reclassification.");
-            const payload = await readArchivedPage(conn, page.responseHash);
+            const payload = isRawPageLocator(page.responseHash)
+                ? await rawArchivedPage(opts.rawArchiveDir, page, classifier)
+                : await readArchivedPage(conn, page.responseHash);
             const rows = [];
             for (const stash of payload.stashes) {
                 // Withdrawals retain earlier asking observations, as live capture does.
@@ -234,6 +240,26 @@ export async function reclassifyArchivedEquipment(
         hours: completedHours.length,
         completedHours,
         pending: (await nextHour()) !== undefined,
+    };
+}
+
+/** A page `recordRawPage` recorded, with only the items the database archive would have kept. */
+async function rawArchivedPage(
+    dir: string | undefined,
+    page: { responseHash: string; capturedAt: number },
+    classifier: EquipmentClassifier,
+) {
+    if (!dir) throw new Error("This archived page is kept in the raw archive, which is not set.");
+    const record = await readRawPageAt(dir, page.responseHash);
+    if (record.capturedAt !== page.capturedAt)
+        throw new Error(`The raw archive page at ${page.responseHash} is not the recorded page.`);
+    const accepts = await defaultCraftingCapture(classifier.manifest);
+    return {
+        ...record.page,
+        stashes: record.page.stashes.map((stash) => ({
+            ...stash,
+            items: stash.public ? (stash.items ?? []).filter(accepts) : [],
+        })),
     };
 }
 
