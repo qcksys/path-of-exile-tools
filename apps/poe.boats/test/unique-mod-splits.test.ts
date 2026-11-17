@@ -54,7 +54,13 @@ const VARIANTS: [name: string, variant: string, mods: string[]][] = [
                 [...mods, "+22% to all Elemental Resistances", "Gain 100 Life per Enemy Killed"],
             ] as [string, string, string[]],
     ),
-    ...["Bubonic Trail", "Lightpoacher", "Shroud of the Lightless", "Tombfist"].flatMap(
+    ...[
+        "Bubonic Trail",
+        "Command of the Pit",
+        "Lightpoacher",
+        "Shroud of the Lightless",
+        "Tombfist",
+    ].flatMap(
         (name) =>
             [
                 [name, "1 Jewel", ["Has 1 Abyssal Socket"]],

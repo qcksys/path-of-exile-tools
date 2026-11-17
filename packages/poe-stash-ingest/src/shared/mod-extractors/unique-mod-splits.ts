@@ -64,8 +64,8 @@ const splitPersonalityStats: Split = (lines) => {
 /**
  * Uniques whose rolled mods make separately priced markets, keyed by unique name. The list and
  * the variant labels follow poe.ninja's `variant` splits (checked 2026-10-27 in Allflame), plus
- * Split Personality, The Light of Meaning, Sublime Vision and Thread of Hope, which poe.ninja does not split, and
- * The Dark Monarch; the `foulborn` extractor adds these labels to Foulborn copies.
+ * Split Personality, The Light of Meaning, Sublime Vision, Thread of Hope and Command of the Pit, which poe.ninja does
+ * not split, and The Dark Monarch; the `foulborn` extractor adds these labels to Foulborn copies.
  */
 export const UNIQUE_MOD_SPLITS: Record<string, Split> = {
     // Hybrid energy shield versions that roll life instead of flat energy shield trade apart.
@@ -76,6 +76,8 @@ export const UNIQUE_MOD_SPLITS: Record<string, Split> = {
         return life && defence.endsWith("ES") && defence !== "ES" ? `${defence}/Life` : defence;
     },
     "Bubonic Trail": abyssalSockets,
+    // Current drops have 2 Abyssal Sockets; vestigial copies have 1.
+    "Command of the Pit": abyssalSockets,
     "Doryani's Invitation": capture(/of (Physical|Lightning|Cold|Fire) Damage Leeched as Life/),
     Impresence: capture(
         new RegExp(`(${Object.keys(IMPRESENCE_CURSES).join("|")}) has no Reservation`),
