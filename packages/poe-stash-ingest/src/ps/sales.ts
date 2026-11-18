@@ -63,8 +63,10 @@ export async function priceModPoolSales(
                  FROM seller_prices GROUP BY sale_id, mod
                  HAVING count(*) >= ${SALE_POLICY.minimumSellers}
              ), best AS (
-                 SELECT sale_id, max(price) AS price, arg_max(sellers, price) AS sellers
-                 FROM mod_markets GROUP BY sale_id
+                 -- Of mods with the same price, the one with most sellers, so the result is
+                 -- the same whatever order the mods are aggregated in.
+                 SELECT sale_id, price, sellers FROM mod_markets
+                 QUALIFY row_number() OVER (PARTITION BY sale_id ORDER BY price DESC, sellers DESC) = 1
              )
              SELECT sales.sale_id, best.price, best.sellers
              FROM sales LEFT JOIN best ON best.sale_id = sales.sale_id
@@ -108,7 +110,7 @@ export async function recordRemovals(
          WITH stash AS MATERIALIZED (
              -- A sale keeps no item JSON, and fetching it for every listing of the stashes cost
              -- more than the rest of this statement.
-             SELECT * EXCLUDE (raw_item, content_digest) FROM ps_listing
+             SELECT * EXCLUDE (raw_item, content_digest, listing_id) FROM ps_listing
              WHERE stash_id IN (${params(stashIds, 4)})
          ), removed AS MATERIALIZED (
              -- A stash changed twice in one page repeats its removals; ON CONFLICT would scan

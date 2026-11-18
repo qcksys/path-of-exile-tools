@@ -25,8 +25,9 @@ services:
     # page's SQL runs; with fewer cores the CPU quota throttles them all and pages slow down.
     cpus: 8.0
     # The PC database is large; enough memory lets DuckDB checkpoint by WAL size, not per page.
-    # Index memory is not bounded by PS_MEMORY_LIMIT, hence the headroom above it.
-    mem_limit: 16g
+    # Index memory is not bounded by PS_MEMORY_LIMIT, hence the headroom above it, and the worker
+    # also holds every listing's key and market in memory (a few GB in a busy league).
+    mem_limit: 20g
     env_file: ./config/pc.env
     environment:
       PS_ARCHIVE_DIR: /backups
@@ -43,6 +44,8 @@ services:
       PS_THREADS: "4"
       # Classifies each page's equipment while its listings and sales are written.
       PS_CLASSIFY_THREADS: "3"
+      # One transaction per cycle (cut at each hour): listings are found in memory and written once.
+      PS_BATCH_PAGES: "200"
       PS_CHECKPOINT_THRESHOLD: 1GB
       # Each reclassified hour re-delivers 24 hours of cohort rows; this keeps the pre-#76 pace.
       PS_RECLASSIFY_PAGES_PER_HOUR: "120"

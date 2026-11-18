@@ -11,6 +11,7 @@ import {
 } from "#src/ps/equipment-reclassify.ts";
 import { rollupEquipment } from "#src/ps/equipment-rollup.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
+import { invalidateListingState, reconcileListingState } from "#src/ps/listing-state-cache.ts";
 import {
     maintainRawArchive,
     type RawArchiveOptions,
@@ -354,13 +355,18 @@ export async function runPipeline(
             streamHour: stashBeforeHour,
             maxHours: ARCHIVE_HOURS_PER_CYCLE,
         }).then(
-            (result) => {
+            async (result) => {
                 if (result.hours.length)
                     console.log(
                         `archived ${result.hours.join(", ")}: ${JSON.stringify(result.rows)}`,
                     );
+                if (result.rows.ps_listing) await reconcileListingState(conn);
             },
-            (error: unknown) => failStage("delivery", "Archive", error),
+            async (error: unknown) => {
+                // Hours archived before the failure are gone; read the listings again.
+                invalidateListingState(conn);
+                await failStage("delivery", "Archive", error);
+            },
         );
     } else if (
         opts.archive &&
@@ -368,14 +374,18 @@ export async function runPipeline(
     ) {
         archiveCheckedAt = Date.now();
         await archiveOldData(conn, opts.archive).then(
-            (result) => {
+            async (result) => {
                 archiveBacklog = result.days.length > 0;
                 if (archiveBacklog)
                     console.log(
                         `archived ${result.days.join(", ")}: ${JSON.stringify(result.rows)}`,
                     );
+                if (result.rows.ps_listing) await reconcileListingState(conn);
             },
-            (error: unknown) => failStage("delivery", "Archive", error),
+            async (error: unknown) => {
+                invalidateListingState(conn);
+                await failStage("delivery", "Archive", error);
+            },
         );
     }
     const rawArchives = [

@@ -528,6 +528,12 @@ export class RawPageReader {
         this.lines = undefined;
         this.current = undefined;
     }
+
+    /** Reads again from `position`, which an earlier `position` gave: a batch that failed. */
+    async rewind(position: RawPosition) {
+        await this.close();
+        this.position = position;
+    }
 }
 
 const RAW_PAGE = "raw:";

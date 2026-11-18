@@ -326,7 +326,7 @@ it("leaves the earlier hour of a listing still in the stash but no longer captur
             last_seen_at - INTERVAL 1 DAY AS last_seen_at, first_seen_at - INTERVAL 1 DAY AS first_seen_at)
         FROM ps_listing WHERE item_id = 'item-0'`);
     await db.conn.run(`INSERT INTO ps_listing_hour BY NAME
-        SELECT * EXCLUDE (removed_at, raw_item, content_digest), epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
+        SELECT * EXCLUDE (removed_at, raw_item, content_digest, listing_id), epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
         FROM ps_listing WHERE item_id = 'stale'`);
     const magic = { ...item, id: "stale", frameType: 1, rarity: "Magic", name: "" };
     await ingest([{ ...stash, items: [item, magic] }]);
