@@ -1,7 +1,7 @@
 {
   "format": 1,
   "game": "poe2",
-  "patch": "0.5.5.9",
+  "patch": "0.5.5.10",
   "source": {
     "basesSha256": "0ba95a560d56f97f562886242c8c20e9691bc7e624e673b27f9e816a7b470da9",
     "modsSha256": "36c1931463c685a704cababa640a44946fca9a08a3444954e0cd0bc6a42fc390",
