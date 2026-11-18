@@ -4,9 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { createClient, type PoeApiClient } from "../../../packages/poe-api-client/src/client";
+import type { RateLimitInfo, RateLimitRule } from "../../../packages/poe-api-client/src/rate-limit";
 import { flushRollups } from "../../../packages/poe-stash-ingest/src/pipeline";
 import {
     openCaptureSource,
+    rateLimitSpacingMs,
     readCaptureState,
     runCapture,
     writeCaptureState,
@@ -314,12 +316,20 @@ it("does not move past a page that fails, and leaves the position unchanged", as
     }
 });
 
-function capture(responses: (Page | Error)[], options: { onStatus?: () => Promise<void> } = {}) {
+function capture(
+    responses: (Page | Error)[],
+    options: { onStatus?: () => Promise<void>; rateLimits?: RateLimitInfo[] } = {},
+) {
     const stop = new AbortController();
     const requested: (string | undefined)[] = [];
+    const startedAt: number[] = [];
+    // The rate-limit headers of the latest response, as the real client reports them.
+    let latest: RateLimitInfo | undefined;
     const client = {
         public: {
             stashTabs: async (request: { id?: string }) => {
+                startedAt.push(Date.now());
+                latest = options.rateLimits?.[requested.length] ?? latest;
                 requested.push(request.id);
                 const next = responses.shift();
                 if (!responses.length) stop.abort();
@@ -330,10 +340,12 @@ function capture(responses: (Page | Error)[], options: { onStatus?: () => Promis
     } as unknown as PoeApiClient;
     return {
         requested,
+        startedAt,
         done: runCapture(client, {
             archive: { dir },
             signal: stop.signal,
             onStatus: options.onStatus,
+            rateLimit: () => latest,
             requestSpacingMs: 1,
             headPollMs: 1,
             errorDelayMs: 1,
@@ -368,6 +380,43 @@ it("retries the same cursor after a failed fetch and keeps going", async () => {
     log.mockRestore();
     expect(run.requested).toEqual(["a", "a"]);
     expect(await readCaptureState(dir)).toEqual({ cursor: "b" });
+});
+
+const rule = (maxHits: number, periodSeconds: number, currentHits = 1): RateLimitRule => ({
+    rule: "ip",
+    maxHits,
+    periodSeconds,
+    restrictionSeconds: 60,
+    currentHits,
+    currentPeriodSeconds: periodSeconds,
+    currentRestrictionSeconds: 0,
+});
+
+it("spends at most two thirds of the strictest rate-limit rule, and waits out a full one", () => {
+    expect(rateLimitSpacingMs(undefined)).toBe(0);
+    expect(rateLimitSpacingMs({ rules: [rule(2, 1)] })).toBe(750);
+    expect(rateLimitSpacingMs({ rules: [rule(2, 1), rule(45, 60)] })).toBe(2000);
+    // Another client on the same IP used the rest of the window.
+    expect(rateLimitSpacingMs({ rules: [rule(2, 1, 2)] })).toBe(1000);
+});
+
+it("spaces requests as the rate-limit headers allow, and logs each new set of rules", async () => {
+    await writeCaptureState(dir, { cursor: "a" });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const run = capture([page("b"), page("c"), page("d")], {
+        rateLimits: [{ rules: [rule(15, 1)] }, { rules: [rule(15, 1), rule(60, 5)] }],
+    });
+    await run.done;
+    const lines = log.mock.calls.map(([line]) => line);
+    log.mockRestore();
+    const [first = 0, second = 0, third = 0] = run.startedAt;
+    expect(second - first).toBeGreaterThanOrEqual(99);
+    expect(third - second).toBeGreaterThanOrEqual(124);
+    expect(lines).toEqual([
+        "psapi rate limits: ip 15:1:60",
+        "psapi rate limits: ip 15:1:60, ip 60:5:60",
+    ]);
+    expect(await readCaptureState(dir)).toEqual({ cursor: "d" });
 });
 
 it("keeps capturing when status reports fail", async () => {

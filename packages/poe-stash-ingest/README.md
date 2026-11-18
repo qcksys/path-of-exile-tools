@@ -424,8 +424,11 @@ a page that fails to process or a full database disk stops fetching.
 
 The `capture` command runs that step alone. It needs `PS_RAW_ARCHIVE_DIR` and no database: it fetches
 pages, syncs each to the spool, and keeps its cursor in `capture-state.json` beside them. It also
-seals and uploads finished hours. It starts a request at most every 2.5 s, polls every minute at the
-stream's head, waits as a rate limit asks, and otherwise retries the same cursor with a growing delay.
+seals and uploads finished hours. It starts a request at most every 1.5 s, and less often when the
+API's rate-limit headers ask: it spends at most two thirds of any rule's hits, waits out a rule that is
+full, and logs the rules whenever they change. At busy hours every page is cut off at the API's size
+limit, so this request rate sets how far capture falls behind. It polls every minute at the stream's
+head, waits as a rate limit asks, and otherwise retries the same cursor with a growing delay.
 It reports status as `<INGEST_WORKER_ID>-capture`.
 
 A `process` worker with `PS_SEPARATE_CAPTURE=true` reads those pages instead of fetching, and keeps its

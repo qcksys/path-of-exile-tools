@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import type { RateLimitInfo } from "@poe-tools/api-client";
 import { Command, positiveInteger, runCli } from "@poe-tools/cli";
 
 const program = new Command();
@@ -334,11 +335,18 @@ program
         const stop = new AbortController();
         process.once("SIGTERM", () => stop.abort());
         process.once("SIGINT", () => stop.abort());
-        await runCapture(createPoeClient(), {
+        let rateLimit: RateLimitInfo | undefined;
+        const client = createPoeClient({
+            onRateLimit: (info) => {
+                rateLimit = info;
+            },
+        });
+        await runCapture(client, {
             archive,
             realm: REALM,
             signal: stop.signal,
             onStatus: status.update,
+            rateLimit: () => rateLimit,
         });
         await status.close();
         // A seal in progress restarts from its spool, and must not hold up the replacement.
