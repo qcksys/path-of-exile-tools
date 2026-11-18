@@ -36,7 +36,9 @@ services:
       PS_RAW_ARCHIVE_DIR: /backups/raw
       # pc-capture fetches the stream; this worker reads the archive and can fall behind safely.
       PS_SEPARATE_CAPTURE: "true"
-      INGEST_PAGES: "50"
+      # A cycle's checkpoint and deliveries take about as long whatever its size, so longer cycles
+      # spend less of each hour on them. The site's figures update once a cycle.
+      INGEST_PAGES: "200"
       PS_MEMORY_LIMIT: 10GB
       PS_THREADS: "4"
       # Classifies each page's equipment while its listings and sales are written.
