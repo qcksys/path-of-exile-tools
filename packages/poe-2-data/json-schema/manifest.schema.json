@@ -12,11 +12,11 @@
     },
     "version": {
       "type": "string",
-      "const": "4.5.5-build.4"
+      "const": "0.5.5-build.9"
     },
     "client_build": {
       "type": "string",
-      "const": "4.5.5.4"
+      "const": "0.5.5.9"
     },
     "source_manifest_sha256": {
       "type": "string",
@@ -87,6 +87,6 @@
     "files"
   ],
   "additionalProperties": false,
-  "$id": "urn:qcksys:poe2:4.5.5-build.4:manifest.schema.json",
+  "$id": "urn:qcksys:poe2:0.5.5-build.9:manifest.schema.json",
   "$comment": "Generated from Zod. Cross-field refinements (such as min <= max) and dataset reference checks remain in the Zod validators."
 }

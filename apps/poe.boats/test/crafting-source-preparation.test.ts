@@ -23,7 +23,7 @@ const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r10",
 )!;
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r18",
+    (entry) => entry.game === "poe1" && entry.revision === "r19",
 )!;
 const fractureId = "BreachBodyCriticalChanceIncreasedByUncappedLightningResistance1";
 const scour = currency("convert_to_normal").id;

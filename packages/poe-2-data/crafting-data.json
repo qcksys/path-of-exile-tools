@@ -1,18 +1,18 @@
 {
   "format": 1,
   "game": "poe2",
-  "patch": "4.5.5.4",
+  "patch": "0.5.5.9",
   "source": {
-    "basesSha256": "36cdad96e9c408af1b78a490445ef1b5079cdae6495feadc1688381e31d1aaef",
-    "modsSha256": "38687e2e199660f0908a3ba61916d13c18b6f917ad699e065ef49ff116ca2020",
-    "schemaSha256": "4b51063be32f2a66c1047bf455784d2e85411bed401ffdee380c8603399b9656",
+    "basesSha256": "0ba95a560d56f97f562886242c8c20e9691bc7e624e673b27f9e816a7b470da9",
+    "modsSha256": "36c1931463c685a704cababa640a44946fca9a08a3444954e0cd0bc6a42fc390",
+    "schemaSha256": "25e17f0463e56a4ed0dcc13a841aeb811012debb23daa9111053aa8157bd7b60",
     "tables": {
-      "Data/Balance/BaseItemTypes.datc64": "1150a50cc4005287e2a8274b158980f9ec7ac62e26511b75fc95a1ca6ce88bbc",
-      "Data/Balance/Mods.datc64": "f1ffbcd5228f2b78c1f90a116d2ac37673b34d94c6d7f3602b5e03385eb49679",
-      "Data/Balance/Stats.datc64": "e808452ef330de79cca6d496982bc8810e7967c2c0c681e61dc63506177af8a5",
+      "Data/Balance/BaseItemTypes.datc64": "4773e9295ef988a709bcbd1b8274b9e90d1d23d01a9fa0f437cb2c2494860be7",
+      "Data/Balance/Mods.datc64": "7c8af1924e35ef40a261afcbfd6ff4d1a61b738d1c73389afc0bbf6c4a63ab0b",
+      "Data/Balance/Stats.datc64": "4026fed8bc9a4e26c06a07a7563b53dbd4b79d47b1086191f6b70f357523008f",
       "Data/Balance/ItemClasses.datc64": "1aee2b9b8107cce9eb9237733e4177777809aa276ea0dbda55521d86ea3886f3",
       "Data/Balance/Tags.datc64": "26d1167906b91339240a817259ee3cb31b60b6cb8accec1a926919d139f257a2",
-      "Data/Balance/CurrencyItems.datc64": "00670223080cfb0a93262cd178b8aa3a24a1cda3c1a08c11107fa623630a78f0",
+      "Data/Balance/CurrencyItems.datc64": "9d4b59457824e2d5e5c2a250a12d2d47023e4a390922c07e3a1b8556ada4c9af",
       "Data/Balance/Rarity.datc64": "470f3e116a4aaf69df2b52d06d52a845f5e699c9ff38c48e161f90958633860d",
       "Data/Balance/ModEquivalencies.datc64": "69a467c8d2674f1a6c245a1303dae2abd7715b644297d61b7a883f3ffc445dc5",
       "Data/Balance/AlternateQualityTypes.datc64": "5582415c67d6814f31112a4326203de2a85ba5fafcce40d03a192146f37fcde0",
@@ -23,14 +23,14 @@
       "Data/Balance/BlightCraftingResults.datc64": "ff90685c9a46adf2fc063eccdc6824cc19455b10b81005ba6ee62db9d0d6be50",
       "Data/Balance/PassiveSkills.datc64": "49af4f7dfab787b57efa22e06e2673c268cbd90c4f40140aa085cb8fbb602bc2",
       "Data/Balance/Strongboxes.datc64": "72d453a90f9525b1a9948a856ba84801a11518521aaf9c59ff6f44374749ad3f",
-      "Data/Balance/Chests.datc64": "233df14d64f12bc082cf7cd67b61b7c81d22f390a0667adb69425c17c998bf34",
+      "Data/Balance/Chests.datc64": "73e5ebecd5a9d538bebe94e95a8e832a5037881772e9d6e102cc6128ecd4d4e3",
       "Data/Balance/TieredCurrency.datc64": "c558554464e75ef2b335784f6344ab2449922a18ca297287a8d73c586e3cee76",
       "Data/Balance/Essences.datc64": "f20dea15b8929ba76603f7ff8056a97a8420432ee20eab2f6f5bad1917172d01",
-      "Data/Balance/EssenceMods.datc64": "68a70a2f2282f82592cf38e65b1caccb9757b85ba7a61e438546c58a728dc32f",
+      "Data/Balance/EssenceMods.datc64": "f2aaa3d4f3bc22a173e9f09bdc7187a85def68bc4a946a9754197d4e37bf2c4c",
       "Data/Balance/EssenceTargetItemCategories.datc64": "428eab96b37cd1e0bd345cf7f41d99ee58311b689ab252d891900db0cb5f7f69",
       "Data/Balance/EssenceReplacementType.datc64": "c37ff49399e7caaad3a9801543465a985a4acb2c975f4e722b97cb86a0c8eb02",
       "Data/Balance/CraftableModTypes.datc64": "241a12f2effc78a919b6d5dfe016d42f246385ca709150cb534b3b9ca32a24fa",
-      "Data/Balance/ModType.datc64": "899cd076f1d16cc79fb06529b44710faa22c2261e95216e368379969775a5bd0",
+      "Data/Balance/ModType.datc64": "8c417cace87a2140dcd7e266d3d4c3d40cad5493fc0a838e594231509ce69335",
       "Data/Balance/AbyssBenchTicketTypes.datc64": "183b78531252d03694e72972a19085f86b7dcadb85935fb42d7feebd6a0ecbbd",
       "Data/Balance/LiquidEmotionOutcomes.datc64": "df101175ed3da3480575baa7d23b7d61101e82381ab40bb62b44cd5e11e717ae",
       "Data/Balance/KeywordPopups.datc64": "5ae856ce7c1dbcff2ae620b899297e3714db08879049ed4879af32ab4bb8178d",
@@ -39,28 +39,28 @@
       "Data/Balance/Maps.datc64": "c4732068627a2bf3fc887f7154337f53d20f5caf490aa4aad88a379f3d1787a3",
       "Data/Balance/MapTiers.datc64": "e825896dacb5310c77984001d5d1284e68c27a9a03d5bbf4942928d8f0e7f4d3",
       "Data/Balance/Incursion2CorruptionCurrencies.datc64": "d95e43fe79650d763ebbec13c38858b85b6673e6c0aa8923b20ab99cc5ba6ab5",
-      "Data/Balance/ClientStrings.datc64": "cf29df781365a39e98c167e3f40f5a6bfef14bdd3cb5ec3f4c082ed950da9a43",
+      "Data/Balance/ClientStrings.datc64": "3f2ceda91a2012f2de75fec63dd2cd4c91ec6be62065a39c6a6a6479d086a435",
       "Data/Balance/SoulCores.datc64": "7fd883c775b9d61499741350e09960d9f10d28177e1d543bd1fef1b79985d0d0",
       "Data/Balance/SoulCoreStats.datc64": "0b8a1098f71a0f2c62d30b675a5a1dc91beb58b7ec844ada3a1127ae9e10adf7",
       "Data/Balance/SoulCoreLimits.datc64": "6d90e881c8664117f2dbe1fad23cb39d5b1855a03fe688f4c174b6e8757b878c",
       "Data/Balance/SoulCoreTypes.datc64": "3d8ff9dbab8ee08658045443f82543f8465245f442ce0a2ce7a61e8bcd3e5674",
       "Data/Balance/SoulCoreStatCategories.datc64": "b4d336e557411a30e616b2518759cda53772f34b46783de28aca5206a8c6ed55",
-      "Data/Balance/ClientStrings2.datc64": "3c64d2e03b0c66e352309cc66a31be4f5ddf16e4f383a6210deed0675876f3fb",
+      "Data/Balance/ClientStrings2.datc64": "69b6742aed108f1a9b1ca2d38e4519964f360a5bd5ad17c32df93c9d00c8f627",
       "Data/Balance/Expedition2WarpingRuneStatToTag.datc64": "499bbef45633133becf960e56e7744e123ec7000472835b91af97d0d2d1c3f94",
-      "Data/Balance/Expedition2ElementalModConversions.datc64": "fad87963976a3cff19969e96a8a04f08a2c132c6f5e1af0b62f505bef60e5f4c",
+      "Data/Balance/Expedition2ElementalModConversions.datc64": "34e5e878ce5fb4f3e210bd7ee085ddaacb61ac005ce47081d36feba013141598",
       "Metadata/PassiveSkillGraph.psg": "071cba806a621a0bdae09828cc5ad8e34259159659e950a1898770790730c344",
-      "Data/StatDescriptions/passive_skill_stat_descriptions.csd": "7351c16a1d8c4b7d7f319e29b7463247f767457ff0d0660b1986f932d84b074e",
-      "Data/StatDescriptions/stat_descriptions.csd": "9eb47635f9d5744a57c82d0ad5521d3b8899163dac0a2817808655447ee2b391",
+      "Data/StatDescriptions/passive_skill_stat_descriptions.csd": "6ca0627ddb7672edbf209b0462127edd2571e0d95b59949142d80686bbc45650",
+      "Data/StatDescriptions/stat_descriptions.csd": "29752f1e59edd78fad6cbe35cac9c6eb7e2f74645f8ec72d67c38dbdd3e763f7",
       "Data/Balance/PassiveKeystoneList.datc64": "2fe027424f978462220d73977b88e19391d284396d810b6fb36ae7cc6cb18b3d",
-      "Data/StatDescriptions/monster_stat_descriptions.csd": "d76236ed84012998671ff216c448b6b03857be57a0755881ddaff91094ba12ce",
-      "Data/StatDescriptions/map_stat_descriptions.csd": "3b79f93f7377d63ffd30d2986c448624f5c57849a44a8be8a34370417eb9681e",
-      "Data/StatDescriptions/tablet_stat_descriptions.csd": "1da9d1070e11f3993ebcafcd7c80debe1ac8c46b091b10e53fbd84903573e793",
-      "Data/StatDescriptions/chest_stat_descriptions.csd": "214fb6a5451e775bbd3afc917da067fca06b4db361c7ba7f178c55d98528724e",
-      "Data/StatDescriptions/atlas_stat_descriptions.csd": "da668eb679ce026eda0ba0fe9b8f55a841e6779484365971752d06b1eb9c369f",
-      "Data/StatDescriptions/leaguestone_stat_descriptions.csd": "c63e15a966aa9b76cf9782864863716a338dd60ccf89a2f18d09794423a4c0b2",
-      "Data/StatDescriptions/heist_equipment_stat_descriptions.csd": "9eebefc78b7ca1b7089fe0718a1db08047210dc97f0ab74a2dd3b3c4bd5f1464",
-      "Data/StatDescriptions/sentinel_stat_descriptions.csd": "585e5a1d0cb2da2aed525d65af11376f010a59efca4ae54f20783d989593e6cb",
-      "Data/StatDescriptions/sanctum_relic_stat_descriptions.csd": "49c1ad2b780a63d6a95c41896b03c72ba0ce377c3e59dd7bff9cf74386e89c73",
+      "Data/StatDescriptions/monster_stat_descriptions.csd": "bab6eac27760870d782fc24cad1c52bd5de89f6ddd10f40dee3ed4ef1e075a42",
+      "Data/StatDescriptions/map_stat_descriptions.csd": "39cf546bb77c347168a0b3795b27f63e04ea10a42e782775325e4a472b4bdc79",
+      "Data/StatDescriptions/tablet_stat_descriptions.csd": "ccb4053039d5a2fb05964ce9dbc2f0bababd31add6dd1b605180d82d3212a420",
+      "Data/StatDescriptions/chest_stat_descriptions.csd": "3533cb64403a9df37787c29fd8c71e1688e63dca7140ae7a2a7fd4a5e8310a3d",
+      "Data/StatDescriptions/atlas_stat_descriptions.csd": "f282a3f66ed565e06b17a7aea31198d0d97ba714c5dd12223a01e2c6e18993ee",
+      "Data/StatDescriptions/leaguestone_stat_descriptions.csd": "c6a06f799d8d9a028c9cc5d58ff4b4c9460cd12a5fddf08fe1be9d83f1176d1b",
+      "Data/StatDescriptions/heist_equipment_stat_descriptions.csd": "37212de45635fe92d893f723808ed4dd01f9e0f560843531c3bedb0ad9b85b78",
+      "Data/StatDescriptions/sentinel_stat_descriptions.csd": "be51d06bcd57c69a2e5af663c22ebb0b4e7625632e40c5dcbc221f96ac53a4ce",
+      "Data/StatDescriptions/sanctum_relic_stat_descriptions.csd": "ed3a2ee776afb91d033f3de506f3498ff531d4882ea47982ef8a57cd2a04a264",
       "Data/Balance/UltimatumWagerTypes.datc64": "0dda23404ea79830f6274128f3866d7e6d1151bc32bfe78cf6b99f9310889b29",
       "Data/Balance/SkillGemsForUniqueStat.datc64": "624628f3138bb0431235f73c757bf3d060af457030dd1604902665a85e18f2d7",
       "Data/Balance/UniqueMagesLegacy.datc64": "1091337ce41c31386f799325eb7cc3d1cded77307bfd8de58575448ed856cdf3"
@@ -17390,7 +17390,7 @@
             48
           ],
           "bondedDescriptions": [
-            4195
+            4221
           ]
         },
         {
@@ -17529,7 +17529,7 @@
             48
           ],
           "bondedDescriptions": [
-            4195
+            4221
           ]
         },
         {
@@ -17668,7 +17668,7 @@
             48
           ],
           "bondedDescriptions": [
-            4195
+            4221
           ]
         },
         {
@@ -17807,7 +17807,7 @@
             48
           ],
           "bondedDescriptions": [
-            4195
+            4221
           ]
         },
         {
@@ -18134,7 +18134,7 @@
           "text": "25% increased [Pinned|Pin] duration",
           "bondedText": null,
           "statDescriptions": [
-            4196
+            4222
           ],
           "bondedDescriptions": []
         }
@@ -18804,7 +18804,7 @@
           "text": "25% reduced Effect of [NonDamagingAilments|Non-Damaging Ailments] on you",
           "bondedText": null,
           "statDescriptions": [
-            4197
+            4223
           ],
           "bondedDescriptions": []
         }
@@ -19049,7 +19049,7 @@
           "text": "[StatConversion|Convert] 40% of Requirements to [Strength|Strength]",
           "bondedText": null,
           "statDescriptions": [
-            4198
+            4224
           ],
           "bondedDescriptions": []
         },
@@ -19077,7 +19077,7 @@
           "text": "[StatConversion|Convert] 40% of Requirements to [Strength|Strength]",
           "bondedText": null,
           "statDescriptions": [
-            4198
+            4224
           ],
           "bondedDescriptions": []
         }
@@ -19135,7 +19135,7 @@
           "text": "[StatConversion|Convert] 40% of Requirements to [Dexterity|Dexterity]",
           "bondedText": null,
           "statDescriptions": [
-            4199
+            4225
           ],
           "bondedDescriptions": []
         },
@@ -19163,7 +19163,7 @@
           "text": "[StatConversion|Convert] 40% of Requirements to [Dexterity|Dexterity]",
           "bondedText": null,
           "statDescriptions": [
-            4199
+            4225
           ],
           "bondedDescriptions": []
         }
@@ -19221,7 +19221,7 @@
           "text": "[StatConversion|Convert] 40% of Requirements to [Intelligence|Intelligence]",
           "bondedText": null,
           "statDescriptions": [
-            4200
+            4226
           ],
           "bondedDescriptions": []
         },
@@ -19249,7 +19249,7 @@
           "text": "[StatConversion|Convert] 40% of Requirements to [Intelligence|Intelligence]",
           "bondedText": null,
           "statDescriptions": [
-            4200
+            4226
           ],
           "bondedDescriptions": []
         }
@@ -19313,7 +19313,7 @@
           "text": "[Minion|Minions] gain 10% of their [Physical] Damage as Extra [Lightning] Damage",
           "bondedText": "[Minion|Minions] deal 20% increased Damage",
           "statDescriptions": [
-            4201
+            4227
           ],
           "bondedDescriptions": [
             230
@@ -19349,7 +19349,7 @@
           "text": "Minions take 10% of [Physical|Physical] Damage as [Lightning|Lightning] Damage",
           "bondedText": "[Minion|Minions] have +10% to all Elemental [Resistances]",
           "statDescriptions": [
-            4202
+            4228
           ],
           "bondedDescriptions": [
             331
@@ -19456,7 +19456,7 @@
           "text": "1 to 100 [Lightning|Lightning] [Thorns|Thorns] damage",
           "bondedText": "15% increased [Thorns|Thorns] damage",
           "statDescriptions": [
-            4203
+            4229
           ],
           "bondedDescriptions": [
             357
@@ -19624,7 +19624,7 @@
           "text": "[Attack|Attacks] with this Weapon have 10% chance to inflict [Exposure]",
           "bondedText": "20% increased [Exposure] Effect",
           "statDescriptions": [
-            4204
+            4230
           ],
           "bondedDescriptions": [
             3670
@@ -22439,7 +22439,7 @@
             91
           ],
           "bondedDescriptions": [
-            4205
+            4231
           ]
         }
       ]
@@ -22491,7 +22491,7 @@
             354
           ],
           "bondedDescriptions": [
-            4206
+            4232
           ]
         },
         {
@@ -22521,7 +22521,7 @@
             97
           ],
           "bondedDescriptions": [
-            4205
+            4231
           ]
         }
       ]
@@ -22612,7 +22612,7 @@
             45
           ],
           "bondedDescriptions": [
-            4207
+            4233
           ]
         }
       ]
@@ -22691,10 +22691,10 @@
           "text": "[Allies] in your [Presence] Regenerate 0.5% of your Maximum Life per second",
           "bondedText": "25% increased Life Regeneration rate while [Shapeshift|Shapeshifted]",
           "statDescriptions": [
-            4208
+            4234
           ],
           "bondedDescriptions": [
-            4209
+            4235
           ]
         }
       ]
@@ -22781,7 +22781,7 @@
             42
           ],
           "bondedDescriptions": [
-            4207
+            4233
           ]
         }
       ]
@@ -22834,7 +22834,7 @@
             100
           ],
           "bondedDescriptions": [
-            4210
+            4236
           ]
         },
         {
@@ -22864,7 +22864,7 @@
             8
           ],
           "bondedDescriptions": [
-            4211
+            4237
           ]
         }
       ]
@@ -22950,7 +22950,7 @@
             102
           ],
           "bondedDescriptions": [
-            4212
+            4238
           ]
         }
       ]
@@ -23008,7 +23008,7 @@
           "text": "[Idol|Idols] socketed in this item gain the benefits of their [ShamanOnlyMods|Bonded] modifiers",
           "bondedText": "+5% to [Quality] of all Skills",
           "statDescriptions": [
-            4213
+            4239
           ],
           "bondedDescriptions": [
             480
@@ -23165,7 +23165,7 @@
           "text": "[Gain] 5% of Damage as Extra Damage of all [ElementalDamage|Elements]",
           "bondedText": "8% chance to gain an additional random [Charges|Charge] when you gain a Charge",
           "statDescriptions": [
-            4214
+            4240
           ],
           "bondedDescriptions": [
             3804
@@ -23196,7 +23196,7 @@
           "text": "[Gain] 5% of Damage as Extra Damage of all [ElementalDamage|Elements]",
           "bondedText": "12% chance when collecting an [ElementalInfusion|Elemental Infusion] to gain an\nadditional [ElementalInfusion|Elemental Infusion] of the same type",
           "statDescriptions": [
-            4214
+            4240
           ],
           "bondedDescriptions": [
             3703
@@ -23580,7 +23580,7 @@
             3670
           ],
           "bondedDescriptions": [
-            4215
+            4241
           ]
         }
       ]
@@ -23647,7 +23647,7 @@
           "text": "50% increased [Attack] Damage against [Rarity|Rare or Unique] Enemies",
           "bondedText": "+1 to Level of all [Attack] Skills",
           "statDescriptions": [
-            4216
+            4242
           ],
           "bondedDescriptions": [
             3628
@@ -23821,7 +23821,7 @@
           "text": "30% increased [BuffMagnitude|Magnitude] of [NonDamagingAilments|Non-Damaging Ailments] you inflict",
           "bondedText": "15% increased Duration of Elemental [Ailments] on Enemies",
           "statDescriptions": [
-            4215
+            4241
           ],
           "bondedDescriptions": [
             1903
@@ -23880,7 +23880,7 @@
             82
           ],
           "bondedDescriptions": [
-            4217
+            4243
           ]
         }
       ]
@@ -23993,7 +23993,7 @@
             3700
           ],
           "bondedDescriptions": [
-            4218
+            4244
           ]
         }
       ]
@@ -24196,7 +24196,7 @@
           "text": "Adds 19 to 28 Cold Damage against Chilled Enemies",
           "bondedText": "+2% to [MaximumResistances|Maximum Cold Resistance]",
           "statDescriptions": [
-            4219
+            4245
           ],
           "bondedDescriptions": [
             112
@@ -24271,7 +24271,7 @@
           "text": "Adds 1 to 60 Lightning Damage against Shocked Enemies",
           "bondedText": "+2% to [MaximumResistances|Maximum Lightning Resistance]",
           "statDescriptions": [
-            4220
+            4246
           ],
           "bondedDescriptions": [
             113
@@ -24335,7 +24335,7 @@
             34
           ],
           "bondedDescriptions": [
-            4221
+            4247
           ]
         }
       ]
@@ -24474,7 +24474,7 @@
           "text": "[Allies|Allies] in your [Presence|Presence] have 8% increased Movement Speed",
           "bondedText": "4% increased Movement Speed",
           "statDescriptions": [
-            4222
+            4248
           ],
           "bondedDescriptions": [
             32
@@ -24671,7 +24671,7 @@
           "text": "15% increased Damage per each different [Companion] in your [Presence]",
           "bondedText": "15% increased [Reservation] [Efficiency] of [Companion] Skills",
           "statDescriptions": [
-            4223
+            4249
           ],
           "bondedDescriptions": [
             3692
@@ -24757,10 +24757,10 @@
           "text": "15% increased Mana Recovery rate while your [Companion] is in your [Presence]",
           "bondedText": "8% increased Life Recovery Rate while your [Companion] is in your [Presence]",
           "statDescriptions": [
-            4224
+            4250
           ],
           "bondedDescriptions": [
-            4225
+            4251
           ]
         }
       ]
@@ -24846,7 +24846,7 @@
             286
           ],
           "bondedDescriptions": [
-            4226
+            4252
           ]
         }
       ]
@@ -24902,7 +24902,7 @@
             904
           ],
           "bondedDescriptions": [
-            4227
+            4253
           ]
         },
         {
@@ -25015,7 +25015,7 @@
           "text": "40% increased [Armour], [Evasion] and [EnergyShield|Energy Shield] while your [Companion] is in your [Presence]",
           "bondedText": "[Companion|Companions] have 25% increased maximum Life",
           "statDescriptions": [
-            4228
+            4254
           ],
           "bondedDescriptions": [
             378
@@ -25131,10 +25131,10 @@
           "text": "[Companion|Companions] deal 10% more Damage for each different type of dead Companion you have",
           "bondedText": "Recover 3% of maximum Life when one of your [Minion|Minions] is [Reviving|Revived]",
           "statDescriptions": [
-            4229
+            4255
           ],
           "bondedDescriptions": [
-            4230
+            4256
           ]
         }
       ]
@@ -25187,10 +25187,10 @@
           "text": "30% increased Skill Effect Duration with [Plant|Plant] Skills",
           "bondedText": "[Plant|Plants] have a 25% chance to immediately [Plant|Overgrow] when they enter your [Presence] for the first time",
           "statDescriptions": [
-            4231
+            4257
           ],
           "bondedDescriptions": [
-            4232
+            4258
           ]
         },
         {
@@ -25217,10 +25217,10 @@
           "text": "[Plant|Plants] have a 25% chance to immediately [Plant|Overgrow] when they enter your [Presence] for the first time",
           "bondedText": "30% increased Skill Effect Duration with [Plant|Plant] Skills",
           "statDescriptions": [
-            4232
+            4258
           ],
           "bondedDescriptions": [
-            4231
+            4257
           ]
         }
       ]
@@ -25303,7 +25303,7 @@
           "text": "[Allies] in your [Presence] share [Charges] with you",
           "bondedText": "25% increased [Charges|Endurance, Frenzy and Power Charge] Duration",
           "statDescriptions": [
-            4233
+            4259
           ],
           "bondedDescriptions": [
             1902
@@ -25359,7 +25359,7 @@
           "text": "15% chance when you gain an [Charges|Endurance Charge] to gain an additional [Charges|Endurance Charge]",
           "bondedText": "+1 to Maximum [Charges|Endurance Charges]",
           "statDescriptions": [
-            4234
+            4260
           ],
           "bondedDescriptions": [
             403
@@ -25392,7 +25392,7 @@
             1515
           ],
           "bondedDescriptions": [
-            4235
+            4261
           ]
         }
       ]
@@ -25475,10 +25475,10 @@
           "text": "If you would gain a [Charges|Power Charge], [Allies] in your [Presence] gain that [Charges|Charge] instead",
           "bondedText": "40% increased maximum [EnergyShield|Energy Shield] if you've consumed a [Charges|Power Charge] [Recently|Recently]",
           "statDescriptions": [
-            4236
+            4262
           ],
           "bondedDescriptions": [
-            4237
+            4263
           ]
         }
       ]
@@ -25531,7 +25531,7 @@
           "text": "15% chance when you gain a [Charges|Frenzy Charge] to gain an additional [Charges|Frenzy Charge]",
           "bondedText": "+1 to Maximum [Charges|Frenzy Charges]",
           "statDescriptions": [
-            4238
+            4264
           ],
           "bondedDescriptions": [
             404
@@ -25561,10 +25561,10 @@
           "text": "If you would gain a [Charges|Frenzy Charge], [Allies] in your [Presence] gain that [Charges|Charge] instead",
           "bondedText": "40% increased [Evasion|Evasion Rating] if you've consumed a [Charges|Frenzy Charge] [Recently|Recently]",
           "statDescriptions": [
-            4239
+            4265
           ],
           "bondedDescriptions": [
-            4240
+            4266
           ]
         }
       ]
@@ -25617,7 +25617,7 @@
           "text": "15% increased [Block] chance while your [Companion] is in your [Presence]",
           "bondedText": "+3% to maximum [Block] chance",
           "statDescriptions": [
-            4241
+            4267
           ],
           "bondedDescriptions": [
             406
@@ -25648,7 +25648,7 @@
           "bondedText": "30% increased [Parry] Range",
           "statDescriptions": [],
           "bondedDescriptions": [
-            4242
+            4268
           ]
         },
         {
@@ -25675,10 +25675,10 @@
           "text": "[Companion|Companions] in your [Presence] gain 1 [Rage] on hit",
           "bondedText": "[Companion|Companions] have 30% increased Area of Effect",
           "statDescriptions": [
-            4243
+            4269
           ],
           "bondedDescriptions": [
-            4244
+            4270
           ]
         }
       ]
@@ -25757,7 +25757,7 @@
           "text": "[Gain] 20% of Damage as Extra Damage of a random [ElementalDamage|Element]\n-20% to all [ElementalDamage|Elemental] [Resistances]",
           "bondedText": "[Gain] 20% of Damage as Extra [Chaos] Damage\n-20% to [Resistances|Chaos Resistance]",
           "statDescriptions": [
-            4245,
+            4271,
             7
           ],
           "bondedDescriptions": [
@@ -25799,12 +25799,12 @@
           "text": "[Companion|Companions] in your [Presence] [Gain] 20% of Damage as Extra Damage of a random [ElementalDamage|Element]\n[Companion|Companions] in your [Presence] have -20% to all [ElementalDamage|Elemental] [Resistances]",
           "bondedText": "[Allies|Allies] in your [Presence|Presence] [Gain] 20% of Damage as Extra [Chaos] Damage\n[Companion|Companions] in your [Presence] have -20% to [Resistances|Chaos Resistance]",
           "statDescriptions": [
-            4246,
-            4247
+            4272,
+            4273
           ],
           "bondedDescriptions": [
             504,
-            4248
+            4274
           ]
         }
       ]
@@ -25929,7 +25929,7 @@
             149
           ],
           "bondedDescriptions": [
-            4208,
+            4234,
             314
           ]
         }
@@ -26009,11 +26009,11 @@
           "text": "[Gain] 2% of Damage as Extra [Physical] Damage per ten percent missing Mana\n30% reduced maximum Mana",
           "bondedText": "12% increased [SkillSpeed|Skill Speed] while on [LowMana|Low Mana]\n30% reduced Mana Cost [Efficiency]",
           "statDescriptions": [
-            4249,
+            4275,
             13
           ],
           "bondedDescriptions": [
-            4250,
+            4276,
             1109
           ]
         },
@@ -26052,7 +26052,7 @@
           "bondedText": "[TemporaryMinion|Temporary Minion] Skills have +2 to [Limit] of [Minion|Minions] summoned\n25% reduced [Reservation] [Efficiency] of [Minion] Skills",
           "statDescriptions": [
             4104,
-            4251
+            4277
           ],
           "bondedDescriptions": [
             3856,
@@ -26361,7 +26361,7 @@
           "text": "+40% of [Armour] also applies to [Cold|Cold Damage]",
           "bondedText": null,
           "statDescriptions": [
-            4252
+            4278
           ],
           "bondedDescriptions": []
         }
@@ -26409,7 +26409,7 @@
           "text": "+40% of [Armour] also applies to [Lightning|Lightning Damage]",
           "bondedText": null,
           "statDescriptions": [
-            4253
+            4279
           ],
           "bondedDescriptions": []
         }
@@ -26457,7 +26457,7 @@
           "text": "+40% of [Armour] also applies to [Fire|Fire Damage]",
           "bondedText": null,
           "statDescriptions": [
-            4254
+            4280
           ],
           "bondedDescriptions": []
         }
@@ -26745,7 +26745,7 @@
           "text": "50% chance when you gain a [Charges|Frenzy Charge] to gain an additional [Charges|Frenzy Charge]",
           "bondedText": null,
           "statDescriptions": [
-            4238
+            4264
           ],
           "bondedDescriptions": []
         },
@@ -26768,7 +26768,7 @@
           "text": "50% chance when you gain a [Charges|Frenzy Charge] to gain an additional [Charges|Frenzy Charge]",
           "bondedText": null,
           "statDescriptions": [
-            4238
+            4264
           ],
           "bondedDescriptions": []
         }
@@ -26830,7 +26830,7 @@
           "text": "50% chance when you gain an [Charges|Endurance Charge] to gain an additional [Charges|Endurance Charge]",
           "bondedText": null,
           "statDescriptions": [
-            4234
+            4260
           ],
           "bondedDescriptions": []
         },
@@ -26853,7 +26853,7 @@
           "text": "50% chance when you gain an [Charges|Endurance Charge] to gain an additional [Charges|Endurance Charge]",
           "bondedText": null,
           "statDescriptions": [
-            4234
+            4260
           ],
           "bondedDescriptions": []
         }
@@ -27307,7 +27307,7 @@
           "text": "+1 to Level of all [Totem] Skill Gems",
           "bondedText": null,
           "statDescriptions": [
-            4255
+            4281
           ],
           "bondedDescriptions": []
         }
@@ -27502,7 +27502,7 @@
           "text": "+1 to Level of all [Warcry] Skill Gems",
           "bondedText": null,
           "statDescriptions": [
-            4256
+            4282
           ],
           "bondedDescriptions": []
         }
@@ -27567,7 +27567,7 @@
           "text": "+1 to Level of all [Herald] Skill Gems",
           "bondedText": null,
           "statDescriptions": [
-            4257
+            4283
           ],
           "bondedDescriptions": []
         }
@@ -27632,7 +27632,7 @@
           "text": "+1 to Level of all [Strike] Skill Gems",
           "bondedText": null,
           "statDescriptions": [
-            4258
+            4284
           ],
           "bondedDescriptions": []
         }
@@ -27697,7 +27697,7 @@
           "text": "+1 to Level of all [Nova] Skill Gems",
           "bondedText": null,
           "statDescriptions": [
-            4259
+            4285
           ],
           "bondedDescriptions": []
         }
@@ -27762,7 +27762,7 @@
           "text": "+1 to Level of all [Slam] Skill Gems",
           "bondedText": null,
           "statDescriptions": [
-            4260
+            4286
           ],
           "bondedDescriptions": []
         }
@@ -27827,7 +27827,7 @@
           "text": "+1 to Level of all [Grenade] Skill Gems",
           "bondedText": null,
           "statDescriptions": [
-            4261
+            4287
           ],
           "bondedDescriptions": []
         }
@@ -27892,7 +27892,7 @@
           "text": "+1 to Level of all [Hazard] Skill Gems",
           "bondedText": null,
           "statDescriptions": [
-            4262
+            4288
           ],
           "bondedDescriptions": []
         }
@@ -27957,7 +27957,7 @@
           "text": "+1 to Level of all [Plant] Skill Gems",
           "bondedText": null,
           "statDescriptions": [
-            4263
+            4289
           ],
           "bondedDescriptions": []
         }
@@ -28022,7 +28022,7 @@
           "text": "+1 to Level of all [Wind] Skill Gems",
           "bondedText": null,
           "statDescriptions": [
-            4264
+            4290
           ],
           "bondedDescriptions": []
         }
@@ -28087,7 +28087,7 @@
           "text": "+1 to Level of all [Storm] Skill Gems",
           "bondedText": null,
           "statDescriptions": [
-            4265
+            4291
           ],
           "bondedDescriptions": []
         }
@@ -28140,8 +28140,8 @@
           "text": "[Corrupted|Corrupting] will always result in change\n1% increased [Spirit] for each Corrupted Item [Equipped]",
           "bondedText": null,
           "statDescriptions": [
-            4266,
-            4267
+            4292,
+            4293
           ],
           "bondedDescriptions": []
         }
@@ -28194,7 +28194,7 @@
           "text": "[Corrupted|Corrupting] will always result in change\n1% increased Maximum Life for each Corrupted Item [Equipped]",
           "bondedText": null,
           "statDescriptions": [
-            4266,
+            4292,
             4117
           ],
           "bondedDescriptions": []
@@ -28248,8 +28248,8 @@
           "text": "[Corrupted|Corrupting] will always result in change\n1% increased [SkillSpeed|Skill Speed] for each Corrupted Item [Equipped]",
           "bondedText": null,
           "statDescriptions": [
-            4266,
-            4268
+            4292,
+            4294
           ],
           "bondedDescriptions": []
         }
@@ -28302,8 +28302,8 @@
           "text": "[Corrupted|Corrupting] will always result in change\n+2% to [Resistances|Chaos Resistance] for each Corrupted Item [Equipped]",
           "bondedText": null,
           "statDescriptions": [
-            4266,
-            4269
+            4292,
+            4295
           ],
           "bondedDescriptions": []
         }
@@ -28351,7 +28351,7 @@
           "text": "Remove a [DamagingAilments|Damaging Ailment] when you use a [Command] Skill",
           "bondedText": null,
           "statDescriptions": [
-            4270
+            4296
           ],
           "bondedDescriptions": []
         },
@@ -28373,7 +28373,7 @@
           "text": "+2 to [Armour] per 1 [Spirit]",
           "bondedText": null,
           "statDescriptions": [
-            4271
+            4297
           ],
           "bondedDescriptions": []
         },
@@ -28395,7 +28395,7 @@
           "text": "1% increased Movement Speed per 15 [Spirit], up to a maximum of 40%\nOther Modifiers to Movement Speed except for Sprinting do not apply",
           "bondedText": null,
           "statDescriptions": [
-            4272
+            4298
           ],
           "bondedDescriptions": []
         }
@@ -28535,7 +28535,7 @@
           "text": "Increases and Reductions to Life Regeneration Rate also apply to Mana Regeneration Rate",
           "bondedText": null,
           "statDescriptions": [
-            4273
+            4299
           ],
           "bondedDescriptions": []
         },
@@ -28579,7 +28579,7 @@
           "text": "15% increased Mana Cost [Efficiency] if you haven't Dodge Rolled [Recently]",
           "bondedText": null,
           "statDescriptions": [
-            4274
+            4300
           ],
           "bondedDescriptions": []
         }
@@ -28627,7 +28627,7 @@
           "text": "+1 to [Accuracy] Rating per 1 [ItemEvasion|Item Evasion Rating] on Equipped Helmet",
           "bondedText": null,
           "statDescriptions": [
-            4275
+            4301
           ],
           "bondedDescriptions": []
         },
@@ -28649,7 +28649,7 @@
           "text": "[Critical|Critical Hit] chance is [Lucky] against [ParriedDebuff|Parried] enemies",
           "bondedText": null,
           "statDescriptions": [
-            4276
+            4302
           ],
           "bondedDescriptions": []
         },
@@ -28719,7 +28719,7 @@
           "text": "Gain [Armour] equal to 35% of Life Lost from [Hit|Hits] in the past 8 seconds",
           "bondedText": null,
           "statDescriptions": [
-            4277
+            4303
           ],
           "bondedDescriptions": []
         },
@@ -28768,7 +28768,7 @@
           "text": "Lose 5% of maximum Life per second while Sprinting\n25% increased Movement Speed while Sprinting",
           "bondedText": null,
           "statDescriptions": [
-            4278,
+            4304,
             3772
           ],
           "bondedDescriptions": []
@@ -28817,7 +28817,7 @@
           "text": "You [Recoup] 50% of Damage taken by your [Offering|Offerings] as Life",
           "bondedText": null,
           "statDescriptions": [
-            4279
+            4305
           ],
           "bondedDescriptions": []
         },
@@ -28839,7 +28839,7 @@
           "text": "One of your [Persistent] [Minion|Minions] revives when an [Offering] expires",
           "bondedText": null,
           "statDescriptions": [
-            4280
+            4306
           ],
           "bondedDescriptions": []
         },
@@ -28861,7 +28861,7 @@
           "text": "[Sacrifice] 10% of maximum Life to gain that much [Guard] when you Dodge Roll",
           "bondedText": null,
           "statDescriptions": [
-            4281
+            4307
           ],
           "bondedDescriptions": []
         }
@@ -28909,7 +28909,7 @@
           "text": "+1 to maximum Mana per 3 [ItemArmour|Item Armour] on [Equipped] Helmet",
           "bondedText": null,
           "statDescriptions": [
-            4282
+            4308
           ],
           "bondedDescriptions": []
         },
@@ -28931,7 +28931,7 @@
           "text": "[ESRecharge|Energy Shield Recharge] starts after spending a total of\n 2000 Mana, no more than once every 2 seconds",
           "bondedText": null,
           "statDescriptions": [
-            4283
+            4309
           ],
           "bondedDescriptions": []
         },
@@ -28953,7 +28953,7 @@
           "text": "Increases and Reductions to Movement Speed also\n apply to [ESRechargeRate|Energy Shield Recharge Rate]",
           "bondedText": null,
           "statDescriptions": [
-            4284
+            4310
           ],
           "bondedDescriptions": []
         }
@@ -29001,7 +29001,7 @@
           "text": "A random Skill that requires Glory generates 50% of its maximum Glory when your [Mark|Marks] [MarkActivate|Activate]",
           "bondedText": null,
           "statDescriptions": [
-            4285
+            4311
           ],
           "bondedDescriptions": []
         },
@@ -29023,7 +29023,7 @@
           "text": "Your [ESRecharge|Energy Shield Recharge] starts when your [Minion|Minions] are [Reform|Reformed]",
           "bondedText": null,
           "statDescriptions": [
-            4286
+            4312
           ],
           "bondedDescriptions": []
         },
@@ -29045,7 +29045,7 @@
           "text": "+75% of [Armour|Armour] also applies to [Chaos|Chaos Damage] while on full [EnergyShield|Energy Shield]",
           "bondedText": null,
           "statDescriptions": [
-            4287
+            4313
           ],
           "bondedDescriptions": []
         }
@@ -29099,7 +29099,7 @@
           "text": "+1 to maximum Life per 8 [ItemArmour|Armour] on [Equipped] Helmet",
           "bondedText": "+20 to [Spirit|Spirit]",
           "statDescriptions": [
-            4288
+            4314
           ],
           "bondedDescriptions": [
             393
@@ -29129,7 +29129,7 @@
           "text": "Gain [EnergyShield|Maximum Energy Shield] equal to 50% of total\n[Strength] Requirements of [EquipArmour|Equipped Armour Items]",
           "bondedText": "+20 to [Strength|Strength]",
           "statDescriptions": [
-            4289
+            4315
           ],
           "bondedDescriptions": [
             0
@@ -29159,10 +29159,10 @@
           "text": "[Hit|Hits] against you have no [CriticalDamageBonus|Critical Damage Bonus] while on [ConsecratedGround|Consecrated Ground]",
           "bondedText": "20% increased Effect of [ConsecratedGround|Consecrated Ground] you create",
           "statDescriptions": [
-            4290
+            4316
           ],
           "bondedDescriptions": [
-            4291
+            4317
           ]
         }
       ]
@@ -29215,7 +29215,7 @@
           "text": "15% of [Chaos] Damage from [Hit|Hits] taken as Damage of a random [ElementalDamage|Element]",
           "bondedText": "+13% to [Resistances|Chaos Resistance]",
           "statDescriptions": [
-            4292
+            4318
           ],
           "bondedDescriptions": [
             9
@@ -29245,7 +29245,7 @@
           "text": "[Gain] 1% of Damage as [Gain|Extra] Damage of a random [ElementalDamage|Element] per\n[Rune] Socketed in [Equipped] Items",
           "bondedText": "20% increased [ElementalDamage|Elemental Damage]",
           "statDescriptions": [
-            4293
+            4319
           ],
           "bondedDescriptions": [
             296
@@ -29275,10 +29275,10 @@
           "text": "50% increased [Ward|Runic Ward] Regeneration Rate while Sprinting",
           "bondedText": "15% increased [Ward|Runic Ward] Cost [Efficiency]",
           "statDescriptions": [
-            4294
+            4320
           ],
           "bondedDescriptions": [
-            4295
+            4321
           ]
         }
       ]
@@ -29331,7 +29331,7 @@
           "text": "Gain 1 [Charges|Endurance Charge] on reaching [LowLife|Low Life], only once every 2 seconds",
           "bondedText": "40% increased [Charges|Endurance Charge] Duration",
           "statDescriptions": [
-            4296
+            4322
           ],
           "bondedDescriptions": [
             713
@@ -29361,7 +29361,7 @@
           "text": "[Banner|Banners] also grant 2% of Life Regenerated per second to affected targets",
           "bondedText": "Regenerate 0.5% of maximum Life per second",
           "statDescriptions": [
-            4297
+            4323
           ],
           "bondedDescriptions": [
             208
@@ -29391,10 +29391,10 @@
           "text": "When you stop Sprinting, gain [Guard] equal to 4% of maximum Life per second spent Sprinting, up to a maximum of 20%, for 4 seconds",
           "bondedText": "20% increased [Guard] gained",
           "statDescriptions": [
-            4298
+            4324
           ],
           "bondedDescriptions": [
-            4299
+            4325
           ]
         }
       ]
@@ -29447,7 +29447,7 @@
           "text": "Targets that are [Blind|Blinded], [Maim|Maimed], and [Bleeding] cannot [Evasion|Evade] your [Hit|Hits]",
           "bondedText": "30% increased [Immobilised|Immobilisation] buildup",
           "statDescriptions": [
-            4300
+            4326
           ],
           "bondedDescriptions": [
             3682
@@ -29477,7 +29477,7 @@
           "text": "Regenerate 5% of maximum Life per Second if you have used a [Command] Skill [Recently]",
           "bondedText": "20% increased Life Regeneration rate",
           "statDescriptions": [
-            4301
+            4327
           ],
           "bondedDescriptions": [
             314
@@ -29507,7 +29507,7 @@
           "text": "[Thorns] Damage is [Lucky] against targets with [ArmourBreak|Fully Broken Armour]",
           "bondedText": "30% increased [Thorns|Thorns] damage",
           "statDescriptions": [
-            4302
+            4328
           ],
           "bondedDescriptions": [
             357
@@ -29563,7 +29563,7 @@
           "text": "Enemies which are on Full Life cannot [Evasion|Evade] your [Hit|Hits]",
           "bondedText": "30% increased [Accuracy] Rating",
           "statDescriptions": [
-            4303
+            4329
           ],
           "bondedDescriptions": [
             171
@@ -29593,7 +29593,7 @@
           "text": "Prevent +5% of Damage from [Deflect|Deflected] [Hit|Hits] if you've\n[Deflect|Deflected] no [Hit|Hits] [Recently]",
           "bondedText": "8% increased [Deflect|Deflection Rating]",
           "statDescriptions": [
-            4304
+            4330
           ],
           "bondedDescriptions": [
             3716
@@ -29623,10 +29623,10 @@
           "text": "Gain [Onslaught|Onslaught] for 4 seconds when your [Mark|Marks] [MarkActivate|Activate]",
           "bondedText": "[Buff|Buffs] on you expire 10% slower",
           "statDescriptions": [
-            4305
+            4331
           ],
           "bondedDescriptions": [
-            4306
+            4332
           ]
         }
       ]
@@ -29679,7 +29679,7 @@
           "text": "+3 to [Spirit] per [Idol] socketed in your [Equipment]",
           "bondedText": "5% increased [Spirit]",
           "statDescriptions": [
-            4307
+            4333
           ],
           "bondedDescriptions": [
             435
@@ -29709,7 +29709,7 @@
           "text": "[Companion|Companions] gain [Onslaught] for 4 seconds on [Hit|Hitting] your [Mark|Marked] targets",
           "bondedText": "[Companion|Companions] deal 30% increased Damage",
           "statDescriptions": [
-            4308
+            4334
           ],
           "bondedDescriptions": [
             377
@@ -29739,7 +29739,7 @@
           "text": "1% increased Movement Speed while Sprinting per [Persistent] [Minion]",
           "bondedText": "[Minion|Minions] have 12% increased maximum Life",
           "statDescriptions": [
-            4309
+            4335
           ],
           "bondedDescriptions": [
             150
@@ -29795,10 +29795,10 @@
           "text": "Gain [Guard] equal to 10% of maximum Life for 4 seconds on taking [SavageHit|Savage Hit]",
           "bondedText": "[Buff|Buffs] on you expire 10% slower",
           "statDescriptions": [
-            4310
+            4336
           ],
           "bondedDescriptions": [
-            4306
+            4332
           ]
         },
         {
@@ -29825,7 +29825,7 @@
           "text": "+5% to maximum [Block] chance if you've [Block|Blocked] with a raised [Shield] [Recently]",
           "bondedText": "20% increased [Block] chance",
           "statDescriptions": [
-            4311
+            4337
           ],
           "bondedDescriptions": [
             269
@@ -29855,7 +29855,7 @@
           "text": "200% increased [StunThreshold|Stun Threshold] if you've been [Stun|Stunned] [Recently]",
           "bondedText": "25% increased [StunThreshold|Stun Threshold]",
           "statDescriptions": [
-            4312
+            4338
           ],
           "bondedDescriptions": [
             190
@@ -29911,7 +29911,7 @@
           "text": "Enemies have no [CriticalDamageBonus|Critical Damage Bonus] for 4 seconds after you Blind them",
           "bondedText": "20% increased [Blind] Effect",
           "statDescriptions": [
-            4313
+            4339
           ],
           "bondedDescriptions": [
             267
@@ -29941,7 +29941,7 @@
           "text": "Enemies you [Critical|Critically] [Hit] get 100% reduced Life Regeneration Rate for 4 seconds",
           "bondedText": "15% increased [Critical|Critical Hit] Chance",
           "statDescriptions": [
-            4314
+            4340
           ],
           "bondedDescriptions": [
             86
@@ -30092,7 +30092,7 @@
           "text": "Upgrades a socketed [Rune]",
           "bondedText": null,
           "statDescriptions": [
-            4315
+            4341
           ],
           "bondedDescriptions": []
         }
@@ -30383,7 +30383,7 @@
             215
           ],
           "bondedDescriptions": [
-            4316
+            4342
           ]
         }
       ]
@@ -30441,7 +30441,7 @@
             215
           ],
           "bondedDescriptions": [
-            4316
+            4342
           ]
         }
       ]
@@ -30499,7 +30499,7 @@
             215
           ],
           "bondedDescriptions": [
-            4316
+            4342
           ]
         }
       ]
@@ -30557,7 +30557,7 @@
             215
           ],
           "bondedDescriptions": [
-            4316
+            4342
           ]
         }
       ]
@@ -30615,7 +30615,7 @@
             3959
           ],
           "bondedDescriptions": [
-            4317
+            4343
           ]
         }
       ]
@@ -30674,10 +30674,10 @@
           "text": "Every 4 seconds, gain [Guard] equal to 20% of maximum [Ward|Runic Ward] for 2 seconds",
           "bondedText": "8% increased [Guard] gained",
           "statDescriptions": [
-            4318
+            4344
           ],
           "bondedDescriptions": [
-            4299
+            4325
           ]
         }
       ]
@@ -30740,7 +30740,7 @@
           "text": "[Attack|Attacks] [ArmourBreak|Break Armour] equal to 15% of maximum [Ward|Runic Ward]",
           "bondedText": "[ArmourBreak|Break] 10% increased [Armour|Armour]",
           "statDescriptions": [
-            4319
+            4345
           ],
           "bondedDescriptions": [
             259
@@ -30793,7 +30793,7 @@
           "text": "Spell damage [Penetration|Penetrates] 25% of enemy [ElementalDamage|Elemental] [Resistances] while on [LowWard|Low Runic Ward]",
           "bondedText": "12% increased [ElementalDamage|Elemental Damage]",
           "statDescriptions": [
-            4320
+            4346
           ],
           "bondedDescriptions": [
             296
@@ -30849,7 +30849,7 @@
           "text": "1% increased [ESRechargeRate|Energy Shield Recharge Rate] per 30 maximum [Ward|Runic Ward]",
           "bondedText": "Regenerate 1% of maximum [EnergyShield|Energy Shield] per second",
           "statDescriptions": [
-            4321
+            4347
           ],
           "bondedDescriptions": [
             1660
@@ -30901,10 +30901,10 @@
           "text": "25% increased [Armour] and [Evasion] Rating while on [LowWard|Low Runic Ward]",
           "bondedText": "20% increased [Armour] and [Evasion] Rating when on [LowLife|Low Life]",
           "statDescriptions": [
-            4322
+            4348
           ],
           "bondedDescriptions": [
-            4323
+            4349
           ]
         }
       ]
@@ -30954,10 +30954,10 @@
           "text": "+4 to [StunThreshold|Stun Threshold] per 10 maximum [Ward|Runic Ward]",
           "bondedText": "15% increased [Stun] buildup while [Shapeshift|Shapeshifted]",
           "statDescriptions": [
-            4324
+            4350
           ],
           "bondedDescriptions": [
-            4325
+            4351
           ]
         }
       ]
@@ -31006,7 +31006,7 @@
           "text": "+3 to [Deflect|Deflection Rating] per 10 maximum [Ward|Runic Ward]",
           "bondedText": "Prevent +1% of Damage from [Deflect|Deflected] [Hit|Hits]",
           "statDescriptions": [
-            4326
+            4352
           ],
           "bondedDescriptions": [
             122
@@ -31062,10 +31062,10 @@
           "text": "[StatGain|Gain] 5% of maximum Life as Extra maximum [Ward|Runic Ward]",
           "bondedText": "1% more [Ward|Runic Ward] Regeneration rate per 2% of maximum [Ward|Runic Ward] lost from [Hit|Hits] [Recently], up to 100% more",
           "statDescriptions": [
-            4317
+            4343
           ],
           "bondedDescriptions": [
-            4327
+            4353
           ]
         }
       ]
@@ -31194,10 +31194,10 @@
           "text": "[Attack|Attacks] spend 5% of your maximum [Ward|Runic Ward] if possible to gain that much added [Physical] damage",
           "bondedText": "10% reduced [Ward|Runic Ward] Cost [Efficiency]",
           "statDescriptions": [
-            4328
+            4354
           ],
           "bondedDescriptions": [
-            4295
+            4321
           ]
         }
       ]
@@ -31264,7 +31264,7 @@
           "text": "Gain maximum [Ward|Runic Ward] equal to 15% of this Weapon's maximum damage",
           "bondedText": "5% increased [Attack] Speed while missing [Ward|Runic Ward]",
           "statDescriptions": [
-            4329
+            4355
           ],
           "bondedDescriptions": [
             3957
@@ -31325,8 +31325,8 @@
           "text": "All damage taken bypasses [Ward|Runic Ward]\n[Ward|Runic Ward] Regeneration Rate is doubled",
           "bondedText": "12% increased maximum [Ward|Runic Ward]",
           "statDescriptions": [
-            4330,
-            4331
+            4356,
+            4357
           ],
           "bondedDescriptions": [
             3954
@@ -31389,11 +31389,11 @@
           "text": "Mana Recovery from Regeneration is also applied to [Ward|Runic Ward]\n40% less Mana Regeneration Rate",
           "bondedText": "20% increased [Ward|Runic Ward] Regeneration Rate if you've dealt a [Critical|Critical Hit] [Recently]",
           "statDescriptions": [
-            4332,
-            4333
+            4358,
+            4359
           ],
           "bondedDescriptions": [
-            4334
+            4360
           ]
         }
       ]
@@ -31446,10 +31446,10 @@
           "text": "Recover 3% of maximum [Ward|Runic Ward] when one of your [Reviving] [Minion|Minions] is [MinionDeath|Killed]",
           "bondedText": "Recover 3% of maximum Life when one of your [Minion|Minions] is [Reviving|Revived]",
           "statDescriptions": [
-            4335
+            4361
           ],
           "bondedDescriptions": [
-            4230
+            4256
           ]
         }
       ]
@@ -31502,10 +31502,10 @@
           "text": "[Minion|Minions] in your [Presence] have [Onslaught] while you are on [LowWard|Low Runic Ward]",
           "bondedText": "Damage of Enemies [Hit|Hitting] you is [Unlucky] if\nyour [Ward|Runic Ward] has been damaged [Recently]",
           "statDescriptions": [
-            4336
+            4362
           ],
           "bondedDescriptions": [
-            4337
+            4363
           ]
         }
       ]
@@ -31565,11 +31565,11 @@
           "text": "15% less maximum Life\n[StatGain|Gain] 15% of maximum Life as Extra maximum [Ward|Runic Ward]",
           "bondedText": "+1% to all [MaximumResistances|Maximum Elemental Resistances] while on full [Ward|Runic Ward]",
           "statDescriptions": [
-            4338,
-            4317
+            4364,
+            4343
           ],
           "bondedDescriptions": [
-            4339
+            4365
           ]
         }
       ]
@@ -31635,7 +31635,7 @@
           "text": "Transforms all [Cold] and [Lightning] modifiers on the item into equivalent [Fire] modifiers",
           "bondedText": "25% increased [Fire] Damage",
           "statDescriptions": [
-            4340
+            4366
           ],
           "bondedDescriptions": [
             52
@@ -31704,7 +31704,7 @@
           "text": "When socketed, transforms all [Fire] and [Lightning] modifiers to equivalent [Cold] modifiers",
           "bondedText": "25% increased [Cold] Damage",
           "statDescriptions": [
-            4341
+            4367
           ],
           "bondedDescriptions": [
             53
@@ -31773,7 +31773,7 @@
           "text": "Transforms all [Fire] and [Cold] modifiers on the item into equivalent [Lightning] modifiers",
           "bondedText": "25% increased [Lightning] Damage",
           "statDescriptions": [
-            4342
+            4368
           ],
           "bondedDescriptions": [
             54
@@ -31842,7 +31842,7 @@
           "text": "Transforms all [Fire], [Cold] and [Lightning] modifiers on the item into equivalent [Chaos] modifiers",
           "bondedText": "25% increased [Chaos] Damage",
           "statDescriptions": [
-            4343
+            4369
           ],
           "bondedDescriptions": [
             55
@@ -32234,7 +32234,7 @@
           "text": "30% chance to create an additional [Remnant]",
           "bondedText": "+1 to maximum number of [ElementalInfusion|Elemental Infusions]",
           "statDescriptions": [
-            4344
+            4370
           ],
           "bondedDescriptions": [
             3726
@@ -32293,7 +32293,7 @@
             369
           ],
           "bondedDescriptions": [
-            4345
+            4371
           ]
         }
       ]
@@ -32458,7 +32458,7 @@
           "text": "Gain 2 [DruidicProwess|Druidic Prowess] when you [HeavyStun|Heavy Stun] a [Rarity|Rare or Unique] Enemy",
           "bondedText": "40% increased [Stun] Buildup",
           "statDescriptions": [
-            4346
+            4372
           ],
           "bondedDescriptions": [
             172
@@ -32570,7 +32570,7 @@
           "text": "8% increased [Attack] Speed if you have Blocked [Recently]",
           "bondedText": "+3% to maximum [Block] chance",
           "statDescriptions": [
-            4347
+            4373
           ],
           "bondedDescriptions": [
             406
@@ -32763,7 +32763,7 @@
             377
           ],
           "bondedDescriptions": [
-            4224
+            4250
           ]
         }
       ]
@@ -32866,7 +32866,7 @@
             805
           ],
           "bondedDescriptions": [
-            4348
+            4374
           ]
         }
       ]
@@ -32950,7 +32950,7 @@
           "text": "[BooleanDamageRoll|Rolls only the minimum or maximum Damage value] for [Physical] Damage",
           "bondedText": "20% increased Bleeding Duration",
           "statDescriptions": [
-            4349
+            4375
           ],
           "bondedDescriptions": [
             266
@@ -33009,7 +33009,7 @@
             3679
           ],
           "bondedDescriptions": [
-            4350
+            4376
           ]
         },
         {
@@ -33138,7 +33138,7 @@
           "text": "On [Hit|Hitting] an enemy, gains maximum added [Cold] damage equal to the enemy's [Power] for 20 seconds, up to a total of 32",
           "bondedText": "30% increased [Freeze|Freeze] Buildup",
           "statDescriptions": [
-            4351
+            4377
           ],
           "bondedDescriptions": [
             137
@@ -33336,7 +33336,7 @@
           "bondedText": "5% increased [Spirit] [Reservation] [Efficiency] of Skills",
           "statDescriptions": [
             393,
-            4352
+            4378
           ],
           "bondedDescriptions": [
             436
@@ -33430,10 +33430,10 @@
           "text": "50% increased [Spell] Damage while your [Companion] is in your [Presence]",
           "bondedText": "8% increased Mana Recovery rate while your [Companion] is in your [Presence]",
           "statDescriptions": [
-            4353
+            4379
           ],
           "bondedDescriptions": [
-            4224
+            4250
           ]
         }
       ]
@@ -33489,7 +33489,7 @@
             3710
           ],
           "bondedDescriptions": [
-            4354
+            4380
           ]
         },
         {
@@ -33983,7 +33983,7 @@
           "text": "Destroys all [Augment] Sockets on the item to create a [Jewel] Socket",
           "bondedText": null,
           "statDescriptions": [
-            4355
+            4381
           ],
           "bondedDescriptions": []
         }
@@ -34058,7 +34058,7 @@
           "text": "Can have 1 additional Crafted Modifier",
           "bondedText": null,
           "statDescriptions": [
-            4356
+            4382
           ],
           "bondedDescriptions": []
         }
@@ -34112,7 +34112,7 @@
           "text": "Can roll Chronomancy modifiers",
           "bondedText": "10% increased [CooldownRecovery|Cooldown Recovery Rate]",
           "statDescriptions": [
-            4357
+            4383
           ],
           "bondedDescriptions": [
             278
@@ -34168,7 +34168,7 @@
           "text": "Can roll Marksman modifiers",
           "bondedText": "20% increased [Projectile] Damage",
           "statDescriptions": [
-            4358
+            4384
           ],
           "bondedDescriptions": [
             340
@@ -34224,7 +34224,7 @@
           "text": "Can roll Berserking modifiers",
           "bondedText": "Gain 2 [Rage|Rage] on [Melee] [Hit]",
           "statDescriptions": [
-            4359
+            4385
           ],
           "bondedDescriptions": [
             231
@@ -34297,7 +34297,7 @@
           "text": "Can roll Destruction modifiers",
           "bondedText": "+5% to all [ElementalDamage|Elemental] [Resistances]",
           "statDescriptions": [
-            4360
+            4386
           ],
           "bondedDescriptions": [
             7
@@ -34358,7 +34358,7 @@
           "text": "Can roll Soul modifiers",
           "bondedText": "3% increased maximum Life\n3% increased maximum Mana",
           "statDescriptions": [
-            4361
+            4387
           ],
           "bondedDescriptions": [
             11,
@@ -34415,10 +34415,10 @@
           "text": "Can roll Decay modifiers",
           "bondedText": "25% reduced Effect of [NonDamagingAilments|Non-Damaging Ailments] on you",
           "statDescriptions": [
-            4362
+            4388
           ],
           "bondedDescriptions": [
-            4197
+            4223
           ]
         }
       ]
@@ -34488,7 +34488,7 @@
           "text": "When socketed into a [Rarity|Unique] Kalguuran or Ezomyte item, destroys the item to create a [Rune] imbued with that item's power",
           "bondedText": null,
           "statDescriptions": [
-            4363
+            4389
           ],
           "bondedDescriptions": []
         }
@@ -35017,7 +35017,7 @@
             3765
           ],
           "bondedDescriptions": [
-            4364
+            4390
           ]
         }
       ]
@@ -35141,7 +35141,7 @@
             231
           ],
           "bondedDescriptions": [
-            4365
+            4391
           ]
         }
       ]
@@ -36459,7 +36459,7 @@
           "text": "[Gain] 1% of damage as [Fire] damage per 2% [ChanceToBlock|Chance to Block]",
           "bondedText": "+30% to [Resistances|Chaos Resistance]",
           "statDescriptions": [
-            4366
+            4392
           ],
           "bondedDescriptions": [
             9
@@ -36988,7 +36988,7 @@
             677
           ],
           "bondedDescriptions": [
-            4367
+            4393
           ]
         }
       ]
@@ -37268,7 +37268,7 @@
             226
           ],
           "bondedDescriptions": [
-            4368
+            4394
           ]
         }
       ]
@@ -38203,7 +38203,7 @@
             541
           ],
           "bondedDescriptions": [
-            4369
+            4395
           ]
         }
       ]
@@ -91250,6 +91250,7 @@
     "lightning_damage_taken_goes_to_life_over_4_seconds_%",
     "keystone_battlemage",
     "map_beyond_portal_search_radius_+%",
+    "map_strongbox_close_after_opening_chance_%",
     "map_strongboxes_additional_pack_chance_%",
     "map_blight_oils_chance_to_drop_a_tier_higher_%",
     "map_breach_splinters_drop_as_stones_permyriad",
@@ -91272,6 +91273,7 @@
     "map_breach_time_passed_+%",
     "map_abyss_monster_spawn_amount_+%",
     "map_abyss_monster_experience_+%",
+    "map_rogue_exiles_are_doubled_chance_%",
     "map_affliction_encounter_monster_depth_+%",
     "map_betrayal_intelligence_+%",
     "map_affliction_secondary_wave_acceleration_+%",
@@ -91640,9 +91642,11 @@
     "strongbox_monsters_life_+%",
     "map_strongbox_monsters_damage_+%",
     "map_strongbox_monsters_life_+%",
+    "map_shrine_granted_player_buff_effect_+%",
     "base_mana_cost_+_with_non_channelling_skills",
     "map_monster_unaffected_by_shock",
     "memory_line_abyss_scourge_spawn_boss_chance_%",
+    "map_shrine_granted_player_buff_duration_+%",
     "num_charm_slots",
     "monster_base_flask_charges_percent_of_monster_power",
     "map_maximum_monster_archnemesis_mods",
@@ -92348,6 +92352,9 @@
     "demigods_fortitude",
     "demigods_judgement",
     "hazard_damage_+%",
+    "map_shrines_x%_chance_all_packs_are_magic",
+    "map_enlightening_shrine_chance_+%",
+    "map_enlightening_shrine_effect_+%",
     "map_shrine_chance_+%",
     "map_tempest_corruption_weight",
     "map_tempest_radiant_weight",
@@ -92371,16 +92378,23 @@
     "charm_recover_life_equal_to_x%_of_mana_flask_recovery_amount",
     "charm_recover_mana_equal_to_x%_of_life_flask_recovery_amount",
     "map_monolith_chance_+%",
+    "map_essence_greater_essence_+%",
+    "map_essence_%_chance_double_corrupted",
     "map_expedition_twinned_elites",
     "map_all_items_drop_as_gold",
     "local_armour_break_damage_%_dealt_as_armour_break",
     "infinite_active_block_distance",
     "map_ritual_offered_and_defer_rewards_tribute_cost_+%",
     "map_rogue_exile_chance_+%",
+    "map_rogue_exile_unique_weapon_chance_+%",
+    "map_rogue_exile_unique_armour_chance_+%",
+    "map_rogue_exile_unique_jewellery_chance_+%",
     "map_monster_additional_sanctified_packs",
     "hit_damage_freeze_multiplier_+%_against_ignited_enemies",
     "ignite_effect_+%_against_frozen_enemies",
     "map_strongbox_chance_+%",
+    "map_strongbox_monsters_chance_to_be_magic_+%",
+    "map_strongbox_monsters_chance_to_be_rare_+%",
     "strongbox_gold_cost_to_open",
     "strongbox_gold_cost_min_multiplier_per_open_%",
     "strongbox_gold_cost_max_multiplier_per_open_%",
@@ -92846,11 +92860,14 @@
     "companions_you_control_gain_damage_+%_against_enemies_marked_by_you",
     "bleed_damage_applies_as_fire_instead_of_physical",
     "fire_damage_can_inflict_bleeding",
+    "map_essence_rare_monster_modifiers_chance_%",
     "map_monsters_elemental_ailment_chance_+%",
     "minion_chance_to_apply_gruelling_madness_on_hit_%",
     "life_flask_charges_used_%_granted_to_charms",
     "corrupted_skills_have_+%_increased_skill_cost_efficiency_during_flask_effect",
     "corrupted_charms_have_+%_duration",
+    "map_corrupted_stone_circle_chance_%",
+    "map_tormented_spirits_maximum_power_+%",
     "remnants_affect_allies_in_presence",
     "reservation_efficiency_+%_of_remnant_skills",
     "tower_add_incursion_to_X_maps",
@@ -92881,26 +92898,34 @@
     "map_ritual_offered_rewards_amount_+%",
     "enemies_in_your_presence_gain_a_stack_of_gruelling_madness_every_second",
     "deflect_chance_is_lucky_while_on_low_life",
+    "map_stone_circle_boss_additional_modifier_chance_%",
+    "map_stone_circle_summon_tormented_spirit_chance_%",
     "using_mana_flask_grants_%_recovery_amount_as_guard_for_4s",
     "energy_generated_+%_per_spell_crit_dealt_recently",
     "lightning_skill_additional_chains",
     "unique_body_armour_life_flask_life_recovery_+%_final",
     "dummy_display_stat_rune_upgrade",
+    "map_essences_contains_rogue_exiles_chance_%",
+    "map_strongboxes_have_%_chance_to_be_rare_corrupted_max_mods",
     "item_can_have_catalyst_quality_in_addition_to_base_quality",
     "fire_hit_and_dot_damage_%_taken_as_cold",
     "lightning_hit_and_dot_damage_%_taken_as_cold",
     "cold_and_lightning_resist_+_per_equipped_item_with_a_fire_resistance_mod",
     "fire_and_cold_resist_+_per_equipped_item_with_a_lightning_resistance_mod",
     "fire_and_lightning_resist_+_per_equipped_item_with_a_cold_resistance_mod",
+    "map_shrine_monster_dropped_item_rarity_+%",
     "league_is_race",
     "gain_maximum_energy_shield_equal_to_%_total_strength_requirement_of_equipped_armour_items",
     "strongbox_rare_monsters_have_defensive_mod",
     "strongbox_rare_monsters_have_elemental_ground_effect_mod",
     "strongbox_rare_monsters_have_ailment_mod",
     "strongbox_rare_monsters_have_damage_as_extra_mod",
+    "map_stone_circle_tormented_spirit_release_chance_%",
     "display_item_can_also_roll_ring_mods",
+    "map_stone_circle_essence_encrusted_chance_%",
     "map_number_of_magic_and_rare_packs_+%_and_rare_monster_modifiers_chance_%",
     "map_rare_monster_modifiers_chance_%",
+    "map_shrines_additional_packs_+",
     "local_can_socket_x_ruby_jewels_exclude_disallowed_types",
     "local_can_socket_x_emerald_jewels_exclude_disallowed_types",
     "local_can_socket_x_sapphire_jewels_exclude_disallowed_types",
@@ -92950,8 +92975,12 @@
     "+_deflection_rating_per_50_missing_maximum_energy_shield",
     "local_attacks_have_added_min_cold_damage_equal_to_%_of_maximum_mana",
     "local_attacks_have_added_max_cold_damage_equal_to_%_of_maximum_mana",
+    "map_essence_minions_drop_random_greater_essence_chance_%",
+    "map_rogue_exile_items_drop_exceptional_chance_+%",
+    "map_rogue_exile_dropped_item_rarity_+%_per_explicit_map_mod_affecting_area",
     "local_inflict_x_stacks_of_gruelling_madness_on_hit",
     "monster_double_potency",
+    "map_rogue_exile_unique_chance_+%",
     "spell_critical_hit_chance_%_for_lucky_damage",
     "spell_crit_bonus_+%_per_spell_crit_recently",
     "monsters_in_your_presence_have_additional_power_equal_to_their_gruelling_madness_stacks",
@@ -92995,6 +93024,7 @@
     "map_breach_hiveblood_quantity_+%",
     "map_breach_wombgift_quantity_+%",
     "blind_from_sightless_conviction_unique",
+    "map_unique_tormented_spirit_release_chance_%",
     "gain_X_druidic_prowess_on_heavy_stunning_rare_or_unique_enemy",
     "block_chance_+X%_per_100_base_armour_on_armours",
     "main_hand_attacks_with_this_weapon_minimum_added_physical_damage_per_1%_block_chance",
@@ -93062,6 +93092,7 @@
     "non_skill_base_all_damage_%_to_gain_as_lightning_while_missing_ward",
     "non_skill_base_all_damage_%_to_gain_as_chaos_while_missing_ward",
     "recover_X_ward_on_block",
+    "map_tormented_spirit_migrate_chance_%",
     "chance_to_grant_power_charge_to_nearby_allies_on_hit_%",
     "dropped_items_are_converted_to_dexint_items_martial",
     "dropped_items_are_converted_to_int_items_martial",
@@ -93077,6 +93108,7 @@
     "physical_damage_from_hits_also_contributes_to_chill_and_freeze",
     "base_spell_mana_cost_efficiency_+%",
     "map_rogue_exile_upgrade_forced_exile_x_times",
+    "map_rogue_exile_flee_to_adjacent_map_on_death_chance_%",
     "dummy_display_stat_rune_fire_convert",
     "dummy_display_stat_rune_cold_convert",
     "dummy_display_stat_rune_lightning_convert",
@@ -93160,6 +93192,7 @@
     "display_additional_socketable_mods_for_idols",
     "spell_damage_+%_during_mana_flask_effect",
     "cast_speed_+%_during_mana_flask_effect",
+    "map_stone_circle_bosses_are_powerful",
     "map_previously_attempted",
     "reflect_shocks_%_chance",
     "reflect_chills_%_chance",
@@ -93218,6 +93251,7 @@
     "map_ritual_contains_omen_sanctification",
     "map_ritual_contains_omen_dextral_crystallisation",
     "map_ritual_contains_omen_sinistral_crystallisation",
+    "map_spawn_at_least_sacred_X_spirits",
     "gain_1_verisium_infusion_every_X_seconds",
     "non_skill_base_all_damage_%_to_gain_as_lightning_per_50_ward_cost",
     "attack_speed_+%_while_missing_ward",
@@ -218656,6 +218690,24 @@
       "spawnLevel": null,
       "gameMode": null
     },
+    "MapPlayerHideoutMod": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "MapPlayerHideoutReward": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "MapPlayerHideoutOrigin": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
     "StrongboxVaseMonsterMod1": {
       "itemClasses": [],
       "influence": null,
@@ -227609,6 +227661,750 @@
       "gameMode": null
     },
     "AtlasAbyssCrackOfThePit6": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericMonsterEffectiveness1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericDroppedItemRarityIncrease1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericPackSizeIncrease1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericMagicPackIncrease1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericRarePackIncrease1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericMonsterRarityIncrease1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericDroppedGoldIncrease1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericExperienceGainIncrease1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericRareChestCount1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericAdditionalShrine1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericAdditionalStrongbox1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericAdditionalEssence1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericAdditionalAzmeriWisp1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericAdditionalExile1": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericAdditionalStoneCircle": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericMapAdditionalModifier": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericMapAdditionalModifier2": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutGenericMapAdditionalUniqueMonsterModifier": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutBreachHivebloodQuantity": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutBreachWombgiftQuantity": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutBreachWombgiftLevelChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutBreachBossChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutBreachAdditionalRares": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutBreachRareMonsterPotency": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutBreachMonsterQuantity": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpeditionExplosionRadius": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpeditionLogbookIncrease": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpeditionRunicMonsters": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpeditionIncreasedVerisium": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpeditionUnearthedRares": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpeditionAdditionalSentinels": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpeditionIncreasedMonsterRarity": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpeditionFrozenBosses": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpeditionBuriedStrongboxes": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpeditionVaalRemnants": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpeditionChanceForVerisiumRemnant": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpeditionChanceForTwinnedElites": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutExpedition2RunicModPassoverChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutDeliriumMonsterSplinterIncrease": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutDeliriumFogDissipationDelayNew": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutDeliriumFogPersistence": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutDeliriumDifficultyIncrease": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutDeliriumPackSizeIncrease": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutDeliriumDoodadsIncrease": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutDeliriumRareMonsterPause": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutDeliriumBossChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutDeliriumAdditionalShardsChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRitualTributeIncrease": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRitualRerollCostIncrease": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRitualDeferCostIncrease": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRitualDeferSpeed": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRitualAdditionalReroll": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRitualChanceForNoCost": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRitualRareMonsters": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRitualMagicMonsters": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRitualOmenChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutMapBossAdditionalStrongbox": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutMapBossAdditionalShrine": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutMapBossAdditionalEssence": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutMapBossAdditionalSpirit": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutMapBossWaystoneChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutMapBossExperience": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutMapBossRarity": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutMapBossQuantity": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAbyssMonsterIncrease": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAbyssRareMonsterIncrease": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAbyssEffectivenessPerChasm": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAbyssDepthsChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAbyssAdditionalChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAbyssIncreasedRewards": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAbyss4AdditionalChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAbyssExtraModifiers": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAbyssExtraTickets": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutIncursionPackSize": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutIncursionExtraPacks": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutIncursionExtraPacksChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutIncursionSecondaryEncounters": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutIncursionTokenChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutIncursionBossChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutIncursionRareChestChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutStrongboxCorruptedRareMaxMods": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutStrongboxMonsterMagicChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutStrongboxRareChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutStrongboxReCloseChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutStrongboxAdditionalStrongbox": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutStrongboxAdditionalStrongbox2": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAzmeriWispReleaseChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAzmeriWispMigrateChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAzmeriWispXSacredWisps": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAzmeriWispMaximumPower": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAzmeriWispAdditionalSpirit": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutAzmeriWispAdditionalSpirit2": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutEssenceGreaterEssenceChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutEssenceMonsterEmpowerChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutEssenceDoubleCorruptedChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutEssenceRareMonsterModChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutEssenceMinionsDropRandomGreaterEssenceChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutEssenceContainsExileChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutEssenceContainsAdditionalEssence": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutEssenceContainsAdditionalEssence2": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutShrineEnlighteningShrineChanceAndEffect": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutShrineBuffEffect": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutShrinePacksAreMagicChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutShrineBuffDuration": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutShrineAdditionalPacks": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutShrineMonsterAdditionalRarity": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutShrineAdditionalShrines": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutShrineAdditionalShrines2": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutStoneCircleAdditionalStoneCircles": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutStoneCircleCorruptedCircleChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutStoneCircleEssenceEncrustedChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutStoneCircleBossAdditionalModChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutStoneCircleAzmeriWispReleaseChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutStoneCircleSummonedBossIsPowerful": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRogueExileUniqueChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRogueExileItemRarityPerMapMod": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRogueExileExceptionalItemChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRogueExileDoubledExilesChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRogueExileFleeToAdjacentMapChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRogueExileUniqueWeaponChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRogueExileUniqueArmourChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRogueExileUniqueJewelleryChance": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRogueExileAdditionalExiles": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": null
+    },
+    "EndgamePlayerHideoutRogueExileAdditionalExiles2": {
       "itemClasses": [],
       "influence": null,
       "spawnLevel": null,
@@ -304319,6 +305115,569 @@
     },
     {
       "ids": [
+        "map_monster_potency_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "Monsters have {0}% increased [MonsterEffectiveness|Effectiveness]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "Monsters have {0}% reduced [MonsterEffectiveness|Effectiveness]",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_number_of_magic_and_rare_packs_+%_and_rare_monster_modifiers_chance_%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "#"
+          ],
+          "text": "{0}% increased [MonsterRarity|Monster Rarity]",
+          "handlers": []
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_number_of_additional_mods"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1"
+          ],
+          "text": "Map has {0} additional random Modifier",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "2|#"
+          ],
+          "text": "Map has {0} additional random Modifiers",
+          "handlers": []
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_affliction_secondary_wave_delay_seconds_+"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "#"
+          ],
+          "text": "Delirium Fog in Area lasts {0} additional seconds before dissipating",
+          "handlers": []
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_affliction_secondary_wave_acceleration_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "[ContainsDelirium|Delirium] Fog in Area dissipates {0}% faster",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "[ContainsDelirium|Delirium] Fog in Area dissipates {0}% slower",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_affliction_encounter_monster_depth_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "[ContainsDelirium|Delirium] Fog in Area applies {0}% increased [Delirious|Deliriousness] to Players",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "[ContainsDelirium|Delirium] Fog in Area applies {0}% reduced [Delirious|Deliriousness] to Players",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_affliction_pack_size_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "Delirium Monsters in Area have {0}% increased Pack Size",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "Delirium Monsters in Area have {0}% reduced Pack Size",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_delirium_doodads_+%_final"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "[ContainsDelirium|Delirium Fog] in Area spawns {0}% increased [FracturingMirror|Fracturing Mirrors]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "[ContainsDelirium|Delirium Fog] in Area spawns {0}% reduced [FracturingMirror|Fracturing Mirrors]",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_killing_rare_monsters_pauses_delirium_mirror_timer_for_x_seconds"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1"
+          ],
+          "text": "Slaying [Rarity|Rare] Monsters in Area pauses the [ContainsDelirium|Delirium] Mirror Timer for 1 second",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#"
+          ],
+          "text": "Slaying [Rarity|Rare] Monsters in Area pauses the [ContainsDelirium|Delirium] Mirror Timer for {0} seconds",
+          "handlers": []
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_affliction_encounter_boss_chance_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "[ContainsDelirium|Delirium] Encounters in Area are {0}% more likely to spawn [Rarity|Unique] Bosses",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "[ContainsDelirium|Delirium] Encounters in Area are {0}% less likely to spawn [Rarity|Unique] Bosses",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_ritual_defer_reward_tribute_cost_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "Deferring Favours at [ContainsRitual|Ritual Altars] in Area costs {0}% increased Tribute",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "Deferring Favours at [ContainsRitual|Ritual Altars] in Area costs {0}% reduced Tribute",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_ritual_deferred_rewards_are_offered_again_+%_sooner"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "Favours Deferred at [ContainsRitual|Ritual Altars] in Area reappear {0}% sooner",
+          "handlers": []
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_ritual_offered_rewards_from_rerolls_have_permyriad_chance_to_cost_no_tribute"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "Favours Rerolled at [ContainsRitual|Ritual Altars] in Area have {0}% chance to cost no Tribute",
+          "handlers": [
+            "divide_by_one_hundred",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_ritual_magic_monsters_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "Revived Monsters from [ContainsRitual|Ritual Altars] in Area have {0}% increased chance to be [Rarity|Magic]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "Revived Monsters from [ContainsRitual|Ritual Altars] in Area have {0}% reduced chance to be [Rarity|Magic]",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_ritual_rare_monsters_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "Revived Monsters from [ContainsRitual|Ritual Altars] in Area have {0}% increased chance to be [Rarity|Rare]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "Revived Monsters from [ContainsRitual|Ritual Altars] in Area have {0}% reduced chance to be [Rarity|Rare]",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_ritual_omen_chance_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "[ContainsRitual|Ritual] Favours in Area have {0}% increased chance to be [Omen|Omens]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "[ContainsRitual|Ritual] Favours in Area have {0}% reduced chance to be [Omen|Omens]",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "maps_with_powerful_bosses_additional_strongbox_+"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1"
+          ],
+          "text": "Areas with [PowerfulMapBoss|Powerful Map Bosses] contain an additional [Strongbox]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#"
+          ],
+          "text": "Areas with [PowerfulMapBoss|Powerful Map Bosses] contain {0} additional [Strongbox|Strongboxes]",
+          "handlers": []
+        }
+      ]
+    },
+    {
+      "ids": [
+        "maps_with_powerful_bosses_additional_shrine_+"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1"
+          ],
+          "text": "Areas with [PowerfulMapBoss|Map Powerful Map Bosses] contain an additional [Shrine]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#"
+          ],
+          "text": "Areas with [PowerfulMapBoss|Map Powerful Map Bosses] contain {0} additional [Shrine|Shrines]",
+          "handlers": []
+        }
+      ]
+    },
+    {
+      "ids": [
+        "maps_with_powerful_bosses_additional_essence_+"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1"
+          ],
+          "text": "Areas with [PowerfulMapBoss|Powerful Map Bosses] contain an additional [Essence]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#"
+          ],
+          "text": "Areas with [PowerfulMapBoss|Powerful Map Bosses] contain {0} additional [Essence|Essences]",
+          "handlers": []
+        }
+      ]
+    },
+    {
+      "ids": [
+        "maps_with_powerful_bosses_additional_spirit_+"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1"
+          ],
+          "text": "Areas with [PowerfulMapBoss|Powerful Map Bosses] contain an additional [AzmeriSpirit|Azmeri Spirit]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#"
+          ],
+          "text": "Areas with [PowerfulMapBoss|Powerful Map Bosses] contain {0} additional [AzmeriSpirit|Azmeri Spirits]",
+          "handlers": []
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_map_boss_bonus_map_drop_chance_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "{0}% increased Quantity of [Waystone|Waystones] dropped by [MapBoss|Map Bosses] in Area",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "{0}% reduced Quantity of [Waystone|Waystones] dropped by [MapBoss|Map Bosses] in Area",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_boss_experience_+%_final"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "[MapBoss|Map Bosses] grant {0}% increased Experience",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "[MapBoss|Map Bosses] grant {0}% reduced Experience",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_boss_item_rarity_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "{0}% increased [Rarity] of Items dropped by [MapBoss|Map Bosses]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "{0}% reduced [Rarity] of Items dropped by [MapBoss|Map Bosses]",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_boss_dropped_item_quantity_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "{0}% increased Quantity of Items dropped by [MapBoss|Map Bosses]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "{0}% reduced Quantity of Items dropped by [MapBoss|Map Bosses]",
+          "handlers": [
+            "negate",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_abyss_depths_chance_+%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "[ContainsAbyss|Abysses] in Area have {0}% increased chance to lead to an [AbyssalDepths|Abyssal Depths]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "#|-1"
+          ],
+          "text": "[ContainsAbyss|Abysses] in Area have {0}% reduced chance to lead to an [AbyssalDepths|Abyssal Depths]",
+          "handlers": []
+        }
+      ]
+    },
+    {
+      "ids": [
+        "map_chance_for_4_additional_abysses_%"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|99"
+          ],
+          "text": "Area has {0}% chance to contain four additional [ContainsAbyss|Abysses]",
+          "handlers": []
+        },
+        {
+          "conditions": [
+            "100|#"
+          ],
+          "text": "Area contains four additional [ContainsAbyss|Abysses]",
+          "handlers": []
+        }
+      ]
+    },
+    {
+      "ids": [
         "attack_additional_critical_strike_chance_permyriad"
       ],
       "rules": [
@@ -352011,6 +353370,315 @@
     ],
     "AtlasAbyssCrackOfThePit6": [
       1205
+    ],
+    "EndgamePlayerHideoutGenericMonsterEffectiveness1": [
+      4195
+    ],
+    "EndgamePlayerHideoutGenericDroppedItemRarityIncrease1": [
+      1129
+    ],
+    "EndgamePlayerHideoutGenericPackSizeIncrease1": [
+      1132
+    ],
+    "EndgamePlayerHideoutGenericMagicPackIncrease1": [
+      1134
+    ],
+    "EndgamePlayerHideoutGenericRarePackIncrease1": [
+      1135
+    ],
+    "EndgamePlayerHideoutGenericMonsterRarityIncrease1": [
+      4196
+    ],
+    "EndgamePlayerHideoutGenericDroppedGoldIncrease1": [
+      1130
+    ],
+    "EndgamePlayerHideoutGenericExperienceGainIncrease1": [
+      1131
+    ],
+    "EndgamePlayerHideoutGenericRareChestCount1": [
+      1139
+    ],
+    "EndgamePlayerHideoutGenericAdditionalShrine1": [
+      1143,
+      1142,
+      1132
+    ],
+    "EndgamePlayerHideoutGenericAdditionalStrongbox1": [
+      1144,
+      1142,
+      1132
+    ],
+    "EndgamePlayerHideoutGenericAdditionalEssence1": [
+      1145,
+      1142,
+      1129
+    ],
+    "EndgamePlayerHideoutGenericAdditionalAzmeriWisp1": [
+      1147,
+      1142,
+      1129
+    ],
+    "EndgamePlayerHideoutGenericAdditionalExile1": [
+      1146,
+      1142,
+      1129
+    ],
+    "EndgamePlayerHideoutGenericAdditionalStoneCircle": [
+      4049
+    ],
+    "EndgamePlayerHideoutGenericMapAdditionalModifier": [
+      4197
+    ],
+    "EndgamePlayerHideoutGenericMapAdditionalModifier2": [
+      4197
+    ],
+    "EndgamePlayerHideoutGenericMapAdditionalUniqueMonsterModifier": [
+      1252
+    ],
+    "EndgamePlayerHideoutBreachMonsterQuantity": [
+      4165
+    ],
+    "EndgamePlayerHideoutExpeditionLogbookIncrease": [
+      1370
+    ],
+    "EndgamePlayerHideoutExpeditionRunicMonsters": [
+      2921
+    ],
+    "EndgamePlayerHideoutExpeditionIncreasedVerisium": [
+      1271
+    ],
+    "EndgamePlayerHideoutDeliriumMonsterSplinterIncrease": [
+      1352
+    ],
+    "EndgamePlayerHideoutDeliriumFogDissipationDelayNew": [
+      4198
+    ],
+    "EndgamePlayerHideoutDeliriumFogPersistence": [
+      4199
+    ],
+    "EndgamePlayerHideoutDeliriumDifficultyIncrease": [
+      4200
+    ],
+    "EndgamePlayerHideoutDeliriumPackSizeIncrease": [
+      4201
+    ],
+    "EndgamePlayerHideoutDeliriumDoodadsIncrease": [
+      4202
+    ],
+    "EndgamePlayerHideoutDeliriumRareMonsterPause": [
+      4203
+    ],
+    "EndgamePlayerHideoutDeliriumBossChance": [
+      4204
+    ],
+    "EndgamePlayerHideoutRitualTributeIncrease": [
+      2653
+    ],
+    "EndgamePlayerHideoutRitualRerollCostIncrease": [
+      4099
+    ],
+    "EndgamePlayerHideoutRitualDeferCostIncrease": [
+      4205
+    ],
+    "EndgamePlayerHideoutRitualDeferSpeed": [
+      4206
+    ],
+    "EndgamePlayerHideoutRitualAdditionalReroll": [
+      2654
+    ],
+    "EndgamePlayerHideoutRitualChanceForNoCost": [
+      4207
+    ],
+    "EndgamePlayerHideoutRitualRareMonsters": [
+      4208
+    ],
+    "EndgamePlayerHideoutRitualMagicMonsters": [
+      4209
+    ],
+    "EndgamePlayerHideoutRitualOmenChance": [
+      4210
+    ],
+    "EndgamePlayerHideoutMapBossAdditionalStrongbox": [
+      4211
+    ],
+    "EndgamePlayerHideoutMapBossAdditionalShrine": [
+      4212
+    ],
+    "EndgamePlayerHideoutMapBossAdditionalEssence": [
+      4213
+    ],
+    "EndgamePlayerHideoutMapBossAdditionalSpirit": [
+      4214
+    ],
+    "EndgamePlayerHideoutMapBossWaystoneChance": [
+      4215
+    ],
+    "EndgamePlayerHideoutMapBossExperience": [
+      4216
+    ],
+    "EndgamePlayerHideoutMapBossRarity": [
+      4217
+    ],
+    "EndgamePlayerHideoutMapBossQuantity": [
+      4218
+    ],
+    "EndgamePlayerHideoutAbyssMonsterIncrease": [
+      1202
+    ],
+    "EndgamePlayerHideoutAbyssRareMonsterIncrease": [
+      1201
+    ],
+    "EndgamePlayerHideoutAbyssDepthsChance": [
+      4219
+    ],
+    "EndgamePlayerHideoutAbyssAdditionalChance": [
+      2645
+    ],
+    "EndgamePlayerHideoutAbyssIncreasedRewards": [
+      1214
+    ],
+    "EndgamePlayerHideoutAbyss4AdditionalChance": [
+      4220
+    ],
+    "EndgamePlayerHideoutStrongboxCorruptedRareMaxMods": [
+      1144
+    ],
+    "EndgamePlayerHideoutStrongboxMonsterMagicChance": [
+      1144
+    ],
+    "EndgamePlayerHideoutStrongboxRareChance": [
+      1144
+    ],
+    "EndgamePlayerHideoutStrongboxReCloseChance": [
+      1144
+    ],
+    "EndgamePlayerHideoutStrongboxAdditionalStrongbox": [
+      1144,
+      1142,
+      1132
+    ],
+    "EndgamePlayerHideoutStrongboxAdditionalStrongbox2": [
+      1144,
+      1142,
+      1132
+    ],
+    "EndgamePlayerHideoutAzmeriWispReleaseChance": [
+      1147
+    ],
+    "EndgamePlayerHideoutAzmeriWispMigrateChance": [
+      1147
+    ],
+    "EndgamePlayerHideoutAzmeriWispXSacredWisps": [
+      1147
+    ],
+    "EndgamePlayerHideoutAzmeriWispMaximumPower": [
+      1147
+    ],
+    "EndgamePlayerHideoutAzmeriWispAdditionalSpirit": [
+      1147,
+      1142,
+      1129
+    ],
+    "EndgamePlayerHideoutAzmeriWispAdditionalSpirit2": [
+      1147,
+      1142,
+      1129
+    ],
+    "EndgamePlayerHideoutEssenceGreaterEssenceChance": [
+      1145
+    ],
+    "EndgamePlayerHideoutEssenceMonsterEmpowerChance": [
+      1145
+    ],
+    "EndgamePlayerHideoutEssenceDoubleCorruptedChance": [
+      1145
+    ],
+    "EndgamePlayerHideoutEssenceRareMonsterModChance": [
+      1145
+    ],
+    "EndgamePlayerHideoutEssenceMinionsDropRandomGreaterEssenceChance": [
+      1145
+    ],
+    "EndgamePlayerHideoutEssenceContainsExileChance": [
+      1145
+    ],
+    "EndgamePlayerHideoutEssenceContainsAdditionalEssence": [
+      1145
+    ],
+    "EndgamePlayerHideoutEssenceContainsAdditionalEssence2": [
+      1145
+    ],
+    "EndgamePlayerHideoutShrineEnlighteningShrineChanceAndEffect": [
+      1143
+    ],
+    "EndgamePlayerHideoutShrineBuffEffect": [
+      1143
+    ],
+    "EndgamePlayerHideoutShrinePacksAreMagicChance": [
+      1143
+    ],
+    "EndgamePlayerHideoutShrineBuffDuration": [
+      1143
+    ],
+    "EndgamePlayerHideoutShrineAdditionalPacks": [
+      1143
+    ],
+    "EndgamePlayerHideoutShrineMonsterAdditionalRarity": [
+      1143
+    ],
+    "EndgamePlayerHideoutShrineAdditionalShrines": [
+      1143
+    ],
+    "EndgamePlayerHideoutShrineAdditionalShrines2": [
+      1143
+    ],
+    "EndgamePlayerHideoutStoneCircleAdditionalStoneCircles": [
+      4049
+    ],
+    "EndgamePlayerHideoutStoneCircleCorruptedCircleChance": [
+      4049
+    ],
+    "EndgamePlayerHideoutStoneCircleEssenceEncrustedChance": [
+      4049
+    ],
+    "EndgamePlayerHideoutStoneCircleBossAdditionalModChance": [
+      4049
+    ],
+    "EndgamePlayerHideoutStoneCircleAzmeriWispReleaseChance": [
+      4049
+    ],
+    "EndgamePlayerHideoutStoneCircleSummonedBossIsPowerful": [
+      4049
+    ],
+    "EndgamePlayerHideoutRogueExileUniqueChance": [
+      1146
+    ],
+    "EndgamePlayerHideoutRogueExileItemRarityPerMapMod": [
+      1146
+    ],
+    "EndgamePlayerHideoutRogueExileExceptionalItemChance": [
+      1146
+    ],
+    "EndgamePlayerHideoutRogueExileDoubledExilesChance": [
+      1146
+    ],
+    "EndgamePlayerHideoutRogueExileFleeToAdjacentMapChance": [
+      1146
+    ],
+    "EndgamePlayerHideoutRogueExileUniqueWeaponChance": [
+      1146
+    ],
+    "EndgamePlayerHideoutRogueExileUniqueArmourChance": [
+      1146
+    ],
+    "EndgamePlayerHideoutRogueExileUniqueJewelleryChance": [
+      1146
+    ],
+    "EndgamePlayerHideoutRogueExileAdditionalExiles": [
+      1146
+    ],
+    "EndgamePlayerHideoutRogueExileAdditionalExiles2": [
+      1146
     ]
   },
   "modTexts": {},

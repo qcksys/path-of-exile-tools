@@ -218231,6 +218231,14 @@
     "is_aliased": false,
     "is_local": false
   },
+  "mtx_edict_of_the_spear_level_up": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
   "mtx_disease_back_attachment_alternate_charge_behaviour": {
     "alias": {
       "when_in_main_hand": null,
@@ -218240,6 +218248,142 @@
     "is_local": false
   },
   "map_essence_rare_monsters_are_corrupt": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "mtx_nightfowl_level_up": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "map_generate_as_area_hash": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "map_player_hideout_mod": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "map_player_hideout_reward": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "player_should_use_floating_focus_animation": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "mtx_edict_of_corruption_level_up": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "mtx_corruption_back_attachment_track_enemies_killed_recently": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "mtx_corruption_back_attachment_track_killstreaks": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "mtx_corruption_weapon_effect_track_killstreak": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "mtx_corruption_back_attachment_float_above_25_rampage": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "breach_additional_core_league_level": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "delirium_additional_core_league_level": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "ritual_additional_core_league_level": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "expedition_additional_core_league_level": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "abyss_additional_core_league_level": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "incursion_additional_core_league_level": {
+    "alias": {
+      "when_in_main_hand": null,
+      "when_in_off_hand": null
+    },
+    "is_aliased": false,
+    "is_local": false
+  },
+  "mtx_corruption_armour_rampaging": {
     "alias": {
       "when_in_main_hand": null,
       "when_in_off_hand": null

@@ -22,7 +22,7 @@ import { historyIndex } from "./crafting-history-fixtures";
 import { marketCandidate } from "./crafting-market-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r18",
+    (entry) => entry.game === "poe1" && entry.revision === "r19",
 )!;
 const cohorts = craftingPresetCohorts(engine, ruleset);
 const manifest = marketCohortManifestSchema.parse(

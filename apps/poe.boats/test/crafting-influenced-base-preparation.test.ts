@@ -7,7 +7,7 @@ import { quote, runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r18",
+    (entry) => entry.game === "poe1" && entry.revision === "r19",
 )!;
 const transmute = currency("transmute_to_magic").id;
 const regal = currency("upgrade_magic_to_rare").id;

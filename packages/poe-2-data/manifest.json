@@ -1,13 +1,13 @@
 {
   "format": 1,
   "game": "poe2",
-  "version": "4.5.5-build.4",
-  "client_build": "4.5.5.4",
-  "source_manifest_sha256": "6cfa1f489f4421575961ac6fa849e6a75d6f149bac57a8de9d0d10fe065401df",
-  "dat_schema_sha256": "4b51063be32f2a66c1047bf455784d2e85411bed401ffdee380c8603399b9656",
-  "extractor_sha256": "ed2986ea76b8dba4948460a403cc199ee5444c2a06c8b3845756871b87ceb123",
+  "version": "0.5.5-build.9",
+  "client_build": "0.5.5.9",
+  "source_manifest_sha256": "89ee2eb2219379c653437f8aa9f3c07251c3dd51404c9917cef2d1f2e43e3982",
+  "dat_schema_sha256": "25e17f0463e56a4ed0dcc13a841aeb811012debb23daa9111053aa8157bd7b60",
+  "extractor_sha256": "2a6f3013a28578ef64ab14fe41bbe28832f738faac98b7d31bcf8dc5ab1d0a8c",
   "zod_schema_sha256": "a02f8ec2a774de489b1c9990bedea17e8e9a82d9edceff56d3fb68a676d28a60",
-  "crafting_data_sha256": "9788dd268fc1b330d60f9ef85f30d5dfa38ae2e65066e48b1ab4d095f9f68ed1",
+  "crafting_data_sha256": "06cede6abcfadf5aad43ec64db59d78d3e996c609cc8818ce13891169d7b2ed7",
   "weight_provenance": "client-extracted; PoE 2 values are not Craft of Exile empirical weights",
   "files": {
     "Metadata/Items/Amulets/AbstractAmulet.json": {
@@ -456,7 +456,7 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "base_items.json": {
-      "sha256": "36cdad96e9c408af1b78a490445ef1b5079cdae6495feadc1688381e31d1aaef",
+      "sha256": "0ba95a560d56f97f562886242c8c20e9691bc7e624e673b27f9e816a7b470da9",
       "bytes": 8346297,
       "schema": "json-schema/base_items.schema.json"
     },
@@ -811,7 +811,7 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/StackableCurrency.json": {
-      "sha256": "527a5da125b48d61f787fe876372098085ad78babdd76e7c0d489a1b23da943d",
+      "sha256": "b08b636c9cd5943ee6c0d9a814ed0dd4dc6add12aefcaffd893d44ad19d6041c",
       "bytes": 1295089,
       "schema": "json-schema/base_items.schema.json"
     },
@@ -921,13 +921,13 @@
       "schema": "json-schema/item_classes.schema.json"
     },
     "mods.json": {
-      "sha256": "38687e2e199660f0908a3ba61916d13c18b6f917ad699e065ef49ff116ca2020",
-      "bytes": 13413248,
+      "sha256": "36c1931463c685a704cababa640a44946fca9a08a3444954e0cd0bc6a42fc390",
+      "bytes": 13522972,
       "schema": "json-schema/mods.schema.json"
     },
     "stats.json": {
-      "sha256": "d4156122e478f983a2c085c7aaa322e5b8577e744e26dcdc5529702d93cf7779",
-      "bytes": 5108509,
+      "sha256": "d04d4ebdf919c0b5fbf2ca2ce52e2c8e5304be43c2f90ba84c381bcdd39e9de1",
+      "bytes": 5111791,
       "schema": "json-schema/stats.schema.json"
     },
     "tag_details.json": {

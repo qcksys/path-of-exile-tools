@@ -1350,6 +1350,81 @@
                 "disabled": [],
                 "allflame": false
             }
+        },
+        {
+            "era": "3.30",
+            "revision": "r19",
+            "engine": "crafting-graph-19",
+            "patch": "3.30.0.2.2",
+            "manifestSha256": "22bdcc3bb0ab51d054206cf3ab1cfbc9006063dc5d6b02e727d1ba951f2cdf06",
+            "craftingSha256": "4be4d153e7273e3b35abb47a4b41035c3fa52bf18bea5bade98822691126363e",
+            "format": 1,
+            "game": "poe1",
+            "label": "PoE 1 3.30",
+            "notes": "Publishes the shared implementation changes made since r18, with no change to PoE 1 crafting mechanics or its catalog. Item queries stop at the first failed condition of an all-of group, and modifier text resolution steps only through the candidates of a side that is not yet full; both return the same results as before. Projects on the 3.29 era keep r17 and its catalog.",
+            "publishedAt": "2026-11-17T15:16:16.012Z",
+            "catalog": {
+                "sha256": "a67e0bb290c778e2c2856dbc9ef84991fb583ebcd7bd5ff3624d2d6dc116e2b4",
+                "bytes": 17093703
+            },
+            "implementation": {
+                "sha256": "69d3190d42db9387bd627e52926ceec401db14253c6043c7cdd2f11256cd6bc4",
+                "bytes": 531083
+            },
+            "availability": {
+                "kinds": [
+                    "generate",
+                    "recombine",
+                    "currency",
+                    "essence",
+                    "bench",
+                    "locus",
+                    "anoint",
+                    "fossils",
+                    "harvest",
+                    "beast",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": true
+            }
+        },
+        {
+            "era": "client-4.5",
+            "revision": "r19",
+            "engine": "crafting-graph-19",
+            "patch": "0.5.5.9",
+            "manifestSha256": "f74257bd0acd6f1f646d9b500ce128dd3e0e87211ecd2a1ba7be8df1b0b50285",
+            "craftingSha256": "06cede6abcfadf5aad43ec64db59d78d3e996c609cc8818ce13891169d7b2ed7",
+            "format": 1,
+            "game": "poe2",
+            "label": "PoE 2 (client 4.5)",
+            "notes": "Catalog extracted from client 0.5.5.9. GGG renumbered the PoE 2 client from 4.5.5.x to 0.5.5.x and no longer serves 4.5.5.4, so this era continues under its original name. The catalog adds and removes no bases or modifiers: 61 Precursor Tower tablet modifiers each gain a zero-valued stat (an additional core league level for Abyss, Breach, Delirium, Expedition, Incursion or Ritual, or a powerful map boss), and the powerful map boss stat becomes scalable. Crafting mechanics are unchanged. Also publishes the shared implementation changes made since r18. Revisions r1 through r18 retain their original immutable engines, catalogs and behavior; equipment prices remain manual.",
+            "publishedAt": "2026-11-17T15:16:16.425Z",
+            "catalog": {
+                "sha256": "adedeb29ad634080df6f51fc1221155eab28e5551351776d62abaa398cc2c6cb",
+                "bytes": 7952974
+            },
+            "implementation": {
+                "sha256": "69d3190d42db9387bd627e52926ceec401db14253c6043c7cdd2f11256cd6bc4",
+                "bytes": 531083
+            },
+            "availability": {
+                "kinds": [
+                    "genesis",
+                    "generate",
+                    "socket_jewel",
+                    "remove_jewel",
+                    "currency",
+                    "essence",
+                    "augment",
+                    "upgrade_augment",
+                    "anoint",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": false
+            }
         }
     ],
     "latest": [
@@ -1361,12 +1436,12 @@
         {
             "game": "poe1",
             "era": "3.30",
-            "revision": "r18"
+            "revision": "r19"
         },
         {
             "game": "poe2",
             "era": "client-4.5",
-            "revision": "r18"
+            "revision": "r19"
         }
     ]
 }
