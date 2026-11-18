@@ -70,7 +70,8 @@ it("starts a run with each step's instant-buyout search and shows why it stopped
     renderPanel(graph());
     const price = await screen.findByRole("button", { name: "Price steps (1)" });
     await vi.waitFor(() => expect(price.hasAttribute("disabled")).toBe(false));
-    expect(received).toContainEqual({ kind: "collect", graphId: "graph" });
+    // The panel sends "collect" as it enables the button, and postMessage delivers it a task later.
+    await vi.waitFor(() => expect(received).toContainEqual({ kind: "collect", graphId: "graph" }));
     fireEvent.click(price);
     const start = await vi.waitFor(() => {
         const found = received.find((message) => message.kind === "startRun");
