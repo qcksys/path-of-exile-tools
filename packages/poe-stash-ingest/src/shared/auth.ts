@@ -3,6 +3,7 @@ import {
     createClient,
     createOAuthClient,
     type PoeApiClient,
+    type RateLimitInfo,
     type Realm,
 } from "@poe-tools/api-client";
 
@@ -40,7 +41,9 @@ async function getAccessToken(): Promise<string> {
     return tokenCache.token;
 }
 
-export function createPoeClient(): PoeApiClient {
+export function createPoeClient(
+    options: { onRateLimit?: (info: RateLimitInfo) => void } = {},
+): PoeApiClient {
     return createClient({
         userAgent: userAgentParts,
         token: getAccessToken,
@@ -53,6 +56,7 @@ export function createPoeClient(): PoeApiClient {
                     );
                 }
             }
+            options.onRateLimit?.(info);
         },
     });
 }

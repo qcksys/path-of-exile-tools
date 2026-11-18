@@ -2,7 +2,12 @@ import { mkdir, open, readFile, rename } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout } from "node:timers/promises";
 import type { DuckDBConnection } from "@duckdb/node-api";
-import { isRateLimited, type PoeApiClient, type Realm } from "@poe-tools/api-client";
+import {
+    isRateLimited,
+    type PoeApiClient,
+    type RateLimitInfo,
+    type Realm,
+} from "@poe-tools/api-client";
 import type { IngestStatus } from "@poe-tools/market";
 import {
     appendRawPage,
@@ -25,13 +30,37 @@ import { failureMessage } from "#src/shared/watch.ts";
 
 const STATE_FILE = "capture-state.json";
 const STATE_POLL_MS = 5000;
-// psapi's Ip rule (2 hits/1 s, 60 s ban) fired at one request per 1.1 s; this pace ran clean.
-const REQUEST_SPACING_MS = 2500;
+// At busy hours every page is cut off at the API's size limit, so the request rate sets how far
+// capture falls behind. psapi's Ip rule allows 2 hits per 1 s; the test that tripped it at one
+// request per 1.1 s shared the IP with other clients. The rate-limit headers can only slow this.
+const REQUEST_SPACING_MS = 1500;
+// The share of any rate-limit rule's hits capture may spend is 1 / RULE_HEADROOM.
+const RULE_HEADROOM = 1.5;
 const HEAD_POLL_MS = 60_000;
 const MAINTENANCE_INTERVAL_MS = 60_000;
 const STATUS_INTERVAL_MS = 30_000;
 const MAX_ERROR_DELAY_MS = 60_000;
 const RATE_LIMIT_DELAY_SECONDS = 60;
+
+/**
+ * The shortest request spacing the latest rate-limit headers allow: two thirds of any rule's hits,
+ * and a whole period once a rule is full, since other clients on the same IP count against it too.
+ */
+export function rateLimitSpacingMs(info: RateLimitInfo | undefined) {
+    let ms = 0;
+    for (const rule of info?.rules ?? []) {
+        if (rule.maxHits <= 0) continue;
+        const periodMs = rule.periodSeconds * 1000;
+        ms = Math.max(ms, (periodMs * RULE_HEADROOM) / rule.maxHits);
+        if (rule.currentHits >= rule.maxHits) ms = Math.max(ms, periodMs);
+    }
+    return Math.ceil(ms);
+}
+
+const describeRules = (info: RateLimitInfo) =>
+    info.rules
+        .map((r) => `${r.rule} ${r.maxHits}:${r.periodSeconds}:${r.restrictionSeconds}`)
+        .join(", ");
 
 export interface CaptureState {
     cursor: string | null;
@@ -94,6 +123,8 @@ export async function runCapture(
         signal: AbortSignal;
         onStatus?: (patch: Partial<IngestStatus>) => Promise<void>;
         requestSpacingMs?: number;
+        /** The rate-limit headers of the client's latest response. */
+        rateLimit?: () => RateLimitInfo | undefined;
         headPollMs?: number;
         errorDelayMs?: number;
         maintain?: typeof maintainRawArchive;
@@ -148,8 +179,15 @@ export async function runCapture(
     let pages = 0;
     let failures = 0;
     let requestedAt = 0;
+    let loggedRules = "";
     while (!opts.signal.aborted) {
-        await pause(requestedAt + spacing - Date.now());
+        const limits = opts.rateLimit?.();
+        const rules = limits ? describeRules(limits) : "";
+        if (rules && rules !== loggedRules) {
+            console.log(`psapi rate limits: ${rules}`);
+            loggedRules = rules;
+        }
+        await pause(requestedAt + Math.max(spacing, rateLimitSpacingMs(limits)) - Date.now());
         if (opts.signal.aborted) break;
         requestedAt = Date.now();
         let delay = 0;
