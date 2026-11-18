@@ -1,6 +1,6 @@
 {
     "name": "@qcksys/poe-2-data",
-    "version": "0.5.5-build.9",
+    "version": "0.5.5-build.10",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
