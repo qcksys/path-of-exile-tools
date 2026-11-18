@@ -72,7 +72,7 @@ class Interner {
 const HEX_ID = /^[0-9a-f]{64}$/;
 
 /** 128 bits identifying an item ID: a hex ID's two halves XORed, or a hash of any other ID. */
-function fingerprint(id: string, out: Uint32Array, at: number) {
+export function fingerprint(id: string, out: Uint32Array, at: number) {
     if (HEX_ID.test(id)) {
         for (let i = 0; i < 4; i++)
             out[at + i] =
@@ -86,7 +86,7 @@ function fingerprint(id: string, out: Uint32Array, at: number) {
 }
 
 /** The first 64 bits of a `rowDigest` (base64 SHA-1). */
-function digestWords(digest: string): [number, number] {
+export function digestWords(digest: string): [number, number] {
     const bytes = Buffer.from(digest, "base64");
     return [bytes.readUInt32BE(0), bytes.readUInt32BE(4)];
 }

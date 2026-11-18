@@ -1,7 +1,17 @@
 // biome-ignore-all lint/style/useNamingConvention: Fixtures preserve the public-stash wire format.
 import { yellowBeastNames } from "@poe-tools/market";
-import { describe, expect, it, vi } from "vite-plus/test";
+import { beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import type { PublicStashChange } from "../../../packages/poe-api-client/src/types";
+import {
+    captureEquipmentPage,
+    defaultEquipmentClassifier,
+    type EquipmentClassifier,
+} from "../../../packages/poe-stash-ingest/src/ps/equipment";
+import { EquipmentBatch } from "../../../packages/poe-stash-ingest/src/ps/equipment-batch";
+import {
+    type EquipmentState,
+    loadEquipmentState,
+} from "../../../packages/poe-stash-ingest/src/ps/equipment-state";
 import { applyStashChanges } from "../../../packages/poe-stash-ingest/src/ps/ingest";
 import { ListingBatch } from "../../../packages/poe-stash-ingest/src/ps/listing-batch";
 import {
@@ -19,9 +29,16 @@ type DuckDBConnection = DbHandle["conn"];
 
 vi.mock("../../../packages/poe-stash-ingest/src/shared/auth", () => ({ REALM: undefined }));
 
-// The batch engine must write exactly what applying each page with `applyStashChanges` writes,
-// whatever the batch size: listings, hour rows, sales with their markets, and the basemap.
+// The batch engine must write exactly what applying each page with `applyStashChanges` and
+// `captureEquipmentPage` writes, whatever the batch size: listings, hour rows, sales with their
+// markets, the basemap, and equipment with its hour rows and cohort hours.
 type Item = PublicStashChange["items"][number];
+const EQUIPMENT = [
+    { baseType: "Plate Vest", mods: ["+80 to maximum Life", "+40% to Fire Resistance"] },
+    { baseType: "Necrotic Armour", mods: ["+100 to maximum Life", "+30% to Cold Resistance"] },
+    { baseType: "Stygian Vise", mods: ["+70 to maximum Life", "+35 to Strength"] },
+    { baseType: "Two-Stone Ring", mods: ["+60 to maximum Life"] },
+];
 
 function random(seed: number) {
     let state = seed;
@@ -64,7 +81,22 @@ function world(seed: number) {
         const id = next() < 0.8 ? hex(++itemNumber * 7919) : `item-${++itemNumber}`;
         const kind = next();
         const base = { id, verified: true, w: 1, h: 1, ilvl: 80, note: pick(PRICES) };
-        if (kind < 0.3) {
+        if (kind < 0.25) {
+            const equipment = pick(EQUIPMENT);
+            return {
+                ...base,
+                ilvl: 84,
+                icon: "",
+                name: "Doom Shell",
+                typeLine: equipment.baseType,
+                baseType: equipment.baseType,
+                identified: true,
+                rarity: "Rare",
+                frameType: 2,
+                explicitMods: equipment.mods,
+            } as Item;
+        }
+        if (kind < 0.45) {
             const unique = pick(UNIQUES);
             return {
                 ...base,
@@ -78,7 +110,7 @@ function world(seed: number) {
                 corrupted: next() < 0.1,
             } as Item;
         }
-        if (kind < 0.6)
+        if (kind < 0.7)
             return {
                 ...base,
                 note: pick(["~price 5 chaos", "~price 9 chaos", "~price 12 chaos"]),
@@ -97,7 +129,7 @@ function world(seed: number) {
                         : []),
                 ],
             } as Item;
-        if (kind < 0.75) {
+        if (kind < 0.85) {
             const species = pick(yellowBeastNames.slice(0, 3));
             return {
                 ...base,
@@ -183,6 +215,10 @@ function world(seed: number) {
                 identified: true,
                 corrupted: !changed.corrupted,
             });
+        } else if (op < 0.86 && items.length) {
+            // Equipment that drops below its cohorts' item levels leaves them, or comes back.
+            const changed = pick(items);
+            stash.items.set(changed.id!, { ...changed, ilvl: changed.ilvl === 1 ? 84 : 1 });
         }
         return snapshot(stash);
     };
@@ -220,7 +256,30 @@ async function tables(conn: DuckDBConnection) {
         basemap: await read(
             "SELECT icon_asset, name, base_type, seen_count FROM icon_basemap ORDER BY icon_asset",
         ),
+        equipment: await read(
+            "SELECT * EXCLUDE (equipment_id) FROM ps_equipment_listing ORDER BY account_name, item_id",
+        ),
+        equipmentHours: await read(
+            "SELECT * FROM ps_equipment_hour ORDER BY observed_hour, account_name, item_id, revision",
+        ),
+        cohortHours: await read(
+            "SELECT * EXCLUDE (changed_at) FROM ps_equipment_cohort_hour ORDER BY ALL",
+        ),
+        cohorts: await read("SELECT * FROM ps_equipment_cohort ORDER BY revision, cohort_id"),
     };
+}
+
+let classifier: EquipmentClassifier;
+beforeAll(async () => {
+    classifier = await defaultEquipmentClassifier();
+}, 60_000);
+
+/** One page as `ingestPs` wrote it before batches. */
+async function referencePage(conn: DuckDBConnection, changes: PublicStashChange[], at: Date) {
+    await withTransaction(conn, async () => {
+        await applyStashChanges(conn, changes, at);
+        await captureEquipmentPage(conn, changes, classifier, at);
+    });
 }
 
 async function setUp(conn: DuckDBConnection) {
@@ -233,13 +292,16 @@ async function setUp(conn: DuckDBConnection) {
 async function runBatches(
     conn: DuckDBConnection,
     state: ListingState,
+    equipmentState: EquipmentState,
     pages: PublicStashChange[][],
     first: number,
     size: number,
 ) {
     let batch: ListingBatch | undefined;
+    let equipment: EquipmentBatch | undefined;
     const commit = async () => {
         await batch!.flush(conn);
+        await equipment!.flush(conn);
         await conn.run("COMMIT");
         batch = undefined;
     };
@@ -250,8 +312,10 @@ async function runBatches(
         if (!batch) {
             await conn.run("BEGIN TRANSACTION");
             batch = await ListingBatch.open(conn, state, hour);
+            equipment = new EquipmentBatch(equipmentState, hour / 1e6);
         }
         batch.applyPage(changes, at);
+        equipment!.applyPage(changes, classifier, new Date(at / 1000));
     }
     if (batch) await commit();
 }
@@ -281,18 +345,26 @@ describe("listing batches write what page-by-page ingest writes", () => {
                 // Both start from rows the reference wrote, as the worker starts from its database.
                 for (const [n, changes] of pages.slice(0, 15).entries())
                     for (const db of [reference, batched])
-                        await withTransaction(db.conn, () =>
-                            applyStashChanges(db.conn, changes, new Date(pageTime(n))),
-                        );
+                        await referencePage(db.conn, changes, new Date(pageTime(n)));
                 for (const [n, changes] of pages.slice(15).entries())
-                    await withTransaction(reference.conn, () =>
-                        applyStashChanges(reference.conn, changes, new Date(pageTime(15 + n))),
-                    );
-                const state = await loadListingState(batched.conn);
-                await runBatches(batched.conn, state, pages.slice(15, 55), 15, size);
+                    await referencePage(reference.conn, changes, new Date(pageTime(15 + n)));
+                await runBatches(
+                    batched.conn,
+                    await loadListingState(batched.conn),
+                    await loadEquipmentState(batched.conn),
+                    pages.slice(15, 55),
+                    15,
+                    size,
+                );
                 // A restarted worker reads the rows the batches wrote.
-                const restarted = await loadListingState(batched.conn);
-                await runBatches(batched.conn, restarted, pages.slice(55), 55, size);
+                await runBatches(
+                    batched.conn,
+                    await loadListingState(batched.conn),
+                    await loadEquipmentState(batched.conn),
+                    pages.slice(55),
+                    55,
+                    size,
+                );
 
                 const expected = await tables(reference.conn);
                 const actual = await tables(batched.conn);
@@ -300,6 +372,14 @@ describe("listing batches write what page-by-page ingest writes", () => {
                 expect(actual.hours).toEqual(expected.hours);
                 expect(actual.sales).toEqual(expected.sales);
                 expect(actual.basemap).toEqual(expected.basemap);
+                expect(actual.equipment).toEqual(expected.equipment);
+                expect(actual.equipmentHours).toEqual(expected.equipmentHours);
+                expect(actual.cohortHours).toEqual(expected.cohortHours);
+                expect(actual.cohorts).toEqual(expected.cohorts);
+                const equipmentHours = expected.equipmentHours as { matches: string }[];
+                if (equipmentHours.length > 20) covered.add("equipment");
+                if (equipmentHours.some((row) => row.matches === "[]"))
+                    covered.add("equipment leaving its cohorts");
                 // The sequences must exercise what they are meant to; see the last test.
                 const sales = (
                     expected.sales as {
@@ -349,6 +429,8 @@ describe("listing batches write what page-by-page ingest writes", () => {
     it("between them, the sequences exercise every case", () => {
         expect([...covered].sort()).toEqual(
             [
+                "equipment",
+                "equipment leaving its cohorts",
                 "hours",
                 "mod pool market",
                 "pending",

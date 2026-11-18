@@ -447,14 +447,16 @@ besides `PS_THREADS` and the main thread: under a tighter CPU quota every thread
 get slower.
 
 `PS_BATCH_PAGES` (default 1) applies that many pages in one transaction. The worker keeps every
-`ps_listing` row's key, content digest and market in memory (`ps/listing-state.ts`), finds each page's
-listing changes and prices its sales there, and writes the batch's listings, hour rows, sales and
-basemap in a few statements (`ps/listing-batch.ts`), instead of about twenty statements a page against
-tables of millions of rows. A batch ends at each capture hour, so a listing's hour row is its last
-values. The tables are the same as page by page, which `test/listing-batch-differential.test.ts`
-checks against `applyStashChanges`; a failure rolls back and replays the whole batch, and the memory is
-read again from `ps_listing`. Rows have a `listing_id` for this, since DuckDB renumbers row IDs; write
-`ps_listing` only through the worker while one runs, or it reads the table again.
+`ps_listing` row's key, content digest and market in memory (`ps/listing-state.ts`), and every
+`ps_equipment_listing` row's key and digest (`ps/equipment-state.ts`); it finds each page's listing and
+equipment changes and prices its sales there, and writes the batch's listings, hour rows, sales,
+basemap, equipment and cohort hours in a few statements (`ps/listing-batch.ts`,
+`ps/equipment-batch.ts`), instead of about thirty statements a page against tables of millions of rows.
+A batch ends at each capture hour, so a row's hour row is its last values. The tables are the same as
+page by page, which `test/listing-batch-differential.test.ts` checks against `applyStashChanges` and
+`captureEquipmentPage`; a failure rolls back and replays the whole batch, and the memory is read again
+from the tables. Rows have a `listing_id` or `equipment_id` for this, since DuckDB renumbers row IDs;
+write either table only through the worker while one runs, or it reads the table again.
 
 A new database starts after everything archived. To rebuild one from the archive, set `PS_RAW_FROM` (or
 `--raw-from`) to the first UTC hour to read; the setting is ignored once the database has a position.

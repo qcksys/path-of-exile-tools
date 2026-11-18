@@ -5,11 +5,11 @@ import { recordCheckpoint } from "#src/ps/checkpoints.ts";
 import { sharedClassifyPool } from "#src/ps/classify-pool.ts";
 import { defaultCraftingCapture } from "#src/ps/crafting-capture.ts";
 import {
-    captureEquipmentPage,
     defaultEquipmentClassifier,
     type EquipmentClassifier,
     primeClassifications,
 } from "#src/ps/equipment.ts";
+import { EquipmentBatch } from "#src/ps/equipment-batch.ts";
 import type {
     EquipmentDiagnosticFixture,
     EquipmentDiagnostics,
@@ -22,7 +22,12 @@ import {
     listingRows,
     UPDATED_COLUMNS,
 } from "#src/ps/listing-rows.ts";
-import { invalidateListingState, listingState } from "#src/ps/listing-state-cache.ts";
+import {
+    equipmentState,
+    invalidateEquipmentState,
+    invalidateListingState,
+    listingState,
+} from "#src/ps/listing-state-cache.ts";
 import {
     appendRawPage,
     RAW_POSITION_STREAM,
@@ -53,6 +58,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const BATCH_BYTES = 256_000_000;
 const HOUR_US = 3_600_000_000;
 const hourStart = (micros: number) => Math.floor(micros / HOUR_US) * HOUR_US;
+/** Equipment hours are seconds, as `ps_equipment_hour.observed_hour`. */
+const equipmentHour = (at: Date) => Math.floor(at.getTime() / 3_600_000) * 3600;
 
 /**
  * Pages applied in one transaction (`PS_BATCH_PAGES`, default 1). A batch also ends at each hour of
@@ -330,18 +337,25 @@ export async function ingestPs(
     let lastCapturedAt: number | undefined;
     let streamHeadAt: number | undefined;
 
-    // Pages are applied in batches, each in one transaction: listings in memory, then written
-    // together (see `ListingBatch`); everything else page by page inside the transaction.
+    // Pages are applied in batches, each in one transaction: listings and equipment in memory,
+    // then written together (see `ListingBatch`, `EquipmentBatch`); checkpoints and cursors page
+    // by page inside the transaction.
     const batchPages = ingestBatchPages();
     const state = await listingState(conn);
+    const equipmentRows = await equipmentState(conn);
     let batch: ListingBatch | undefined;
+    let equipmentBatch: EquipmentBatch | undefined;
     let batchStart: RawPageReader["position"] | undefined;
     let fixtures: EquipmentDiagnosticFixture[] = [];
+    let inTransaction = false;
     const commit = async () => {
         if (!batch) return;
         await batch.flush(conn);
+        await equipmentBatch!.flush(conn);
         await conn.run("COMMIT");
+        inTransaction = false;
         batch = undefined;
+        equipmentBatch = undefined;
         if (fixtures.length) await opts.equipmentDiagnostics?.flush(fixtures);
         fixtures = [];
     };
@@ -357,11 +371,14 @@ export async function ingestPs(
             const pageTime = captured ? new Date(captured.capturedAt) : undefined;
             const listingsAt = opts.listingsObservedAt ?? pageTime;
             const at = listingsAt && listingsAt.getTime() * 1000;
+            const equipmentAt = opts.observedAt ?? pageTime;
             if (
                 batch &&
                 (batch.pages >= batchPages ||
-                    batch.bytes >= BATCH_BYTES ||
-                    (at !== undefined && hourStart(at) !== batch.hour))
+                    batch.bytes + equipmentBatch!.bytes >= BATCH_BYTES ||
+                    (at !== undefined && hourStart(at) !== batch.hour) ||
+                    (equipmentAt !== undefined &&
+                        equipmentHour(equipmentAt) !== equipmentBatch!.hour))
             )
                 await commit();
             if (!batch && i > 0 && !process.env.PS_CHECKPOINT_THRESHOLD) {
@@ -416,6 +433,7 @@ export async function ingestPs(
             if (!batch) {
                 batchStart = opts.spool?.position;
                 await conn.run("BEGIN TRANSACTION");
+                inTransaction = true;
             }
             const [clock] = await queryAll<{ millis: number; micros: number }>(
                 conn,
@@ -425,7 +443,8 @@ export async function ingestPs(
             // `current_timestamp` would have them.
             const listingsUs = at ?? Number(clock!.micros);
             batch ??= await ListingBatch.open(conn, state, hourStart(listingsUs));
-            const observedAt = opts.observedAt ?? pageTime ?? new Date(Number(clock!.millis));
+            const observedAt = equipmentAt ?? new Date(Number(clock!.millis));
+            equipmentBatch ??= new EquipmentBatch(equipmentRows, equipmentHour(observedAt));
             const changes = page.stashes.filter(
                 (change) => !change.public || !opts.league || change.league === opts.league,
             );
@@ -443,8 +462,7 @@ export async function ingestPs(
             const r = batch.applyPage(changes, listingsUs);
             const prepared = await classified;
             if (prepared) primeClassifications(equipment, prepared);
-            result.equipmentObserved += await captureEquipmentPage(
-                conn,
+            result.equipmentObserved += equipmentBatch.applyPage(
                 changes,
                 equipment,
                 observedAt,
@@ -517,9 +535,10 @@ export async function ingestPs(
         }
         await commit();
     } catch (error) {
-        if (batch) {
+        if (inTransaction) {
             // The state already holds the batch's changes, and the reader is past its pages.
             invalidateListingState(conn);
+            invalidateEquipmentState(conn);
             if (opts.spool && batchStart) await opts.spool.rewind(batchStart);
             try {
                 await conn.run("ROLLBACK");

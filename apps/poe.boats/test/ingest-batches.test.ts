@@ -8,11 +8,17 @@ import type {
     PublicStashChange,
     PublicStashPage,
 } from "../../../packages/poe-api-client/src/types";
+import {
+    captureEquipmentPage,
+    defaultEquipmentClassifier,
+} from "../../../packages/poe-stash-ingest/src/ps/equipment";
 import { ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest";
 import { ListingBatch } from "../../../packages/poe-stash-ingest/src/ps/listing-batch";
 import { loadListingState, NONE } from "../../../packages/poe-stash-ingest/src/ps/listing-state";
 import {
+    equipmentState,
     listingState,
+    reconcileEquipmentState,
     reconcileListingState,
 } from "../../../packages/poe-stash-ingest/src/ps/listing-state-cache";
 import {
@@ -212,10 +218,50 @@ it("forgets removed listings archiving moved out, so one listed again is inserte
     }
 });
 
+it("forgets equipment rows archiving moved out", async () => {
+    const classifier = await defaultEquipmentClassifier();
+    const rare = (id: string) =>
+        ({
+            id,
+            verified: true,
+            w: 2,
+            h: 2,
+            icon: "",
+            name: "Doom Shell",
+            typeLine: "Plate Vest",
+            baseType: "Plate Vest",
+            ilvl: 84,
+            identified: true,
+            frameType: 2,
+            explicitMods: ["+80 to maximum Life", "+40% to Fire Resistance"],
+            note: "~price 5 chaos",
+        }) as Item;
+    const db = await openDb(":memory:");
+    try {
+        const at = new Date(START);
+        await captureEquipmentPage(
+            db.conn,
+            [stash("vests", "a", [rare("kept"), rare("sold")])],
+            classifier,
+            at,
+        );
+        await captureEquipmentPage(db.conn, [stash("vests", "a", [rare("kept")])], classifier, at);
+        const state = await equipmentState(db.conn);
+        expect(state.find("a", "sold")).not.toBe(NONE);
+        await db.conn.run("DELETE FROM ps_equipment_listing WHERE removed_at IS NOT NULL");
+        await reconcileEquipmentState(db.conn);
+        expect(state.find("a", "sold")).toBe(NONE);
+        expect(state.find("a", "kept")).not.toBe(NONE);
+        expect(await equipmentState(db.conn)).toBe(state);
+    } finally {
+        await db.close();
+    }
+}, 60_000);
+
 it("loads under Node's type stripping, as the worker runs it", () => {
     // Tests compile TypeScript fully; the worker image runs the sources as they are, so syntax
     // that needs compiling (parameter properties, enums) would only fail in production.
-    const sources = ["listing-batch.ts", "listing-state-cache.ts"].map(
+    const sources = ["listing-batch.ts", "listing-state-cache.ts", "equipment-batch.ts"].map(
         (file) =>
             new URL(`../../../packages/poe-stash-ingest/src/ps/${file}`, import.meta.url).href,
     );

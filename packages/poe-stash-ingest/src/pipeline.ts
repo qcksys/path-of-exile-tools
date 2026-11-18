@@ -11,7 +11,12 @@ import {
 } from "#src/ps/equipment-reclassify.ts";
 import { rollupEquipment } from "#src/ps/equipment-rollup.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
-import { invalidateListingState, reconcileListingState } from "#src/ps/listing-state-cache.ts";
+import {
+    invalidateEquipmentState,
+    invalidateListingState,
+    reconcileEquipmentState,
+    reconcileListingState,
+} from "#src/ps/listing-state-cache.ts";
 import {
     maintainRawArchive,
     type RawArchiveOptions,
@@ -79,6 +84,12 @@ async function exchangeCapturedBeforeHour(conn: DuckDBConnection) {
         Number.isFinite(cursor) ? cursor : 0,
         stored?.hour === null || stored?.hour === undefined ? 0 : Number(stored.hour) + 3600,
     );
+}
+
+/** The worker's in-memory rows forget removed rows archiving moved out of their tables. */
+async function reconcileArchived(conn: DuckDBConnection, rows: Record<string, number>) {
+    if (rows.ps_listing) await reconcileListingState(conn);
+    if (rows.ps_equipment_listing) await reconcileEquipmentState(conn);
 }
 
 export async function flushRollups(
@@ -360,11 +371,12 @@ export async function runPipeline(
                     console.log(
                         `archived ${result.hours.join(", ")}: ${JSON.stringify(result.rows)}`,
                     );
-                if (result.rows.ps_listing) await reconcileListingState(conn);
+                await reconcileArchived(conn, result.rows);
             },
             async (error: unknown) => {
-                // Hours archived before the failure are gone; read the listings again.
+                // Hours archived before the failure are gone; read the tables again.
                 invalidateListingState(conn);
+                invalidateEquipmentState(conn);
                 await failStage("delivery", "Archive", error);
             },
         );
@@ -380,10 +392,11 @@ export async function runPipeline(
                     console.log(
                         `archived ${result.days.join(", ")}: ${JSON.stringify(result.rows)}`,
                     );
-                if (result.rows.ps_listing) await reconcileListingState(conn);
+                await reconcileArchived(conn, result.rows);
             },
             async (error: unknown) => {
                 invalidateListingState(conn);
+                invalidateEquipmentState(conn);
                 await failStage("delivery", "Archive", error);
             },
         );

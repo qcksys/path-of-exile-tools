@@ -103,6 +103,8 @@ DROP INDEX IF EXISTS ps_equipment_hour_pk;
 DROP INDEX IF EXISTS ps_equipment_hour_time;
 -- After ps_equipment_hour copied its columns; see ps_listing.content_digest.
 ALTER TABLE ps_equipment_listing ADD COLUMN IF NOT EXISTS content_digest VARCHAR;
+-- The worker's own row identity (see equipment-state.ts), as ps_listing.listing_id.
+ALTER TABLE ps_equipment_listing ADD COLUMN IF NOT EXISTS equipment_id BIGINT;
 CREATE TABLE IF NOT EXISTS ps_equipment_cohort_hour (
     revision VARCHAR NOT NULL, league VARCHAR NOT NULL, hour BIGINT NOT NULL,
     cohort_id VARCHAR NOT NULL, changed_at TIMESTAMP NOT NULL,
