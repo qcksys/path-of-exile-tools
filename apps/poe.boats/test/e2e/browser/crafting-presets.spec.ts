@@ -99,7 +99,9 @@ for (const preset of craftingPresets) {
                     "sushi-luminary-shield",
                 ].includes(preset.id)
                     ? 60_000
-                    : preset.id === "sushi-rf-totem-shield"
+                    : // Suppression chest takes the longest of the remaining presets under 3.30
+                      // rules; on a busy runner its worker sometimes needs more than 5 seconds.
+                      ["sushi-rf-totem-shield", "suppression-chest"].includes(preset.id)
                       ? 10_000
                       : 5000,
             })
