@@ -1,17 +1,17 @@
 {
   "format": 1,
   "game": "poe1",
-  "patch": "3.30.0.2.2",
+  "patch": "3.30.0.3",
   "source": {
-    "basesSha256": "5fdec2ba6f5124ca1abd7bd2bbe1acb6e1aec7e70a3740a03722f1157e140c05",
-    "modsSha256": "7e9f57aa95a6eb8f0b8c9adb947869ae5b7f39999727e8f076be3f5d691606d9",
-    "schemaSha256": "25e17f0463e56a4ed0dcc13a841aeb811012debb23daa9111053aa8157bd7b60",
+    "basesSha256": "8eb40b29c676cfec924e0160a4f6f59a5606f8ef61457912c1ea8b2bd0c35864",
+    "modsSha256": "edff448e754e9bf55bb2a445149d8bae744dbbc3a5c3f10ab5b3a13783a3fbc4",
+    "schemaSha256": "5d598f4c57fae1ae3d92be9046fe3f7702ee77180eb6c1e2e518efc79d29c137",
     "tables": {
-      "Data/Essences.datc64": "9fd31967b26f4c70e3e6b07a6847099aa38335123b84e0ae4fd24a75329df30f",
-      "Data/CraftingBenchOptions.datc64": "1ce14270c9d87c9879ed2d9a5a8aedb967656b38775740889c1b88d225f608a2",
+      "Data/Essences.datc64": "ca69a07539a5faf42a086d57109460d6e1c50ba8fa3c364a00df367508deda3d",
+      "Data/CraftingBenchOptions.datc64": "b8eff5f599517bb3aaec7c9281c7918c0c994dc97443406e0b44b6d86ace9115",
       "Data/CraftingItemClassCategories.datc64": "2e36ddd886a34b9faaa7334d9e8132e2418f824024ebbeaeb078382dee880e83",
-      "Data/BaseItemTypes.datc64": "e67c5a990f46fe329c404f95c1a08eff239fbaad7925f7b543c26f6c3deec774",
-      "Data/Mods.datc64": "f8140153d7333a6a5aa3ef407d467a0245d46eb4d620ddfc06e8198069976742",
+      "Data/BaseItemTypes.datc64": "95004f17f8b23f31c1fad8b8df3f3cdeb27b2f621043b9a5d87c8202bb8b3426",
+      "Data/Mods.datc64": "adce68ff78b5e308df96f0622263bb74e206d3234112477cf4311f9b1215b588",
       "Data/ItemClasses.datc64": "aa63d34e43ed7dbf0fbad5272bc5a235a70bdd6246bd8234fe2c62ec542b0038"
     }
   },
