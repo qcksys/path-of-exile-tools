@@ -61,9 +61,12 @@ async function marketData(...args: Parameters<typeof getMarketData>) {
 }
 
 beforeAll(async () => {
+    // Start the container on the real clock. Testcontainers holds a lock file every e2e test
+    // process shares while it starts, stamped with `Date`: stamped in the past, other processes
+    // judge it stale and take it, and this start fails with ECOMPROMISED.
+    container = await new MySqlContainer("mysql:8.4").withDatabase("market_query_test").start();
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date((hour + 3600) * 1000));
-    container = await new MySqlContainer("mysql:8.4").withDatabase("market_query_test").start();
     connection = await createConnection(container.getConnectionUri());
     db = drizzle({
         client: connection,
