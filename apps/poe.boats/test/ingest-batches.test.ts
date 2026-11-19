@@ -158,6 +158,13 @@ it("writes the same tables in batches of pages as one page at a time", async () 
         expect(
             new Set(expected.hours.map((row: Record<string, unknown>) => row.observed_hour)).size,
         ).toBe(2);
+        // A batch's temporary tables hold their rows in memory, so none outlives its flush.
+        expect(
+            await queryAll(
+                batched.db.conn,
+                "SELECT table_name FROM duckdb_tables() WHERE temporary",
+            ),
+        ).toEqual([]);
     } finally {
         await single.db.close();
         await batched.db.close();

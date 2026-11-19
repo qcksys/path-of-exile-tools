@@ -2,6 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
+import { flushRollups } from "../../../packages/poe-stash-ingest/src/pipeline";
 import { equipmentHourly } from "../../../packages/poe-stash-ingest/src/ps/equipment-rollup";
 import { type DbHandle, openDb } from "../../../packages/poe-stash-ingest/src/shared/db";
 
@@ -229,6 +230,27 @@ it("expands varied cohort arrays within bounded memory for complete observation 
         },
         { listingCount: 0, unknownCount: 1, prices: {} },
     ]);
+});
+
+it("checkpoints once before a delivery's equipment rollups, releasing a batch's memory", async () => {
+    for (let offset = 0; offset < 25; offset++) await observe({ offset });
+    const run = vi.spyOn(db.conn, "run");
+    const read = vi.spyOn(db.conn, "runAndReadAll");
+    const checkpoints = () => run.mock.calls.filter(([sql]) => sql === "CHECKPOINT");
+    expect(await flushRollups(db.conn, { league: "Standard", dryRun: true })).toMatchObject({
+        hours: 0,
+    });
+    expect(checkpoints()).toEqual([]);
+
+    await mark("complete");
+    await mark("complete", "Standard", "base", HOUR - 3600);
+    expect(await flushRollups(db.conn, { league: "Standard", dryRun: true })).toMatchObject({
+        hours: 2,
+    });
+    expect(checkpoints()).toHaveLength(1);
+    const checkpointAt = run.mock.invocationCallOrder[run.mock.calls.indexOf(checkpoints()[0]!)]!;
+    const firstScan = read.mock.calls.findIndex(([sql]) => sql.includes("FROM ps_equipment_hour"));
+    expect(checkpointAt).toBeLessThan(read.mock.invocationCallOrder[firstScan]!);
 });
 
 it("preserves escaped cohort IDs and repeated entries in matched and unknown arrays", async () => {

@@ -149,7 +149,20 @@ export async function flushRollups(
     });
     let rows = 0;
     let hours = 0;
+    let released = false;
     for (const entry of pending) {
+        // An equipment hour's windows scan a day of observations. A batch's indexes and updates
+        // stay in memory until a checkpoint and can leave too little of the limit for them.
+        if (entry.stream === "equipment" && !released) {
+            const started = performance.now();
+            await conn.run("CHECKPOINT").catch((error: unknown) => {
+                throw operationFailure("Checkpoint before equipment rollups", error);
+            });
+            released = true;
+            console.log(
+                `checkpointed before equipment rollups in ${((performance.now() - started) / 1000).toFixed(1)} s`,
+            );
+        }
         const rollup =
             entry.stream === "equipment"
                 ? rollupEquipment

@@ -384,5 +384,8 @@ export class EquipmentBatch {
                     AND hour > $1 AND hour <= $1 + 23 * 3600`,
                 [hour, JSON.stringify([...this.leagues])],
             );
+        // A temporary table keeps its rows in memory until it is dropped.
+        for (const table of ["batch_equipment", "batch_cohort_hour"])
+            await conn.run(`DROP TABLE IF EXISTS ${table}`);
     }
 }

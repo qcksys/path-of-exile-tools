@@ -478,6 +478,9 @@ export class ListingBatch {
             );
         }
         for (const chunk of chunks(this.basemap, NARROW_CHUNK)) await learnBasemap(conn, chunk);
+        // A temporary table keeps its rows in memory until it is dropped.
+        for (const table of ["batch_listing", "batch_prior_sale"])
+            await conn.run(`DROP TABLE IF EXISTS ${table}`);
     }
 }
 
