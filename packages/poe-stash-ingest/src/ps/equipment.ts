@@ -2,6 +2,7 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import type { PublicStashChange } from "@poe-tools/api-client";
 import { normalizeApiItem } from "@poe-tools/item-query";
 import type { Classification, EquipmentClassifier } from "#src/ps/default-classifier.ts";
+import { invalidateEquipmentState } from "#src/ps/listing-state-cache.ts";
 import { params, stashRounds } from "#src/ps/rounds.ts";
 import { queryAll } from "#src/shared/db.ts";
 import { type ItemMemo, memoizeByItem, rowDigest } from "#src/shared/item-memo.ts";
@@ -20,7 +21,7 @@ type OnClassified = (
     classification: ReturnType<EquipmentClassifier["classify"]>,
 ) => void;
 
-interface EquipmentRow {
+export interface EquipmentRow {
     account: string;
     stashId: string;
     league: string;
@@ -34,7 +35,7 @@ interface EquipmentRow {
     digest: string;
 }
 
-function equipmentRow(row: Omit<EquipmentRow, "digest">, revision: string): EquipmentRow {
+export function equipmentRow(row: Omit<EquipmentRow, "digest">, revision: string): EquipmentRow {
     const derived = [row.league, revision, row.matches, row.unknown, row.amount, row.currency];
     return { ...row, digest: rowDigest(row.item, derived) };
 }
@@ -55,7 +56,7 @@ function classifierMemo(classifier: EquipmentClassifier) {
     return classify;
 }
 
-function classifyItem(classifier: EquipmentClassifier, item: Item) {
+export function classifyItem(classifier: EquipmentClassifier, item: Item) {
     return classifierMemo(classifier)(item);
 }
 
@@ -78,7 +79,11 @@ export function captureEquipment(
     return captureEquipmentPage(conn, [change], classifier, observedAt, onClassified);
 }
 
-/** Captures a page's equipment with a fixed number of statements; see `applyStashChanges`. */
+/**
+ * Captures a page's equipment with a fixed number of statements; see `applyStashChanges`.
+ * `ingestPs` captures equipment with an `EquipmentBatch` instead, which must write what this
+ * writes; this stays as the reference its tests compare with.
+ */
 export async function captureEquipmentPage(
     conn: DuckDBConnection,
     changes: readonly PublicStashChange[],
@@ -86,6 +91,7 @@ export async function captureEquipmentPage(
     observedAt: Date,
     onClassified?: OnClassified,
 ) {
+    invalidateEquipmentState(conn);
     let captured = 0;
     for (const round of stashRounds(changes))
         captured += await captureRound(conn, round, classifier, observedAt, onClassified);
@@ -316,7 +322,9 @@ async function captureRound(
             `INSERT INTO ps_equipment_listing
             SELECT value->>'account', value->>'id', value->>'stashId', value->>'league', $2,
                 value->'matches', value->'unknown', (value->>'amount')::DOUBLE,
-                value->>'currency', value->'item', $1::TIMESTAMP, NULL, value->>'digest'
+                value->>'currency', value->'item', $1::TIMESTAMP, NULL, value->>'digest',
+                -- equipment_id: numbered when the worker next reads the table.
+                NULL
             FROM json_each($3::JSON)`,
             [time, revision, JSON.stringify(inserts)],
         );
@@ -330,7 +338,7 @@ async function captureRound(
             SELECT rowid AS row_id, * FROM ps_equipment_listing
             WHERE stash_id IN (${params(touchedIds, 2)})
         )
-        SELECT stash.* EXCLUDE (raw_item, removed_at, content_digest) FROM stash
+        SELECT stash.* EXCLUDE (raw_item, removed_at, content_digest, equipment_id) FROM stash
         JOIN json_each($1::JSON) j ON stash.stash_id = (j.value->>'stashId')
             AND stash.account_name = (j.value->>'account')
         WHERE stash.removed_at IS NULL`,

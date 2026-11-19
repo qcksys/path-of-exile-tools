@@ -5,15 +5,29 @@ import { recordCheckpoint } from "#src/ps/checkpoints.ts";
 import { sharedClassifyPool } from "#src/ps/classify-pool.ts";
 import { defaultCraftingCapture } from "#src/ps/crafting-capture.ts";
 import {
-    captureEquipmentPage,
     defaultEquipmentClassifier,
     type EquipmentClassifier,
     primeClassifications,
 } from "#src/ps/equipment.ts";
+import { EquipmentBatch } from "#src/ps/equipment-batch.ts";
 import type {
     EquipmentDiagnosticFixture,
     EquipmentDiagnostics,
 } from "#src/ps/equipment-diagnostics.ts";
+import { ListingBatch } from "#src/ps/listing-batch.ts";
+import {
+    INDEXED_COLUMNS,
+    LISTING_VALUES,
+    type ListingRow,
+    listingRows,
+    UPDATED_COLUMNS,
+} from "#src/ps/listing-rows.ts";
+import {
+    equipmentState,
+    invalidateEquipmentState,
+    invalidateListingState,
+    listingState,
+} from "#src/ps/listing-state-cache.ts";
 import {
     appendRawPage,
     RAW_POSITION_STREAM,
@@ -24,16 +38,10 @@ import { params, stashRounds } from "#src/ps/rounds.ts";
 import { evaluateSales, recordRemovals } from "#src/ps/sales.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { learnBasemap } from "#src/shared/basemap.ts";
-import { isMapItem, shouldCapture } from "#src/shared/capture.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
-import { queryAll, sqlTimestamp, withTransaction } from "#src/shared/db.ts";
-import { decodeIconAsset } from "#src/shared/icon.ts";
-import { itemKey, itemLinks } from "#src/shared/item-key.ts";
-import { rowDigest } from "#src/shared/item-memo.ts";
-import { extractModSignature, signatureValue } from "#src/shared/mod-extractors/index.ts";
-import { extractListingPrice } from "#src/shared/price.ts";
+import { queryAll, sqlTimestamp, TransactionRollbackError } from "#src/shared/db.ts";
 import { configureSource } from "#src/shared/source.ts";
-import { type ListingTab, listingTab } from "#src/shared/stash-tab.ts";
+import { listingTab } from "#src/shared/stash-tab.ts";
 
 const STREAM = "psapi";
 const PAGE_DELAY_MS = 1200;
@@ -45,6 +53,24 @@ const PAGE_DELAY_MS = 1200;
 export const HEAD_PAGE_BYTES = 3_000_000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** A batch's item JSON held in memory before it is written; see `ListingBatch.bytes`. */
+const BATCH_BYTES = 256_000_000;
+const HOUR_US = 3_600_000_000;
+const hourStart = (micros: number) => Math.floor(micros / HOUR_US) * HOUR_US;
+/** Equipment hours are seconds, as `ps_equipment_hour.observed_hour`. */
+const equipmentHour = (at: Date) => Math.floor(at.getTime() / 3_600_000) * 3600;
+
+/**
+ * Pages applied in one transaction (`PS_BATCH_PAGES`, default 1). A batch also ends at each hour of
+ * capture time. A failure rolls back, and replays, the whole batch.
+ */
+export function ingestBatchPages(env = process.env) {
+    const pages = env.PS_BATCH_PAGES ? Number(env.PS_BATCH_PAGES) : 1;
+    if (!Number.isSafeInteger(pages) || pages < 1)
+        throw new Error("PS_BATCH_PAGES must be a positive whole number.");
+    return pages;
+}
 
 export interface PsIngestResult {
     pages: number;
@@ -60,87 +86,6 @@ export interface PsIngestResult {
     /** Reading a capture process's archive: whether every archived page has been read. */
     drained?: boolean;
 }
-
-interface ListingRow {
-    accountName: string;
-    stashId: string;
-    itemId: string;
-    league: string;
-    itemKey: string;
-    iconAsset: string | null;
-    identified: boolean;
-    frameType: number;
-    typeLine: string;
-    baseType: string;
-    name: string | null;
-    rarity: string | null;
-    corrupted: boolean;
-    foilVariation: number | null;
-    links: number;
-    tab: ListingTab;
-    priceAmount: number | null;
-    priceCurrency: string | null;
-    stackSize: number | null;
-    modSignature: string | null;
-    signatureValue: string;
-    rawItem: string;
-    /** See `rowDigest`; a re-sent listing with the same digest only records the sighting. */
-    contentDigest: string;
-}
-
-/** `ListingRow` JSON from `json_each`, as `ps_listing` columns. */
-const LISTING_VALUES = `
-    value->>'accountName' AS account_name,
-    value->>'stashId' AS stash_id,
-    value->>'itemId' AS item_id,
-    value->>'league' AS league,
-    value->>'itemKey' AS item_key,
-    value->>'iconAsset' AS icon_asset,
-    (value->>'identified')::BOOLEAN AS identified,
-    (value->>'frameType')::INTEGER AS frame_type,
-    value->>'typeLine' AS type_line,
-    value->>'baseType' AS base_type,
-    value->>'name' AS name,
-    value->>'rarity' AS rarity,
-    (value->>'corrupted')::BOOLEAN AS corrupted,
-    (value->>'foilVariation')::INTEGER AS foil_variation,
-    (value->>'links')::INTEGER AS links,
-    value->>'tab' AS tab,
-    (value->>'priceAmount')::DOUBLE AS price_amount,
-    value->>'priceCurrency' AS price_currency,
-    (value->>'stackSize')::INTEGER AS stack_size,
-    (value->>'modSignature')::JSON AS mod_signature,
-    (value->>'rawItem')::JSON AS raw_item,
-    value->>'signatureValue' AS signature_value,
-    value->>'contentDigest' AS content_digest`;
-
-const UPDATED_COLUMNS = [
-    "league",
-    "item_key",
-    "icon_asset",
-    "identified",
-    "frame_type",
-    "type_line",
-    "base_type",
-    "name",
-    "rarity",
-    "corrupted",
-    "foil_variation",
-    "links",
-    "tab",
-    "price_amount",
-    "price_currency",
-    "stack_size",
-    "mod_signature",
-    "signature_value",
-    "raw_item",
-    "content_digest",
-];
-/**
- * `ps_listing`'s indexed columns. DuckDB rewrites a row when an UPDATE sets one, even to its own
- * value, and keeps the old copy for every later scan to read; leaving them out updates in place.
- */
-const INDEXED_COLUMNS = new Set(["item_key", "icon_asset"]);
 
 async function updateListings(
     conn: DuckDBConnection,
@@ -162,52 +107,13 @@ async function updateListings(
     );
 }
 
-function listingRows(change: PublicStashChange, accountName: string, league: string) {
-    const rows: ListingRow[] = [];
-    const tab = listingTab(change);
-    for (const item of change.items) {
-        if (!item.id || !shouldCapture(item)) continue;
-        const iconAsset = decodeIconAsset(item.icon);
-        const price = extractListingPrice(item, change.stash);
-        const signature = extractModSignature(item);
-        const row = {
-            accountName,
-            stashId: change.id,
-            itemId: item.id,
-            league,
-            itemKey: itemKey(item, iconAsset),
-            iconAsset,
-            // Crafting base markets do not split by identification, so sales compare across it.
-            identified: signature?.kind === "base" || item.identified,
-            // Unknown legacy frame; preserve the source frameTypeId in rawItem.
-            frameType: item.frameType ?? -1,
-            typeLine: item.typeLine,
-            baseType: item.baseType,
-            // A rare map's or crafting base's random name is not part of its market.
-            name:
-                item.identified && !isMapItem(item) && signature?.kind !== "base"
-                    ? item.name
-                    : null,
-            rarity: item.rarity ?? null,
-            corrupted: item.corrupted ?? false,
-            foilVariation: item.foilVariation ?? null,
-            links: itemLinks(item),
-            tab,
-            priceAmount: price?.amount ?? null,
-            priceCurrency: price?.currency ?? null,
-            stackSize: item.stackSize ?? null,
-            modSignature: signature ? JSON.stringify(signature) : null,
-            signatureValue: signatureValue(signature),
-        };
-        rows.push({ ...row, rawItem: JSON.stringify(item), contentDigest: rowDigest(item, row) });
-    }
-    return rows;
-}
-
 /**
  * Applies a page's stash changes with a fixed number of set-based statements. DuckDB pays a few
  * milliseconds per statement, and `ON CONFLICT`/`INSERT OR REPLACE` scan the whole table, so rows
  * are looked up once through the stash index, then updated by row ID or plainly inserted.
+ *
+ * `ingestPs` applies pages with a `ListingBatch` instead, which must write what this writes; this
+ * stays as the reference its tests compare with.
  */
 export async function applyStashChanges(
     conn: DuckDBConnection,
@@ -215,6 +121,7 @@ export async function applyStashChanges(
     /** When the page was captured; by default, now. */
     observedAt?: Date,
 ): Promise<{ inserted: number; updated: number; removed: number }> {
+    invalidateListingState(conn);
     const totals = { inserted: 0, updated: 0, removed: 0 };
     for (const round of stashRounds(changes)) {
         const result = await applyRound(conn, round, observedAt);
@@ -333,7 +240,7 @@ async function applyRound(
         `CREATE OR REPLACE TEMP TABLE page_listing AS
         WITH stash AS MATERIALIZED (
             -- The hour rows keep no item JSON or digest, so neither is copied here.
-            SELECT * EXCLUDE (raw_item, content_digest) FROM ps_listing WHERE stash_id IN (${params(listedIds, 2)})
+            SELECT * EXCLUDE (raw_item, content_digest, listing_id) FROM ps_listing WHERE stash_id IN (${params(listedIds, 2)})
         )
         SELECT stash.* EXCLUDE (removed_at) FROM stash
         JOIN json_each($1::JSON) j ON stash.stash_id = (j.value->>'stashId')
@@ -430,61 +337,114 @@ export async function ingestPs(
     let lastCapturedAt: number | undefined;
     let streamHeadAt: number | undefined;
 
-    for (let i = 0; i < opts.pages; i++) {
-        if (i > 0) {
-            // Release the committed page's indexes before loading another page. On a large
-            // database each checkpoint rewrites gigabytes of index, so with memory to spare
-            // PS_CHECKPOINT_THRESHOLD leaves checkpoints to DuckDB once the WAL reaches it.
-            if (!process.env.PS_CHECKPOINT_THRESHOLD) await conn.run("CHECKPOINT");
-            if (!opts.spool) await sleep(PAGE_DELAY_MS);
-        }
-        const captured = await opts.spool?.peek();
-        if (opts.spool && !captured) {
-            result.drained = true;
-            break;
-        }
-        const requestCursor = captured ? (captured.cursor ?? undefined) : cursor;
-        const page =
-            captured?.page ??
-            (await client.public.stashTabs(
-                requestCursor ? { realm: REALM, id: requestCursor } : { realm: REALM },
-            ));
-        const capturedAt = captured?.capturedAt ?? Date.now();
-        // Classified on other threads while this page's listings and sales are written.
-        const classified =
-            pool && captured
-                ? pool.classify(captured.pageJson, opts.league ?? null).catch((error: unknown) => {
-                      console.error("Page classification threads failed; classifying here.", error);
-                      return undefined;
-                  })
-                : undefined;
-        // Written before processing, so a failure refetches the page; replays may see it twice.
-        if (opts.rawArchiveDir)
-            await appendRawPage(opts.rawArchiveDir, { capturedAt, cursor: requestCursor, page });
-        // A page read from the raw archive already has its copy there; see `recordRawPage`.
-        const rawLocator = opts.spool && rawPageLocator(opts.spool.position);
-        const captureId = rawLocator
-            ? null
-            : await archivePage(
-                  conn,
-                  page,
-                  {
-                      realm,
-                      league: opts.league ?? "all",
-                      cursor: requestCursor,
-                      capturedAt,
-                  },
-                  accepts,
-              );
+    // Pages are applied in batches, each in one transaction: listings and equipment in memory,
+    // then written together (see `ListingBatch`, `EquipmentBatch`); checkpoints and cursors page
+    // by page inside the transaction.
+    const batchPages = ingestBatchPages();
+    const state = await listingState(conn);
+    const equipmentRows = await equipmentState(conn);
+    let batch: ListingBatch | undefined;
+    let equipmentBatch: EquipmentBatch | undefined;
+    let batchStart: RawPageReader["position"] | undefined;
+    let fixtures: EquipmentDiagnosticFixture[] = [];
+    let inTransaction = false;
+    const commit = async () => {
+        if (!batch) return;
+        await batch.flush(conn);
+        await equipmentBatch!.flush(conn);
+        await conn.run("COMMIT");
+        inTransaction = false;
+        batch = undefined;
+        equipmentBatch = undefined;
+        if (fixtures.length) await opts.equipmentDiagnostics?.flush(fixtures);
+        fixtures = [];
+    };
 
-        const fixtures: EquipmentDiagnosticFixture[] = [];
-        await withTransaction(conn, async () => {
-            const [clock] = await queryAll<{ millis: number }>(
-                conn,
-                "SELECT epoch_ms(current_timestamp) AS millis",
-            );
+    try {
+        for (let i = 0; i < opts.pages; i++) {
+            if (i > 0 && !opts.spool) await sleep(PAGE_DELAY_MS);
+            const captured = await opts.spool?.peek();
+            if (opts.spool && !captured) {
+                result.drained = true;
+                break;
+            }
             const pageTime = captured ? new Date(captured.capturedAt) : undefined;
-            const observedAt = opts.observedAt ?? pageTime ?? new Date(Number(clock!.millis));
+            const listingsAt = opts.listingsObservedAt ?? pageTime;
+            const at = listingsAt && listingsAt.getTime() * 1000;
+            const equipmentAt = opts.observedAt ?? pageTime;
+            if (
+                batch &&
+                (batch.pages >= batchPages ||
+                    batch.bytes + equipmentBatch!.bytes >= BATCH_BYTES ||
+                    (at !== undefined && hourStart(at) !== batch.hour) ||
+                    (equipmentAt !== undefined &&
+                        equipmentHour(equipmentAt) !== equipmentBatch!.hour))
+            )
+                await commit();
+            if (!batch && i > 0 && !process.env.PS_CHECKPOINT_THRESHOLD) {
+                // Release the committed batch's indexes before loading another. On a large
+                // database each checkpoint rewrites gigabytes of index, so with memory to spare
+                // PS_CHECKPOINT_THRESHOLD leaves checkpoints to DuckDB once the WAL reaches it.
+                await conn.run("CHECKPOINT");
+            }
+            const requestCursor = captured ? (captured.cursor ?? undefined) : cursor;
+            const page =
+                captured?.page ??
+                (await client.public.stashTabs(
+                    requestCursor ? { realm: REALM, id: requestCursor } : { realm: REALM },
+                ));
+            const capturedAt = captured?.capturedAt ?? Date.now();
+            // Classified on other threads while this page's listings and sales are written.
+            const classified =
+                pool && captured
+                    ? pool
+                          .classify(captured.pageJson, opts.league ?? null)
+                          .catch((error: unknown) => {
+                              console.error(
+                                  "Page classification threads failed; classifying here.",
+                                  error,
+                              );
+                              return undefined;
+                          })
+                    : undefined;
+            // Written before processing, so a failure refetches the page; replays may see it twice.
+            if (opts.rawArchiveDir)
+                await appendRawPage(opts.rawArchiveDir, {
+                    capturedAt,
+                    cursor: requestCursor,
+                    page,
+                });
+            // A page read from the raw archive already has its copy there; see `recordRawPage`.
+            const rawLocator = opts.spool && rawPageLocator(opts.spool.position);
+            const captureId = rawLocator
+                ? null
+                : await archivePage(
+                      conn,
+                      page,
+                      {
+                          realm,
+                          league: opts.league ?? "all",
+                          cursor: requestCursor,
+                          capturedAt,
+                      },
+                      accepts,
+                  );
+
+            if (!batch) {
+                batchStart = opts.spool?.position;
+                await conn.run("BEGIN TRANSACTION");
+                inTransaction = true;
+            }
+            const [clock] = await queryAll<{ millis: number; micros: number }>(
+                conn,
+                "SELECT epoch_ms(current_timestamp) AS millis, epoch_us(current_timestamp)::DOUBLE AS micros",
+            );
+            // Without a capture time, listings are seen at the transaction's start, as SQL's
+            // `current_timestamp` would have them.
+            const listingsUs = at ?? Number(clock!.micros);
+            batch ??= await ListingBatch.open(conn, state, hourStart(listingsUs));
+            const observedAt = equipmentAt ?? new Date(Number(clock!.millis));
+            equipmentBatch ??= new EquipmentBatch(equipmentRows, equipmentHour(observedAt));
             const changes = page.stashes.filter(
                 (change) => !change.public || !opts.league || change.league === opts.league,
             );
@@ -499,11 +459,10 @@ export async function ingestPs(
                     result.leagues.set(lg, acc);
                 }
             }
-            const r = await applyStashChanges(conn, changes, opts.listingsObservedAt ?? pageTime);
+            const r = batch.applyPage(changes, listingsUs);
             const prepared = await classified;
             if (prepared) primeClassifications(equipment, prepared);
-            result.equipmentObserved += await captureEquipmentPage(
-                conn,
+            result.equipmentObserved += equipmentBatch.applyPage(
                 changes,
                 equipment,
                 observedAt,
@@ -544,37 +503,50 @@ export async function ingestPs(
                     locator: rawLocator,
                     revision: equipment.manifest.revision,
                 });
-        });
-        if (fixtures.length) await opts.equipmentDiagnostics?.flush(fixtures);
-        opts.spool?.advance();
-        lastCapturedAt = capturedAt;
+            opts.spool?.advance();
+            lastCapturedAt = capturedAt;
 
-        cursor = page.next_change_id;
-        result.pages++;
-        result.finalCursor = cursor;
-        await opts.onProgress?.(result);
+            cursor = page.next_change_id;
+            result.pages++;
+            result.finalCursor = cursor;
+            await opts.onProgress?.(result);
 
-        console.log(
-            `page ${i + 1}/${opts.pages}: stashes=${page.stashes.length} ` +
-                `ins=${result.inserted} upd=${result.updated} rem=${result.removed} ` +
-                `equipment=${result.equipmentObserved} ` +
-                `next=${cursor.slice(0, 12)}…`,
-        );
+            console.log(
+                `page ${i + 1}/${opts.pages}: stashes=${page.stashes.length} ` +
+                    `ins=${result.inserted} upd=${result.updated} rem=${result.removed} ` +
+                    `equipment=${result.equipmentObserved} ` +
+                    `next=${cursor.slice(0, 12)}…`,
+            );
 
-        if (requestCursor !== undefined) {
-            const bytes = captured?.bytes ?? Buffer.byteLength(JSON.stringify(page));
-            if (bytes < HEAD_PAGE_BYTES) streamHeadAt = capturedAt;
+            if (requestCursor !== undefined) {
+                const bytes = captured?.bytes ?? Buffer.byteLength(JSON.stringify(page));
+                if (bytes < HEAD_PAGE_BYTES) streamHeadAt = capturedAt;
+            }
+
+            // Caught up: API echoed the cursor we sent. No new pages exist;
+            // refetching would burn rate-limit budget for identical content.
+            if (requestCursor !== undefined && page.next_change_id === requestCursor) {
+                result.caughtUp = true;
+                // More archived pages may follow; capture has already waited before fetching them.
+                if (opts.spool) continue;
+                console.log("psapi: caught up; stopping early");
+                break;
+            }
         }
-
-        // Caught up: API echoed the cursor we sent. No new pages exist;
-        // refetching would burn rate-limit budget for identical content.
-        if (requestCursor !== undefined && page.next_change_id === requestCursor) {
-            result.caughtUp = true;
-            // More archived pages may follow; capture has already waited before fetching them.
-            if (opts.spool) continue;
-            console.log("psapi: caught up; stopping early");
-            break;
+        await commit();
+    } catch (error) {
+        if (inTransaction) {
+            // The state already holds the batch's changes, and the reader is past its pages.
+            invalidateListingState(conn);
+            invalidateEquipmentState(conn);
+            if (opts.spool && batchStart) await opts.spool.rewind(batchStart);
+            try {
+                await conn.run("ROLLBACK");
+            } catch (rollbackError) {
+                throw new TransactionRollbackError(error, rollbackError);
+            }
         }
+        throw error;
     }
 
     // Sales follow the capture clock, so a database that fell behind judges them as if it had not.

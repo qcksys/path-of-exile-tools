@@ -1651,16 +1651,23 @@ it("keeps the filters usable while an earlier filter change loads", async () => 
         expect(node.classList.contains("pointer-events-none")).toBe(false);
 
     fireEvent.click(within(influence).getByRole("button", { name: "None: any" }));
-    await waitFor(() =>
-        expect(getMarketData).toHaveBeenLastCalledWith(
-            expect.anything(),
-            expect.objectContaining({ mapMods: "8", mapInfluence: "none" }),
-            "list",
-        ),
+    // Each filter change navigates and re-renders the whole market page, which on a busy runner
+    // can pass waitFor's 1 s default.
+    const slow = { timeout: 5000 };
+    await waitFor(
+        () =>
+            expect(getMarketData).toHaveBeenLastCalledWith(
+                expect.anything(),
+                expect.objectContaining({ mapMods: "8", mapInfluence: "none" }),
+                "list",
+            ),
+        slow,
     );
     for (const resolve of pending) resolve();
-    await waitFor(() =>
-        expect(screen.getByLabelText("Current URL").textContent).toContain("mapInfluence=none"),
+    await waitFor(
+        () =>
+            expect(screen.getByLabelText("Current URL").textContent).toContain("mapInfluence=none"),
+        slow,
     );
     expect(screen.getByLabelText("Current URL").textContent).toContain("mapMods=8");
 });

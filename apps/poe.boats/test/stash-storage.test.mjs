@@ -47,7 +47,7 @@ it("bootstraps hourly observations from an existing database once", async () => 
 it("prunes old delivered observations, and unidentified maps, while retaining pending, unmapped and recent ones", async () => {
     await seedListing();
     await db.conn.run(`INSERT INTO ps_listing_hour
-        SELECT * EXCLUDE (removed_at, raw_item, content_digest),
+        SELECT * EXCLUDE (removed_at, raw_item, content_digest, listing_id),
                epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
         FROM ps_listing`);
     await db.conn.run(`INSERT INTO ps_listing_hour

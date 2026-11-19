@@ -69,6 +69,9 @@ ALTER TABLE ps_sale ADD COLUMN IF NOT EXISTS tab VARCHAR;
 -- Added after the hour and sale tables copied ps_listing's columns, so neither has it.
 -- NULL (rows written before it) never matches, so those rows are rewritten once.
 ALTER TABLE ps_listing ADD COLUMN IF NOT EXISTS content_digest VARCHAR;
+-- The worker's own row identity (see listing-state.ts): DuckDB renumbers row IDs as it vacuums.
+-- Added after the hour and sale tables copied ps_listing's columns, so neither has it.
+ALTER TABLE ps_listing ADD COLUMN IF NOT EXISTS listing_id BIGINT;
 
 CREATE TABLE IF NOT EXISTS pipeline_health (
     id INTEGER PRIMARY KEY, last_poll_at TIMESTAMP NOT NULL, caught_up BOOLEAN NOT NULL
@@ -100,6 +103,8 @@ DROP INDEX IF EXISTS ps_equipment_hour_pk;
 DROP INDEX IF EXISTS ps_equipment_hour_time;
 -- After ps_equipment_hour copied its columns; see ps_listing.content_digest.
 ALTER TABLE ps_equipment_listing ADD COLUMN IF NOT EXISTS content_digest VARCHAR;
+-- The worker's own row identity (see equipment-state.ts), as ps_listing.listing_id.
+ALTER TABLE ps_equipment_listing ADD COLUMN IF NOT EXISTS equipment_id BIGINT;
 CREATE TABLE IF NOT EXISTS ps_equipment_cohort_hour (
     revision VARCHAR NOT NULL, league VARCHAR NOT NULL, hour BIGINT NOT NULL,
     cohort_id VARCHAR NOT NULL, changed_at TIMESTAMP NOT NULL,

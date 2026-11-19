@@ -39,7 +39,7 @@ async function listing(item: string, hour: number, removed: number | null) {
     );
     await db.conn.run(
         `INSERT INTO ps_listing_hour BY NAME
-        SELECT * EXCLUDE (removed_at, raw_item, content_digest), $2 AS observed_hour
+        SELECT * EXCLUDE (removed_at, raw_item, content_digest, listing_id), $2 AS observed_hour
         FROM ps_listing WHERE item_id = $1`,
         [item, hour],
     );

@@ -12,6 +12,12 @@ import {
 import { rollupEquipment } from "#src/ps/equipment-rollup.ts";
 import { ingestPs } from "#src/ps/ingest.ts";
 import {
+    invalidateEquipmentState,
+    invalidateListingState,
+    reconcileEquipmentState,
+    reconcileListingState,
+} from "#src/ps/listing-state-cache.ts";
+import {
     maintainRawArchive,
     type RawArchiveOptions,
     type RawPageReader,
@@ -78,6 +84,12 @@ async function exchangeCapturedBeforeHour(conn: DuckDBConnection) {
         Number.isFinite(cursor) ? cursor : 0,
         stored?.hour === null || stored?.hour === undefined ? 0 : Number(stored.hour) + 3600,
     );
+}
+
+/** The worker's in-memory rows forget removed rows archiving moved out of their tables. */
+async function reconcileArchived(conn: DuckDBConnection, rows: Record<string, number>) {
+    if (rows.ps_listing) await reconcileListingState(conn);
+    if (rows.ps_equipment_listing) await reconcileEquipmentState(conn);
 }
 
 export async function flushRollups(
@@ -354,13 +366,19 @@ export async function runPipeline(
             streamHour: stashBeforeHour,
             maxHours: ARCHIVE_HOURS_PER_CYCLE,
         }).then(
-            (result) => {
+            async (result) => {
                 if (result.hours.length)
                     console.log(
                         `archived ${result.hours.join(", ")}: ${JSON.stringify(result.rows)}`,
                     );
+                await reconcileArchived(conn, result.rows);
             },
-            (error: unknown) => failStage("delivery", "Archive", error),
+            async (error: unknown) => {
+                // Hours archived before the failure are gone; read the tables again.
+                invalidateListingState(conn);
+                invalidateEquipmentState(conn);
+                await failStage("delivery", "Archive", error);
+            },
         );
     } else if (
         opts.archive &&
@@ -368,14 +386,19 @@ export async function runPipeline(
     ) {
         archiveCheckedAt = Date.now();
         await archiveOldData(conn, opts.archive).then(
-            (result) => {
+            async (result) => {
                 archiveBacklog = result.days.length > 0;
                 if (archiveBacklog)
                     console.log(
                         `archived ${result.days.join(", ")}: ${JSON.stringify(result.rows)}`,
                     );
+                await reconcileArchived(conn, result.rows);
             },
-            (error: unknown) => failStage("delivery", "Archive", error),
+            async (error: unknown) => {
+                invalidateListingState(conn);
+                invalidateEquipmentState(conn);
+                await failStage("delivery", "Archive", error);
+            },
         );
     }
     const rawArchives = [
