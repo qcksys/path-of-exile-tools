@@ -236362,6 +236362,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "infected_map",
+        "weight": 0
+      },
+      {
         "tag": "uber_tier_map",
         "weight": 0
       },
@@ -236427,6 +236431,10 @@
     "required_level": 68,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "infected_map",
+        "weight": 0
+      },
       {
         "tag": "uber_tier_map",
         "weight": 0
@@ -236494,6 +236502,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "infected_map",
+        "weight": 0
+      },
+      {
         "tag": "uber_tier_map",
         "weight": 0
       },
@@ -236559,6 +236571,10 @@
     "required_level": 68,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "infected_map",
+        "weight": 0
+      },
       {
         "tag": "uber_tier_map",
         "weight": 0
@@ -236626,6 +236642,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "infected_map",
+        "weight": 0
+      },
+      {
         "tag": "uber_tier_map",
         "weight": 0
       },
@@ -236691,6 +236711,10 @@
     "required_level": 68,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "infected_map",
+        "weight": 0
+      },
       {
         "tag": "uber_tier_map",
         "weight": 0
@@ -236758,6 +236782,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "infected_map",
+        "weight": 0
+      },
+      {
         "tag": "uber_tier_map",
         "weight": 0
       },
@@ -236824,6 +236852,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "infected_map",
+        "weight": 0
+      },
+      {
         "tag": "uber_tier_map",
         "weight": 0
       },
@@ -236889,6 +236921,10 @@
     "required_level": 68,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "infected_map",
+        "weight": 0
+      },
       {
         "tag": "uber_tier_map",
         "weight": 0
@@ -625232,9 +625268,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625280,9 +625316,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625328,9 +625364,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625376,9 +625412,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625424,9 +625460,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625472,9 +625508,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625520,9 +625556,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625568,9 +625604,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625616,9 +625652,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625664,9 +625700,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625712,9 +625748,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625760,9 +625796,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625808,9 +625844,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625856,9 +625892,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625904,9 +625940,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -625953,9 +625989,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -626012,9 +626048,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -626078,9 +626114,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -626147,9 +626183,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -626211,9 +626247,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -626274,9 +626310,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -626332,9 +626368,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -626380,9 +626416,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -626428,9 +626464,9 @@
     ],
     "stats": [
       {
-        "min": 50,
-        "max": 50,
-        "id": "maximum_life_+%"
+        "min": 30,
+        "max": 30,
+        "id": "monster_difficulty_tankiness_+%"
       },
       {
         "min": 0,
@@ -735086,6 +735122,32 @@
     "type": "SpellsHinderOnHitChance",
     "gold_value": null
   },
+  "BetrayalUpgradeMonsterRarity": {
+    "adds_tags": [],
+    "domain": "monster",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "BetrayalUpgradeMonsterRarity"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "min": 2000,
+        "max": 2000,
+        "id": "monster_dropped_item_rarity_+%"
+      }
+    ],
+    "text": null,
+    "type": "BetrayalUpgradeMonsterRarity",
+    "gold_value": null
+  },
   "CustomLeagueMonsterDamage1": {
     "adds_tags": [],
     "domain": "area",
@@ -741311,8 +741373,8 @@
         "id": "monster_dropped_item_quantity_+%"
       },
       {
-        "min": 0,
-        "max": 0,
+        "min": 1500,
+        "max": 1500,
         "id": "monster_dropped_item_rarity_+%"
       },
       {
@@ -741360,8 +741422,8 @@
         "id": "monster_dropped_item_quantity_+%"
       },
       {
-        "min": 0,
-        "max": 0,
+        "min": 3000,
+        "max": 3000,
         "id": "monster_dropped_item_rarity_+%"
       },
       {
@@ -741409,8 +741471,8 @@
         "id": "monster_dropped_item_quantity_+%"
       },
       {
-        "min": 0,
-        "max": 0,
+        "min": 4500,
+        "max": 4500,
         "id": "monster_dropped_item_rarity_+%"
       },
       {
@@ -1014809,7 +1014871,7 @@
       {
         "min": 1000,
         "max": 1000,
-        "id": "monster_dropped_item_rarity_+%"
+        "id": "from_league_item_rarity_+%_permyriad"
       }
     ],
     "text": null,
@@ -1014835,7 +1014897,7 @@
       {
         "min": 1400,
         "max": 1400,
-        "id": "monster_dropped_item_rarity_+%"
+        "id": "from_league_item_rarity_+%_permyriad"
       }
     ],
     "text": null,
@@ -1014861,7 +1014923,7 @@
       {
         "min": 1800,
         "max": 1800,
-        "id": "monster_dropped_item_rarity_+%"
+        "id": "from_league_item_rarity_+%_permyriad"
       }
     ],
     "text": null,
@@ -1014887,7 +1014949,7 @@
       {
         "min": 2200,
         "max": 2200,
-        "id": "monster_dropped_item_rarity_+%"
+        "id": "from_league_item_rarity_+%_permyriad"
       }
     ],
     "text": null,
@@ -1014901,7 +1014963,7 @@
     "generation_weights": [],
     "grants_effects": [],
     "groups": [
-      "MonsterDroppedItemQuantity"
+      "Nothing"
     ],
     "implicit_tags": [],
     "is_essence_only": false,
@@ -1014913,11 +1014975,11 @@
       {
         "min": 500,
         "max": 500,
-        "id": "monster_dropped_item_quantity_+%"
+        "id": "from_league_item_quantity_+%_permyriad"
       }
     ],
     "text": null,
-    "type": "MonsterDroppedItemQuantityIncrease",
+    "type": "UltimatumMonsterQuantity",
     "gold_value": null
   },
   "UltimatumMonsterIncreasedQuantityUpside2": {
@@ -1014927,7 +1014989,7 @@
     "generation_weights": [],
     "grants_effects": [],
     "groups": [
-      "MonsterDroppedItemQuantity"
+      "Nothing"
     ],
     "implicit_tags": [],
     "is_essence_only": false,
@@ -1014939,11 +1015001,11 @@
       {
         "min": 800,
         "max": 800,
-        "id": "monster_dropped_item_quantity_+%"
+        "id": "from_league_item_quantity_+%_permyriad"
       }
     ],
     "text": null,
-    "type": "MonsterDroppedItemQuantityIncrease",
+    "type": "UltimatumMonsterQuantity",
     "gold_value": null
   },
   "UltimatumMonsterIncreasedQuantityUpside3": {
@@ -1014953,7 +1015015,7 @@
     "generation_weights": [],
     "grants_effects": [],
     "groups": [
-      "MonsterDroppedItemQuantity"
+      "Nothing"
     ],
     "implicit_tags": [],
     "is_essence_only": false,
@@ -1014965,11 +1015027,11 @@
       {
         "min": 1100,
         "max": 1100,
-        "id": "monster_dropped_item_quantity_+%"
+        "id": "from_league_item_quantity_+%_permyriad"
       }
     ],
     "text": null,
-    "type": "MonsterDroppedItemQuantityIncrease",
+    "type": "UltimatumMonsterQuantity",
     "gold_value": null
   },
   "UltimatumMonsterIncreasedQuantityUpside4": {
@@ -1014979,7 +1015041,7 @@
     "generation_weights": [],
     "grants_effects": [],
     "groups": [
-      "MonsterDroppedItemQuantity"
+      "Nothing"
     ],
     "implicit_tags": [],
     "is_essence_only": false,
@@ -1014991,11 +1015053,11 @@
       {
         "min": 1400,
         "max": 1400,
-        "id": "monster_dropped_item_quantity_+%"
+        "id": "from_league_item_quantity_+%_permyriad"
       }
     ],
     "text": null,
-    "type": "MonsterDroppedItemQuantityIncrease",
+    "type": "UltimatumMonsterQuantity",
     "gold_value": null
   },
   "UltimatumMonsterDivinationCardIncreaseUpside1": {
@@ -1021265,6 +1021327,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1021343,6 +1021409,10 @@
     "required_level": 1,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1021423,6 +1021493,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1021502,6 +1021576,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1021580,6 +1021658,10 @@
     "required_level": 1,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_common_remnant_logbook",
         "weight": 0
@@ -1021664,6 +1021746,10 @@
     "maximum_level": 44,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1021742,6 +1021828,10 @@
     "required_level": 45,
     "maximum_level": 67,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1021822,6 +1021912,10 @@
     "maximum_level": 77,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1021900,6 +1021994,10 @@
     "required_level": 78,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1021980,6 +1022078,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_remnant_special",
         "weight": 1000
       },
@@ -1022015,6 +1022117,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_remnant_special",
         "weight": 1000
       },
@@ -1022049,6 +1022155,10 @@
     "required_level": 68,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_remnant_special",
         "weight": 1000
@@ -1022278,6 +1022388,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1022357,6 +1022471,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1022435,6 +1022553,10 @@
     "required_level": 24,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_common_remnant_logbook",
         "weight": 0
@@ -1022550,6 +1022672,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "default",
         "weight": 1000
       }
@@ -1022580,6 +1022706,10 @@
     "required_level": 1,
     "maximum_level": 44,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
       {
         "tag": "default",
         "weight": 1000
@@ -1022612,6 +1022742,10 @@
     "maximum_level": 67,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "default",
         "weight": 1000
       }
@@ -1022643,6 +1022777,10 @@
     "maximum_level": 77,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "default",
         "weight": 1000
       }
@@ -1022673,6 +1022811,10 @@
     "required_level": 78,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
       {
         "tag": "default",
         "weight": 1000
@@ -1022767,6 +1022909,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "default",
         "weight": 800
       }
@@ -1022797,6 +1022943,10 @@
     "required_level": 1,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
       {
         "tag": "default",
         "weight": 800
@@ -1023077,6 +1023227,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1023155,6 +1023309,10 @@
     "required_level": 5,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1023235,6 +1023393,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1023313,6 +1023475,10 @@
     "required_level": 1,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1023393,6 +1023559,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1023471,6 +1023641,10 @@
     "required_level": 1,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1023551,6 +1023725,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1023629,6 +1023807,10 @@
     "required_level": 5,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1023709,6 +1023891,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1023787,6 +1023973,10 @@
     "required_level": 13,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1023867,6 +1024057,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1023945,6 +1024139,10 @@
     "required_level": 10,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1024025,6 +1024223,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1024103,6 +1024305,10 @@
     "required_level": 68,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1024183,6 +1024389,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1024261,6 +1024471,10 @@
     "required_level": 45,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1024341,6 +1024555,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1024419,6 +1024637,10 @@
     "required_level": 45,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1024499,6 +1024721,10 @@
     "maximum_level": 100,
     "spawn_weights": [
       {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
+      {
         "tag": "expedition_templar_remnant",
         "weight": 0
       },
@@ -1024577,6 +1024803,10 @@
     "required_level": 81,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1024687,6 +1024917,10 @@
     "required_level": 5,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_monster_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1024983,6 +1025217,10 @@
     "required_level": 5,
     "maximum_level": 100,
     "spawn_weights": [
+      {
+        "tag": "expedition_remnant_no_chest_upside",
+        "weight": 0
+      },
       {
         "tag": "expedition_templar_remnant",
         "weight": 0
@@ -1025524,7 +1025762,7 @@
         "id": "map_expedition_extra_relic_suffix_chance_%"
       }
     ],
-    "text": "Remnants have (10-40)% chance to have an additional Suffix Modifier",
+    "text": "+(10-40)% [SurpassChance|Surpassing Chance] for Remnants to have an additional Suffix Modifier",
     "type": "MapExpeditionExtraRelicSuffixChance",
     "gold_value": null
   },
@@ -1290683,7 +1290921,7 @@
         "id": "map_expedition_extra_relic_suffix_chance_%"
       }
     ],
-    "text": "Remnants have (15-25)% chance to have an additional Suffix Modifier",
+    "text": "+(15-25)% [SurpassChance|Surpassing Chance] for Remnants to have an additional Suffix Modifier",
     "type": "EagonMissionMapExpeditionExtraRelicSuffixChance",
     "gold_value": null
   },
@@ -1516714,7 +1516952,7 @@
         "id": "map_expedition_extra_relic_suffix_chance_%"
       }
     ],
-    "text": "Remnants in your Maps have (25-35)% chance to have an additional Suffix Modifier",
+    "text": "+(25-35)% [SurpassChance|Surpassing Chance] for Remnants in your Maps to have an additional Suffix Modifier",
     "type": "MapRelicExpeditionExtraRelicSuffixChance",
     "gold_value": null
   },
@@ -1539495,7 +1539733,8 @@
     "implicit_tags": [
       "power_charge",
       "frenzy_charge",
-      "endurance_charge"
+      "endurance_charge",
+      "unveiled_mod"
     ],
     "is_essence_only": false,
     "name": "of Catarina",
@@ -1539533,6 +1539772,7 @@
     ],
     "implicit_tags": [
       "resource",
+      "unveiled_mod",
       "life"
     ],
     "is_essence_only": false,
@@ -1539569,7 +1539809,9 @@
     "groups": [
       "VeiledJewelElusiveEffect"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "of Catarina",
     "required_level": 68,
@@ -1539606,6 +1539848,7 @@
     ],
     "implicit_tags": [
       "resource",
+      "unveiled_mod",
       "life"
     ],
     "is_essence_only": false,
@@ -1539642,7 +1539885,9 @@
     "groups": [
       "VeiledJewelBlindAvoid"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "of Catarina",
     "required_level": 68,
@@ -1539678,7 +1539923,8 @@
       "VeiledJewelStunAndBlock"
     ],
     "implicit_tags": [
-      "block"
+      "block",
+      "unveiled_mod"
     ],
     "is_essence_only": false,
     "name": "of Catarina",
@@ -1539714,7 +1539960,9 @@
     "groups": [
       "VeiledJewelEvasionBody"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Catarina's",
     "required_level": 68,
@@ -1539749,7 +1539997,9 @@
     "groups": [
       "VeiledJewelMultiTotems"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Catarina's",
     "required_level": 68,
@@ -1539784,7 +1540034,9 @@
     "groups": [
       "VeiledJewelStrikeRange"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Catarina's",
     "required_level": 68,
@@ -1539819,7 +1540071,9 @@
     "groups": [
       "VeiledJewelLinkSkills"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Catarina's",
     "required_level": 68,
@@ -1539855,6 +1540109,7 @@
       "VeiledJewelFireConversion"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "physical",
       "elemental",
       "fire"
@@ -1539893,7 +1540148,9 @@
     "groups": [
       "VeiledJewelReflectedDamage"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "of Catarina",
     "required_level": 68,
@@ -1539929,6 +1540186,7 @@
       "VeiledJewelCritMultiIfNotCritRecently"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "critical"
     ],
     "is_essence_only": false,
@@ -1539965,7 +1540223,9 @@
     "groups": [
       "VeiledJewelLifeOnBlock"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "of Catarina",
     "required_level": 68,
@@ -1540000,7 +1540260,9 @@
     "groups": [
       "VeiledJewelAOEPerRepeat"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Catarina's",
     "required_level": 68,
@@ -1540035,7 +1540297,9 @@
     "groups": [
       "VeiledJewelTrapTriggerRadius"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "of Catarina",
     "required_level": 68,
@@ -1540070,7 +1540334,9 @@
     "groups": [
       "VeiledJewelCruelty"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Catarina's",
     "required_level": 68,
@@ -1540107,6 +1540373,7 @@
     ],
     "implicit_tags": [
       "resource",
+      "unveiled_mod",
       "life"
     ],
     "is_essence_only": false,
@@ -1540143,7 +1540410,9 @@
     "groups": [
       "VeiledJewelConvocation"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "of Catarina",
     "required_level": 68,
@@ -1540179,6 +1540448,7 @@
       "VeiledJewelArmourBootsGloves"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "defences"
     ],
     "is_essence_only": false,
@@ -1540215,7 +1540485,9 @@
     "groups": [
       "VeiledJewelTinctureStacks"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Catarina's",
     "required_level": 68,
@@ -1540251,6 +1540523,7 @@
       "VeiledJewelSelfCritMulti"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "critical"
     ],
     "is_essence_only": false,
@@ -1540288,6 +1540561,7 @@
       "VeiledJewelAttackSpeedCloseRange"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "attack"
     ],
     "is_essence_only": false,
@@ -1540325,6 +1540599,7 @@
       "VeiledJewelAttributes"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "attribute"
     ],
     "is_essence_only": false,
@@ -1540361,7 +1540636,9 @@
     "groups": [
       "VeiledJewelMirageArcher"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Catarina's",
     "required_level": 68,
@@ -1540396,7 +1540673,9 @@
     "groups": [
       "VeiledJewelBrandRecall"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "of Catarina",
     "required_level": 68,
@@ -1540432,6 +1540711,7 @@
       "VeiledJewelOffhandCrit"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "critical"
     ],
     "is_essence_only": false,
@@ -1540469,6 +1540749,7 @@
       "VeiledJewelMoveSpeedIfNotHit"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "speed"
     ],
     "is_essence_only": false,
@@ -1540506,6 +1540787,7 @@
       "VeiledJewelDoubleDamageAttackTime"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "attack"
     ],
     "is_essence_only": false,
@@ -1540542,7 +1540824,9 @@
     "groups": [
       "VeiledJewelProjDamagePerChain"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Catarina's",
     "required_level": 68,
@@ -1540577,7 +1540861,9 @@
     "groups": [
       "CooldownRecovery"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Zorath's",
     "required_level": 68,
@@ -1540613,6 +1540899,7 @@
       "BuffEnchantment"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "elemental",
       "fire",
       "cold",
@@ -1540655,6 +1540942,7 @@
     ],
     "implicit_tags": [
       "resource",
+      "unveiled_mod",
       "mana"
     ],
     "is_essence_only": false,
@@ -1540692,6 +1540980,7 @@
       "MinionPhysicalConvertToFire"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "elemental",
       "fire",
       "minion"
@@ -1540731,6 +1541020,7 @@
       "MinionPhysicalConvertToCold"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "elemental",
       "cold",
       "minion"
@@ -1540770,6 +1541060,7 @@
       "MinionPhysicalConvertToLightning"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "elemental",
       "lightning",
       "minion"
@@ -1540809,6 +1541100,7 @@
       "ImpaleEffect"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "physical"
     ],
     "is_essence_only": false,
@@ -1540850,6 +1541142,7 @@
       "ImpaleEffect"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "physical"
     ],
     "is_essence_only": false,
@@ -1540891,6 +1541184,7 @@
       "BuffEnchantment"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "caster",
       "curse"
     ],
@@ -1540929,6 +1541223,7 @@
       "BuffEnchantment"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "critical"
     ],
     "is_essence_only": false,
@@ -1540967,6 +1541262,7 @@
     ],
     "implicit_tags": [
       "resource",
+      "unveiled_mod",
       "life"
     ],
     "is_essence_only": false,
@@ -1541003,7 +1541299,9 @@
     "groups": [
       "BuffEnchantment"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "of Zorath",
     "required_level": 68,
@@ -1541039,6 +1541337,7 @@
       "BuffEnchantment"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "damage"
     ],
     "is_essence_only": false,
@@ -1541076,6 +1541375,7 @@
       "BuffEnchantment"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "damage"
     ],
     "is_essence_only": false,
@@ -1541113,6 +1541413,7 @@
       "MaximumFireResist"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "elemental",
       "fire",
       "resistance"
@@ -1541152,6 +1541453,7 @@
       "MaximumColdResist"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "elemental",
       "cold",
       "resistance"
@@ -1541191,6 +1541493,7 @@
       "MaximumLightningResistance"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "elemental",
       "lightning",
       "resistance"
@@ -1541229,7 +1541532,9 @@
     "groups": [
       "RageOnHitAxeSword"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Zorath's",
     "required_level": 68,
@@ -1541265,6 +1541570,7 @@
       "MeleeTypeSpeed"
     ],
     "implicit_tags": [
+      "unveiled_mod",
       "attack",
       "speed"
     ],
@@ -1541302,7 +1541608,9 @@
     "groups": [
       "ClawDamageLowLife"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Zorath's",
     "required_level": 68,
@@ -1541337,7 +1541645,9 @@
     "groups": [
       "BowPoisonOnCritChance"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "of Zorath",
     "required_level": 68,
@@ -1541372,7 +1541682,9 @@
     "groups": [
       "DaggerDamageAsSpellDamage"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "of Zorath",
     "required_level": 68,
@@ -1541407,7 +1541719,9 @@
     "groups": [
       "WandDamageAsSpellDamage"
     ],
-    "implicit_tags": [],
+    "implicit_tags": [
+      "unveiled_mod"
+    ],
     "is_essence_only": false,
     "name": "Zorath's",
     "required_level": 68,
@@ -1602364,7 +1602678,7 @@
     ],
     "implicit_tags": [],
     "is_essence_only": false,
-    "name": "Kurgal's Grasp",
+    "name": "Kurgal's Gasp",
     "required_level": 1,
     "maximum_level": 100,
     "spawn_weights": [
@@ -1603366,6 +1603680,32 @@
     "type": "RandomJuiceModRitualBloodShrines",
     "gold_value": null
   },
+  "RandomJuiceModRitualFavours": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RandomJuiceModRitualFavours"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "min": 150,
+        "max": 150,
+        "id": "map_ritual_reward_count_+%"
+      }
+    ],
+    "text": "Rituals offer 150% increased Favour",
+    "type": "RandomJuiceModRitualFavours",
+    "gold_value": null
+  },
   "RandomJuiceModBetrayalCatarina": {
     "adds_tags": [],
     "domain": "area",
@@ -1603520,6 +1603860,32 @@
     ],
     "text": null,
     "type": "RandomJuiceModBetrayalChestClusters",
+    "gold_value": null
+  },
+  "RandomJuiceModBetrayalRareBodyguards": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RandomJuiceModBetrayalRareBodyguards"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "min": 2,
+        "max": 2,
+        "id": "map_betrayal_initial_targets_have_x_additional_rare_bodyguards"
+      }
+    ],
+    "text": null,
+    "type": "RandomJuiceModBetrayalRareBodyguards",
     "gold_value": null
   },
   "RandomJuiceModAbyssConsort": {
@@ -1603858,6 +1604224,32 @@
     ],
     "text": null,
     "type": "RandomJuiceModIncursionContainsFleshMerchant",
+    "gold_value": null
+  },
+  "RandomJuiceModIncursionRareBodyguards": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RandomJuiceModIncursionRareBodyguards"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_incursion_architect_rare_bodyguard_per_previous_incursion"
+      }
+    ],
+    "text": null,
+    "type": "RandomJuiceModIncursionRareBodyguards",
     "gold_value": null
   },
   "RandomJuiceModLegionAdditionalLegion": {
@@ -1604255,6 +1604647,32 @@
     "type": "RandomJuiceModBestiaryYellowBeastsReplacedWithAzmeriHulks",
     "gold_value": null
   },
+  "RandomJuiceModBestiaryAdditionalModifier": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RandomJuiceModBestiaryAdditionalModifier"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_bestiary_beasts_X_additional_modifiers"
+      }
+    ],
+    "text": null,
+    "type": "RandomJuiceModBestiaryAdditionalModifier",
+    "gold_value": null
+  },
   "RandomJuiceModBreachWombgiftRareDrops": {
     "adds_tags": [],
     "domain": "area",
@@ -1604461,6 +1604879,58 @@
     ],
     "text": null,
     "type": "RandomJuiceModBreachEmpoweredAilithSkills",
+    "gold_value": null
+  },
+  "RandomJuiceModBreachMagicMods": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RandomJuiceModBreachMagicMods"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_breach_magic_monsters_num_additional_modifiers"
+      }
+    ],
+    "text": null,
+    "type": "RandomJuiceModBreachMagicMods",
+    "gold_value": null
+  },
+  "RandomJuiceModBreachDuplicateRares": {
+    "adds_tags": [],
+    "domain": "area",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "RandomJuiceModBreachDuplicateRares"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "map_breach_duplicate_final_rare_monsters"
+      }
+    ],
+    "text": null,
+    "type": "RandomJuiceModBreachDuplicateRares",
     "gold_value": null
   },
   "VisceraModFireFuryLow": {
@@ -1606033,8 +1606503,8 @@
         "id": "damage_vs_enemies_on_low_life_+%"
       },
       {
-        "min": 1,
-        "max": 1,
+        "min": 0,
+        "max": 0,
         "id": "kill_enemy_on_hit_if_under_10%_life"
       },
       {
@@ -1613360,7 +1613830,7 @@
         "id": "killing_blow_consumes_corpse_restore_%_mana"
       }
     ],
-    "text": "Killing Blows Consume corpses to Recover (3-4)% of Mana",
+    "text": "Killing Blows Consume corpses to Recover (3-4)% of Life\nKilling Blows Consume corpses to Recover (3-4)% of Mana",
     "type": "VisceraModHundredFootShadow",
     "gold_value": null
   },
@@ -1622481,7 +1622951,7 @@
   },
   "VisceraModShredderofGladiators2": {
     "adds_tags": [
-      "viscera_med"
+      "viscera_high"
     ],
     "domain": "item",
     "generation_type": "unique",
@@ -1622542,7 +1623012,7 @@
   },
   "VisceraModShreikerEihal2": {
     "adds_tags": [
-      "viscera_med"
+      "viscera_high"
     ],
     "domain": "item",
     "generation_type": "unique",
@@ -1623984,6 +1624454,32 @@
     "type": "AuguryMonsterModRewardWarstavesTransformCritical",
     "gold_value": null
   },
+  "AuguryMonsterModRewardAmuletTransformGem": {
+    "adds_tags": [],
+    "domain": "monster",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AuguryMonsterModRewardAmuletTransformGem"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "augury_monster_reward_amulets_drop_with_gem_mod"
+      }
+    ],
+    "text": null,
+    "type": "AuguryMonsterModRewardAmuletTransformGem",
+    "gold_value": null
+  },
   "AuguryMonsterModRewardAxesTransformPhysical": {
     "adds_tags": [],
     "domain": "monster",
@@ -1624346,6 +1624842,110 @@
     ],
     "text": null,
     "type": "AuguryMonsterModRewardQuiverTransformNoElemental",
+    "gold_value": null
+  },
+  "AuguryMonsterModRewardHelmetTransformLife": {
+    "adds_tags": [],
+    "domain": "monster",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AuguryMonsterModRewardHelmetTransformLife"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "augury_monster_reward_helmet_drop_with_life_mod"
+      }
+    ],
+    "text": null,
+    "type": "AuguryMonsterModRewardHelmetTransformLife",
+    "gold_value": null
+  },
+  "AuguryMonsterModRewardBodyTransformDefences": {
+    "adds_tags": [],
+    "domain": "monster",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AuguryMonsterModRewardBodyTransformDefences"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "augury_monster_reward_body_drop_with_defence_mod"
+      }
+    ],
+    "text": null,
+    "type": "AuguryMonsterModRewardBodyTransformDefences",
+    "gold_value": null
+  },
+  "AuguryMonsterModRewardGlovesTransformLife": {
+    "adds_tags": [],
+    "domain": "monster",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AuguryMonsterModRewardGlovesTransformLife"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "augury_monster_reward_gloves_drop_with_life_mod"
+      }
+    ],
+    "text": null,
+    "type": "AuguryMonsterModRewardGlovesTransformLife",
+    "gold_value": null
+  },
+  "AuguryMonsterModRewardShieldTransformDefences": {
+    "adds_tags": [],
+    "domain": "monster",
+    "generation_type": "unique",
+    "generation_weights": [],
+    "grants_effects": [],
+    "groups": [
+      "AuguryMonsterModRewardShieldTransformDefences"
+    ],
+    "implicit_tags": [],
+    "is_essence_only": false,
+    "name": "",
+    "required_level": 1,
+    "maximum_level": 100,
+    "spawn_weights": [],
+    "stats": [
+      {
+        "min": 1,
+        "max": 1,
+        "id": "augury_monster_reward_shield_drop_with_defence_mod"
+      }
+    ],
+    "text": null,
+    "type": "AuguryMonsterModRewardShieldTransformDefences",
     "gold_value": null
   },
   "HarvestImplicitSpawnsSacredFauna": {
