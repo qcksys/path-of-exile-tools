@@ -38,17 +38,36 @@ const EIGHT_MODS = [
     "Players have 40% less Cooldown Recovery Rate",
     "Map Boss is accompanied by a Synthesis Boss",
 ];
+// A 3.30 rare map's mods: one entry per line, league content and delirium as rare-only suffixes.
+const FOUR_MODS_330 = [
+    { description: "Players cannot inflict Exposure" },
+    { description: "Monsters have +1 to Maximum Frenzy Charges" },
+    { description: "Monsters gain a Frenzy Charge on Hit" },
+    {
+        description: "Area contains an [EvocatorKTash|Evocator of K'Tash]",
+        flags: { rareonly: true },
+    },
+    { description: "Area contains a [Mirage]", flags: { rareonly: true } },
+];
+const DELIRIOUS_SUFFIX = [
+    { description: "Players in Area are 37% Delirious", flags: { rareonly: true } },
+    {
+        description: "[DeliriumRewardType|Delirium Reward Type]: Currency",
+        flags: { rareonly: true },
+    },
+];
 
-// Synthetic API fixtures, not evidence of live asking prices.
+// Synthetic API fixtures, not evidence of live asking prices. `delirious` adds a 3.29 Delirium Orb
+// enchantment; since 3.30 the orb adds explicit mods instead (see DELIRIOUS_SUFFIX).
 function map(
     id: string,
     baseType: string,
     {
-        quantity,
+        atlasDrops,
         explicitMods = [],
         delirious,
         ...overrides
-    }: Partial<Item> & { quantity?: number; delirious?: number } = {},
+    }: Partial<Item> & { atlasDrops?: number; delirious?: number } = {},
 ): Item {
     return {
         id,
@@ -63,9 +82,16 @@ function map(
         identified: true,
         frameType: explicitMods.length ? 2 : 0,
         properties:
-            quantity === undefined
+            atlasDrops === undefined
                 ? []
-                : [{ name: "Item Quantity", values: [[`+${quantity}%`, 1]], displayMode: 0 }],
+                : [
+                      {
+                          name: "[AtlasDropScaling|Atlas Drops]",
+                          values: [[`+${atlasDrops}%`, 1]],
+                          displayMode: 0,
+                          type: 112,
+                      },
+                  ],
         explicitMods,
         ...(delirious
             ? {
@@ -109,23 +135,72 @@ describe("map capture", () => {
     it.each([
         [
             "an 8-mod tier 16 map",
-            map("a", "Map (Tier 16)", { explicitMods: EIGHT_MODS, quantity: 101, delirious: 40 }),
-            "8 mods · Quantity 100–119% · Delirium 40%",
+            map("a", "Map (Tier 16)", { explicitMods: EIGHT_MODS, atlasDrops: 101, delirious: 40 }),
+            "8 mods · Atlas Drops 100–119% · Delirium 40%",
         ],
         [
             "a 6-mod Nightmare map",
-            map("b", "Nightmare Map", { explicitMods: SIX_MODS, quantity: 84 }),
-            "1–6 mods · Quantity 80–99% · Delirium 0%",
+            map("b", "Nightmare Map", { explicitMods: SIX_MODS, atlasDrops: 84 }),
+            "1–6 mods · Atlas Drops 80–99% · Delirium 0%",
         ],
         [
             "a normal tier 16 map",
-            map("c", "Map (Tier 16)"),
-            "1–6 mods · Quantity 0–59% · Delirium 0%",
+            map("c", "Map (Tier 16)", { atlasDrops: 0 }),
+            "1–6 mods · Atlas Drops 0–39% · Delirium 0%",
         ],
         [
-            "an 8-mod tier 15 map, without a quantity band",
-            map("d", "Map (Tier 15)", { explicitMods: EIGHT_MODS, quantity: 140 }),
+            "an 8-mod tier 15 map, without an Atlas Drops band",
+            map("d", "Map (Tier 15)", { explicitMods: EIGHT_MODS, atlasDrops: 140 }),
             "8 mods · Delirium 0%",
+        ],
+        [
+            "a 3.30 tier 16 map with league content, by its API affix count",
+            map("i", "Map (Tier 16)", {
+                explicitMods: FOUR_MODS_330,
+                extended: { prefixes: 2, suffixes: 2 },
+                atlasDrops: 55,
+            }),
+            "1–6 mods · Atlas Drops 40–59% · Delirium 0% · Mirage · Evocator of K'Tash",
+        ],
+        [
+            "a corrupted 3.30 map with 7 affixes, though 6 lines",
+            map("j", "Map (Tier 16)", {
+                explicitMods: SIX_MODS.slice(0, 6),
+                extended: { prefixes: 4, suffixes: 3 },
+                corrupted: true,
+                atlasDrops: 97,
+            }),
+            "8 mods · Atlas Drops 80–99% · Delirium 0%",
+        ],
+        [
+            "a 3.30 map a Delirium Orb made 37% Delirious",
+            map("k", "Map (Tier 16)", {
+                explicitMods: [...FOUR_MODS_330.slice(0, 3), ...DELIRIOUS_SUFFIX],
+                extended: { prefixes: 1, suffixes: 2 },
+                atlasDrops: 40,
+            }),
+            "1–6 mods · Atlas Drops 40–59% · Delirium 40%",
+        ],
+        [
+            "a Conqueror's Citadel map that is also Memory influenced",
+            map("l", "Map (Tier 14)", {
+                explicitMods: FOUR_MODS_330,
+                extended: { prefixes: 2, suffixes: 2 },
+                implicitMods: [
+                    { description: "Map contains Baran's Citadel" },
+                    { description: "Area is Influenced by the Originator's Memories" },
+                ],
+            }),
+            "1–6 mods · Delirium 0% · Mirage · Evocator of K'Tash · Memory · Citadel",
+        ],
+        [
+            "an unidentified Conqueror's Citadel map",
+            map("m", "Map (Tier 14)", {
+                identified: false,
+                rarity: "Rare",
+                implicitMods: [{ description: "Map contains Drox's Citadel" }],
+            }),
+            "Unidentified · Delirium 0% · Citadel",
         ],
         [
             "an unidentified delirious tier 16 map",
@@ -144,10 +219,10 @@ describe("map capture", () => {
             "a Shaper influenced tier 16 map",
             map("h", "Map (Tier 16)", {
                 explicitMods: EIGHT_MODS,
-                quantity: 120,
+                atlasDrops: 120,
                 implicitMods: ["Area is influenced by The Shaper"],
             }),
-            "8 mods · Quantity 120–139% · Delirium 0% · Shaper",
+            "8 mods · Atlas Drops 120%+ · Delirium 0% · Shaper",
         ],
         [
             "an unidentified Memory Influenced map",
@@ -206,18 +281,25 @@ describe("map split in ingest", () => {
                         map("a", "Map (Tier 16)", {
                             name: "Damnation Carving",
                             explicitMods: EIGHT_MODS,
-                            quantity: 105,
+                            atlasDrops: 105,
                             corrupted: true,
                             note: "~price 3 divine",
                         }),
                         map("b", "Map (Tier 16)", {
                             name: "Hate Carving",
                             explicitMods: EIGHT_MODS,
-                            quantity: 112,
+                            atlasDrops: 112,
                             corrupted: true,
                             note: "~price 5 divine",
                         }),
-                        map("c", "Map (Tier 16)", { note: "~price 2 chaos" }),
+                        map("c", "Map (Tier 16)", { atlasDrops: 0, note: "~price 2 chaos" }),
+                        map("j", "Map (Tier 16)", {
+                            name: "Woe Spell",
+                            explicitMods: FOUR_MODS_330,
+                            extended: { prefixes: 2, suffixes: 2 },
+                            atlasDrops: 56,
+                            note: "~price 1 divine",
+                        }),
                         map("d", "Map (Tier 16)", {
                             identified: false,
                             rarity: "Rare",
@@ -270,8 +352,15 @@ describe("map split in ingest", () => {
                 ])
                 .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
         ).toEqual([
-            ["Map (Tier 16)", "1–6 mods · Quantity 0–59% · Delirium 0%", false, true, 1],
-            ["Map (Tier 16)", "8 mods · Quantity 100–119% · Delirium 0%", true, true, 2],
+            ["Map (Tier 16)", "1–6 mods · Atlas Drops 0–39% · Delirium 0%", false, true, 1],
+            [
+                "Map (Tier 16)",
+                "1–6 mods · Atlas Drops 40–59% · Delirium 0% · Mirage · Evocator of K'Tash",
+                false,
+                true,
+                1,
+            ],
+            ["Map (Tier 16)", "8 mods · Atlas Drops 100–119% · Delirium 0%", true, true, 2],
             ["Map (Tier 16)", "Unidentified · Delirium 0%", false, false, 1],
             ["Map (Tier 3)", "1–6 mods · Delirium 0% · Elder Guardian", false, true, 2],
             ["Map (Tier 3)", "1–6 mods · Delirium 0% · Elder", false, true, 1],

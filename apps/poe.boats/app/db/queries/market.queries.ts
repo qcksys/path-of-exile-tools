@@ -2,7 +2,8 @@ import {
     exchangeCurrencyId,
     exchangeSnapshotSchema,
     gemVariantValues,
-    mapVariantValues,
+    MAP_VALUE_SEPARATOR,
+    mapVariantConditions,
     marketBaseEntry,
     marketBaseVariantValues,
     marketLeagueTracked,
@@ -109,13 +110,28 @@ function gemFilter(daily: DailyTable, filters: MarketFilters) {
         : sql`false`;
 }
 
-/** Map mod count, quantity, delirium and influence filters list only the map markets they allow. */
+/**
+ * Map mod count, Atlas Drops, delirium, content and influence filters list only the map markets
+ * they allow, testing whole parts of the value (wrapped in separators, so `Elder` is not found in
+ * `Elder Guardian`).
+ */
 function mapFilter(daily: DailyTable, filters: MarketFilters) {
-    const values = mapVariantValues(filters);
-    if (!values) return undefined;
-    return values.length
-        ? and(eq(daily.signatureKind, "map"), inArray(daily.signatureValue, values))
-        : sql`false`;
+    const conditions = mapVariantConditions(filters);
+    if (!conditions) return undefined;
+    const value = sql`concat(${MAP_VALUE_SEPARATOR}, ${daily.signatureValue}, ${MAP_VALUE_SEPARATOR})`;
+    const position = (part: string) =>
+        sql`locate(${`${MAP_VALUE_SEPARATOR}${part}${MAP_VALUE_SEPARATOR}`}, ${value})`;
+    return and(
+        eq(daily.signatureKind, "map"),
+        ...conditions.map(
+            ({ anyOf, noneOf }) =>
+                or(
+                    ...anyOf.map((part) => sql`${position(part)} > 0`),
+                    noneOf &&
+                        (and(...noneOf.map((part) => sql`${position(part)} = 0`)) ?? sql`true`),
+                ) ?? sql`false`,
+        ),
+    );
 }
 
 /** Item level, link and quality filters list only the crafting base markets they allow. */
