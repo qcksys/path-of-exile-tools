@@ -2,6 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
+import { flushRollups } from "../../../packages/poe-stash-ingest/src/pipeline";
 import { equipmentHourly } from "../../../packages/poe-stash-ingest/src/ps/equipment-rollup";
 import { type DbHandle, openDb } from "../../../packages/poe-stash-ingest/src/shared/db";
 
@@ -229,6 +230,25 @@ it("expands varied cohort arrays within bounded memory for complete observation 
         },
         { listingCount: 0, unknownCount: 1, prices: {} },
     ]);
+});
+
+it("prepares once before a delivery's equipment rollups, so the pipeline can release memory", async () => {
+    for (let offset = 0; offset < 25; offset++) await observe({ offset });
+    const read = vi.spyOn(db.conn, "runAndReadAll");
+    const beforeEquipment = vi.fn(async () => {});
+    const flush = () =>
+        flushRollups(db.conn, { league: "Standard", dryRun: true, beforeEquipment });
+    expect(await flush()).toMatchObject({ hours: 0 });
+    expect(beforeEquipment).not.toHaveBeenCalled();
+
+    await mark("complete");
+    await mark("complete", "Standard", "base", HOUR - 3600);
+    expect(await flush()).toMatchObject({ hours: 2 });
+    expect(beforeEquipment).toHaveBeenCalledOnce();
+    const firstScan = read.mock.calls.findIndex(([sql]) => sql.includes("FROM ps_equipment_hour"));
+    expect(beforeEquipment.mock.invocationCallOrder[0]).toBeLessThan(
+        read.mock.invocationCallOrder[firstScan]!,
+    );
 });
 
 it("preserves escaped cohort IDs and repeated entries in matched and unknown arrays", async () => {

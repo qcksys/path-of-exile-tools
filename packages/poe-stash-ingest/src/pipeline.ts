@@ -104,6 +104,8 @@ export async function flushRollups(
         exchangeBeforeHour?: number;
         onProgress?: (hours: number, rows: number) => Promise<void>;
         onBatch?: () => Promise<void>;
+        /** Runs once, before the first equipment rollup. */
+        beforeEquipment?: () => Promise<void>;
     } = {},
 ) {
     const pending = await queryAll<{ stream: string; league: string; hour: number }>(
@@ -149,7 +151,12 @@ export async function flushRollups(
     });
     let rows = 0;
     let hours = 0;
+    let equipmentStarted = false;
     for (const entry of pending) {
+        if (entry.stream === "equipment" && !equipmentStarted) {
+            equipmentStarted = true;
+            await opts.beforeEquipment?.();
+        }
         const rollup =
             entry.stream === "equipment"
                 ? rollupEquipment
@@ -336,6 +343,20 @@ export async function runPipeline(
                 exchangeBeforeHour,
                 onBatch: async () => {
                     await update({ progressAt: Date.now() });
+                },
+                // An equipment hour's windows scan a day of observations. A batch's indexes and
+                // updates stay in memory until a checkpoint and can leave too little of the
+                // limit for them; replay's checkpoint only runs while replay has work.
+                beforeEquipment: async () => {
+                    const started = performance.now();
+                    await conn.run("CHECKPOINT").then(
+                        () =>
+                            console.log(
+                                `checkpointed before equipment rollups in ${((performance.now() - started) / 1000).toFixed(1)} s`,
+                            ),
+                        (error: unknown) =>
+                            failStage("delivery", "Checkpoint before equipment rollups", error),
+                    );
                 },
                 onProgress: async (hours, rows) => {
                     await update({
