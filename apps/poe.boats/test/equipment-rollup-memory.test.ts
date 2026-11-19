@@ -232,25 +232,23 @@ it("expands varied cohort arrays within bounded memory for complete observation 
     ]);
 });
 
-it("checkpoints once before a delivery's equipment rollups, releasing a batch's memory", async () => {
+it("prepares once before a delivery's equipment rollups, so the pipeline can release memory", async () => {
     for (let offset = 0; offset < 25; offset++) await observe({ offset });
-    const run = vi.spyOn(db.conn, "run");
     const read = vi.spyOn(db.conn, "runAndReadAll");
-    const checkpoints = () => run.mock.calls.filter(([sql]) => sql === "CHECKPOINT");
-    expect(await flushRollups(db.conn, { league: "Standard", dryRun: true })).toMatchObject({
-        hours: 0,
-    });
-    expect(checkpoints()).toEqual([]);
+    const beforeEquipment = vi.fn(async () => {});
+    const flush = () =>
+        flushRollups(db.conn, { league: "Standard", dryRun: true, beforeEquipment });
+    expect(await flush()).toMatchObject({ hours: 0 });
+    expect(beforeEquipment).not.toHaveBeenCalled();
 
     await mark("complete");
     await mark("complete", "Standard", "base", HOUR - 3600);
-    expect(await flushRollups(db.conn, { league: "Standard", dryRun: true })).toMatchObject({
-        hours: 2,
-    });
-    expect(checkpoints()).toHaveLength(1);
-    const checkpointAt = run.mock.invocationCallOrder[run.mock.calls.indexOf(checkpoints()[0]!)]!;
+    expect(await flush()).toMatchObject({ hours: 2 });
+    expect(beforeEquipment).toHaveBeenCalledOnce();
     const firstScan = read.mock.calls.findIndex(([sql]) => sql.includes("FROM ps_equipment_hour"));
-    expect(checkpointAt).toBeLessThan(read.mock.invocationCallOrder[firstScan]!);
+    expect(beforeEquipment.mock.invocationCallOrder[0]).toBeLessThan(
+        read.mock.invocationCallOrder[firstScan]!,
+    );
 });
 
 it("preserves escaped cohort IDs and repeated entries in matched and unknown arrays", async () => {

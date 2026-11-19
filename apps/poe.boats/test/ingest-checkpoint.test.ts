@@ -52,12 +52,14 @@ vi.mock("../../../packages/poe-stash-ingest/src/ps/equipment-rollup.ts", () => (
     },
 }));
 
+// The fixture's equipment hour is delivered after a checkpoint of its own.
 const stages = [
     "capture",
     "exchange",
     "checkpoint",
     "reclassify",
     "checkpoint-delivery",
+    "checkpoint",
     "rollup-delivery",
 ];
 const client = createClient({ userAgent: "checkpoint-test", token: "inert" });
@@ -158,12 +160,13 @@ it("logs a checkpoint failure, skips replay, delivers committed work and retries
             { signal: stop.signal, intervalMs: 1 },
         );
         expect(cycles).toBe(2);
+        // The equipment checkpoint fails too, and its rollup still runs.
         expect(fixture.events).toEqual([
             ...stages.filter((stage) => stage !== "reclassify"),
             ...stages,
         ]);
         expect(status).toHaveBeenCalledWith(
-            expect.objectContaining({ state: "error", failedStages: ["stash"] }),
+            expect.objectContaining({ state: "error", failedStages: ["stash", "delivery"] }),
         );
         expect(status).toHaveBeenLastCalledWith(
             expect.objectContaining({ state: "idle", failedStages: [] }),
@@ -171,6 +174,7 @@ it("logs a checkpoint failure, skips replay, delivers committed work and retries
         expect(log).toHaveBeenCalledOnce();
         const output = log.mock.calls.flat().join(" ");
         expect(output).toContain("Capture database checkpoint failed");
+        expect(output).toContain("Checkpoint before equipment rollups failed");
         expect(output).toContain("Out of Memory: failed to pin block");
         expect(output).not.toContain("fixture-private");
         expect(output).not.toContain("authorization");
@@ -216,7 +220,12 @@ it("keeps the PoE 2 exchange-only pipeline free of the PC checkpoint and replay"
     const db = await database();
     try {
         await runPipeline(db.conn, client, { pages: 5, league: "Allflame" });
-        expect(fixture.events).toEqual(["exchange", "checkpoint-delivery", "rollup-delivery"]);
+        expect(fixture.events).toEqual([
+            "exchange",
+            "checkpoint-delivery",
+            "checkpoint",
+            "rollup-delivery",
+        ]);
         expect(fixture.capture).not.toHaveBeenCalled();
     } finally {
         vi.restoreAllMocks();
