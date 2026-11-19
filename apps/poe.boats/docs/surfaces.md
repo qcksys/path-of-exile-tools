@@ -209,19 +209,30 @@ PoE 1 tier maps (`Map (Tier 1)` to `Map (Tier 16)`) and Nightmare maps are captu
 stashes, keyed by base type whether identified or not; unique maps stay keyed by name, and blighted
 maps (type line `Blighted …` or `Blight-ravaged …`, same base type) are not captured. Both bases
 belong to Maps, though their item class is `MapKey`. Each lists one market per corruption state and
-variant (`signatureKind` `map`, `signatureValue` like `8 mods · Quantity 100–119% · Delirium 40%`):
-mod count band 1–6 (normal maps included) or 8 (7 counts as 8), delirium 0–100% in 20% steps from
-the `Players in Area are N% Delirious` enchant, and on tier 16 and Nightmare maps the Item Quantity
-band (0–59%, then 20% steps to 200%+). An influence implicit appends `Shaper`, `Elder`,
+variant (`signatureKind` `map`, `signatureValue` like `8 mods · Atlas Drops 100–119% · Delirium 40%`):
+mod count band 1–6 (normal maps included) or 8 (7 or more count as 8), delirium 0–100% to the
+nearest 20% from `Players in Area are N% Delirious` (a Delirium Orb's enchantment before 3.30, a
+rare map's suffix since), and on tier 16 and Nightmare maps the Atlas Drops band (0–39%, then 20%
+steps to 120%+; Atlas Drops replaced Item Quantity in 3.30). Each league content suffix a rare map
+carries since 3.30 appends its own part: `Mirror of Delirium`, `Mirage`, `Viridian Wildwood`,
+`Apex Sentinel`, `Pandemonium Sentinel`, `Stalker Sentinel`, `Evocator of Beidat`,
+`Evocator of K'Tash` or `Evocator of Ghorr`. An influence implicit appends `Shaper`, `Elder`,
 `Elder Guardian` (any of the four guardians, which a Blessed Orb rerolls) or `Memory` (the
-Originator's Memories). A rare map's random name is not stored. Unidentified maps show neither mods
-nor quantity, so their value is `Unidentified · Delirium N%`; the identification is in the value so the rollup, which
-groups by item key and signature, keeps the `identified` column true to each market. Several map
-mods show two or more lines, so the mod count matches lines to the multi-line map mods of the game
-data (`vp run game-data:maps` writes `packages/poe-market/data/maps-poe1.json`) and takes the
-fewest mods that explain them. The Maps list adds tri-state toggles per band; `mapMods`,
-`mapQuantity`, `mapDelirium` and `mapInfluence` (`none`, `shaper`, `elder`, `elder-guardian`,
-`memory`) hold them as `8,-1-6`, and links to other categories drop them. A map's item page reads
+Originator's Memories), and any Conqueror's Citadel appends `Citadel` after it, so `Memory`,
+`Citadel` and `Memory · Citadel` are three markets. A rare map's
+random name is not stored. Unidentified maps show neither mods nor Atlas Drops, nor the suffixes
+that add content or delirium, so their value is `Unidentified · Delirium 0%` unless an older
+enchantment shows; the identification is in the value so the rollup, which groups by item key and
+signature, keeps the `identified` column true to each market. The mod count is the API's
+`extended.prefixes` plus `extended.suffixes`; for a map without them, it matches lines to the
+multi-line map mods of the game data (`vp run game-data:maps` writes
+`packages/poe-market/data/maps-poe1.json`) and takes the fewest mods that explain them. The Maps
+list adds tri-state toggles per band; `mapMods`, `mapAtlasDrops`, `mapDelirium`, `mapContent`
+(`none` and each content) and `mapInfluence` (`none`, `shaper`, `elder`, `elder-guardian`,
+`memory`, `citadel`) hold them as `8,-1-6`, and links to other categories drop them. Each filter
+tests whole parts of the value, so content and influence filters keep maps with any included
+part and drop those with an excluded one, whatever else they carry: `citadel` lists `Citadel`
+and `Memory · Citadel`, and `memory,-citadel` only `Memory`. A map's item page reads
 the same parameters, plus `identification` and `corruption`, to narrow its variant table in the
 browser; its loader ignores them and `shouldRevalidate` skips it when only they change.
 The shared market query applies category, text, identification, corruption, gem and map bands,

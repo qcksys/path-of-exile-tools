@@ -748,14 +748,18 @@ it("lists map markets under Maps by variant and filters them by included and exc
             ...overrides,
         });
     await insertMarket([
-        map("Map (Tier 16)", "8 mods · Quantity 100–119% · Delirium 0%", { corrupted: true }),
-        map("Map (Tier 16)", "8 mods · Quantity 120–139% · Delirium 40%", { corrupted: true }),
-        map("Map (Tier 16)", "1–6 mods · Quantity 60–79% · Delirium 0%"),
+        map("Map (Tier 16)", "8 mods · Atlas Drops 100–119% · Delirium 0%", { corrupted: true }),
+        map("Map (Tier 16)", "8 mods · Atlas Drops 120%+ · Delirium 40%", { corrupted: true }),
+        map("Map (Tier 16)", "1–6 mods · Atlas Drops 60–79% · Delirium 0%"),
         map("Map (Tier 16)", "Unidentified · Delirium 0%", { identified: false }),
-        map("Nightmare Map", "1–6 mods · Quantity 80–99% · Delirium 20%"),
+        map("Nightmare Map", "1–6 mods · Atlas Drops 80–99% · Delirium 20%"),
         map("Map (Tier 14)", "8 mods · Delirium 0%", { corrupted: true }),
         map("Map (Tier 14)", "1–6 mods · Delirium 0% · Elder Guardian"),
         map("Map (Tier 14)", "1–6 mods · Delirium 0% · Memory"),
+        map("Map (Tier 14)", "1–6 mods · Delirium 0% · Memory · Citadel"),
+        map("Map (Tier 13)", "1–6 mods · Delirium 0% · Mirage"),
+        map("Map (Tier 13)", "1–6 mods · Delirium 0% · Mirage · Apex Sentinel · Citadel"),
+        map("Map (Tier 13)", "1–6 mods · Delirium 0% · Viridian Wildwood · Elder"),
         observation({ league: "Maps", itemKey: "Kaom's Heart", name: "Kaom's Heart" }),
     ]);
     const list = async (filters: Record<string, string>) =>
@@ -767,27 +771,31 @@ it("lists map markets under Maps by variant and filters them by included and exc
             )
         ).rows.map((row) => [row.itemKey, row.signatureValue, row.category].join(" | "));
     expect(await list({ category: "maps" })).toEqual([
+        "Map (Tier 13) | 1–6 mods · Delirium 0% · Mirage | maps",
+        "Map (Tier 13) | 1–6 mods · Delirium 0% · Mirage · Apex Sentinel · Citadel | maps",
+        "Map (Tier 13) | 1–6 mods · Delirium 0% · Viridian Wildwood · Elder | maps",
         "Map (Tier 14) | 1–6 mods · Delirium 0% · Elder Guardian | maps",
         "Map (Tier 14) | 1–6 mods · Delirium 0% · Memory | maps",
+        "Map (Tier 14) | 1–6 mods · Delirium 0% · Memory · Citadel | maps",
         "Map (Tier 14) | 8 mods · Delirium 0% | maps",
         "Map (Tier 16) | Unidentified · Delirium 0% | maps",
-        "Map (Tier 16) | 1–6 mods · Quantity 60–79% · Delirium 0% | maps",
-        "Map (Tier 16) | 8 mods · Quantity 100–119% · Delirium 0% | maps",
-        "Map (Tier 16) | 8 mods · Quantity 120–139% · Delirium 40% | maps",
-        "Nightmare Map | 1–6 mods · Quantity 80–99% · Delirium 20% | maps",
+        "Map (Tier 16) | 1–6 mods · Atlas Drops 60–79% · Delirium 0% | maps",
+        "Map (Tier 16) | 8 mods · Atlas Drops 100–119% · Delirium 0% | maps",
+        "Map (Tier 16) | 8 mods · Atlas Drops 120%+ · Delirium 40% | maps",
+        "Nightmare Map | 1–6 mods · Atlas Drops 80–99% · Delirium 20% | maps",
     ]);
     expect(await list({ category: "fragments" })).toEqual([]);
-    expect(await list({ category: "maps", mapMods: "8", mapQuantity: "-100-119" })).toEqual([
-        "Map (Tier 16) | 8 mods · Quantity 120–139% · Delirium 40% | maps",
+    expect(await list({ category: "maps", mapMods: "8", mapAtlasDrops: "-100-119" })).toEqual([
+        "Map (Tier 16) | 8 mods · Atlas Drops 120%+ · Delirium 40% | maps",
     ]);
     expect(await list({ category: "maps", mapDelirium: "-0" })).toEqual([
-        "Map (Tier 16) | 8 mods · Quantity 120–139% · Delirium 40% | maps",
-        "Nightmare Map | 1–6 mods · Quantity 80–99% · Delirium 20% | maps",
+        "Map (Tier 16) | 8 mods · Atlas Drops 120%+ · Delirium 40% | maps",
+        "Nightmare Map | 1–6 mods · Atlas Drops 80–99% · Delirium 20% | maps",
     ]);
     expect(await list({ category: "maps", mapMods: "8", corruption: "true" })).toEqual([
         "Map (Tier 14) | 8 mods · Delirium 0% | maps",
-        "Map (Tier 16) | 8 mods · Quantity 100–119% · Delirium 0% | maps",
-        "Map (Tier 16) | 8 mods · Quantity 120–139% · Delirium 40% | maps",
+        "Map (Tier 16) | 8 mods · Atlas Drops 100–119% · Delirium 0% | maps",
+        "Map (Tier 16) | 8 mods · Atlas Drops 120%+ · Delirium 40% | maps",
     ]);
     expect(await list({ category: "maps", identification: "false" })).toEqual([
         "Map (Tier 16) | Unidentified · Delirium 0% | maps",
@@ -795,14 +803,42 @@ it("lists map markets under Maps by variant and filters them by included and exc
     expect(await list({ category: "maps", mapInfluence: "elder-guardian,memory" })).toEqual([
         "Map (Tier 14) | 1–6 mods · Delirium 0% · Elder Guardian | maps",
         "Map (Tier 14) | 1–6 mods · Delirium 0% · Memory | maps",
+        "Map (Tier 14) | 1–6 mods · Delirium 0% · Memory · Citadel | maps",
+    ]);
+    expect(await list({ category: "maps", mapInfluence: "citadel" })).toEqual([
+        "Map (Tier 13) | 1–6 mods · Delirium 0% · Mirage · Apex Sentinel · Citadel | maps",
+        "Map (Tier 14) | 1–6 mods · Delirium 0% · Memory · Citadel | maps",
+    ]);
+    expect(await list({ category: "maps", mapInfluence: "memory,-citadel" })).toEqual([
+        "Map (Tier 14) | 1–6 mods · Delirium 0% · Memory | maps",
+    ]);
+    expect(await list({ category: "maps", mapInfluence: "elder" })).toEqual([
+        "Map (Tier 13) | 1–6 mods · Delirium 0% · Viridian Wildwood · Elder | maps",
     ]);
     expect(
-        await list({ category: "maps", mapInfluence: "-none,-memory", mapDelirium: "0" }),
-    ).toEqual(["Map (Tier 14) | 1–6 mods · Delirium 0% · Elder Guardian | maps"]);
-    expect(await list({ category: "maps", mapMods: "1-6", mapInfluence: "none" })).toEqual([
-        "Map (Tier 16) | 1–6 mods · Quantity 60–79% · Delirium 0% | maps",
-        "Nightmare Map | 1–6 mods · Quantity 80–99% · Delirium 20% | maps",
+        await list({ category: "maps", mapInfluence: "-none,-memory,-citadel", mapDelirium: "0" }),
+    ).toEqual([
+        "Map (Tier 13) | 1–6 mods · Delirium 0% · Viridian Wildwood · Elder | maps",
+        "Map (Tier 14) | 1–6 mods · Delirium 0% · Elder Guardian | maps",
     ]);
+    expect(await list({ category: "maps", mapMods: "1-6", mapInfluence: "none" })).toEqual([
+        "Map (Tier 13) | 1–6 mods · Delirium 0% · Mirage | maps",
+        "Map (Tier 16) | 1–6 mods · Atlas Drops 60–79% · Delirium 0% | maps",
+        "Nightmare Map | 1–6 mods · Atlas Drops 80–99% · Delirium 20% | maps",
+    ]);
+    expect(await list({ category: "maps", mapContent: "mirage" })).toEqual([
+        "Map (Tier 13) | 1–6 mods · Delirium 0% · Mirage | maps",
+        "Map (Tier 13) | 1–6 mods · Delirium 0% · Mirage · Apex Sentinel · Citadel | maps",
+    ]);
+    expect(await list({ category: "maps", mapContent: "mirage,-apex-sentinel" })).toEqual([
+        "Map (Tier 13) | 1–6 mods · Delirium 0% · Mirage | maps",
+    ]);
+    expect(await list({ category: "maps", mapContent: "-none", mapInfluence: "citadel" })).toEqual([
+        "Map (Tier 13) | 1–6 mods · Delirium 0% · Mirage · Apex Sentinel · Citadel | maps",
+    ]);
+    expect(
+        await list({ category: "maps", mapContent: "none", mapMods: "8", mapAtlasDrops: "120" }),
+    ).toEqual(["Map (Tier 16) | 8 mods · Atlas Drops 120%+ · Delirium 40% | maps"]);
 });
 
 it("lists only transfigured or Vaal gems, or only other gems, with their filters", async () => {

@@ -1,0 +1,8 @@
+---
+"@poe-tools/stash-ingest": minor
+"@poe-tools/market": minor
+"@poe-tools/api-client": patch
+"poe-boats": minor
+---
+
+Split PoE 1 map markets the way 3.30 maps work. Tier 16 and Nightmare maps split by Atlas Drops (0–39%, then 20% steps to 120%+), the property that replaced Item Quantity; every 3.30 map had fallen into the lowest quantity band. Delirium bands read the Delirium Orb's `Players in Area are N% Delirious` suffix as well as the older enchantment, to the nearest 20%. Each league content suffix a rare map carries appends its own part to the value (`Mirror of Delirium`, `Mirage`, `Viridian Wildwood`, `Apex Sentinel`, `Pandemonium Sentinel`, `Stalker Sentinel`, `Evocator of Beidat`, `Evocator of K'Tash`, `Evocator of Ghorr`), e.g. `1–6 mods · Atlas Drops 60–79% · Delirium 0% · Mirage · Apex Sentinel`. Maps holding any Conqueror's Citadel append `Citadel` after their other influence, so `Memory`, `Citadel` and `Memory · Citadel` are three markets. Mod counts come from the API's prefix and suffix counts, falling back to matching lines when an item has neither. The market filters replace `mapQuantity` with `mapAtlasDrops` and gain `mapContent` (`none` and each content); content and influence filters keep a map with any included part and no excluded one, so `citadel` lists both Citadel markets; each map filter now tests whole parts of the value instead of listing every possible value, in the list query and on a map's item page, which gains Atlas Drops and Content columns. The API client's mod flags gain `rareonly`. Map markets recorded before this change keep their old values.

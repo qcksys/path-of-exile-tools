@@ -706,10 +706,10 @@ it("lists many variants as their best sellers, with prices, until all are shown"
 
 describe("a map's variant table", () => {
     const identified = ["1–6 mods", "8 mods"].flatMap((mods) =>
-        ["Quantity 100–119%", "Quantity 60–79%"].flatMap((quantity) =>
+        ["Atlas Drops 100–119%", "Atlas Drops 60–79%"].flatMap((atlasDrops) =>
             ["0%", "20%", "40%"].flatMap((delirium) =>
-                ["", " · Memory"].map(
-                    (influence) => `${mods} · ${quantity} · Delirium ${delirium}${influence}`,
+                ["", " · Mirage · Apex Sentinel · Memory"].map(
+                    (rest) => `${mods} · ${atlasDrops} · Delirium ${delirium}${rest}`,
                 ),
             ),
         ),
@@ -751,23 +751,25 @@ describe("a map's variant table", () => {
     it("splits each signature into its own columns and keeps the full label on the link", async () => {
         const variants = await show();
         fireEvent.click(within(variants).getByRole("button", { name: "Show all 25" }));
-        expect(cells(rows(variants)[1]!).slice(0, 5)).toEqual([
+        expect(cells(rows(variants)[1]!).slice(0, 6)).toEqual([
             "1–6 mods",
             "100–119%",
             "0%",
+            "Mirage + Apex Sentinel",
             "Memory",
             "—",
         ]);
-        expect(cells(rows(variants)[24]!).slice(0, 5)).toEqual([
+        expect(cells(rows(variants)[24]!).slice(0, 6)).toEqual([
             "Unidentified",
             "—",
             "40%",
+            "—",
             "—",
             "Corrupted",
         ]);
         expect(
             within(variants).getByRole("link", {
-                name: "1–6 mods · Quantity 100–119% · Delirium 0% · Memory",
+                name: "1–6 mods · Atlas Drops 100–119% · Delirium 0% · Mirage · Apex Sentinel · Memory",
             }),
         ).toBeTruthy();
         expect(
@@ -777,7 +779,7 @@ describe("a map's variant table", () => {
 
     it("sorts by band order rather than by label", async () => {
         const variants = await show();
-        fireEvent.click(within(variants).getByRole("button", { name: "Quantity" }));
+        fireEvent.click(within(variants).getByRole("button", { name: "Atlas Drops" }));
         // Alphabetically, 100–119% would sort before 60–79%.
         expect(cells(rows(variants)[0]!)[1]).toBe("60–79%");
     });
@@ -789,6 +791,12 @@ describe("a map's variant table", () => {
         expect(within(influence).queryByRole("button", { name: "Shaper: any" })).toBeNull();
         const delirium = within(variants).getByRole("group", { name: "Delirium" });
         expect(within(delirium).queryByRole("button", { name: "100%: any" })).toBeNull();
+        const content = within(variants).getByRole("group", { name: "Content" });
+        expect(within(content).getByRole("button", { name: "None: any" })).toBeTruthy();
+        expect(within(content).getByRole("button", { name: "Apex Sentinel: any" })).toBeTruthy();
+        expect(
+            within(content).queryByRole("button", { name: "Viridian Wildwood: any" }),
+        ).toBeNull();
     });
 
     it("narrows the rows through the URL and carries the filter to the other variants", async () => {
@@ -814,7 +822,7 @@ describe("a map's variant table", () => {
         expect(url).toContain("mapDelirium=0");
         expect(url).not.toContain("page=");
         const link = within(variants).getByRole("link", {
-            name: "8 mods · Quantity 100–119% · Delirium 0%",
+            name: "8 mods · Atlas Drops 100–119% · Delirium 0%",
         });
         expect(link.getAttribute("href")).toContain("mapMods=8");
         expect(link.getAttribute("href")).toContain("kind=map");
@@ -869,6 +877,16 @@ describe("a map's variant table", () => {
         expect(
             within(within(variants).getByRole("group", { name: "Influence" })).getByRole("button", {
                 name: "Memory: included",
+            }),
+        ).toBeTruthy();
+    });
+
+    it("keeps maps carrying an included content among others", async () => {
+        const variants = await show("&mapContent=mirage");
+        expect(within(variants).getByRole("status").textContent).toContain("12 of 25");
+        expect(
+            within(within(variants).getByRole("group", { name: "Content" })).getByRole("button", {
+                name: "Mirage: included",
             }),
         ).toBeTruthy();
     });
@@ -1572,29 +1590,32 @@ it("filters skill gems by tri-state level, quality and corruption toggles", asyn
     expect(screen.getByLabelText("Current URL").textContent).not.toContain("gemLevel");
 });
 
-it("filters maps by tri-state mod count, quantity, delirium and influence toggles", async () => {
+it("filters maps by tri-state mod count, Atlas Drops, delirium, content and influence toggles", async () => {
     showMarket("/1/market/maps?league=Allflame");
     const mods = await screen.findByRole("group", { name: "Mods" });
-    const quantity = screen.getByRole("group", { name: "Item quantity" });
+    const atlasDrops = screen.getByRole("group", { name: "Atlas Drops" });
     const delirium = screen.getByRole("group", { name: "Delirium" });
+    const content = screen.getByRole("group", { name: "Content" });
     const influence = screen.getByRole("group", { name: "Influence" });
     expect(screen.getByRole("combobox", { name: "Corruption" })).toBeTruthy();
 
     fireEvent.click(within(mods).getByRole("button", { name: "8 mods: any" }));
-    fireEvent.click(within(quantity).getByRole("button", { name: "100–119%: any" }));
-    fireEvent.click(within(quantity).getByRole("button", { name: "120–139%: any" }));
+    fireEvent.click(within(atlasDrops).getByRole("button", { name: "80–99%: any" }));
+    fireEvent.click(within(atlasDrops).getByRole("button", { name: "100–119%: any" }));
     fireEvent.click(within(delirium).getByRole("button", { name: "0%: any" }));
     fireEvent.click(within(delirium).getByRole("button", { name: "0%: included" }));
-    fireEvent.click(within(influence).getByRole("button", { name: "Elder Guardian: any" }));
+    fireEvent.click(within(content).getByRole("button", { name: "Mirage: any" }));
+    fireEvent.click(within(influence).getByRole("button", { name: "Citadel: any" }));
     await waitFor(() =>
         expect(getMarketData).toHaveBeenLastCalledWith(
             expect.anything(),
             expect.objectContaining({
                 category: "maps",
                 mapMods: "8",
-                mapQuantity: "100-119,120-139",
+                mapAtlasDrops: "80-99,100-119",
                 mapDelirium: "-0",
-                mapInfluence: "elder-guardian",
+                mapContent: "mirage",
+                mapInfluence: "citadel",
             }),
             "list",
         ),
@@ -1614,7 +1635,8 @@ it("filters maps by tri-state mod count, quantity, delirium and influence toggle
             expect.objectContaining({
                 category: "currency",
                 mapMods: "",
-                mapQuantity: "",
+                mapAtlasDrops: "",
+                mapContent: "",
                 mapInfluence: "",
             }),
             "list",

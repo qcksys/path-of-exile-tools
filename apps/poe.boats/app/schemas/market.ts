@@ -106,7 +106,12 @@ export function marketCorruption({
     return corruption ?? settings.defaultCorruption;
 }
 
-export type MarketMapBandFilter = "mapMods" | "mapQuantity" | "mapDelirium" | "mapInfluence";
+export type MarketMapBandFilter =
+    | "mapMods"
+    | "mapAtlasDrops"
+    | "mapDelirium"
+    | "mapContent"
+    | "mapInfluence";
 
 /**
  * What an item page's variant table narrows by. Its loader ignores these, so changing them only
@@ -117,8 +122,9 @@ const marketItemViewFiltersSchema = marketFiltersSchema.pick({
     identification: true,
     corruption: true,
     mapMods: true,
-    mapQuantity: true,
+    mapAtlasDrops: true,
     mapDelirium: true,
+    mapContent: true,
     mapInfluence: true,
 });
 export const MARKET_ITEM_VIEW_PARAMS = Object.keys(marketItemViewFiltersSchema.shape);

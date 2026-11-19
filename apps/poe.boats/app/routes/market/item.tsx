@@ -1,13 +1,16 @@
 import {
+    MAP_ATLAS_DROPS_BANDS,
+    MAP_ATLAS_DROPS_LABELS,
+    MAP_CONTENT_LABELS,
+    MAP_CONTENTS,
     MAP_DELIRIUM_BANDS,
     MAP_DELIRIUM_LABELS,
     MAP_INFLUENCE_LABELS,
     MAP_INFLUENCES,
     MAP_MOD_BANDS,
     MAP_MOD_LABELS,
-    MAP_QUANTITY_BANDS,
-    MAP_QUANTITY_LABELS,
-    mapVariantValues,
+    mapValueMeets,
+    mapVariantConditions,
     parseMapVariantValue,
 } from "@poe-tools/market";
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -290,13 +293,30 @@ function mapBandColumn<Band extends string>(
     );
 }
 
+/** A column naming the parts a map can show several of, e.g. `Memory + Citadel`. */
+function mapListColumn(header: string, names: (fields: MapFields) => readonly string[]) {
+    return variantColumn.accessor(
+        (variant) => {
+            const fields = mapFields(variant);
+            return (fields && names(fields).join(" + ")) || undefined;
+        },
+        {
+            id: header,
+            header,
+            enableColumnFilter: false,
+            sortDescFirst: false,
+            sortUndefined: "last",
+            cell: ({ getValue }) => getValue() ?? "—",
+        },
+    );
+}
+
 /** Whether the variant table's filters, the same ones the map list has, allow a variant. */
 function mapVariantMatcher(filters: MarketFilters) {
-    const values = mapVariantValues(filters);
-    const allowed = values && new Set(values);
+    const conditions = mapVariantConditions(filters);
     const { identification, corruption = "all" } = filters;
     return (variant: VariantRow) =>
-        (!allowed || allowed.has(variant.signatureValue)) &&
+        (!conditions || mapValueMeets(variant.signatureValue, conditions)) &&
         (identification === "all" || String(variant.identified) === identification) &&
         (corruption === "all" || String(variant.corrupted) === corruption);
 }
@@ -339,10 +359,10 @@ function MapVariantTable({
                     },
                 ),
                 mapBandColumn(
-                    "Quantity",
-                    MAP_QUANTITY_BANDS,
-                    MAP_QUANTITY_LABELS,
-                    ({ quantity }) => quantity,
+                    "Atlas Drops",
+                    MAP_ATLAS_DROPS_BANDS,
+                    MAP_ATLAS_DROPS_LABELS,
+                    ({ atlasDrops }) => atlasDrops,
                 ),
                 mapBandColumn(
                     "Delirium",
@@ -350,11 +370,13 @@ function MapVariantTable({
                     MAP_DELIRIUM_LABELS,
                     ({ delirium }) => delirium,
                 ),
-                mapBandColumn(
-                    "Influence",
-                    MAP_INFLUENCES,
-                    MAP_INFLUENCE_LABELS,
-                    ({ influence }) => influence,
+                mapListColumn("Content", ({ contents }) =>
+                    contents.map((content) => MAP_CONTENT_LABELS[MAP_CONTENTS.indexOf(content)]!),
+                ),
+                mapListColumn("Influence", ({ influences }) =>
+                    influences.map(
+                        (influence) => MAP_INFLUENCE_LABELS[MAP_INFLUENCES.indexOf(influence)]!,
+                    ),
                 ),
                 variantColumn.accessor((variant) => Number(variant.corrupted), {
                     id: "Corrupted",
@@ -370,9 +392,14 @@ function MapVariantTable({
         const fields = variants.flatMap((variant) => mapFields(variant) ?? []);
         return {
             mapMods: new Set(fields.flatMap(({ mods }) => mods ?? [])),
-            mapQuantity: new Set(fields.flatMap(({ quantity }) => quantity ?? [])),
+            mapAtlasDrops: new Set(fields.flatMap(({ atlasDrops }) => atlasDrops ?? [])),
             mapDelirium: new Set(fields.map(({ delirium }) => delirium)),
-            mapInfluence: new Set(fields.map(({ influence }) => influence ?? "none")),
+            mapContent: new Set(
+                fields.flatMap(({ contents }) => (contents.length ? contents : ["none"])),
+            ),
+            mapInfluence: new Set(
+                fields.flatMap(({ influences }) => (influences.length ? influences : ["none"])),
+            ),
         };
     }, [variants]);
     const rows = useMemo(() => variants.filter(mapVariantMatcher(filters)), [variants, filters]);

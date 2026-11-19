@@ -58,6 +58,8 @@ export interface ItemMod {
         crafted?: boolean;
         desecrated?: boolean;
         vestigial?: boolean;
+        /** A PoE 1 map suffix only rare maps carry, such as league content or delirium (3.30). */
+        rareonly?: boolean;
     };
 }
 

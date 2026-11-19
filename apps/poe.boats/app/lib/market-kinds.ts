@@ -3,14 +3,16 @@ import {
     GEM_LEVEL_LABELS,
     GEM_QUALITY_BANDS,
     GEM_QUALITY_LABELS,
+    MAP_ATLAS_DROPS_BANDS,
+    MAP_ATLAS_DROPS_LABELS,
+    MAP_CONTENT_BAND_LABELS,
+    MAP_CONTENT_BANDS,
     MAP_DELIRIUM_BANDS,
     MAP_DELIRIUM_LABELS,
     MAP_INFLUENCE_BAND_LABELS,
     MAP_INFLUENCE_BANDS,
     MAP_MOD_BANDS,
     MAP_MOD_LABELS,
-    MAP_QUANTITY_BANDS,
-    MAP_QUANTITY_LABELS,
     parseGemBandFilter,
 } from "@poe-tools/market";
 import { z } from "zod";
@@ -59,6 +61,7 @@ function mapBands(
     labels: readonly string[],
     axis: string,
     note = "",
+    maxLength = 60,
 ) {
     return {
         control: "bands",
@@ -68,7 +71,7 @@ function mapBands(
         empty: "",
         schema: z
             .string()
-            .max(60)
+            .max(maxLength)
             .default("")
             .refine(
                 (value) => parseGemBandFilter(value, bands) !== null,
@@ -131,23 +134,31 @@ export const MARKET_AXES = {
         "mod count",
         "; unidentified maps have no mod count",
     ),
-    mapQuantity: {
+    mapAtlasDrops: {
         ...mapBands(
-            "Item quantity",
-            MAP_QUANTITY_BANDS,
-            MAP_QUANTITY_LABELS,
-            "item quantity %",
-            "; only identified tier 16 and Nightmare maps have a quantity band",
+            "Atlas Drops",
+            MAP_ATLAS_DROPS_BANDS,
+            MAP_ATLAS_DROPS_LABELS,
+            "Atlas Drops %",
+            "; only identified tier 16 and Nightmare maps have an Atlas Drops band",
         ),
         hint: "Tier 16 and Nightmare maps only",
     },
     mapDelirium: mapBands("Delirium", MAP_DELIRIUM_BANDS, MAP_DELIRIUM_LABELS, "delirium %"),
+    mapContent: mapBands(
+        "Content",
+        MAP_CONTENT_BANDS,
+        MAP_CONTENT_BAND_LABELS,
+        "league content",
+        "; a map passes with any included content (`none`: no content) and no excluded one",
+        200,
+    ),
     mapInfluence: mapBands(
         "Influence",
         MAP_INFLUENCE_BANDS,
         MAP_INFLUENCE_BAND_LABELS,
         "influence",
-        "; `none` is an uninfluenced map, and `elder-guardian` an Elder map occupied by any guardian",
+        "; `none` is an uninfluenced map, `elder-guardian` an Elder map occupied by any guardian, and `citadel` a map holding any Conqueror's Citadel, which can also carry another influence such as `memory`; a map passes with any included influence and no excluded one",
     ),
     baseClass: {
         control: "select",
@@ -239,8 +250,9 @@ export const MARKET_GEM_AXES = [
 ] as const satisfies readonly MarketAxisParam[];
 export const MARKET_MAP_AXES = [
     "mapMods",
-    "mapQuantity",
+    "mapAtlasDrops",
     "mapDelirium",
+    "mapContent",
     "mapInfluence",
 ] as const satisfies readonly MarketAxisParam[];
 
