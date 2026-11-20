@@ -1,76 +1,76 @@
 {
   "format": 1,
   "game": "poe1",
-  "patch": "3.30.0.2.2",
+  "patch": "3.30.0.4",
   "source": {
-    "basesSha256": "5fdec2ba6f5124ca1abd7bd2bbe1acb6e1aec7e70a3740a03722f1157e140c05",
-    "modsSha256": "7e9f57aa95a6eb8f0b8c9adb947869ae5b7f39999727e8f076be3f5d691606d9",
-    "schemaSha256": "25e17f0463e56a4ed0dcc13a841aeb811012debb23daa9111053aa8157bd7b60",
+    "basesSha256": "aaaf5d3048c1a7dcbb984e1fd9f673812bba60f322d032f2a5db752260dd8217",
+    "modsSha256": "e1dd955e52dd8bfd6cff247d6f5236206cb976f95053a017af78dea83c7e6ab6",
+    "schemaSha256": "5d598f4c57fae1ae3d92be9046fe3f7702ee77180eb6c1e2e518efc79d29c137",
     "tables": {
-      "Data/BaseItemTypes.datc64": "e67c5a990f46fe329c404f95c1a08eff239fbaad7925f7b543c26f6c3deec774",
-      "Data/Mods.datc64": "f8140153d7333a6a5aa3ef407d467a0245d46eb4d620ddfc06e8198069976742",
-      "Data/Stats.datc64": "401c8a3f6f310da64d3fd6b6a4c5e0902c11f27c7e3e1738ea4c8f993e35438c",
+      "Data/BaseItemTypes.datc64": "27145fd67fa256cfde688786bd4c503364d42cbeaf61662c2e37d64892b53974",
+      "Data/Mods.datc64": "38eec5eac3c12011777e6a6b14f66f4dcbd5ba9a8eb08c44b85e0e570d065064",
+      "Data/Stats.datc64": "30af913763b5fa76e0d8cce0cd678c4f6a8ed08810b0fa3700ab962cf403e383",
       "Data/ItemClasses.datc64": "aa63d34e43ed7dbf0fbad5272bc5a235a70bdd6246bd8234fe2c62ec542b0038",
-      "Data/Tags.datc64": "c828b828e313a92390ae618fd5c4c65ed55ea9bd8db8782389d809cdfee32796",
-      "Data/CurrencyItems.datc64": "1cd5c8dc373aa421a18025319df7c47b8f6d3c414eeb7932041ab54d56419589",
+      "Data/Tags.datc64": "51ac771e4038eb837a0975b0d3e6bf644b9ded0b9b8ef1097f0d0ae043ce5c57",
+      "Data/CurrencyItems.datc64": "9ddcecc610ba8579b6dfb7c2b916d2b1e8ded204bff1993fef6618fd1e912126",
       "Data/Rarity.datc64": "b142dc765a1ea8e51c780d623683b607627fd10b81ed44c62d7e1c3c904cd5aa",
-      "Data/ModEquivalencies.datc64": "e4519b1b4debecd635169d3fc076bcbce06ecec04113911449285cdf82f17a07",
-      "Data/AlternateQualityTypes.datc64": "d1e24779dd8095e2dde3900958b1c6a3ddb571c4d79b58afd6850cca98d4f98b",
+      "Data/ModEquivalencies.datc64": "9388f7b4612b4cc3b84e75663863451e42236a4fa5c4af352ddf69ff96184b34",
+      "Data/AlternateQualityTypes.datc64": "c32f4fedaf042d1ac47f91cd78a1de347a4abc1a6df44b7d437f3c352fc62ea6",
       "Data/ModEffectStats.datc64": "48d5bf5c0e09d73914dd9f853cce3be8a538b2ff73e76f25adc232d3e0cc438c",
       "Data/RecombinableClasses.datc64": "4f1137fc32f9451320205375938064b60c79cddc4faff3edd6dbd3082b9a24b2",
-      "Data/BlightCraftingItems.datc64": "07cfa2f9f16af87bf2eab61bbe052f0cc4b01eaff15f744ba0f0abe0299ef83d",
+      "Data/BlightCraftingItems.datc64": "b6e8bb0d1a91f33554bf776545bcdcea863e3c2b147627994f170e7782a9727b",
       "Data/BlightCraftingRecipes.datc64": "4e1fc21cd8a5e15171f56b34af271be149c1b3cadbdd4444a126d07616c836de",
-      "Data/BlightCraftingResults.datc64": "d615dbb253dc0a4cf245a8f3214b39e9d78f81d78aa3bad2586572bce2511d3a",
-      "Data/PassiveSkills.datc64": "7ad8d509656abc7b3f75f4b9813948720343f24205e2874fe317fac0a284b75d",
+      "Data/BlightCraftingResults.datc64": "026dbfa22041ef4cd084a2b84ff53bb0f6618bdd3e53dea87a55d62457db1c01",
+      "Data/PassiveSkills.datc64": "73802427654a13e31a204c24421c0cd6cbe6deb37abd025f6b0e26c8824bed27",
       "Data/Strongboxes.datc64": "9546c334ccda630c34e4bbd19778bed666b774fed3e396ac908027a0abad898e",
-      "Data/Chests.datc64": "8a355134467b3fb84696a9af00246a700265417fe36096d9d1d13d79e5bb56d4",
+      "Data/Chests.datc64": "21e597ded4a13f74001756776db9d9a8c2f8f3f46dc13a19facb122575fe2856",
       "Data/InfluenceTags.datc64": "7ddadb01cde78d420c75ce0aa64ad07dfbb48ab8418830510d9ab914d9417130",
       "Data/BlightCraftingTypes.datc64": "21458b6835d724c2efb6f2ed2e933d677ad9d65059309119901bbe2d58c1041f",
-      "Data/InfluenceModUpgrades.datc64": "a9c476dba3501d35393de7092af3dfa2ed61c6762edf815f71f7cf1e89fbe977",
-      "Data/Essences.datc64": "9fd31967b26f4c70e3e6b07a6847099aa38335123b84e0ae4fd24a75329df30f",
+      "Data/InfluenceModUpgrades.datc64": "4a8a867183c50f6af05383eb78b68d5509d09d8b0be06f2bdf623ece43e9f0b6",
+      "Data/Essences.datc64": "9844eae9150f70953b24e51f8f7f431b00bf5a61d86d9406380bd72cf3b6c411",
       "Data/EssenceType.datc64": "43b374eb831bde69efdf0d29e3ae1b2f0b06899aba3f72b073bb72b17306abbf",
-      "Data/CraftingBenchOptions.datc64": "1ce14270c9d87c9879ed2d9a5a8aedb967656b38775740889c1b88d225f608a2",
+      "Data/CraftingBenchOptions.datc64": "ed881f46dca4d9252220a6967e136163b8e7d12d70f32038e1ad1ed763c3c211",
       "Data/CraftingItemClassCategories.datc64": "2e36ddd886a34b9faaa7334d9e8132e2418f824024ebbeaeb078382dee880e83",
-      "Data/DelveCraftingModifiers.datc64": "5a87aa1a06ac794bbe2391963731588e50ff38d47f95f1676d9d65f0b3291d88",
+      "Data/DelveCraftingModifiers.datc64": "01be45160b39a68f1d813eb0b9b7969041366674869b79b5d7e4394114b36299",
       "Data/DelveCraftingTags.datc64": "b87b82ee993226ecd415c8c32e7a43c8fe51c336c77c05e1bd99563527ad5741",
       "Data/DelveCraftingModifierDescriptions.datc64": "fa616f33fa484fe36230cb307d29f6ec0389a77159628a494c8a53a09fe97e0d",
       "Data/HarvestCraftOptions.datc64": "ef0b2dc49b96dec22bf2288b7441c3fbcb4ad9b20a381864bdebb50d813bd132",
-      "Data/HarvestSeedItems.datc64": "08dde3b80635af33fd6484a7c1148845c8b8c9d8ef676b50471b6ddbbb72a96a",
-      "Data/BestiaryRecipes.datc64": "049ea49d2113d91f6976b8d30bcf9011161af41dd4f0ce6911ce841f343129d4",
+      "Data/HarvestSeedItems.datc64": "453c2e25d839df8726bdb4302f4d829853946a0ab6d6ce887e7ef7e7f174429a",
+      "Data/BestiaryRecipes.datc64": "b3c190461e0ec183f9a33f7352e40fabb6f5a5dc2af7c3734e8697ca86127946",
       "Data/BestiaryRecipeComponent.datc64": "c3fd69e1e3c06f0f8634724399f3cddf1ce9ceaf4620e369cf0f770a1f24c395",
       "Data/BestiaryRecipeCategories.datc64": "1ecd974a8646b121df4ff9176c7e4293174ffd3df34e9d9b7756a5f2bcde3cfc",
       "Data/ZanaInfluenceCostPerCurrency.datc64": "9d112a9e54ced8f07fca83f0a7f66ac7a0a0288431737b2c8eae34d134cdb347",
-      "Data/Maps.datc64": "f304262b9409fa27585c6ba040b63a962f1942a32bc1c03ee1829385586aad9d",
-      "Data/WorldAreas.datc64": "e1e04a4d1eea32e2d1b0ef01843c7a0689503b56b6cb0b141eb4f51585d1a5de",
-      "Data/IncursionRooms.datc64": "538c2b4a333cd8e497c76052ee2d2ae618bcd53d6481fd0a4f74e90e8b1f7db8",
+      "Data/Maps.datc64": "20146bcf4fbb042fb7e16b7b4b80940b2142325b52adb74683ecdebbc3a748e8",
+      "Data/WorldAreas.datc64": "d5839cede1dd92554bbf8d4eb90df661855027b3a3414b2a3cc929d576064642",
+      "Data/IncursionRooms.datc64": "0da7fee98abf9384c764493f504e6a4919617109828e3dbeeda3456820106640",
       "Data/DeepwaterCraftingClasses.datc64": "1084ee7a61c338f448858455ce4668051bc366efd4b5afe6a2fd2c53e65b9360",
-      "Data/DeepwaterCraftingCurrencies.datc64": "52bf4c12a1ea3d575e21126b2e7f3e28cc0859e7b2c3293dbde7bbfc5da5d9da",
+      "Data/DeepwaterCraftingCurrencies.datc64": "4bd0e0472c031acbf36187e4da644af3810ae1c4060ffed739a771956a4074fb",
       "Data/DeepwaterBalancePerLevel.datc64": "e3a19e5b9fce117b00bd30307eaa9dbfb36cf127308beb0a5dedbfbc230c10b3",
-      "Data/KeywordPopupItemReference.datc64": "ba9cce97e08312fa01675d8d605399b0d5c44044e74ead2063c58a931a34baba",
-      "Data/ClientStrings.datc64": "95ed86219a52c971ebee1f7383afde7297554668617a17b86f17261251c7c3d0",
+      "Data/KeywordPopupItemReference.datc64": "b028e2580eefcbf4dfd1325dbe460266b19c8781769622969f600f1fa6e7ad00",
+      "Data/ClientStrings.datc64": "699b74546194113d6dbcc9117357fdbf7cd965bca4f1074440dc0336c95bbf8c",
       "Data/GrantedEffectsPerLevel.datc64": "fa8bf968da8ff0db636a47ab64f83f36b042eeedb075f653d2d9f4350da35930",
       "Data/GrantedEffects.datc64": "6d83465c422005c8e4d482423de2cf02ef665103deac68ab32894b628035153d",
       "Data/ActiveSkills.datc64": "636dfb47cbb068d4af76088fc4d7626a6194f5cc794cdc9ac04c1d325246fbeb",
-      "Data/KeywordPopups.datc64": "fcd6a928d14861b2e55dab12f5d3b4d9409d87000f318905182bda03fd6b6c01",
+      "Data/KeywordPopups.datc64": "6ba171347864d8175d0501466981cd6dfbf8849752889c4e755f798f31ecb070",
       "Data/PassiveSkillTrees.datc64": "ad78cea213799161562aca43c7e8d645efab238c44ad62a547617e786a5ef6be",
-      "Data/BrequelPassiveSubTrees.datc64": "b1b1db23b417b6bb416307bfdbb1e75e5afdf1370be2f8f4e88da064214ec5c3",
-      "Data/PassiveTreeExpansionJewels.datc64": "362419596b1563335d86349743096303a6a7e1f25be428de3d795907a77fc681",
+      "Data/BrequelPassiveSubTrees.datc64": "7ba1220b477f151be8e8c2b52fdaf852b290d3bf2e404e52099bf3bfbc513dac",
+      "Data/PassiveTreeExpansionJewels.datc64": "db9ed9311f9048905b4d81aa1b0136856ab6e7077dc8ce33781f61876450c0e6",
       "Data/PassiveTreeExpansionJewelSizes.datc64": "d3798a5ce2546d76f299fc0b5a627c327189d166163aec7375837ffafe7b57b5",
       "Data/PassiveTreeExpansionSkills.datc64": "6e4d50ceaafefb6f0e9e2611b6273dd838600bf9231be5040b1ebc51dd576223",
       "Data/PassiveTreeExpansionSpecialSkills.datc64": "f0a925ae7931d663bab8204764337acf4c8daed6e7b63cb8202f755d468f24d6",
       "Metadata/LeagueSkillGraphs/ChayulaTreePassiveSkillGraph.psg": "e4e2b5d74bd1062a9c17f35bc8923d721004598fb4ba7de91192de67d801159d",
       "Metadata/StatDescriptions/passive_skill_stat_descriptions.csd": "dab1a8a4aff87e6543e1be4f06ea9e4051c549856bb8eb293b493462e68a57c9",
-      "Metadata/StatDescriptions/stat_descriptions.csd": "cb13dacd5b3bca7a4226e4a68a62e6e28dacc99fff809156f9f15ae740eda94e",
-      "Metadata/StatDescriptions/chest_stat_descriptions.csd": "7d2ec80ceb731166768d9b4796051e1977cbfc053ebc73a7a21a5cbbecac93ec",
+      "Metadata/StatDescriptions/stat_descriptions.csd": "bba8bfce9ebab908d08ef7d8f8c8ec50b88037af1c03944f033bceb5245e7b75",
+      "Metadata/StatDescriptions/chest_stat_descriptions.csd": "1cab4646a7610653f5a8d4b674493573809627796d4734718492b56f22d89059",
       "Metadata/StatDescriptions/monster_stat_descriptions.csd": "4960bb516707c444f2bfc341cfc8529eafcf66946830b0d28385e0c17e6b14be",
-      "Metadata/StatDescriptions/map_stat_descriptions.csd": "ccce2f328b2fdb0436a7c6b3a60089e2a7d0529c6d173f9a00cf0e0d70a6a489",
+      "Metadata/StatDescriptions/map_stat_descriptions.csd": "aaf9a54e11eddb4f08632b696d5f79cb7c4f06d9423e4c88ef3eb0d3665766ad",
       "Data/FishingLureTypes.datc64": "9e5bb7ad478c49b620a849243d1c4d6aeb8496ba609fd9856c8be659c44f3e36",
       "Data/FishingHookTypes.datc64": "55b6fcf721ed5dc095628db817b624bfbc47d7eae43508a73fa1cf7b769d78da",
-      "Metadata/StatDescriptions/atlas_stat_descriptions.csd": "1e30955cd8ace74a977daabb022e051e3c73f3b83220eef45b9451e2423968f4",
-      "Metadata/StatDescriptions/leaguestone_stat_descriptions.csd": "a3d0a78ecf6e671e245b26469a4b29c6e2d52418f9b3e239b1c6c18ef49eac46",
-      "Metadata/StatDescriptions/heist_equipment_stat_descriptions.csd": "168ba73bb56e9c68ae6430bbd0562d7bbe6d13fe9f0b0bf1ad7d91f49bc81649",
-      "Metadata/StatDescriptions/primordial_altar_stat_descriptions.csd": "ae008cf62f948996d4c136eb969e335677fa6a137353994e9229476f51c60594",
-      "Metadata/StatDescriptions/sentinel_stat_descriptions.csd": "1a5603710b2932ce9e4aee4231c82b9bff3a6d8db96bc8eaed5c15373381ae31",
+      "Metadata/StatDescriptions/atlas_stat_descriptions.csd": "bb7f6e841f265819c0ba83d584641ebb29ab8124d0df2265c53ece1cf9299aba",
+      "Metadata/StatDescriptions/leaguestone_stat_descriptions.csd": "ecb24489a2f5ad8548af85d296fbf06ae438bca55d43b6123c2b9609e922d847",
+      "Metadata/StatDescriptions/heist_equipment_stat_descriptions.csd": "931b15b9454426a2f213fbf2fe2371c7761ff1869e12ed8bc63618a7307850be",
+      "Metadata/StatDescriptions/primordial_altar_stat_descriptions.csd": "870c5d6c098133ef41872a1460a0b65fa147df338e00eb3c9d7ab8fdf13b5c46",
+      "Metadata/StatDescriptions/sentinel_stat_descriptions.csd": "45a3c98b26442304784581ba26f705e007a402739fa666c9a51acef36a3a5037",
       "Metadata/StatDescriptions/sanctum_relic_stat_descriptions.csd": "13a42918ea4c8e6fa03ee2787cc36c9201573b0f4be7840fd1588d842005d287",
       "Metadata/StatDescriptions/tincture_stat_descriptions.csd": "3421d5e6a481c2cbc770ba5e2cd0b4b255347e13266d1a85dbb650485e547949",
       "Metadata/StatDescriptions/atlas_relic_stat_descriptions.csd": "fd95f9b55a28e41403c59be2532c18ee55ffc715a427cfa84664059a575366d7",
@@ -497,6 +497,13 @@
       "action": "add_influence_mod_to_rare",
       "description": "Adds Elder influence and a new Elder modifier to a rare item",
       "directions": "Right click this item then left click a high-level rare item with no influence to apply it. Rare items can have up to six random modifiers."
+    },
+    {
+      "id": "Metadata/Items/Currency/CurrencyAddModToRareOriginator",
+      "name": "Originator's Exalted Orb",
+      "action": "add_mod_using_table",
+      "description": "Removes a random Suffix modifier and adds a random\nrare-only modifier to a rare map item",
+      "directions": "Right click this item then left click a rare map item to apply it."
     },
     {
       "id": "Metadata/Items/Currency/CurrencyAddZanaInfluence",
@@ -5962,7 +5969,7 @@
       "id": "Metadata/Items/DivinationCards/DivinationCardAmbitiousObsession",
       "name": "Ambitious Obsession",
       "action": "",
-      "description": "<currencyitem>{Skittering Delirium Orb}",
+      "description": "<currencyitem>{Threaded Delirium Orb}",
       "directions": ""
     },
     {
@@ -13153,6 +13160,13 @@
       "action": "create_random_scarab",
       "description": "A collection of unknown [Thread|Threads]",
       "directions": "Right click to reveal a random [Thread].\nHold Ctrl + Right Click to repeatedly move threads into your inventory."
+    },
+    {
+      "id": "Metadata/Items/Currency/CurrencyStackedExalt",
+      "name": "Primordial Exalted Orb",
+      "action": "create_random_exalt",
+      "description": "A collection of unknown exotic Exalted Orbs",
+      "directions": "Right click to reveal a random Exalted Orb."
     },
     {
       "id": "Metadata/Items/Currency/KalguuranRune1",
@@ -55128,6 +55142,7 @@
     "local_affliction_notable_holy_word",
     "local_affliction_notable_fiery_aegis",
     "local_ring_impaled_debuff_duration_+%_final",
+    "map_bosses_can_drop_exceptional_supports",
     "map_boss_spawn_standalone_guardian",
     "map_breach_boss_additional_wombgift_chance_%",
     "heist_currency_chaos_drops_as_ancient_%",
@@ -55394,7 +55409,8 @@
     "granite_flask_effect_+%",
     "ruby_flask_effect_+%",
     "topaz_flask_effect_+%",
-    "sapphire_flask_effect_+%"
+    "sapphire_flask_effect_+%",
+    "map_betrayal_initial_targets_have_x_additional_rare_bodyguards"
   ],
   "catalysts": [
     {
@@ -59348,6 +59364,11 @@
       "unmodifiable": false,
       "initialSockets": 0
     },
+    "Metadata/Items/Currency/CurrencyAddModToRareOriginator": {
+      "corrupted": false,
+      "unmodifiable": false,
+      "initialSockets": 0
+    },
     "Metadata/Items/Currency/CurrencyAddZanaInfluence": {
       "corrupted": false,
       "unmodifiable": false,
@@ -60114,6 +60135,11 @@
       "initialSockets": 0
     },
     "Metadata/Items/Currency/CurrencyStackedThread": {
+      "corrupted": false,
+      "unmodifiable": false,
+      "initialSockets": 0
+    },
+    "Metadata/Items/Currency/CurrencyStackedExalt": {
       "corrupted": false,
       "unmodifiable": false,
       "initialSockets": 0
@@ -212622,6 +212648,12 @@
       "spawnLevel": null,
       "gameMode": 0
     },
+    "BetrayalUpgradeMonsterRarity": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": 0
+    },
     "CustomLeagueMonsterDamage1": {
       "itemClasses": [],
       "influence": null,
@@ -342019,6 +342051,12 @@
       "spawnLevel": null,
       "gameMode": 0
     },
+    "RandomJuiceModRitualFavours": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": 0
+    },
     "RandomJuiceModBetrayalCatarina": {
       "itemClasses": [],
       "influence": null,
@@ -342050,6 +342088,12 @@
       "gameMode": 0
     },
     "RandomJuiceModBetrayalChestClusters": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": 0
+    },
+    "RandomJuiceModBetrayalRareBodyguards": {
       "itemClasses": [],
       "influence": null,
       "spawnLevel": null,
@@ -342128,6 +342172,12 @@
       "gameMode": 0
     },
     "RandomJuiceModIncursionContainsFleshMerchant": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": 0
+    },
+    "RandomJuiceModIncursionRareBodyguards": {
       "itemClasses": [],
       "influence": null,
       "spawnLevel": null,
@@ -342223,6 +342273,12 @@
       "spawnLevel": null,
       "gameMode": 0
     },
+    "RandomJuiceModBestiaryAdditionalModifier": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": 0
+    },
     "RandomJuiceModBreachWombgiftRareDrops": {
       "itemClasses": [],
       "influence": null,
@@ -342266,6 +342322,18 @@
       "gameMode": 0
     },
     "RandomJuiceModBreachEmpoweredAilithSkills": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": 0
+    },
+    "RandomJuiceModBreachMagicMods": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": 0
+    },
+    "RandomJuiceModBreachDuplicateRares": {
       "itemClasses": [],
       "influence": null,
       "spawnLevel": null,
@@ -345769,6 +345837,12 @@
       "spawnLevel": null,
       "gameMode": 0
     },
+    "AuguryMonsterModRewardAmuletTransformGem": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": 0
+    },
     "AuguryMonsterModRewardAxesTransformPhysical": {
       "itemClasses": [],
       "influence": null,
@@ -345848,6 +345922,30 @@
       "gameMode": 0
     },
     "AuguryMonsterModRewardQuiverTransformNoElemental": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": 0
+    },
+    "AuguryMonsterModRewardHelmetTransformLife": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": 0
+    },
+    "AuguryMonsterModRewardBodyTransformDefences": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": 0
+    },
+    "AuguryMonsterModRewardGlovesTransformLife": {
+      "itemClasses": [],
+      "influence": null,
+      "spawnLevel": null,
+      "gameMode": 0
+    },
+    "AuguryMonsterModRewardShieldTransformDefences": {
       "itemClasses": [],
       "influence": null,
       "spawnLevel": null,
@@ -467473,7 +467571,7 @@
           "conditions": [
             "1|#"
           ],
-          "text": "Remnants have {0}% chance to have an additional Suffix Modifier",
+          "text": "{0:+d}% [SurpassChance|Surpassing Chance] for Remnants to have an additional Suffix Modifier",
           "handlers": []
         }
       ]
@@ -497370,7 +497468,7 @@
           "conditions": [
             "1|#"
           ],
-          "text": "Remnants in your Maps have {0}% chance to have an additional Suffix Modifier",
+          "text": "{0:+d}% [SurpassChance|Surpassing Chance] for Remnants in your Maps to have an additional Suffix Modifier",
           "handlers": []
         }
       ]
@@ -513334,6 +513432,20 @@
             "1|#"
           ],
           "text": "Killing Blows Consume corpses to Recover {1} Mana",
+          "handlers": []
+        }
+      ]
+    },
+    {
+      "ids": [
+        "killing_blow_consumes_corpse_restore_%_life"
+      ],
+      "rules": [
+        {
+          "conditions": [
+            "1|#"
+          ],
+          "text": "Killing Blows Consume corpses to Recover {0}% of Life",
           "handlers": []
         }
       ]
@@ -631211,6 +631323,9 @@
     "RandomJuiceModRitualWildwoodWisp": [
       4666
     ],
+    "RandomJuiceModRitualFavours": [
+      4667
+    ],
     "RandomJuiceModAbyssExtraAbysses": [
       611
     ],
@@ -631888,15 +632003,18 @@
     ],
     "VisceraModHundredFootShadowLow": [
       8844,
-      8845
+      8845,
+      8846
     ],
     "VisceraModHundredFootShadowMed": [
       8844,
-      8845
+      8845,
+      8846
     ],
     "VisceraModHundredFootShadowHigh": [
       8844,
-      8845
+      8845,
+      8846
     ],
     "VisceraModVollLow": [
       851,
@@ -631912,39 +632030,39 @@
     ],
     "VisceraModPikerivetLow": [
       6562,
-      8846
+      8847
     ],
     "VisceraModPikerivetMed": [
       6562,
-      8846
+      8847
     ],
     "VisceraModPikerivetHigh": [
       6562,
-      8846
+      8847
     ],
     "VisceraModHammerstormLow": [
       6535,
-      8847
+      8848
     ],
     "VisceraModHammerstormMed": [
       6535,
-      8847
+      8848
     ],
     "VisceraModHammerstormHigh": [
       6535,
-      8847
+      8848
     ],
     "VisceraModTheBurningManLow": [
       2721,
-      8848
+      8849
     ],
     "VisceraModTheBurningManMed": [
       2721,
-      8848
+      8849
     ],
     "VisceraModTheBurningManHigh": [
       2721,
-      8848
+      8849
     ],
     "VisceraModTorchoakGroveLow": [
       1690,
@@ -631984,75 +632102,75 @@
     ],
     "VisceraModDaressoLow": [
       66,
-      8849
+      8850
     ],
     "VisceraModDaressoMed": [
       66,
-      8849
+      8850
     ],
     "VisceraModDaressoHigh": [
       66,
-      8849
+      8850
     ],
     "VisceraModBoneQueenLow": [
       7232,
-      8850
+      8851
     ],
     "VisceraModBoneQueenMed": [
       7232,
-      8850
+      8851
     ],
     "VisceraModBoneQueenHigh": [
       7232,
-      8850
+      8851
     ],
     "VisceraModPietyAbominationLow": [
-      8851,
+      8852,
       1218
     ],
     "VisceraModPietyAbominationMed": [
-      8851,
+      8852,
       1218
     ],
     "VisceraModPietyAbominationHigh": [
-      8851,
+      8852,
       1218
     ],
     "VisceraModMalachaiNightmareLow": [
-      8852,
-      8853
+      8853,
+      8854
     ],
     "VisceraModMalachaiNightmareMed": [
-      8852,
-      8853
+      8853,
+      8854
     ],
     "VisceraModMalachaiNightmareHigh": [
-      8852,
-      8853
+      8853,
+      8854
     ],
     "VisceraModTheWhiteDeathLow": [
-      8854,
+      8855,
       193
     ],
     "VisceraModTheWhiteDeathMed": [
-      8854,
+      8855,
       193
     ],
     "VisceraModTheWhiteDeathHigh": [
-      8854,
+      8855,
       193
     ],
     "VisceraModOverseerKrowLow": [
-      8855,
-      8856
+      8856,
+      8857
     ],
     "VisceraModOverseerKrowMed": [
-      8855,
-      8856
+      8856,
+      8857
     ],
     "VisceraModOverseerKrowHigh": [
-      8855,
-      8856
+      8856,
+      8857
     ],
     "VisceraModJusticarCasticusLow": [
       1693,
@@ -632068,15 +632186,15 @@
     ],
     "VisceraModMatriarchLow": [
       5259,
-      8857
+      8858
     ],
     "VisceraModMatriarchMed": [
       5259,
-      8857
+      8858
     ],
     "VisceraModMatriarchHigh": [
       5259,
-      8857
+      8858
     ],
     "VisceraModPrayerLeaderLow": [
       38,
@@ -632092,92 +632210,92 @@
     ],
     "VisceraModCatoLow": [
       3522,
-      8858
+      8859
     ],
     "VisceraModCatoMed": [
       3522,
-      8858
+      8859
     ],
     "VisceraModCatoHigh": [
       3522,
-      8858
+      8859
     ],
     "VisceraModHighTemplarAvariusLow": [
       7224,
-      8859
+      8860
     ],
     "VisceraModHighTemplarAvariusMed": [
       7224,
-      8859
+      8860
     ],
     "VisceraModHighTemplarAvariusHigh": [
       7224,
-      8859
+      8860
     ],
     "VisceraModSkeletalAbominationLow": [
       862,
-      8860
+      8861
     ],
     "VisceraModSkeletalAbominationMed": [
       862,
-      8860
+      8861
     ],
     "VisceraModSkeletalAbominationHigh": [
       862,
-      8860
+      8861
     ],
     "VisceraModGrandReliquarianLow": [
-      8861,
-      8862
+      8862,
+      8863
     ],
     "VisceraModGrandReliquarianMed": [
-      8861,
-      8862
+      8862,
+      8863
     ],
     "VisceraModGrandReliquarianHigh": [
-      8861,
-      8862
+      8862,
+      8863
     ],
     "VisceraModKitavaLow": [
-      8863,
+      8864,
       7804,
       6008,
       8476,
       8477
     ],
     "VisceraModKitavaMed": [
-      8863,
+      8864,
       7804,
       6008,
       8476,
       8477
     ],
     "VisceraModKitavaHigh": [
-      8863,
+      8864,
       7804,
       6008,
       8476,
       8477
     ],
     "VisceraModRhysLow": [
-      8864,
       8865,
-      8866
+      8866,
+      8867
     ],
     "VisceraModRhysMed": [
-      8864,
       8865,
-      8866
+      8866,
+      8867
     ],
     "VisceraModRhysHigh": [
-      8864,
       8865,
-      8866
+      8866,
+      8867
     ],
     "VisceraModRhysQueen": [
-      8864,
       8865,
-      8866
+      8866,
+      8867
     ],
     "VisceraModRaiharaLow": [
       5756,
@@ -632193,26 +632311,26 @@
     ],
     "VisceraModDishonouredQueenLow": [
       959,
-      8867
+      8868
     ],
     "VisceraModDishonouredQueenMed": [
       959,
-      8867
+      8868
     ],
     "VisceraModDishonouredQueenHigh": [
       959,
-      8867
+      8868
     ],
     "VisceraModTukohamaLow": [
-      8868,
+      8869,
       5272
     ],
     "VisceraModTukohamaMed": [
-      8868,
+      8869,
       5272
     ],
     "VisceraModTukohamaHigh": [
-      8868,
+      8869,
       5272
     ],
     "VisceraModFleetfreakLow": [
@@ -632252,7 +632370,7 @@
       164
     ],
     "VisceraModAnimalPackBear": [
-      8869
+      8870
     ],
     "VisceraModAnimalPackBoar": [
       5292
@@ -632261,16 +632379,16 @@
       1028
     ],
     "VisceraModRyslathaLow": [
-      8870,
-      8871
+      8871,
+      8872
     ],
     "VisceraModRyslathaMed": [
-      8870,
-      8871
+      8871,
+      8872
     ],
     "VisceraModRyslathaHigh": [
-      8870,
-      8871
+      8871,
+      8872
     ],
     "VisceraModHollowskullLow": [
       1083,
@@ -632325,15 +632443,15 @@
     ],
     "VisceraModPlagueRetchLow": [
       1760,
-      8872
+      8873
     ],
     "VisceraModPlagueRetchMed": [
       1760,
-      8872
+      8873
     ],
     "VisceraModPlagueRetchHigh": [
       1760,
-      8872
+      8873
     ],
     "VisceraModMaligaroLow": [
       6539,
@@ -632349,75 +632467,75 @@
     ],
     "VisceraModBoneSculptorLow": [
       5234,
-      8873
+      8874
     ],
     "VisceraModBoneSculptorMed": [
       5234,
-      8873
+      8874
     ],
     "VisceraModBoneSculptorHigh": [
       5234,
-      8873
+      8874
     ],
     "VisceraModGreustLow": [
       321,
-      8874
+      8875
     ],
     "VisceraModGreustMed": [
       321,
-      8874
+      8875
     ],
     "VisceraModGreustHigh": [
       321,
-      8874
+      8875
     ],
     "VisceraModTunnelwormLow": [
-      8875,
-      8876
+      8876,
+      8877
     ],
     "VisceraModTunnelwormMed": [
-      8875,
-      8876
+      8876,
+      8877
     ],
     "VisceraModTunnelwormHigh": [
-      8875,
-      8876
+      8876,
+      8877
     ],
     "VisceraModGruthkulLow": [
       4549,
-      8877
+      8878
     ],
     "VisceraModGruthkulMed": [
       4549,
-      8877
+      8878
     ],
     "VisceraModGruthkulHigh": [
       4549,
-      8877
+      8878
     ],
     "VisceraModVaalSentryLow": [
       208,
-      8878
+      8879
     ],
     "VisceraModVaalSentryMed": [
       208,
-      8878
+      8879
     ],
     "VisceraModVaalSentryHigh": [
       208,
-      8878
+      8879
     ],
     "VisceraModArakaaliLow": [
-      8879,
-      8880
+      8880,
+      8881
     ],
     "VisceraModArakaaliMed": [
-      8879,
-      8880
+      8880,
+      8881
     ],
     "VisceraModArakaaliHigh": [
-      8879,
-      8880
+      8880,
+      8881
     ],
     "VisceraModToweringAberrationLow": [
       1972,
@@ -632444,15 +632562,15 @@
       1454
     ],
     "VisceraModOndarLow": [
-      8881,
+      8882,
       6073
     ],
     "VisceraModOndarMed": [
-      8881,
+      8882,
       6073
     ],
     "VisceraModOndarHigh": [
-      8881,
+      8882,
       6073
     ],
     "VisceraModYugulLow": [
@@ -632469,15 +632587,15 @@
     ],
     "VisceraModHectorTituciusLow": [
       747,
-      8882
+      8883
     ],
     "VisceraModHectorTituciusMed": [
       747,
-      8882
+      8883
     ],
     "VisceraModHectorTituciusHigh": [
       747,
-      8882
+      8883
     ],
     "VisceraModNightbringerLuciusLow": [
       1292,
@@ -632492,16 +632610,16 @@
       1249
     ],
     "VisceraModBannerofLunarisLow": [
-      8883,
-      8884
+      8884,
+      8885
     ],
     "VisceraModBannerofLunarisMed": [
-      8883,
-      8884
+      8884,
+      8885
     ],
     "VisceraModBannerofLunarisHigh": [
-      8883,
-      8884
+      8884,
+      8885
     ],
     "VisceraModHarbingerofLunarisLow": [
       39,
@@ -632529,45 +632647,45 @@
     ],
     "VisceraModGemlingCaptainLow": [
       828,
-      8885,
+      8886,
       3813,
       8491
     ],
     "VisceraModGemlingCaptainMed": [
       828,
-      8885,
+      8886,
       3813,
       8491
     ],
     "VisceraModGemlingCaptainHigh1": [
       828,
-      8885,
+      8886,
       3813,
       8491
     ],
     "VisceraModGemlingCaptainHigh2": [
       828,
-      8885,
+      8886,
       3813,
       8491
     ],
     "VisceraModGemlingCaptainHigh3": [
       828,
-      8885,
+      8886,
       3813,
       8491
     ],
     "VisceraModEffigyofFearLow": [
       303,
-      8886
+      8887
     ],
     "VisceraModEffigyofFearMed": [
       303,
-      8886
+      8887
     ],
     "VisceraModEffigyofFearHigh": [
       303,
-      8886
+      8887
     ],
     "VisceraModRegulusLow": [
       1190,
@@ -632582,28 +632700,28 @@
       1248
     ],
     "VisceraModSwordofLunarisLow": [
-      8887,
-      8888
+      8888,
+      8889
     ],
     "VisceraModSwordofLunarisMed": [
-      8887,
-      8888
+      8888,
+      8889
     ],
     "VisceraModSwordofLunarisHigh": [
-      8887,
-      8888
+      8888,
+      8889
     ],
     "VisceraModHarbingerofSolarisLow": [
       5285,
-      8889
+      8890
     ],
     "VisceraModHarbingerofSolarisMed": [
       5285,
-      8889
+      8890
     ],
     "VisceraModHarbingerofSolarisHigh": [
       5285,
-      8889
+      8890
     ],
     "VisceraModSolarisLow": [
       186,
@@ -632637,39 +632755,39 @@
     ],
     "VisceraModWeaponsSmugglerLow": [
       133,
-      8890
+      8891
     ],
     "VisceraModWeaponsSmugglerMed": [
       133,
-      8890
+      8891
     ],
     "VisceraModWeaponsSmugglerHigh": [
       133,
-      8890
+      8891
     ],
     "VisceraModCoagulationofGoreLow": [
-      8891,
-      8892
+      8892,
+      8893
     ],
     "VisceraModCoagulationofGoreMed": [
-      8891,
-      8892
+      8892,
+      8893
     ],
     "VisceraModCoagulationofGoreHigh": [
-      8891,
-      8892
+      8892,
+      8893
     ],
     "VisceraModChilloftheMountainLow": [
       1288,
-      8893
+      8894
     ],
     "VisceraModChilloftheMountainMed": [
       1288,
-      8893
+      8894
     ],
     "VisceraModChilloftheMountainHigh": [
       1288,
-      8893
+      8894
     ],
     "VisceraModMessengeroftheDesertLow": [
       1367,
@@ -632684,16 +632802,16 @@
       4179
     ],
     "VisceraModShakariLow": [
-      8894,
-      8895
+      8895,
+      8896
     ],
     "VisceraModShakariMed": [
-      8894,
-      8895
+      8895,
+      8896
     ],
     "VisceraModShakariHigh": [
-      8894,
-      8895
+      8895,
+      8896
     ],
     "VisceraModBoulderbackLow": [
       3812,
@@ -632708,37 +632826,37 @@
       5282
     ],
     "VisceraModBasiliskLow": [
-      8896
+      8897
     ],
     "VisceraModBasiliskMed": [
-      8896
+      8897
     ],
     "VisceraModBasiliskHigh": [
-      8896
+      8897
     ],
     "VisceraModMurukLow": [
       196,
-      8897
+      8898
     ],
     "VisceraModMurukMed": [
       196,
-      8897
+      8898
     ],
     "VisceraModMurukHigh": [
       196,
-      8897
+      8898
     ],
     "VisceraModGarukhanLow": [
-      8898,
-      8899
+      8899,
+      8900
     ],
     "VisceraModGarukhanMed": [
-      8898,
-      8899
+      8899,
+      8900
     ],
     "VisceraModGarukhanHigh": [
-      8898,
-      8899
+      8899,
+      8900
     ],
     "VisceraModGeneralAdusLow": [
       40,
@@ -632754,41 +632872,41 @@
     ],
     "VisceraModDroolmawLow": [
       1561,
-      8900
+      8901
     ],
     "VisceraModDroolmawMed": [
       1561,
-      8900
+      8901
     ],
     "VisceraModDroolmawHigh": [
       1561,
-      8900
+      8901
     ],
     "VisceraModDepravedTrinityMaligaro1": [
-      8901,
+      8902,
       1349
     ],
     "VisceraModDepravedTrinityMaligaro2": [
-      8901,
+      8902,
       1349
     ],
     "VisceraModDepravedTrinityShavronne": [
-      8902
+      8903
     ],
     "VisceraModDepravedTrinityDoedre": [
-      8903
+      8904
     ],
     "VisceraModPlaguewingLow": [
       4502,
-      8904
+      8905
     ],
     "VisceraModPlaguewingMed": [
       4502,
-      8904
+      8905
     ],
     "VisceraModPlaguewingHigh": [
       4502,
-      8904
+      8905
     ],
     "VisceraModAureltheHungryLow": [
       6550,
@@ -632804,39 +632922,39 @@
     ],
     "VisceraModAvariusReassembledLow": [
       735,
-      8905
+      8906
     ],
     "VisceraModAvariusReassembledMed": [
       735,
-      8905
+      8906
     ],
     "VisceraModAvariusReassembledHigh": [
       735,
-      8905
+      8906
     ],
     "VisceraModUnendingFeastLow": [
       6008,
-      8906
+      8907
     ],
     "VisceraModUnendingFeastMed": [
       6008,
-      8906
+      8907
     ],
     "VisceraModUnendingFeastHigh": [
       6008,
-      8906
+      8907
     ],
     "VisceraModVilentaLow": [
-      8907,
-      8862
+      8908,
+      8863
     ],
     "VisceraModVilentaMed": [
-      8907,
-      8862
+      8908,
+      8863
     ],
     "VisceraModVilentaHigh": [
-      8907,
-      8862
+      8908,
+      8863
     ],
     "VisceraModLivingKnowledge": [
       909
@@ -632887,7 +633005,7 @@
       5229
     ],
     "VisceraModSirusUber": [
-      8908
+      8909
     ],
     "VisceraModIncarnationofDread": [
       8350
@@ -632969,16 +633087,16 @@
       3971
     ],
     "VisceraModBaran": [
-      8909
-    ],
-    "VisceraModVeritania": [
       8910
     ],
-    "VisceraModDrox": [
+    "VisceraModVeritania": [
       8911
     ],
-    "VisceraModAlHezmin": [
+    "VisceraModDrox": [
       8912
+    ],
+    "VisceraModAlHezmin": [
+      8913
     ],
     "VisceraModBringerofBlood1": [
       3849,
@@ -633018,7 +633136,7 @@
       2772
     ],
     "VisceraModNightmareofUhtred": [
-      8913
+      8914
     ],
     "VisceraModNightmareofUnbreakable": [
       3928

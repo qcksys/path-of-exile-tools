@@ -185,6 +185,6 @@
     "additionalProperties": false
   },
   "minProperties": 1,
-  "$id": "urn:qcksys:poe1:3.30.0-build.2.2:mods.schema.json",
+  "$id": "urn:qcksys:poe1:3.30.0-build.4:mods.schema.json",
   "$comment": "Generated from Zod. Cross-field refinements (such as min <= max) and dataset reference checks remain in the Zod validators."
 }
