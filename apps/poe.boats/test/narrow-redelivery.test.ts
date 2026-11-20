@@ -130,6 +130,60 @@ it("matches what a whole-hour rollup sends for the changed item", async () => {
     }
 });
 
+it("resends only the markets that hold the changed sale, as a whole-hour rollup has them", async () => {
+    const eye = (id: string, ...explicitMods: string[]) => ({
+        ...item("Watcher's Eye", "Prismatic Jewel", "Jewels/ElderJewel"),
+        id: `id-${id}`,
+        explicitMods,
+    });
+    const anger = "+20% to Critical Strike Multiplier while affected by Anger";
+    const db = await openDb(":memory:");
+    try {
+        await configureSource(db.conn, "pc", LEAGUE);
+        await applyStashChanges(
+            db.conn,
+            stash(
+                "a",
+                eye(
+                    "clarity",
+                    anger,
+                    "Gain 15% of Maximum Mana as Extra Energy Shield while affected by Clarity",
+                ),
+            ),
+            at(5),
+        );
+        await applyStashChanges(
+            db.conn,
+            stash("b", eye("haste", anger, "+10% to Movement Speed while affected by Haste")),
+            at(6),
+        );
+        await applyStashChanges(db.conn, stash("a"), at(10));
+        await applyStashChanges(db.conn, stash("b"), at(11));
+        await flushRollups(db.conn, { league: LEAGUE, stashBeforeHour: HOUR + 3600 });
+        const markets = (rows: typeof pushed) =>
+            rows.map((row) => (row as unknown as { signatureValue: string }).signatureValue);
+        expect(markets(pushed)).toHaveLength(4);
+
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        await db.conn.run(
+            `UPDATE ps_sale SET status = 'relisted', updated_at = current_timestamp::TIMESTAMP
+            WHERE item_id = 'id-clarity'`,
+        );
+        pushed.length = 0;
+        expect(
+            await flushRollups(db.conn, { league: LEAGUE, stashBeforeHour: HOUR + 3600 }),
+        ).toMatchObject({ hours: 1, rows: 3 });
+        const narrow = [...pushed];
+        pushed.length = 0;
+        await rollupPs(db.conn, { hour: HOUR, league: LEAGUE });
+        const whole = pushed.filter((row) => !markets([row])[0]!.includes("Haste"));
+        expect(markets(whole)).toHaveLength(3);
+        expect(narrow).toEqual(whole);
+    } finally {
+        await db.close();
+    }
+});
+
 it("prices a removal as delisted only while it is not a sale, relist or undecided", async () => {
     const { db } = await deliveredHour();
     const prices = { divine: { count: 1, min: 10, median: 10, p25: 10, p75: 10 } };

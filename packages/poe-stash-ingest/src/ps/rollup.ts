@@ -60,13 +60,14 @@ interface AggregateRow {
  */
 const ROLLUP_SQL = /* sql */ `
 WITH observations AS (
-    SELECT * EXCLUDE (observed_hour), observed_hour AS hour, 'listing' AS status
+    SELECT * EXCLUDE (observed_hour), observed_hour AS hour, 'listing' AS status,
+        last_seen_at AS changed_at
     FROM ps_listing_hour WHERE observed_hour = $1 AND ($2 IS NULL OR league = $2)
         AND tab = 'merchant'
         AND ($3::VARCHAR IS NULL OR list_contains($3::JSON::VARCHAR[], item_key))
     UNION ALL BY NAME
     SELECT * EXCLUDE (eligible_since, market_price, market_sellers, updated_at),
-        epoch(date_trunc('hour', removed_at))::BIGINT AS hour
+        epoch(date_trunc('hour', removed_at))::BIGINT AS hour, updated_at AS changed_at
     FROM ps_sale WHERE epoch(date_trunc('hour', removed_at))::BIGINT = $1
         AND ($2 IS NULL OR league = $2)
         AND tab = 'merchant'
@@ -97,7 +98,8 @@ WITH observations AS (
         l.price_currency,
         l.first_seen_at,
         l.last_seen_at,
-        l.removed_at
+        l.removed_at,
+        l.changed_at
     FROM observations l
     LEFT JOIN icon_basemap b ON l.icon_asset = b.icon_asset
     WHERE l.hour = $1
@@ -228,6 +230,8 @@ LEFT JOIN (SELECT * FROM prices_agg WHERE price_kind = 'delisted') d USING (
 GROUP BY
     w.league, w.hour, w.item_key, w.corrupted, w.links, w.tab,
     w.signature_kind, w.signature_value, p.prices_json, s.prices_json, d.prices_json
+-- A delivered hour resends only the markets holding an observation changed since (µs).
+HAVING $4::BIGINT IS NULL OR bool_or(w.changed_at > make_timestamp($4::BIGINT))
 ORDER BY w.league, w.item_key, w.signature_kind, w.signature_value
 `;
 
@@ -236,12 +240,18 @@ function unixHour(d: Date = new Date()): number {
 }
 
 /**
- * The items whose observations changed since this hour was last delivered, or null when the whole
- * hour must be sent: it was never delivered, or a newly learned icon can name any of its markets.
- * Every market of an item is sent, because a mod pool unique's sale reaches several of them.
+ * The items whose observations changed since this hour was last delivered (`since`, in µs), or null
+ * when the whole hour must be sent: it was never delivered, or a newly learned icon can name any of
+ * its markets. Their markets that hold a changed observation are sent; a mod pool unique's sale is
+ * in several.
  */
 async function changedItemKeys(conn: DuckDBConnection, hour: number, league: string) {
-    const rows = await queryAll<{ itemKey: string; basemap: boolean; changed: boolean }>(
+    const rows = await queryAll<{
+        itemKey: string;
+        basemap: boolean;
+        changed: boolean;
+        since: number;
+    }>(
         conn,
         `WITH state AS (
             SELECT pushed_at FROM rollup_state
@@ -255,14 +265,18 @@ async function changedItemKeys(conn: DuckDBConnection, hour: number, league: str
                 AND tab = 'merchant'
         )
         SELECT o.item_key AS "itemKey", bool_or(b.first_seen_at > s.pushed_at) AS basemap,
-            bool_or(o.changed_at > s.pushed_at) AS changed
+            bool_or(o.changed_at > s.pushed_at) AS changed,
+            any_value(epoch_us(s.pushed_at))::DOUBLE AS since
         FROM observations o CROSS JOIN state s
         LEFT JOIN icon_basemap b ON b.icon_asset = o.icon_asset
         GROUP BY o.item_key`,
         [hour, league],
     );
     if (!rows.length || rows.some((row) => row.basemap)) return null;
-    return rows.filter((row) => row.changed).map((row) => row.itemKey);
+    return {
+        itemKeys: rows.filter((row) => row.changed).map((row) => row.itemKey),
+        since: rows[0]!.since,
+    };
 }
 
 export async function rollupPs(
@@ -271,7 +285,7 @@ export async function rollupPs(
         hour?: number;
         league?: string | null;
         dryRun?: boolean;
-        /** Send a delivered hour's changed items, not all of it; needs `league`. */
+        /** Send a delivered hour's changed markets, not all of it; needs `league`. */
         changedOnly?: boolean;
         onBatch?: () => Promise<void>;
     },
@@ -279,13 +293,15 @@ export async function rollupPs(
     await assertSourceRealm(conn, REALM ?? "pc");
     const hour = opts.hour ?? unixHour() - 3600;
     const league = opts.league ?? null;
-    const itemKeys =
+    const changed =
         opts.changedOnly && league !== null ? await changedItemKeys(conn, hour, league) : null;
+    const itemKeys = changed?.itemKeys ?? null;
 
     const aggregates = await queryAll<AggregateRow>(conn, ROLLUP_SQL, [
         hour,
         league,
         itemKeys && JSON.stringify(itemKeys),
+        changed?.since ?? null,
     ]);
 
     const rows: UniqueHourlyRow[] = aggregates.map((a) => ({
