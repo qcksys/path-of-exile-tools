@@ -68,14 +68,19 @@ async function equipmentRange(
         WHERE observed_hour BETWEEN $1 - ($3 - 1) * 3600 AND $1 AND ($2 IS NULL OR league = $2)
         GROUP BY revision, league
         HAVING count(DISTINCT observed_hour) = $3
-    ), source AS (
+    ), source AS NOT MATERIALIZED (
+        -- DuckDB materializes a CTE read twice. A day of observations with their cohort arrays
+        -- spills tens of gigabytes that way, so the wide CTEs are read again instead.
         SELECT h.* FROM ps_equipment_hour h JOIN coverage USING (revision, league)
         WHERE observed_hour BETWEEN $1 - ($3 - 1) * 3600 AND $1
-    ), recent AS (
-        SELECT * FROM source
-        QUALIFY row_number() OVER (
-            PARTITION BY revision, league, account_name, item_id ORDER BY observed_hour DESC
-        ) = 1
+    ), latest AS MATERIALIZED (
+        -- Each listing's last hour, from its key alone: a window over the day buffers every row.
+        SELECT revision, league, account_name, item_id, max(observed_hour) AS observed_hour
+        FROM source GROUP BY ALL
+    ), recent AS NOT MATERIALIZED (
+        -- An hour has one row per listing and revision.
+        SELECT h.* FROM source h
+        JOIN latest USING (revision, league, account_name, item_id, observed_hour)
     ), hourly_prices AS (
         SELECT revision, league, json_extract_string(c.value, '$') AS cohort_id,
             price_currency, observed_hour, median(price_amount) AS median
@@ -86,7 +91,7 @@ async function equipmentRange(
         SELECT revision, league, cohort_id, price_currency,
             min(median) AS hourly_min, max(median) AS hourly_max
         FROM hourly_prices GROUP BY revision, league, cohort_id, price_currency
-    ), observations AS (
+    ), observations AS NOT MATERIALIZED (
         SELECT revision, league, account_name, price_amount, price_currency, last_seen_at,
             json_extract_string(c.value, '$') AS cohort_id, TRUE AS matched
         FROM recent h, json_each(h.matches) c

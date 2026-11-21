@@ -251,6 +251,35 @@ it("prepares once before a delivery's equipment rollups, so the pipeline can rel
     );
 });
 
+it("rolls up a day of wide cohort arrays without writing them all to temporary files", async () => {
+    const itemCount = 3000;
+    await db.close();
+    directory = await mkdtemp(join(tmpdir(), "equipment-rollup-"));
+    const path = join(directory, "market.duckdb");
+    db = await openDb(path);
+    await db.conn.run(
+        `INSERT INTO ps_equipment_hour
+        SELECT 'seller-' || (i % 50), 'item-' || i, 'stash', 'Standard', 'complete',
+            '["base"]'::JSON,
+            to_json(list_transform(range(20), j -> 'unknown-' || ((i + j) % 500) || repeat('x', 64))),
+            10 + (i % 3), 'chaos', to_timestamp($1 - h * 3600 + 60), $1 - h * 3600
+        FROM range($2) items(i), range(24) hours(h)`,
+        [HOUR, itemCount],
+    );
+    await mark("complete");
+    const expected = await equipmentHourly(db.conn, HOUR, "Standard");
+    await db.close();
+    db = await openDb(path);
+    await db.conn.run("SET memory_limit = '128MB'");
+    await db.conn.run("SET max_temp_directory_size = '64MB'");
+    expect(await equipmentHourly(db.conn, HOUR, "Standard")).toEqual(expected);
+    // A window counts each listing once, at its last hour.
+    expect(expected[0]?.prices.chaos?.windows?.[24]).toMatchObject({
+        count: itemCount,
+        sellers: 50,
+    });
+});
+
 it("preserves escaped cohort IDs and repeated entries in matched and unknown arrays", async () => {
     const cohort = 'cohort-\\"雪';
     for (let offset = 0; offset < 24; offset++) {
