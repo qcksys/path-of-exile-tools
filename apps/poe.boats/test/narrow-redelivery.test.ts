@@ -130,37 +130,6 @@ it("matches what a whole-hour rollup sends for the changed item", async () => {
     }
 });
 
-it("sends every delivered hour's changed markets in one request", async () => {
-    const db = await openDb(":memory:");
-    try {
-        await configureSource(db.conn, "pc", LEAGUE);
-        for (const [offset, sold] of [
-            item("Headhunter"),
-            item("Mageblood", "Heavy Belt"),
-        ].entries()) {
-            const minute = (m: number) => new Date((HOUR + offset * 3600 + m * 60) * 1000);
-            await applyStashChanges(db.conn, stash(`seller-${offset}`, sold), minute(5));
-            await applyStashChanges(db.conn, stash(`seller-${offset}`), minute(10));
-        }
-        const flush = () => flushRollups(db.conn, { league: LEAGUE, stashBeforeHour: HOUR + 7200 });
-        expect(await flush()).toMatchObject({ hours: 2, rows: 2 });
-
-        await new Promise((resolve) => setTimeout(resolve, 5));
-        await relistSale(db.conn);
-        const requests = vi.mocked(fetch).mock.calls.length;
-        pushed.length = 0;
-        expect(await flush()).toMatchObject({ hours: 2, rows: 2 });
-        expect(vi.mocked(fetch).mock.calls.length - requests).toBe(1);
-        expect(pushed.map((row) => [row.hour, row.itemKey])).toEqual([
-            [HOUR, "Headhunter"],
-            [HOUR + 3600, "Mageblood"],
-        ]);
-        expect((await flush()).hours).toBe(0);
-    } finally {
-        await db.close();
-    }
-});
-
 it("resends only the markets that hold the changed sale, as a whole-hour rollup has them", async () => {
     const eye = (id: string, ...explicitMods: string[]) => ({
         ...item("Watcher's Eye", "Prismatic Jewel", "Jewels/ElderJewel"),

@@ -279,20 +279,22 @@ async function changedItemKeys(conn: DuckDBConnection, hour: number, league: str
     };
 }
 
-type DeliveryOptions = { dryRun?: boolean; onBatch?: () => Promise<void> };
-
-/** A delivered hour's changed markets, and how many of its items changed. */
-type ChangedHour = { hour: number; league: string; rows: UniqueHourlyRow[]; items: number };
-
-/** An hour's market rows, and its changed items when only their markets are to be sent. */
-async function hourRows(
+export async function rollupPs(
     conn: DuckDBConnection,
-    hour: number,
-    league: string | null,
-    changedOnly: boolean,
-) {
+    opts: {
+        hour?: number;
+        league?: string | null;
+        dryRun?: boolean;
+        /** Send a delivered hour's changed markets, not all of it; needs `league`. */
+        changedOnly?: boolean;
+        onBatch?: () => Promise<void>;
+    },
+): Promise<{ hours: number[]; rows: number }> {
+    await assertSourceRealm(conn, REALM ?? "pc");
+    const hour = opts.hour ?? unixHour() - 3600;
+    const league = opts.league ?? null;
     const changed =
-        changedOnly && league !== null ? await changedItemKeys(conn, hour, league) : null;
+        opts.changedOnly && league !== null ? await changedItemKeys(conn, hour, league) : null;
     const itemKeys = changed?.itemKeys ?? null;
 
     const aggregates = await queryAll<AggregateRow>(conn, ROLLUP_SQL, [
@@ -334,49 +336,22 @@ async function hourRows(
         firstSeenAt: a.firstSeenAt,
         lastSeenAt: a.lastSeenAt,
     }));
-    return { rows, itemKeys };
-}
 
-/**
- * Pushes delivered hours' changed markets in as few requests as they fit, then marks each hour
- * delivered. `row_count` stays the whole hour's. An hour must also stop being pending when its
- * changed items have no market, such as a corrupted Watcher's Eye, or are only in other tabs.
- */
-async function deliverChanged(conn: DuckDBConnection, hours: ChangedHour[], opts: DeliveryOptions) {
-    // Leagues poe.boats doesn't store stay in this database and its archive.
-    await push(
-        {
-            stream: "psapi",
-            rows: hours.flatMap((h) => h.rows).filter((row) => marketLeagueTracked(row.league)),
-        },
-        opts,
-    );
-    for (const { hour, league, rows, items } of hours) {
+    // `row_count` stays the whole hour's. This hour must also stop being pending when its changed
+    // items have no market, such as a corrupted Watcher's Eye, or are only in other tabs.
+    const markDelivered = async () => {
         if (!opts.dryRun)
             await conn.run(
                 `UPDATE rollup_state SET pushed_at = now()
                 WHERE stream_name = '${STREAM}' AND league = $1 AND hour = $2`,
                 [league, hour],
             );
-        console.log(
-            `psapi rollup hour=${hour}: ${rows.length} rows of ${items} changed items pushed.`,
-        );
-    }
-    return hours.reduce((sum, h) => sum + h.rows.length, 0);
-}
-
-/** Sends a whole hour and records its row count. */
-async function deliverWhole(
-    conn: DuckDBConnection,
-    hour: number,
-    league: string | null,
-    rows: UniqueHourlyRow[],
-    opts: DeliveryOptions,
-) {
+    };
     if (rows.length === 0) {
+        if (itemKeys) await markDelivered();
         // An hour with only other tabs' listings sends nothing, but archiving and pruning its rows
         // need it marked delivered.
-        if (league !== null && !opts.dryRun)
+        else if (league !== null && !opts.dryRun)
             await conn.run(
                 `INSERT INTO rollup_state (stream_name, league, hour, pushed_at, row_count)
                  VALUES ('${STREAM}', $1, $2, current_timestamp, 0)
@@ -387,14 +362,22 @@ async function deliverWhole(
         console.log(
             `psapi rollup hour=${hour} league=${league ?? "all"}: no rows; nothing to push.`,
         );
-        return 0;
+        return { hours: [hour], rows: 0 };
     }
 
     // Leagues poe.boats doesn't store stay in this database and its archive.
     await push(
         { stream: "psapi", rows: rows.filter((row) => marketLeagueTracked(row.league)) },
-        opts,
+        { dryRun: opts.dryRun, onBatch: opts.onBatch },
     );
+
+    if (itemKeys) {
+        await markDelivered();
+        console.log(
+            `psapi rollup hour=${hour}: ${rows.length} rows of ${itemKeys.length} changed items pushed.`,
+        );
+        return { hours: [hour], rows: rows.length };
+    }
     if (!opts.dryRun) {
         const byLeague = new Map<string, number>();
         for (const r of rows) byLeague.set(r.league, (byLeague.get(r.league) ?? 0) + 1);
@@ -410,57 +393,5 @@ async function deliverWhole(
     }
 
     console.log(`psapi rollup hour=${hour}: ${rows.length} rows pushed.`);
-    return rows.length;
-}
-
-export async function rollupPs(
-    conn: DuckDBConnection,
-    opts: DeliveryOptions & {
-        hour?: number;
-        league?: string | null;
-        /** Send a delivered hour's changed markets, not all of it; needs `league`. */
-        changedOnly?: boolean;
-    },
-): Promise<{ hours: number[]; rows: number }> {
-    await assertSourceRealm(conn, REALM ?? "pc");
-    const hour = opts.hour ?? unixHour() - 3600;
-    const league = opts.league ?? null;
-    const delivery = { dryRun: opts.dryRun, onBatch: opts.onBatch };
-    const { rows, itemKeys } = await hourRows(conn, hour, league, opts.changedOnly ?? false);
-    return {
-        hours: [hour],
-        rows:
-            itemKeys && league !== null
-                ? await deliverChanged(
-                      conn,
-                      [{ hour, league, rows, items: itemKeys.length }],
-                      delivery,
-                  )
-                : await deliverWhole(conn, hour, league, rows, delivery),
-    };
-}
-
-/**
- * Re-delivers stash hours for `flushRollups`. An hour never delivered is sent whole at once; a
- * delivered hour's changed markets wait for `flush`, which sends every waiting hour together. The
- * receiver refreshes each request's item days once, so a few requests for many hours do the work
- * of one per hour.
- */
-export function psRedelivery(conn: DuckDBConnection, opts: DeliveryOptions) {
-    const waiting: ChangedHour[] = [];
-    return {
-        /** The rows sent now: none for a delivered hour, whose rows wait for `flush`. */
-        async add(hour: number, league: string) {
-            await assertSourceRealm(conn, REALM ?? "pc");
-            const { rows, itemKeys } = await hourRows(conn, hour, league, true);
-            if (!itemKeys) return deliverWhole(conn, hour, league, rows, opts);
-            waiting.push({ hour, league, rows, items: itemKeys.length });
-            return 0;
-        },
-        /** Sends the waiting hours' rows; returns how many. */
-        async flush() {
-            const hours = waiting.splice(0);
-            return hours.length ? deliverChanged(conn, hours, opts) : 0;
-        },
-    };
+    return { hours: [hour], rows: rows.length };
 }

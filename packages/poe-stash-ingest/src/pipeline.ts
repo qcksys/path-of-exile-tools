@@ -22,7 +22,7 @@ import {
     type RawArchiveOptions,
     type RawPageReader,
 } from "#src/ps/raw-archive.ts";
-import { psRedelivery } from "#src/ps/rollup.ts";
+import { rollupPs } from "#src/ps/rollup.ts";
 import { type ArchiveOptions, archiveBehindStream, archiveOldData } from "#src/shared/archive.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { getCursor } from "#src/shared/cursor.ts";
@@ -152,18 +152,7 @@ export async function flushRollups(
     let rows = 0;
     let hours = 0;
     let equipmentStarted = false;
-    // A sale's status keeps changing for days; each must not resend its hour.
-    const stash = psRedelivery(conn, { dryRun: opts.dryRun, onBatch: opts.onBatch });
-    const sendWaitingHours = async () => {
-        const sent = await stash.flush().catch((error: unknown) => {
-            throw operationFailure("psapi re-delivery", error);
-        });
-        if (!sent) return;
-        rows += sent;
-        await opts.onProgress?.(hours, rows);
-    };
     for (const entry of pending) {
-        if (entry.stream !== "psapi") await sendWaitingHours();
         if (entry.stream === "equipment" && !equipmentStarted) {
             equipmentStarted = true;
             await opts.beforeEquipment?.();
@@ -173,9 +162,9 @@ export async function flushRollups(
                 ? rollupEquipment
                 : entry.stream === "cxapi"
                   ? rollupCx
-                  : async (_db: DuckDBConnection, target: { hour: number; league: string }) => ({
-                        rows: await stash.add(target.hour, target.league),
-                    });
+                  : (...[db, target]: Parameters<typeof rollupPs>) =>
+                        // A sale's status keeps changing for days; each must not resend its hour.
+                        rollupPs(db, { ...target, changedOnly: true });
         rows += (
             await rollup(conn, {
                 hour: Number(entry.hour),
@@ -191,7 +180,6 @@ export async function flushRollups(
         ).rows;
         await opts.onProgress?.(++hours, rows);
     }
-    await sendWaitingHours();
     return { hours: pending.length, rows };
 }
 
