@@ -40,7 +40,8 @@ services:
       # A cycle's checkpoint and deliveries take about as long whatever its size, so longer cycles
       # spend less of each hour on them. The site's figures update once a cycle.
       INGEST_PAGES: "200"
-      PS_MEMORY_LIMIT: 10GB
+      # DuckDB keeps cached blocks up to this, and writing a batch adds a few GB on top of it.
+      PS_MEMORY_LIMIT: 8GB
       PS_THREADS: "4"
       # Classifies each page's equipment while its listings and sales are written.
       PS_CLASSIFY_THREADS: "3"
