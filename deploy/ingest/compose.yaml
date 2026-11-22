@@ -50,6 +50,9 @@ services:
       PS_CHECKPOINT_THRESHOLD: 1GB
       # Each reclassified hour re-delivers 24 hours of cohort rows; this keeps the pre-#76 pace.
       PS_RECLASSIFY_PAGES_PER_HOUR: "120"
+      # Sending each delivered hour's sale changes every cycle had the receiver recompute the same
+      # item days over and over while the worker waited.
+      PS_REDELIVER_MINUTES: "30"
     volumes:
       - ./data/pc:/data
       - ./backups/pc:/backups
