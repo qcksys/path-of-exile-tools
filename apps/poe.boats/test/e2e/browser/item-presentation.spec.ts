@@ -78,9 +78,9 @@ for (const game of ["poe1", "poe2"] as const) {
         await page.setViewportSize({ width: 1280, height: 1400 });
         await card.screenshot({ path: testInfo.outputPath("rare-item-card.png") });
         await page.setViewportSize({ width: 390, height: 844 });
-        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-            390,
-        );
+        await expect
+            .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+            .toBeLessThanOrEqual(390);
     });
 }
 
@@ -156,9 +156,9 @@ test("currency artwork remains usable in prices, pinned methods and mobile contr
     await page.setViewportSize({ width: 390, height: 844 });
     await pinned.scrollIntoViewIfNeeded();
     await pinned.screenshot({ path: testInfo.outputPath("pinned-currency-mobile.png") });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-        390,
-    );
+    await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+        .toBeLessThanOrEqual(390);
 });
 
 for (const { game, base, host } of [

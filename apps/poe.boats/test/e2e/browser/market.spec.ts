@@ -123,9 +123,10 @@ test("changes an exchange item's season and period and keeps the way back", asyn
     await expect(page.getByRole("img", { name: /Hourly chaos/ }).locator("svg")).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("exchange-desktop.png"), fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-        390,
-    );
+    // The chart redraws at the new width after the resize.
+    await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+        .toBeLessThanOrEqual(390);
     await page.screenshot({ path: testInfo.outputPath("exchange-mobile.png"), fullPage: true });
     await page.getByRole("link", { name: /Back to markets/ }).click();
     await expect(page).toHaveURL((url) => url.pathname === "/1/market/currency");
