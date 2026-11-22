@@ -27,6 +27,32 @@ describe("upstream modifier formats", () => {
             }),
         ).toEqual(legacy);
     });
+
+    it.each([
+        [
+            "Forbidden Flame",
+            "Allocates [AscendancyTrickster10|Spellbreaker] if you have the matching modifier on Forbidden Flesh",
+            "Spellbreaker",
+        ],
+        [
+            "Forbidden Flesh",
+            "Allocates [AscendancyChieftan9|Hinekora, Death's Fury] if you have the matching modifier on Forbidden Flame",
+            "Hinekora, Death's Fury",
+        ],
+        [
+            "Impossible Escape",
+            "Passive Skills in Radius of [iron_reflexes1|Iron Reflexes] can be Allocated\nwithout being connected to your tree",
+            "Iron Reflexes",
+        ],
+        [
+            "Forbidden Shako",
+            "Socketed Gems are Supported by Level 35 [SupportIceBite<gemlevel=35>|Ice Bite]",
+            "Ice Bite@35",
+        ],
+    ])("reads %s through 3.30's tag markup", (name, description, value) => {
+        const item = { name, frameType: 3, identified: true, explicitMods: [{ description }] };
+        expect(signatureValue(extractModSignature(item))).toBe(value);
+    });
 });
 
 describe("Foulborn uniques", () => {
