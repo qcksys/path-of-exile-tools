@@ -4,8 +4,9 @@ import { explicitModLines } from "#src/shared/mod-extractors/lines.ts";
 import type { ModExtractor, ModSignature } from "#src/shared/mod-extractors/types.ts";
 
 const NAMES = new Set(["Forbidden Flame", "Forbidden Flesh"]);
-// "Allocates {Notable} if you have the matching modifier on Forbidden Flesh"
-const ALLOCATES_RE = /Allocates ([A-Za-z' ]+?) if you have the matching modifier/;
+// "Allocates {Notable} if you have the matching modifier on Forbidden Flesh"; some notables
+// have commas ("Hinekora, Death's Fury").
+const ALLOCATES_RE = /Allocates ([A-Za-z', ]+?) if you have the matching modifier/;
 
 export const forbiddenJewelExtractor: ModExtractor = {
     kind: "forbidden-jewel",
