@@ -26,6 +26,7 @@ import {
     RawPageReader,
 } from "../../../packages/poe-stash-ingest/src/ps/raw-archive";
 import { type DbHandle, openDb, queryAll } from "../../../packages/poe-stash-ingest/src/shared/db";
+import { Laps } from "../../../packages/poe-stash-ingest/src/shared/laps";
 
 type DuckDBConnection = DbHandle["conn"];
 
@@ -169,6 +170,34 @@ it("writes the same tables in batches of pages as one page at a time", async () 
         await single.db.close();
         await batched.db.close();
     }
+});
+
+it("logs how long each part of every batch's write took", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const { db } = await ingest(4);
+    try {
+        const writes = log.mock.calls
+            .map(([line]) => String(line))
+            .filter((line) => line.startsWith("batch write of "));
+        // The four batches above: pages 1–4, 5, 6–9 and 10–12.
+        expect(writes.map((line) => line.split(" ")[3])).toEqual(["4", "1", "4", "3"]);
+        const n = "[\\d.]+";
+        expect(writes[0]).toMatch(
+            new RegExp(
+                `^batch write of 4 pages: listings ${n} s \\(withdrawn ${n}, sales ${n}, seen ${n}, changed ${n}, new ${n}, hours read ${n}, hours updated ${n}, hours inserted ${n}, basemap ${n}\\), equipment ${n} s \\(cohorts ${n}, seen ${n}, changed ${n}, new ${n}, hours ${n}, other ${n}\\), ${n} s \\(commit ${n}\\)$`,
+            ),
+        );
+    } finally {
+        await db.close();
+    }
+});
+
+it("adds up the time of a section reached more than once", () => {
+    const laps = new Laps();
+    laps.lap("sales");
+    laps.lap("hours");
+    laps.lap("sales");
+    expect(String(laps)).toMatch(/^[\d.]+ s \(sales [\d.]+, hours [\d.]+\)$/);
 });
 
 it("rolls back a failed batch whole, and reads its pages again", async () => {
