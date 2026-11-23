@@ -62,6 +62,48 @@ const hourStart = (micros: number) => Math.floor(micros / HOUR_US) * HOUR_US;
 /** Equipment hours are seconds, as `ps_equipment_hour.observed_hour`. */
 const equipmentHour = (at: Date) => Math.floor(at.getTime() / 3_600_000) * 3600;
 
+const BINARY_UNITS: Record<string, number> = {
+    bytes: 1,
+    kib: 1024,
+    mib: 1024 ** 2,
+    gib: 1024 ** 3,
+    tib: 1024 ** 4,
+};
+
+/** Bytes of a DuckDB size setting as `current_setting` shows it, such as "7.4 GiB". */
+export function settingBytes(text: string) {
+    const match = /^\s*([\d.]+)\s*([a-z]+)\s*$/i.exec(text);
+    const unit = match && BINARY_UNITS[match[2]!.toLowerCase()];
+    return match && unit ? Number(match[1]) * unit : undefined;
+}
+
+/** Whether committed updates held in memory (bytes) have passed a quarter of DuckDB's limit. */
+export function holdsTooManyUpdates(held: number, memoryLimit: string) {
+    const limit = settingBytes(memoryLimit);
+    return limit !== undefined && held > limit / 4;
+}
+
+/**
+ * With `PS_CHECKPOINT_THRESHOLD`, DuckDB checkpoints at a commit only when its WAL would pass that
+ * size, which can be set so a batch's commit just appends to the WAL. DuckDB holds each committed
+ * update's values in memory until a checkpoint, so checkpoint once those pass a quarter of its
+ * memory limit.
+ */
+async function checkpointHeldUpdates(conn: DuckDBConnection) {
+    if (!process.env.PS_CHECKPOINT_THRESHOLD) return;
+    const [memory] = await queryAll<{ held: number; limit: string }>(
+        conn,
+        `SELECT coalesce((SELECT sum(memory_usage_bytes) FROM duckdb_memory() WHERE tag = 'TRANSACTION'), 0)::DOUBLE AS held,
+            current_setting('memory_limit') AS limit`,
+    );
+    if (!holdsTooManyUpdates(memory!.held, memory!.limit)) return;
+    const started = performance.now();
+    await conn.run("CHECKPOINT");
+    console.log(
+        `checkpointed ${(memory!.held / 1024 ** 3).toFixed(1)} GiB of held updates in ${((performance.now() - started) / 1000).toFixed(1)} s`,
+    );
+}
+
 /**
  * Pages applied in one transaction (`PS_BATCH_PAGES`, default 1). A batch also ends at each hour of
  * capture time. A failure rolls back, and replays, the whole batch.
@@ -366,6 +408,13 @@ export async function ingestPs(
         equipmentBatch = undefined;
         if (fixtures.length) await opts.equipmentDiagnostics?.flush(fixtures);
         fixtures = [];
+        // The batch is committed, so a failed checkpoint must not roll it back or replay it.
+        await checkpointHeldUpdates(conn).catch((error: unknown) =>
+            console.error(
+                "Checkpoint after a batch failed; DuckDB checkpoints at its WAL threshold instead.",
+                error,
+            ),
+        );
     };
 
     try {

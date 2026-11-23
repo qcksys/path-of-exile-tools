@@ -12,7 +12,11 @@ import {
     captureEquipmentPage,
     defaultEquipmentClassifier,
 } from "../../../packages/poe-stash-ingest/src/ps/equipment";
-import { ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest";
+import {
+    holdsTooManyUpdates,
+    ingestPs,
+    settingBytes,
+} from "../../../packages/poe-stash-ingest/src/ps/ingest";
 import { ListingBatch } from "../../../packages/poe-stash-ingest/src/ps/listing-batch";
 import { loadListingState, NONE } from "../../../packages/poe-stash-ingest/src/ps/listing-state";
 import {
@@ -169,6 +173,33 @@ it("writes the same tables in batches of pages as one page at a time", async () 
     } finally {
         await single.db.close();
         await batched.db.close();
+    }
+});
+
+it("checkpoints once held updates pass a quarter of DuckDB's memory limit", () => {
+    expect(settingBytes("7.4 GiB")).toBeCloseTo(7.4 * 1024 ** 3);
+    expect(settingBytes("953.6 MiB")).toBeCloseTo(953.6 * 1024 ** 2);
+    expect(settingBytes("0 bytes")).toBe(0);
+    expect(settingBytes("unlimited")).toBeUndefined();
+    expect(holdsTooManyUpdates(1.8 * 1024 ** 3, "7.4 GiB")).toBe(false);
+    expect(holdsTooManyUpdates(1.9 * 1024 ** 3, "7.4 GiB")).toBe(true);
+    expect(holdsTooManyUpdates(1.9 * 1024 ** 3, "unlimited")).toBe(false);
+});
+
+it("checks held updates after each commit when checkpoints are left to the WAL", async () => {
+    vi.stubEnv("PS_CHECKPOINT_THRESHOLD", "4GB");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { db, result } = await ingest(4);
+    try {
+        expect(result.pages).toBe(12);
+        // A few test pages hold far less than a quarter of the limit.
+        expect(log.mock.calls.some(([line]) => String(line).startsWith("checkpointed "))).toBe(
+            false,
+        );
+        expect(error).not.toHaveBeenCalled();
+    } finally {
+        await db.close();
     }
 });
 
