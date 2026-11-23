@@ -1264,30 +1264,35 @@ it("searches, filters and sorts hourly observations in the browser", async () =>
         };
     });
     showMarket("/1/market/items/Abberath's%20Hooves?league=Allflame");
-    const table = await screen.findByRole("table", { name: "Hourly observations" });
+    await screen.findByRole("table", { name: "Hourly observations" });
+    // The rows re-sort and re-filter after each change, so each read finds the table again.
+    const table = () => screen.getByRole("table", { name: "Hourly observations" });
     const listings = () =>
-        within(table)
+        within(table())
             .getAllByRole("row")
             .slice(1)
             .map((row) => within(row).getAllByRole("cell")[2]!.textContent);
     expect(listings()).toEqual(["5", "7", "3"]);
 
-    fireEvent.click(within(table).getByRole("button", { name: "Listings observed" }));
-    expect(listings()).toEqual(["7", "5", "3"]);
+    fireEvent.click(within(table()).getByRole("button", { name: "Listings observed" }));
+    await waitFor(() => expect(listings()).toEqual(["7", "5", "3"]));
 
-    fireEvent.change(within(table).getByRole("spinbutton", { name: "Minimum Listings observed" }), {
-        target: { value: "4" },
-    });
-    expect(listings()).toEqual(["7", "5"]);
+    fireEvent.change(
+        within(table()).getByRole("spinbutton", { name: "Minimum Listings observed" }),
+        { target: { value: "4" } },
+    );
+    await waitFor(() => expect(listings()).toEqual(["7", "5"]));
 
     fireEvent.change(screen.getByRole("searchbox", { name: "Search Hourly observations" }), {
         target: { value: "12:00" },
     });
-    expect(listings()).toEqual(["5"]);
+    await waitFor(() => expect(listings()).toEqual(["5"]));
     fireEvent.change(screen.getByRole("searchbox", { name: "Search Hourly observations" }), {
         target: { value: "no such hour" },
     });
-    expect(within(table).getByText("No rows match these filters.")).toBeTruthy();
+    await waitFor(() =>
+        expect(within(table()).getByText("No rows match these filters.")).toBeTruthy(),
+    );
     expect(getMarketData).toHaveBeenCalledTimes(1);
 });
 

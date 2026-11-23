@@ -320,7 +320,8 @@ it("has exact equipment definitions for every preset purchase including canonica
         const boundAlternative = priced.alternatives.find((entry) => entry.id === alternative.id)!;
         expect(boundAlternative.kind === "purchase" && boundAlternative.price?.amount).toBe(20);
     }
-});
+    // Binding all 134 preset purchases runs just under the 5 s default on CI runners.
+}, 30_000);
 
 it("does not treat matching Two-Toned Boots display names as proof of canonical base identity", () => {
     const { item, node } = purchases.find(
