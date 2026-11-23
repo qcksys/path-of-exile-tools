@@ -92,7 +92,11 @@ preserves the last committed cursor and leaves the next page unfetched for retry
 Single-page and caught-up captures do not add a final page checkpoint.
 On a large database each checkpoint rewrites gigabytes of index. With memory to spare, set
 `PS_CHECKPOINT_THRESHOLD` (for example `1GB`, with `PS_MEMORY_LIMIT=10GB`): pages are then not
-checkpointed individually, and DuckDB checkpoints once its WAL reaches that size. On a
+checkpointed individually, and DuckDB checkpoints once its WAL would reach that size. DuckDB
+counts a commit's changes before writing them, so a threshold below a batch's estimated size
+checkpoints at every commit. DuckDB also holds committed updates in memory until a checkpoint, so
+with a threshold set the worker checkpoints after a batch once those pass a quarter of
+`PS_MEMORY_LIMIT`. On a
 41 GB database, 60 replayed pages averaged 4.4 s instead of about 22 s and wrote about 0.2 GiB
 each instead of about 4.3 GiB, with peak memory near the DuckDB limit. Index memory is not
 bounded by `PS_MEMORY_LIMIT`, so leave the container several gigabytes above it.
