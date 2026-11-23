@@ -5,6 +5,7 @@ import { classifyItem, type EquipmentRow, equipmentRow } from "#src/ps/equipment
 import { EquipmentState } from "#src/ps/equipment-state.ts";
 import { NONE } from "#src/ps/listing-state.ts";
 import { stashRounds } from "#src/ps/rounds.ts";
+import type { Laps } from "#src/shared/laps.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
 import { listingTab } from "#src/shared/stash-tab.ts";
 
@@ -233,8 +234,8 @@ export class EquipmentBatch {
         return captured;
     }
 
-    /** Writes the batch inside the caller's transaction. */
-    async flush(conn: DuckDBConnection) {
+    /** Writes the batch inside the caller's transaction; `laps` times each part. */
+    async flush(conn: DuckDBConnection, laps?: Laps) {
         const state = this.state;
         const hour = this.hour;
         if (this.changedItems.size || this.cohorts.size) {
@@ -273,6 +274,7 @@ export class EquipmentBatch {
                 WHERE NOT EXISTS (SELECT 1 FROM ps_equipment_cohort_hour t WHERE ${sameKey})`,
             );
         }
+        laps?.lap("cohorts");
 
         const states: unknown[] = [];
         const stayed: unknown[] = [];
@@ -312,6 +314,7 @@ export class EquipmentBatch {
                 WHERE ps_equipment_listing.equipment_id = v.equipment_id`,
                 [JSON.stringify(states.slice(i, i + NARROW_CHUNK))],
             );
+        laps?.lap("seen");
         // `stash_id` is indexed (ps_equipment_stash), and setting an indexed column rewrites the
         // row even when its value is unchanged, so only items that moved set it.
         for (const [rows, stashColumn] of [
@@ -329,6 +332,7 @@ export class EquipmentBatch {
                     WHERE ps_equipment_listing.equipment_id = v.equipment_id`,
                     [this.revision, JSON.stringify(rows.slice(i, i + CHUNK))],
                 );
+        laps?.lap("changed");
         for (let i = 0; i < inserts.length; i += CHUNK)
             await conn.run(
                 `INSERT INTO ps_equipment_listing BY NAME
@@ -344,6 +348,7 @@ export class EquipmentBatch {
                 FROM json_each($2::JSON)`,
                 [this.revision, JSON.stringify(inserts.slice(i, i + CHUNK))],
             );
+        laps?.lap("new");
 
         if (this.observed.size) {
             await conn.run(
@@ -368,6 +373,7 @@ export class EquipmentBatch {
                 WHERE NOT EXISTS (SELECT 1 FROM ps_equipment_hour h WHERE ${sameRow})`,
             );
         }
+        laps?.lap("hours");
         if (this.definitions.size)
             await conn.run(
                 `INSERT INTO ps_equipment_cohort
@@ -387,5 +393,6 @@ export class EquipmentBatch {
         // A temporary table keeps its rows in memory until it is dropped.
         for (const table of ["batch_equipment", "batch_cohort_hour"])
             await conn.run(`DROP TABLE IF EXISTS ${table}`);
+        laps?.lap("other");
     }
 }

@@ -20,6 +20,7 @@ import { SALE_POLICY } from "#src/ps/sales.ts";
 import { learnBasemap } from "#src/shared/basemap.ts";
 import { isUniqueItem } from "#src/shared/capture.ts";
 import { queryAll } from "#src/shared/db.ts";
+import type { Laps } from "#src/shared/laps.ts";
 import { listingTab } from "#src/shared/stash-tab.ts";
 
 const GRACE_US = SALE_POLICY.graceSeconds * 1e6;
@@ -296,8 +297,8 @@ export class ListingBatch {
         }
     }
 
-    /** Writes the batch inside the caller's transaction. */
-    async flush(conn: DuckDBConnection) {
+    /** Writes the batch inside the caller's transaction; `laps` times each part. */
+    async flush(conn: DuckDBConnection, laps?: Laps) {
         const state = this.state;
         if (this.withdrawnStashes.size) {
             await conn.run(
@@ -311,6 +312,7 @@ export class ListingBatch {
                 [JSON.stringify([...this.withdrawnStashes])],
             );
         }
+        laps?.lap("withdrawn");
 
         // Sales first, while ps_listing still holds the rows they were removed from. A sale an
         // earlier batch recorded at the same time (pages captured in the same instant) blocks
@@ -369,6 +371,7 @@ export class ListingBatch {
                 ],
             );
         }
+        laps?.lap("sales");
 
         const states: unknown[] = [];
         const kept: unknown[] = [];
@@ -408,6 +411,7 @@ export class ListingBatch {
                 [JSON.stringify(chunk)],
             );
         }
+        laps?.lap("seen");
         for (const [rows, keysChanged] of [
             [kept, false],
             [rekeyed, true],
@@ -424,6 +428,7 @@ export class ListingBatch {
                 );
             }
         }
+        laps?.lap("changed");
         for (const chunk of chunks(inserts)) {
             await conn.run(
                 `INSERT INTO ps_listing BY NAME
@@ -435,6 +440,7 @@ export class ListingBatch {
                 [JSON.stringify(chunk)],
             );
         }
+        laps?.lap("new");
 
         // Every listing seen in the batch has one row for its hour, holding its last values.
         if (this.sighted.size) {
@@ -444,6 +450,7 @@ export class ListingBatch {
                 WHERE listing_id IN (SELECT value::BIGINT FROM json_each($1::JSON))`,
                 [JSON.stringify([...this.sighted].map((slot) => state.listingId[slot]))],
             );
+            laps?.lap("hours read");
             const sameRow = `h.observed_hour = epoch(date_trunc('hour', l.last_seen_at))::BIGINT
                 AND h.stash_id = l.stash_id AND h.account_name = l.account_name AND h.item_id = l.item_id`;
             await conn.run(
@@ -470,17 +477,20 @@ export class ListingBatch {
                 FROM batch_listing l
                 WHERE h.observed_hour = ${Math.floor(this.hour / 1e6)} AND ${sameRow}`,
             );
+            laps?.lap("hours updated");
             await conn.run(
                 `INSERT INTO ps_listing_hour BY NAME
                 SELECT *, epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
                 FROM batch_listing l
                 WHERE NOT EXISTS (SELECT 1 FROM ps_listing_hour h WHERE ${sameRow})`,
             );
+            laps?.lap("hours inserted");
         }
         for (const chunk of chunks(this.basemap, NARROW_CHUNK)) await learnBasemap(conn, chunk);
         // A temporary table keeps its rows in memory until it is dropped.
         for (const table of ["batch_listing", "batch_prior_sale"])
             await conn.run(`DROP TABLE IF EXISTS ${table}`);
+        laps?.lap("basemap");
     }
 }
 

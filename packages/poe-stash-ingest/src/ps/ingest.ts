@@ -40,6 +40,7 @@ import { REALM } from "#src/shared/auth.ts";
 import { learnBasemap } from "#src/shared/basemap.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
 import { queryAll, sqlTimestamp, TransactionRollbackError } from "#src/shared/db.ts";
+import { Laps } from "#src/shared/laps.ts";
 import { configureSource } from "#src/shared/source.ts";
 import { listingTab } from "#src/shared/stash-tab.ts";
 
@@ -350,9 +351,16 @@ export async function ingestPs(
     let inTransaction = false;
     const commit = async () => {
         if (!batch) return;
-        await batch.flush(conn);
-        await equipmentBatch!.flush(conn);
+        const listings = new Laps();
+        await batch.flush(conn, listings);
+        const equipment = new Laps();
+        await equipmentBatch!.flush(conn, equipment);
+        const committing = new Laps();
         await conn.run("COMMIT");
+        committing.lap("commit");
+        console.log(
+            `batch write of ${batch.pages} pages: listings ${listings}, equipment ${equipment}, ${committing}`,
+        );
         inTransaction = false;
         batch = undefined;
         equipmentBatch = undefined;
