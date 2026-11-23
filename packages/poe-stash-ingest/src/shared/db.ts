@@ -32,9 +32,11 @@ CREATE TABLE IF NOT EXISTS ps_listing (
 DROP INDEX IF EXISTS ps_listing_league_lastseen;
 DROP INDEX IF EXISTS ps_listing_league_itemkey;
 DROP INDEX IF EXISTS ps_listing_removed;
-CREATE INDEX IF NOT EXISTS ps_listing_icon ON ps_listing(icon_asset);
+-- Lookups by item key or icon run as joins, which no index serves. An UPDATE that set either
+-- column rewrote the row as a delete and insert, which can fail as a duplicate primary key.
+DROP INDEX IF EXISTS ps_listing_icon;
+DROP INDEX IF EXISTS ps_listing_item_key;
 CREATE INDEX IF NOT EXISTS ps_listing_stash ON ps_listing(stash_id);
-CREATE INDEX IF NOT EXISTS ps_listing_item_key ON ps_listing(item_key);
 
 ALTER TABLE ps_listing ADD COLUMN IF NOT EXISTS signature_value VARCHAR;
 -- Listings seen before links were recorded count as unlinked until their stash is re-sent.

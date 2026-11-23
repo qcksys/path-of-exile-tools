@@ -296,18 +296,6 @@ export class ListingState {
         return this.digest[slot * 2] === a && this.digest[slot * 2 + 1] === b;
     }
 
-    keysEqual(slot: number, itemKey: string, iconAsset: string | null) {
-        return (
-            this.itemKeyOf[slot] === this.strings.find(itemKey) &&
-            this.iconOf[slot] === (iconAsset === null ? NONE : this.strings.find(iconAsset))
-        );
-    }
-
-    /** The item key and icon of `slot`, to compare with the row a batch started from. */
-    keys(slot: number) {
-        return [this.itemKeyOf[slot]!, this.iconOf[slot]!] as const;
-    }
-
     keysOf(itemKey: string, iconAsset: string | null) {
         return [
             this.strings.id(itemKey),

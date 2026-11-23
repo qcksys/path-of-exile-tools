@@ -91,11 +91,6 @@ export const UPDATED_COLUMNS = [
     "raw_item",
     "content_digest",
 ];
-/**
- * `ps_listing`'s indexed columns. DuckDB rewrites a row when an UPDATE sets one, even to its own
- * value, and keeps the old copy for every later scan to read; leaving them out updates in place.
- */
-export const INDEXED_COLUMNS = new Set(["item_key", "icon_asset"]);
 
 export function listingRows(change: PublicStashChange, accountName: string, league: string) {
     const rows: ListingRow[] = [];
