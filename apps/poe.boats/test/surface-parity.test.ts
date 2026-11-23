@@ -1623,7 +1623,8 @@ describe("transport parity", () => {
             );
             expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
         }
-    });
+        // Both games over both transports run just under the 5 s default on CI runners.
+    }, 30_000);
 
     it("passes separate request timing collectors through HTTP and MCP without changing results", async () => {
         const input = {
