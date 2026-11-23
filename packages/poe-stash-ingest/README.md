@@ -82,6 +82,10 @@ Each cycle reclassifies up to its live page limit, capped at five archived pages
 Each reclassified hour re-delivers the 24 hours whose windows include it, so with fast cycles set
 `PS_RECLASSIFY_PAGES_PER_HOUR` to cap the receiver's write load; cycles without an allowance skip
 reclassification and its checkpoint.
+A delivered stash hour keeps changing while its sales resolve, and each cycle sends its changed
+markets again; the receiver recomputes the whole day of every changed item it is sent. Set
+`PS_REDELIVER_MINUTES` to send each delivered hour's changes at most once in that many minutes.
+An hour is archived only once its changes are delivered, so archiving waits up to as long.
 Live stash capture also checkpoints between committed pages before fetching the next
 page, releasing accumulated indexes without splitting a page transaction. A failure
 preserves the last committed cursor and leaves the next page unfetched for retry.

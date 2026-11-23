@@ -106,6 +106,11 @@ export async function flushRollups(
         onBatch?: () => Promise<void>;
         /** Runs once, before the first equipment rollup. */
         beforeEquipment?: () => Promise<void>;
+        /**
+         * Minutes a delivered stash hour waits after its last delivery before its changes are sent
+         * again; by default they are sent at once. An hour never delivered is never held back.
+         */
+        redeliverAfterMinutes?: number;
     } = {},
 ) {
     const pending = await queryAll<{ stream: string; league: string; hour: number }>(
@@ -121,7 +126,10 @@ export async function flushRollups(
             LEFT JOIN rollup_state r ON r.stream_name = 'psapi' AND r.league = l.league AND r.hour = l.hour
             LEFT JOIN icon_basemap b ON b.icon_asset = l.icon_asset
             WHERE (l.identified OR NOT starts_with(l.item_key, 'unid:') OR b.name IS NOT NULL)
-                AND (r.pushed_at IS NULL OR l.changed_at > r.pushed_at OR b.first_seen_at > r.pushed_at)
+                AND (r.pushed_at IS NULL OR (
+                    (l.changed_at > r.pushed_at OR b.first_seen_at > r.pushed_at)
+                    -- The receiver recomputes the whole day of each changed item it is sent.
+                    AND r.pushed_at <= current_timestamp::TIMESTAMP - to_minutes($5::BIGINT)))
             UNION ALL
             SELECT DISTINCT 'cxapi', l.league, l.observed_hour FROM cx_market_hour l
             LEFT JOIN rollup_state r ON r.stream_name = 'cxapi' AND r.league = l.league AND r.hour = l.observed_hour
@@ -145,6 +153,7 @@ export async function flushRollups(
             opts.limit ?? 168,
             opts.stashBeforeHour ?? null,
             opts.exchangeBeforeHour ?? null,
+            opts.redeliverAfterMinutes ?? 0,
         ],
     ).catch((error: unknown) => {
         throw operationFailure("Pending rollup discovery", error);
@@ -341,6 +350,9 @@ export async function runPipeline(
                 ...opts,
                 stashBeforeHour,
                 exchangeBeforeHour,
+                // A sale's status keeps changing for days, so unset, every cycle resends each
+                // delivered hour that changed.
+                redeliverAfterMinutes: Number(process.env.PS_REDELIVER_MINUTES) || 0,
                 onBatch: async () => {
                     await update({ progressAt: Date.now() });
                 },

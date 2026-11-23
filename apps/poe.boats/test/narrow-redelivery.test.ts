@@ -113,6 +113,55 @@ it("sends a whole hour first, then only the item whose sale changed", async () =
     }
 });
 
+it("holds a delivered hour's changes back until its last delivery is old enough", async () => {
+    const { db } = await deliveredHour();
+    const flush = () =>
+        flushRollups(db.conn, {
+            league: LEAGUE,
+            stashBeforeHour: HOUR + 3600,
+            redeliverAfterMinutes: 30,
+        });
+    try {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        await relistSale(db.conn);
+        pushed.length = 0;
+        expect((await flush()).hours).toBe(0);
+        expect(pushed).toEqual([]);
+
+        // As if 31 minutes had passed since the delivery (and since the icons were learned).
+        await db.conn.run(
+            "UPDATE rollup_state SET pushed_at = pushed_at - INTERVAL 31 MINUTE WHERE stream_name = 'psapi'",
+        );
+        await db.conn.run(
+            "UPDATE icon_basemap SET first_seen_at = first_seen_at - INTERVAL 1 HOUR",
+        );
+        expect(await flush()).toMatchObject({ hours: 1, rows: 1 });
+        expect(pushed).toMatchObject([{ itemKey: "Headhunter", relistedCount: 1 }]);
+    } finally {
+        await db.close();
+    }
+});
+
+it("delivers a new hour at once while an earlier hour's changes wait", async () => {
+    const { db } = await deliveredHour();
+    try {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        await applyStashChanges(db.conn, stash("c", item("Bated Breath", "Chain Belt")), at(65));
+        await relistSale(db.conn);
+        pushed.length = 0;
+        expect(
+            await flushRollups(db.conn, {
+                league: LEAGUE,
+                stashBeforeHour: HOUR + 7200,
+                redeliverAfterMinutes: 30,
+            }),
+        ).toMatchObject({ hours: 1 });
+        expect(new Set(pushed.map((row) => row.hour))).toEqual(new Set([HOUR + 3600]));
+    } finally {
+        await db.close();
+    }
+});
+
 it("matches what a whole-hour rollup sends for the changed item", async () => {
     const { db, flush } = await deliveredHour();
     try {
