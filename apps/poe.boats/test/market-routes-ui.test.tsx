@@ -780,8 +780,8 @@ describe("a map's variant table", () => {
     it("sorts by band order rather than by label", async () => {
         const variants = await show();
         fireEvent.click(within(variants).getByRole("button", { name: "Atlas Drops" }));
-        // Alphabetically, 100–119% would sort before 60–79%.
-        expect(cells(rows(variants)[0]!)[1]).toBe("60–79%");
+        // Alphabetically, 100–119% would sort before 60–79%. The rows re-sort after the click.
+        await waitFor(() => expect(cells(rows(variants)[0]!)[1]).toBe("60–79%"));
     });
 
     it("offers toggles only for the bands this map has", async () => {
