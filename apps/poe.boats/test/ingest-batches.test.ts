@@ -176,6 +176,56 @@ it("writes the same tables in batches of pages as one page at a time", async () 
     }
 });
 
+it("updates a listing in place when identifying it changes its item key", async () => {
+    const pagesDir = await mkdtemp(join(tmpdir(), "ingest-rekey-"));
+    try {
+        // An unidentified unique is keyed by its base type, then by its name once identified.
+        const seen = [
+            { ...unique("rekeyed", "~price 5 chaos"), name: "", identified: false } as Item,
+            unique("rekeyed", "~price 6 chaos"),
+        ];
+        for (const [n, item] of seen.entries())
+            await appendRawPage(pagesDir, {
+                capturedAt: START + n * 60_000,
+                cursor: `rekey-${n}`,
+                page: {
+                    next_change_id: `rekey-${n + 1}`,
+                    stashes: [stash("stash-r", "r", [item])],
+                } as PublicStashPage,
+            });
+        vi.stubEnv("PS_BATCH_PAGES", "1");
+        const db = await openDb(":memory:");
+        try {
+            const source = new RawPageReader(pagesDir, {
+                hour: new Date(START).toISOString().slice(0, 13),
+                offset: 0,
+                capturedAt: 0,
+            });
+            const listing = () =>
+                queryAll<{ row: string; key: string }>(
+                    db.conn,
+                    "SELECT rowid::VARCHAR AS row, item_key AS key FROM ps_listing WHERE item_id = 'rekeyed'",
+                );
+            await ingestPs(db.conn, {} as never, { pages: 1, league: "Standard", spool: source });
+            const [before] = await listing();
+            expect(before?.key).toBe("unid:Leather Belt");
+            await ingestPs(db.conn, {} as never, { pages: 1, league: "Standard", spool: source });
+            // A rewritten row would get a new row ID, and could collide with its own key.
+            expect(await listing()).toEqual([{ row: before!.row, key: "Headhunter" }]);
+            expect(
+                await queryAll(
+                    db.conn,
+                    "SELECT index_name FROM duckdb_indexes() WHERE table_name = 'ps_listing'",
+                ),
+            ).toEqual([{ index_name: "ps_listing_stash" }]);
+        } finally {
+            await db.close();
+        }
+    } finally {
+        await rm(pagesDir, { recursive: true, force: true });
+    }
+});
+
 it("checkpoints once held updates pass a quarter of DuckDB's memory limit", () => {
     expect(settingBytes("7.4 GiB")).toBeCloseTo(7.4 * 1024 ** 3);
     expect(settingBytes("953.6 MiB")).toBeCloseTo(953.6 * 1024 ** 2);

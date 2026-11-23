@@ -1,7 +1,6 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import type { PublicStashChange } from "@poe-tools/api-client";
 import {
-    INDEXED_COLUMNS,
     type ListingRow,
     listingRows,
     listingValues,
@@ -60,8 +59,6 @@ interface Touch {
     inDb: boolean;
     /** Its values, when the batch changed them. */
     row?: ListingRow;
-    /** Its item key and icon in `ps_listing`, to tell whether an update sets indexed columns. */
-    dbKeys?: readonly [number, number];
     /** When the batch first saw a row it inserted. */
     firstSeen: number;
 }
@@ -135,7 +132,7 @@ export class ListingBatch {
     private touch(slot: number) {
         let touch = this.touches.get(slot);
         if (!touch) {
-            touch = { inDb: true, dbKeys: this.state.keys(slot), firstSeen: Number.NaN };
+            touch = { inDb: true, firstSeen: Number.NaN };
             this.touches.set(slot, touch);
         }
         return touch;
@@ -151,7 +148,6 @@ export class ListingBatch {
         const removals: { stashId: string; withdrawn: boolean; tab?: string }[] = [];
         const seen: [number, ListingRow][] = [];
         const updates: [number, ListingRow][] = [];
-        const rekeyed: [number, ListingRow][] = [];
         const inserts: ListingRow[] = [];
         for (const change of changes) {
             const slots = state.stashSlots(change.id);
@@ -174,9 +170,7 @@ export class ListingBatch {
                 if (existing === NONE) inserts.push(row);
                 else if (state.digestEquals(existing, row.contentDigest))
                     seen.push([existing, row]);
-                else if (state.keysEqual(existing, row.itemKey, row.iconAsset))
-                    updates.push([existing, row]);
-                else rekeyed.push([existing, row]);
+                else updates.push([existing, row]);
             }
             const gone = slots.filter(
                 (slot) =>
@@ -193,7 +187,7 @@ export class ListingBatch {
 
         // The order `applyRound` writes in: sales are priced after the removals and before this
         // round's sightings, updates and inserts.
-        for (const row of [...seen, ...updates, ...rekeyed].map(([, row]) => row).concat(inserts))
+        for (const row of [...seen, ...updates].map(([, row]) => row).concat(inserts))
             if (row.iconAsset && row.identified && isUniqueItem(row) && row.name)
                 this.basemap.push({
                     iconAsset: row.iconAsset,
@@ -213,7 +207,7 @@ export class ListingBatch {
             state.sight(slot, at);
             this.sighted.add(slot);
         }
-        for (const [slot, row] of [...updates, ...rekeyed]) {
+        for (const [slot, row] of updates) {
             const touch = this.touch(slot);
             state.setValues(slot, rowFields(row), row.contentDigest, row.iconAsset);
             state.sight(slot, at);
@@ -374,8 +368,7 @@ export class ListingBatch {
         laps?.lap("sales");
 
         const states: unknown[] = [];
-        const kept: unknown[] = [];
-        const rekeyed: unknown[] = [];
+        const changed: unknown[] = [];
         const inserts: unknown[] = [];
         for (const [slot, touch] of this.touches) {
             const listingId = state.listingId[slot]!;
@@ -391,13 +384,8 @@ export class ListingBatch {
                 });
                 continue;
             }
-            if (!touch.row) {
-                states.push({ listingId, lastSeen, removedAt });
-                continue;
-            }
-            const [itemKey, icon] = state.keys(slot);
-            const keysChanged = itemKey !== touch.dbKeys![0] || icon !== touch.dbKeys![1];
-            (keysChanged ? rekeyed : kept).push({ ...touch.row, listingId, lastSeen, removedAt });
+            if (!touch.row) states.push({ listingId, lastSeen, removedAt });
+            else changed.push({ ...touch.row, listingId, lastSeen, removedAt });
         }
         const listingTimes = `last_seen_at = make_timestamp(v.last_seen), removed_at = ${timestamp("v.removed")}`;
         const byId = `(value->>'listingId')::BIGINT AS listing_id, (value->>'lastSeen')::BIGINT AS last_seen,
@@ -412,21 +400,13 @@ export class ListingBatch {
             );
         }
         laps?.lap("seen");
-        for (const [rows, keysChanged] of [
-            [kept, false],
-            [rekeyed, true],
-        ] as const) {
-            const columns = UPDATED_COLUMNS.filter(
-                (column) => keysChanged || !INDEXED_COLUMNS.has(column),
+        for (const chunk of chunks(changed)) {
+            await conn.run(
+                `UPDATE ps_listing SET ${UPDATED_COLUMNS.map((c) => `${c} = v.${c}`).join(", ")}, ${listingTimes}
+                FROM (SELECT ${byId}, ${listingValues()} FROM json_each($1::JSON)) v
+                WHERE ps_listing.listing_id = v.listing_id`,
+                [JSON.stringify(chunk)],
             );
-            for (const chunk of chunks(rows)) {
-                await conn.run(
-                    `UPDATE ps_listing SET ${columns.map((c) => `${c} = v.${c}`).join(", ")}, ${listingTimes}
-                    FROM (SELECT ${byId}, ${listingValues()} FROM json_each($1::JSON)) v
-                    WHERE ps_listing.listing_id = v.listing_id`,
-                    [JSON.stringify(chunk)],
-                );
-            }
         }
         laps?.lap("changed");
         for (const chunk of chunks(inserts)) {

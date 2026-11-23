@@ -16,7 +16,6 @@ import type {
 } from "#src/ps/equipment-diagnostics.ts";
 import { ListingBatch } from "#src/ps/listing-batch.ts";
 import {
-    INDEXED_COLUMNS,
     LISTING_VALUES,
     type ListingRow,
     listingRows,
@@ -134,12 +133,10 @@ async function updateListings(
     conn: DuckDBConnection,
     rows: readonly (ListingRow & { rowId: string })[],
     seenAt: string,
-    keysChanged: boolean,
 ) {
-    const columns = UPDATED_COLUMNS.filter((column) => keysChanged || !INDEXED_COLUMNS.has(column));
     await conn.run(
         `UPDATE ps_listing SET
-            ${columns.map((column) => `${column} = v.${column}`).join(", ")},
+            ${UPDATED_COLUMNS.map((column) => `${column} = v.${column}`).join(", ")},
             last_seen_at = ${seenAt},
             removed_at = NULL
         FROM (
@@ -188,15 +185,13 @@ async function applyRound(
         stashId: string;
         itemId: string;
         league: string;
-        itemKey: string;
-        iconAsset: string | null;
         contentDigest: string | null;
         active: boolean;
     }>(
         conn,
         `SELECT rowid::VARCHAR AS "rowId", account_name AS "accountName", stash_id AS "stashId",
-            item_id AS "itemId", league, item_key AS "itemKey", icon_asset AS "iconAsset",
-            content_digest AS "contentDigest", removed_at IS NULL AS active
+            item_id AS "itemId", league, content_digest AS "contentDigest",
+            removed_at IS NULL AS active
         FROM ps_listing WHERE stash_id IN (${params(stashIds)})`,
         stashIds,
     );
@@ -206,7 +201,6 @@ async function applyRound(
     const removals: Parameters<typeof recordRemovals>[1][number][] = [];
     const seen: (ListingRow & { rowId: string })[] = [];
     const updates: (ListingRow & { rowId: string })[] = [];
-    const rekeyed: (ListingRow & { rowId: string })[] = [];
     const inserts: ListingRow[] = [];
     const listed: { stashId: string; accountName: string }[] = [];
     for (const change of changes) {
@@ -231,9 +225,7 @@ async function applyRound(
             if (!existing) inserts.push(row);
             else if (existing.contentDigest === row.contentDigest)
                 seen.push({ ...row, rowId: existing.rowId });
-            else if (existing.itemKey === row.itemKey && existing.iconAsset === row.iconAsset)
-                updates.push({ ...row, rowId: existing.rowId });
-            else rekeyed.push({ ...row, rowId: existing.rowId });
+            else updates.push({ ...row, rowId: existing.rowId });
         }
         const gone = [...owned.values()].filter((row) => row.active && !current.has(row.itemId));
         if (gone.length) {
@@ -244,8 +236,7 @@ async function applyRound(
         listed.push({ stashId: change.id, accountName });
     }
 
-    await learnBasemap(conn, [...seen, ...updates, ...rekeyed, ...inserts]);
-    // Removals first: rekeyed updates rewrite their rows under new row IDs.
+    await learnBasemap(conn, [...seen, ...updates, ...inserts]);
     if (removedRows.length) {
         await conn.run(
             `UPDATE ps_listing SET removed_at = ${seenAt}
@@ -262,8 +253,7 @@ async function applyRound(
             [JSON.stringify(seen.map((row) => row.rowId))],
         );
     }
-    if (updates.length) await updateListings(conn, updates, seenAt, false);
-    if (rekeyed.length) await updateListings(conn, rekeyed, seenAt, true);
+    if (updates.length) await updateListings(conn, updates, seenAt);
     if (inserts.length) {
         await conn.run(
             `INSERT INTO ps_listing BY NAME
