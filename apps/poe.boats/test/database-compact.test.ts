@@ -5,9 +5,10 @@ import { afterEach, beforeEach, expect, it } from "vite-plus/test";
 import { compactDatabase } from "../../../packages/poe-stash-ingest/src/shared/compact";
 import { type DbHandle, openDb, queryAll } from "../../../packages/poe-stash-ingest/src/shared/db";
 
-// DuckDB 1.x reclaims rows deleted from a table with an index only once a whole row group of
-// 122,880 rows is gone. Listings leave ps_listing in any order, so its file grew without bound.
-// DuckDB 2.0's storage format lets a checkpoint compact such tables; older files need a copy.
+// DuckDB 1.x's storage format reclaims rows deleted from a table with an index only once a whole
+// row group of 122,880 rows is gone. Listings leave ps_listing in any order, so while it had
+// indexes the file grew without bound. `compact` copies a database into a new file in the current
+// format, keeping only live rows.
 // The smallest row group DuckDB allows, so a few row groups take little time to fill.
 const ROW_GROUP = 2048;
 let dir: string;
@@ -58,11 +59,11 @@ it("writes new database files in the format whose checkpoints compact indexed ta
     expect(await storageVersion(db)).toMatch(/^v2\./);
 });
 
-it("reclaims rows deleted out of order from the keyed listing table at a checkpoint", async () => {
+it("reclaims rows deleted out of order from the listing table at a checkpoint, in DuckDB 1.x's format too", async () => {
     db = await openDb(":memory:");
-    // The worker's schema, keys and index included, in a file with small row groups.
+    // The worker's schema in a file of the older format, with small row groups.
     await db.conn.run(
-        `ATTACH '${join(dir, "small.duckdb")}' AS small (ROW_GROUP_SIZE ${ROW_GROUP})`,
+        `ATTACH '${join(dir, "small.duckdb")}' AS small (ROW_GROUP_SIZE ${ROW_GROUP}, STORAGE_VERSION 'v1.2.0')`,
     );
     await db.conn.run("COPY FROM DATABASE memory TO small");
     await db.conn.run("USE small");
@@ -74,8 +75,6 @@ it("reclaims rows deleted out of order from the keyed listing table at a checkpo
     const { stored: rows, live } = await stored(db, "ps_listing");
     expect(live).toBe(ROW_GROUP);
     expect(rows).toBeLessThan(2 * live);
-    // The primary key still holds after its rows moved.
-    await expect(addListings(db, 1)).rejects.toThrow(/Duplicate key|PRIMARY KEY|primary key/i);
 });
 
 it("copies an older-format database into the current format with the same rows, indexes and keys", async () => {
@@ -102,13 +101,13 @@ it("copies an older-format database into the current format with the same rows, 
 
     db = await openDb(copy);
     expect(await storageVersion(db)).toMatch(/^v2\./);
-    expect(
-        await queryAll(
-            db.conn,
-            "SELECT index_name AS name FROM duckdb_indexes() WHERE table_name = 'ps_listing' ORDER BY 1",
-        ),
-    ).toEqual([{ name: "ps_listing_stash" }]);
-    await expect(addListings(db, 1)).rejects.toThrow(/Duplicate key|PRIMARY KEY|primary key/i);
+    // The keys the worker keeps survive the copy.
+    const delivered = () =>
+        db!.conn.run(
+            "INSERT INTO rollup_state VALUES ('psapi', 'Standard', 3600, current_timestamp, 1)",
+        );
+    await delivered();
+    await expect(delivered()).rejects.toThrow(/Duplicate key|PRIMARY KEY|primary key/i);
 });
 
 it("refuses to write over an existing file", async () => {
