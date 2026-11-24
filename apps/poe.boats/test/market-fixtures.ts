@@ -94,6 +94,9 @@ export function marketFixture(
                           volume: 1_500,
                           history: [0.0016, null, null, null, null, null, 0.002],
                           change: 0.25,
+                          hourly: [...Array<null>(22).fill(null), 0.0021, 0.002],
+                          change24h: 0.002 / 0.0021 - 1,
+                          change3d: null,
                           recentVolume: {
                               hourly: [...Array<number>(22).fill(0), 500, 1_500],
                               daily: [4_000, 0, 0, 0, 0, 0, 2_000],
@@ -118,6 +121,13 @@ export function marketFixture(
                 recentSales: {
                     hourly: [...Array<number>(22).fill(0), 1, 0],
                     daily: [0, 0, 0, 0, 0, 1, 1],
+                },
+                priceTrend: {
+                    hourly: [...Array<null>(23).fill(null), 2],
+                    daily: [null, null, null, null, 1.6, 2.2, 2],
+                    change24h: null,
+                    change3d: 2 / 1.6 - 1,
+                    change7d: 2 / 1.6 - 1,
                 },
                 ...(bases
                     ? {
@@ -207,6 +217,15 @@ export function marketFixture(
               ]
             : [],
         historyUnit: "chaos",
+        priceTrend: filters.item
+            ? {
+                  hourly: [...Array<null>(22).fill(null), 1.8, 2],
+                  daily: [1.5, null, null, null, null, null, 2],
+                  change24h: 2 / 1.8 - 1,
+                  change3d: null,
+                  change7d: 2 / 1.5 - 1,
+              }
+            : null,
     };
 }
 

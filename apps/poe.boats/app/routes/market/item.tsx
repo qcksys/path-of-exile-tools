@@ -15,9 +15,11 @@ import {
 } from "@poe-tools/market";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Link, type ShouldRevalidateFunctionArgs, useSearchParams } from "react-router";
+import { CurrencyLabel } from "~/components/currency-label";
 import { DataTable, dataTableColumns } from "~/components/data-table";
 import { ItemArt } from "~/components/item-art";
 import { MarketAxisToggles } from "~/components/market-axis-filters";
+import { MarketPriceTrends } from "~/components/market-exchange";
 import { marketUtc } from "~/components/market-filters";
 import { FlagToggle, MarketDetailFilters } from "~/components/market-form";
 import { MarketHistory, MarketHistoryPrice } from "~/components/market-history";
@@ -511,8 +513,16 @@ function HourlyTable({ rows, game }: { rows: HistoryRow[]; game: "poe1" | "poe2"
 }
 
 export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
-    const { seasons, history, variants, modValues, chaosRates, priceRates, baseDescription } =
-        loaderData;
+    const {
+        seasons,
+        history,
+        variants,
+        modValues,
+        chaosRates,
+        priceRates,
+        baseDescription,
+        priceTrend,
+    } = loaderData;
     const [searchParams, setSearchParams] = useSearchParams();
     const filters = useMemo(
         () => ({ ...loaderData.filters, ...marketItemViewFilters(searchParams) }),
@@ -680,11 +690,24 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                                 </p>
                             ) : null}
                         </div>
-                        <div className="text-right">
-                            <p className="text-3xl font-semibold tabular-nums">
-                                {number(periodSales)}
-                            </p>
-                            <p className="text-sm text-muted-foreground">likely sales in period</p>
+                        <div className="flex flex-wrap items-start gap-6">
+                            {priceTrend ? (
+                                <section aria-label="Price change" className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">
+                                        Median asking price in{" "}
+                                        <CurrencyLabel currency={filters.currency} game={game} />
+                                    </p>
+                                    <MarketPriceTrends trend={priceTrend} />
+                                </section>
+                            ) : null}
+                            <div className="text-right">
+                                <p className="text-3xl font-semibold tabular-nums">
+                                    {number(periodSales)}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    likely sales in period
+                                </p>
+                            </div>
                         </div>
                     </div>
                     <MarketHistory

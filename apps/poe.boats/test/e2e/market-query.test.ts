@@ -1411,6 +1411,81 @@ describe("prices locked when a stash hour is written", () => {
         expect(await names(league, { currency: "unrated", priceMin: 1 })).toEqual([]);
     });
 
+    it("trends each row's locked price in the selected currency over 24 hours and 7 days", async () => {
+        const league = "LockedTrend";
+        const exaltedId = "Metadata/Items/Currency/CurrencyAddModToRare";
+        const rates = (at: number, chaosPerDivine: number, chaosPerExalted: number) => [
+            rate(league, at, chaosPerDivine),
+            {
+                ...rate(league, at, chaosPerExalted),
+                marketId: `${exaltedId}|${chaosId}`,
+                volumeTraded: { [exaltedId]: 1, [chaosId]: chaosPerExalted },
+            },
+        ];
+        const listed = (at: number, overrides: Partial<TStashUniqueHourlyI> = {}) =>
+            observation({
+                league,
+                hour: at,
+                itemKey: "Steady",
+                prices: { divine: summary(1, 5) },
+                ...overrides,
+            });
+        const fiveDaysAgo = hour - 5 * 86400;
+        for (const [at, chaosPerDivine, chaosPerExalted] of [
+            [fiveDaysAgo, 100, 2],
+            [hour - 3600, 160, 4],
+            [hour, 200, 5],
+        ] as const) {
+            await upsertStashCurrencyHourly(
+                db as unknown as TDatabase,
+                rates(at, chaosPerDivine, chaosPerExalted),
+            );
+            await ingest([
+                listed(at),
+                // A 6-link copy is the same market; a corrupted one is another.
+                listed(at, { links: 6, prices: { divine: summary(1, 1) } }),
+                listed(at, { corrupted: true, prices: { divine: summary(50, 5) } }),
+            ]);
+        }
+        const trend = async (currency: string) =>
+            (await read(league, { currency })).rows.find((row) => !row.corrupted)!.priceTrend;
+        const nulls = (length: number) => Array<null>(length).fill(null);
+        statements.length = 0;
+        await trend("divine");
+        // The page's markets read their hours by index, never every market hour of the league.
+        const prices = statements.find(
+            ({ sql: query }) => query.includes(uniqueHourly) && query.includes(" is not null"),
+        )!;
+        const [plan] = await connection.query<RowDataPacket[]>(
+            `EXPLAIN ${prices.sql}`,
+            prices.params,
+        );
+        expect(plan.find((row) => row.table === marketHours)?.type).toMatch(/^(eq_ref|ref|range)$/);
+        // Steady in divine, so it is flat in divine while divine rose against chaos.
+        expect(await trend("divine")).toEqual({
+            hourly: [...nulls(22), 1, 1],
+            daily: [null, 1, null, null, null, null, 1],
+            change24h: 0,
+            change3d: null,
+            change7d: 0,
+        });
+        expect(await trend("chaos")).toEqual({
+            hourly: [...nulls(22), 160, 200],
+            daily: [null, 100, null, null, null, null, 200],
+            change24h: 0.25,
+            change3d: null,
+            change7d: 1,
+        });
+        // Another currency converts each hour's locked chaos price at that hour's rate.
+        const exalted = await trend("exalted");
+        expect(exalted).toMatchObject({
+            hourly: [...nulls(22), 40, 40],
+            daily: [null, 50, null, null, null, null, 40],
+            change24h: 0,
+        });
+        expect(exalted.change7d).toBeCloseTo(-0.2, 9);
+    });
+
     it("keeps the rate of the hour it was written, when a later hour's rate differs", async () => {
         const league = "LockedRate";
         await upsertStashCurrencyHourly(db as unknown as TDatabase, [

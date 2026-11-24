@@ -7,7 +7,8 @@ import {
     ExchangeItemName,
     ExchangePair,
     ExchangePrice,
-    ExchangeTrend,
+    exchangeTrend,
+    MarketPriceTrends,
 } from "~/components/market-exchange";
 import { MarketExchangeChart } from "~/components/market-exchange-chart";
 import { marketUtc } from "~/components/market-filters";
@@ -115,10 +116,7 @@ export function MarketExchangeItem({
                                 : ""}
                         </>,
                     )}
-                    {summary(
-                        `Last ${MARKET_EXCHANGE_DAYS} days`,
-                        <ExchangeTrend history={item.history} change={item.change} />,
-                    )}
+                    {summary("Price change", <MarketPriceTrends trend={exchangeTrend(item)} />)}
                     {summary(
                         "Volume / hour",
                         item.volume === null ? (

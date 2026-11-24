@@ -5,6 +5,7 @@ import {
     quoteExchangeWindow,
 } from "@poe-tools/market";
 import type { MarketExchangeCategory } from "~/lib/market-categories";
+import { MARKET_PRICE_HOURS, marketPriceTrend } from "~/lib/market-price-change";
 import { MARKET_PRICE_CURRENCIES, type MarketPriceRates } from "~/lib/market-price-currencies";
 
 const CHAOS = exchangeCurrencyId("chaos")!;
@@ -242,8 +243,8 @@ function snapshotPairHours(snapshots: ExchangeSnapshot[]) {
     return new Map([...traded].map(([key, hours]) => [key, hours.size]));
 }
 
-/** Hours of exchange volume the list charts, with MARKET_EXCHANGE_DAYS days. */
-export const MARKET_EXCHANGE_RECENT_HOURS = 24;
+/** Hours of exchange volume and prices the list charts, with MARKET_EXCHANGE_DAYS days. */
+export const MARKET_EXCHANGE_RECENT_HOURS = MARKET_PRICE_HOURS;
 
 export type MarketExchangeRecentVolume = { hourly: number[]; daily: number[] };
 
@@ -311,6 +312,12 @@ export type MarketExchangeRow = {
     history: (number | null)[];
     /** Change from the first to the last priced day in `history`, as a fraction. */
     change: number | null;
+    /** Price in each of the MARKET_EXCHANGE_RECENT_HOURS hours to the latest, oldest first. */
+    hourly: (number | null)[];
+    /** Change from the first to the last priced hour in `hourly`, as a fraction. */
+    change24h: number | null;
+    /** Change from the first to the last priced day of the last 3 in `history`, as a fraction. */
+    change3d: number | null;
     /** The pair with the most units of this item traded in the period, at its newest rate. */
     pair: { quoteId: string; name: string; rate: number } | null;
 };
@@ -322,10 +329,11 @@ export type MarketExchangeListRow = MarketExchangeRow & {
 
 /**
  * One row per `listed` item and per item traded in the latest hour, priced in `unit`. `snapshots`
- * are the latest hour's markets and `daily` the last MARKET_EXCHANGE_DAYS days of daily totals.
+ * are the latest hour's markets, plus any of the earlier MARKET_EXCHANGE_RECENT_HOURS hours' that
+ * price items in `hourly`, and `daily` the last MARKET_EXCHANGE_DAYS days of daily totals.
  * Items without trades get a row without a price. Volumes average over the hours since the
  * window's first day, or since `leagueStart` (the league's first exchange hour) when that is later.
- * Pairs low volume for an item over `daily` do not price it, in the latest hour or on any day.
+ * Pairs low volume for an item over `daily` do not price it, in any hour or on any day.
  */
 export function marketExchangeRows(
     snapshots: ExchangeSnapshot[],
@@ -339,12 +347,12 @@ export function marketExchangeRows(
     const anchor = marketExchangeUnitId(unit);
     const days = tradedDays(daily);
     const isLowVolume = lowVolumeCheck(dailyPairHours(days));
-    const current = hourRates(
-        snapshots.filter((snapshot) => snapshot.hour === latestHour),
-        latestHour,
-        anchor,
-        isLowVolume,
-    );
+    const byHour = Map.groupBy(snapshots, (snapshot) => snapshot.hour);
+    const recentHours = Array.from(
+        { length: MARKET_EXCHANGE_RECENT_HOURS },
+        (_, index) => latestHour - (MARKET_EXCHANGE_RECENT_HOURS - 1 - index) * 3600,
+    ).map((hour) => hourRates(byHour.get(hour) ?? [], hour, anchor, isLowVolume));
+    const current = recentHours.at(-1)!;
     const dayRates = exchangeDailyRates(days, anchor, isLowVolume);
     const lastDay = Math.floor(latestHour / DAY) * DAY;
     const window = Array.from(
@@ -390,7 +398,14 @@ export function marketExchangeRows(
                   ? { price: 1, via: anchor }
                   : dayRates.get(staleDay)!.get(itemId)!;
         const price = fresh ?? stale ?? null;
-        const priced = history.filter((value) => value !== null);
+        const hourly = recentHours.map(({ rates, traded }) =>
+            itemId === anchor
+                ? traded.has(anchor)
+                    ? 1
+                    : null
+                : (rates.get(itemId)?.price ?? null),
+        );
+        const trend = marketPriceTrend(hourly, history);
         const top = [...pairs.values()].sort((a, b) => b.units - a.units)[0];
         const topRate = top && pairRate(itemId, top.quoteId, current.quote, days, window);
         const quoteName = top && describe(top.quoteId)?.name;
@@ -409,7 +424,10 @@ export function marketExchangeRows(
                 current: Boolean(fresh),
                 volume: price && hours > 0 ? (units * price.price) / hours : null,
                 history,
-                change: priced.length > 1 ? priced.at(-1)! / priced[0]! - 1 : null,
+                change: trend.change7d,
+                hourly,
+                change24h: trend.change24h,
+                change3d: trend.change3d,
                 pair:
                     top && topRate && quoteName
                         ? { quoteId: top.quoteId, name: quoteName, rate: topRate }

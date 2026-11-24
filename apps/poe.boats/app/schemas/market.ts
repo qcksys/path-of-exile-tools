@@ -162,6 +162,34 @@ export const mergedMarketPriceSchema = z.object({
 });
 export type MergedMarketPrice = z.infer<typeof mergedMarketPriceSchema>;
 
+/** A stash market's prices over the latest 24 hours and the last 7 UTC days, and their changes. */
+export const marketPriceTrendSchema = z.object({
+    hourly: z
+        .array(z.number().nullable())
+        .describe(
+            "Price in each of the 24 hours to the season's latest hour, oldest first; null where it had no price",
+        ),
+    daily: z
+        .array(z.number().nullable())
+        .describe(
+            "Price on each of the 7 UTC days to the season's latest hour at the day's newest priced hour, oldest first",
+        ),
+    change24h: z
+        .number()
+        .nullable()
+        .describe("Change from the first to the last price of `hourly`, as a fraction"),
+    change3d: z
+        .number()
+        .nullable()
+        .describe(
+            "Change from the first to the last price of the last 3 days of `daily`, as a fraction",
+        ),
+    change7d: z
+        .number()
+        .nullable()
+        .describe("Change from the first to the last price of `daily`, as a fraction"),
+});
+
 export const poe2ExchangeCategorySchema = z.enum(
     Object.keys(POE2_EXCHANGE_CATEGORIES) as [Poe2ExchangeCategory, ...Poe2ExchangeCategory[]],
 );
@@ -212,6 +240,21 @@ export const marketExchangeRowSchema = z.object({
         .number()
         .nullable()
         .describe("Change from the first to the last priced day of `history`, as a fraction"),
+    hourly: z
+        .array(z.number().nullable())
+        .describe(
+            "Price in each of the 24 hours to the latest completed hour, oldest first; null where the item did not trade",
+        ),
+    change24h: z
+        .number()
+        .nullable()
+        .describe("Change from the first to the last priced hour of `hourly`, as a fraction"),
+    change3d: z
+        .number()
+        .nullable()
+        .describe(
+            "Change from the first to the last priced day of the last 3 days of `history`, as a fraction",
+        ),
     pair: z
         .object({ quoteId: z.string(), name: z.string(), rate: z.number() })
         .nullable()

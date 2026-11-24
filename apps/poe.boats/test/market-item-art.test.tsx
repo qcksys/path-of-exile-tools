@@ -3,6 +3,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { afterEach, expect, it, vi } from "vite-plus/test";
+import { marketPriceTrend } from "~/lib/market-price-change";
 import MarketIndex from "~/routes/market/index";
 import MarketItem from "~/routes/market/item";
 import { marketFiltersSchema } from "~/schemas/market";
@@ -60,6 +61,7 @@ function showMarket(
         exchange: [],
         exchangeUnit: "chaos",
         historyUnit: "chaos",
+        priceTrend: null,
         variants: [],
         baseDescription: null,
         modValues: null,
@@ -73,6 +75,7 @@ function showMarket(
                 periodPending: 0,
                 baseDescription: null,
                 recentSales: { hourly: Array<number>(24).fill(0), daily: Array<number>(7).fill(0) },
+                priceTrend: marketPriceTrend(Array(24).fill(null), Array(7).fill(null)),
             },
         ],
         history: [

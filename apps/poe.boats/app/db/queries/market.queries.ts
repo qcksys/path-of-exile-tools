@@ -19,6 +19,7 @@ import {
     gt,
     gte,
     inArray,
+    isNotNull,
     like,
     lte,
     max,
@@ -56,6 +57,11 @@ import {
 } from "~/lib/market-exchange";
 import { marketExchangeItem } from "~/lib/market-exchange.server";
 import { marketSettings } from "~/lib/market-kinds";
+import {
+    MARKET_PRICE_DAYS,
+    type MarketPriceTrend,
+    marketPriceTrendFromHours,
+} from "~/lib/market-price-change";
 import { MARKET_PRICE_CURRENCIES } from "~/lib/market-price-currencies";
 import {
     chaosRatesByHour,
@@ -361,6 +367,86 @@ async function marketRecentSales(
     return sales;
 }
 
+/**
+ * Each listed market's price trend to `latestHour` in the filters' currency, from the price locked
+ * on its market hours (as the list's price cell shows it), keyed by `marketRowKey(row, 0)`. Chaos
+ * and divine read their locked columns; another currency converts the chaos price at each hour's
+ * rate.
+ */
+async function marketRecentPrices(
+    db: TDatabase,
+    filters: MarketFilters,
+    markets: MarketRowKey[],
+    latestHour: number,
+) {
+    const trends = new Map<string, MarketPriceTrend>();
+    if (!markets.length) return trends;
+    const { market } = marketTables(filters.realm);
+    const locked = filters.currency === "divine" ? market.priceDivine : market.priceChaos;
+    const rows = await traceQuery(
+        "market.recent_prices",
+        db
+            .select({
+                hour: market.hour,
+                itemKey: market.itemKey,
+                identified: market.identified,
+                corrupted: market.corrupted,
+                signatureKind: market.signatureKind,
+                signatureValue: market.signatureValue,
+                price: sql<number>`max(${locked})`.mapWith(Number),
+            })
+            .from(market)
+            .where(
+                and(
+                    eq(market.realm, filters.realm),
+                    eq(market.league, filters.league),
+                    inArray(market.itemKey, [...new Set(markets.map((row) => row.itemKey))]),
+                    or(
+                        ...markets.map((entry) =>
+                            and(
+                                eq(market.itemKey, entry.itemKey),
+                                eq(market.identified, entry.identified),
+                                eq(market.corrupted, entry.corrupted),
+                                eq(market.signatureKind, entry.signatureKind),
+                                eq(market.signatureValue, entry.signatureValue),
+                            ),
+                        ),
+                    ),
+                    gte(market.hour, utcDay(latestHour) - (MARKET_PRICE_DAYS - 1) * 86400),
+                    lte(market.hour, latestHour),
+                    merchantTab(market),
+                    isNotNull(locked),
+                ),
+            )
+            .groupBy(
+                market.hour,
+                market.itemKey,
+                market.identified,
+                market.corrupted,
+                market.signatureKind,
+                market.signatureValue,
+            ),
+    );
+    const rates =
+        filters.currency === "chaos" || filters.currency === "divine"
+            ? undefined
+            : await marketChaosRates(db, filters, [], [...new Set(rows.map((row) => row.hour))]);
+    const points = Map.groupBy(
+        rows.map((row) => {
+            const toChaos = rates && marketDisplayRate(rates, "chaos", row.hour)(filters.currency);
+            return {
+                key: marketRowKey(row, 0),
+                hour: row.hour,
+                price: rates ? (toChaos ? row.price / toChaos : null) : row.price,
+            };
+        }),
+        (point) => point.key,
+    );
+    for (const [key, hours] of points)
+        trends.set(key, marketPriceTrendFromHours(hours, latestHour));
+    return trends;
+}
+
 /** Null for a Cluster Jewel, whose base type already says all of it. */
 function baseDescription(baseType: string) {
     const entry = marketBaseEntry(baseType);
@@ -647,9 +733,13 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                   "market.page_latest_rows": pageLatestRows,
                   "market.window_start": windowStart,
               }).then(async (markets) => {
-                  const [latest, recent] = await Promise.all([
+                  const [latest, recent, trends] = await Promise.all([
                       marketLatestRows(db, filters, markets),
                       marketRecentSales(db, filters, markets, latestHour),
+                      // A pairs page lists up to FORBIDDEN_PAGE_SIZE markets and shows no trend.
+                      settings.layout === "pairs"
+                          ? new Map<string, MarketPriceTrend>()
+                          : marketRecentPrices(db, filters, markets, latestHour),
                   ]);
                   return latest.map((row) => ({
                       ...row,
@@ -657,6 +747,9 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                           hourly: Array<number>(RECENT_SALE_HOURS).fill(0),
                           daily: Array<number>(RECENT_SALE_DAYS).fill(0),
                       },
+                      priceTrend:
+                          trends.get(marketRowKey(row, 0)) ??
+                          marketPriceTrendFromHours([], latestHour),
                   }));
               });
     const [rows, history, variants, exchange, modRows] = await Promise.all([
@@ -768,6 +861,20 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         priceRates,
         /** The currency `history` prices are in: the game's first price currency. */
         historyUnit,
+        /** With an item, its merged median asking price's trend in the filters' currency. */
+        priceTrend: filters.item
+            ? marketPriceTrendFromHours(
+                  history.map((row) => ({
+                      hour: row.hour,
+                      price:
+                          mergeMarketPrices(
+                              row.prices,
+                              marketDisplayRate(rates, filters.currency, row.hour),
+                          )?.median ?? null,
+                  })),
+                  latestHour,
+              )
+            : null,
         history: history.map((row) => {
             const rate = marketDisplayRate(rates, historyUnit, row.hour);
             return {
@@ -1071,10 +1178,11 @@ function exchangeSnapshots(
     scope: { realm: string; league: string },
     [fromHour, toHour]: [number, number],
     marketIds?: string[],
+    label = fromHour === toHour ? "market.exchange" : "market.exchange_history",
 ) {
     const { currencyHourly } = marketTables(scope.realm);
     return traceQuery(
-        fromHour === toHour ? "market.exchange" : "market.exchange_history",
+        label,
         db
             .select({
                 realm: currencyHourly.realm,
@@ -1136,45 +1244,10 @@ function exchangeWindowStart(latestHour: number) {
     return utcDay(latestHour) - (MARKET_EXCHANGE_DAYS - 1) * 86400;
 }
 
-/** Units of each item traded on some exchange markets in each hour from `fromHour`. */
-function exchangeHourlyVolumes(
-    db: TDatabase,
-    scope: { realm: string; league: string },
-    [fromHour, toHour]: [number, number],
-    marketIds: string[],
-) {
-    if (!marketIds.length) return Promise.resolve([]);
-    const { currencyHourly } = marketTables(scope.realm);
-    return traceQuery(
-        "market.exchange_recent_volume",
-        db
-            .select({
-                marketId: currencyHourly.marketId,
-                hour: currencyHourly.hour,
-                volumeTraded: currencyHourly.volumeTraded,
-            })
-            .from(currencyHourly)
-            .where(
-                and(
-                    eq(currencyHourly.realm, scope.realm),
-                    eq(currencyHourly.league, scope.league),
-                    inArray(currencyHourly.marketId, marketIds),
-                    gte(currencyHourly.hour, fromHour),
-                    lte(currencyHourly.hour, toHour),
-                ),
-            ),
-    ).then((rows) =>
-        rows.map((row) =>
-            exchangeSnapshotSchema
-                .pick({ marketId: true, hour: true, volumeTraded: true })
-                .parse(row),
-        ),
-    );
-}
-
 /**
  * Rows for every item on the listed markets, priced in the realm's exchange unit. Items `shown`
- * accepts carry their recent traded units; the others carry zeros.
+ * accepts carry their recent traded units and hourly prices; the others carry zeros and only the
+ * latest hour's price.
  */
 async function marketExchange(
     db: TDatabase,
@@ -1191,20 +1264,29 @@ async function marketExchange(
             return item !== undefined && shown(item);
         }),
     );
-    const [snapshots, days, hourly] = await Promise.all([
+    // The shown items' markets and the exchange unit markets that convert them, before the latest hour.
+    const recentIds = exchangeItemMarkets(
+        markets.map((row) => row.marketId.split("|")),
+        [...charted],
+        marketExchangeUnitId(marketExchangeUnit(scope.realm)),
+        [],
+    );
+    const [latest, days, earlier] = await Promise.all([
         exchangeSnapshots(db, scope, [latestHour, latestHour]),
         exchangeDaily(db, scope, exchangeWindowStart(latestHour)),
-        exchangeHourlyVolumes(
-            db,
-            scope,
-            [latestHour - (MARKET_EXCHANGE_RECENT_HOURS - 1) * 3600, latestHour],
-            markets
-                .map((row) => row.marketId)
-                .filter((id) => id.split("|").some((itemId) => charted.has(itemId))),
-        ),
+        recentIds.length
+            ? exchangeSnapshots(
+                  db,
+                  scope,
+                  [latestHour - (MARKET_EXCHANGE_RECENT_HOURS - 1) * 3600, latestHour - 3600],
+                  recentIds,
+                  "market.exchange_recent",
+              )
+            : [],
     ]);
+    const snapshots = [...earlier, ...latest];
     const past = days.filter((row) => row.day <= latestHour);
-    const volumes = marketExchangeRecentVolume(hourly, past, latestHour, charted);
+    const volumes = marketExchangeRecentVolume(snapshots, past, latestHour, charted);
     return marketExchangeRows(
         snapshots,
         past,
@@ -1328,7 +1410,13 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
         const historyStart = latestHour - Number(input.days) * 86400 + 3600;
         const [snapshots, days] = marketIds.length
             ? await Promise.all([
-                  exchangeSnapshots(db, scope, [latestHour, latestHour], marketIds),
+                  exchangeSnapshots(
+                      db,
+                      scope,
+                      [latestHour - (MARKET_EXCHANGE_RECENT_HOURS - 1) * 3600, latestHour],
+                      marketIds,
+                      "market.exchange_recent",
+                  ),
                   exchangeDaily(
                       db,
                       scope,
