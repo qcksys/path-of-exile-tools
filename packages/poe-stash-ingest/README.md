@@ -98,8 +98,9 @@ checkpoints at every commit. DuckDB also holds committed updates in memory until
 with a threshold set the worker checkpoints after a batch once those pass a quarter of
 `PS_MEMORY_LIMIT`. On a
 41 GB database, 60 replayed pages averaged 4.4 s instead of about 22 s and wrote about 0.2 GiB
-each instead of about 4.3 GiB, with peak memory near the DuckDB limit. Index memory is not
-bounded by `PS_MEMORY_LIMIT`, so leave the container several gigabytes above it.
+each instead of about 4.3 GiB, with peak memory near the DuckDB limit. DuckDB 2.0 counts index
+memory inside `PS_MEMORY_LIMIT`, so the listing, sale and equipment tables keep no indexes; the
+worker finds their rows by its own IDs.
 Before replay, the PoE 1 pipeline checkpoints committed capture and exchange writes
 to release loaded DuckDB indexes before publication loads its own indexes. This
 also runs after ordinary capture failures because earlier pages may have committed.
@@ -319,13 +320,14 @@ sale change, and equipment hours inside an undelivered 24-hour window. A capture
 the last page that references it. Query archives with DuckDB, for example
 `SELECT * FROM read_parquet('/backups/*/ps_listing_hour-*.parquet')`.
 
-Deleted rows free space inside the database file for reuse; the file itself does not shrink. In a
-file written in DuckDB 2.0's storage format, checkpoints also compact row groups that keep some live
-rows. Files written by DuckDB 1.x keep that format, in which a table with a key or index, such as
-`ps_listing`, reclaims nothing until a whole row group of 122,880 rows is deleted. Listings leave in
-any order, so such a file grows until it is copied. With the worker stopped,
-`compact <source> <target>` copies a database into a new file in the current format, keeping only
-live rows, and checks that every table, index and key matches. DuckDB 1.x cannot open the new file.
+Deleted rows free space inside the database file for reuse; the file itself does not shrink.
+Checkpoints also compact row groups that keep some live rows, in any table without an index; in a
+file written in DuckDB 2.0's storage format, in indexed tables too. In DuckDB 1.x's format an
+indexed table reclaims nothing until a whole row group of 122,880 rows is deleted. Listings leave
+in any order, so while `ps_listing` had indexes the file grew without bound. With the worker
+stopped, `compact <source> <target>` copies a database into a new file in the current format,
+keeping only live rows, and checks that every table, index and key matches. DuckDB 1.x cannot open
+the new file.
 
 With the worker stopped, `pnpm ps capture-status` reports observation/payload counts, unprocessed
 pages, first/latest capture times, and original/compressed payload bytes. These byte counts exclude

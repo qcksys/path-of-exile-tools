@@ -217,7 +217,7 @@ it("updates a listing in place when identifying it changes its item key", async 
                     db.conn,
                     "SELECT index_name FROM duckdb_indexes() WHERE table_name = 'ps_listing'",
                 ),
-            ).toEqual([{ index_name: "ps_listing_stash" }]);
+            ).toEqual([]);
         } finally {
             await db.close();
         }

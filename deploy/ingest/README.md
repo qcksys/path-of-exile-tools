@@ -158,12 +158,11 @@ images. Monitor free space and arrange off-host data backups as described in the
 
 ### Compacting a worker database
 
-A database file written by DuckDB 1.x keeps growing, because that storage format reclaims rows
-deleted from indexed tables only a whole row group at a time (see
-[Archiving old data](../../packages/poe-stash-ingest/README.md#archiving-old-data)). Copying it
-with an image on DuckDB 2.0 or later writes a file in the newer format, whose checkpoints compact
-those tables. The copy needs free space on the data volume for the live rows, and the worker is
-stopped while it runs. It rebuilds the keys' indexes in memory, so give it what the host can spare
+Deleted rows free space inside the database file, which later writes reuse, but the file does not
+shrink (see [Archiving old data](../../packages/poe-stash-ingest/README.md#archiving-old-data)).
+Copying it into a new file returns that space, and with an image on DuckDB 2.0 or later writes the
+newer format, whose checkpoints also compact indexed tables. The copy needs free space on the data
+volume for the live rows, and the worker is stopped while it runs. It rebuilds the keys' indexes in memory, so give it what the host can spare
 with `--memory-limit` (default 4GB) and a container memory limit above that.
 
 ```sh

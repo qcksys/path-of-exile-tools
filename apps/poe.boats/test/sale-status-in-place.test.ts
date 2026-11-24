@@ -24,7 +24,7 @@ it("changes a sale's status in place", async () => {
                     db.conn,
                     "SELECT index_name AS name FROM duckdb_indexes() WHERE table_name = 'ps_sale'",
                 ),
-            ).toEqual([{ name: "ps_sale_pk" }]);
+            ).toEqual([]);
             await db.conn.run(`INSERT INTO ps_sale BY NAME SELECT 'Standard' AS league,
                 'seller' AS account_name, 'stash-1' AS stash_id, 'item-1' AS item_id,
                 'key' AS item_key, TRUE AS identified, 3 AS frame_type, 'Belt' AS type_line,

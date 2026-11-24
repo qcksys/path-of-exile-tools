@@ -23,20 +23,19 @@ CREATE TABLE IF NOT EXISTS ps_listing (
     raw_item JSON NOT NULL,
     first_seen_at TIMESTAMP NOT NULL,
     last_seen_at TIMESTAMP NOT NULL,
-    removed_at TIMESTAMP,
-    PRIMARY KEY (account_name, stash_id, item_id)
+    removed_at TIMESTAMP
 );
 
--- DuckDB only index-scans single-column indexes, and an indexed removed_at turns every
--- removal into a whole-row delete and insert, so these never paid for their memory.
+-- The listing tables keep no indexes. The worker finds their rows by its own listing_id and
+-- equipment_id (see listing-state.ts), through joins no index serves. DuckDB 2.0 counts index
+-- memory inside its limit, where these held most of it, and reclaims deleted rows from an indexed
+-- table only a whole row group at a time. A primary key is rebuilt away (UNKEYED_TABLES).
 DROP INDEX IF EXISTS ps_listing_league_lastseen;
 DROP INDEX IF EXISTS ps_listing_league_itemkey;
 DROP INDEX IF EXISTS ps_listing_removed;
--- Lookups by item key or icon run as joins, which no index serves. An UPDATE that set either
--- column rewrote the row as a delete and insert, which can fail as a duplicate primary key.
 DROP INDEX IF EXISTS ps_listing_icon;
 DROP INDEX IF EXISTS ps_listing_item_key;
-CREATE INDEX IF NOT EXISTS ps_listing_stash ON ps_listing(stash_id);
+DROP INDEX IF EXISTS ps_listing_stash;
 
 ALTER TABLE ps_listing ADD COLUMN IF NOT EXISTS signature_value VARCHAR;
 -- Listings seen before links were recorded count as unlinked until their stash is re-sent.
@@ -63,11 +62,9 @@ CREATE TABLE IF NOT EXISTS ps_sale AS
         NULL::TIMESTAMP AS eligible_since, NULL::DOUBLE AS market_price,
         0::BIGINT AS market_sellers, current_timestamp::TIMESTAMP AS updated_at
     FROM ps_listing WHERE FALSE;
-CREATE UNIQUE INDEX IF NOT EXISTS ps_sale_pk
-    ON ps_sale(league, account_name, stash_id, item_id, removed_at);
--- An indexed status turned every status change into a delete and insert of the whole row, unique
--- key included, which can fail as a duplicate of the row itself. Most sales are pending while the
--- worker is behind the stream, too many for DuckDB to look up by index.
+-- No indexes, as for ps_listing: a sale is recorded once by the listing batch's NOT EXISTS check.
+-- An indexed status also turned every status change into a delete and insert of the whole row.
+DROP INDEX IF EXISTS ps_sale_pk;
 DROP INDEX IF EXISTS ps_sale_status;
 ALTER TABLE ps_sale ADD COLUMN IF NOT EXISTS links INTEGER DEFAULT 0;
 ALTER TABLE ps_sale ADD COLUMN IF NOT EXISTS tab VARCHAR;
@@ -94,11 +91,11 @@ CREATE TABLE IF NOT EXISTS ps_equipment_listing (
     price_currency VARCHAR,
     raw_item JSON NOT NULL,
     last_seen_at TIMESTAMP NOT NULL,
-    removed_at TIMESTAMP,
-    PRIMARY KEY (account_name, item_id)
+    removed_at TIMESTAMP
 );
-CREATE INDEX IF NOT EXISTS ps_equipment_stash ON ps_equipment_listing(stash_id);
-CREATE INDEX IF NOT EXISTS ps_equipment_item ON ps_equipment_listing(item_id);
+-- No indexes, as for ps_listing. An indexed stash_id also turned every move into a delete and insert.
+DROP INDEX IF EXISTS ps_equipment_stash;
+DROP INDEX IF EXISTS ps_equipment_item;
 CREATE TABLE IF NOT EXISTS ps_equipment_hour AS
     SELECT * EXCLUDE (raw_item, removed_at),
         epoch(date_trunc('hour', last_seen_at))::BIGINT AS observed_hour
@@ -136,7 +133,8 @@ CREATE TABLE IF NOT EXISTS ps_capture_page (
     cursor VARCHAR, next_cursor VARCHAR NOT NULL, captured_at BIGINT NOT NULL,
     response_hash VARCHAR NOT NULL, processed_at TIMESTAMP
 );
-CREATE INDEX IF NOT EXISTS ps_capture_page_time ON ps_capture_page(captured_at);
+-- Capture times are only aggregated and ordered, which no index serves.
+DROP INDEX IF EXISTS ps_capture_page_time;
 ALTER TABLE ps_capture_page ADD COLUMN IF NOT EXISTS equipment_revision VARCHAR;
 CREATE TABLE IF NOT EXISTS ps_capture_stash (stash_id VARCHAR PRIMARY KEY);
 CREATE TABLE IF NOT EXISTS ps_equipment_reclassify (
@@ -199,6 +197,49 @@ export interface DbHandle {
     close: () => Promise<void>;
 }
 
+/** Tables that once had a primary key, which DuckDB cannot drop; see the listing tables above. */
+const UNKEYED_TABLES = ["ps_listing", "ps_equipment_listing"];
+
+/** Rewrites `table` with the same columns, defaults and NOT NULLs, and no primary key. */
+async function dropPrimaryKey(conn: DuckDBConnection, table: string) {
+    const [keys] = await queryAll<{ n: number }>(
+        conn,
+        `SELECT count(*)::INTEGER AS n FROM duckdb_constraints() WHERE database_name = current_database()
+            AND schema_name = 'main' AND table_name = $1 AND constraint_type = 'PRIMARY KEY'`,
+        [table],
+    );
+    if (!keys?.n) return;
+    const columns = await queryAll<{
+        name: string;
+        type: string;
+        nullable: boolean;
+        fallback: string | null;
+    }>(
+        conn,
+        `SELECT column_name AS name, data_type AS type, is_nullable AS nullable, column_default AS fallback
+        FROM duckdb_columns() WHERE database_name = current_database() AND schema_name = 'main'
+            AND table_name = $1 ORDER BY column_index`,
+        [table],
+    );
+    const definitions = columns.map(
+        (column) =>
+            `"${column.name}" ${column.type}` +
+            (column.fallback === null ? "" : ` DEFAULT ${column.fallback}`) +
+            (column.nullable ? "" : " NOT NULL"),
+    );
+    const started = performance.now();
+    await withTransaction(conn, async () => {
+        await conn.run(`CREATE TABLE ${table}_unkeyed (${definitions.join(", ")})`);
+        await conn.run(`INSERT INTO ${table}_unkeyed SELECT * FROM ${table}`);
+        await conn.run(`DROP TABLE ${table}`);
+        await conn.run(`ALTER TABLE ${table}_unkeyed RENAME TO ${table}`);
+    });
+    await conn.run("CHECKPOINT");
+    console.log(
+        `rebuilt ${table} without its primary key in ${((performance.now() - started) / 1000).toFixed(1)} s`,
+    );
+}
+
 export async function openDb(path = process.env.PS_LOCAL_DB ?? "./data.duckdb"): Promise<DbHandle> {
     const instance = await DuckDBInstance.fromCache(path, {
         // biome-ignore lint/style/useNamingConvention: DuckDB configuration key.
@@ -218,6 +259,7 @@ export async function openDb(path = process.env.PS_LOCAL_DB ?? "./data.duckdb"):
     // `epoch(date_trunc('hour', ts))` agrees with JS `Date.now()/3.6e6` unix-hour math.
     await conn.run("SET TimeZone='UTC'");
     await conn.run(SCHEMA_SQL);
+    for (const table of UNKEYED_TABLES) await dropPrimaryKey(conn, table);
     // Preserve the market keys used before extractors owned their key projection.
     for (const table of ["ps_listing", "ps_listing_hour"]) {
         await conn.run(`UPDATE ${table} SET signature_value = CASE
