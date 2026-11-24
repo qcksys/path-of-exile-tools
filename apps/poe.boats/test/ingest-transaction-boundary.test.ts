@@ -148,7 +148,11 @@ it.each([
         expect(status).toHaveBeenLastCalledWith(
             expect.objectContaining({ state: "idle", failedStages: [] }),
         );
-        expect(log).toHaveBeenCalledOnce();
+        // The memory failure logs what held DuckDB's memory; the cycle's error follows.
+        expect(log).toHaveBeenCalledTimes(2);
+        expect(String(log.mock.calls[0]?.[0])).toMatch(
+            new RegExp(`^${operation} ran out of memory; DuckDB memory [\\d.]+ of `),
+        );
         expect(log.mock.calls.flat().every((value) => typeof value === "string")).toBe(true);
         const output = log.mock.calls.flat().join(" ");
         expect(output).toContain(`${operation} failed`);
