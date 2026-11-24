@@ -36,7 +36,15 @@ const page = (next: string, note = "~b/o 1 chaos") =>
                 accountName: "seller",
                 league: "Standard",
                 stashType: "PremiumStash",
-                items: [{ id: "item", typeLine: "Plate Vest", note, futureField: [1, null] }],
+                items: [
+                    {
+                        id: "item",
+                        typeLine: "Plate Vest",
+                        baseType: "Plate Vest",
+                        note,
+                        futureField: [1, null],
+                    },
+                ],
             },
         ],
     }) as unknown as Page;
