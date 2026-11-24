@@ -6,6 +6,7 @@ import { useItemPresentations } from "~/hooks/use-item-presentations";
 import { findItemPresentation } from "~/lib/item-presentation";
 import type { MarketExchangeRow } from "~/lib/market-exchange";
 import { marketNumber as number } from "~/lib/market-number";
+import { MARKET_PRICE_WINDOWS, type MarketPriceTrend } from "~/lib/market-price-change";
 import {
     MARKET_PRICE_CURRENCIES,
     MARKET_PRICE_CURRENCY_NAMES,
@@ -178,7 +179,67 @@ export function exchangeChange(change: number) {
     return `${change > 0 ? "+" : ""}${Math.round(change * 100)}%`;
 }
 
-/** A 7-day sparkline of daily prices and the change across it. */
+/** Rises in green, falls in red, and a change that rounds to 0% muted. */
+function changeTone(change: number) {
+    if (Math.round(change * 100) === 0) return "text-muted-foreground";
+    return change > 0 ? "text-success" : "text-destructive";
+}
+
+/** An exchange row's prices and changes as a price trend. */
+export function exchangeTrend(
+    row: Pick<MarketExchangeRow, "hourly" | "history" | "change24h" | "change3d" | "change">,
+): MarketPriceTrend {
+    return {
+        hourly: row.hourly,
+        daily: row.history,
+        change24h: row.change24h,
+        change3d: row.change3d,
+        change7d: row.change,
+    };
+}
+
+/** The 24-hour, 3-day and 7-day changes on one line, e.g. `+3% 24h · -1% 3d · +25% 7d`. */
+export function MarketPriceChanges({ trend }: { trend: MarketPriceTrend }) {
+    if (MARKET_PRICE_WINDOWS.every((window) => trend[window.key] === null)) return null;
+    return (
+        <p className="text-xs text-muted-foreground">
+            {MARKET_PRICE_WINDOWS.map((window, index) => {
+                const change = trend[window.key];
+                return (
+                    <span key={window.key} title={`Change over the last ${window.name}`}>
+                        {index ? " · " : null}
+                        <span className={change === null ? undefined : changeTone(change)}>
+                            {change === null ? "—" : exchangeChange(change)}
+                        </span>{" "}
+                        {window.label}
+                    </span>
+                );
+            })}
+        </p>
+    );
+}
+
+/** The latest 24 hours', 3 days' and 7 days' prices, each as a sparkline and its change. */
+export function MarketPriceTrends({ trend }: { trend: MarketPriceTrend }) {
+    return (
+        <dl className="grid grid-cols-[auto_auto] items-center gap-x-3 gap-y-1">
+            {MARKET_PRICE_WINDOWS.map((window) => (
+                <div key={window.key} className="contents">
+                    <dt className="text-xs font-normal text-muted-foreground">
+                        <abbr title={`Last ${window.name}`} className="no-underline">
+                            {window.label}
+                        </abbr>
+                    </dt>
+                    <dd>
+                        <ExchangeTrend history={window.points(trend)} change={trend[window.key]} />
+                    </dd>
+                </div>
+            ))}
+        </dl>
+    );
+}
+
+/** A sparkline of prices and the change across them. */
 export function ExchangeTrend({
     history,
     change,

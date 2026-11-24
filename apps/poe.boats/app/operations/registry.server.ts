@@ -19,6 +19,7 @@ import {
     marketExchangeRowSchema,
     marketExchangeUnitSchema,
     marketFiltersSchema,
+    marketPriceTrendSchema,
     mergedMarketPriceSchema,
     poe2MarketFiltersSchema,
 } from "~/schemas/market";
@@ -337,6 +338,9 @@ export const operations = [
                                 "Likely sales on each of the 7 UTC days to the season's latest hour, oldest first",
                             ),
                     }),
+                    priceTrend: marketPriceTrendSchema.describe(
+                        "Prices in `currency`, each the price locked on the market hour when it was written (in chaos or divine, or chaos converted at that hour's rate for another currency), as the price cell and the price order read it. Every price and change is null in the `forbidden` category",
+                    ),
                 }),
             ),
             hasMore: z.boolean(),
@@ -390,6 +394,11 @@ export const operations = [
             modValues: watchersEyeModValues,
             priceRates: priceRates("at the season's latest hour"),
             historyUnit,
+            priceTrend: marketPriceTrendSchema
+                .nullable()
+                .describe(
+                    "With an item, the median asking price of `history` in `currency`, merging every listing currency at each hour's exchange rate; null otherwise",
+                ),
             history: z.array(
                 marketRow.extend({
                     merged: mergedMarketPriceSchema
@@ -420,7 +429,7 @@ export const operations = [
         name: "get_season_exchange_item",
         ui: "/1/market/currency",
         description:
-            "Read one currency exchange item (an item ID from the season market's `exchange` rows, or the PoE 2 market's `rows` with realm `poe2`): its current price in `unit`, 7-day trend, volume and most traded pair as listed, plus its hourly history over the last `days` days through its chaos, divine and exalted pairs and its eight other most traded pairs. An empty league reads the league whose exchange traded most recently.",
+            "Read one currency exchange item (an item ID from the season market's `exchange` rows, or the PoE 2 market's `rows` with realm `poe2`): its current price in `unit`, 24-hour, 3-day and 7-day changes, volume and most traded pair as listed, plus its hourly history over the last `days` days through its chaos, divine and exalted pairs and its eight other most traded pairs. An empty league reads the league whose exchange traded most recently.",
         input: marketExchangeItemInputSchema,
         output: z.object({
             realm: z.string(),

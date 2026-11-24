@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { dataTableColumns } from "~/components/data-table";
+import { MarketPriceChanges } from "~/components/market-exchange";
 import { marketUtc } from "~/components/market-filters";
 import { MarketListingPrices } from "~/components/market-listing-price";
 import { MarketRecentSales } from "~/components/market-recent-sales";
 import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
 import { marketNumber as number } from "~/lib/market-number";
+import type { MarketPriceTrend } from "~/lib/market-price-change";
 import type { MarketPriceRates } from "~/lib/market-price-currencies";
 import type { MarketFilters } from "~/schemas/market";
 
@@ -18,6 +20,8 @@ type MarketListRow = {
     listingCount: number;
     uniqueSellers: number;
     hour: number;
+    /** In the filters' price currency. */
+    priceTrend: MarketPriceTrend;
 };
 
 /** How a list shows its rows' items. */
@@ -67,12 +71,15 @@ export function marketListColumns<Row extends MarketListRow>(
             sortDescFirst: true,
             meta: { filter: "range", className: "tabular-nums" },
             cell: ({ row: { original: row } }) => (
-                <MarketListingPrices
-                    prices={row.prices}
-                    game={game}
-                    chaosRates={chaosRates}
-                    rates={rates}
-                />
+                <>
+                    <MarketListingPrices
+                        prices={row.prices}
+                        game={game}
+                        chaosRates={chaosRates}
+                        rates={rates}
+                    />
+                    <MarketPriceChanges trend={row.priceTrend} />
+                </>
             ),
         }),
         column.accessor((row) => row.listingCount, {

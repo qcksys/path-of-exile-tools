@@ -38,6 +38,9 @@ const runeRow: MarketExchangeListRow = {
     volume: 12_000,
     history: [600, null, null, null, null, null, 800],
     change: 1 / 3,
+    hourly: Array<number | null>(24).fill(800),
+    change24h: 0,
+    change3d: null,
     pair: { quoteId: divine, name: "Divine Orb", rate: 2 },
     recentVolume: { hourly: Array<number>(24).fill(1), daily: Array<number>(7).fill(30) },
 };

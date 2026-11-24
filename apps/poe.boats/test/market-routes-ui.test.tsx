@@ -148,13 +148,24 @@ it("shows the most listed currency and folds the others behind +N more", async (
     showMarket();
     const cell = (await screen.findByText("5 listed")).closest("td")!;
     const lines = () => [...cell.querySelectorAll("p")].map((price) => price.textContent);
-    expect(lines()).toEqual(["2 divine≈ 300 chaos", "5 listed", "15 chaos 4 listed"]);
+    expect(lines()).toEqual([
+        "2 divine≈ 300 chaos",
+        "5 listed",
+        "15 chaos 4 listed",
+        // The price change in the selected currency, under the prices.
+        "— 24h · +25% 3d · +25% 7d",
+    ]);
     const details = cell.querySelector("details")!;
     expect(details.open).toBe(false);
     expect(details.querySelector("summary")!.textContent).toBe("+1 more");
     // Stash listings follow the same value display as exchange items, noting the listed amount.
     fireEvent.click(screen.getByRole("button", { name: "Chaos Orb" }));
-    expect(lines()).toEqual(["300 chaos", "as 2 divine · 5 listed", "15 chaos 4 listed"]);
+    expect(lines()).toEqual([
+        "300 chaos",
+        "as 2 divine · 5 listed",
+        "15 chaos 4 listed",
+        "— 24h · +25% 3d · +25% 7d",
+    ]);
 });
 
 function exchangeRow(table: HTMLElement, name: string) {
@@ -168,7 +179,7 @@ it("shows exchange-traded items with their value, trend, volume and most traded 
     const cells = [...row.querySelectorAll("td")].map((cell) => cell.textContent);
     expect(cells).toEqual([
         "Scroll of Wisdom",
-        "0.002 chaos≈ 0.00001333 divine+25% in 7 days",
+        "0.002 chaos≈ 0.00001333 divine-5% 24h · — 3d · +25% 7d",
         // Units traded in the latest 6 hours, day and 7 days, as the stash rows chart likely sales.
         "6h2K1d2K7d6K",
         "1.5K chaos",
@@ -256,6 +267,19 @@ it("opens an exchange item's page with its history and returns to the list", asy
         itemId: "Metadata/Items/Currency/CurrencyIdentification",
     });
     expect(page.textContent).toContain("Traded in the latest hour");
+    // Each window charts its prices beside its change; 3 days needs a second priced day.
+    const change = within(page).getByText("Price change").closest("div")!;
+    expect([...change.querySelectorAll("dt")].map((term) => term.textContent)).toEqual([
+        "24h",
+        "3d",
+        "7d",
+    ]);
+    expect([...change.querySelectorAll("dd")].map((value) => value.textContent)).toEqual([
+        "-5%",
+        "—",
+        "+25%",
+    ]);
+    expect(change.querySelectorAll("dd svg")).toHaveLength(2);
     expect(
         within(page).getByRole("heading", { level: 3, name: /Hourly price history/ }).textContent,
     ).toContain("last 30 days");
@@ -372,6 +396,7 @@ it("rounds prices to two places, leaving out divine equivalents under 0.01", asy
         // Currencies cheaper than chaos show in chaos; fractions of a divine below 0.01 say so.
         "0.05 chaos as 1 alch · 1 listed",
         "6 divine 1 listed",
+        "— 24h · +25% 3d · +25% 7d",
     ]);
     expect(cell.querySelector("summary")!.textContent).toBe("+2 more");
     fireEvent.click(screen.getByRole("button", { name: "Divine Orb" }));
@@ -1314,6 +1339,14 @@ it("shows one merged price history in the value display at each hour's rate", as
     });
     showMarket("/1/market/items/Abberath's%20Hooves?league=Allflame&currency=divine");
     const history = await screen.findByRole("region", { name: "Item price history" });
+    // The price change follows the selected price currency, not the value display.
+    const change = within(history).getByRole("region", { name: "Price change" });
+    expect(change.querySelector("p")!.textContent).toBe("Median asking price in divine");
+    expect([...change.querySelectorAll("dd")].map((value) => value.textContent)).toEqual([
+        "+11%",
+        "—",
+        "+33%",
+    ]);
     expect(within(history).queryByRole("link", { name: "chaos" })).toBeNull();
     expect(within(history).queryByRole("link", { name: "divine" })).toBeNull();
     expect(

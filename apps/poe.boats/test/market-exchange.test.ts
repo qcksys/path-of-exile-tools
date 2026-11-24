@@ -234,6 +234,9 @@ it("lists exchange items that did not trade without a price", () => {
         volume: null,
         history: [null, null, null, null, null, null, null],
         change: null,
+        hourly: Array(24).fill(null),
+        change24h: null,
+        change3d: null,
         pair: null,
     });
     expect(rows.map((row) => row.name).sort()).toEqual([
@@ -268,6 +271,45 @@ it("builds a 7-day trend, chaos value per hour and the most traded pair from dai
         name: "Divine Orb",
         rate: 2 / 80,
     });
+});
+
+it("prices each of the latest 24 hours, for 24-hour and 3-day changes beside the 7-day one", () => {
+    const nulls = (length: number) => Array<null>(length).fill(null);
+    const rows = marketExchangeRows(
+        [
+            snapshot(divine, 10, chaos, 1600, hour - 23 * 3600),
+            // Earlier hours convert through a bridge traded in the same hour.
+            snapshot(exalted, 10, chaos, 50, hour - 3600),
+            snapshot(wisdom, 500, exalted, 1, hour - 3600),
+            // Before the 24 hours.
+            snapshot(divine, 10, chaos, 1000, hour - 24 * 3600),
+            snapshot(divine, 10, chaos, 2000),
+        ],
+        [
+            daily(divine, 10, chaos, 1500, today - 2 * DAY),
+            daily(divine, 10, chaos, 1800, today - DAY),
+            daily(divine, 10, chaos, 2000),
+        ],
+        hour,
+        describe,
+        [wisdom],
+    );
+    const rowsById = Object.fromEntries(rows.map((row) => [row.itemId, row]));
+    expect(rowsById[divine]).toMatchObject({
+        hourly: [160, ...nulls(22), 200],
+        change24h: 0.25,
+        history: [null, null, null, null, 150, 180, 200],
+    });
+    expect(rowsById[divine]!.change3d).toBeCloseTo(1 / 3, 9);
+    expect(rowsById[divine]!.change).toBeCloseTo(1 / 3, 9);
+    expect(rowsById[wisdom]).toMatchObject({
+        price: null,
+        hourly: [...nulls(22), expect.closeTo(0.01, 9), null],
+        change24h: null,
+    });
+    // The exchange unit is worth 1 in every hour it traded.
+    expect(rowsById[chaos]?.hourly).toEqual([1, ...nulls(21), 1, 1]);
+    expect(rowsById[chaos]?.change24h).toBe(0);
 });
 
 it("returns an item's hourly chaos price and range through a bridge and each pair's hourly rates", () => {
