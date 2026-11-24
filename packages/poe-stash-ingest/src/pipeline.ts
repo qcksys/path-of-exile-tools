@@ -28,6 +28,7 @@ import { REALM } from "#src/shared/auth.ts";
 import { getCursor } from "#src/shared/cursor.ts";
 import { queryAll, TransactionRollbackError } from "#src/shared/db.ts";
 import { deliverLeagues } from "#src/shared/leagues.ts";
+import { memoryByTag } from "#src/shared/memory.ts";
 import { configureSource } from "#src/shared/source.ts";
 
 const ARCHIVE_INTERVAL_MS = 3_600_000;
@@ -63,6 +64,10 @@ let archiveBacklog = false;
 // its failure on the next cycle.
 let rawMaintenanceRunning = false;
 let rawMaintenanceError: unknown;
+
+/** A DuckDB memory failure, here or as a cause. Only `Error` messages are read. */
+const outOfMemory = (error: unknown): boolean =>
+    error instanceof Error && (error.message.includes("Out of Memory") || outOfMemory(error.cause));
 
 function operationFailure(operation: string, error: unknown) {
     return error instanceof TransactionRollbackError
@@ -238,6 +243,12 @@ export async function runPipeline(
             }
             throw error;
         }
+        if (outOfMemory(error))
+            await memoryByTag(conn).then(
+                (memory) =>
+                    console.error(`${operation} ran out of memory; DuckDB memory ${memory}`),
+                () => {},
+            );
         errors.push(operationFailure(operation, error));
     }
     await update({

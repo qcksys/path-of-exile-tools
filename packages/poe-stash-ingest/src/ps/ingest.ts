@@ -40,6 +40,7 @@ import { learnBasemap } from "#src/shared/basemap.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
 import { queryAll, sqlTimestamp, TransactionRollbackError } from "#src/shared/db.ts";
 import { Laps } from "#src/shared/laps.ts";
+import { memoryByTag } from "#src/shared/memory.ts";
 import { configureSource } from "#src/shared/source.ts";
 import { listingTab } from "#src/shared/stash-tab.ts";
 
@@ -391,7 +392,7 @@ export async function ingestPs(
         await conn.run("COMMIT");
         committing.lap("commit");
         console.log(
-            `batch write of ${batch.pages} pages: listings ${listings}, equipment ${equipment}, ${committing}`,
+            `batch write of ${batch.pages} pages: listings ${listings}, equipment ${equipment}, ${committing}; DuckDB memory ${await memoryByTag(conn)}`,
         );
         inTransaction = false;
         batch = undefined;

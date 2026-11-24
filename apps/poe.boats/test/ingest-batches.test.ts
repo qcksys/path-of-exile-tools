@@ -253,7 +253,7 @@ it("checks held updates after each commit when checkpoints are left to the WAL",
     }
 });
 
-it("logs how long each part of every batch's write took", async () => {
+it("logs how long each part of every batch's write took, and DuckDB's memory after it", async () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     const { db } = await ingest(4);
     try {
@@ -265,7 +265,7 @@ it("logs how long each part of every batch's write took", async () => {
         const n = "[\\d.]+";
         expect(writes[0]).toMatch(
             new RegExp(
-                `^batch write of 4 pages: listings ${n} s \\(withdrawn ${n}, sales ${n}, seen ${n}, changed ${n}, new ${n}, hours read ${n}, hours updated ${n}, hours inserted ${n}, basemap ${n}\\), equipment ${n} s \\(cohorts ${n}, seen ${n}, changed ${n}, new ${n}, hours ${n}, other ${n}\\), ${n} s \\(commit ${n}\\)$`,
+                `^batch write of 4 pages: listings ${n} s \\(withdrawn ${n}, sales ${n}, seen ${n}, changed ${n}, new ${n}, hours read ${n}, hours updated ${n}, hours inserted ${n}, basemap ${n}\\), equipment ${n} s \\(cohorts ${n}, seen ${n}, changed ${n}, new ${n}, hours ${n}, other ${n}\\), ${n} s \\(commit ${n}\\); DuckDB memory ${n} of ${n} [KMG]iB: (nothing above 0.05 GiB|[A-Z_]+ ${n}(, [a-zA-Z_]+ ${n})*)$`,
             ),
         );
     } finally {

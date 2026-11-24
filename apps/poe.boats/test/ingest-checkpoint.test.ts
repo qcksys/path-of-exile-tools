@@ -171,8 +171,14 @@ it("logs a checkpoint failure, skips replay, delivers committed work and retries
         expect(status).toHaveBeenLastCalledWith(
             expect.objectContaining({ state: "idle", failedStages: [] }),
         );
-        expect(log).toHaveBeenCalledOnce();
+        // Each memory failure logs what held DuckDB's memory; the cycle's error follows.
+        expect(log.mock.calls.map(([line]) => String(line).split(";")[0])).toEqual([
+            "Capture database checkpoint ran out of memory",
+            "Checkpoint before equipment rollups ran out of memory",
+            expect.stringContaining("Processing failed"),
+        ]);
         const output = log.mock.calls.flat().join(" ");
+        expect(output).toMatch(/ran out of memory; DuckDB memory [\d.]+ of [\d.]+ [KMG]iB: /);
         expect(output).toContain("Capture database checkpoint failed");
         expect(output).toContain("Checkpoint before equipment rollups failed");
         expect(output).toContain("Out of Memory: failed to pin block");

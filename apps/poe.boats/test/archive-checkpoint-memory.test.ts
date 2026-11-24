@@ -15,7 +15,8 @@ it("checkpoints and reopens mixed archives beyond the whole-BLOB memory failure 
             {
                 cwd: resolve(import.meta.dirname, ".."),
                 encoding: "utf8",
-                timeout: 20_000,
+                // About 20 s for all three locally on DuckDB 2.0, and over 30 s on CI.
+                timeout: 40_000,
                 env: { ...process.env, PS_MEMORY_LIMIT: memory, PS_THREADS: "2" },
             },
         );
@@ -39,4 +40,4 @@ it("checkpoints and reopens mixed archives beyond the whole-BLOB memory failure 
     } finally {
         await rm(directory, { recursive: true, force: true });
     }
-}, 30_000);
+}, 120_000);
