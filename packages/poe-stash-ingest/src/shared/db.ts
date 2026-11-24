@@ -65,7 +65,10 @@ CREATE TABLE IF NOT EXISTS ps_sale AS
     FROM ps_listing WHERE FALSE;
 CREATE UNIQUE INDEX IF NOT EXISTS ps_sale_pk
     ON ps_sale(league, account_name, stash_id, item_id, removed_at);
-CREATE INDEX IF NOT EXISTS ps_sale_status ON ps_sale(status);
+-- An indexed status turned every status change into a delete and insert of the whole row, unique
+-- key included, which can fail as a duplicate of the row itself. Most sales are pending while the
+-- worker is behind the stream, too many for DuckDB to look up by index.
+DROP INDEX IF EXISTS ps_sale_status;
 ALTER TABLE ps_sale ADD COLUMN IF NOT EXISTS links INTEGER DEFAULT 0;
 ALTER TABLE ps_sale ADD COLUMN IF NOT EXISTS tab VARCHAR;
 -- Added after the hour and sale tables copied ps_listing's columns, so neither has it.
