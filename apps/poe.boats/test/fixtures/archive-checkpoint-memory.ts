@@ -105,7 +105,11 @@ if (mode === "verify") {
         assert.equal(mode, "legacy");
         const message =
             error instanceof AggregateError ? error.errors.map(String).join("; ") : String(error);
-        assert.match(message, /Failed to commit.*(?:pin block|create checkpoint)/s);
+        // DuckDB 1.x reports the commit failing; 2.0 reports its checkpoint failing.
+        assert.match(
+            message,
+            /Failed to (?:commit|create checkpoint).*(?:pin block|create checkpoint)/s,
+        );
         await writeFile(
             resultPath,
             JSON.stringify({ acknowledged: hashes.length, commitMemoryFailure: true }),

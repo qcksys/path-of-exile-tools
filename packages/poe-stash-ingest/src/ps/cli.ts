@@ -243,6 +243,24 @@ program
     });
 
 program
+    .command("compact")
+    .description(
+        "Copy a stopped worker's database into a new file in the current DuckDB storage format, keeping only live rows, and check that every table matches.",
+    )
+    .argument("<source>", "database file to copy; nothing else may have it open")
+    .argument("<target>", "new database file to write")
+    .option("--memory-limit <size>", "DuckDB memory limit for the copy", "4GB")
+    .option("--threads <n>", "DuckDB threads for the copy", "4")
+    .action(async (source: string, target: string, opts) => {
+        const { compactDatabase } = await import("#src/shared/compact.ts");
+        const result = await compactDatabase(source, target, {
+            memoryLimit: opts.memoryLimit,
+            threads: opts.threads,
+        });
+        console.log(JSON.stringify(result, null, 2));
+    });
+
+program
     .command("archive")
     .description(
         "Move whole UTC days older than $PS_ARCHIVE_KEEP_DAYS (default 30), or while the database exceeds $PS_ARCHIVE_MAX_GB (default 100), to zstd Parquet files in $PS_ARCHIVE_DIR.",

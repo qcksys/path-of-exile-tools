@@ -156,6 +156,40 @@ before switching. Do not use `down --volumes` or clear cursors.
 Image and data retention are separate: this updater deletes neither archives nor Docker
 images. Monitor free space and arrange off-host data backups as described in the runbook.
 
+### Compacting a worker database
+
+A database file written by DuckDB 1.x keeps growing, because that storage format reclaims rows
+deleted from indexed tables only a whole row group at a time (see
+[Archiving old data](../../packages/poe-stash-ingest/README.md#archiving-old-data)). Copying it
+with an image on DuckDB 2.0 or later writes a file in the newer format, whose checkpoints compact
+those tables. The copy needs free space on the data volume for the live rows, and the worker is
+stopped while it runs. It rebuilds the keys' indexes in memory, so give it what the host can spare
+with `--memory-limit` (default 4GB) and a container memory limit above that.
+
+```sh
+cd ~/poe-ingest
+systemctl --user stop poe-ingest-update.timer
+docker compose -f compose.yaml stop <realm>
+export INGEST_IMAGE="$(python3 -c 'import json; print(json.load(open("deployment.json"))["image"])')"
+mkdir data/<realm>-compact
+docker run --rm --network none --user 1000:1000 --memory <container limit> \
+  -v "$PWD/data/<realm>:/data:ro" -v "$PWD/data/<realm>-compact:/fresh" \
+  "$INGEST_IMAGE" compact /data/market.duckdb /fresh/market.duckdb --memory-limit <size>
+# Continue only if compact succeeded.
+mv data/<realm> data/<realm>-before-compact
+mv data/<realm>-compact data/<realm>
+rm -rf data/<realm>/market.duckdb.tmp
+# The container's health check reads the worker's last status.
+cp -p data/<realm>-before-compact/status.json data/<realm>/
+docker compose -f compose.yaml up -d --no-deps <realm>
+systemctl --user start poe-ingest-update.timer
+```
+
+`compact` only reads the original. It fails if any table, index or key of the copy differs; then
+delete `data/<realm>-compact` and restart the worker and timer on the original. An image
+on DuckDB 1.x cannot open the new file, so to roll back past the upgrade, restore
+`data/<realm>-before-compact` first. Delete that directory once the worker has run on the new file.
+
 ## Data and archive volumes
 
 Each worker keeps its live database in `~/poe-ingest/data/<realm>` and writes daily Parquet

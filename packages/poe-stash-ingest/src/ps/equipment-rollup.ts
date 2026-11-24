@@ -78,12 +78,15 @@ async function equipmentRange(
         SELECT revision, league, account_name, item_id, max(observed_hour) AS observed_hour
         FROM source GROUP BY ALL
     ), recent AS NOT MATERIALIZED (
-        -- An hour has one row per listing and revision.
-        SELECT h.* FROM source h
-        JOIN latest USING (revision, league, account_name, item_id, observed_hour)
+        -- An hour has one row per listing and revision. A semi join hashes the keys alone; an
+        -- inner join may hash the observations, cohort arrays included, when it misjudges sizes.
+        SELECT h.* FROM source h WHERE EXISTS (SELECT 1 FROM latest l
+            WHERE l.revision = h.revision AND l.league = h.league AND l.account_name = h.account_name
+                AND l.item_id = h.item_id AND l.observed_hour = h.observed_hour)
     ), hourly_prices AS (
+        -- DuckDB 2.0's median holds its values in memory, where a list of them can spill.
         SELECT revision, league, json_extract_string(c.value, '$') AS cohort_id,
-            price_currency, observed_hour, median(price_amount) AS median
+            price_currency, observed_hour, list_median(list(price_amount)) AS median
         FROM source h, json_each(h.matches) c
         WHERE price_amount > 0 AND price_currency IS NOT NULL
         GROUP BY revision, league, cohort_id, price_currency, observed_hour
@@ -109,7 +112,7 @@ async function equipmentRange(
     ), prices AS (
         SELECT revision, league, cohort_id, price_currency, count(*) AS count,
             count(DISTINCT account_name) AS sellers, min(price_amount) AS min,
-            median(price_amount) AS median, max(price_amount) AS max
+            list_median(list(price_amount)) AS median, max(price_amount) AS max
         FROM observations WHERE matched AND price_amount > 0 AND price_currency IS NOT NULL
         GROUP BY revision, league, cohort_id, price_currency
     ) SELECT c.revision, c.league, c.cohort_id AS "cohortId",

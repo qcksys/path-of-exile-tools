@@ -204,7 +204,7 @@ it("expands varied cohort arrays within bounded memory for complete observation 
         `INSERT INTO ps_equipment_hour
         SELECT 'seller-' || (i % 50), 'item-' || (i + h * $2), 'stash', 'Standard', 'complete',
             '["base"]'::JSON,
-            to_json(list_transform(range(20), j -> 'unknown-' || ((i + h * $2 + j) % ($2 * 6)) || repeat('x', 64))),
+            to_json(list_transform(range(20), lambda j: 'unknown-' || ((i + h * $2 + j) % ($2 * 6)) || repeat('x', 64))),
             10 + (i % 3), 'chaos', to_timestamp($1 - h * 3600 + 60), $1 - h * 3600
         FROM range($2) items(i), range(6) hours(h)`,
         [HOUR, itemCount],
@@ -261,7 +261,7 @@ it("rolls up a day of wide cohort arrays without writing them all to temporary f
         `INSERT INTO ps_equipment_hour
         SELECT 'seller-' || (i % 50), 'item-' || i, 'stash', 'Standard', 'complete',
             '["base"]'::JSON,
-            to_json(list_transform(range(20), j -> 'unknown-' || ((i + j) % 500) || repeat('x', 64))),
+            to_json(list_transform(range(20), lambda j: 'unknown-' || ((i + j) % 500) || repeat('x', 64))),
             10 + (i % 3), 'chaos', to_timestamp($1 - h * 3600 + 60), $1 - h * 3600
         FROM range($2) items(i), range(24) hours(h)`,
         [HOUR, itemCount],

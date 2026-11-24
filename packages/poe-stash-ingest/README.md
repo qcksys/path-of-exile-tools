@@ -319,8 +319,13 @@ sale change, and equipment hours inside an undelivered 24-hour window. A capture
 the last page that references it. Query archives with DuckDB, for example
 `SELECT * FROM read_parquet('/backups/*/ps_listing_hour-*.parquet')`.
 
-Deleted rows free space inside the database file for reuse; the file itself does not shrink. To
-compact it, stop the worker, `ATTACH` a new file and run `COPY FROM DATABASE old TO new`.
+Deleted rows free space inside the database file for reuse; the file itself does not shrink. In a
+file written in DuckDB 2.0's storage format, checkpoints also compact row groups that keep some live
+rows. Files written by DuckDB 1.x keep that format, in which a table with a key or index, such as
+`ps_listing`, reclaims nothing until a whole row group of 122,880 rows is deleted. Listings leave in
+any order, so such a file grows until it is copied. With the worker stopped,
+`compact <source> <target>` copies a database into a new file in the current format, keeping only
+live rows, and checks that every table, index and key matches. DuckDB 1.x cannot open the new file.
 
 With the worker stopped, `pnpm ps capture-status` reports observation/payload counts, unprocessed
 pages, first/latest capture times, and original/compressed payload bytes. These byte counts exclude

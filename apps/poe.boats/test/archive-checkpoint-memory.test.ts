@@ -8,7 +8,7 @@ it("checkpoints and reopens mixed archives beyond the whole-BLOB memory failure 
     const directory = await mkdtemp(join(tmpdir(), "poe-archive-memory-"));
     const fixture = resolve(import.meta.dirname, "fixtures/archive-checkpoint-memory.ts");
     const resultPath = join(directory, "result.json");
-    const invoke = (mode: string, filename: string) =>
+    const invoke = (mode: string, filename: string, memory = "64MB") =>
         spawnSync(
             process.execPath,
             ["--import", "tsx", fixture, mode, join(directory, filename), resultPath],
@@ -16,7 +16,7 @@ it("checkpoints and reopens mixed archives beyond the whole-BLOB memory failure 
                 cwd: resolve(import.meta.dirname, ".."),
                 encoding: "utf8",
                 timeout: 20_000,
-                env: { ...process.env, PS_MEMORY_LIMIT: "64MB", PS_THREADS: "2" },
+                env: { ...process.env, PS_MEMORY_LIMIT: memory, PS_THREADS: "2" },
             },
         );
     try {
@@ -30,7 +30,9 @@ it("checkpoints and reopens mixed archives beyond the whole-BLOB memory failure 
         const chunked = invoke("chunked", "chunked.duckdb");
         expect(chunked.error).toBeUndefined();
         expect(chunked.status, chunked.stderr).toBe(0);
-        const reopened = invoke("verify", "chunked.duckdb");
+        // Summing the 96 whole-page payloads reads them as one vector, which DuckDB 2.0 holds in
+        // memory at about twice their 45 MB.
+        const reopened = invoke("verify", "chunked.duckdb", "128MB");
         expect(reopened.error).toBeUndefined();
         expect(reopened.status, reopened.stderr).toBe(0);
         expect(JSON.parse(reopened.stdout)).toEqual({ verified: 256, legacy: 96 });
