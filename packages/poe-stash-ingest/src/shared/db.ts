@@ -201,6 +201,10 @@ export async function openDb(path = process.env.PS_LOCAL_DB ?? "./data.duckdb"):
         // biome-ignore lint/style/useNamingConvention: DuckDB configuration key.
         memory_limit: process.env.PS_MEMORY_LIMIT ?? "1GB",
         threads: process.env.PS_THREADS ?? "2",
+        // DuckDB 2.0 computes DISTINCT aggregates from a materialized copy of their input, which
+        // for the equipment rollup is every listing's expanded cohorts.
+        // biome-ignore lint/style/useNamingConvention: DuckDB configuration key.
+        disabled_optimizers: "distinct_aggregate_rewrite",
         ...(process.env.PS_CHECKPOINT_THRESHOLD
             ? // biome-ignore lint/style/useNamingConvention: DuckDB configuration key.
               { checkpoint_threshold: process.env.PS_CHECKPOINT_THRESHOLD }
