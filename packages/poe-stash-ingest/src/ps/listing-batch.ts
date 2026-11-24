@@ -21,6 +21,7 @@ import { isUniqueItem } from "#src/shared/capture.ts";
 import { queryAll } from "#src/shared/db.ts";
 import type { Laps } from "#src/shared/laps.ts";
 import { listingTab } from "#src/shared/stash-tab.ts";
+import { assertUniqueKeys } from "#src/shared/unique-keys.ts";
 
 const GRACE_US = SALE_POLICY.graceSeconds * 1e6;
 /** Rows per statement: rows carry their item JSON, and a statement's JSON is one string. */
@@ -365,16 +366,28 @@ export class ListingBatch {
                 ],
             );
         }
+        if (this.sales.length)
+            await assertUniqueKeys(
+                conn,
+                "ps_sale",
+                ["league", "account_name", "stash_id", "item_id", "removed_at"],
+                `SELECT league, account_name, stash_id, item_id, removed_at FROM ps_sale
+                WHERE removed_at IN (SELECT make_timestamp(value::BIGINT) FROM json_each($1::JSON))`,
+                [JSON.stringify([...new Set(this.sales.map((sale) => sale.removedAt))])],
+            );
         laps?.lap("sales");
 
         const states: unknown[] = [];
         const changed: unknown[] = [];
         const inserts: unknown[] = [];
+        const insertedKeys: Pick<ListingRow, "accountName" | "stashId" | "itemId">[] = [];
         for (const [slot, touch] of this.touches) {
             const listingId = state.listingId[slot]!;
             const lastSeen = state.lastSeen[slot]!;
             const removedAt = state.active[slot] ? null : state.removedAt[slot]!;
             if (!touch.inDb) {
+                const { accountName, stashId, itemId } = touch.row!;
+                insertedKeys.push({ accountName, stashId, itemId });
                 inserts.push({
                     ...touch.row!,
                     listingId,
@@ -421,6 +434,16 @@ export class ListingBatch {
             );
         }
         laps?.lap("new");
+        if (insertedKeys.length)
+            await assertUniqueKeys(
+                conn,
+                "ps_listing",
+                ["account_name", "stash_id", "item_id"],
+                `SELECT value->>'accountName' AS account_name, value->>'stashId' AS stash_id,
+                    value->>'itemId' AS item_id FROM json_each($1::JSON)`,
+                [JSON.stringify(insertedKeys)],
+            );
+        laps?.lap("keys");
 
         // Every listing seen in the batch has one row for its hour, holding its last values.
         if (this.sighted.size) {

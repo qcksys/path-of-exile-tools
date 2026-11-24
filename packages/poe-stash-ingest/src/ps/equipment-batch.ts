@@ -8,6 +8,7 @@ import { stashRounds } from "#src/ps/rounds.ts";
 import type { Laps } from "#src/shared/laps.ts";
 import { extractListingPrice } from "#src/shared/price.ts";
 import { listingTab } from "#src/shared/stash-tab.ts";
+import { assertUniqueKeys } from "#src/shared/unique-keys.ts";
 
 type Item = PublicStashChange["items"][number];
 type OnClassified = (item: Item, classification: Classification) => void;
@@ -280,6 +281,7 @@ export class EquipmentBatch {
         const stayed: unknown[] = [];
         const moved: unknown[] = [];
         const inserts: unknown[] = [];
+        const insertedKeys: { account: string; id: string }[] = [];
         for (const [slot, touch] of this.touches) {
             const equipmentId = state.equipmentId[slot]!;
             const lastSeen = Number.isNaN(touch.lastSeen) ? null : touch.lastSeen;
@@ -299,8 +301,10 @@ export class EquipmentBatch {
                 lastSeen,
                 removedAt,
             };
-            if (!touch.inDb) inserts.push(values);
-            else if (!values) states.push({ equipmentId, lastSeen, removedAt });
+            if (!touch.inDb) {
+                inserts.push(values);
+                insertedKeys.push({ account: touch.row!.account, id: touch.row!.id });
+            } else if (!values) states.push({ equipmentId, lastSeen, removedAt });
             else (touch.row!.stashId === touch.dbStash ? stayed : moved).push(values);
         }
         const byId = `(value->>'equipmentId')::BIGINT AS equipment_id,
@@ -315,8 +319,7 @@ export class EquipmentBatch {
                 [JSON.stringify(states.slice(i, i + NARROW_CHUNK))],
             );
         laps?.lap("seen");
-        // `stash_id` is indexed (ps_equipment_stash), and setting an indexed column rewrites the
-        // row even when its value is unchanged, so only items that moved set it.
+        // Only items that moved set `stash_id`.
         for (const [rows, stashColumn] of [
             [stayed, ""],
             [moved, "stash_id = v.value->>'stashId',"],
@@ -349,6 +352,15 @@ export class EquipmentBatch {
                 [this.revision, JSON.stringify(inserts.slice(i, i + CHUNK))],
             );
         laps?.lap("new");
+        if (insertedKeys.length)
+            await assertUniqueKeys(
+                conn,
+                "ps_equipment_listing",
+                ["account_name", "item_id"],
+                `SELECT value->>'account' AS account_name, value->>'id' AS item_id FROM json_each($1::JSON)`,
+                [JSON.stringify(insertedKeys)],
+            );
+        laps?.lap("keys");
 
         if (this.observed.size) {
             await conn.run(
