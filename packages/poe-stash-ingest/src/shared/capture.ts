@@ -8,10 +8,10 @@ import {
 } from "@poe-tools/market";
 
 /**
- * Whether to persist this item. Captures every unique, skill gem, captured beast and tier or
- * Nightmare map, identified currency-tier items and clean equipment of listed crafting bases. No
- * watchlist — the universe of interest is defined by the structured mod-extractor config and
- * downstream queries.
+ * Whether to persist this item. Captures every unique, skill gem, captured beast, Reliquary Key
+ * and tier or Nightmare map, identified currency-tier items and clean equipment of listed crafting
+ * bases. No watchlist — the universe of interest is defined by the structured mod-extractor config
+ * and downstream queries.
  *
  * Legacy numeric frames remain a fallback when rarity is absent.
  */
@@ -26,8 +26,17 @@ export const ITEM_CATEGORIES: ReadonlyArray<{ name: string; matches: (item: Item
     { name: "map", matches: isMapItem },
     { name: "beast", matches: isCapturedBeast },
     { name: "heist", matches: isHeistMarketItem },
+    { name: "reliquary-key", matches: isReliquaryKey },
     { name: "base", matches: isMarketBaseItem },
 ];
+
+/**
+ * Every Vault Key base is named `<name> Reliquary Key`. All but the Voidborn key are Normal items,
+ * which the currency rule misses.
+ */
+export function isReliquaryKey(item: Pick<Item, "baseType">): boolean {
+    return item.baseType.endsWith(" Reliquary Key");
+}
 
 /** A clean item of a listed crafting base, in one of its item level bands. */
 export function isMarketBaseItem(item: Item): boolean {
