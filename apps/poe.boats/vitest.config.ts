@@ -12,6 +12,8 @@ export default defineConfig({
     },
     test: {
         environment: "node",
+        // UI times follow the machine's zone; pin it so they read the same everywhere.
+        env: { TZ: "UTC" },
         // CI runners have 4 vCPUs. Locally, half the cores or more slows the CPU-heavy
         // crafting and DuckDB tests past their timeouts.
         maxWorkers: process.env.CI ? 2 : "40%",

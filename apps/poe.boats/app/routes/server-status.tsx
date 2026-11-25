@@ -1,6 +1,7 @@
 import { Activity, ArrowRight, RefreshCw } from "lucide-react";
 import { useEffect } from "react";
 import { data, Link, useRevalidator } from "react-router";
+import { LocalTime } from "~/components/local-time";
 import { Button } from "~/components/ui/button";
 import { dbContext } from "~/context";
 import { getServerStatus } from "~/operations/server-status.server";
@@ -19,10 +20,8 @@ export async function loader({ context }: Route.LoaderArgs) {
     });
 }
 
-function date(value: number | null) {
-    return value === null
-        ? "Not yet"
-        : `${new Date(value).toISOString().replace("T", " ").slice(0, 19)} UTC`;
+function StatusTime({ at }: { at: number | null }) {
+    return at === null ? "Not yet" : <LocalTime at={at} seconds />;
 }
 
 const labels = {
@@ -72,9 +71,7 @@ export default function ServerStatus({ loaderData }: Pick<Route.ComponentProps, 
                         />
                         {revalidator.state !== "idle" ? "Refreshing…" : "Refresh status"}
                     </Button>
-                    <p className="text-muted-foreground text-xs">
-                        Refreshes every 30 seconds · All times UTC
-                    </p>
+                    <p className="text-muted-foreground text-xs">Refreshes every 30 seconds</p>
                 </div>
             </div>
             <section aria-label="Worker health" className="space-y-4">
@@ -163,11 +160,13 @@ export default function ServerStatus({ loaderData }: Pick<Route.ComponentProps, 
                                         Exchange progress
                                     </p>
                                     <p className="mt-2 font-mono text-sm">
-                                        {date(
-                                            worker.currencyNextHour === null
-                                                ? null
-                                                : worker.currencyNextHour * 1000,
-                                        )}
+                                        <StatusTime
+                                            at={
+                                                worker.currencyNextHour === null
+                                                    ? null
+                                                    : worker.currencyNextHour * 1000
+                                            }
+                                        />
                                     </p>
                                     <p className="mt-2 text-muted-foreground text-xs">
                                         Next snapshot to request
@@ -192,15 +191,21 @@ export default function ServerStatus({ loaderData }: Pick<Route.ComponentProps, 
                                     <dt className="text-muted-foreground">
                                         Last heartbeat received
                                     </dt>
-                                    <dd className="mt-1 font-mono">{date(worker.receivedAt)}</dd>
+                                    <dd className="mt-1 font-mono">
+                                        <StatusTime at={worker.receivedAt} />
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt className="text-muted-foreground">Last progress</dt>
-                                    <dd className="mt-1 font-mono">{date(worker.progressAt)}</dd>
+                                    <dd className="mt-1 font-mono">
+                                        <StatusTime at={worker.progressAt} />
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt className="text-muted-foreground">Last successful cycle</dt>
-                                    <dd className="mt-1 font-mono">{date(worker.lastSuccessAt)}</dd>
+                                    <dd className="mt-1 font-mono">
+                                        <StatusTime at={worker.lastSuccessAt} />
+                                    </dd>
                                 </div>
                             </dl>
                         </article>
@@ -221,8 +226,13 @@ export default function ServerStatus({ loaderData }: Pick<Route.ComponentProps, 
                     Coverage counts distinct stored hours. Gaps are not filled. Exchange snapshots
                     can be backfilled; equipment and unique-item history begins when listings were
                     observed.
-                    {coverageCheckedAt !== null &&
-                        ` Coverage checked ${date(coverageCheckedAt)}; summaries are reused for up to one minute.`}
+                    {coverageCheckedAt !== null && (
+                        <>
+                            {" "}
+                            Coverage checked <StatusTime at={coverageCheckedAt} />; summaries are
+                            reused for up to one minute.
+                        </>
+                    )}
                 </p>
                 {!coverage.length ? (
                     <p className="rounded-lg border border-dashed p-6 text-muted-foreground">
@@ -264,10 +274,10 @@ export default function ServerStatus({ loaderData }: Pick<Route.ComponentProps, 
                                         </td>
                                         <td className="px-4 py-4 capitalize">{row.stream}</td>
                                         <td className="whitespace-nowrap px-4 py-4 font-mono text-xs">
-                                            {date(row.firstHour * 1000)}
+                                            <StatusTime at={row.firstHour * 1000} />
                                         </td>
                                         <td className="whitespace-nowrap px-4 py-4 font-mono text-xs">
-                                            {date(row.latestHour * 1000)}
+                                            <StatusTime at={row.latestHour * 1000} />
                                         </td>
                                         <td className="px-4 py-4 font-mono">
                                             {row.hours.toLocaleString("en-US")}
@@ -282,8 +292,8 @@ export default function ServerStatus({ loaderData }: Pick<Route.ComponentProps, 
                     </div>
                 )}
                 <p className="text-muted-foreground text-xs">
-                    Checked {date(checkedAt)}. Missing heartbeats are flagged after 3 minutes;
-                    active stages without progress after 10 minutes.
+                    Checked <StatusTime at={checkedAt} />. Missing heartbeats are flagged after 3
+                    minutes; active stages without progress after 10 minutes.
                 </p>
             </section>
         </main>

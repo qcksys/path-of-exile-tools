@@ -3,6 +3,7 @@ import { decodeCohortPriceReference, decodeExchangePriceReference } from "@poe-t
 import { useEffect, useId, useMemo, useRef } from "react";
 import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogItemArt } from "~/components/item-art";
+import { LocalTime } from "~/components/local-time";
 import { CatalogPicker } from "~/components/recombinator/catalog-item-editor";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -93,7 +94,19 @@ export function GraphPriceInput({
                 {priority?.unavailable ? (
                     "Exchange price unavailable · refresh or enter a manual price"
                 ) : value?.source === "market" ? (
-                    `Market estimate · ${value.observedAt ? new Date(value.observedAt).toLocaleString() : "unknown observation time"} · ${value.confidence === null ? "unknown confidence" : `${(value.confidence * 100).toFixed(0)}% data confidence`} · edit to override`
+                    <>
+                        Market estimate ·{" "}
+                        {value.observedAt ? (
+                            <LocalTime at={Date.parse(value.observedAt)} />
+                        ) : (
+                            "unknown observation time"
+                        )}{" "}
+                        ·{" "}
+                        {value.confidence === null
+                            ? "unknown confidence"
+                            : `${(value.confidence * 100).toFixed(0)}% data confidence`}{" "}
+                        · edit to override
+                    </>
                 ) : value ? (
                     "Manual price"
                 ) : fallback !== undefined ? (

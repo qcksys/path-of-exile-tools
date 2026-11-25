@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
 import { DataTable, dataTableColumns } from "~/components/data-table";
+import { LocalTime } from "~/components/local-time";
 import {
     ExchangeItemName,
     ExchangePair,
@@ -9,7 +10,6 @@ import {
     exchangeTrend,
     MarketPriceChanges,
 } from "~/components/market-exchange";
-import { marketUtc } from "~/components/market-filters";
 import { MarketRecentSales } from "~/components/market-recent-sales";
 import {
     MARKET_EXCHANGE_DAYS,
@@ -70,7 +70,8 @@ function exchangeColumns(
                         <MarketPriceChanges trend={exchangeTrend(row)} />
                         {row.current ? null : (
                             <p className="text-xs text-muted-foreground">
-                                Last traded {row.hour === null ? "—" : marketUtc(row.hour)}
+                                Last traded{" "}
+                                {row.hour === null ? "—" : <LocalTime at={row.hour * 1000} />}
                             </p>
                         )}
                         {row.via && row.via.itemId !== marketExchangeUnitId(unit) ? (

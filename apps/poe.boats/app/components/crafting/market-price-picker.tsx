@@ -2,6 +2,7 @@ import type { ItemQuery, SourcePreparationProfile } from "@poe-tools/item-query"
 import { decodeCohortPriceReference } from "@poe-tools/market";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CurrencyLabel } from "~/components/currency-label";
+import { LocalTime } from "~/components/local-time";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
@@ -285,7 +286,7 @@ export function MarketPricePicker({
                                 )}
                             </p>
                             <p className="text-muted-foreground">
-                                Observed {new Date(candidate.latest.hour * 1000).toLocaleString()} ·{" "}
+                                Observed <LocalTime at={candidate.latest.hour * 1000} /> ·{" "}
                                 {quote?.unknownCount ?? candidate.latest.unknownCount} unknown
                                 matches
                             </p>
@@ -312,8 +313,8 @@ export function MarketPricePicker({
                             {quote && candidate.window && (
                                 <p className="text-muted-foreground">
                                     {quote.hours}-hour estimate from{" "}
-                                    {new Date(quote.windowStart * 1000).toLocaleString()}. Source
-                                    observations do not establish current inventory or sales.
+                                    <LocalTime at={quote.windowStart * 1000} />. Source observations
+                                    do not establish current inventory or sales.
                                 </p>
                             )}
                             {candidate.reasons.map((reason) => (
@@ -365,7 +366,9 @@ export function MarketPricePicker({
                             <tbody>
                                 {history.rows.map((row) => (
                                     <tr key={row.hour}>
-                                        <td>{new Date(row.hour * 1000).toLocaleString()}</td>
+                                        <td>
+                                            <LocalTime at={row.hour * 1000} />
+                                        </td>
                                         <td>{row.amount ?? "Unknown"}</td>
                                         <td>{row.samples}</td>
                                     </tr>

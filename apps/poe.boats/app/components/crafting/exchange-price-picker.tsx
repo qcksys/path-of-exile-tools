@@ -7,6 +7,7 @@ import {
 } from "@poe-tools/market";
 import { useEffect, useRef, useState } from "react";
 import { CurrencyLabel } from "~/components/currency-label";
+import { LocalTime } from "~/components/local-time";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
@@ -325,8 +326,7 @@ export function ExchangePricePicker({
                                     </p>
                                     {quote.hour !== null && (
                                         <p>
-                                            Observed {new Date(quote.hour * 1000).toLocaleString()}{" "}
-                                            ·{" "}
+                                            Observed <LocalTime at={quote.hour * 1000} /> ·{" "}
                                             {quote.itemVolume === null
                                                 ? "no direct traded volume"
                                                 : `${quote.itemVolume.toLocaleString()} units traded`}{" "}
@@ -362,8 +362,8 @@ export function ExchangePricePicker({
                                         <p>
                                             Estimate window:{" "}
                                             {(quote.hour - quote.windowStart) / 3600 + 1} hours ·{" "}
-                                            {new Date(quote.windowStart * 1000).toLocaleString()} to{" "}
-                                            {new Date((quote.hour + 3600) * 1000).toLocaleString()}.
+                                            <LocalTime at={quote.windowStart * 1000} /> to{" "}
+                                            <LocalTime at={(quote.hour + 3600) * 1000} />.
                                             {copyOnly ? "" : " Refresh keeps the adaptive policy."}
                                         </p>
                                     )}
@@ -453,7 +453,9 @@ export function ExchangePricePicker({
                             <tbody>
                                 {history.map((row) => (
                                     <tr key={row.hour}>
-                                        <td>{new Date(row.hour * 1000).toLocaleString()}</td>
+                                        <td>
+                                            <LocalTime at={row.hour * 1000} />
+                                        </td>
                                         <td>{row.amount?.toPrecision(5) ?? "Unknown"}</td>
                                         <td>{row.volume ?? "Unknown"}</td>
                                     </tr>

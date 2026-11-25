@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { dataTableColumns } from "~/components/data-table";
+import { LocalTime } from "~/components/local-time";
 import { MarketPriceChanges } from "~/components/market-exchange";
-import { marketUtc } from "~/components/market-filters";
 import { MarketListingPrices } from "~/components/market-listing-price";
 import { MarketRecentSales } from "~/components/market-recent-sales";
 import type { MarketPriceSummary } from "~/db/schema/stash.unique-hourly";
@@ -119,7 +119,7 @@ export function marketListColumns<Row extends MarketListRow>(
             sortDescFirst: true,
             enableColumnFilter: false,
             meta: { className: "whitespace-nowrap text-xs text-muted-foreground" },
-            cell: ({ getValue }) => marketUtc(getValue()),
+            cell: ({ getValue }) => <LocalTime at={getValue() * 1000} />,
         }),
     ]);
 }

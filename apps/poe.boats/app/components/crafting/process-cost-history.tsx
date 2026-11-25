@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CurrencyLabel } from "~/components/currency-label";
 import { EChart } from "~/components/echart";
+import { LocalTime, useTimeZone } from "~/components/local-time";
 import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
@@ -8,6 +9,7 @@ import { Label } from "~/components/ui/label";
 import { liveExchangePrices } from "~/lib/crafting-exchange";
 import { livePurchasePrices } from "~/lib/crafting-market";
 import type { ChartOption } from "~/lib/echarts";
+import { formatTime } from "~/lib/local-time";
 import type { CraftingGraph } from "~/schemas/crafting-graph";
 import {
     type CraftingGraphResult,
@@ -63,7 +65,6 @@ function cost(point: CostPoint) {
 export function historyChartOption(points: CostPoint[], currency: string): ChartOption | null {
     if (!points.some((point) => cost(point) !== null)) return null;
     return {
-        useUTC: true,
         grid: { left: 8, right: 24, top: 16, bottom: 8, outerBoundsMode: "same" },
         tooltip: {
             trigger: "axis",
@@ -103,6 +104,8 @@ export function ProcessCostHistory({ graph }: { graph: CraftingGraph }) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
     const active = useRef<AbortController | null>(null);
+    const timeZone = useTimeZone();
+    const day = (at: number) => (timeZone ? formatTime(at, timeZone).slice(0, 10) : undefined);
     // biome-ignore lint/correctness/useExhaustiveDependencies: Any project edit invalidates these historical estimates and cancels their worker.
     useEffect(() => {
         setPoints([]);
@@ -119,8 +122,9 @@ export function ProcessCostHistory({ graph }: { graph: CraftingGraph }) {
         setError("");
         try {
             const data = new FormData(form);
-            const start = Date.parse(`${data.get("start")}T00:00:00Z`) / 1000;
-            const end = Date.parse(`${data.get("end")}T00:00:00Z`) / 1000;
+            // A date-time without an offset parses as local midnight.
+            const start = Date.parse(`${data.get("start")}T00:00:00`) / 1000;
+            const end = Date.parse(`${data.get("end")}T00:00:00`) / 1000;
             const count = Number(data.get("points"));
             if (!Number.isFinite(start) || !Number.isFinite(end) || start > end)
                 throw new Error("Choose a valid start and end date.");
@@ -197,11 +201,11 @@ export function ProcessCostHistory({ graph }: { graph: CraftingGraph }) {
         <details className="rounded-lg border p-4 text-sm">
             <summary className="cursor-pointer font-medium">Process cost history</summary>
             <p className="my-3 text-xs text-muted-foreground">
-                Recalculate this process with observations at or before each sampled UTC hour.
-                Manual prices, sale assumptions and crafting rules stay fixed. Missing market data
-                creates a gap. Observations may be older than the sample date; asking-price
-                confidence is a heuristic, and exchange confidence is uncalibrated. Costs are
-                sampled estimates; their sampling intervals do not include market-price uncertainty.
+                Recalculate this process with observations at or before each sampled hour. Manual
+                prices, sale assumptions and crafting rules stay fixed. Missing market data creates
+                a gap. Observations may be older than the sample date; asking-price confidence is a
+                heuristic, and exchange confidence is uncalibrated. Costs are sampled estimates;
+                their sampling intervals do not include market-price uncertainty.
             </p>
             <form
                 className="flex flex-wrap items-end gap-3"
@@ -211,25 +215,23 @@ export function ProcessCostHistory({ graph }: { graph: CraftingGraph }) {
                 }}
             >
                 <Label>
-                    History start (UTC)
+                    History start
                     <Input
                         className={graphControl}
                         type="date"
                         name="start"
                         required
-                        defaultValue={new Date(Date.now() - 7 * 86400000)
-                            .toISOString()
-                            .slice(0, 10)}
+                        defaultValue={day(Date.now() - 7 * 86400000)}
                     />
                 </Label>
                 <Label>
-                    History end (UTC)
+                    History end
                     <Input
                         className={graphControl}
                         type="date"
                         name="end"
                         required
-                        defaultValue={new Date().toISOString().slice(0, 10)}
+                        defaultValue={day(Date.now())}
                     />
                 </Label>
                 <Label>
@@ -276,7 +278,7 @@ export function ProcessCostHistory({ graph }: { graph: CraftingGraph }) {
                         </caption>
                         <thead>
                             <tr>
-                                <th className="p-2">UTC hour</th>
+                                <th className="p-2">Hour</th>
                                 <th className="p-2">
                                     Expected cost (
                                     <CurrencyLabel currency={graph.currency} game={graph.game} />)
@@ -291,10 +293,7 @@ export function ProcessCostHistory({ graph }: { graph: CraftingGraph }) {
                             {points.map((point) => (
                                 <tr key={point.at} className="border-t">
                                     <td className="p-2 whitespace-nowrap">
-                                        {new Date(point.at * 1000)
-                                            .toISOString()
-                                            .slice(0, 16)
-                                            .replace("T", " ")}
+                                        <LocalTime at={point.at * 1000} />
                                     </td>
                                     <td className="p-2">
                                         {cost(point)?.toFixed(2) ?? "Unavailable"}
@@ -307,8 +306,11 @@ export function ProcessCostHistory({ graph }: { graph: CraftingGraph }) {
                                             : "Unavailable"}
                                     </td>
                                     <td className="p-2">
-                                        {point.oldestObservation?.slice(0, 16).replace("T", " ") ??
-                                            "No market observation"}
+                                        {point.oldestObservation ? (
+                                            <LocalTime at={Date.parse(point.oldestObservation)} />
+                                        ) : (
+                                            "No market observation"
+                                        )}
                                     </td>
                                     <td className="p-2">
                                         {point.itemConfidence === null

@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 import { redirect } from "react-router";
+import { LocalTime } from "~/components/local-time";
 import { ExchangeDisplayPicker } from "~/components/market-exchange";
 import { MarketExchangeTable } from "~/components/market-exchange-table";
-import { marketUtc } from "~/components/market-filters";
 import { MarketListForm } from "~/components/market-form";
 import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
@@ -69,9 +69,13 @@ export default function Poe2MarketIndex({ loaderData }: Pick<Route.ComponentProp
                     </div>
                     <div className="grid justify-items-end gap-1">
                         <p className="text-xs text-muted-foreground">
-                            {season
-                                ? `Data through ${marketUtc(season.latestHour)}`
-                                : "Awaiting season data"}
+                            {season ? (
+                                <>
+                                    Data through <LocalTime at={season.latestHour * 1000} />
+                                </>
+                            ) : (
+                                "Awaiting season data"
+                            )}
                         </p>
                         <ExchangeDisplayPicker game="poe2" />
                     </div>

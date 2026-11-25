@@ -1,6 +1,7 @@
 import { marketObservationRange } from "@poe-tools/market";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CurrencyLabel } from "~/components/currency-label";
+import { LocalTime } from "~/components/local-time";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
@@ -46,9 +47,11 @@ export function VendorUpgradeQuoteDetails({ quote }: { quote: VendorUpgradeQuote
             </ul>
             <p>
                 Ingredient observed{" "}
-                {quote.ingredient.hour === null
-                    ? "unknown"
-                    : new Date(quote.ingredient.hour * 1000).toLocaleString()}{" "}
+                {quote.ingredient.hour === null ? (
+                    "unknown"
+                ) : (
+                    <LocalTime at={quote.ingredient.hour * 1000} />
+                )}{" "}
                 · {quote.ingredient.itemVolume ?? "unknown"} ingredient units traded ·{" "}
                 {quote.ingredient.quoteVolume ?? "unknown"} quote-currency units traded.
             </p>

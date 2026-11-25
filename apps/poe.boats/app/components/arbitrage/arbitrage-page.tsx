@@ -4,6 +4,7 @@ import { ClusterRecipeCalculator } from "~/components/arbitrage/cluster-recipe-c
 import { ManualRecipeCalculator } from "~/components/arbitrage/manual-recipe-calculator";
 import { RecipeItems } from "~/components/arbitrage/recipe-items";
 import { CurrencyLabel } from "~/components/currency-label";
+import { LocalTime } from "~/components/local-time";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button, buttonVariants } from "~/components/ui/button";
@@ -468,11 +469,7 @@ export function ArbitragePage({
                     seven days that traded.{" "}
                     {snapshot && Object.keys(snapshot.quotes).length > 0 ? (
                         <>
-                            Latest hour:{" "}
-                            <time dateTime={snapshot.fetchedAt}>
-                                {snapshot.fetchedAt.replace("T", " ").replace(/\.\d+Z$/, " UTC")}
-                            </time>
-                            .
+                            Latest hour: <LocalTime at={Date.parse(snapshot.fetchedAt)} seconds />.
                         </>
                     ) : null}
                 </p>

@@ -2,9 +2,10 @@ import { type ReactNode, useCallback, useMemo } from "react";
 import { Link, redirect, useNavigate } from "react-router";
 import { DataTable, type DataTableServerState } from "~/components/data-table";
 import { ItemArt } from "~/components/item-art";
+import { LocalTime } from "~/components/local-time";
 import { ExchangeDisplayPicker } from "~/components/market-exchange";
 import { MarketExchangeTable } from "~/components/market-exchange-table";
-import { MarketFiltersForm, marketUtc } from "~/components/market-filters";
+import { MarketFiltersForm } from "~/components/market-filters";
 import { MarketForbiddenJewels } from "~/components/market-forbidden-jewels";
 import { type MarketListPrices, marketListColumns } from "~/components/market-list-table";
 import { RouteError } from "~/components/route-error";
@@ -202,9 +203,13 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                     </div>
                     <div className="grid justify-items-end gap-1">
                         <p className="text-xs text-muted-foreground">
-                            {season?.latestHour
-                                ? `Data through ${marketUtc(Number(season.latestHour))}`
-                                : "Awaiting season data"}
+                            {season?.latestHour ? (
+                                <>
+                                    Data through <LocalTime at={Number(season.latestHour) * 1000} />
+                                </>
+                            ) : (
+                                "Awaiting season data"
+                            )}
                         </p>
                         <ExchangeDisplayPicker game={game} />
                     </div>
