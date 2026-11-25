@@ -240,6 +240,24 @@ jobs:
       - run: vp install --frozen-lockfile
       - name: Build
         run: vp run poe-boats#build
+      # An environment whose database sits behind a Cloudflare Tunnel sets DATABASE_ACCESS_HOSTNAME;
+      # its DATABASE_URL then points at the local end of this forwarder.
+      - name: Forward the database through Cloudflare Access
+        if: vars.DATABASE_ACCESS_HOSTNAME != ''
+        env:
+          TUNNEL_SERVICE_HOSTNAME: ${{ vars.DATABASE_ACCESS_HOSTNAME }}
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.DATABASE_ACCESS_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.DATABASE_ACCESS_CLIENT_SECRET }}
+        run: |
+          docker run --detach --name database-access --network host \
+            --env TUNNEL_SERVICE_HOSTNAME --env TUNNEL_SERVICE_TOKEN_ID --env TUNNEL_SERVICE_TOKEN_SECRET \
+            cloudflare/cloudflared:2026.10.5 access tcp --url 127.0.0.1:3306
+          for attempt in $(seq 30); do
+            if (exec 3<>/dev/tcp/127.0.0.1/3306) 2>/dev/null; then exit 0; fi
+            sleep 1
+          done
+          docker logs database-access
+          exit 1
       # Migrations run before the new code deploys, so each one must keep working with the
       # code already deployed. A failed migration stops the deployment.
       - name: Apply database migrations

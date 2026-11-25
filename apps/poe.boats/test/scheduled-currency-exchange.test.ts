@@ -1,13 +1,13 @@
 // biome-ignore-all lint/style/useNamingConvention: The feed uses GGG's public field names.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { openDatabase } from "~/db/client";
+import { openWorkerDatabase } from "~/db/client";
 import {
     countStashCurrencyHour,
     upsertStashCurrencyHourly,
 } from "~/db/queries/stash-ingest.queries";
 import { handleScheduled } from "~/scheduled";
 
-vi.mock("~/db/client", () => ({ openDatabase: vi.fn() }));
+vi.mock("~/db/client", () => ({ openWorkerDatabase: vi.fn() }));
 vi.mock("~/db/queries/stash-ingest.queries", () => ({
     countStashCurrencyHour: vi.fn(),
     upsertStashCurrencyHourly: vi.fn(),
@@ -25,7 +25,7 @@ const controller: ScheduledController = {
 };
 const env = { DATABASE_URL: "mysql://inert", DATABASE_DRIVER: "mysql" } as CloudflareBindings;
 const close = vi.fn(async () => {});
-const database = {} as Awaited<ReturnType<typeof openDatabase>>["db"];
+const database = {} as Awaited<ReturnType<typeof openWorkerDatabase>>["db"];
 
 function feed(request: string | URL | Request, overrides: Record<string, unknown> = {}) {
     const url = new URL(String(request));
@@ -50,7 +50,7 @@ function feed(request: string | URL | Request, overrides: Record<string, unknown
 
 beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(openDatabase).mockResolvedValue({ db: database, close });
+    vi.mocked(openWorkerDatabase).mockResolvedValue({ db: database, close });
     vi.mocked(countStashCurrencyHour).mockResolvedValue(0);
     vi.mocked(upsertStashCurrencyHourly).mockImplementation(async (_, rows) => rows.length);
     vi.stubGlobal(

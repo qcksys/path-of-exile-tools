@@ -189,6 +189,42 @@ delete `data/<realm>-compact` and restart the worker and timer on the original. 
 on DuckDB 1.x cannot open the new file, so to roll back past the upgrade, restore
 `data/<realm>-before-compact` first. Delete that directory once the worker has run on the new file.
 
+## Receiver database
+
+The `mysql` service holds the dev receiver's MySQL database in `data/mysql`. The receiver Worker
+reaches it through Hyperdrive, and Hyperdrive reaches it through the `mysql-tunnel` connector:
+
+```text
+Worker -> Hyperdrive -> Cloudflare Access -> tunnel hostname -> mysql-tunnel -> mysql:3306
+```
+
+- **Tunnel:** a remotely managed Cloudflare Tunnel whose one public hostname routes to
+  `tcp://mysql:3306`. Its token is `secrets/mysql_tunnel_token`.
+- **Access:** a self-hosted application on that hostname with one Service Auth policy, which
+  includes two service tokens: one for Hyperdrive and one for CI. Nothing else can open it.
+- **Hyperdrive:** a configuration with query caching off, because the receiver reads rows it has
+  just written. Its ID goes in the Worker environment's `hyperdrive` binding; with a `HYPERDRIVE`
+  binding the Worker ignores `DATABASE_URL`.
+- **Migrations:** the deploy job opens the hostname with `cloudflared access tcp` when the GitHub
+  environment sets the `DATABASE_ACCESS_HOSTNAME` variable and the `DATABASE_ACCESS_CLIENT_ID`
+  and `DATABASE_ACCESS_CLIENT_SECRET` secrets. Its `DATABASE_URL` is then
+  `mysql://poeboats:<password>@127.0.0.1:3306/poeboats`.
+
+Both services run as UID 1000. Before installing this Compose file, create `data/mysql` owned by
+that UID, and the three secret files with mode 600: `mysql_root_password`,
+`mysql_poeboats_password` and `mysql_tunnel_token`. The image creates the `poeboats` user and
+database on first start, from the password files.
+
+The settings trade durability for write speed: no binary log, and commits reach the disk once a
+second, so a host crash can lose the last second. Market rows can be delivered again from the
+workers' archives; accounts and saved sets cannot, so back them up with `mysqldump` if the
+environment holds any that matter.
+
+To copy a database in, stop the workers and the updater timer first, so nothing writes to the old
+database during the copy. Create the schema with the app's migrations, then load the data alone
+(`mysqldump --no-create-info`) from the old database. Compare row counts before switching the
+Worker over.
+
 ## Data and archive volumes
 
 Each worker keeps its live database in `~/poe-ingest/data/<realm>` and writes daily Parquet
