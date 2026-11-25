@@ -40,30 +40,31 @@ describe("PoE 1 map implicit beastcraft", () => {
         );
     });
 
-    it.each([
-        "normal",
-        "magic",
-        "rare",
-    ] as const)("preserves %s map state and charges the whole recipe", (rarity) => {
-        let item = { ...blank(), rarity, quality: 20 };
-        if (rarity !== "normal") {
-            item = engine.addStartingMod(item, engine.pool(item)[0]!.id, seededRandom(1));
-        }
-        const before = structuredClone(item);
-        const result = engine.apply(item, method, seededRandom(42));
-        expect(item).toEqual(before);
-        expect(result.item).toEqual({ ...item, corrupted: true, implicits: expect.any(Array) });
-        expect(result.item.implicits).toHaveLength(1);
-        expect(engine.mod(result.item.implicits[0]!.id).generation_type).toBe("corrupted");
-        expect(result.cost).toEqual([
-            {
-                id: method.id,
-                name: "Beastcraft · Corrupt a Map: To have an Implicit Modifier",
-                amount: 1,
-            },
-        ]);
-        expect(engine.validateItem(JSON.parse(JSON.stringify(result.item)))).toEqual(result.item);
-    });
+    it.each(["normal", "magic", "rare"] as const)(
+        "preserves %s map state and charges the whole recipe",
+        (rarity) => {
+            let item = { ...blank(), rarity, quality: 20 };
+            if (rarity !== "normal") {
+                item = engine.addStartingMod(item, engine.pool(item)[0]!.id, seededRandom(1));
+            }
+            const before = structuredClone(item);
+            const result = engine.apply(item, method, seededRandom(42));
+            expect(item).toEqual(before);
+            expect(result.item).toEqual({ ...item, corrupted: true, implicits: expect.any(Array) });
+            expect(result.item.implicits).toHaveLength(1);
+            expect(engine.mod(result.item.implicits[0]!.id).generation_type).toBe("corrupted");
+            expect(result.cost).toEqual([
+                {
+                    id: method.id,
+                    name: "Beastcraft · Corrupt a Map: To have an Implicit Modifier",
+                    amount: 1,
+                },
+            ]);
+            expect(engine.validateItem(JSON.parse(JSON.stringify(result.item)))).toEqual(
+                result.item,
+            );
+        },
+    );
 
     it("renders and imports every extracted map corruption outcome, including stats hidden in area descriptions", () => {
         // 3.30 gives Item Quantity, Scarab, Vaal Side Area, free craft and quality-to-pack-size

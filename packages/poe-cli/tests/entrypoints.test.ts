@@ -26,23 +26,27 @@ const entrypoints = [
     ["apps/poe.boats/scripts/check-locales.mjs"],
 ];
 
-it.each(entrypoints)("shows help without credentials or side effects: %s", async (...entry) => {
-    const { stdout, stderr } = await execute(
-        process.execPath,
-        [tsx, resolve(root, entry[0]!), ...entry.slice(1), "--help"],
-        {
-            cwd: root,
-            env: {
-                ...process.env,
-                APP_ENV: "missing-cli-help-environment",
-                CI: "true",
-                POE_CLIENT_ID: "",
-                POE_CLIENT_SECRET: "",
-                POE_LEAGUE: "",
+it.each(entrypoints)(
+    "shows help without credentials or side effects: %s",
+    async (...entry) => {
+        const { stdout, stderr } = await execute(
+            process.execPath,
+            [tsx, resolve(root, entry[0]!), ...entry.slice(1), "--help"],
+            {
+                cwd: root,
+                env: {
+                    ...process.env,
+                    APP_ENV: "missing-cli-help-environment",
+                    CI: "true",
+                    POE_CLIENT_ID: "",
+                    POE_CLIENT_SECRET: "",
+                    POE_LEAGUE: "",
+                },
+                timeout: 15_000,
             },
-            timeout: 15_000,
-        },
-    );
-    expect(stdout).toContain("Usage:");
-    expect(stderr).not.toContain("Missing required");
-}, 20_000);
+        );
+        expect(stdout).toContain("Usage:");
+        expect(stderr).not.toContain("Missing required");
+    },
+    20_000,
+);

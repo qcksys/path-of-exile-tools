@@ -107,27 +107,30 @@ it.each([
     ["poe2", "list"],
     ["pc", "history"],
     ["poe2", "history"],
-] as const)("uses captured unique artwork in %s %s without duplicating accessible names", (realm, view) => {
-    const { container } = showMarket(realm, undefined, view);
-    const images = [
-        ...container.querySelectorAll<HTMLImageElement>('[data-item-art="Unique armour"] img'),
-    ];
-    expect(images).toHaveLength(1);
-    expect(images.map((image) => image.src)).toEqual(
-        Array(1).fill(
-            realm === "poe2"
-                ? "https://cdn.poe2db.tw/image/Art/2DItems/Armours/BodyArmours/Unique.webp"
-                : "https://www.pathofexile.com/image/Art/2DItems/Armours/BodyArmours/Unique.png",
-        ),
-    );
-    expect(
-        screen.getByRole(view === "list" ? "link" : "heading", { name: "Unique armour" }),
-    ).toBeTruthy();
-    fireEvent.error(images[0]!);
-    expect(
-        screen.getByRole(view === "list" ? "link" : "heading", { name: "Unique armour" }),
-    ).toBeTruthy();
-});
+] as const)(
+    "uses captured unique artwork in %s %s without duplicating accessible names",
+    (realm, view) => {
+        const { container } = showMarket(realm, undefined, view);
+        const images = [
+            ...container.querySelectorAll<HTMLImageElement>('[data-item-art="Unique armour"] img'),
+        ];
+        expect(images).toHaveLength(1);
+        expect(images.map((image) => image.src)).toEqual(
+            Array(1).fill(
+                realm === "poe2"
+                    ? "https://cdn.poe2db.tw/image/Art/2DItems/Armours/BodyArmours/Unique.webp"
+                    : "https://www.pathofexile.com/image/Art/2DItems/Armours/BodyArmours/Unique.png",
+            ),
+        );
+        expect(
+            screen.getByRole(view === "list" ? "link" : "heading", { name: "Unique armour" }),
+        ).toBeTruthy();
+        fireEvent.error(images[0]!);
+        expect(
+            screen.getByRole(view === "list" ? "link" : "heading", { name: "Unique armour" }),
+        ).toBeTruthy();
+    },
+);
 
 it("keeps market identity visible when a captured icon is missing", () => {
     const { container } = showMarket("pc", null);

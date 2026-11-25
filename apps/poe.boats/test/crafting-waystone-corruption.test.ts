@@ -98,32 +98,35 @@ describe("PoE 2 Waystone corruption", () => {
         [15, -1, 14],
         [1, -1, 1],
         [16, 1, 16],
-    ])("changes tier %i by %i to %i, rerolling affixes even at boundaries", (tier, direction, expected) => {
-        const item = { ...prepared(tier), quality: 20 };
-        item.mods.forEach((entry) => {
-            entry.fractured = true;
-        });
-        const before = structuredClone(item);
-        const result = engine.apply(item, vaal, force("tier", direction)).item;
-        expect(engine.waystone(result)?.tier).toBe(expected);
-        expect(engine.waystone(result)?.areaLevel).toBe(expected + 64);
-        expect(result).toMatchObject({
-            level: item.level,
-            quality: 20,
-            rarity: "rare",
-            corrupted: true,
-        });
-        expect(result.mods).toHaveLength(6);
-        expect(result.mods.every((entry) => !entry.fractured)).toBe(true);
-        expect(engine.validateItem(result)).toEqual(result);
-        expect(item).toEqual(before);
-        const copied = exportCraftingItemText(engine, result);
-        expect(
-            importCraftingItemText(engine, copied).some(
-                (entry) => exportCraftingItemText(engine, entry.item) === copied,
-            ),
-        ).toBe(true);
-    });
+    ])(
+        "changes tier %i by %i to %i, rerolling affixes even at boundaries",
+        (tier, direction, expected) => {
+            const item = { ...prepared(tier), quality: 20 };
+            item.mods.forEach((entry) => {
+                entry.fractured = true;
+            });
+            const before = structuredClone(item);
+            const result = engine.apply(item, vaal, force("tier", direction)).item;
+            expect(engine.waystone(result)?.tier).toBe(expected);
+            expect(engine.waystone(result)?.areaLevel).toBe(expected + 64);
+            expect(result).toMatchObject({
+                level: item.level,
+                quality: 20,
+                rarity: "rare",
+                corrupted: true,
+            });
+            expect(result.mods).toHaveLength(6);
+            expect(result.mods.every((entry) => !entry.fractured)).toBe(true);
+            expect(engine.validateItem(result)).toEqual(result);
+            expect(item).toEqual(before);
+            const copied = exportCraftingItemText(engine, result);
+            expect(
+                importCraftingItemText(engine, copied).some(
+                    (entry) => exportCraftingItemText(engine, entry.item) === copied,
+                ),
+            ).toBe(true);
+        },
+    );
 
     it("replaces suffixes with prefixes while retaining existing prefixes and fractured suffixes", () => {
         for (const fractures of [false, true]) {
@@ -156,43 +159,44 @@ describe("PoE 2 Waystone corruption", () => {
         }
     });
 
-    it.each([
-        0, 1, 2, 3, 4,
-    ])("adds %i affixes subject to four per side and eight total without rerolling existing values", (count) => {
-        const item = prepared();
-        item.mods[0]!.fractured = true;
-        const result = engine.apply(item, vaal, force("extra", count)).item;
-        expect(result.mods).toHaveLength(Math.min(8, 6 + count));
-        expect(result.mods.slice(0, 6)).toEqual(item.mods);
-        expect(engine.counts(result).prefixes).toBeLessThanOrEqual(4);
-        expect(engine.counts(result).suffixes).toBeLessThanOrEqual(4);
-        expect(engine.validateItem(result)).toEqual(result);
-        if (result.mods.length === 8) {
-            const text = exportCraftingItemText(engine, result);
-            expect(
-                importCraftingItemText(engine, text).some(
-                    (entry) => exportCraftingItemText(engine, entry.item) === text,
-                ),
-            ).toBe(true);
-        }
-    });
-
-    it.each([
-        "normal",
-        "magic",
-    ] as const)("preserves %s rarity for each outcome, including added affixes", (rarity) => {
-        const item = prepared(15, rarity);
-        for (const [outcome, choice] of [
-            ["tier", 1],
-            ["prefixes", undefined],
-            ["extra", 4],
-        ] as const) {
-            const result = engine.apply(item, vaal, force(outcome, choice)).item;
-            expect(result.rarity).toBe(rarity);
-            expect(result.mods).toHaveLength(item.mods.length + (outcome === "extra" ? 4 : 0));
+    it.each([0, 1, 2, 3, 4])(
+        "adds %i affixes subject to four per side and eight total without rerolling existing values",
+        (count) => {
+            const item = prepared();
+            item.mods[0]!.fractured = true;
+            const result = engine.apply(item, vaal, force("extra", count)).item;
+            expect(result.mods).toHaveLength(Math.min(8, 6 + count));
+            expect(result.mods.slice(0, 6)).toEqual(item.mods);
+            expect(engine.counts(result).prefixes).toBeLessThanOrEqual(4);
+            expect(engine.counts(result).suffixes).toBeLessThanOrEqual(4);
             expect(engine.validateItem(result)).toEqual(result);
-        }
-    });
+            if (result.mods.length === 8) {
+                const text = exportCraftingItemText(engine, result);
+                expect(
+                    importCraftingItemText(engine, text).some(
+                        (entry) => exportCraftingItemText(engine, entry.item) === text,
+                    ),
+                ).toBe(true);
+            }
+        },
+    );
+
+    it.each(["normal", "magic"] as const)(
+        "preserves %s rarity for each outcome, including added affixes",
+        (rarity) => {
+            const item = prepared(15, rarity);
+            for (const [outcome, choice] of [
+                ["tier", 1],
+                ["prefixes", undefined],
+                ["extra", 4],
+            ] as const) {
+                const result = engine.apply(item, vaal, force(outcome, choice)).item;
+                expect(result.rarity).toBe(rarity);
+                expect(result.mods).toHaveLength(item.mods.length + (outcome === "extra" ? 4 : 0));
+                expect(engine.validateItem(result)).toEqual(result);
+            }
+        },
+    );
 
     it("clears removed hidden suffix reveals and stops when a replacement pool runs out", () => {
         const bone = catalog.crafting.desecration.find((entry) =>

@@ -200,31 +200,32 @@ it("does not extend Scouring preparation to other boots or body armours", () => 
     }
 });
 
-it.each(
-    scopes,
-)("matches real paid cleanup and Scouring for %s without invented affixes", (name) => {
-    for (const crafted of [false, true]) {
-        const enchanted = false;
-        const { purchase, source } = fixture(name, crafted, enchanted);
-        for (const rarity of ["magic", "rare"] as const) {
-            let actual = actualSource(purchase, rarity);
-            for (const method of sourcePreparationMethods(engine, source))
-                actual = engine.apply(actual, method, seededRandom(2)).item;
-            const prepared = prepareSourcePurchase(engine, purchase, seededRandom(2));
-            expect(prepared.item).toEqual(actual);
-            expect(prepared.item).toEqual(purchase.item);
-            expect(prepared.actions).toBe(1 + Number(crafted) + Number(enchanted));
-            expect(prepared.costs.reduce((total, cost) => total + cost.amount, 0)).toBe(
-                1 + Number(crafted) + 3 * Number(enchanted),
-            );
-            expect(prepared.costs.every((cost) => cost.id === scour)).toBe(true);
-            expect(
-                engine.apply(prepared.item, currency("transmute_to_magic"), seededRandom(3)).item
-                    .rarity,
-            ).toBe("magic");
+it.each(scopes)(
+    "matches real paid cleanup and Scouring for %s without invented affixes",
+    (name) => {
+        for (const crafted of [false, true]) {
+            const enchanted = false;
+            const { purchase, source } = fixture(name, crafted, enchanted);
+            for (const rarity of ["magic", "rare"] as const) {
+                let actual = actualSource(purchase, rarity);
+                for (const method of sourcePreparationMethods(engine, source))
+                    actual = engine.apply(actual, method, seededRandom(2)).item;
+                const prepared = prepareSourcePurchase(engine, purchase, seededRandom(2));
+                expect(prepared.item).toEqual(actual);
+                expect(prepared.item).toEqual(purchase.item);
+                expect(prepared.actions).toBe(1 + Number(crafted) + Number(enchanted));
+                expect(prepared.costs.reduce((total, cost) => total + cost.amount, 0)).toBe(
+                    1 + Number(crafted) + 3 * Number(enchanted),
+                );
+                expect(prepared.costs.every((cost) => cost.id === scour)).toBe(true);
+                expect(
+                    engine.apply(prepared.item, currency("transmute_to_magic"), seededRandom(3))
+                        .item.rarity,
+                ).toBe("magic");
+            }
         }
-    }
-});
+    },
+);
 
 const prefixLock = "StrMasterItemGenerationCannotChangePrefixes";
 const suffixLock = "DexMasterItemGenerationCannotChangeSuffixes";
@@ -237,26 +238,29 @@ it.each([
         "multicraft and both locks",
         ["StrIntMasterItemGenerationCanHaveMultipleCraftedMods", prefixLock, suffixLock],
     ],
-] as const)("removes actual %s before Scouring without retaining protected affixes", (_name, mods) => {
-    for (const name of scopes) {
-        const { purchase } = fixture(name, false, false);
-        let actual = actualSource(purchase, "rare");
-        for (const mod of mods) {
-            const id = benchId(mod, engine.base(actual).item_class);
-            actual = engine.apply(actual, { kind: "bench", id }, seededRandom(1)).item;
+] as const)(
+    "removes actual %s before Scouring without retaining protected affixes",
+    (_name, mods) => {
+        for (const name of scopes) {
+            const { purchase } = fixture(name, false, false);
+            let actual = actualSource(purchase, "rare");
+            for (const mod of mods) {
+                const id = benchId(mod, engine.base(actual).item_class);
+                actual = engine.apply(actual, { kind: "bench", id }, seededRandom(1)).item;
+            }
+            purchase.sourcePreparation = { kind: "scour-v1", crafted: true, enchanted: false };
+            if (mods.some((mod) => mod === prefixLock || mod === suffixLock))
+                expect(
+                    engine.apply(actual, currency("convert_to_normal"), seededRandom(1)).item.mods
+                        .length,
+                ).toBeGreaterThan(0);
+            for (const method of sourcePreparationMethods(engine, purchase.sourcePreparation))
+                actual = engine.apply(actual, method, seededRandom(2)).item;
+            expect(actual).toEqual(purchase.item);
+            expect(prepareSourcePurchase(engine, purchase, seededRandom(2)).item).toEqual(actual);
         }
-        purchase.sourcePreparation = { kind: "scour-v1", crafted: true, enchanted: false };
-        if (mods.some((mod) => mod === prefixLock || mod === suffixLock))
-            expect(
-                engine.apply(actual, currency("convert_to_normal"), seededRandom(1)).item.mods
-                    .length,
-            ).toBeGreaterThan(0);
-        for (const method of sourcePreparationMethods(engine, purchase.sourcePreparation))
-            actual = engine.apply(actual, method, seededRandom(2)).item;
-        expect(actual).toEqual(purchase.item);
-        expect(prepareSourcePurchase(engine, purchase, seededRandom(2)).item).toEqual(actual);
-    }
-});
+    },
+);
 
 it("proves the shared removal bench with a real supported enchant without inventing a helmet enchant", () => {
     const { purchase, source } = fixture();
@@ -290,31 +294,32 @@ it("does not project a fractured source to Normal", () => {
     expect(() => prepareSourcePurchase(engine, purchase, seededRandom(1))).toThrow("Normal");
 });
 
-it.each(
-    partitions,
-)("charges crafted=%s enchanted=%s in estimates, discovery and trial trace", (crafted, enchanted) => {
-    const { graph, node, purchase, source } = fixture(scopes[0], crafted, enchanted);
-    const amount = 1 + Number(crafted) + 3 * Number(enchanted);
-    const actions = 1 + Number(crafted) + Number(enchanted);
-    expect(purchaseSourceProfile(purchase)).toEqual(source);
-    expect(discoverGraphCraftingCosts(engine, graph).map((cost) => cost.id)).toEqual([scour]);
-    expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
-        expectedCost: 11 + 2 * amount,
-        expectedActions: actions,
-        missingPrices: [],
-    });
-    const result = runGraphTrial(graph, seededRandom(42));
-    expect(result).toMatchObject({
-        success: true,
-        purchases: 1,
-        actions,
-        cost: 11 + 2 * amount,
-        missingPrices: [],
-    });
-    expect(result.spending[scour]).toBe(amount);
-    expect(result.trace[0]?.preparation).toEqual(sourcePreparationMethods(engine, source));
-    expect(result.nodeItems?.[node.id]).toEqual(purchase.item);
-});
+it.each(partitions)(
+    "charges crafted=%s enchanted=%s in estimates, discovery and trial trace",
+    (crafted, enchanted) => {
+        const { graph, node, purchase, source } = fixture(scopes[0], crafted, enchanted);
+        const amount = 1 + Number(crafted) + 3 * Number(enchanted);
+        const actions = 1 + Number(crafted) + Number(enchanted);
+        expect(purchaseSourceProfile(purchase)).toEqual(source);
+        expect(discoverGraphCraftingCosts(engine, graph).map((cost) => cost.id)).toEqual([scour]);
+        expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
+            expectedCost: 11 + 2 * amount,
+            expectedActions: actions,
+            missingPrices: [],
+        });
+        const result = runGraphTrial(graph, seededRandom(42));
+        expect(result).toMatchObject({
+            success: true,
+            purchases: 1,
+            actions,
+            cost: 11 + 2 * amount,
+            missingPrices: [],
+        });
+        expect(result.spending[scour]).toBe(amount);
+        expect(result.trace[0]?.preparation).toEqual(sourcePreparationMethods(engine, source));
+        expect(result.nodeItems?.[node.id]).toEqual(purchase.item);
+    },
+);
 
 it.each(["purchase", "scouring"])("preserves unknown total when %s price is missing", (missing) => {
     const { graph, node, purchase } = fixture();

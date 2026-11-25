@@ -240,103 +240,103 @@ function axeGraph() {
 }
 
 describe("physical axe multi-stage recombination", () => {
-    it.each([
-        true,
-        false,
-    ])("accounts for both production chains and recovered partials (final desired base: %s)", (win) => {
-        const { graph, block, goodBase } = axeGraph();
-        expect(
-            nonNativeEssenceSources(engine, goodBase).some(
-                (entry) => entry.id === essence.id && entry.side === "prefix",
-            ),
-        ).toBe(true);
-        const before = structuredClone(graph);
-        const donors = ["miss", percent, hybrid, hybrid];
-        let combinations = 0;
-        const random = seededRandom(42);
-        const result = runGraphTrial(graph, {
-            integer: random.integer,
-            pick: (choices) => {
-                if (craftingItemSchema.safeParse(choices[0]?.value).success) {
-                    combinations++;
-                    const expected =
-                        combinations === 1
-                            ? [percent]
-                            : combinations === 2
-                              ? [percent, hybrid]
-                              : [percent, hybrid, flat];
-                    const selected = choices.find(({ value, weight }) => {
-                        const parsed = craftingItemSchema.safeParse(value);
-                        return (
-                            weight > 0 &&
-                            parsed.success &&
-                            (combinations < 3
-                                ? parsed.data.mods.length === expected.length &&
-                                  expected.every((id) =>
-                                      parsed.data.mods.some((mod) => mod.id === id),
-                                  )
-                                : (parsed.data.baseId === goodBase.baseId) === win &&
-                                  (!win ||
+    it.each([true, false])(
+        "accounts for both production chains and recovered partials (final desired base: %s)",
+        (win) => {
+            const { graph, block, goodBase } = axeGraph();
+            expect(
+                nonNativeEssenceSources(engine, goodBase).some(
+                    (entry) => entry.id === essence.id && entry.side === "prefix",
+                ),
+            ).toBe(true);
+            const before = structuredClone(graph);
+            const donors = ["miss", percent, hybrid, hybrid];
+            let combinations = 0;
+            const random = seededRandom(42);
+            const result = runGraphTrial(graph, {
+                integer: random.integer,
+                pick: (choices) => {
+                    if (craftingItemSchema.safeParse(choices[0]?.value).success) {
+                        combinations++;
+                        const expected =
+                            combinations === 1
+                                ? [percent]
+                                : combinations === 2
+                                  ? [percent, hybrid]
+                                  : [percent, hybrid, flat];
+                        const selected = choices.find(({ value, weight }) => {
+                            const parsed = craftingItemSchema.safeParse(value);
+                            return (
+                                weight > 0 &&
+                                parsed.success &&
+                                (combinations < 3
+                                    ? parsed.data.mods.length === expected.length &&
                                       expected.every((id) =>
                                           parsed.data.mods.some((mod) => mod.id === id),
-                                      )))
-                        );
-                    });
-                    if (!selected)
-                        throw new Error(
-                            "The requested axe outcome is absent from the real engine distribution.",
-                        );
-                    return selected.value;
-                }
-                if (donors.length && choices.some((entry) => entry.value === percent)) {
-                    const next = donors.shift();
-                    return choices.find(
-                        (entry) =>
-                            entry.weight > 0 &&
-                            (next === "miss"
-                                ? entry.value !== percent && entry.value !== hybrid
-                                : entry.value === next),
-                    )!.value;
-                }
-                return (choices.find((entry) => entry.weight > 0 && entry.value === flat) ??
-                    choices.find(
-                        (entry) =>
-                            entry.weight > 0 &&
-                            typeof entry.value === "string" &&
-                            catalog.mods[entry.value]?.generation_type === "suffix",
-                    ) ??
-                    choices.find((entry) => entry.weight > 0))!.value;
-            },
-        });
-        expect(result).toMatchObject({
-            status: "terminal",
-            success: win,
-            outcomeId: win ? "target" : "miss",
-            purchases: 4,
-            missingPrices: [],
-        });
-        expect(result.spending).toMatchObject({
-            "purchase:percent-base:buy": 1,
-            "purchase:hybrid-base:buy": 2,
-            "purchase:good:buy": 1,
-            [transmute.id]: 3,
-            [alteration.id]: 1,
-            [exalt.id]: 3,
-            [influence.id]: 1,
-            [essence.id]: 1,
-            "service:recombine": 3,
-        });
-        const preparation = [...block.cost, ...remove.cost].reduce(
-            (sum, entry) => sum + entry.amount * graph.prices[entry.id]!.amount,
-            0,
-        );
-        expect(result.cost).toBeCloseTo(16 + 0.3 + 0.1 + 6 + 20 + 1 + 3 + preparation);
-        expect(result.visits.join!.recovered).toBe(1);
-        expect(result.revenue).toBe(0);
-        const consumed = result.trace
-            .filter((entry) => !entry.skipped)
-            .flatMap((entry) => entry.inputs);
-        expect(new Set(consumed).size).toBe(consumed.length);
-        expect(graph).toEqual(before);
-    });
+                                      )
+                                    : (parsed.data.baseId === goodBase.baseId) === win &&
+                                      (!win ||
+                                          expected.every((id) =>
+                                              parsed.data.mods.some((mod) => mod.id === id),
+                                          )))
+                            );
+                        });
+                        if (!selected)
+                            throw new Error(
+                                "The requested axe outcome is absent from the real engine distribution.",
+                            );
+                        return selected.value;
+                    }
+                    if (donors.length && choices.some((entry) => entry.value === percent)) {
+                        const next = donors.shift();
+                        return choices.find(
+                            (entry) =>
+                                entry.weight > 0 &&
+                                (next === "miss"
+                                    ? entry.value !== percent && entry.value !== hybrid
+                                    : entry.value === next),
+                        )!.value;
+                    }
+                    return (choices.find((entry) => entry.weight > 0 && entry.value === flat) ??
+                        choices.find(
+                            (entry) =>
+                                entry.weight > 0 &&
+                                typeof entry.value === "string" &&
+                                catalog.mods[entry.value]?.generation_type === "suffix",
+                        ) ??
+                        choices.find((entry) => entry.weight > 0))!.value;
+                },
+            });
+            expect(result).toMatchObject({
+                status: "terminal",
+                success: win,
+                outcomeId: win ? "target" : "miss",
+                purchases: 4,
+                missingPrices: [],
+            });
+            expect(result.spending).toMatchObject({
+                "purchase:percent-base:buy": 1,
+                "purchase:hybrid-base:buy": 2,
+                "purchase:good:buy": 1,
+                [transmute.id]: 3,
+                [alteration.id]: 1,
+                [exalt.id]: 3,
+                [influence.id]: 1,
+                [essence.id]: 1,
+                "service:recombine": 3,
+            });
+            const preparation = [...block.cost, ...remove.cost].reduce(
+                (sum, entry) => sum + entry.amount * graph.prices[entry.id]!.amount,
+                0,
+            );
+            expect(result.cost).toBeCloseTo(16 + 0.3 + 0.1 + 6 + 20 + 1 + 3 + preparation);
+            expect(result.visits.join!.recovered).toBe(1);
+            expect(result.revenue).toBe(0);
+            const consumed = result.trace
+                .filter((entry) => !entry.skipped)
+                .flatMap((entry) => entry.inputs);
+            expect(new Set(consumed).size).toBe(consumed.length);
+            expect(graph).toEqual(before);
+        },
+    );
 });

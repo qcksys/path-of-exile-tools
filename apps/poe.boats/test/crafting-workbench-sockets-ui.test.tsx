@@ -9,104 +9,104 @@ import { baseId, catalog, currency, engine, getCatalog } from "./crafting-fixtur
 import { button, CraftingWorker, mount } from "./crafting-workbench-ui-fixtures";
 
 describe("crafting workbench", () => {
-    it.each([
-        "bench",
-        "beast",
-    ] as const)("links sockets through the %s with targets, spending, history and persistence", async (kind) => {
-        const recipe = catalog.crafting.bench.find((entry) => entry.linkCount === 6)!;
-        const linkingBeast = catalog.crafting.beasts.find((entry) => entry.maximumLinks)!;
-        const method = { kind, id: kind === "bench" ? recipe.id : linkingBeast.id };
-        const priceId = kind === "bench" ? recipe.cost[0]!.id : linkingBeast.id;
-        const vaal = catalog.crafting.currencies.find(
-            (entry) => entry.action === "corrupt_item",
-        )!.id;
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe1",
-            patch: catalog.patch,
-            item: {
-                ...engine.createItem(baseId),
-                sockets: 6,
-                memoryStrands: 82,
-                quality: 20,
-                corrupted: kind === "bench",
-            },
-            method: currency("transmute_to_magic"),
-            target: { groups: [] },
-            steps: [],
-            prices: { [priceId]: 0.5, [vaal]: 1 },
-            seed: 42,
-            iterations: 10,
-            maxActions: 1,
-        });
-        const key = `poe-boats:crafting:poe1:${catalog.patch}`;
-        localStorage.setItem(key, JSON.stringify({ linking: project }));
-        mount("calculate");
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "linking" } });
-        fireEvent.click(button("Load project"));
-        const connection = screen.getByRole("combobox", { name: "Socket 1 to 2" });
-        changeControl(connection, { target: { value: "Linked" } });
-        fireEvent.keyDown(connection, { key: "ArrowDown" });
-        fireEvent.click(await screen.findByRole("option", { name: "Linked" }));
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: engine.methodName(method) } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        fireEvent.click(
-            await screen.findByRole("option", {
-                name: `${kind === "bench" ? "Bench" : "Beastcraft"} · ${engine.methodName(method)}`,
-            }),
-        );
-        expect(screen.getByRole("note", { name: "Socket linking model" }).textContent).toContain(
-            kind === "bench" ? "Remaining links are unknown" : "Links all current",
-        );
-        fireEvent.click(screen.getByText("Linked socket requirement"));
-        fireEvent.click(button("Add linked socket requirement"));
-        changeControl(screen.getByRole("spinbutton", { name: "Minimum linked sockets" }), {
-            target: { value: "6" },
-        });
-        fireEvent.click(button("Calculate odds"));
-        const request = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0];
-        expect(request.project.item.socketLinks).toEqual([true, null, null, null, null]);
-        expect(request.project.target.linkedSockets).toEqual({ min: 6, max: 6 });
-        expect(request.project.method).toEqual(method);
-        const sampled = new CraftingSimulation(catalog, request.project);
-        sampled.runTrial();
-        expect(sampled.result()).toMatchObject({
-            probability: 1,
-            meanCost: kind === "bench" ? 2250 : 0.5,
-        });
-        fireEvent.click(button("Stop simulation"));
-        const card = screen.getByRole("region", { name: "Current item" });
-        const before = card.textContent;
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        expect(card.textContent).toContain("Largest linked group: 6 sockets");
-        expect(card.textContent).toContain("Memory Strands: 82");
-        const after = card.textContent;
-        expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
-            engine.costName(priceId),
-        );
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).toBe(before);
-        fireEvent.click(button("Redo"));
-        expect(card.textContent).toBe(after);
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.item.socketLinks).toEqual([true, true, true, true, true]);
-        expect(saved.target.linkedSockets).toEqual({ min: 6, max: 6 });
-        expect(saved.method).toEqual(method);
-        fireEvent.click(button("Undo"));
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "My crafting project" },
-        });
-        fireEvent.click(button("Load project"));
-        expect(card.textContent).toBe(after);
-        changeControl(screen.getByRole("spinbutton", { name: "Gem sockets" }), {
-            target: { value: "4" },
-        });
-        expect(card.textContent).toContain("Largest linked group: 1–4 sockets");
-    });
+    it.each(["bench", "beast"] as const)(
+        "links sockets through the %s with targets, spending, history and persistence",
+        async (kind) => {
+            const recipe = catalog.crafting.bench.find((entry) => entry.linkCount === 6)!;
+            const linkingBeast = catalog.crafting.beasts.find((entry) => entry.maximumLinks)!;
+            const method = { kind, id: kind === "bench" ? recipe.id : linkingBeast.id };
+            const priceId = kind === "bench" ? recipe.cost[0]!.id : linkingBeast.id;
+            const vaal = catalog.crafting.currencies.find(
+                (entry) => entry.action === "corrupt_item",
+            )!.id;
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe1",
+                patch: catalog.patch,
+                item: {
+                    ...engine.createItem(baseId),
+                    sockets: 6,
+                    memoryStrands: 82,
+                    quality: 20,
+                    corrupted: kind === "bench",
+                },
+                method: currency("transmute_to_magic"),
+                target: { groups: [] },
+                steps: [],
+                prices: { [priceId]: 0.5, [vaal]: 1 },
+                seed: 42,
+                iterations: 10,
+                maxActions: 1,
+            });
+            const key = `poe-boats:crafting:poe1:${catalog.patch}`;
+            localStorage.setItem(key, JSON.stringify({ linking: project }));
+            mount("calculate");
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "linking" } });
+            fireEvent.click(button("Load project"));
+            const connection = screen.getByRole("combobox", { name: "Socket 1 to 2" });
+            changeControl(connection, { target: { value: "Linked" } });
+            fireEvent.keyDown(connection, { key: "ArrowDown" });
+            fireEvent.click(await screen.findByRole("option", { name: "Linked" }));
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: engine.methodName(method) } });
+            fireEvent.keyDown(picker, { key: "ArrowDown" });
+            fireEvent.click(
+                await screen.findByRole("option", {
+                    name: `${kind === "bench" ? "Bench" : "Beastcraft"} · ${engine.methodName(method)}`,
+                }),
+            );
+            expect(
+                screen.getByRole("note", { name: "Socket linking model" }).textContent,
+            ).toContain(kind === "bench" ? "Remaining links are unknown" : "Links all current");
+            fireEvent.click(screen.getByText("Linked socket requirement"));
+            fireEvent.click(button("Add linked socket requirement"));
+            changeControl(screen.getByRole("spinbutton", { name: "Minimum linked sockets" }), {
+                target: { value: "6" },
+            });
+            fireEvent.click(button("Calculate odds"));
+            const request = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0];
+            expect(request.project.item.socketLinks).toEqual([true, null, null, null, null]);
+            expect(request.project.target.linkedSockets).toEqual({ min: 6, max: 6 });
+            expect(request.project.method).toEqual(method);
+            const sampled = new CraftingSimulation(catalog, request.project);
+            sampled.runTrial();
+            expect(sampled.result()).toMatchObject({
+                probability: 1,
+                meanCost: kind === "bench" ? 2250 : 0.5,
+            });
+            fireEvent.click(button("Stop simulation"));
+            const card = screen.getByRole("region", { name: "Current item" });
+            const before = card.textContent;
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            expect(card.textContent).toContain("Largest linked group: 6 sockets");
+            expect(card.textContent).toContain("Memory Strands: 82");
+            const after = card.textContent;
+            expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
+                engine.costName(priceId),
+            );
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).toBe(before);
+            fireEvent.click(button("Redo"));
+            expect(card.textContent).toBe(after);
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.item.socketLinks).toEqual([true, true, true, true, true]);
+            expect(saved.target.linkedSockets).toEqual({ min: 6, max: 6 });
+            expect(saved.method).toEqual(method);
+            fireEvent.click(button("Undo"));
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "My crafting project" },
+            });
+            fireEvent.click(button("Load project"));
+            expect(card.textContent).toBe(after);
+            changeControl(screen.getByRole("spinbutton", { name: "Gem sockets" }), {
+                target: { value: "4" },
+            });
+            expect(card.textContent).toContain("Largest linked group: 1–4 sockets");
+        },
+    );
 
     it("converts an occupied glove socket, targets the Jewel socket and retains it through history and saves", async () => {
         const data = getCatalog("poe2");
@@ -350,77 +350,79 @@ describe("crafting workbench", () => {
         expect(card.textContent).toContain("Gem sockets: 4");
     });
 
-    it.each([
-        false,
-        true,
-    ])("selects socket-count bench recipes with corruption=%s and retains targets, spending, history and saves", async (corrupted) => {
-        const recipe = catalog.crafting.bench.find((entry) => entry.socketCount === 6)!;
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe1",
-            patch: catalog.patch,
-            item: { ...engine.createItem(baseId, 1), corrupted },
-            method: { kind: "bench", id: recipe.id },
-            target: { groups: [] },
-            steps: [],
-            prices: {},
-            seed: 42,
-            iterations: 100,
-            maxActions: 1,
-        });
-        const key = `poe-boats:crafting:poe1:${catalog.patch}`;
-        localStorage.setItem(key, JSON.stringify({ sockets: project }));
-        mount("calculate");
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "sockets" } });
-        fireEvent.click(button("Load project"));
-        const count = screen.getByRole("spinbutton", { name: "Gem sockets" }) as HTMLInputElement;
-        fireEvent.click(screen.getByText(byText("Custom prices in chaos")));
-        expect(screen.getByRole("spinbutton", { name: "Vaal Orb" })).toBeDefined();
-        expect(count.max).toBe("6");
-        changeControl(count, { target: { value: "2" } });
-        fireEvent.click(screen.getByText("Socket requirement"));
-        fireEvent.click(button("Add socket requirement"));
-        changeControl(screen.getByRole("spinbutton", { name: "Minimum gem sockets" }), {
-            target: { value: "6" },
-        });
-        fireEvent.click(button("Calculate odds"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        const request = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0];
-        expect(request.project.item.sockets).toBe(2);
-        expect(request.project.target.sockets).toEqual({ min: 6, max: 6 });
-        fireEvent.click(button("Stop simulation"));
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: "Six Sockets" } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        fireEvent.click(await screen.findByRole("option", { name: "Bench · Six Sockets" }));
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        const card = screen.getByRole("region", { name: "Current item" });
-        expect(card.textContent).toContain("Gem sockets: 6");
-        expect(count.value).toBe("6");
-        expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
-            "Jeweller's Orb350",
-        );
-        const spending = screen.getByText("Emulator spending").closest("details")!.textContent;
-        if (corrupted) expect(spending).toContain("Vaal Orb350");
-        else expect(spending).not.toContain("Vaal Orb350");
-        fireEvent.click(button("Undo"));
-        expect(count.value).toBe("2");
-        fireEvent.click(button("Redo"));
-        expect(count.value).toBe("6");
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.item.sockets).toBe(6);
-        expect(saved.item.corrupted).toBe(corrupted);
-        expect(saved.target.sockets).toEqual({ min: 6, max: 6 });
-        changeControl(count, { target: { value: "0" } });
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "My crafting project" },
-        });
-        fireEvent.click(button("Load project"));
-        expect(count.value).toBe("6");
-    });
+    it.each([false, true])(
+        "selects socket-count bench recipes with corruption=%s and retains targets, spending, history and saves",
+        async (corrupted) => {
+            const recipe = catalog.crafting.bench.find((entry) => entry.socketCount === 6)!;
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe1",
+                patch: catalog.patch,
+                item: { ...engine.createItem(baseId, 1), corrupted },
+                method: { kind: "bench", id: recipe.id },
+                target: { groups: [] },
+                steps: [],
+                prices: {},
+                seed: 42,
+                iterations: 100,
+                maxActions: 1,
+            });
+            const key = `poe-boats:crafting:poe1:${catalog.patch}`;
+            localStorage.setItem(key, JSON.stringify({ sockets: project }));
+            mount("calculate");
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "sockets" } });
+            fireEvent.click(button("Load project"));
+            const count = screen.getByRole("spinbutton", {
+                name: "Gem sockets",
+            }) as HTMLInputElement;
+            fireEvent.click(screen.getByText(byText("Custom prices in chaos")));
+            expect(screen.getByRole("spinbutton", { name: "Vaal Orb" })).toBeDefined();
+            expect(count.max).toBe("6");
+            changeControl(count, { target: { value: "2" } });
+            fireEvent.click(screen.getByText("Socket requirement"));
+            fireEvent.click(button("Add socket requirement"));
+            changeControl(screen.getByRole("spinbutton", { name: "Minimum gem sockets" }), {
+                target: { value: "6" },
+            });
+            fireEvent.click(button("Calculate odds"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            const request = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0];
+            expect(request.project.item.sockets).toBe(2);
+            expect(request.project.target.sockets).toEqual({ min: 6, max: 6 });
+            fireEvent.click(button("Stop simulation"));
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: "Six Sockets" } });
+            fireEvent.keyDown(picker, { key: "ArrowDown" });
+            fireEvent.click(await screen.findByRole("option", { name: "Bench · Six Sockets" }));
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            const card = screen.getByRole("region", { name: "Current item" });
+            expect(card.textContent).toContain("Gem sockets: 6");
+            expect(count.value).toBe("6");
+            expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
+                "Jeweller's Orb350",
+            );
+            const spending = screen.getByText("Emulator spending").closest("details")!.textContent;
+            if (corrupted) expect(spending).toContain("Vaal Orb350");
+            else expect(spending).not.toContain("Vaal Orb350");
+            fireEvent.click(button("Undo"));
+            expect(count.value).toBe("2");
+            fireEvent.click(button("Redo"));
+            expect(count.value).toBe("6");
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.item.sockets).toBe(6);
+            expect(saved.item.corrupted).toBe(corrupted);
+            expect(saved.target.sockets).toEqual({ min: 6, max: 6 });
+            changeControl(count, { target: { value: "0" } });
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "My crafting project" },
+            });
+            fireEvent.click(button("Load project"));
+            expect(count.value).toBe("6");
+        },
+    );
 
     it("selects the maximum-socket beastcraft and retains calculation, costs, history and saves", async () => {
         const recipe = catalog.crafting.beasts.find((entry) => entry.maximumSockets)!;

@@ -31,79 +31,81 @@ const button = (name: string) => screen.getByRole("button", { name });
 const saved = () => JSON.parse(localStorage.getItem(key)!)["My crafting project"];
 
 describe("bench replacement in the workbench", () => {
-    it.each([
-        false,
-        true,
-    ])("retains paid removals, undo history and the skip setting (%s)", (skipOnConflict) => {
-        let item: CraftingItem = { ...engine.createItem(baseId), rarity: "rare" };
-        while (engine.counts(item).prefixes < 3)
-            item = engine.addStartingMod(
-                item,
-                engine.pool(item, { side: "prefix" })[0]!.id,
-                seededRandom(1),
+    it.each([false, true])(
+        "retains paid removals, undo history and the skip setting (%s)",
+        (skipOnConflict) => {
+            let item: CraftingItem = { ...engine.createItem(baseId), rarity: "rare" };
+            while (engine.counts(item).prefixes < 3)
+                item = engine.addStartingMod(
+                    item,
+                    engine.pool(item, { side: "prefix" })[0]!.id,
+                    seededRandom(1),
+                );
+            const recipes = catalog.crafting.bench.filter(
+                (entry) => entry.mod && entry.itemClasses.includes(engine.base(item).item_class),
             );
-        const recipes = catalog.crafting.bench.filter(
-            (entry) => entry.mod && entry.itemClasses.includes(engine.base(item).item_class),
-        );
-        const prefix = recipes.find(
-            (entry) => engine.mod(entry.mod!).generation_type === "prefix",
-        )!;
-        const suffix = recipes.find(
-            (entry) => engine.mod(entry.mod!).generation_type === "suffix",
-        )!;
-        item = engine.apply(item, { kind: "bench", id: suffix.id }, seededRandom(1)).item;
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe1",
-            patch: catalog.patch,
-            item,
-            method: { kind: "bench", id: prefix.id, skipOnConflict },
-            target: { groups: [] },
-            steps: [],
-            prices: {},
-            seed: 1,
-            iterations: 10,
-            maxActions: 2,
-        });
-        localStorage.setItem(key, JSON.stringify({ bench: project }));
-        render(
-            <MemoryRouter>
-                <CraftingWorkbench catalog={catalog} mode="emulate" />
-            </MemoryRouter>,
-        );
-        chooseStartingItem(catalog);
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "bench" } });
-        fireEvent.click(button("Load project"));
-        expect(
-            screen
-                .getByRole("checkbox", {
-                    name: "Skip addition when the bench modifier conflicts",
-                })
-                .getAttribute("aria-checked"),
-        ).toBe(String(skipOnConflict));
-        expect(screen.getByLabelText("Orb of Scouring")).toBeDefined();
-        fireEvent.click(button("Apply craft"));
-        const spending = within(screen.getByText("Emulator spending").closest("details")!);
-        expect(
-            spending.getByText("Orb of Scouring").closest("dt")!.nextElementSibling!.textContent,
-        ).toBe("1");
-        if (!skipOnConflict) expect(screen.getByRole("alert").textContent).toContain("open prefix");
-        fireEvent.click(button("Save project"));
-        expect(saved().item.mods).toEqual(item.mods.filter((entry) => !entry.crafted));
-        expect(saved().method).toEqual(project.method);
-        fireEvent.click(button("Undo"));
-        fireEvent.click(button("Save project"));
-        expect(saved().item).toEqual(item);
-        expect(screen.queryByText("Emulator spending")).toBeNull();
-        fireEvent.click(button("Redo"));
-        fireEvent.click(button("Save project"));
-        expect(saved().item.mods).toHaveLength(3);
-        const checkbox = screen.getByRole("checkbox", {
-            name: "Skip addition when the bench modifier conflicts",
-        });
-        fireEvent.click(checkbox);
-        fireEvent.click(button("Save project"));
-        expect(saved().method.skipOnConflict).toBe(!skipOnConflict);
-    });
+            const prefix = recipes.find(
+                (entry) => engine.mod(entry.mod!).generation_type === "prefix",
+            )!;
+            const suffix = recipes.find(
+                (entry) => engine.mod(entry.mod!).generation_type === "suffix",
+            )!;
+            item = engine.apply(item, { kind: "bench", id: suffix.id }, seededRandom(1)).item;
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe1",
+                patch: catalog.patch,
+                item,
+                method: { kind: "bench", id: prefix.id, skipOnConflict },
+                target: { groups: [] },
+                steps: [],
+                prices: {},
+                seed: 1,
+                iterations: 10,
+                maxActions: 2,
+            });
+            localStorage.setItem(key, JSON.stringify({ bench: project }));
+            render(
+                <MemoryRouter>
+                    <CraftingWorkbench catalog={catalog} mode="emulate" />
+                </MemoryRouter>,
+            );
+            chooseStartingItem(catalog);
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "bench" } });
+            fireEvent.click(button("Load project"));
+            expect(
+                screen
+                    .getByRole("checkbox", {
+                        name: "Skip addition when the bench modifier conflicts",
+                    })
+                    .getAttribute("aria-checked"),
+            ).toBe(String(skipOnConflict));
+            expect(screen.getByLabelText("Orb of Scouring")).toBeDefined();
+            fireEvent.click(button("Apply craft"));
+            const spending = within(screen.getByText("Emulator spending").closest("details")!);
+            expect(
+                spending.getByText("Orb of Scouring").closest("dt")!.nextElementSibling!
+                    .textContent,
+            ).toBe("1");
+            if (!skipOnConflict)
+                expect(screen.getByRole("alert").textContent).toContain("open prefix");
+            fireEvent.click(button("Save project"));
+            expect(saved().item.mods).toEqual(item.mods.filter((entry) => !entry.crafted));
+            expect(saved().method).toEqual(project.method);
+            fireEvent.click(button("Undo"));
+            fireEvent.click(button("Save project"));
+            expect(saved().item).toEqual(item);
+            expect(screen.queryByText("Emulator spending")).toBeNull();
+            fireEvent.click(button("Redo"));
+            fireEvent.click(button("Save project"));
+            expect(saved().item.mods).toHaveLength(3);
+            const checkbox = screen.getByRole("checkbox", {
+                name: "Skip addition when the bench modifier conflicts",
+            });
+            fireEvent.click(checkbox);
+            fireEvent.click(button("Save project"));
+            expect(saved().method.skipOnConflict).toBe(!skipOnConflict);
+        },
+    );
 });

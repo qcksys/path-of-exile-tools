@@ -197,28 +197,25 @@ describe("catalog package export", () => {
         expect(await readFile(output, "utf8")).toBe(before);
     });
 
-    it.each([
-        "patch",
-        "basesSha256",
-        "modsSha256",
-        "schemaSha256",
-        "tables",
-    ])("rejects a supplement with inconsistent %s despite a matching file hash", async (field) => {
-        const directory = await dataPackage();
-        const path = join(directory, "crafting-data.json");
-        const supplement = JSON.parse(await readFile(path, "utf8"));
-        if (field === "patch") supplement.patch = "3.29.3.2";
-        else supplement.source[field] = field === "tables" ? {} : "0".repeat(64);
-        const bytes = JSON.stringify(supplement);
-        await writeFile(path, bytes);
-        const manifestPath = join(directory, "manifest.json");
-        const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-        manifest.crafting_data_sha256 = sha256(bytes);
-        await writeFile(manifestPath, JSON.stringify(manifest));
-        await expect(
-            exportRecombinatorCatalog(directory, join(directory, "catalog.json")),
-        ).rejects.toThrow("Recombination data differs");
-    });
+    it.each(["patch", "basesSha256", "modsSha256", "schemaSha256", "tables"])(
+        "rejects a supplement with inconsistent %s despite a matching file hash",
+        async (field) => {
+            const directory = await dataPackage();
+            const path = join(directory, "crafting-data.json");
+            const supplement = JSON.parse(await readFile(path, "utf8"));
+            if (field === "patch") supplement.patch = "3.29.3.2";
+            else supplement.source[field] = field === "tables" ? {} : "0".repeat(64);
+            const bytes = JSON.stringify(supplement);
+            await writeFile(path, bytes);
+            const manifestPath = join(directory, "manifest.json");
+            const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+            manifest.crafting_data_sha256 = sha256(bytes);
+            await writeFile(manifestPath, JSON.stringify(manifest));
+            await expect(
+                exportRecombinatorCatalog(directory, join(directory, "catalog.json")),
+            ).rejects.toThrow("Recombination data differs");
+        },
+    );
 
     it.each([
         { classes: ["missing"], error: "Unresolved recombinable item class" },

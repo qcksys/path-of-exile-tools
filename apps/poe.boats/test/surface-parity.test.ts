@@ -317,30 +317,30 @@ describe("transport parity", () => {
         lookup.mockRestore();
     });
 
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("lists %s common crafts identically over HTTP and MCP", async (game) => {
-        const input = { game };
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/presets",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime },
-        );
-        const expected = { presets: listCraftingPresets(game) };
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual(expected);
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", { name: "list_crafting_presets", arguments: input })
-            ).json(),
-        );
-        expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(expected);
-    });
+    it.each(["poe1", "poe2"] as const)(
+        "lists %s common crafts identically over HTTP and MCP",
+        async (game) => {
+            const input = { game };
+            const response = await api.request(
+                "https://poe.boats/api/v1/crafting/presets",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
+                },
+                { runtime },
+            );
+            const expected = { presets: listCraftingPresets(game) };
+            expect(response.status).toBe(200);
+            expect(await response.json()).toEqual(expected);
+            const rpc = RpcSchema.parse(
+                await (
+                    await mcp("tools/call", { name: "list_crafting_presets", arguments: input })
+                ).json(),
+            );
+            expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(expected);
+        },
+    );
 
     it.each(craftingPresets)("creates $name identically over HTTP and MCP", async (preset) => {
         const ruleset = historyIndex.revisions.find(
@@ -383,278 +383,33 @@ describe("transport parity", () => {
         ["r9", "energy-shield-chest", 3],
         ["r8", "life-block-shield", 0],
         ["r9", "life-block-shield", 6],
-    ] as const)("preserves %s %s preparation support over HTTP and MCP", async (revision, presetId, count) => {
-        const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === revision,
-        )!;
-        const input = {
-            game: "poe1",
-            ruleset: rulesetReference(ruleset),
-            presetId,
-        };
-        const expected = projectFromPreset(await publishedEngine(ruleset), ruleset, input.presetId);
-        const production = expected.nodes.flatMap((node) =>
-            node.kind === "acquire"
-                ? node.alternatives.filter((alternative) => alternative.kind === "production")
-                : [],
-        );
-        expect(production).toHaveLength(count);
-        for (const node of expected.nodes)
-            if (node.kind === "acquire")
-                expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/graph/from-preset",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime },
-        );
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({ graph: { ...expected, id: expect.any(String) } });
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", {
-                    name: "create_crafting_graph_from_preset",
-                    arguments: input,
-                })
-            ).json(),
-        );
-        expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual({
-            graph: { ...expected, id: expect.any(String) },
-        });
-    });
-
-    it.each([
-        ["r14", "life-block-shield", "recovery-make-base"],
-        ["r14", "es-block-shield", "flat-make-base"],
-        ["r15", "life-block-shield", "recovery-make-base"],
-        ["r15", "es-block-shield", "flat-make-base"],
-    ] as const)("preserves %s %s direct Shaper preparation over HTTP and MCP", async (revision, presetId, nodeId) => {
-        const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === revision,
-        )!;
-        const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId };
-        const expected = projectFromPreset(fixtureEngine, ruleset, presetId);
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/graph/from-preset",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime },
-        );
-        expect(response.status).toBe(200);
-        const http = z.object({ graph: craftingGraphSchema }).parse(await response.json());
-        expect(http.graph).toEqual({ ...expected, id: expect.any(String) });
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", {
-                    name: "create_crafting_graph_from_preset",
-                    arguments: input,
-                })
-            ).json(),
-        );
-        const result = CallToolResultSchema.parse(rpc.result);
-        expect(result.isError).not.toBe(true);
-        const tool = z.object({ graph: craftingGraphSchema }).parse(result.structuredContent);
-        expect({ ...tool.graph, id: http.graph.id }).toEqual(http.graph);
-        for (const graph of [http.graph, tool.graph]) {
-            const node = graph.nodes.find((entry) => entry.id === nodeId);
-            if (node?.kind !== "acquire") throw new Error("Expected base acquisition.");
-            expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
-            const production = node.alternatives.find((entry) => entry.id === "make-shaper");
-            const source = graph.nodes.find((entry) => entry.id === `${nodeId}-influence-base`);
-            if (revision === "r14") {
-                expect(production).toBeUndefined();
-                expect(source).toBeUndefined();
-            } else {
-                expect(production).toMatchObject({ kind: "production", id: "make-shaper" });
-                expect(source).toMatchObject({
-                    kind: "acquire",
-                    alternatives: expect.arrayContaining([
-                        expect.objectContaining({
-                            kind: "purchase",
-                            id: "buy",
-                            item: expect.objectContaining({ rarity: "normal", influences: [] }),
-                            sourcePreparation: { kind: "influence-ready-v1" },
-                        }),
-                    ]),
-                });
-            }
-        }
-    });
-
-    it.each([
-        "life-block-shield",
-        "energy-shield-chest",
-    ] as const)("preserves r16 %s extended base sources over HTTP and MCP", async (presetId) => {
-        const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === "r19",
-        )!;
-        const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId };
-        const expected = projectFromPreset(fixtureEngine, ruleset, presetId);
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/graph/from-preset",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime },
-        );
-        expect(response.status).toBe(200);
-        const http = z.object({ graph: craftingGraphSchema }).parse(await response.json());
-        expect(http.graph).toEqual({ ...expected, id: expect.any(String) });
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", {
-                    name: "create_crafting_graph_from_preset",
-                    arguments: input,
-                })
-            ).json(),
-        );
-        const result = CallToolResultSchema.parse(rpc.result);
-        expect(result.isError).not.toBe(true);
-        const tool = z.object({ graph: craftingGraphSchema }).parse(result.structuredContent);
-        expect({ ...tool.graph, id: http.graph.id }).toEqual(http.graph);
-        for (const graph of [http.graph, tool.graph]) {
-            for (const node of graph.nodes)
+    ] as const)(
+        "preserves %s %s preparation support over HTTP and MCP",
+        async (revision, presetId, count) => {
+            const ruleset = historyIndex.revisions.find(
+                (entry) => entry.game === "poe1" && entry.revision === revision,
+            )!;
+            const input = {
+                game: "poe1",
+                ruleset: rulesetReference(ruleset),
+                presetId,
+            };
+            const expected = projectFromPreset(
+                await publishedEngine(ruleset),
+                ruleset,
+                input.presetId,
+            );
+            const production = expected.nodes.flatMap((node) =>
+                node.kind === "acquire"
+                    ? node.alternatives.filter((alternative) => alternative.kind === "production")
+                    : [],
+            );
+            expect(production).toHaveLength(count);
+            for (const node of expected.nodes)
                 if (node.kind === "acquire")
                     expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
-            const sourceId =
-                presetId === "life-block-shield"
-                    ? "shield-make-heat-influence-base"
-                    : "donor-0-make-base";
-            const source = graph.nodes.find((node) => node.id === sourceId);
-            if (source?.kind !== "acquire") throw new Error("Missing r16 source acquisition.");
-            expect(source.alternatives.map((entry) => entry.id)).toEqual([
-                "buy",
-                "buy-scour",
-                "buy-scour-crafted",
-                "buy-scour-enchanted",
-                "buy-scour-crafted-enchanted",
-            ]);
-            for (const alternative of source.alternatives) {
-                if (alternative.kind !== "purchase") throw new Error("Expected source purchase.");
-                expect(alternative.item).toMatchObject({
-                    rarity: "normal",
-                    influences: [],
-                    mods: [],
-                });
-                if (alternative.id === "buy") {
-                    expect(alternative.sourcePreparation).toEqual(
-                        presetId === "life-block-shield"
-                            ? { kind: "influence-ready-v1" }
-                            : undefined,
-                    );
-                } else {
-                    expect(alternative.sourcePreparation).toEqual({
-                        kind: "scour-v1",
-                        crafted: alternative.id.includes("crafted"),
-                        enchanted: alternative.id.includes("enchanted"),
-                    });
-                }
-            }
-            if (presetId === "life-block-shield") {
-                for (const nodeId of ["block-make-base", "max-res-make-base"]) {
-                    const target = graph.nodes.find((node) => node.id === nodeId);
-                    if (target?.kind !== "acquire") throw new Error("Missing Heat checkpoint.");
-                    expect(target.alternatives).toContainEqual(
-                        expect.objectContaining({
-                            kind: "production",
-                            id: "make-shaper",
-                            nodeId: "shield-make-heat-influence-scour",
-                        }),
-                    );
-                }
-            }
-        }
-    });
-
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("publishes the same current %s workbench catalog on both transports", async (game) => {
-        const response = await api.request(
-            `https://poe.boats/api/v1/crafting/workbench/catalog?game=${game}`,
-            {},
-            { runtime },
-        );
-        expect(response.status).toBe(200);
-        const http = z.object({ catalog: craftingCatalogSchema }).parse(await response.json());
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", {
-                    name: "get_crafting_workbench_catalog",
-                    arguments: { game },
-                })
-            ).json(),
-        );
-        const result = CallToolResultSchema.parse(rpc.result);
-        expect(result.isError).not.toBe(true);
-        expect(result.structuredContent).toEqual(http);
-        expect(http.catalog.game).toBe(game);
-        expect(http.catalog.patch).toBe(workbenchCatalog(game).patch);
-        expect(Object.keys(http.catalog.bases)).toEqual(Object.keys(workbenchCatalog(game).bases));
-    });
-
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("shares %s workbench calculation and emulation through HTTP and MCP", async (game) => {
-        const project = workbenchProject(game);
-        const catalog = workbenchCatalog(game);
-        const cases: [string, string, unknown, unknown][] = [];
-        for (const mode of ["calculate", "sample", "process"] as const) {
-            const calculation = new CraftingWorkbenchCalculation(catalog, project, mode);
-            while (!calculation.runBatch()) {
-                /* complete bounded fixture */
-            }
-            cases.push([
-                "calculate_crafting_workbench",
-                "calculate",
-                { project, mode },
-                { result: calculation.result() },
-            ]);
-        }
-        const process = new CraftingProcess(
-            new CraftingEngine(catalog),
-            project,
-            seededRandom(project.seed),
-        );
-        while (!process.done) process.advance();
-        cases.push([
-            "emulate_crafting_process",
-            "process",
-            { project },
-            { result: process.result() },
-        ]);
-        const command = { kind: "apply", method: project.method } as const;
-        cases.push([
-            "emulate_crafting_item",
-            "emulate",
-            {
-                game,
-                patch: project.patch,
-                item: project.item,
-                command,
-                seed: project.seed,
-            },
-            {
-                result: emulateCraftingItem(
-                    new CraftingEngine(catalog),
-                    project.item,
-                    command,
-                    project.seed,
-                ),
-            },
-        ]);
-        for (const [name, path, input, expected] of cases) {
             const response = await api.request(
-                `https://poe.boats/api/v1/crafting/workbench/${path}`,
+                "https://poe.boats/api/v1/crafting/graph/from-preset",
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -662,65 +417,325 @@ describe("transport parity", () => {
                 },
                 { runtime },
             );
-            expect(response.status, await response.clone().text()).toBe(200);
-            expect(await response.json()).toEqual(JSON.parse(JSON.stringify(expected)));
-            const rpc = RpcSchema.parse(
-                await (await mcp("tools/call", { name, arguments: input })).json(),
-            );
-            const result = CallToolResultSchema.parse(rpc.result);
-            expect(result.isError).not.toBe(true);
-            expect(result.structuredContent).toEqual(JSON.parse(JSON.stringify(expected)));
-        }
-    });
-
-    it.each([
-        false,
-        true,
-    ])("shares seeded fossil rankings and unknown prices on HTTP and MCP (Allflame: %s)", async (allflame) => {
-        const input = fossilOptimizationFixture(allflame);
-        delete input.project.prices[input.options.fossils[0]!];
-        const before = structuredClone(input);
-        for (const partition of [undefined, { index: 1, count: 2 }]) {
-            const options = { ...input.options, partition };
-            const optimizer = new FossilOptimizer(
-                fixtureEngine,
-                input.project.item,
-                input.project.target,
-                input.project.prices,
-                input.project.seed,
-                options,
-            );
-            while (!optimizer.runBatch()) {
-                /* Complete bounded fixture. */
-            }
-            const expected = { result: fossilOptimizationSchema.parse(optimizer.result()) };
-            const request = { project: input.project, options };
-            const response = await api.request(
-                "https://poe.boats/api/v1/crafting/workbench/optimize-fossils",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(request),
-                },
-                { runtime },
-            );
-            expect(response.status, await response.clone().text()).toBe(200);
-            expect(await response.json()).toEqual(JSON.parse(JSON.stringify(expected)));
+            expect(response.status).toBe(200);
+            expect(await response.json()).toEqual({
+                graph: { ...expected, id: expect.any(String) },
+            });
             const rpc = RpcSchema.parse(
                 await (
                     await mcp("tools/call", {
-                        name: "optimize_crafting_fossils",
-                        arguments: request,
+                        name: "create_crafting_graph_from_preset",
+                        arguments: input,
+                    })
+                ).json(),
+            );
+            expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual({
+                graph: { ...expected, id: expect.any(String) },
+            });
+        },
+    );
+
+    it.each([
+        ["r14", "life-block-shield", "recovery-make-base"],
+        ["r14", "es-block-shield", "flat-make-base"],
+        ["r15", "life-block-shield", "recovery-make-base"],
+        ["r15", "es-block-shield", "flat-make-base"],
+    ] as const)(
+        "preserves %s %s direct Shaper preparation over HTTP and MCP",
+        async (revision, presetId, nodeId) => {
+            const ruleset = historyIndex.revisions.find(
+                (entry) => entry.game === "poe1" && entry.revision === revision,
+            )!;
+            const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId };
+            const expected = projectFromPreset(fixtureEngine, ruleset, presetId);
+            const response = await api.request(
+                "https://poe.boats/api/v1/crafting/graph/from-preset",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
+                },
+                { runtime },
+            );
+            expect(response.status).toBe(200);
+            const http = z.object({ graph: craftingGraphSchema }).parse(await response.json());
+            expect(http.graph).toEqual({ ...expected, id: expect.any(String) });
+            const rpc = RpcSchema.parse(
+                await (
+                    await mcp("tools/call", {
+                        name: "create_crafting_graph_from_preset",
+                        arguments: input,
                     })
                 ).json(),
             );
             const result = CallToolResultSchema.parse(rpc.result);
             expect(result.isError).not.toBe(true);
-            expect(result.structuredContent).toEqual(JSON.parse(JSON.stringify(expected)));
-            expect(expected.result.byAttempts.some((entry) => entry.cost === null)).toBe(true);
-        }
-        expect(input).toEqual(before);
-    });
+            const tool = z.object({ graph: craftingGraphSchema }).parse(result.structuredContent);
+            expect({ ...tool.graph, id: http.graph.id }).toEqual(http.graph);
+            for (const graph of [http.graph, tool.graph]) {
+                const node = graph.nodes.find((entry) => entry.id === nodeId);
+                if (node?.kind !== "acquire") throw new Error("Expected base acquisition.");
+                expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+                const production = node.alternatives.find((entry) => entry.id === "make-shaper");
+                const source = graph.nodes.find((entry) => entry.id === `${nodeId}-influence-base`);
+                if (revision === "r14") {
+                    expect(production).toBeUndefined();
+                    expect(source).toBeUndefined();
+                } else {
+                    expect(production).toMatchObject({ kind: "production", id: "make-shaper" });
+                    expect(source).toMatchObject({
+                        kind: "acquire",
+                        alternatives: expect.arrayContaining([
+                            expect.objectContaining({
+                                kind: "purchase",
+                                id: "buy",
+                                item: expect.objectContaining({ rarity: "normal", influences: [] }),
+                                sourcePreparation: { kind: "influence-ready-v1" },
+                            }),
+                        ]),
+                    });
+                }
+            }
+        },
+    );
+
+    it.each(["life-block-shield", "energy-shield-chest"] as const)(
+        "preserves r16 %s extended base sources over HTTP and MCP",
+        async (presetId) => {
+            const ruleset = historyIndex.revisions.find(
+                (entry) => entry.game === "poe1" && entry.revision === "r19",
+            )!;
+            const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId };
+            const expected = projectFromPreset(fixtureEngine, ruleset, presetId);
+            const response = await api.request(
+                "https://poe.boats/api/v1/crafting/graph/from-preset",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
+                },
+                { runtime },
+            );
+            expect(response.status).toBe(200);
+            const http = z.object({ graph: craftingGraphSchema }).parse(await response.json());
+            expect(http.graph).toEqual({ ...expected, id: expect.any(String) });
+            const rpc = RpcSchema.parse(
+                await (
+                    await mcp("tools/call", {
+                        name: "create_crafting_graph_from_preset",
+                        arguments: input,
+                    })
+                ).json(),
+            );
+            const result = CallToolResultSchema.parse(rpc.result);
+            expect(result.isError).not.toBe(true);
+            const tool = z.object({ graph: craftingGraphSchema }).parse(result.structuredContent);
+            expect({ ...tool.graph, id: http.graph.id }).toEqual(http.graph);
+            for (const graph of [http.graph, tool.graph]) {
+                for (const node of graph.nodes)
+                    if (node.kind === "acquire")
+                        expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+                const sourceId =
+                    presetId === "life-block-shield"
+                        ? "shield-make-heat-influence-base"
+                        : "donor-0-make-base";
+                const source = graph.nodes.find((node) => node.id === sourceId);
+                if (source?.kind !== "acquire") throw new Error("Missing r16 source acquisition.");
+                expect(source.alternatives.map((entry) => entry.id)).toEqual([
+                    "buy",
+                    "buy-scour",
+                    "buy-scour-crafted",
+                    "buy-scour-enchanted",
+                    "buy-scour-crafted-enchanted",
+                ]);
+                for (const alternative of source.alternatives) {
+                    if (alternative.kind !== "purchase")
+                        throw new Error("Expected source purchase.");
+                    expect(alternative.item).toMatchObject({
+                        rarity: "normal",
+                        influences: [],
+                        mods: [],
+                    });
+                    if (alternative.id === "buy") {
+                        expect(alternative.sourcePreparation).toEqual(
+                            presetId === "life-block-shield"
+                                ? { kind: "influence-ready-v1" }
+                                : undefined,
+                        );
+                    } else {
+                        expect(alternative.sourcePreparation).toEqual({
+                            kind: "scour-v1",
+                            crafted: alternative.id.includes("crafted"),
+                            enchanted: alternative.id.includes("enchanted"),
+                        });
+                    }
+                }
+                if (presetId === "life-block-shield") {
+                    for (const nodeId of ["block-make-base", "max-res-make-base"]) {
+                        const target = graph.nodes.find((node) => node.id === nodeId);
+                        if (target?.kind !== "acquire") throw new Error("Missing Heat checkpoint.");
+                        expect(target.alternatives).toContainEqual(
+                            expect.objectContaining({
+                                kind: "production",
+                                id: "make-shaper",
+                                nodeId: "shield-make-heat-influence-scour",
+                            }),
+                        );
+                    }
+                }
+            }
+        },
+    );
+
+    it.each(["poe1", "poe2"] as const)(
+        "publishes the same current %s workbench catalog on both transports",
+        async (game) => {
+            const response = await api.request(
+                `https://poe.boats/api/v1/crafting/workbench/catalog?game=${game}`,
+                {},
+                { runtime },
+            );
+            expect(response.status).toBe(200);
+            const http = z.object({ catalog: craftingCatalogSchema }).parse(await response.json());
+            const rpc = RpcSchema.parse(
+                await (
+                    await mcp("tools/call", {
+                        name: "get_crafting_workbench_catalog",
+                        arguments: { game },
+                    })
+                ).json(),
+            );
+            const result = CallToolResultSchema.parse(rpc.result);
+            expect(result.isError).not.toBe(true);
+            expect(result.structuredContent).toEqual(http);
+            expect(http.catalog.game).toBe(game);
+            expect(http.catalog.patch).toBe(workbenchCatalog(game).patch);
+            expect(Object.keys(http.catalog.bases)).toEqual(
+                Object.keys(workbenchCatalog(game).bases),
+            );
+        },
+    );
+
+    it.each(["poe1", "poe2"] as const)(
+        "shares %s workbench calculation and emulation through HTTP and MCP",
+        async (game) => {
+            const project = workbenchProject(game);
+            const catalog = workbenchCatalog(game);
+            const cases: [string, string, unknown, unknown][] = [];
+            for (const mode of ["calculate", "sample", "process"] as const) {
+                const calculation = new CraftingWorkbenchCalculation(catalog, project, mode);
+                while (!calculation.runBatch()) {
+                    /* complete bounded fixture */
+                }
+                cases.push([
+                    "calculate_crafting_workbench",
+                    "calculate",
+                    { project, mode },
+                    { result: calculation.result() },
+                ]);
+            }
+            const process = new CraftingProcess(
+                new CraftingEngine(catalog),
+                project,
+                seededRandom(project.seed),
+            );
+            while (!process.done) process.advance();
+            cases.push([
+                "emulate_crafting_process",
+                "process",
+                { project },
+                { result: process.result() },
+            ]);
+            const command = { kind: "apply", method: project.method } as const;
+            cases.push([
+                "emulate_crafting_item",
+                "emulate",
+                {
+                    game,
+                    patch: project.patch,
+                    item: project.item,
+                    command,
+                    seed: project.seed,
+                },
+                {
+                    result: emulateCraftingItem(
+                        new CraftingEngine(catalog),
+                        project.item,
+                        command,
+                        project.seed,
+                    ),
+                },
+            ]);
+            for (const [name, path, input, expected] of cases) {
+                const response = await api.request(
+                    `https://poe.boats/api/v1/crafting/workbench/${path}`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(input),
+                    },
+                    { runtime },
+                );
+                expect(response.status, await response.clone().text()).toBe(200);
+                expect(await response.json()).toEqual(JSON.parse(JSON.stringify(expected)));
+                const rpc = RpcSchema.parse(
+                    await (await mcp("tools/call", { name, arguments: input })).json(),
+                );
+                const result = CallToolResultSchema.parse(rpc.result);
+                expect(result.isError).not.toBe(true);
+                expect(result.structuredContent).toEqual(JSON.parse(JSON.stringify(expected)));
+            }
+        },
+    );
+
+    it.each([false, true])(
+        "shares seeded fossil rankings and unknown prices on HTTP and MCP (Allflame: %s)",
+        async (allflame) => {
+            const input = fossilOptimizationFixture(allflame);
+            delete input.project.prices[input.options.fossils[0]!];
+            const before = structuredClone(input);
+            for (const partition of [undefined, { index: 1, count: 2 }]) {
+                const options = { ...input.options, partition };
+                const optimizer = new FossilOptimizer(
+                    fixtureEngine,
+                    input.project.item,
+                    input.project.target,
+                    input.project.prices,
+                    input.project.seed,
+                    options,
+                );
+                while (!optimizer.runBatch()) {
+                    /* Complete bounded fixture. */
+                }
+                const expected = { result: fossilOptimizationSchema.parse(optimizer.result()) };
+                const request = { project: input.project, options };
+                const response = await api.request(
+                    "https://poe.boats/api/v1/crafting/workbench/optimize-fossils",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(request),
+                    },
+                    { runtime },
+                );
+                expect(response.status, await response.clone().text()).toBe(200);
+                expect(await response.json()).toEqual(JSON.parse(JSON.stringify(expected)));
+                const rpc = RpcSchema.parse(
+                    await (
+                        await mcp("tools/call", {
+                            name: "optimize_crafting_fossils",
+                            arguments: request,
+                        })
+                    ).json(),
+                );
+                const result = CallToolResultSchema.parse(rpc.result);
+                expect(result.isError).not.toBe(true);
+                expect(result.structuredContent).toEqual(JSON.parse(JSON.stringify(expected)));
+                expect(expected.result.byAttempts.some((entry) => entry.cost === null)).toBe(true);
+            }
+            expect(input).toEqual(before);
+        },
+    );
 
     it("refuses stale, ineligible and oversized fossil searches on both transports", async () => {
         const input = fossilOptimizationFixture();
@@ -771,34 +786,67 @@ describe("transport parity", () => {
         }
     });
 
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("shares %s starting-item editing and text export without mutating supplied state", async (game) => {
-        const project = workbenchProject(game);
-        const engine = new CraftingEngine(workbenchCatalog(game));
-        const item = { ...project.item, rarity: "rare" as const };
-        const id = engine.pool(item)[0]!.id;
-        const added = engine.addStartingMod(item, id, seededRandom(17));
-        const commands: CraftingItemEdit[] = [
-            { kind: "create", baseId: item.baseId, level: item.level },
-            { kind: "add-mod", item, id, source: "natural", seed: 17 },
-            { kind: "flag", item: added, flag: "corrupted", enabled: true },
-            { kind: "flag", item: { ...added, corrupted: true }, flag: "mirrored", enabled: true },
-            { kind: "validate", item: { ...added, level: 100 } },
-        ];
-        if (game === "poe2") {
-            const baseId = Object.entries(engine.catalog.bases).find(
-                ([, base]) => base.name === "Rusted Cuirass",
-            )![0];
-            commands.push({ kind: "passive", item: engine.createItem(baseId), id: "elemental32" });
-        }
-        const before = structuredClone(commands);
-        for (const command of commands) {
-            const input = { game, patch: project.patch, command };
-            const expected = { item: editCraftingStartingItem(engine, command) };
+    it.each(["poe1", "poe2"] as const)(
+        "shares %s starting-item editing and text export without mutating supplied state",
+        async (game) => {
+            const project = workbenchProject(game);
+            const engine = new CraftingEngine(workbenchCatalog(game));
+            const item = { ...project.item, rarity: "rare" as const };
+            const id = engine.pool(item)[0]!.id;
+            const added = engine.addStartingMod(item, id, seededRandom(17));
+            const commands: CraftingItemEdit[] = [
+                { kind: "create", baseId: item.baseId, level: item.level },
+                { kind: "add-mod", item, id, source: "natural", seed: 17 },
+                { kind: "flag", item: added, flag: "corrupted", enabled: true },
+                {
+                    kind: "flag",
+                    item: { ...added, corrupted: true },
+                    flag: "mirrored",
+                    enabled: true,
+                },
+                { kind: "validate", item: { ...added, level: 100 } },
+            ];
+            if (game === "poe2") {
+                const baseId = Object.entries(engine.catalog.bases).find(
+                    ([, base]) => base.name === "Rusted Cuirass",
+                )![0];
+                commands.push({
+                    kind: "passive",
+                    item: engine.createItem(baseId),
+                    id: "elemental32",
+                });
+            }
+            const before = structuredClone(commands);
+            for (const command of commands) {
+                const input = { game, patch: project.patch, command };
+                const expected = { item: editCraftingStartingItem(engine, command) };
+                const response = await api.request(
+                    "https://poe.boats/api/v1/crafting/workbench/item",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(input),
+                    },
+                    { runtime },
+                );
+                expect(response.status, await response.clone().text()).toBe(200);
+                expect(await response.json()).toEqual(JSON.parse(JSON.stringify(expected)));
+                const rpc = RpcSchema.parse(
+                    await (
+                        await mcp("tools/call", {
+                            name: "edit_crafting_starting_item",
+                            arguments: input,
+                        })
+                    ).json(),
+                );
+                const result = CallToolResultSchema.parse(rpc.result);
+                expect(result.isError).not.toBe(true);
+                expect(result.structuredContent).toEqual(JSON.parse(JSON.stringify(expected)));
+            }
+            const input = { game, patch: project.patch, item: added };
+            const expected = { text: exportCraftingItemText(engine, added) };
             const response = await api.request(
-                "https://poe.boats/api/v1/crafting/workbench/item",
+                "https://poe.boats/api/v1/crafting/workbench/item-text",
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -807,115 +855,100 @@ describe("transport parity", () => {
                 { runtime },
             );
             expect(response.status, await response.clone().text()).toBe(200);
-            expect(await response.json()).toEqual(JSON.parse(JSON.stringify(expected)));
+            expect(await response.json()).toEqual(expected);
             const rpc = RpcSchema.parse(
                 await (
-                    await mcp("tools/call", {
-                        name: "edit_crafting_starting_item",
-                        arguments: input,
-                    })
+                    await mcp("tools/call", { name: "export_crafting_item_text", arguments: input })
                 ).json(),
             );
             const result = CallToolResultSchema.parse(rpc.result);
             expect(result.isError).not.toBe(true);
-            expect(result.structuredContent).toEqual(JSON.parse(JSON.stringify(expected)));
-        }
-        const input = { game, patch: project.patch, item: added };
-        const expected = { text: exportCraftingItemText(engine, added) };
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/workbench/item-text",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime },
-        );
-        expect(response.status, await response.clone().text()).toBe(200);
-        expect(await response.json()).toEqual(expected);
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", { name: "export_crafting_item_text", arguments: input })
-            ).json(),
-        );
-        const result = CallToolResultSchema.parse(rpc.result);
-        expect(result.isError).not.toBe(true);
-        expect(result.structuredContent).toEqual(expected);
-        expect(commands).toEqual(before);
-    });
+            expect(result.structuredContent).toEqual(expected);
+            expect(commands).toEqual(before);
+        },
+    );
 
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("refuses stale and invalid %s starting-item edits and text exports", async (game) => {
-        const project = workbenchProject(game);
-        const input = { game, patch: project.patch };
-        const engine = new CraftingEngine(workbenchCatalog(game));
-        const item = { ...project.item, rarity: "rare" as const };
-        const id = engine.pool(item)[0]!.id;
-        const roll = engine.rollMod(id, seededRandom(1));
-        const forged = { ...item, mods: [{ ...roll, values: roll.values.map(() => 99999999) }] };
-        const cases: [string, string, unknown][] = [
-            [
-                "edit_crafting_starting_item",
-                "item",
-                {
-                    ...input,
-                    patch: "old",
-                    command: { kind: "create", baseId: item.baseId, level: 86 },
-                },
-            ],
-            [
-                "edit_crafting_starting_item",
-                "item",
-                {
-                    ...input,
-                    command: {
-                        kind: "flag",
-                        item,
-                        flag: game === "poe1" ? "sanctified" : "split",
-                        enabled: true,
+    it.each(["poe1", "poe2"] as const)(
+        "refuses stale and invalid %s starting-item edits and text exports",
+        async (game) => {
+            const project = workbenchProject(game);
+            const input = { game, patch: project.patch };
+            const engine = new CraftingEngine(workbenchCatalog(game));
+            const item = { ...project.item, rarity: "rare" as const };
+            const id = engine.pool(item)[0]!.id;
+            const roll = engine.rollMod(id, seededRandom(1));
+            const forged = {
+                ...item,
+                mods: [{ ...roll, values: roll.values.map(() => 99999999) }],
+            };
+            const cases: [string, string, unknown][] = [
+                [
+                    "edit_crafting_starting_item",
+                    "item",
+                    {
+                        ...input,
+                        patch: "old",
+                        command: { kind: "create", baseId: item.baseId, level: 86 },
                     },
-                },
-            ],
-            [
-                "edit_crafting_starting_item",
-                "item",
-                { ...input, command: { kind: "validate", item: forged } },
-            ],
-            [
-                "edit_crafting_starting_item",
-                "item",
-                {
-                    ...input,
-                    command: { kind: "add-mod", item, id: "missing", source: "natural", seed: 1 },
-                },
-            ],
-            [
-                "edit_crafting_starting_item",
-                "item",
-                { ...input, command: { kind: "passive", item, id: "missing" } },
-            ],
-            ["export_crafting_item_text", "item-text", { ...input, patch: "old", item }],
-            ["export_crafting_item_text", "item-text", { ...input, item: forged }],
-        ];
-        for (const [name, path, request] of cases) {
-            const response = await api.request(
-                `https://poe.boats/api/v1/crafting/workbench/${path}`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(request),
-                },
-                { runtime },
-            );
-            expect(response.status).toBe(400);
-            const rpc = RpcSchema.parse(
-                await (await mcp("tools/call", { name, arguments: request })).json(),
-            );
-            expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
-        }
-    });
+                ],
+                [
+                    "edit_crafting_starting_item",
+                    "item",
+                    {
+                        ...input,
+                        command: {
+                            kind: "flag",
+                            item,
+                            flag: game === "poe1" ? "sanctified" : "split",
+                            enabled: true,
+                        },
+                    },
+                ],
+                [
+                    "edit_crafting_starting_item",
+                    "item",
+                    { ...input, command: { kind: "validate", item: forged } },
+                ],
+                [
+                    "edit_crafting_starting_item",
+                    "item",
+                    {
+                        ...input,
+                        command: {
+                            kind: "add-mod",
+                            item,
+                            id: "missing",
+                            source: "natural",
+                            seed: 1,
+                        },
+                    },
+                ],
+                [
+                    "edit_crafting_starting_item",
+                    "item",
+                    { ...input, command: { kind: "passive", item, id: "missing" } },
+                ],
+                ["export_crafting_item_text", "item-text", { ...input, patch: "old", item }],
+                ["export_crafting_item_text", "item-text", { ...input, item: forged }],
+            ];
+            for (const [name, path, request] of cases) {
+                const response = await api.request(
+                    `https://poe.boats/api/v1/crafting/workbench/${path}`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(request),
+                    },
+                    { runtime },
+                );
+                expect(response.status).toBe(400);
+                const rpc = RpcSchema.parse(
+                    await (await mcp("tools/call", { name, arguments: request })).json(),
+                );
+                expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
+            }
+        },
+    );
 
     it("refuses stale workbench builds, unbounded work and illegal item choices on both transports", async () => {
         const project = workbenchProject("poe1");
@@ -987,149 +1020,145 @@ describe("transport parity", () => {
         }
     });
 
-    it.each([
-        "lookup",
-        "binding",
-        "refresh",
-        "wrong league",
-        "incomplete recipe",
-    ] as const)("shares supplemental %s through HTTP and MCP", async (scenario) => {
-        const graph = exchangeGraph();
-        const id = "EinharMasterCraftMorrigan7";
-        const sourceQuote = craftingSourceQuoteSchema.parse({
-            source: "stash-recipe",
-            game: "poe1",
-            realm: "pc",
-            league: graph.league,
-            currency: "chaos",
-            id,
-            yellowBeasts: "listing-count-weighted-mean-v1",
-            hour: recipeSourceHour,
-            amount: 607,
-            components: [
-                { itemKey: "Craicic Sand Spitter", unitPrice: 1 },
-                { itemKey: "Black Morrigan", unitPrice: 600 },
-            ]
-                .map((component) => ({
-                    ...component,
-                    quantity: 1,
-                    listingCount: 100,
-                    hour: recipeSourceHour,
-                }))
-                .concat([yellowBeastComponent]),
-        });
-        if (sourceQuote.source !== "stash-recipe") throw new Error("Expected beast source");
-        const prices = { quotes: { [id]: sourceQuote }, missing: {} };
-        const lookup = vi
-            .spyOn(craftingSources, "findCraftingSourcePrices")
-            .mockResolvedValue(prices);
-        const bound = bindCraftingSourcePrice(graph, fixtureEngine, id, sourceQuote);
-        const cases = {
-            lookup: [
-                "find_crafting_source_prices",
-                "/market/sources",
-                { graph, ids: [id], realm: "pc" },
-                prices,
-            ],
-            binding: [
-                "bind_crafting_source_price",
-                "/market/sources/bind",
-                { graph, id, quote: sourceQuote },
-                { graph: bound },
-            ],
-            refresh: [
-                "refresh_crafting_item_prices",
-                "/market/refresh",
-                { graph: bound },
-                { graph: bound, issues: [] },
-            ],
-            "wrong league": [
-                "bind_crafting_source_price",
-                "/market/sources/bind",
-                { graph, id, quote: { ...sourceQuote, league: "Other" } },
-                null,
-            ],
-            "incomplete recipe": [
-                "bind_crafting_source_price",
-                "/market/sources/bind",
+    it.each(["lookup", "binding", "refresh", "wrong league", "incomplete recipe"] as const)(
+        "shares supplemental %s through HTTP and MCP",
+        async (scenario) => {
+            const graph = exchangeGraph();
+            const id = "EinharMasterCraftMorrigan7";
+            const sourceQuote = craftingSourceQuoteSchema.parse({
+                source: "stash-recipe",
+                game: "poe1",
+                realm: "pc",
+                league: graph.league,
+                currency: "chaos",
+                id,
+                yellowBeasts: "listing-count-weighted-mean-v1",
+                hour: recipeSourceHour,
+                amount: 607,
+                components: [
+                    { itemKey: "Craicic Sand Spitter", unitPrice: 1 },
+                    { itemKey: "Black Morrigan", unitPrice: 600 },
+                ]
+                    .map((component) => ({
+                        ...component,
+                        quantity: 1,
+                        listingCount: 100,
+                        hour: recipeSourceHour,
+                    }))
+                    .concat([yellowBeastComponent]),
+            });
+            if (sourceQuote.source !== "stash-recipe") throw new Error("Expected beast source");
+            const prices = { quotes: { [id]: sourceQuote }, missing: {} };
+            const lookup = vi
+                .spyOn(craftingSources, "findCraftingSourcePrices")
+                .mockResolvedValue(prices);
+            const bound = bindCraftingSourcePrice(graph, fixtureEngine, id, sourceQuote);
+            const cases = {
+                lookup: [
+                    "find_crafting_source_prices",
+                    "/market/sources",
+                    { graph, ids: [id], realm: "pc" },
+                    prices,
+                ],
+                binding: [
+                    "bind_crafting_source_price",
+                    "/market/sources/bind",
+                    { graph, id, quote: sourceQuote },
+                    { graph: bound },
+                ],
+                refresh: [
+                    "refresh_crafting_item_prices",
+                    "/market/refresh",
+                    { graph: bound },
+                    { graph: bound, issues: [] },
+                ],
+                "wrong league": [
+                    "bind_crafting_source_price",
+                    "/market/sources/bind",
+                    { graph, id, quote: { ...sourceQuote, league: "Other" } },
+                    null,
+                ],
+                "incomplete recipe": [
+                    "bind_crafting_source_price",
+                    "/market/sources/bind",
+                    {
+                        graph,
+                        id,
+                        quote: { ...sourceQuote, components: sourceQuote.components.slice(0, 2) },
+                    },
+                    null,
+                ],
+            } as const;
+            const [name, path, input, expected] = cases[scenario];
+            const response = await api.request(
+                `https://poe.boats/api/v1/crafting${path}`,
                 {
-                    graph,
-                    id,
-                    quote: { ...sourceQuote, components: sourceQuote.components.slice(0, 2) },
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
                 },
-                null,
-            ],
-        } as const;
-        const [name, path, input, expected] = cases[scenario];
-        const response = await api.request(
-            `https://poe.boats/api/v1/crafting${path}`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime },
-        );
-        expect(response.status).toBe(expected === null ? 400 : 200);
-        const rpc = RpcSchema.parse(
-            await (await mcp("tools/call", { name, arguments: input })).json(),
-        );
-        const result = CallToolResultSchema.parse(rpc.result);
-        if (expected === null) expect(result.isError).toBe(true);
-        else {
-            expect(await response.json()).toEqual(expected);
-            expect(result.structuredContent).toEqual(expected);
-        }
-        lookup.mockRestore();
-    });
+                { runtime },
+            );
+            expect(response.status).toBe(expected === null ? 400 : 200);
+            const rpc = RpcSchema.parse(
+                await (await mcp("tools/call", { name, arguments: input })).json(),
+            );
+            const result = CallToolResultSchema.parse(rpc.result);
+            if (expected === null) expect(result.isError).toBe(true);
+            else {
+                expect(await response.json()).toEqual(expected);
+                expect(result.structuredContent).toEqual(expected);
+            }
+            lookup.mockRestore();
+        },
+    );
 
-    it.each([
-        "market",
-        "manual",
-        "wrong identity",
-    ] as const)("checks legacy resonator %s provenance before HTTP/MCP calculation", async (scenario) => {
-        const id = emptyResonatorQuote.id;
-        const price =
-            scenario === "wrong identity"
-                ? bindCraftingSourcePrice(
-                      exchangeGraph(),
-                      fixtureEngine,
-                      commodityQuote.id,
-                      commodityQuote,
-                  ).prices[commodityQuote.id]!
-                : { ...legacyResonatorPrice(), source: scenario };
-        const graph = {
-            ...exchangeGraph(),
-            iterations: 1,
-            prices: { [id]: price },
-        };
-        const input = { graph, options: { estimateIterations: 1, workLimit: 100 } };
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/graph/calculate",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime },
-        );
-        expect(response.status).toBe(scenario === "manual" ? 200 : 400);
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", { name: "calculate_crafting_graph", arguments: input })
-            ).json(),
-        );
-        const result = CallToolResultSchema.parse(rpc.result);
-        if (scenario !== "manual") {
-            expect(await response.text()).toContain("no verified empty provenance");
-            expect(result.isError).toBe(true);
-            expect(result.structuredContent).toBeUndefined();
-        } else {
-            expect(result.isError).not.toBe(true);
-            expect(result.structuredContent).toEqual(await response.json());
-        }
-        expect(graph.prices[id]?.amount).toBe(16.5);
-    });
+    it.each(["market", "manual", "wrong identity"] as const)(
+        "checks legacy resonator %s provenance before HTTP/MCP calculation",
+        async (scenario) => {
+            const id = emptyResonatorQuote.id;
+            const price =
+                scenario === "wrong identity"
+                    ? bindCraftingSourcePrice(
+                          exchangeGraph(),
+                          fixtureEngine,
+                          commodityQuote.id,
+                          commodityQuote,
+                      ).prices[commodityQuote.id]!
+                    : { ...legacyResonatorPrice(), source: scenario };
+            const graph = {
+                ...exchangeGraph(),
+                iterations: 1,
+                prices: { [id]: price },
+            };
+            const input = { graph, options: { estimateIterations: 1, workLimit: 100 } };
+            const response = await api.request(
+                "https://poe.boats/api/v1/crafting/graph/calculate",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
+                },
+                { runtime },
+            );
+            expect(response.status).toBe(scenario === "manual" ? 200 : 400);
+            const rpc = RpcSchema.parse(
+                await (
+                    await mcp("tools/call", { name: "calculate_crafting_graph", arguments: input })
+                ).json(),
+            );
+            const result = CallToolResultSchema.parse(rpc.result);
+            if (scenario !== "manual") {
+                expect(await response.text()).toContain("no verified empty provenance");
+                expect(result.isError).toBe(true);
+                expect(result.structuredContent).toBeUndefined();
+            } else {
+                expect(result.isError).not.toBe(true);
+                expect(result.structuredContent).toEqual(await response.json());
+            }
+            expect(graph.prices[id]?.amount).toBe(16.5);
+        },
+    );
 
     describe.each([
         { commodity: commodityQuote, converted: convertedCommodityQuote },
@@ -1161,129 +1190,134 @@ describe("transport parity", () => {
                 baseType: "Fundamental Fossil",
             },
         },
-    ])("captured $commodity.baseType", ({
-        commodity: commodityQuote,
-        converted: convertedCommodityQuote,
-    }) => {
-        const essenceId = commodityQuote.id;
-        it.each([
-            "lookup",
-            "binding",
-            "refresh",
-            "wrong identity",
-            "invalid counts",
-            "invalid provenance",
-            "conversion",
-            "invalid conversion",
-        ] as const)("shares captured commodity %s through HTTP and MCP", async (scenario) => {
-            const graph = exchangeGraph();
-            const membership = vi
-                .spyOn(exchangeMembership, "knownCraftingExchangeItems")
-                .mockResolvedValue(new Set());
-            const prices = { quotes: { [essenceId]: commodityQuote }, missing: {} };
-            const lookup = vi
-                .spyOn(craftingSources, "findCraftingSourcePrices")
-                .mockResolvedValue(prices);
-            const bound = bindCraftingSourcePrice(graph, fixtureEngine, essenceId, commodityQuote);
-            const cases = {
-                lookup: [
-                    "find_crafting_source_prices",
-                    "/market/sources",
-                    { graph, ids: [essenceId], realm: "pc", at: commodityQuote.hour },
-                    prices,
-                ],
-                binding: [
-                    "bind_crafting_source_price",
-                    "/market/sources/bind",
-                    { graph, id: essenceId, quote: commodityQuote },
-                    { graph: bound },
-                ],
-                refresh: [
-                    "refresh_crafting_item_prices",
-                    "/market/refresh",
-                    { graph: bound },
-                    { graph: bound, issues: [] },
-                ],
-                "wrong identity": [
-                    "bind_crafting_source_price",
-                    "/market/sources/bind",
-                    {
-                        graph,
-                        id: essenceId,
-                        quote: { ...commodityQuote, baseType: "Other Essence" },
-                    },
-                    null,
-                ],
-                "invalid counts": [
-                    "bind_crafting_source_price",
-                    "/market/sources/bind",
-                    { graph, id: essenceId, quote: { ...commodityQuote, samples: 26 } },
-                    null,
-                ],
-                "invalid provenance": [
-                    "bind_crafting_source_price",
-                    "/market/sources/bind",
-                    {
-                        graph,
-                        id: essenceId,
-                        quote: {
-                            ...commodityQuote,
-                            variant:
-                                "variant" in commodityQuote && commodityQuote.variant
-                                    ? undefined
-                                    : "empty-resonator-v1",
-                        },
-                    },
-                    null,
-                ],
-                conversion: [
-                    "bind_crafting_source_price",
-                    "/market/sources/bind",
-                    { graph, id: essenceId, quote: convertedCommodityQuote },
-                    {
-                        graph: bindCraftingSourcePrice(
+    ])(
+        "captured $commodity.baseType",
+        ({ commodity: commodityQuote, converted: convertedCommodityQuote }) => {
+            const essenceId = commodityQuote.id;
+            it.each([
+                "lookup",
+                "binding",
+                "refresh",
+                "wrong identity",
+                "invalid counts",
+                "invalid provenance",
+                "conversion",
+                "invalid conversion",
+            ] as const)("shares captured commodity %s through HTTP and MCP", async (scenario) => {
+                const graph = exchangeGraph();
+                const membership = vi
+                    .spyOn(exchangeMembership, "knownCraftingExchangeItems")
+                    .mockResolvedValue(new Set());
+                const prices = { quotes: { [essenceId]: commodityQuote }, missing: {} };
+                const lookup = vi
+                    .spyOn(craftingSources, "findCraftingSourcePrices")
+                    .mockResolvedValue(prices);
+                const bound = bindCraftingSourcePrice(
+                    graph,
+                    fixtureEngine,
+                    essenceId,
+                    commodityQuote,
+                );
+                const cases = {
+                    lookup: [
+                        "find_crafting_source_prices",
+                        "/market/sources",
+                        { graph, ids: [essenceId], realm: "pc", at: commodityQuote.hour },
+                        prices,
+                    ],
+                    binding: [
+                        "bind_crafting_source_price",
+                        "/market/sources/bind",
+                        { graph, id: essenceId, quote: commodityQuote },
+                        { graph: bound },
+                    ],
+                    refresh: [
+                        "refresh_crafting_item_prices",
+                        "/market/refresh",
+                        { graph: bound },
+                        { graph: bound, issues: [] },
+                    ],
+                    "wrong identity": [
+                        "bind_crafting_source_price",
+                        "/market/sources/bind",
+                        {
                             graph,
-                            fixtureEngine,
-                            essenceId,
-                            convertedCommodityQuote,
-                        ),
-                    },
-                ],
-                "invalid conversion": [
-                    "bind_crafting_source_price",
-                    "/market/sources/bind",
+                            id: essenceId,
+                            quote: { ...commodityQuote, baseType: "Other Essence" },
+                        },
+                        null,
+                    ],
+                    "invalid counts": [
+                        "bind_crafting_source_price",
+                        "/market/sources/bind",
+                        { graph, id: essenceId, quote: { ...commodityQuote, samples: 26 } },
+                        null,
+                    ],
+                    "invalid provenance": [
+                        "bind_crafting_source_price",
+                        "/market/sources/bind",
+                        {
+                            graph,
+                            id: essenceId,
+                            quote: {
+                                ...commodityQuote,
+                                variant:
+                                    "variant" in commodityQuote && commodityQuote.variant
+                                        ? undefined
+                                        : "empty-resonator-v1",
+                            },
+                        },
+                        null,
+                    ],
+                    conversion: [
+                        "bind_crafting_source_price",
+                        "/market/sources/bind",
+                        { graph, id: essenceId, quote: convertedCommodityQuote },
+                        {
+                            graph: bindCraftingSourcePrice(
+                                graph,
+                                fixtureEngine,
+                                essenceId,
+                                convertedCommodityQuote,
+                            ),
+                        },
+                    ],
+                    "invalid conversion": [
+                        "bind_crafting_source_price",
+                        "/market/sources/bind",
+                        {
+                            graph,
+                            id: essenceId,
+                            quote: { ...convertedCommodityQuote, conversion: undefined },
+                        },
+                        null,
+                    ],
+                } as const;
+                const [name, path, input, expected] = cases[scenario];
+                const response = await api.request(
+                    `https://poe.boats/api/v1/crafting${path}`,
                     {
-                        graph,
-                        id: essenceId,
-                        quote: { ...convertedCommodityQuote, conversion: undefined },
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(input),
                     },
-                    null,
-                ],
-            } as const;
-            const [name, path, input, expected] = cases[scenario];
-            const response = await api.request(
-                `https://poe.boats/api/v1/crafting${path}`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(input),
-                },
-                { runtime },
-            );
-            expect(response.status).toBe(expected === null ? 400 : 200);
-            const rpc = RpcSchema.parse(
-                await (await mcp("tools/call", { name, arguments: input })).json(),
-            );
-            const result = CallToolResultSchema.parse(rpc.result);
-            if (expected === null) expect(result.isError).toBe(true);
-            else {
-                expect(await response.json()).toEqual(expected);
-                expect(result.structuredContent).toEqual(expected);
-            }
-            lookup.mockRestore();
-            membership.mockRestore();
-        });
-    });
+                    { runtime },
+                );
+                expect(response.status).toBe(expected === null ? 400 : 200);
+                const rpc = RpcSchema.parse(
+                    await (await mcp("tools/call", { name, arguments: input })).json(),
+                );
+                const result = CallToolResultSchema.parse(rpc.result);
+                if (expected === null) expect(result.isError).toBe(true);
+                else {
+                    expect(await response.json()).toEqual(expected);
+                    expect(result.structuredContent).toEqual(expected);
+                }
+                lookup.mockRestore();
+                membership.mockRestore();
+            });
+        },
+    );
 
     describe.each([
         {
@@ -1440,191 +1474,195 @@ describe("transport parity", () => {
         expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
     });
 
-    it.each([
-        undefined,
-        "adaptive-v1",
-    ] as const)("shares both-game exchange lookup, history, binding and refresh through HTTP and MCP (%s)", async (window) => {
-        const lookup = vi.spyOn(craftingExchangeQueries, "findCraftingExchangePrices");
-        const history = vi.spyOn(craftingExchangeQueries, "craftingExchangeHistory");
-        for (const game of ["poe1", "poe2"] as const) {
-            const realm = game === "poe2" ? "poe2" : "pc";
-            const ruleset = historyIndex.revisions.find(
-                (entry) => entry.game === game && entry.revision === "r3",
-            )!;
-            const retained = await retainedRevision(ruleset);
-            const graph =
-                game === "poe1"
-                    ? exchangeGraph()
-                    : { ...retainedTransmuteGraph(ruleset, retained.catalog), league: "Standard" };
-            const quote = {
-                ...exchangeQuote,
-                realm,
-                ...(window
-                    ? {
-                          window,
-                          windowStart: exchangeQuote.hour! - 5 * 3600,
-                          estimator: "adaptive-volume-ratio-v1" as const,
-                      }
-                    : {}),
-            } as const;
-            const prices = { quotes: { [transmuteId]: quote }, missing: {} };
-            const historical = {
-                history: [{ ...exchangeSnapshot, realm } as const],
-                nextBefore: null,
-            };
-            lookup.mockResolvedValue(prices);
-            history.mockResolvedValue(historical);
-            const bound = bindExchangePrice(graph, transmuteId, quote);
-            const cases = [
-                [
-                    "find_crafting_exchange_prices",
-                    "/market/exchange",
-                    {
-                        game,
-                        realm,
-                        league: "Standard",
-                        currency: "chaos",
-                        itemIds: [transmuteId],
-                        window,
-                    },
-                    prices,
-                ],
-                [
-                    "get_crafting_exchange_price_history",
-                    "/market/exchange/history",
-                    {
-                        realm,
-                        league: "Standard",
-                        itemId: transmuteId,
-                        quoteId: exchangeQuote.quoteId,
-                    },
-                    historical,
-                ],
-                [
-                    "bind_crafting_exchange_price",
-                    "/market/exchange/bind",
-                    { graph, id: transmuteId, quote },
-                    { graph: bound },
-                ],
-                [
-                    "refresh_crafting_item_prices",
-                    "/market/refresh",
-                    { graph: bound },
-                    { graph: bound, issues: [] },
-                ],
-            ] as const;
-            for (const [name, path, input, expected] of cases) {
-                const response = await api.request(
-                    `https://poe.boats/api/v1/crafting${path}`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(input),
-                    },
-                    { runtime },
-                );
-                expect(response.status, name).toBe(200);
-                expect(await response.json()).toEqual(expected);
-                const rpc = RpcSchema.parse(
-                    await (await mcp("tools/call", { name, arguments: input })).json(),
-                );
-                expect(CallToolResultSchema.parse(rpc.result).structuredContent, name).toEqual(
-                    expected,
-                );
-            }
-            const message =
-                "No captured exchange observation is available at the selected completed hour.";
-            const unavailable = { quotes: {}, missing: { [transmuteId]: message } };
-            lookup.mockResolvedValue(unavailable);
-            for (const [name, path, input, expected] of [
-                [
-                    "find_crafting_exchange_prices",
-                    "/market/exchange",
-                    { ...cases[0][2], at: exchangeSnapshot.hour + 3600 },
-                    unavailable,
-                ],
-                [
-                    "refresh_crafting_item_prices",
-                    "/market/refresh",
-                    { graph: bound },
-                    {
-                        graph: markExchangePriceUnavailable(bound, transmuteId),
-                        issues: [`${transmuteId}: ${message}`],
-                    },
-                ],
-            ] as const) {
-                const response = await api.request(
-                    `https://poe.boats/api/v1/crafting${path}`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(input),
-                    },
-                    { runtime },
-                );
-                expect(response.status, name).toBe(200);
-                expect(await response.json()).toEqual(expected);
-                const rpc = RpcSchema.parse(
-                    await (await mcp("tools/call", { name, arguments: input })).json(),
-                );
-                const result = CallToolResultSchema.parse(rpc.result);
-                expect(result.isError).not.toBe(true);
-                expect(result.structuredContent, name).toEqual(expected);
-            }
-            const unavailableGraph = markExchangePriceUnavailable(bound, transmuteId);
-            const calculation = { graph: unavailableGraph, options: { estimateIterations: 1 } };
-            const calculateResponse = await api.request(
-                "https://poe.boats/api/v1/crafting/graph/calculate",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(calculation),
-                },
-                { runtime },
-            );
-            expect(calculateResponse.status).toBe(400);
-            expect(await calculateResponse.json()).toMatchObject({
-                error: expect.stringContaining("exchange price is unavailable"),
-            });
-            const calculateRpc = RpcSchema.parse(
-                await (
-                    await mcp("tools/call", {
-                        name: "calculate_crafting_graph",
-                        arguments: calculation,
-                    })
-                ).json(),
-            );
-            const calculateResult = CallToolResultSchema.parse(calculateRpc.result);
-            expect(calculateResult.isError).toBe(true);
-            expect(JSON.stringify(calculateResult.content)).toContain(
-                "exchange price is unavailable",
-            );
-            const invalid = { graph, id: transmuteId, quote: { ...quote, league: "Other" } };
-            expect(
-                (
-                    await api.request(
-                        "https://poe.boats/api/v1/crafting/market/exchange/bind",
+    it.each([undefined, "adaptive-v1"] as const)(
+        "shares both-game exchange lookup, history, binding and refresh through HTTP and MCP (%s)",
+        async (window) => {
+            const lookup = vi.spyOn(craftingExchangeQueries, "findCraftingExchangePrices");
+            const history = vi.spyOn(craftingExchangeQueries, "craftingExchangeHistory");
+            for (const game of ["poe1", "poe2"] as const) {
+                const realm = game === "poe2" ? "poe2" : "pc";
+                const ruleset = historyIndex.revisions.find(
+                    (entry) => entry.game === game && entry.revision === "r3",
+                )!;
+                const retained = await retainedRevision(ruleset);
+                const graph =
+                    game === "poe1"
+                        ? exchangeGraph()
+                        : {
+                              ...retainedTransmuteGraph(ruleset, retained.catalog),
+                              league: "Standard",
+                          };
+                const quote = {
+                    ...exchangeQuote,
+                    realm,
+                    ...(window
+                        ? {
+                              window,
+                              windowStart: exchangeQuote.hour! - 5 * 3600,
+                              estimator: "adaptive-volume-ratio-v1" as const,
+                          }
+                        : {}),
+                } as const;
+                const prices = { quotes: { [transmuteId]: quote }, missing: {} };
+                const historical = {
+                    history: [{ ...exchangeSnapshot, realm } as const],
+                    nextBefore: null,
+                };
+                lookup.mockResolvedValue(prices);
+                history.mockResolvedValue(historical);
+                const bound = bindExchangePrice(graph, transmuteId, quote);
+                const cases = [
+                    [
+                        "find_crafting_exchange_prices",
+                        "/market/exchange",
+                        {
+                            game,
+                            realm,
+                            league: "Standard",
+                            currency: "chaos",
+                            itemIds: [transmuteId],
+                            window,
+                        },
+                        prices,
+                    ],
+                    [
+                        "get_crafting_exchange_price_history",
+                        "/market/exchange/history",
+                        {
+                            realm,
+                            league: "Standard",
+                            itemId: transmuteId,
+                            quoteId: exchangeQuote.quoteId,
+                        },
+                        historical,
+                    ],
+                    [
+                        "bind_crafting_exchange_price",
+                        "/market/exchange/bind",
+                        { graph, id: transmuteId, quote },
+                        { graph: bound },
+                    ],
+                    [
+                        "refresh_crafting_item_prices",
+                        "/market/refresh",
+                        { graph: bound },
+                        { graph: bound, issues: [] },
+                    ],
+                ] as const;
+                for (const [name, path, input, expected] of cases) {
+                    const response = await api.request(
+                        `https://poe.boats/api/v1/crafting${path}`,
                         {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(invalid),
+                            body: JSON.stringify(input),
                         },
                         { runtime },
-                    )
-                ).status,
-            ).toBe(400);
-            const rpc = RpcSchema.parse(
-                await (
-                    await mcp("tools/call", {
-                        name: "bind_crafting_exchange_price",
-                        arguments: invalid,
-                    })
-                ).json(),
-            );
-            expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
-        }
-        // Both games over both transports run just under the 5 s default on CI runners.
-    }, 30_000);
+                    );
+                    expect(response.status, name).toBe(200);
+                    expect(await response.json()).toEqual(expected);
+                    const rpc = RpcSchema.parse(
+                        await (await mcp("tools/call", { name, arguments: input })).json(),
+                    );
+                    expect(CallToolResultSchema.parse(rpc.result).structuredContent, name).toEqual(
+                        expected,
+                    );
+                }
+                const message =
+                    "No captured exchange observation is available at the selected completed hour.";
+                const unavailable = { quotes: {}, missing: { [transmuteId]: message } };
+                lookup.mockResolvedValue(unavailable);
+                for (const [name, path, input, expected] of [
+                    [
+                        "find_crafting_exchange_prices",
+                        "/market/exchange",
+                        { ...cases[0][2], at: exchangeSnapshot.hour + 3600 },
+                        unavailable,
+                    ],
+                    [
+                        "refresh_crafting_item_prices",
+                        "/market/refresh",
+                        { graph: bound },
+                        {
+                            graph: markExchangePriceUnavailable(bound, transmuteId),
+                            issues: [`${transmuteId}: ${message}`],
+                        },
+                    ],
+                ] as const) {
+                    const response = await api.request(
+                        `https://poe.boats/api/v1/crafting${path}`,
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(input),
+                        },
+                        { runtime },
+                    );
+                    expect(response.status, name).toBe(200);
+                    expect(await response.json()).toEqual(expected);
+                    const rpc = RpcSchema.parse(
+                        await (await mcp("tools/call", { name, arguments: input })).json(),
+                    );
+                    const result = CallToolResultSchema.parse(rpc.result);
+                    expect(result.isError).not.toBe(true);
+                    expect(result.structuredContent, name).toEqual(expected);
+                }
+                const unavailableGraph = markExchangePriceUnavailable(bound, transmuteId);
+                const calculation = { graph: unavailableGraph, options: { estimateIterations: 1 } };
+                const calculateResponse = await api.request(
+                    "https://poe.boats/api/v1/crafting/graph/calculate",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(calculation),
+                    },
+                    { runtime },
+                );
+                expect(calculateResponse.status).toBe(400);
+                expect(await calculateResponse.json()).toMatchObject({
+                    error: expect.stringContaining("exchange price is unavailable"),
+                });
+                const calculateRpc = RpcSchema.parse(
+                    await (
+                        await mcp("tools/call", {
+                            name: "calculate_crafting_graph",
+                            arguments: calculation,
+                        })
+                    ).json(),
+                );
+                const calculateResult = CallToolResultSchema.parse(calculateRpc.result);
+                expect(calculateResult.isError).toBe(true);
+                expect(JSON.stringify(calculateResult.content)).toContain(
+                    "exchange price is unavailable",
+                );
+                const invalid = { graph, id: transmuteId, quote: { ...quote, league: "Other" } };
+                expect(
+                    (
+                        await api.request(
+                            "https://poe.boats/api/v1/crafting/market/exchange/bind",
+                            {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(invalid),
+                            },
+                            { runtime },
+                        )
+                    ).status,
+                ).toBe(400);
+                const rpc = RpcSchema.parse(
+                    await (
+                        await mcp("tools/call", {
+                            name: "bind_crafting_exchange_price",
+                            arguments: invalid,
+                        })
+                    ).json(),
+                );
+                expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
+            }
+            // Both games over both transports run just under the 5 s default on CI runners.
+        },
+        30_000,
+    );
 
     it("passes separate request timing collectors through HTTP and MCP without changing results", async () => {
         const input = {
@@ -1795,83 +1833,35 @@ describe("transport parity", () => {
                 failure,
             })),
         ),
-    )("refuses $policy cohort binding with invalid $failure through HTTP and MCP", async ({
-        policy,
-        failure,
-    }) => {
-        const { graph, candidate } = cohortPricingFixture(policy);
-        if (failure === "scope") {
-            if (policy === "display-equivalent-v1") delete candidate.assumption;
-            else graph.league = "Other";
-        } else if (failure === "starting-state") {
-            candidate.definition.query.groups[0]!.filters =
-                candidate.definition.query.groups[0]!.filters.map((filter) =>
-                    filter.kind === "rarity"
-                        ? { ...filter, values: ["Normal", "Magic", "Rare"] }
-                        : filter,
+    )(
+        "refuses $policy cohort binding with invalid $failure through HTTP and MCP",
+        async ({ policy, failure }) => {
+            const { graph, candidate } = cohortPricingFixture(policy);
+            if (failure === "scope") {
+                if (policy === "display-equivalent-v1") delete candidate.assumption;
+                else graph.league = "Other";
+            } else if (failure === "starting-state") {
+                candidate.definition.query.groups[0]!.filters =
+                    candidate.definition.query.groups[0]!.filters.map((filter) =>
+                        filter.kind === "rarity"
+                            ? { ...filter, values: ["Normal", "Magic", "Rare"] }
+                            : filter,
+                    );
+            } else if (failure === "ambiguous-base") {
+                const node = graph.nodes[0]!;
+                if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
+                    throw new Error("Fixture");
+                node.alternatives[0].item = fixtureEngine.createItem(
+                    "Metadata/Items/Armours/Boots/BootsAtlas1",
+                    86,
                 );
-        } else if (failure === "ambiguous-base") {
-            const node = graph.nodes[0]!;
-            if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
-                throw new Error("Fixture");
-            node.alternatives[0].item = fixtureEngine.createItem(
-                "Metadata/Items/Armours/Boots/BootsAtlas1",
-                86,
-            );
-        } else if (failure === "consent") delete candidate.conversion;
-        else if (failure === "currency")
-            Object.assign(candidate.exchange!, { currency: "unsupported-token" });
-        else candidate.exchange!.quote.hour! -= 3600;
-        const input = { graph, nodeId: "base", alternativeId: "buy", candidate };
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/market/bind",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime },
-        );
-        expect(response.status).toBe(400);
-        if (failure === "starting-state")
-            expect(await response.json()).toMatchObject({
-                error: expect.stringContaining("configured rarity"),
-            });
-        if (failure === "ambiguous-base")
-            expect(await response.json()).toMatchObject({
-                error: expect.stringContaining("canonical variants"),
-            });
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", { name: "bind_crafting_item_price", arguments: input })
-            ).json(),
-        );
-        const result = CallToolResultSchema.parse(rpc.result);
-        expect(result.isError).toBe(true);
-        if (failure === "starting-state")
-            expect(JSON.stringify(result.content)).toContain("configured rarity");
-        if (failure === "ambiguous-base")
-            expect(JSON.stringify(result.content)).toContain("canonical variants");
-    });
-
-    it.each([
-        ["poe1", "r7"],
-        ["poe1", "r8"],
-        ["poe2", "r7"],
-        ["poe2", "r8"],
-    ] as const)("applies %s %s scoped prices only in engine 8 through HTTP and MCP", async (game, revision) => {
-        const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === game && entry.revision === revision,
-        )!;
-        const loaded = await retainedRevision(ruleset);
-        const graph = retainedTransmuteGraph(ruleset, loaded.catalog);
-        for (const scoped of [false, true]) {
-            if (scoped)
-                graph.prices[craftingNodeCostKey("transmute", Object.keys(graph.prices)[0]!)] =
-                    quote(5);
-            const input = { graph, options: { estimateIterations: 1 } };
+            } else if (failure === "consent") delete candidate.conversion;
+            else if (failure === "currency")
+                Object.assign(candidate.exchange!, { currency: "unsupported-token" });
+            else candidate.exchange!.quote.hour! -= 3600;
+            const input = { graph, nodeId: "base", alternativeId: "buy", candidate };
             const response = await api.request(
-                "https://poe.boats/api/v1/crafting/graph/calculate",
+                "https://poe.boats/api/v1/crafting/market/bind",
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -1879,33 +1869,84 @@ describe("transport parity", () => {
                 },
                 { runtime },
             );
+            expect(response.status).toBe(400);
+            if (failure === "starting-state")
+                expect(await response.json()).toMatchObject({
+                    error: expect.stringContaining("configured rarity"),
+                });
+            if (failure === "ambiguous-base")
+                expect(await response.json()).toMatchObject({
+                    error: expect.stringContaining("canonical variants"),
+                });
             const rpc = RpcSchema.parse(
                 await (
-                    await mcp("tools/call", {
-                        name: "calculate_crafting_graph",
-                        arguments: input,
-                    })
+                    await mcp("tools/call", { name: "bind_crafting_item_price", arguments: input })
                 ).json(),
             );
             const result = CallToolResultSchema.parse(rpc.result);
-            const body = await response.json();
-            if (scoped && revision === "r7") {
-                expect(response.status).toBe(400);
-                expect(body).toMatchObject({
-                    error: expect.stringContaining("scoped crafting prices"),
-                });
-                expect(result.isError).toBe(true);
-                expect(JSON.stringify(result.content)).toContain("scoped crafting prices");
-            } else {
-                expect(response.status).toBe(200);
-                expect(body).toMatchObject({
-                    result: { complete: true, meanCost: scoped ? 15 : 11 },
-                });
-                expect(result.isError).not.toBe(true);
-                expect(result.structuredContent).toEqual(body);
+            expect(result.isError).toBe(true);
+            if (failure === "starting-state")
+                expect(JSON.stringify(result.content)).toContain("configured rarity");
+            if (failure === "ambiguous-base")
+                expect(JSON.stringify(result.content)).toContain("canonical variants");
+        },
+    );
+
+    it.each([
+        ["poe1", "r7"],
+        ["poe1", "r8"],
+        ["poe2", "r7"],
+        ["poe2", "r8"],
+    ] as const)(
+        "applies %s %s scoped prices only in engine 8 through HTTP and MCP",
+        async (game, revision) => {
+            const ruleset = historyIndex.revisions.find(
+                (entry) => entry.game === game && entry.revision === revision,
+            )!;
+            const loaded = await retainedRevision(ruleset);
+            const graph = retainedTransmuteGraph(ruleset, loaded.catalog);
+            for (const scoped of [false, true]) {
+                if (scoped)
+                    graph.prices[craftingNodeCostKey("transmute", Object.keys(graph.prices)[0]!)] =
+                        quote(5);
+                const input = { graph, options: { estimateIterations: 1 } };
+                const response = await api.request(
+                    "https://poe.boats/api/v1/crafting/graph/calculate",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(input),
+                    },
+                    { runtime },
+                );
+                const rpc = RpcSchema.parse(
+                    await (
+                        await mcp("tools/call", {
+                            name: "calculate_crafting_graph",
+                            arguments: input,
+                        })
+                    ).json(),
+                );
+                const result = CallToolResultSchema.parse(rpc.result);
+                const body = await response.json();
+                if (scoped && revision === "r7") {
+                    expect(response.status).toBe(400);
+                    expect(body).toMatchObject({
+                        error: expect.stringContaining("scoped crafting prices"),
+                    });
+                    expect(result.isError).toBe(true);
+                    expect(JSON.stringify(result.content)).toContain("scoped crafting prices");
+                } else {
+                    expect(response.status).toBe(200);
+                    expect(body).toMatchObject({
+                        result: { complete: true, meanCost: scoped ? 15 : 11 },
+                    });
+                    expect(result.isError).not.toBe(true);
+                    expect(result.structuredContent).toEqual(body);
+                }
             }
-        }
-    });
+        },
+    );
 
     it("shares cohort refresh and unusable-cohort refusals through HTTP and MCP", async () => {
         const graph = bindCohortPurchasePrice(
@@ -2352,45 +2393,48 @@ describe("transport parity", () => {
             });
     });
 
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("creates %s pasted-item queries through both transports", async (game) => {
-        const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === game && entry.revision === "r3",
-        )!;
-        const loaded = await retainedRevision(ruleset);
-        const engine = new CraftingEngine(craftingCatalogSchema.parse(loaded.catalog));
-        const base = Object.entries(engine.catalog.bases).find(
-            ([, entry]) => entry.item_class === "Body Armour" && entry.drop_level === 1,
-        )![0];
-        const text = exportCraftingItemText(engine, engine.createItem(base, 86));
-        const input = { game, ruleset: rulesetReference(ruleset), text };
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/items/query-from-text",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime },
-        );
-        expect(response.status).toBe(200);
-        const result = craftingItemQueryTextResultSchema.parse(await response.json());
-        expect(result.matches[0]!.query.groups[0]!.filters).toContainEqual({
-            kind: "base",
-            field: "baseId",
-            values: [base],
-        });
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", { name: "create_item_queries_from_text", arguments: input })
-            ).json(),
-        );
-        const tool = CallToolResultSchema.parse(rpc.result);
-        expect(tool.isError).not.toBe(true);
-        expect(tool.structuredContent).toEqual(result);
-    });
+    it.each(["poe1", "poe2"] as const)(
+        "creates %s pasted-item queries through both transports",
+        async (game) => {
+            const ruleset = historyIndex.revisions.find(
+                (entry) => entry.game === game && entry.revision === "r3",
+            )!;
+            const loaded = await retainedRevision(ruleset);
+            const engine = new CraftingEngine(craftingCatalogSchema.parse(loaded.catalog));
+            const base = Object.entries(engine.catalog.bases).find(
+                ([, entry]) => entry.item_class === "Body Armour" && entry.drop_level === 1,
+            )![0];
+            const text = exportCraftingItemText(engine, engine.createItem(base, 86));
+            const input = { game, ruleset: rulesetReference(ruleset), text };
+            const response = await api.request(
+                "https://poe.boats/api/v1/crafting/items/query-from-text",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
+                },
+                { runtime },
+            );
+            expect(response.status).toBe(200);
+            const result = craftingItemQueryTextResultSchema.parse(await response.json());
+            expect(result.matches[0]!.query.groups[0]!.filters).toContainEqual({
+                kind: "base",
+                field: "baseId",
+                values: [base],
+            });
+            const rpc = RpcSchema.parse(
+                await (
+                    await mcp("tools/call", {
+                        name: "create_item_queries_from_text",
+                        arguments: input,
+                    })
+                ).json(),
+            );
+            const tool = CallToolResultSchema.parse(rpc.result);
+            expect(tool.isError).not.toBe(true);
+            expect(tool.structuredContent).toEqual(result);
+        },
+    );
 
     it("refuses unresolved item text through both transports", async () => {
         const input = { game: "poe1", ruleset: graphFixture().ruleset, text: "Not an item" };
@@ -2583,71 +2627,74 @@ describe("transport parity", () => {
         [{ action: "updateProject", graph: graphFixture(), expectedRevision: 1 }, 409],
         [{ action: "deleteProject", projectId: graphFixture().id }, 409],
         [{ action: "removeMember", buildId: "build", memberId: "foreign" }, 400],
-    ])("refuses conflicting or foreign workspace edits through both transports: %j", async (command, status) => {
-        const input = { state: workspaceFixture(), command };
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/workspace/edit",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime },
-        );
-        expect(response.status).toBe(status);
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", { name: "edit_crafting_workspace", arguments: input })
-            ).json(),
-        );
-        expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
-    });
+    ])(
+        "refuses conflicting or foreign workspace edits through both transports: %j",
+        async (command, status) => {
+            const input = { state: workspaceFixture(), command };
+            const response = await api.request(
+                "https://poe.boats/api/v1/crafting/workspace/edit",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
+                },
+                { runtime },
+            );
+            expect(response.status).toBe(status);
+            const rpc = RpcSchema.parse(
+                await (
+                    await mcp("tools/call", { name: "edit_crafting_workspace", arguments: input })
+                ).json(),
+            );
+            expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
+        },
+    );
 
     it("documents crafting method choices despite their preprocessing guard", () => {
         const schema = z.toJSONSchema(craftingMethodSchema, { io: "input" });
-        expect(schema.oneOf).toBeDefined();
+        // Its `id` puts the definition under `$defs`, as it is wherever an operation nests it.
+        expect(schema.$defs?.CraftingMethod?.oneOf).toBeDefined();
         expect(JSON.stringify(schema)).toContain('"recombine"');
     });
 
-    it.each([
-        "catalog",
-        "ports",
-        "budget",
-        "condition-game",
-        "condition-revision",
-    ])("refuses an invalid graph %s through both transports", async (failure) => {
-        const graph = graphFixture();
-        if (failure === "catalog") graph.ruleset.craftingSha256 = "0".repeat(64);
-        if (failure === "ports") graph.nodes.find((node) => node.kind === "craft")!.inputs.pop();
-        if (failure.startsWith("condition-")) {
-            graph.nodes.find((node) => node.kind === "craft")!.applyWhen = itemQuerySchema.parse({
-                game: failure === "condition-game" ? "poe2" : "poe1",
-            });
-            if (failure === "condition-revision")
-                graph.ruleset = rulesetReference(
-                    historyIndex.revisions.find(
-                        (entry) => entry.game === "poe1" && entry.revision === "r4",
-                    )!,
-                );
-        }
-        const input = { graph, options: { workLimit: failure === "budget" ? 100_001 : 100 } };
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/graph/calculate",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime },
-        );
-        expect(response.status).toBe(400);
-        const rpc = RpcSchema.parse(
-            await (
-                await mcp("tools/call", { name: "calculate_crafting_graph", arguments: input })
-            ).json(),
-        );
-        expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
-    });
+    it.each(["catalog", "ports", "budget", "condition-game", "condition-revision"])(
+        "refuses an invalid graph %s through both transports",
+        async (failure) => {
+            const graph = graphFixture();
+            if (failure === "catalog") graph.ruleset.craftingSha256 = "0".repeat(64);
+            if (failure === "ports")
+                graph.nodes.find((node) => node.kind === "craft")!.inputs.pop();
+            if (failure.startsWith("condition-")) {
+                graph.nodes.find((node) => node.kind === "craft")!.applyWhen =
+                    itemQuerySchema.parse({
+                        game: failure === "condition-game" ? "poe2" : "poe1",
+                    });
+                if (failure === "condition-revision")
+                    graph.ruleset = rulesetReference(
+                        historyIndex.revisions.find(
+                            (entry) => entry.game === "poe1" && entry.revision === "r4",
+                        )!,
+                    );
+            }
+            const input = { graph, options: { workLimit: failure === "budget" ? 100_001 : 100 } };
+            const response = await api.request(
+                "https://poe.boats/api/v1/crafting/graph/calculate",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
+                },
+                { runtime },
+            );
+            expect(response.status).toBe(400);
+            const rpc = RpcSchema.parse(
+                await (
+                    await mcp("tools/call", { name: "calculate_crafting_graph", arguments: input })
+                ).json(),
+            );
+            expect(CallToolResultSchema.parse(rpc.result).isError).toBe(true);
+        },
+    );
 
     it("preserves prepared donor options through HTTP and MCP draft parsing", async () => {
         const draft = structuredClone(exampleRecombinatorDraft);

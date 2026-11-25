@@ -42,7 +42,11 @@ export async function discoverVersion(game: Game): Promise<string> {
         socket.on("error", fail);
         socket.on("connect", () => socket.write(Buffer.from([1, 6])));
         socket.on("data", (bytes) => {
-            response = Buffer.concat([response, bytes]);
+            // No encoding is set, so chunks are Buffers; the type also allows strings.
+            response = Buffer.concat([
+                response,
+                typeof bytes === "string" ? Buffer.from(bytes) : bytes,
+            ]);
             try {
                 const patch = parseVersion(game, response);
                 if (patch) {

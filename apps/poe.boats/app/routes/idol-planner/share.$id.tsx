@@ -25,7 +25,7 @@ import type { ScarabPricesData } from "~/schemas/scarab";
 import type { SharedSet } from "~/schemas/share";
 import type { Route } from "./+types/share.$id";
 
-export async function loader({ params, request, context }: Route.LoaderArgs) {
+export async function loader({ params, url, context }: Route.LoaderArgs) {
     const shareId = params.id;
     if (!shareId) {
         return { sharedSet: null, prices: null, shareUrl: null };
@@ -43,7 +43,8 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
         }
     }
 
-    const shareUrl = buildShareUrl(request.url, shareId);
+    // `url`, unlike `request.url`, has no `.data` suffix or router parameters.
+    const shareUrl = buildShareUrl(url.href, shareId);
 
     return { sharedSet, prices, shareUrl };
 }

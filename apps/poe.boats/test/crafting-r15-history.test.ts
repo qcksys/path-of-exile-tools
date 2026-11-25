@@ -46,15 +46,16 @@ it.each(craftingPresets)("preserves the complete r14 $id graph", ({ id }) => {
     expect(createHash("sha256").update(JSON.stringify(graph)).digest("hex")).toBe(r14Hashes[id]);
 });
 
-it.each(
-    Array.from({ length: 15 }, (_, index) => index + 1),
-)("retains capability boundaries for engine %s", (revision) => {
-    const ruleset = { engine: `crafting-graph-${revision}` };
-    expect(rulesetAllowsConditionalSteps(ruleset)).toBe(revision >= 5);
-    expect(rulesetAllowsSimpleCraft(ruleset)).toBe(revision >= 7);
-    expect(rulesetAllowsScopedCraftPrices(ruleset)).toBe(revision >= 8);
-    expect(rulesetAllowsPresetPreparation(ruleset)).toBe(revision >= 9);
-});
+it.each(Array.from({ length: 15 }, (_, index) => index + 1))(
+    "retains capability boundaries for engine %s",
+    (revision) => {
+        const ruleset = { engine: `crafting-graph-${revision}` };
+        expect(rulesetAllowsConditionalSteps(ruleset)).toBe(revision >= 5);
+        expect(rulesetAllowsSimpleCraft(ruleset)).toBe(revision >= 7);
+        expect(rulesetAllowsScopedCraftPrices(ruleset)).toBe(revision >= 8);
+        expect(rulesetAllowsPresetPreparation(ruleset)).toBe(revision >= 9);
+    },
+);
 
 it("keeps every existing source preparation policy available in r15", () => {
     for (const { id } of craftingPresets) {

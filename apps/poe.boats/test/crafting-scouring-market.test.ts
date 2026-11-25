@@ -29,33 +29,32 @@ describe("paid Scouring market source", () => {
         });
     });
 
-    it.each([
-        "change",
-        "remove",
-        "override",
-    ])("refuses direct calculation after source policy %s", (edit) => {
-        const { graph, candidate } = fixture();
-        const bound = bindCohortPurchasePrice(graph, engine, "base", "buy", candidate);
-        const { alternative } = purchase(bound);
-        if (alternative.sourcePreparation?.kind !== "scour-v1")
-            throw new Error("Expected Scouring source profile.");
-        if (edit === "change") alternative.sourcePreparation.crafted = false;
-        else if (edit === "remove") delete alternative.sourcePreparation;
-        else {
-            const other = fixture(false, true);
-            const otherBound = bindCohortPurchasePrice(
-                other.graph,
-                engine,
-                "base",
-                "buy",
-                other.candidate,
-            );
-            bound.prices["purchase:base:buy"] = purchase(otherBound).alternative.price!;
-        }
-        expect(
-            () => new CraftingGraphSimulation(catalog, bound, { estimateIterations: 1 }),
-        ).toThrow(/source preparation/i);
-    });
+    it.each(["change", "remove", "override"])(
+        "refuses direct calculation after source policy %s",
+        (edit) => {
+            const { graph, candidate } = fixture();
+            const bound = bindCohortPurchasePrice(graph, engine, "base", "buy", candidate);
+            const { alternative } = purchase(bound);
+            if (alternative.sourcePreparation?.kind !== "scour-v1")
+                throw new Error("Expected Scouring source profile.");
+            if (edit === "change") alternative.sourcePreparation.crafted = false;
+            else if (edit === "remove") delete alternative.sourcePreparation;
+            else {
+                const other = fixture(false, true);
+                const otherBound = bindCohortPurchasePrice(
+                    other.graph,
+                    engine,
+                    "base",
+                    "buy",
+                    other.candidate,
+                );
+                bound.prices["purchase:base:buy"] = purchase(otherBound).alternative.price!;
+            }
+            expect(
+                () => new CraftingGraphSimulation(catalog, bound, { estimateIterations: 1 }),
+            ).toThrow(/source preparation/i);
+        },
+    );
 
     it("rejects ordinary and r11 bindings, but permits an explicit manual price with cleanup", () => {
         const { graph, candidate } = fixture();

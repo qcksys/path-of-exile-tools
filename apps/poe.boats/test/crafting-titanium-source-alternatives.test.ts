@@ -78,29 +78,30 @@ async function calculate(graph: CraftingGraph) {
     return simulation.result();
 }
 
-it.each(
-    candidates,
-)("retained r9 Scours the observed $id shape to the complete Normal target", async (candidate) => {
-    const { graph, target } = preparation(candidate);
-    graph.iterations = 16;
-    const result = await calculate(graph);
-    expect(result).toMatchObject({
-        complete: true,
-        trials: 16,
-        errors: {},
-        missingPrices: [],
-        meanCost: 18,
-    });
-    for (const sample of result.samples) {
-        expect(sample).toMatchObject({
-            purchases: 1,
-            actions: 1,
-            cost: 18,
-            spending: { [`purchase:${sourceId}:${candidate.id}`]: 1, [scour]: 1 },
+it.each(candidates)(
+    "retained r9 Scours the observed $id shape to the complete Normal target",
+    async (candidate) => {
+        const { graph, target } = preparation(candidate);
+        graph.iterations = 16;
+        const result = await calculate(graph);
+        expect(result).toMatchObject({
+            complete: true,
+            trials: 16,
+            errors: {},
+            missingPrices: [],
+            meanCost: 18,
         });
-        expect(sample.item).toEqual(target);
-    }
-});
+        for (const sample of result.samples) {
+            expect(sample).toMatchObject({
+                purchases: 1,
+                actions: 1,
+                cost: 18,
+                spending: { [`purchase:${sourceId}:${candidate.id}`]: 1, [scour]: 1 },
+            });
+            expect(sample.item).toEqual(target);
+        }
+    },
+);
 
 it.each(candidates)("$id has an exact capturable ordinary-purchase definition", (candidate) => {
     const graph = projectFromPreset(engine, ruleset, "es-block-shield");
@@ -181,46 +182,47 @@ it.each(
     expect(result.samples[0]).toMatchObject({ cost: null, purchases: 1, actions: 1, item: target });
 });
 
-it.each(
-    candidates,
-)("retained r9 charges a separate $id source and Scouring for each consumer", async (candidate) => {
-    const { graph } = preparation(candidate);
-    const target = purchase(graph, "flat-make-base");
-    graph.nodes.push({
-        kind: "craft",
-        id: "consume-bases",
-        name: "Consume two scoured bases",
-        output: target.node.output,
-        inputs: [
-            { id: "first", name: "First", source: target.node.id },
-            { id: "second", name: "Second", source: target.node.id },
-        ],
-        method: { kind: "recombine", id: "recombine" },
-        branches: [],
-        ordering: "manual",
-        fallback: { kind: "return" },
-    });
-    graph.entry = "consume-bases";
-    graph.prices["service:recombine"] = quote(3);
-    const result = await calculate(graph);
-    expect(result).toMatchObject({
-        complete: true,
-        trials: 1,
-        errors: {},
-        missingPrices: [],
-        meanCost: 39,
-    });
-    expect(result.samples[0]).toMatchObject({
-        purchases: 2,
-        actions: 3,
-        cost: 39,
-        spending: {
-            [`purchase:${sourceId}:${candidate.id}`]: 2,
-            [scour]: 2,
-            "service:recombine": 1,
-        },
-    });
-});
+it.each(candidates)(
+    "retained r9 charges a separate $id source and Scouring for each consumer",
+    async (candidate) => {
+        const { graph } = preparation(candidate);
+        const target = purchase(graph, "flat-make-base");
+        graph.nodes.push({
+            kind: "craft",
+            id: "consume-bases",
+            name: "Consume two scoured bases",
+            output: target.node.output,
+            inputs: [
+                { id: "first", name: "First", source: target.node.id },
+                { id: "second", name: "Second", source: target.node.id },
+            ],
+            method: { kind: "recombine", id: "recombine" },
+            branches: [],
+            ordering: "manual",
+            fallback: { kind: "return" },
+        });
+        graph.entry = "consume-bases";
+        graph.prices["service:recombine"] = quote(3);
+        const result = await calculate(graph);
+        expect(result).toMatchObject({
+            complete: true,
+            trials: 1,
+            errors: {},
+            missingPrices: [],
+            meanCost: 39,
+        });
+        expect(result.samples[0]).toMatchObject({
+            purchases: 2,
+            actions: 3,
+            cost: 39,
+            spending: {
+                [`purchase:${sourceId}:${candidate.id}`]: 2,
+                [scour]: 2,
+                "service:recombine": 1,
+            },
+        });
+    },
+);
 
 it("preserves the pinned Magic source, original Normal purchase and unselected preview", () => {
     const graph = projectFromPreset(engine, ruleset, "es-block-shield");

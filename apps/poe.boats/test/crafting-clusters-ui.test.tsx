@@ -122,60 +122,60 @@ it("keeps the item unchanged when a new passive type would invalidate an existin
     ).toBeDefined();
 });
 
-it.each([
-    "advanced",
-    "classic",
-])("shows extracted notable effects in the pool and %s item without changing crafting state", (itemOutput) => {
-    const project = initial();
-    project.item = engine.addStartingMod(
-        project.item,
-        "AfflictionNotableCalamitous",
-        seededRandom(1),
-    );
-    localStorage.setItem(draftKey, JSON.stringify(project));
-    localStorage.setItem("poe-boats:crafting:display", JSON.stringify({ itemOutput }));
-    mount();
-    const current = within(screen.getByRole("region", { name: "Current item" }));
-    if (itemOutput === "classic") {
-        fireEvent.click(current.getByText("Individual modifiers and rolls"));
-    }
-    const itemSummary = current.getByText("Calamitous passive effects");
-    expect(itemSummary.closest("details")).toHaveProperty("open", false);
-    fireEvent.click(itemSummary);
-    expect(itemSummary.closest("details")).toHaveProperty("open", true);
-    const effects =
-        "30% increased Elemental Damage with Attack Skills 10% chance to Freeze, Shock and Ignite 15% increased Effect of Non-Damaging Ailments";
-    expect(current.getByText(effects)).toBeDefined();
-    expect(current.getByText("Applies when allocated on the passive tree.")).toBeDefined();
+it.each(["advanced", "classic"])(
+    "shows extracted notable effects in the pool and %s item without changing crafting state",
+    (itemOutput) => {
+        const project = initial();
+        project.item = engine.addStartingMod(
+            project.item,
+            "AfflictionNotableCalamitous",
+            seededRandom(1),
+        );
+        localStorage.setItem(draftKey, JSON.stringify(project));
+        localStorage.setItem("poe-boats:crafting:display", JSON.stringify({ itemOutput }));
+        mount();
+        const current = within(screen.getByRole("region", { name: "Current item" }));
+        if (itemOutput === "classic") {
+            fireEvent.click(current.getByText("Individual modifiers and rolls"));
+        }
+        const itemSummary = current.getByText("Calamitous passive effects");
+        expect(itemSummary.closest("details")).toHaveProperty("open", false);
+        fireEvent.click(itemSummary);
+        expect(itemSummary.closest("details")).toHaveProperty("open", true);
+        const effects =
+            "30% increased Elemental Damage with Attack Skills 10% chance to Freeze, Shock and Ignite 15% increased Effect of Non-Damaging Ailments";
+        expect(current.getByText(effects)).toBeDefined();
+        expect(current.getByText("Applies when allocated on the passive tree.")).toBeDefined();
 
-    changeControl(screen.getByLabelText("Search modifiers"), {
-        target: { value: "Calamitous" },
-    });
-    const pool = within(screen.getByRole("region", { name: "Modifier pool" }));
-    const poolSummary = pool.getByText("Calamitous passive effects");
-    fireEvent.click(poolSummary);
-    expect(poolSummary.closest("details")).toHaveProperty("open", true);
-    expect(pool.getByText(effects)).toBeDefined();
-    expect(pool.getByTitle("Modifier weight").textContent).toBe("216");
-    expect(draft().item).toEqual(project.item);
-    expect(draft().target).toEqual(project.target);
-    fireEvent.click(pool.getByRole("button", { name: "Remove target" }));
-    fireEvent.click(pool.getByRole("button", { name: "Require" }));
-    expect(draft().target.groups[0]!.mods).toEqual(["AfflictionNotableCalamitous"]);
-    expect(draft().item).toEqual(project.item);
-});
+        changeControl(screen.getByLabelText("Search modifiers"), {
+            target: { value: "Calamitous" },
+        });
+        const pool = within(screen.getByRole("region", { name: "Modifier pool" }));
+        const poolSummary = pool.getByText("Calamitous passive effects");
+        fireEvent.click(poolSummary);
+        expect(poolSummary.closest("details")).toHaveProperty("open", true);
+        expect(pool.getByText(effects)).toBeDefined();
+        expect(pool.getByTitle("Modifier weight").textContent).toBe("216");
+        expect(draft().item).toEqual(project.item);
+        expect(draft().target).toEqual(project.target);
+        fireEvent.click(pool.getByRole("button", { name: "Remove target" }));
+        fireEvent.click(pool.getByRole("button", { name: "Require" }));
+        expect(draft().target.groups[0]!.mods).toEqual(["AfflictionNotableCalamitous"]);
+        expect(draft().item).toEqual(project.item);
+    },
+);
 
-it.each([
-    "calculate",
-    "simulate",
-])("sends selected Cluster Jewel properties to the shared %s worker", async (mode) => {
-    mount(mode);
-    changeControl(screen.getByRole("combobox", { name: "Cluster passive count" }), {
-        target: { value: "9" },
-    });
-    await passive("Spell Damage");
-    fireEvent.click(button(mode === "calculate" ? "Calculate odds" : "Run simulation"));
-    expect(WorkerStub.instances.at(-1)!.postMessage.mock.calls[0]![0].project.item.cluster).toEqual(
-        { passive: "affliction_spell_damage", nodes: 9 },
-    );
-});
+it.each(["calculate", "simulate"])(
+    "sends selected Cluster Jewel properties to the shared %s worker",
+    async (mode) => {
+        mount(mode);
+        changeControl(screen.getByRole("combobox", { name: "Cluster passive count" }), {
+            target: { value: "9" },
+        });
+        await passive("Spell Damage");
+        fireEvent.click(button(mode === "calculate" ? "Calculate odds" : "Run simulation"));
+        expect(
+            WorkerStub.instances.at(-1)!.postMessage.mock.calls[0]![0].project.item.cluster,
+        ).toEqual({ passive: "affliction_spell_damage", nodes: 9 });
+    },
+);

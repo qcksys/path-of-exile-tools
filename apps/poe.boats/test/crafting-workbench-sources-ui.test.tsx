@@ -9,88 +9,90 @@ import { baseId, catalog, currency, engine, getCatalog } from "./crafting-fixtur
 import { button, CraftingWorker, mount } from "./crafting-workbench-ui-fixtures";
 
 describe("crafting workbench", () => {
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("previews %s reveal sources without changing the craft, then switches to the actual offer through history", (game) => {
-        const data = game === "poe1" ? catalog : getCatalog("poe2");
-        const current = new CraftingEngine(data);
-        const base = Object.entries(data.bases).find(
-            ([, base]) => base.item_class === "Body Armour" && base.drop_level === 1,
-        )![0];
-        const action = (action: string) => ({
-            kind: "currency" as const,
-            id: data.crafting.currencies.find((entry) => entry.action === action)!.id,
-        });
-        const item = current.apply(
-            current.createItem(base),
-            action("transmute_to_rare"),
-            seededRandom(42),
-        ).item;
-        const method = action(
-            game === "poe1" ? "replace_rare_mod_veiled" : "abyssal_bench_ticket_armour",
-        );
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game,
-            patch: data.patch,
-            item,
-            method,
-            target: { groups: [] },
-            steps: [],
-            prices: {},
-            seed: 42,
-            iterations: 100,
-            maxActions: 1,
-        });
-        const key = `poe-boats:crafting:${game}:${data.patch}`;
-        localStorage.setItem(key, JSON.stringify({ reveal: project }));
-        mount("calculate", data);
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "reveal" } });
-        fireEvent.click(button("Load project"));
-        const card = screen.getByRole("region", { name: "Current item" });
-        const before = card.textContent;
-        changeControl(screen.getByLabelText("Modifier source"), {
-            target: { value: "revealed" },
-        });
-        expectControlValue(screen.getByLabelText("Preview reveal source"), method.id);
-        const alternative = current.revealSources(item).find((entry) => entry.id !== method.id)!;
-        changeControl(screen.getByLabelText("Preview reveal source"), {
-            target: { value: alternative.id },
-        });
-        const pool = screen.getByRole("region", { name: "Modifier pool" });
-        const row = pool.querySelector<HTMLElement>("[data-modifier-id]")!;
-        const id = row.dataset.modifierId!;
-        expect(within(row).getByText(/^Preview offer [\d.]+%$/)).toBeDefined();
-        fireEvent.click(within(row).getByRole("button", { name: "Require" }));
-        expect(card.textContent).toBe(before);
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.item).toEqual(project.item);
-        expect(saved.method).toEqual(project.method);
-        expect(saved.target.groups[0].mods).toEqual([id]);
-        fireEvent.click(button("Calculate odds"));
-        const request = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0];
-        expect(request.project.method).toEqual(project.method);
-        expect(request.project.target.groups[0].mods).toEqual([id]);
-        fireEvent.click(button("Stop simulation"));
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        expect(screen.queryByLabelText("Preview reveal source")).toBeNull();
-        expect(within(pool).getAllByText(/^Offer [\d.]+%$/).length).toBeGreaterThan(0);
-        fireEvent.click(button("Save project"));
-        expect(
-            JSON.parse(localStorage.getItem(key)!)["My crafting project"].item.reveal.source,
-        ).toBe(method.id);
-        const after = card.textContent;
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).toBe(before);
-        expectControlValue(screen.getByLabelText("Preview reveal source"), alternative.id);
-        fireEvent.click(button("Redo"));
-        expect(card.textContent).toBe(after);
-        expect(screen.queryByLabelText("Preview reveal source")).toBeNull();
-    });
+    it.each(["poe1", "poe2"] as const)(
+        "previews %s reveal sources without changing the craft, then switches to the actual offer through history",
+        (game) => {
+            const data = game === "poe1" ? catalog : getCatalog("poe2");
+            const current = new CraftingEngine(data);
+            const base = Object.entries(data.bases).find(
+                ([, base]) => base.item_class === "Body Armour" && base.drop_level === 1,
+            )![0];
+            const action = (action: string) => ({
+                kind: "currency" as const,
+                id: data.crafting.currencies.find((entry) => entry.action === action)!.id,
+            });
+            const item = current.apply(
+                current.createItem(base),
+                action("transmute_to_rare"),
+                seededRandom(42),
+            ).item;
+            const method = action(
+                game === "poe1" ? "replace_rare_mod_veiled" : "abyssal_bench_ticket_armour",
+            );
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game,
+                patch: data.patch,
+                item,
+                method,
+                target: { groups: [] },
+                steps: [],
+                prices: {},
+                seed: 42,
+                iterations: 100,
+                maxActions: 1,
+            });
+            const key = `poe-boats:crafting:${game}:${data.patch}`;
+            localStorage.setItem(key, JSON.stringify({ reveal: project }));
+            mount("calculate", data);
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "reveal" } });
+            fireEvent.click(button("Load project"));
+            const card = screen.getByRole("region", { name: "Current item" });
+            const before = card.textContent;
+            changeControl(screen.getByLabelText("Modifier source"), {
+                target: { value: "revealed" },
+            });
+            expectControlValue(screen.getByLabelText("Preview reveal source"), method.id);
+            const alternative = current
+                .revealSources(item)
+                .find((entry) => entry.id !== method.id)!;
+            changeControl(screen.getByLabelText("Preview reveal source"), {
+                target: { value: alternative.id },
+            });
+            const pool = screen.getByRole("region", { name: "Modifier pool" });
+            const row = pool.querySelector<HTMLElement>("[data-modifier-id]")!;
+            const id = row.dataset.modifierId!;
+            expect(within(row).getByText(/^Preview offer [\d.]+%$/)).toBeDefined();
+            fireEvent.click(within(row).getByRole("button", { name: "Require" }));
+            expect(card.textContent).toBe(before);
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.item).toEqual(project.item);
+            expect(saved.method).toEqual(project.method);
+            expect(saved.target.groups[0].mods).toEqual([id]);
+            fireEvent.click(button("Calculate odds"));
+            const request = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0];
+            expect(request.project.method).toEqual(project.method);
+            expect(request.project.target.groups[0].mods).toEqual([id]);
+            fireEvent.click(button("Stop simulation"));
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            expect(screen.queryByLabelText("Preview reveal source")).toBeNull();
+            expect(within(pool).getAllByText(/^Offer [\d.]+%$/).length).toBeGreaterThan(0);
+            fireEvent.click(button("Save project"));
+            expect(
+                JSON.parse(localStorage.getItem(key)!)["My crafting project"].item.reveal.source,
+            ).toBe(method.id);
+            const after = card.textContent;
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).toBe(before);
+            expectControlValue(screen.getByLabelText("Preview reveal source"), alternative.id);
+            fireEvent.click(button("Redo"));
+            expect(card.textContent).toBe(after);
+            expect(screen.queryByLabelText("Preview reveal source")).toBeNull();
+        },
+    );
 
     it("previews an inactive influence, adds its modifier and preserves both through history, workers and saves", () => {
         const project = craftingProjectSchema.parse({
@@ -283,136 +285,141 @@ describe("crafting workbench", () => {
         );
     });
 
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("omits Genesis from unsupported %s base selections", async (game) => {
-        const data = game === "poe1" ? catalog : getCatalog("poe2");
-        const current = new CraftingEngine(data);
-        const base = Object.entries(data.bases).find(
-            ([, entry]) => entry.item_class === "Wand",
-        )![0];
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game,
-            patch: data.patch,
-            item: current.createItem(base),
-            method: { kind: "generate", id: "normal" },
-            target: { groups: [] },
-            steps: [],
-            prices: {},
-            seed: 42,
-            iterations: 100,
-            maxActions: 1,
-        });
-        localStorage.setItem(
-            `poe-boats:crafting:${game}:${data.patch}`,
-            JSON.stringify({ wand: project }),
-        );
-        mount("emulate", data);
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "wand" } });
-        fireEvent.click(button("Load project"));
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: "Genesis" } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        expect(await screen.findByText("No eligible matches.")).toBeDefined();
-        expect(screen.queryByRole("option", { name: catalog.crafting.genesis!.name })).toBeNull();
-        expect(screen.queryByRole("region", { name: "Genesis Tree effects" })).toBeNull();
-    });
+    it.each(["poe1", "poe2"] as const)(
+        "omits Genesis from unsupported %s base selections",
+        async (game) => {
+            const data = game === "poe1" ? catalog : getCatalog("poe2");
+            const current = new CraftingEngine(data);
+            const base = Object.entries(data.bases).find(
+                ([, entry]) => entry.item_class === "Wand",
+            )![0];
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game,
+                patch: data.patch,
+                item: current.createItem(base),
+                method: { kind: "generate", id: "normal" },
+                target: { groups: [] },
+                steps: [],
+                prices: {},
+                seed: 42,
+                iterations: 100,
+                maxActions: 1,
+            });
+            localStorage.setItem(
+                `poe-boats:crafting:${game}:${data.patch}`,
+                JSON.stringify({ wand: project }),
+            );
+            mount("emulate", data);
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "wand" } });
+            fireEvent.click(button("Load project"));
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: "Genesis" } });
+            fireEvent.keyDown(picker, { key: "ArrowDown" });
+            expect(await screen.findByText("No eligible matches.")).toBeDefined();
+            expect(
+                screen.queryByRole("option", { name: catalog.crafting.genesis!.name }),
+            ).toBeNull();
+            expect(screen.queryByRole("region", { name: "Genesis Tree effects" })).toBeNull();
+        },
+    );
 
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("generates a fresh %s item with costs, worker dispatch, history and save/load", async (game) => {
-        const data = game === "poe1" ? catalog : getCatalog("poe2");
-        const current = new CraftingEngine(data);
-        const base = Object.entries(data.bases).find(
-            ([, entry]) =>
-                entry.item_class === "Body Armour" && !entry.corrupted && !entry.implicits.length,
-        )![0];
-        const item = current.validateItem({
-            ...current.createItem(base),
-            corrupted: true,
-            destroyed: true,
-            quality: 20,
-            ...(game === "poe1" ? { memoryStrands: 82 } : { twiceCorrupted: true }),
-        });
-        const initialMethod = {
-            kind: "currency",
-            id: data.crafting.currencies.find((entry) => entry.action === "transmute_to_magic")!.id,
-        };
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game,
-            patch: data.patch,
-            item,
-            method: initialMethod,
-            target: { groups: [], rarity: "rare" },
-            steps: [],
-            prices: { "generated:rare": 5 },
-            seed: 42,
-            iterations: 100,
-            maxActions: 1,
-        });
-        const key = `poe-boats:crafting:${game}:${data.patch}`;
-        localStorage.setItem(key, JSON.stringify({ fresh: project }));
-        mount("calculate", data);
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "fresh" } });
-        fireEvent.click(button("Load project"));
-        expect(button("Apply craft").hasAttribute("disabled")).toBe(true);
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: "Generate rare item" } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        fireEvent.click(await screen.findByRole("option", { name: "Generate rare item" }));
-        expect(button("Apply craft").hasAttribute("disabled")).toBe(false);
-        expect(screen.getByRole("note", { name: "Item generation model" }).textContent).toContain(
-            "each replacement",
-        );
-        fireEvent.click(button("Calculate odds"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        const request = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0];
-        expect(request.project.method).toEqual({ kind: "generate", id: "rare" });
-        const simulation = new CraftingSimulation(data, request.project);
-        for (let trial = 0; trial < 100; trial++) simulation.runTrial();
-        expect(simulation.result()).toMatchObject({
-            probability: 1,
-            meanCost: 5,
-            spending: { "generated:rare": 100 },
-        });
-        act(() =>
-            CraftingWorker.instances[0]!.onmessage?.({
-                data: { type: "done", result: simulation.result() },
-            }),
-        );
-        const card = screen.getAllByRole("region", { name: "Current item" })[0]!;
-        const before = card.textContent;
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        expect(card.textContent).not.toContain("Destroyed");
-        expect(card.textContent).not.toContain("Memory Strands: 82");
-        const after = card.textContent;
-        expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
-            "Generated rare item1",
-        );
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).toBe(before);
-        fireEvent.click(button("Redo"));
-        expect(card.textContent).toBe(after);
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.method).toEqual({ kind: "generate", id: "rare" });
-        expect(saved.prices["generated:rare"]).toBe(5);
-        expect(saved.item).toMatchObject({ rarity: "rare", quality: 0, corrupted: false });
-        expect(saved.item.destroyed).toBeUndefined();
-        fireEvent.click(button("Undo"));
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "My crafting project" },
-        });
-        fireEvent.click(button("Load project"));
-        expect(card.textContent).toBe(after);
-    });
+    it.each(["poe1", "poe2"] as const)(
+        "generates a fresh %s item with costs, worker dispatch, history and save/load",
+        async (game) => {
+            const data = game === "poe1" ? catalog : getCatalog("poe2");
+            const current = new CraftingEngine(data);
+            const base = Object.entries(data.bases).find(
+                ([, entry]) =>
+                    entry.item_class === "Body Armour" &&
+                    !entry.corrupted &&
+                    !entry.implicits.length,
+            )![0];
+            const item = current.validateItem({
+                ...current.createItem(base),
+                corrupted: true,
+                destroyed: true,
+                quality: 20,
+                ...(game === "poe1" ? { memoryStrands: 82 } : { twiceCorrupted: true }),
+            });
+            const initialMethod = {
+                kind: "currency",
+                id: data.crafting.currencies.find((entry) => entry.action === "transmute_to_magic")!
+                    .id,
+            };
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game,
+                patch: data.patch,
+                item,
+                method: initialMethod,
+                target: { groups: [], rarity: "rare" },
+                steps: [],
+                prices: { "generated:rare": 5 },
+                seed: 42,
+                iterations: 100,
+                maxActions: 1,
+            });
+            const key = `poe-boats:crafting:${game}:${data.patch}`;
+            localStorage.setItem(key, JSON.stringify({ fresh: project }));
+            mount("calculate", data);
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "fresh" } });
+            fireEvent.click(button("Load project"));
+            expect(button("Apply craft").hasAttribute("disabled")).toBe(true);
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: "Generate rare item" } });
+            fireEvent.keyDown(picker, { key: "ArrowDown" });
+            fireEvent.click(await screen.findByRole("option", { name: "Generate rare item" }));
+            expect(button("Apply craft").hasAttribute("disabled")).toBe(false);
+            expect(
+                screen.getByRole("note", { name: "Item generation model" }).textContent,
+            ).toContain("each replacement");
+            fireEvent.click(button("Calculate odds"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            const request = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0];
+            expect(request.project.method).toEqual({ kind: "generate", id: "rare" });
+            const simulation = new CraftingSimulation(data, request.project);
+            for (let trial = 0; trial < 100; trial++) simulation.runTrial();
+            expect(simulation.result()).toMatchObject({
+                probability: 1,
+                meanCost: 5,
+                spending: { "generated:rare": 100 },
+            });
+            act(() =>
+                CraftingWorker.instances[0]!.onmessage?.({
+                    data: { type: "done", result: simulation.result() },
+                }),
+            );
+            const card = screen.getAllByRole("region", { name: "Current item" })[0]!;
+            const before = card.textContent;
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            expect(card.textContent).not.toContain("Destroyed");
+            expect(card.textContent).not.toContain("Memory Strands: 82");
+            const after = card.textContent;
+            expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
+                "Generated rare item1",
+            );
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).toBe(before);
+            fireEvent.click(button("Redo"));
+            expect(card.textContent).toBe(after);
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.method).toEqual({ kind: "generate", id: "rare" });
+            expect(saved.prices["generated:rare"]).toBe(5);
+            expect(saved.item).toMatchObject({ rarity: "rare", quality: 0, corrupted: false });
+            expect(saved.item.destroyed).toBeUndefined();
+            fireEvent.click(button("Undo"));
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "My crafting project" },
+            });
+            fireEvent.click(button("Load project"));
+            expect(card.textContent).toBe(after);
+        },
+    );
 
     it("retains PoE 2 desecration with an empty reveal pool through calculation, spending, history and saves", () => {
         const data = getCatalog("poe2");

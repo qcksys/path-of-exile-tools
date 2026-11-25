@@ -44,46 +44,44 @@ const currency = (action: string) => ({
 });
 
 describe("PoE 2 Aldur conversions", () => {
-    it.each([
-        "Fire",
-        "Cold",
-        "Lightning",
-        "Chaos",
-    ])("uses extracted %s conversion families, retaining fractures, resistances and implicits", (element) => {
-        const item = weapon([
-            "SpellDamageGainedAsFire6",
-            "SpellDamageGainedAsCold6",
-            "SpellDamageGainedAsLightning6",
-        ]);
-        item.mods[1]!.fractured = true;
-        expect(availableAugments(catalog, item).map((entry) => entry.id)).toContain(
-            rune(element).id,
-        );
-        const result = engine.apply(item, rune(element), seededRandom(3));
-        const target =
-            element === "Chaos"
-                ? "ConvertedSpellDamageGainedAsChaos6"
-                : `SpellDamageGainedAs${element}6`;
-        expect(result.item.mods.map((entry) => entry.id)).toEqual([
-            target,
-            "SpellDamageGainedAsCold6",
-            target,
-        ]);
-        expect(result.item.mods[1]).toEqual(item.mods[1]);
-        expect(convertedModifier(catalog, "FireResist1", "chaos")).toBe("FireResist1");
-        expect(result.item.implicits).toEqual(item.implicits);
-        expect(result.cost).toEqual([
-            {
-                id: rune(element).id,
-                name: catalog.crafting.augments.find((entry) => entry.id === rune(element).id)!
-                    .name,
-                amount: 1,
-            },
-        ]);
-        expect(engine.validateItem(result.item)).toEqual(result.item);
-        expect(item.augments).toBeUndefined();
-        expect(item.mods[0]!.id).toBe("SpellDamageGainedAsFire6");
-    });
+    it.each(["Fire", "Cold", "Lightning", "Chaos"])(
+        "uses extracted %s conversion families, retaining fractures, resistances and implicits",
+        (element) => {
+            const item = weapon([
+                "SpellDamageGainedAsFire6",
+                "SpellDamageGainedAsCold6",
+                "SpellDamageGainedAsLightning6",
+            ]);
+            item.mods[1]!.fractured = true;
+            expect(availableAugments(catalog, item).map((entry) => entry.id)).toContain(
+                rune(element).id,
+            );
+            const result = engine.apply(item, rune(element), seededRandom(3));
+            const target =
+                element === "Chaos"
+                    ? "ConvertedSpellDamageGainedAsChaos6"
+                    : `SpellDamageGainedAs${element}6`;
+            expect(result.item.mods.map((entry) => entry.id)).toEqual([
+                target,
+                "SpellDamageGainedAsCold6",
+                target,
+            ]);
+            expect(result.item.mods[1]).toEqual(item.mods[1]);
+            expect(convertedModifier(catalog, "FireResist1", "chaos")).toBe("FireResist1");
+            expect(result.item.implicits).toEqual(item.implicits);
+            expect(result.cost).toEqual([
+                {
+                    id: rune(element).id,
+                    name: catalog.crafting.augments.find((entry) => entry.id === rune(element).id)!
+                        .name,
+                    amount: 1,
+                },
+            ]);
+            expect(engine.validateItem(result.item)).toEqual(result.item);
+            expect(item.augments).toBeUndefined();
+            expect(item.mods[0]!.id).toBe("SpellDamageGainedAsFire6");
+        },
+    );
 
     it("rerolls converted values independently and calculates and simulates the same outcome distribution", () => {
         const item = input();

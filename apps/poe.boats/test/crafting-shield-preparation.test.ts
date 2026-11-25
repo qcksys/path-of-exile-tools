@@ -43,42 +43,45 @@ function purchase(graph: CraftingGraph, id: string) {
     return { node, alternative: node.alternatives[0] };
 }
 
-it.each(
-    sources,
-)("$id offers one concrete Magic source and paid Scouring for its Normal targets", (source) => {
-    const graph = projectFromPreset(engine, ruleset, source.preset);
-    const { alternative } = purchase(graph, `shield-make-${source.id}-base`);
-    expect(alternative.price).toBeNull();
-    expect(alternative.item.rarity).toBe("magic");
-    expect(alternative.item.mods).toEqual([
-        { id: source.mod, values: expect.any(Array), crafted: false, fractured: false },
-    ]);
-    expect(engine.validateItem(alternative.item)).toEqual(alternative.item);
-    expect(graph.prices[scour]).toBeUndefined();
-    expect(graph.nodes.find((node) => node.id === `shield-make-${source.id}-scour`)).toMatchObject({
-        kind: "craft",
-        method: { kind: "currency", id: scour },
-        inputs: [{ source: `shield-make-${source.id}-base` }],
-    });
-    for (const id of source.targets) {
-        const target = purchase(graph, id);
-        expect(target.node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
-        expect(target.alternative.item).toEqual({
-            ...alternative.item,
-            rarity: "normal",
-            mods: [],
+it.each(sources)(
+    "$id offers one concrete Magic source and paid Scouring for its Normal targets",
+    (source) => {
+        const graph = projectFromPreset(engine, ruleset, source.preset);
+        const { alternative } = purchase(graph, `shield-make-${source.id}-base`);
+        expect(alternative.price).toBeNull();
+        expect(alternative.item.rarity).toBe("magic");
+        expect(alternative.item.mods).toEqual([
+            { id: source.mod, values: expect.any(Array), crafted: false, fractured: false },
+        ]);
+        expect(engine.validateItem(alternative.item)).toEqual(alternative.item);
+        expect(graph.prices[scour]).toBeUndefined();
+        expect(
+            graph.nodes.find((node) => node.id === `shield-make-${source.id}-scour`),
+        ).toMatchObject({
+            kind: "craft",
+            method: { kind: "currency", id: scour },
+            inputs: [{ source: `shield-make-${source.id}-base` }],
         });
-        expect(target.node.alternatives[1]).toEqual({
-            kind: "production",
-            id: "make-scour",
-            name:
-                source.id === "titanium"
-                    ? "Scour a Shaper Titanium base"
-                    : "Scour a Magic Shaper base",
-            nodeId: `shield-make-${source.id}-scour`,
-        });
-    }
-});
+        for (const id of source.targets) {
+            const target = purchase(graph, id);
+            expect(target.node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+            expect(target.alternative.item).toEqual({
+                ...alternative.item,
+                rarity: "normal",
+                mods: [],
+            });
+            expect(target.node.alternatives[1]).toEqual({
+                kind: "production",
+                id: "make-scour",
+                name:
+                    source.id === "titanium"
+                        ? "Scour a Shaper Titanium base"
+                        : "Scour a Magic Shaper base",
+                nodeId: `shield-make-${source.id}-scour`,
+            });
+        }
+    },
+);
 
 function pricedPreparation(source: (typeof targets)[number], missing?: "base" | "scour") {
     const graph = projectFromPreset(engine, ruleset, source.preset);
@@ -90,29 +93,30 @@ function pricedPreparation(source: (typeof targets)[number], missing?: "base" | 
     return { graph, target: target.alternative.item };
 }
 
-it.each(
-    targets,
-)("$preset/$target pays for the concrete source and preserves the complete Normal item", (source) => {
-    const { graph, target } = pricedPreparation(source);
-    for (let seed = 0; seed < 16; seed++) {
-        const trial = new CraftingGraphTrial(engine, graph, seededRandom(seed), {
-            entry: source.target,
-            classify: false,
-        });
-        while (!trial.done) trial.advance();
-        expect(trial.result()).toMatchObject({
-            status: "returned",
-            error: null,
-            purchases: 1,
-            actions: 1,
-            cost: 18,
-            missingPrices: [],
-            item: target,
-            spending: { [`purchase:shield-make-${source.id}-base:buy`]: 1, [scour]: 1 },
-        });
-        expect(trial.result().item).toEqual(target);
-    }
-});
+it.each(targets)(
+    "$preset/$target pays for the concrete source and preserves the complete Normal item",
+    (source) => {
+        const { graph, target } = pricedPreparation(source);
+        for (let seed = 0; seed < 16; seed++) {
+            const trial = new CraftingGraphTrial(engine, graph, seededRandom(seed), {
+                entry: source.target,
+                classify: false,
+            });
+            while (!trial.done) trial.advance();
+            expect(trial.result()).toMatchObject({
+                status: "returned",
+                error: null,
+                purchases: 1,
+                actions: 1,
+                cost: 18,
+                missingPrices: [],
+                item: target,
+                spending: { [`purchase:shield-make-${source.id}-base:buy`]: 1, [scour]: 1 },
+            });
+            expect(trial.result().item).toEqual(target);
+        }
+    },
+);
 
 it.each(
     targets.flatMap((source) =>
@@ -180,44 +184,44 @@ it("retained r9 buys two independent Heat sources when both Normal preparations 
     });
 });
 
-it.each([
-    "life-block-shield",
-    "es-block-shield",
-] as const)("%s preserves original purchases, r8 and unselected previews", (preset) => {
-    const graph = projectFromPreset(engine, ruleset, preset);
-    const legacyRuleset = historyIndex.revisions.find(
-        (entry) => entry.game === "poe1" && entry.revision === "r8",
-    )!;
-    const legacy = projectFromPreset(engine, legacyRuleset, preset);
-    const unprepared = graph.nodes
-        .filter((node) => !node.id.includes("-make"))
-        .map((node) =>
-            node.kind === "acquire"
-                ? {
-                      ...node,
-                      alternatives: node.alternatives.filter(
-                          (alternative) => alternative.kind === "purchase",
-                      ),
-                  }
-                : node,
-        );
-    expect(unprepared).toEqual(legacy.nodes);
-    for (const key of ["entry", "outcomes", "iterations", "maxSteps", "prices"] as const)
-        expect(graph[key]).toEqual(legacy[key]);
-    const previous = structuredClone(graph);
-    previous.nodes = previous.nodes.filter((node) => !node.id.startsWith("shield-make-"));
-    for (const node of previous.nodes)
-        if (node.kind === "acquire")
-            node.alternatives = node.alternatives.filter(
-                (alternative) =>
-                    alternative.kind !== "production" ||
-                    !alternative.nodeId.startsWith("shield-make-"),
+it.each(["life-block-shield", "es-block-shield"] as const)(
+    "%s preserves original purchases, r8 and unselected previews",
+    (preset) => {
+        const graph = projectFromPreset(engine, ruleset, preset);
+        const legacyRuleset = historyIndex.revisions.find(
+            (entry) => entry.game === "poe1" && entry.revision === "r8",
+        )!;
+        const legacy = projectFromPreset(engine, legacyRuleset, preset);
+        const unprepared = graph.nodes
+            .filter((node) => !node.id.includes("-make"))
+            .map((node) =>
+                node.kind === "acquire"
+                    ? {
+                          ...node,
+                          alternatives: node.alternatives.filter(
+                              (alternative) => alternative.kind === "purchase",
+                          ),
+                      }
+                    : node,
             );
-    const options = { estimateIterations: 1, workLimit: 1000 };
-    const currentResult = calculateCraftingGraph(catalog, graph, options);
-    const previousResult = calculateCraftingGraph(catalog, previous, options);
-    expect(currentResult.errors).toEqual({});
-    expect(currentResult.work).toBe(previousResult.work);
-    expect(currentResult.samples).toEqual(previousResult.samples);
-    expect(currentResult.missingPrices).toEqual(previousResult.missingPrices);
-});
+        expect(unprepared).toEqual(legacy.nodes);
+        for (const key of ["entry", "outcomes", "iterations", "maxSteps", "prices"] as const)
+            expect(graph[key]).toEqual(legacy[key]);
+        const previous = structuredClone(graph);
+        previous.nodes = previous.nodes.filter((node) => !node.id.startsWith("shield-make-"));
+        for (const node of previous.nodes)
+            if (node.kind === "acquire")
+                node.alternatives = node.alternatives.filter(
+                    (alternative) =>
+                        alternative.kind !== "production" ||
+                        !alternative.nodeId.startsWith("shield-make-"),
+                );
+        const options = { estimateIterations: 1, workLimit: 1000 };
+        const currentResult = calculateCraftingGraph(catalog, graph, options);
+        const previousResult = calculateCraftingGraph(catalog, previous, options);
+        expect(currentResult.errors).toEqual({});
+        expect(currentResult.work).toBe(previousResult.work);
+        expect(currentResult.samples).toEqual(previousResult.samples);
+        expect(currentResult.missingPrices).toEqual(previousResult.missingPrices);
+    },
+);

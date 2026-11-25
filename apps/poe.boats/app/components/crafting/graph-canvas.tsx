@@ -372,7 +372,8 @@ export function GraphCanvas({
             if (!fitted.current) {
                 fitted.current = true;
                 void flow.fitView({
-                    padding: 0.2,
+                    // A plain number is pixels since React Flow 13; 8% matches the old 0.2.
+                    padding: "8%",
                     maxZoom: 1,
                     nodes: editing
                         ? [{ id: editing.id }]
@@ -382,7 +383,7 @@ export function GraphCanvas({
                 });
             } else if (editing && focusedEditor.current !== editorFocus) {
                 focusedEditor.current = editorFocus;
-                void flow.fitView({ nodes: [{ id: editing.id }], padding: 0.2, maxZoom: 1 });
+                void flow.fitView({ nodes: [{ id: editing.id }], padding: "8%", maxZoom: 1 });
             }
         });
         return () => cancelAnimationFrame(frame);
@@ -569,7 +570,7 @@ export function GraphCanvas({
                         value={focusId}
                         onValueChange={(id) => {
                             setFocusId(id);
-                            void flow?.fitView({ nodes: [{ id }], padding: 0.25, maxZoom: 1 });
+                            void flow?.fitView({ nodes: [{ id }], padding: "10%", maxZoom: 1 });
                         }}
                         className="max-w-56"
                     >
@@ -612,6 +613,8 @@ export function GraphCanvas({
                     onNodesChange={onNodesChange}
                     edgesReconnectable={false}
                     deleteKeyCode={null}
+                    // React Flow 13 follows the page's dark class; the canvas stays light as before.
+                    forceColorMode="light"
                     fitView
                     minZoom={0.03}
                     maxZoom={1.5}

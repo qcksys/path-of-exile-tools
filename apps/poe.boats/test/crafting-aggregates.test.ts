@@ -232,56 +232,62 @@ describe.each(["poe1", "poe2"] as const)("%s aggregate item properties", (game) 
             "FireResistBodyEnchant",
             "ColdResistBodyEnchant",
             "LightningResistBodyEnchant",
-        ])("adds %s quality bonuses once, with whole-point thresholds and text round trips", (id) => {
-            let start: CraftingItem = { ...create("Plate Vest"), rarity: "rare" };
-            for (const mod of ["IncreasedLife1", "FireResist1", "ChaosResist1"])
-                start = engine.addStartingMod(start, mod, minimum);
-            const baseline = itemProperties(engine, start);
-            for (const [quality, bonus] of [
-                [0, 0],
-                [1, 0],
-                [2, 1],
-                [19, 9],
-                [20, 10],
-                [29, 14],
-                [30, 15],
-            ]) {
-                const input = engine.validateItem({ ...start, quality });
-                const result = engine.apply(input, { kind: "harvest", id }, minimum);
-                const life = id === "LifeBodyEnchant";
-                const expected = {
-                    flatLife: baseline.flatLife! + (life ? bonus! : 0),
-                    elementalResistance: baseline.elementalResistance! + (life ? 0 : bonus!),
-                    totalResistance: baseline.totalResistance! + (life ? 0 : bonus!),
-                };
-                expect(itemProperties(engine, result.item)).toMatchObject(expected);
-                expect(engine.statTotals(result.item)).toEqual(engine.statTotals(input));
-                const property = life ? "flatLife" : "totalResistance";
-                expect(
-                    engine.matches(
+        ])(
+            "adds %s quality bonuses once, with whole-point thresholds and text round trips",
+            (id) => {
+                let start: CraftingItem = { ...create("Plate Vest"), rarity: "rare" };
+                for (const mod of ["IncreasedLife1", "FireResist1", "ChaosResist1"])
+                    start = engine.addStartingMod(start, mod, minimum);
+                const baseline = itemProperties(engine, start);
+                for (const [quality, bonus] of [
+                    [0, 0],
+                    [1, 0],
+                    [2, 1],
+                    [19, 9],
+                    [20, 10],
+                    [29, 14],
+                    [30, 15],
+                ]) {
+                    const input = engine.validateItem({ ...start, quality });
+                    const result = engine.apply(input, { kind: "harvest", id }, minimum);
+                    const life = id === "LifeBodyEnchant";
+                    const expected = {
+                        flatLife: baseline.flatLife! + (life ? bonus! : 0),
+                        elementalResistance: baseline.elementalResistance! + (life ? 0 : bonus!),
+                        totalResistance: baseline.totalResistance! + (life ? 0 : bonus!),
+                    };
+                    expect(itemProperties(engine, result.item)).toMatchObject(expected);
+                    expect(engine.statTotals(result.item)).toEqual(engine.statTotals(input));
+                    const property = life ? "flatLife" : "totalResistance";
+                    expect(
+                        engine.matches(
+                            result.item,
+                            engine.validateTarget({
+                                groups: [],
+                                properties: {
+                                    [property]: {
+                                        min: expected[property],
+                                        max: expected[property],
+                                    },
+                                },
+                            }),
+                        ),
+                    ).toBe(true);
+                    const imported = importCraftingItemText(
+                        engine,
+                        exportCraftingItemText(engine, result.item),
+                    )[0]!.item;
+                    expect(itemProperties(engine, imported)).toMatchObject(expected);
+                    const replaced = engine.apply(
                         result.item,
-                        engine.validateTarget({
-                            groups: [],
-                            properties: {
-                                [property]: { min: expected[property], max: expected[property] },
-                            },
-                        }),
-                    ),
-                ).toBe(true);
-                const imported = importCraftingItemText(
-                    engine,
-                    exportCraftingItemText(engine, result.item),
-                )[0]!.item;
-                expect(itemProperties(engine, imported)).toMatchObject(expected);
-                const replaced = engine.apply(
-                    result.item,
-                    { kind: "harvest", id: "ManaBodyEnchant" },
-                    minimum,
-                ).item;
-                expect(itemProperties(engine, replaced)).toEqual(baseline);
-                expect(input.enchantments).toBeUndefined();
-            }
-        });
+                        { kind: "harvest", id: "ManaBodyEnchant" },
+                        minimum,
+                    ).item;
+                    expect(itemProperties(engine, replaced)).toEqual(baseline);
+                    expect(input.enchantments).toBeUndefined();
+                }
+            },
+        );
 
         it("rechecks quality-derived life after each currency use in exact and sampled processes", () => {
             const start = engine.addStartingMod(

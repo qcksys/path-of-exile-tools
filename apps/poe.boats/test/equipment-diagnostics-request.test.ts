@@ -206,13 +206,13 @@ it("stays disabled without a request, a status path, or a supported specific sco
     expect(warn).not.toHaveBeenCalled();
 });
 
-it.each([
-    { cohortIds: ["prepared"] },
-    { cohortIds: ["source", "prepared"] },
-])("accepts current ordinary and mixed cohort requests: $cohortIds", async ({ cohortIds }) => {
-    await request({ cohortIds });
-    expect(await load()).toBeDefined();
-});
+it.each([{ cohortIds: ["prepared"] }, { cohortIds: ["source", "prepared"] }])(
+    "accepts current ordinary and mixed cohort requests: $cohortIds",
+    async ({ cohortIds }) => {
+        await request({ cohortIds });
+        expect(await load()).toBeDefined();
+    },
+);
 
 it.each([
     { realm: "poe2" },
@@ -232,73 +232,73 @@ it.each([
     );
 });
 
-it.each([
-    "source",
-    "prepared",
-])("saves %s observations only after the same page commits its cursor", async (cohortId) => {
-    await request({ cohortIds: [cohortId] });
-    const diagnostics = (await load())!;
-    const db = await openDb(":memory:");
-    const client = createClient({ userAgent: "diagnostic-test", token: "inert" });
-    vi.spyOn(client.public, "stashTabs").mockResolvedValue(page);
-    const save = diagnostics.flush.bind(diagnostics);
-    const flush = vi.spyOn(diagnostics, "flush").mockImplementation(async (fixtures) => {
-        expect(await getCursor(db.conn, "psapi")).toBe(page.next_change_id);
-        await save(fixtures);
-    });
-    try {
-        await ingestPs(db.conn, client, {
-            pages: 1,
-            league: "Allflame",
-            equipment: classifier,
-            equipmentDiagnostics: diagnostics,
+it.each(["source", "prepared"])(
+    "saves %s observations only after the same page commits its cursor",
+    async (cohortId) => {
+        await request({ cohortIds: [cohortId] });
+        const diagnostics = (await load())!;
+        const db = await openDb(":memory:");
+        const client = createClient({ userAgent: "diagnostic-test", token: "inert" });
+        vi.spyOn(client.public, "stashTabs").mockResolvedValue(page);
+        const save = diagnostics.flush.bind(diagnostics);
+        const flush = vi.spyOn(diagnostics, "flush").mockImplementation(async (fixtures) => {
+            expect(await getCursor(db.conn, "psapi")).toBe(page.next_change_id);
+            await save(fixtures);
         });
-        expect(flush).toHaveBeenCalledTimes(1);
-        const saved = await readFile(join(directory, "equipment-diagnostics.json"), "utf8");
-        expect(
-            JSON.parse(saved).fixtures[0].targets.map(
-                (target: { cohortId: string }) => target.cohortId,
-            ),
-        ).toEqual([cohortId]);
-        expect(saved).toContain("Conquest Lamellar");
-        expect(saved).not.toContain("private-");
-        expect(saved).not.toContain("220 divine");
-    } finally {
-        await db.close();
-    }
-});
-
-it.each([
-    "source",
-    "prepared",
-])("discards the page's %s samples when its transaction rolls back", async (cohortId) => {
-    await request({ cohortIds: [cohortId] });
-    const diagnostics = (await load())!;
-    const collect = vi.spyOn(diagnostics, "collect");
-    const flush = vi.spyOn(diagnostics, "flush");
-    const db = await openDb(":memory:");
-    const client = createClient({ userAgent: "diagnostic-rollback-test", token: "inert" });
-    vi.spyOn(client.public, "stashTabs").mockResolvedValue(page);
-    try {
-        await db.conn.run("DROP TABLE ps_checkpoint");
-        await expect(
-            ingestPs(db.conn, client, {
+        try {
+            await ingestPs(db.conn, client, {
                 pages: 1,
                 league: "Allflame",
                 equipment: classifier,
                 equipmentDiagnostics: diagnostics,
-            }),
-        ).rejects.toThrow("ps_checkpoint");
-        expect(collect).toHaveReturnedWith(
-            expect.objectContaining({
-                targets: [expect.objectContaining({ cohortId })],
-            }),
-        );
-        expect(flush).not.toHaveBeenCalled();
-        expect(await getCursor(db.conn, "psapi")).toBeUndefined();
-        expect(await queryAll(db.conn, "SELECT * FROM ps_equipment_listing")).toEqual([]);
-        await expect(readFile(join(directory, "equipment-diagnostics.json"))).rejects.toThrow();
-    } finally {
-        await db.close();
-    }
-});
+            });
+            expect(flush).toHaveBeenCalledTimes(1);
+            const saved = await readFile(join(directory, "equipment-diagnostics.json"), "utf8");
+            expect(
+                JSON.parse(saved).fixtures[0].targets.map(
+                    (target: { cohortId: string }) => target.cohortId,
+                ),
+            ).toEqual([cohortId]);
+            expect(saved).toContain("Conquest Lamellar");
+            expect(saved).not.toContain("private-");
+            expect(saved).not.toContain("220 divine");
+        } finally {
+            await db.close();
+        }
+    },
+);
+
+it.each(["source", "prepared"])(
+    "discards the page's %s samples when its transaction rolls back",
+    async (cohortId) => {
+        await request({ cohortIds: [cohortId] });
+        const diagnostics = (await load())!;
+        const collect = vi.spyOn(diagnostics, "collect");
+        const flush = vi.spyOn(diagnostics, "flush");
+        const db = await openDb(":memory:");
+        const client = createClient({ userAgent: "diagnostic-rollback-test", token: "inert" });
+        vi.spyOn(client.public, "stashTabs").mockResolvedValue(page);
+        try {
+            await db.conn.run("DROP TABLE ps_checkpoint");
+            await expect(
+                ingestPs(db.conn, client, {
+                    pages: 1,
+                    league: "Allflame",
+                    equipment: classifier,
+                    equipmentDiagnostics: diagnostics,
+                }),
+            ).rejects.toThrow("ps_checkpoint");
+            expect(collect).toHaveReturnedWith(
+                expect.objectContaining({
+                    targets: [expect.objectContaining({ cohortId })],
+                }),
+            );
+            expect(flush).not.toHaveBeenCalled();
+            expect(await getCursor(db.conn, "psapi")).toBeUndefined();
+            expect(await queryAll(db.conn, "SELECT * FROM ps_equipment_listing")).toEqual([]);
+            await expect(readFile(join(directory, "equipment-diagnostics.json"))).rejects.toThrow();
+        } finally {
+            await db.close();
+        }
+    },
+);

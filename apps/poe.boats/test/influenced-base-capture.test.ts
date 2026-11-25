@@ -130,116 +130,121 @@ it.each(sources)("refuses unguarded or mismatched source prices for %s", (preset
     );
 });
 
-it.each(
-    sources,
-)("refuses incompatible influence-ready lookup templates for %s", (presetId, nodeId) => {
-    const { node, purchase, definition, profile } = fixture(presetId, nodeId, "buy");
-    const record = queries.record(purchase.item);
-    expect(cohortPriceCoverage(definition, record, node.output, undefined, profile).covered).toBe(
-        true,
-    );
-    const changes: Array<(input: typeof record) => void> = [
-        (input) => {
-            input.item.searing = true;
-        },
-        (input) => {
-            input.item.tangled = true;
-        },
-        (input) => {
-            input.item.intangibility = 84;
-        },
-        (input) => {
-            input.item.properties = [{ name: "Intangibility", values: [["84%", 0]] }];
-        },
-        (input) => {
-            input.item.enchantMods = ["Unremoved enchantment"];
-        },
-        (input) => {
-            input.item.implicitMods = ["Unknown persistent implicit"];
-        },
-        (input) => {
-            input.facts.modifiers.push({ id: "unknown-persistent-implicit", side: "implicit" });
-        },
-        (input) => {
-            input.facts.memoryStrands = 1;
-        },
-        (input) => {
-            input.facts.quality = 20;
-        },
-    ];
-    for (const change of changes) {
-        const incompatible = structuredClone(record);
-        change(incompatible);
+it.each(sources)(
+    "refuses incompatible influence-ready lookup templates for %s",
+    (presetId, nodeId) => {
+        const { node, purchase, definition, profile } = fixture(presetId, nodeId, "buy");
+        const record = queries.record(purchase.item);
         expect(
-            cohortPriceCoverage(definition, incompatible, node.output, undefined, profile).covered,
-        ).toBe(false);
-    }
-});
-
-it.each(
-    sources,
-)("keeps incompatible or uncertain source states unpriced for %s", (presetId, nodeId) => {
-    for (const alternativeId of alternatives) {
-        const { classifier, raw } = fixture(presetId, nodeId, alternativeId);
-        for (const change of [
-            { influences: { shaper: true } },
-            { influences: { hunter: true } },
-            { fractured: true, fracturedMods: ["+70 to maximum Life"] },
-            { synthesised: true },
-            { searing: true },
-            { tangled: true },
-            { implicitMods: [...raw.implicitMods, "An unknown persistent implicit"] },
-            { corrupted: true },
-            { duplicated: true },
-            { ilvl: 85 },
-            { ilvl: 87 },
-            { identified: false },
-            {
-                properties: [
-                    {
-                        name: "[Intangibility|Intangibility]",
-                        type: 110,
-                        displayMode: 0,
-                        values: [["84%", 0]],
-                    },
-                ],
+            cohortPriceCoverage(definition, record, node.output, undefined, profile).covered,
+        ).toBe(true);
+        const changes: Array<(input: typeof record) => void> = [
+            (input) => {
+                input.item.searing = true;
             },
-        ]) {
-            const result = classifier.classify(
-                normalizeApiItem("poe1", "stash", { ...raw, ...change }),
-            );
-            expect(result.matches, `${nodeId}/${alternativeId} ${JSON.stringify(change)}`).toEqual(
-                [],
-            );
+            (input) => {
+                input.item.tangled = true;
+            },
+            (input) => {
+                input.item.intangibility = 84;
+            },
+            (input) => {
+                input.item.properties = [{ name: "Intangibility", values: [["84%", 0]] }];
+            },
+            (input) => {
+                input.item.enchantMods = ["Unremoved enchantment"];
+            },
+            (input) => {
+                input.item.implicitMods = ["Unknown persistent implicit"];
+            },
+            (input) => {
+                input.facts.modifiers.push({ id: "unknown-persistent-implicit", side: "implicit" });
+            },
+            (input) => {
+                input.facts.memoryStrands = 1;
+            },
+            (input) => {
+                input.facts.quality = 20;
+            },
+        ];
+        for (const change of changes) {
+            const incompatible = structuredClone(record);
+            change(incompatible);
+            expect(
+                cohortPriceCoverage(definition, incompatible, node.output, undefined, profile)
+                    .covered,
+            ).toBe(false);
         }
-    }
-});
+    },
+);
 
-it.each(
-    sources,
-)("prices cleanup separately and leaves an absent cleanup quote unknown for %s", (presetId, nodeId) => {
-    for (const alternativeId of alternatives) {
-        const { graph, node, purchase, profile } = fixture(presetId, nodeId, alternativeId);
-        purchase.price = quote(7);
-        graph.prices = {};
-        if (profile?.kind !== "scour-v1") {
+it.each(sources)(
+    "keeps incompatible or uncertain source states unpriced for %s",
+    (presetId, nodeId) => {
+        for (const alternativeId of alternatives) {
+            const { classifier, raw } = fixture(presetId, nodeId, alternativeId);
+            for (const change of [
+                { influences: { shaper: true } },
+                { influences: { hunter: true } },
+                { fractured: true, fracturedMods: ["+70 to maximum Life"] },
+                { synthesised: true },
+                { searing: true },
+                { tangled: true },
+                { implicitMods: [...raw.implicitMods, "An unknown persistent implicit"] },
+                { corrupted: true },
+                { duplicated: true },
+                { ilvl: 85 },
+                { ilvl: 87 },
+                { identified: false },
+                {
+                    properties: [
+                        {
+                            name: "[Intangibility|Intangibility]",
+                            type: 110,
+                            displayMode: 0,
+                            values: [["84%", 0]],
+                        },
+                    ],
+                },
+            ]) {
+                const result = classifier.classify(
+                    normalizeApiItem("poe1", "stash", { ...raw, ...change }),
+                );
+                expect(
+                    result.matches,
+                    `${nodeId}/${alternativeId} ${JSON.stringify(change)}`,
+                ).toEqual([]);
+            }
+        }
+    },
+);
+
+it.each(sources)(
+    "prices cleanup separately and leaves an absent cleanup quote unknown for %s",
+    (presetId, nodeId) => {
+        for (const alternativeId of alternatives) {
+            const { graph, node, purchase, profile } = fixture(presetId, nodeId, alternativeId);
+            purchase.price = quote(7);
+            graph.prices = {};
+            if (profile?.kind !== "scour-v1") {
+                expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
+                    expectedCost: 7,
+                    expectedActions: 0,
+                    missingPrices: [],
+                });
+                continue;
+            }
             expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
-                expectedCost: 7,
-                expectedActions: 0,
+                expectedCost: null,
+                missingPrices: [scour],
+            });
+            graph.prices[scour] = quote(2);
+            const scours = 1 + Number(profile.crafted) + 3 * Number(profile.enchanted);
+            expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
+                expectedCost: 7 + 2 * scours,
+                expectedActions: 1 + Number(profile.crafted) + Number(profile.enchanted),
                 missingPrices: [],
             });
-            continue;
         }
-        expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
-            expectedCost: null,
-            missingPrices: [scour],
-        });
-        graph.prices[scour] = quote(2);
-        const scours = 1 + Number(profile.crafted) + 3 * Number(profile.enchanted);
-        expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
-            expectedCost: 7 + 2 * scours,
-            expectedActions: 1 + Number(profile.crafted) + Number(profile.enchanted),
-            missingPrices: [],
-        });
-    }
-});
+    },
+);

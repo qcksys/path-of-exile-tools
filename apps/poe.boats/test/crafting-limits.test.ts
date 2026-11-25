@@ -9,18 +9,25 @@ describe("implicit affix limits", () => {
         ["Simplex Amulet", 1, 2],
         ["Focused Amulet", 2, 1],
         ["Cogwork Ring", 2, 4],
-    ] as const)("uses the extracted %s limits for rolls and validation", (name, prefixes, suffixes) => {
-        const base = Object.entries(catalog.bases).find(([, entry]) => entry.name === name)![0];
-        const item = { ...engine.createItem(base), rarity: "rare" as const };
-        expect(engine.limits(item)).toMatchObject({ prefixes, suffixes, max: prefixes + suffixes });
-        expect(() => engine.validateItem({ ...item, implicits: [] })).toThrow("implicit");
-        for (let seed = 0; seed < 15; seed++) {
-            const result = engine.apply(item, currency("reroll"), seededRandom(seed)).item;
-            expect(engine.counts(result).prefixes).toBeLessThanOrEqual(prefixes);
-            expect(engine.counts(result).suffixes).toBeLessThanOrEqual(suffixes);
-            expect(result.mods.length).toBeLessThanOrEqual(prefixes + suffixes);
-        }
-    });
+    ] as const)(
+        "uses the extracted %s limits for rolls and validation",
+        (name, prefixes, suffixes) => {
+            const base = Object.entries(catalog.bases).find(([, entry]) => entry.name === name)![0];
+            const item = { ...engine.createItem(base), rarity: "rare" as const };
+            expect(engine.limits(item)).toMatchObject({
+                prefixes,
+                suffixes,
+                max: prefixes + suffixes,
+            });
+            expect(() => engine.validateItem({ ...item, implicits: [] })).toThrow("implicit");
+            for (let seed = 0; seed < 15; seed++) {
+                const result = engine.apply(item, currency("reroll"), seededRandom(seed)).item;
+                expect(engine.counts(result).prefixes).toBeLessThanOrEqual(prefixes);
+                expect(engine.counts(result).suffixes).toBeLessThanOrEqual(suffixes);
+                expect(result.mods.length).toBeLessThanOrEqual(prefixes + suffixes);
+            }
+        },
+    );
 
     it("keeps a protected Simplex suffix rare after scouring", () => {
         const base = Object.entries(catalog.bases).find(

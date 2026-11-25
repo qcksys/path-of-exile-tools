@@ -15,10 +15,8 @@ describe("root locale loader", () => {
             request: new Request("https://poe.boats/"),
             params: {},
             context,
-            // biome-ignore lint/style/useNamingConvention: React Router defines this field name.
-            unstable_pattern: "/",
-            // biome-ignore lint/style/useNamingConvention: React Router defines this field name.
-            unstable_url: new URL("https://poe.boats/"),
+            pattern: "/",
+            url: new URL("https://poe.boats/"),
         });
 
         const expected =

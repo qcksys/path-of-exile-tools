@@ -18,6 +18,14 @@ import {
     selectRouteDestination,
 } from "./crafting-process-ui-fixtures";
 
+/** A flow node's offset; jsdom 31 writes `translate(0px, 0px)` as `translate(0px)`. */
+function translation(node: HTMLElement) {
+    const match = /translate\(\s*(-?[\d.]+)px(?:\s*,\s*(-?[\d.]+)px)?\s*\)/.exec(
+        node.style.transform,
+    );
+    return match ? [Number(match[1]), Number(match[2] ?? 0)] : undefined;
+}
+
 describe.each(catalogs)("$game process routes and flowchart", (data) => {
     it("copies craft and condition steps, preserves routes and saves independent editable copies", async () => {
         const { engine, project, key, mount } = fixture(data);
@@ -233,13 +241,13 @@ describe.each(catalogs)("$game process routes and flowchart", (data) => {
             description: "Retry from the starting item if life is lost",
         });
         fireEvent.click(button("Reset layout"));
-        expect(node.style.transform).toContain("translate(0px,0px)");
+        expect(translation(node)).toEqual([0, 0]);
         expect(screen.getByRole("region", { name: "Process route results" })).toBeDefined();
         changeControl(screen.getByLabelText("Saved project"), {
             target: { value: "My crafting project" },
         });
         fireEvent.click(button("Load project"));
-        expect(node.style.transform).toContain("translate(105px,65px)");
+        expect(translation(node)).toEqual([105, 65]);
         expectControlValue(editor.getByLabelText("Step name"), "Annul safely");
         fireEvent.click(button("Calculate odds"));
         const next = CraftingWorker.instances[1]!;

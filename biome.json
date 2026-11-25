@@ -1,5 +1,5 @@
 {
-    "$schema": "https://biomejs.dev/schemas/2.4.8/schema.json",
+    "$schema": "https://biomejs.dev/schemas/2.6.9/schema.json",
     "files": {
         "includes": [
             "**/*",
@@ -29,7 +29,7 @@
     "linter": {
         "enabled": true,
         "rules": {
-            "recommended": true,
+            "preset": "recommended",
             "style": {
                 "noNonNullAssertion": "off",
                 "useConst": "warn",
@@ -84,6 +84,14 @@
         "parser": {
             "tailwindDirectives": true
         }
+    },
+    "markdown": {
+        "formatter": { "enabled": false },
+        "linter": { "enabled": false }
+    },
+    "yaml": {
+        "formatter": { "enabled": false },
+        "linter": { "enabled": false }
     },
     "overrides": [
         {

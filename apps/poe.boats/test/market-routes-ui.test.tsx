@@ -73,8 +73,8 @@ function showMarket(path = "/1/market/armour?league=Allflame&order=name-asc&page
                             request,
                             context,
                             params: { category: params.category },
-                            unstable_pattern: "/1/market/:category?",
-                            unstable_url: new URL(request.url),
+                            pattern: "/1/market/:category?",
+                            url: new URL(request.url),
                         }),
                     Component: () => <MarketIndex loaderData={useLoaderData()} />,
                 },
@@ -85,8 +85,8 @@ function showMarket(path = "/1/market/armour?league=Allflame&order=name-asc&page
                             request,
                             context,
                             params: { item: params.item! },
-                            unstable_pattern: "/1/market/items/:item",
-                            unstable_url: new URL(request.url),
+                            pattern: "/1/market/items/:item",
+                            url: new URL(request.url),
                         }),
                     Component: () => <MarketItem loaderData={useLoaderData()} />,
                 },
@@ -97,8 +97,8 @@ function showMarket(path = "/1/market/armour?league=Allflame&order=name-asc&page
                             request,
                             context,
                             params: { "*": params["*"]! },
-                            unstable_pattern: "/1/market/exchange/*",
-                            unstable_url: new URL(request.url),
+                            pattern: "/1/market/exchange/*",
+                            url: new URL(request.url),
                         }),
                     Component: () => <MarketExchangeItem loaderData={useLoaderData()} />,
                 },
@@ -109,8 +109,8 @@ function showMarket(path = "/1/market/armour?league=Allflame&order=name-asc&page
                             request,
                             context,
                             params: { base: params.base! },
-                            unstable_pattern: "/1/market/bases/:base",
-                            unstable_url: new URL(request.url),
+                            pattern: "/1/market/bases/:base",
+                            url: new URL(request.url),
                         }),
                 },
             ],
@@ -366,8 +366,8 @@ it("answers 404 for an item outside the exchange catalogue", async () => {
             request: new Request("https://example.invalid/1/market/exchange/Unknown?league=X"),
             context,
             params: { "*": "Unknown" },
-            unstable_pattern: "/1/market/exchange/*",
-            unstable_url: new URL("https://example.invalid/1/market/exchange/Unknown"),
+            pattern: "/1/market/exchange/*",
+            url: new URL("https://example.invalid/1/market/exchange/Unknown"),
         }),
     ).rejects.toMatchObject({ status: 404 });
 });
@@ -563,8 +563,8 @@ it("redirects category query links to the category path", async () => {
         ),
         context,
         params: {},
-        unstable_pattern: "/1/market/:category?",
-        unstable_url: new URL("https://example.invalid/1/market"),
+        pattern: "/1/market/:category?",
+        url: new URL("https://example.invalid/1/market"),
     });
     if (!(response instanceof Response)) throw new Error("Expected redirect");
     expect(response.status).toBe(308);
@@ -586,8 +586,8 @@ it("redirects the bare market path to the default category, keeping its filters"
         ),
         context,
         params: {},
-        unstable_pattern: "/1/market/:category?",
-        unstable_url: new URL("https://example.invalid/1/market"),
+        pattern: "/1/market/:category?",
+        url: new URL("https://example.invalid/1/market"),
     });
     if (!(response instanceof Response)) throw new Error("Expected redirect");
     expect(response.status).toBe(308);
@@ -608,8 +608,8 @@ it("redirects PoE 2 realm links to the PoE 2 market, searching for their item", 
         ),
         context,
         params: {},
-        unstable_pattern: "/1/market/:category?",
-        unstable_url: new URL("https://example.invalid/1/market"),
+        pattern: "/1/market/:category?",
+        url: new URL("https://example.invalid/1/market"),
     });
     if (!(list instanceof Response)) throw new Error("Expected redirect");
     expect(list.status).toBe(308);
@@ -626,8 +626,8 @@ it("redirects PoE 2 realm links to the PoE 2 market, searching for their item", 
         ),
         context,
         params: { "*": "Currency/CurrencyAddModToRare" },
-        unstable_pattern: "/1/market/exchange/*",
-        unstable_url: new URL("https://example.invalid/1/market/exchange/x"),
+        pattern: "/1/market/exchange/*",
+        url: new URL("https://example.invalid/1/market/exchange/x"),
     });
     if (!(item instanceof Response)) throw new Error("Expected redirect");
     expect(item.headers.get("Location")).toMatch(
@@ -643,8 +643,8 @@ it("rejects unknown category paths", async () => {
             request: new Request("https://example.invalid/1/market/nonsense"),
             context,
             params: { category: "nonsense" },
-            unstable_pattern: "/1/market/:category?",
-            unstable_url: new URL("https://example.invalid/1/market/nonsense"),
+            pattern: "/1/market/:category?",
+            url: new URL("https://example.invalid/1/market/nonsense"),
         }),
     ).rejects.toMatchObject({ status: 404 });
 });
@@ -1169,8 +1169,8 @@ it("redirects legacy query links while preserving every variant field", async ()
         ),
         context,
         params: {},
-        unstable_pattern: "/1/market",
-        unstable_url: new URL("https://example.invalid/1/market"),
+        pattern: "/1/market",
+        url: new URL("https://example.invalid/1/market"),
     });
     expect(response).toBeInstanceOf(Response);
     if (!(response instanceof Response)) throw new Error("Expected redirect");
@@ -1434,8 +1434,8 @@ it("redirects an old crafting base page to its market, or to the list when it is
             request: new Request(url),
             context,
             params: { base: id },
-            unstable_pattern: "/1/market/bases/:base",
-            unstable_url: new URL(url),
+            pattern: "/1/market/bases/:base",
+            url: new URL(url),
         });
         expect(response.status).toBe(308);
         return new URL(response.headers.get("Location")!, "https://example.invalid");

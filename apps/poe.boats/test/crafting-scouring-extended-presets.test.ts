@@ -100,38 +100,45 @@ it.each(craftingPresets)("keeps $id unchanged apart from the two r13 source list
     expect({ ...graph, id: old.id, ruleset: old.ruleset }).toEqual(old);
 });
 
-it.each(
-    targets.flatMap((target) => partitions.map((partition) => ({ ...target, ...partition }))),
-)("charges the full $id preparation before $preset Transmutation", (target) => {
-    const { graph, node, purchase } = fixture(target, target.id);
-    const count = 1 + Number(target.crafted) + 3 * Number(target.enchanted);
-    const actions = 1 + Number(target.crafted) + Number(target.enchanted);
-    expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
-        expectedCost: 11 + 2 * count,
-        expectedActions: actions,
-        missingPrices: [],
-    });
-    expect(discoverGraphCraftingCosts(engine, graph).some((cost) => cost.id === scour)).toBe(true);
-    graph.entry = target.transmuteId;
-    graph.outcomes[0]!.query = itemQuerySchema.parse({
-        game: "poe1",
-        groups: [{ type: "and", filters: [{ kind: "rarity", values: ["Magic"] }] }],
-    });
-    graph.prices[transmute.id] = quote(3);
-    const result = runGraphTrial(graph, seededRandom(42));
-    expect(result).toMatchObject({
-        success: true,
-        purchases: 1,
-        actions: actions + 1,
-        cost: 14 + 2 * count,
-        missingPrices: [],
-        spending: { [scour]: count, [transmute.id]: 1, [`purchase:${node.id}:${purchase.id}`]: 1 },
-    });
-    expect(result.nodeItems?.[node.id]).toEqual(purchase.item);
-    expect(result.trace[0]?.preparation).toEqual(
-        sourcePreparationMethods(engine, purchase.sourcePreparation!),
-    );
-});
+it.each(targets.flatMap((target) => partitions.map((partition) => ({ ...target, ...partition }))))(
+    "charges the full $id preparation before $preset Transmutation",
+    (target) => {
+        const { graph, node, purchase } = fixture(target, target.id);
+        const count = 1 + Number(target.crafted) + 3 * Number(target.enchanted);
+        const actions = 1 + Number(target.crafted) + Number(target.enchanted);
+        expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
+            expectedCost: 11 + 2 * count,
+            expectedActions: actions,
+            missingPrices: [],
+        });
+        expect(discoverGraphCraftingCosts(engine, graph).some((cost) => cost.id === scour)).toBe(
+            true,
+        );
+        graph.entry = target.transmuteId;
+        graph.outcomes[0]!.query = itemQuerySchema.parse({
+            game: "poe1",
+            groups: [{ type: "and", filters: [{ kind: "rarity", values: ["Magic"] }] }],
+        });
+        graph.prices[transmute.id] = quote(3);
+        const result = runGraphTrial(graph, seededRandom(42));
+        expect(result).toMatchObject({
+            success: true,
+            purchases: 1,
+            actions: actions + 1,
+            cost: 14 + 2 * count,
+            missingPrices: [],
+            spending: {
+                [scour]: count,
+                [transmute.id]: 1,
+                [`purchase:${node.id}:${purchase.id}`]: 1,
+            },
+        });
+        expect(result.nodeItems?.[node.id]).toEqual(purchase.item);
+        expect(result.trace[0]?.preparation).toEqual(
+            sourcePreparationMethods(engine, purchase.sourcePreparation!),
+        );
+    },
+);
 
 it.each(targets)("pays for another $preset source and cleanup after discard", (target) => {
     const { graph, node, purchase } = fixture(target);
@@ -177,71 +184,72 @@ it.each(
     expect(result.nodeItems?.[node.id]).toEqual(purchase.item);
 });
 
-it.each(
-    targets,
-)("binds only the exact $preset source policy and keeps cleanup separate", (target) => {
-    const { graph, node, purchase } = fixture(target);
-    graph.league = marketCandidate.latest.league;
-    const profile = purchaseSourceProfile(purchase);
-    if (profile?.kind !== "scour-v1") throw new Error("Expected Scouring source profile.");
-    const record = createCraftingItemQuery(engine).record(purchase.item);
-    const definitions = craftingPresetCohorts(engine, ruleset);
-    const matching = definitions.filter(
-        (definition) =>
-            cohortPriceCoverage(definition, record, node.output, undefined, profile).covered,
-    );
-    expect(matching).toHaveLength(1);
-    const definition = matching[0]!;
-    const candidate = {
-        ...structuredClone(marketCandidate),
-        sourcePreparation: profile,
-        definition: { ...marketCandidate.definition, ...definition },
-        latest: { ...marketCandidate.latest, cohortId: definition.id },
-    };
-    const bound = bindCohortPurchasePrice(graph, engine, node.id, purchase.id, candidate);
-    const boundNode = bound.nodes.find((entry) => entry.id === node.id)!;
-    if (boundNode.kind !== "acquire") throw new Error("Expected bound acquisition.");
-    const boundPurchase = boundNode.alternatives.find((entry) => entry.id === purchase.id)!;
-    if (boundPurchase.kind !== "purchase") throw new Error("Expected bound source.");
-    expect(boundPurchase.price?.amount).toBe(20);
-    expect(decodeCohortPriceReference(boundPurchase.price!.cohortId!)?.sourcePreparation).toEqual(
-        profile,
-    );
-    expect(runGraphTrial(bound, seededRandom(42))).toMatchObject({
-        success: true,
-        purchases: 1,
-        actions: 3,
-        cost: 30,
-        missingPrices: [],
-    });
-    expect(() => bindCohortPurchasePrice(graph, engine, node.id, "buy", candidate)).toThrow(
-        "different source preparation",
-    );
-    expect(
-        cohortPriceCoverage(definition, record, node.output, undefined, {
-            ...profile,
-            crafted: false,
-        }).covered,
-    ).toBe(false);
-    for (const item of [
-        { ...purchase.item, level: 85 },
-        {
-            ...purchase.item,
-            influences: [
-                engine.catalog.crafting.modRules.RecoverLifePercentOnBlockUber1_!.influence!,
-            ],
-        },
-    ])
+it.each(targets)(
+    "binds only the exact $preset source policy and keeps cleanup separate",
+    (target) => {
+        const { graph, node, purchase } = fixture(target);
+        graph.league = marketCandidate.latest.league;
+        const profile = purchaseSourceProfile(purchase);
+        if (profile?.kind !== "scour-v1") throw new Error("Expected Scouring source profile.");
+        const record = createCraftingItemQuery(engine).record(purchase.item);
+        const definitions = craftingPresetCohorts(engine, ruleset);
+        const matching = definitions.filter(
+            (definition) =>
+                cohortPriceCoverage(definition, record, node.output, undefined, profile).covered,
+        );
+        expect(matching).toHaveLength(1);
+        const definition = matching[0]!;
+        const candidate = {
+            ...structuredClone(marketCandidate),
+            sourcePreparation: profile,
+            definition: { ...marketCandidate.definition, ...definition },
+            latest: { ...marketCandidate.latest, cohortId: definition.id },
+        };
+        const bound = bindCohortPurchasePrice(graph, engine, node.id, purchase.id, candidate);
+        const boundNode = bound.nodes.find((entry) => entry.id === node.id)!;
+        if (boundNode.kind !== "acquire") throw new Error("Expected bound acquisition.");
+        const boundPurchase = boundNode.alternatives.find((entry) => entry.id === purchase.id)!;
+        if (boundPurchase.kind !== "purchase") throw new Error("Expected bound source.");
+        expect(boundPurchase.price?.amount).toBe(20);
         expect(
-            cohortPriceCoverage(
-                definition,
-                createCraftingItemQuery(engine).record(item),
-                node.output,
-                undefined,
-                profile,
-            ).covered,
+            decodeCohortPriceReference(boundPurchase.price!.cohortId!)?.sourcePreparation,
+        ).toEqual(profile);
+        expect(runGraphTrial(bound, seededRandom(42))).toMatchObject({
+            success: true,
+            purchases: 1,
+            actions: 3,
+            cost: 30,
+            missingPrices: [],
+        });
+        expect(() => bindCohortPurchasePrice(graph, engine, node.id, "buy", candidate)).toThrow(
+            "different source preparation",
+        );
+        expect(
+            cohortPriceCoverage(definition, record, node.output, undefined, {
+                ...profile,
+                crafted: false,
+            }).covered,
         ).toBe(false);
-});
+        for (const item of [
+            { ...purchase.item, level: 85 },
+            {
+                ...purchase.item,
+                influences: [
+                    engine.catalog.crafting.modRules.RecoverLifePercentOnBlockUber1_!.influence!,
+                ],
+            },
+        ])
+            expect(
+                cohortPriceCoverage(
+                    definition,
+                    createCraftingItemQuery(engine).record(item),
+                    node.output,
+                    undefined,
+                    profile,
+                ).covered,
+            ).toBe(false);
+    },
+);
 
 it.each(targets)("refuses $preset extended sources under r12", (target) => {
     const { graph } = fixture(target);

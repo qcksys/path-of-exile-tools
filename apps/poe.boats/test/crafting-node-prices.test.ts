@@ -152,35 +152,35 @@ describe("per-step crafting prices", () => {
         expect(rulesetAllowsSimpleCraft({ engine: "crafting-graph-6" })).toBe(false);
     });
 
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("retains published %s r7 global pricing and applies overrides only in published r8", async (game) => {
-        for (const revision of ["r7", "r8"] as const) {
-            const ruleset = historyIndex.revisions.find(
-                (entry) => entry.game === game && entry.revision === revision,
-            )!;
-            const loaded = await retainedRevision(ruleset);
-            const graph = retainedTransmuteGraph(ruleset, loaded.catalog);
-            const run = () => {
-                const simulation = loaded.runtime.createSimulation(loaded.catalog, graph, {
-                    estimateIterations: 1,
+    it.each(["poe1", "poe2"] as const)(
+        "retains published %s r7 global pricing and applies overrides only in published r8",
+        async (game) => {
+            for (const revision of ["r7", "r8"] as const) {
+                const ruleset = historyIndex.revisions.find(
+                    (entry) => entry.game === game && entry.revision === revision,
+                )!;
+                const loaded = await retainedRevision(ruleset);
+                const graph = retainedTransmuteGraph(ruleset, loaded.catalog);
+                const run = () => {
+                    const simulation = loaded.runtime.createSimulation(loaded.catalog, graph, {
+                        estimateIterations: 1,
+                    });
+                    while (!simulation.done) simulation.runBatch();
+                    return simulation.result();
+                };
+                expect(run()).toMatchObject({ complete: true, meanCost: 11 });
+                const currency = Object.keys(graph.prices)[0]!;
+                graph.prices[craftingNodeCostKey("transmute", currency)] = quote(5);
+                if (revision === "r7")
+                    expect(() => validateRulesetGraph(ruleset, graph)).toThrow(
+                        "scoped crafting prices",
+                    );
+                else expect(validateRulesetGraph(ruleset, graph)).toEqual(graph);
+                expect(run()).toMatchObject({
+                    complete: true,
+                    meanCost: revision === "r7" ? 11 : 15,
                 });
-                while (!simulation.done) simulation.runBatch();
-                return simulation.result();
-            };
-            expect(run()).toMatchObject({ complete: true, meanCost: 11 });
-            const currency = Object.keys(graph.prices)[0]!;
-            graph.prices[craftingNodeCostKey("transmute", currency)] = quote(5);
-            if (revision === "r7")
-                expect(() => validateRulesetGraph(ruleset, graph)).toThrow(
-                    "scoped crafting prices",
-                );
-            else expect(validateRulesetGraph(ruleset, graph)).toEqual(graph);
-            expect(run()).toMatchObject({
-                complete: true,
-                meanCost: revision === "r7" ? 11 : 15,
-            });
-        }
-    });
+            }
+        },
+    );
 });

@@ -130,14 +130,16 @@ it.each([
     { typeLine: "Axe of the Ice", counts: { prefixes: 1, suffixes: 1 } },
     { typeLine: "Axe of the Ice", counts: { prefixes: 1, suffixes: 0 } },
     { typeLine: "Anomalous Axe of the Ice", counts: { prefixes: 0, suffixes: 1 } },
-])("refuses conflicting Magic name, count and description evidence: $typeLine $counts", ({
-    typeLine,
-    counts,
-}) => {
-    const input = namedMagic(typeLine);
-    input.item.extended = counts;
-    expect(compileModifierTextModel({ ...model(namedModifiers), format: 3 })(input)).toEqual(input);
-});
+])(
+    "refuses conflicting Magic name, count and description evidence: $typeLine $counts",
+    ({ typeLine, counts }) => {
+        const input = namedMagic(typeLine);
+        input.item.extended = counts;
+        expect(compileModifierTextModel({ ...model(namedModifiers), format: 3 })(input)).toEqual(
+            input,
+        );
+    },
+);
 
 it("requires every displayed affix name to be explained by a complete text solution", () => {
     const input = namedMagic("Axe of Frost");
@@ -229,26 +231,23 @@ it.each([
         id: "cold",
         expected: [0, 1],
     },
-])("infers only the uniquely determined missing count for $id", ({
-    descriptions,
-    prefixes,
-    suffixes,
-    id,
-    expected,
-}) => {
-    const input = item(descriptions, prefixes, suffixes);
-    const source = structuredClone(input);
-    const resolved = compileModifierTextModel(model())(input);
-    expect([resolved.facts.prefixes, resolved.facts.suffixes]).toEqual(expected);
-    expect(resolved.facts.modifiers).toMatchObject([{ id }]);
-    expect(resolved.facts.modifiersComplete).toBe(false);
-    expect(resolved.item).toBe(input.item);
-    expect(input).toEqual(source);
-    if (id === "physical") {
-        expect(matchItem(input, isolatedPhysical)).toBe("unknown");
-        expect(matchItem(resolved, isolatedPhysical)).toBe("match");
-    }
-});
+])(
+    "infers only the uniquely determined missing count for $id",
+    ({ descriptions, prefixes, suffixes, id, expected }) => {
+        const input = item(descriptions, prefixes, suffixes);
+        const source = structuredClone(input);
+        const resolved = compileModifierTextModel(model())(input);
+        expect([resolved.facts.prefixes, resolved.facts.suffixes]).toEqual(expected);
+        expect(resolved.facts.modifiers).toMatchObject([{ id }]);
+        expect(resolved.facts.modifiersComplete).toBe(false);
+        expect(resolved.item).toBe(input.item);
+        expect(input).toEqual(source);
+        if (id === "physical") {
+            expect(matchItem(input, isolatedPhysical)).toBe("unknown");
+            expect(matchItem(resolved, isolatedPhysical)).toBe("match");
+        }
+    },
+);
 
 it("preserves legacy missing counts, both missing counts, and supplied counts", () => {
     const missing = item(["110% increased Physical Damage"], 1, undefined);
@@ -761,33 +760,34 @@ const recordedFractures = [
     },
 ];
 
-it.each(
-    recordedFractures,
-)("resolves recorded $id despite an ordinary line shared with a fossil effect", ({ id, rows }) => {
-    const input = normalizeApiItem("poe1", "stash", {
-        baseType: "Conquest Lamellar",
-        typeLine: "Conquest Lamellar",
-        ilvl: 86,
-        rarity: "Rare",
-        identified: true,
-        fractured: true,
-        extended: { prefixes: 1, suffixes: 3 },
-        explicitMods: rows,
-    });
-    const original = structuredClone(input);
-    for (const format of [1, 2, 3, 4] as const) {
-        const historical = { ...physicalReductionModel, format };
-        expect(compileModifierTextModel(historical)(input)).toBe(input);
-        expect(compileFracturedModifierTextModel(historical)(input)).toBe(input);
-    }
-    const resolved = compileModifierTextModel(physicalReductionModel)(input);
-    expect(resolved.facts.modifiers).toHaveLength(4);
-    expect(resolved.facts.modifiers.filter((mod) => mod.fractured)).toMatchObject([{ id }]);
-    expect(
-        compileFracturedModifierTextModel(physicalReductionModel)(input).facts.modifiers,
-    ).toContainEqual(expect.objectContaining({ id, fractured: true }));
-    expect(input).toEqual(original);
-});
+it.each(recordedFractures)(
+    "resolves recorded $id despite an ordinary line shared with a fossil effect",
+    ({ id, rows }) => {
+        const input = normalizeApiItem("poe1", "stash", {
+            baseType: "Conquest Lamellar",
+            typeLine: "Conquest Lamellar",
+            ilvl: 86,
+            rarity: "Rare",
+            identified: true,
+            fractured: true,
+            extended: { prefixes: 1, suffixes: 3 },
+            explicitMods: rows,
+        });
+        const original = structuredClone(input);
+        for (const format of [1, 2, 3, 4] as const) {
+            const historical = { ...physicalReductionModel, format };
+            expect(compileModifierTextModel(historical)(input)).toBe(input);
+            expect(compileFracturedModifierTextModel(historical)(input)).toBe(input);
+        }
+        const resolved = compileModifierTextModel(physicalReductionModel)(input);
+        expect(resolved.facts.modifiers).toHaveLength(4);
+        expect(resolved.facts.modifiers.filter((mod) => mod.fractured)).toMatchObject([{ id }]);
+        expect(
+            compileFracturedModifierTextModel(physicalReductionModel)(input).facts.modifiers,
+        ).toContainEqual(expect.objectContaining({ id, fractured: true }));
+        expect(input).toEqual(original);
+    },
+);
 
 it.each([
     {
@@ -807,36 +807,38 @@ it.each([
             "Cannot roll Modifiers of [damage|Non-Physical Damage] Types",
         ],
     },
-])("format 5 refuses complete unsupported groups across explicit display rows: $rows", ({
-    rows,
-}) => {
-    const effect = physicalReductionModel.unsupportedImplicitTexts![0]!;
-    const data: ModifierTextModel = {
-        ...physicalReductionModel,
-        modifiers: [
-            {
-                id: "effect",
-                name: "Effect",
-                side: "suffix",
-                groups: ["Effect"],
-                crafted: false,
-                text: effect.replace("3%", "8%"),
-            },
-        ],
-    };
-    const input = normalizeApiItem("poe1", "stash", {
-        baseType: "Conquest Lamellar",
-        rarity: "Rare",
-        identified: true,
-        extended: { prefixes: 0, suffixes: 1 },
-        explicitMods: rows.map((description) => ({ description, flags: { fractured: true } })),
-    });
-    expect(
-        compileModifierTextModel({ ...data, unsupportedImplicitTexts: [] })(input).facts.modifiers,
-    ).toMatchObject([{ id: "effect" }]);
-    expect(compileModifierTextModel(data)(input)).toBe(input);
-    expect(compileFracturedModifierTextModel(data)(input)).toBe(input);
-});
+])(
+    "format 5 refuses complete unsupported groups across explicit display rows: $rows",
+    ({ rows }) => {
+        const effect = physicalReductionModel.unsupportedImplicitTexts![0]!;
+        const data: ModifierTextModel = {
+            ...physicalReductionModel,
+            modifiers: [
+                {
+                    id: "effect",
+                    name: "Effect",
+                    side: "suffix",
+                    groups: ["Effect"],
+                    crafted: false,
+                    text: effect.replace("3%", "8%"),
+                },
+            ],
+        };
+        const input = normalizeApiItem("poe1", "stash", {
+            baseType: "Conquest Lamellar",
+            rarity: "Rare",
+            identified: true,
+            extended: { prefixes: 0, suffixes: 1 },
+            explicitMods: rows.map((description) => ({ description, flags: { fractured: true } })),
+        });
+        expect(
+            compileModifierTextModel({ ...data, unsupportedImplicitTexts: [] })(input).facts
+                .modifiers,
+        ).toMatchObject([{ id: "effect" }]);
+        expect(compileModifierTextModel(data)(input)).toBe(input);
+        expect(compileFracturedModifierTextModel(data)(input)).toBe(input);
+    },
+);
 
 it("format 5 retains singleton effects and partial or malformed implicit refusals", () => {
     const data: ModifierTextModel = {
@@ -1055,37 +1057,38 @@ it("uses catalyst-specific ranges without mistaking a lower raw tier for an unsc
     expect(resolve(invalid)).toBe(invalid);
 });
 
-it.each([
-    2, 5,
-] as const)("format %s adds native magnitude and catalyst effects only with the native implicit", (format) => {
-    const name = "Quality (Resistance Modifiers)";
-    const data = model([modifiers[3]!]);
-    data.format = format;
-    const implicit = "100% increased Explicit Modifier magnitudes";
-    data.unsupportedImplicitTexts = ["(10-100)% increased Explicit Modifier magnitudes"];
-    data.bases[0]!.magnitude = { prefix: 100, suffix: 100, texts: [implicit] };
-    data.bases[0]!.catalystProperties = [name];
-    data.catalysts = [{ name, maximum: 20 }];
-    data.translations = {
-        statDescriptions: [
-            {
-                ids: ["cold"],
-                rules: [{ conditions: ["#"], text: "+{0}% to Cold Resistance", handlers: [] }],
-            },
-        ],
-        statLookups: {},
-    };
-    data.modifiers[0]!.catalysts = [name];
-    data.modifiers[0]!.scaling = {
-        descriptions: [0],
-        stats: [{ id: "cold", min: 46, max: 48, scalable: true }],
-    };
-    const resolve = compileModifierTextModel(data);
-    const input = item(["+103% to Cold Resistance"], 0, 1, true);
-    input.item.properties = [{ name, type: 6, values: [["+20%", 1]] }];
-    expect(resolve(input)).toBe(input);
-    input.item.implicitMods = [{ description: implicit }];
-    expect(resolve(input).facts.modifiers).toMatchObject([{ id: "cold", tier: 1 }]);
-    input.item.implicitMods = [{ description: "50% increased Explicit Modifier magnitudes" }];
-    expect(resolve(input)).toBe(input);
-});
+it.each([2, 5] as const)(
+    "format %s adds native magnitude and catalyst effects only with the native implicit",
+    (format) => {
+        const name = "Quality (Resistance Modifiers)";
+        const data = model([modifiers[3]!]);
+        data.format = format;
+        const implicit = "100% increased Explicit Modifier magnitudes";
+        data.unsupportedImplicitTexts = ["(10-100)% increased Explicit Modifier magnitudes"];
+        data.bases[0]!.magnitude = { prefix: 100, suffix: 100, texts: [implicit] };
+        data.bases[0]!.catalystProperties = [name];
+        data.catalysts = [{ name, maximum: 20 }];
+        data.translations = {
+            statDescriptions: [
+                {
+                    ids: ["cold"],
+                    rules: [{ conditions: ["#"], text: "+{0}% to Cold Resistance", handlers: [] }],
+                },
+            ],
+            statLookups: {},
+        };
+        data.modifiers[0]!.catalysts = [name];
+        data.modifiers[0]!.scaling = {
+            descriptions: [0],
+            stats: [{ id: "cold", min: 46, max: 48, scalable: true }],
+        };
+        const resolve = compileModifierTextModel(data);
+        const input = item(["+103% to Cold Resistance"], 0, 1, true);
+        input.item.properties = [{ name, type: 6, values: [["+20%", 1]] }];
+        expect(resolve(input)).toBe(input);
+        input.item.implicitMods = [{ description: implicit }];
+        expect(resolve(input).facts.modifiers).toMatchObject([{ id: "cold", tier: 1 }]);
+        input.item.implicitMods = [{ description: "50% increased Explicit Modifier magnitudes" }];
+        expect(resolve(input)).toBe(input);
+    },
+);

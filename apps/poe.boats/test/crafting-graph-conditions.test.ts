@@ -25,129 +25,138 @@ const normal = (game: "poe1" | "poe2") =>
     });
 
 describe("conditional graph steps", () => {
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("fills only missing %s suffixes and preserves the prepared prefixes", (game) => {
-        const data = workbenchCatalog(game);
-        const engine = new CraftingEngine(data);
-        for (const suffixes of [0, 2, 3]) {
-            const graph = conditionalTransmuteGraph(game);
+    it.each(["poe1", "poe2"] as const)(
+        "fills only missing %s suffixes and preserves the prepared prefixes",
+        (game) => {
+            const data = workbenchCatalog(game);
+            const engine = new CraftingEngine(data);
+            for (const suffixes of [0, 2, 3]) {
+                const graph = conditionalTransmuteGraph(game);
+                const purchase = graph.nodes[0]!;
+                if (purchase.kind !== "acquire" || purchase.alternatives[0]!.kind !== "purchase")
+                    throw new Error("Fixture");
+                let item: CraftingItem = {
+                    ...purchase.alternatives[0]!.item,
+                    rarity: "rare",
+                    mods: [],
+                };
+                for (const side of ["prefix", "suffix"] as const)
+                    for (let i = 0; i < (side === "prefix" ? 3 : suffixes); i++)
+                        item = engine.addStartingMod(
+                            item,
+                            engine.pool(item, { side })[0]!.id,
+                            seededRandom(i),
+                        );
+                purchase.alternatives[0]!.item = item;
+                const craft = graph.nodes.find((node) => node.kind === "craft")!;
+                const exalt = data.crafting.currencies.find(
+                    (entry) => entry.action === "add_mod_to_rare",
+                )!;
+                craft.method = { kind: "currency", id: exalt.id };
+                craft.applyWhen = itemQuerySchema.parse({
+                    game,
+                    groups: [
+                        {
+                            type: "and",
+                            filters: [{ kind: "range", field: "openSuffixes", value: { min: 1 } }],
+                        },
+                    ],
+                });
+                craft.output = itemQuerySchema.parse({
+                    game,
+                    groups: [
+                        {
+                            type: "and",
+                            filters: [{ kind: "range", field: "suffixes", value: { min: 3 } }],
+                        },
+                    ],
+                });
+                craft.branches = [
+                    {
+                        id: "repeat",
+                        name: "Fill remaining suffixes",
+                        query: craft.applyWhen,
+                        destination: {
+                            kind: "recover",
+                            nodeId: craft.id,
+                            inputId: craft.inputs[0]!.id,
+                        },
+                    },
+                ];
+                graph.outcomes[0]!.query = craft.output;
+                graph.prices = {
+                    [exalt.id]: {
+                        amount: 2,
+                        currency: "chaos",
+                        source: "manual",
+                        confidence: null,
+                    },
+                };
+                const result = calculateCraftingGraph(data, graph, {
+                    estimateIterations: 1,
+                    workLimit: 1000,
+                });
+                expect(result).toMatchObject({
+                    complete: true,
+                    meanCost: 10 + (3 - suffixes) * 2,
+                    meanActions: 3 - suffixes,
+                    probability: 1,
+                });
+                expect(result.samples[0]!.item!.mods).toEqual(expect.arrayContaining(item.mods));
+                expect(result.samples[0]!.purchases).toBe(1);
+            }
+        },
+    );
+    it.each(["poe1", "poe2"] as const)(
+        "applies %s preparation only while needed, preserving ready items and costs",
+        (game) => {
+            const data = workbenchCatalog(game);
+            const ruleset = historyIndex.revisions.find(
+                (entry) => entry.game === game && entry.revision === "r19",
+            )!;
+            const graph = retainedTransmuteGraph(
+                { ...ruleset, engine: CRAFTING_GRAPH_ENGINE, revision: "r5" },
+                data,
+            );
+            const craft = graph.nodes.find((node) => node.kind === "craft")!;
+            craft.applyWhen = normal(game);
+            const options = { estimateIterations: 1, workLimit: 1000 };
+            expect(calculateCraftingGraph(data, graph, options)).toMatchObject({
+                complete: true,
+                meanCost: 11,
+                meanActions: 1,
+                probability: 1,
+            });
             const purchase = graph.nodes[0]!;
             if (purchase.kind !== "acquire" || purchase.alternatives[0]!.kind !== "purchase")
                 throw new Error("Fixture");
-            let item: CraftingItem = {
-                ...purchase.alternatives[0]!.item,
-                rarity: "rare",
-                mods: [],
-            };
-            for (const side of ["prefix", "suffix"] as const)
-                for (let i = 0; i < (side === "prefix" ? 3 : suffixes); i++)
-                    item = engine.addStartingMod(
-                        item,
-                        engine.pool(item, { side })[0]!.id,
-                        seededRandom(i),
-                    );
-            purchase.alternatives[0]!.item = item;
-            const craft = graph.nodes.find((node) => node.kind === "craft")!;
-            const exalt = data.crafting.currencies.find(
-                (entry) => entry.action === "add_mod_to_rare",
-            )!;
-            craft.method = { kind: "currency", id: exalt.id };
-            craft.applyWhen = itemQuerySchema.parse({
-                game,
-                groups: [
-                    {
-                        type: "and",
-                        filters: [{ kind: "range", field: "openSuffixes", value: { min: 1 } }],
-                    },
-                ],
-            });
-            craft.output = itemQuerySchema.parse({
-                game,
-                groups: [
-                    {
-                        type: "and",
-                        filters: [{ kind: "range", field: "suffixes", value: { min: 3 } }],
-                    },
-                ],
-            });
-            craft.branches = [
-                {
-                    id: "repeat",
-                    name: "Fill remaining suffixes",
-                    query: craft.applyWhen,
-                    destination: {
-                        kind: "recover",
-                        nodeId: craft.id,
-                        inputId: craft.inputs[0]!.id,
-                    },
-                },
-            ];
-            graph.outcomes[0]!.query = craft.output;
-            graph.prices = {
-                [exalt.id]: { amount: 2, currency: "chaos", source: "manual", confidence: null },
-            };
-            const result = calculateCraftingGraph(data, graph, {
-                estimateIterations: 1,
-                workLimit: 1000,
-            });
+            const ready = new CraftingEngine(data).apply(
+                purchase.alternatives[0]!.item,
+                craft.method,
+                seededRandom(42),
+            ).item;
+            purchase.alternatives[0]!.item = ready;
+            const result = calculateCraftingGraph(data, graph, options);
             expect(result).toMatchObject({
                 complete: true,
-                meanCost: 10 + (3 - suffixes) * 2,
-                meanActions: 3 - suffixes,
+                meanCost: 10,
+                meanActions: 0,
                 probability: 1,
+                visits: { transmute: { skipped: 3 } },
             });
-            expect(result.samples[0]!.item!.mods).toEqual(expect.arrayContaining(item.mods));
-            expect(result.samples[0]!.purchases).toBe(1);
-        }
-    });
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("applies %s preparation only while needed, preserving ready items and costs", (game) => {
-        const data = workbenchCatalog(game);
-        const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === game && entry.revision === "r19",
-        )!;
-        const graph = retainedTransmuteGraph(
-            { ...ruleset, engine: CRAFTING_GRAPH_ENGINE, revision: "r5" },
-            data,
-        );
-        const craft = graph.nodes.find((node) => node.kind === "craft")!;
-        craft.applyWhen = normal(game);
-        const options = { estimateIterations: 1, workLimit: 1000 };
-        expect(calculateCraftingGraph(data, graph, options)).toMatchObject({
-            complete: true,
-            meanCost: 11,
-            meanActions: 1,
-            probability: 1,
-        });
-        const purchase = graph.nodes[0]!;
-        if (purchase.kind !== "acquire" || purchase.alternatives[0]!.kind !== "purchase")
-            throw new Error("Fixture");
-        const ready = new CraftingEngine(data).apply(
-            purchase.alternatives[0]!.item,
-            craft.method,
-            seededRandom(42),
-        ).item;
-        purchase.alternatives[0]!.item = ready;
-        const result = calculateCraftingGraph(data, graph, options);
-        expect(result).toMatchObject({
-            complete: true,
-            meanCost: 10,
-            meanActions: 0,
-            probability: 1,
-            visits: { transmute: { skipped: 3 } },
-        });
-        expect(result.samples[0]).toMatchObject({ item: ready, consumedItems: 0, purchases: 1 });
-        expect(result.samples[0]!.trace).toContainEqual({
-            nodeId: "transmute",
-            inputs: ["item-1"],
-            outputs: ["item-1"],
-            skipped: true,
-        });
-    });
+            expect(result.samples[0]).toMatchObject({
+                item: ready,
+                consumedItems: 0,
+                purchases: 1,
+            });
+            expect(result.samples[0]!.trace).toContainEqual({
+                nodeId: "transmute",
+                inputs: ["item-1"],
+                outputs: ["item-1"],
+                skipped: true,
+            });
+        },
+    );
 
     it("checks the first input before acquiring or consuming a recombination donor", () => {
         const graph = graphFixture();

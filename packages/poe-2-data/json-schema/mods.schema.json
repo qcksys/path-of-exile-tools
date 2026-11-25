@@ -138,13 +138,9 @@
         }
       },
       "text": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "type": {

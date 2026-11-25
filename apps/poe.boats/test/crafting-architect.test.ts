@@ -58,42 +58,44 @@ describe("PoE 2 Architect's Orb", () => {
         );
     });
 
-    it.each([
-        "Gold Ring",
-        "Sapphire",
-    ])("adds or replaces a weighted implicit on %s and round trips Twice Corrupted text", (name) => {
-        const item = blank(name);
-        const random = force("implicit");
-        const result = engine.apply(item, method, random);
-        expect(result.item).toMatchObject({
-            corrupted: true,
-            twiceCorrupted: true,
-            rarity: item.rarity,
-            mods: item.mods,
-        });
-        expect(result.item.implicits).toHaveLength(1);
-        expect(engine.mod(result.item.implicits[0]!.id).generation_type).toBe("corrupted");
-        const choices = vi
-            .mocked(random.pick)
-            .mock.calls.find(([choices]) =>
-                choices.some((entry) => entry.value === result.item.implicits[0]!.id),
-            )![0];
-        expect(choices).toEqual(
-            engine
-                .corruptedModifiers(item)
-                .map((entry) => ({ value: entry.id, weight: entry.weight })),
-        );
-        expect(result.cost).toMatchObject([{ id: method.id, amount: 1 }]);
-        const text = exportCraftingItemText(engine, result.item);
-        expect(text.split("\n").at(-1)).toBe("Twice Corrupted");
-        expect(
-            importCraftingItemText(engine, text).some(
-                (entry) => JSON.stringify(entry.item) === JSON.stringify(result.item),
-            ),
-        ).toBe(true);
-        expect(engine.validateItem(JSON.parse(JSON.stringify(result.item)))).toEqual(result.item);
-        expect(item.twiceCorrupted).toBeUndefined();
-    });
+    it.each(["Gold Ring", "Sapphire"])(
+        "adds or replaces a weighted implicit on %s and round trips Twice Corrupted text",
+        (name) => {
+            const item = blank(name);
+            const random = force("implicit");
+            const result = engine.apply(item, method, random);
+            expect(result.item).toMatchObject({
+                corrupted: true,
+                twiceCorrupted: true,
+                rarity: item.rarity,
+                mods: item.mods,
+            });
+            expect(result.item.implicits).toHaveLength(1);
+            expect(engine.mod(result.item.implicits[0]!.id).generation_type).toBe("corrupted");
+            const choices = vi
+                .mocked(random.pick)
+                .mock.calls.find(([choices]) =>
+                    choices.some((entry) => entry.value === result.item.implicits[0]!.id),
+                )![0];
+            expect(choices).toEqual(
+                engine
+                    .corruptedModifiers(item)
+                    .map((entry) => ({ value: entry.id, weight: entry.weight })),
+            );
+            expect(result.cost).toMatchObject([{ id: method.id, amount: 1 }]);
+            const text = exportCraftingItemText(engine, result.item);
+            expect(text.split("\n").at(-1)).toBe("Twice Corrupted");
+            expect(
+                importCraftingItemText(engine, text).some(
+                    (entry) => JSON.stringify(entry.item) === JSON.stringify(result.item),
+                ),
+            ).toBe(true);
+            expect(engine.validateItem(JSON.parse(JSON.stringify(result.item)))).toEqual(
+                result.item,
+            );
+            expect(item.twiceCorrupted).toBeUndefined();
+        },
+    );
 
     it("can replace either a native or corrupted implicit and prevents duplicate corruption groups", () => {
         const original = blank("Sinew Belt");

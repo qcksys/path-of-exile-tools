@@ -18,45 +18,51 @@ const cases = [
     ["es-block-shield", "flat-make-base"],
 ] as const;
 
-it.each(
-    cases,
-)("%s can pay to add Shaper influence and return its exact unrolled base checkpoint", (presetId, nodeId) => {
-    const graph = projectFromPreset(engine, ruleset, presetId);
-    const target = graph.nodes.find((node) => node.id === nodeId);
-    if (target?.kind !== "acquire" || target.alternatives[0]?.kind !== "purchase")
-        throw new Error("Missing influenced base purchase.");
-    const checkpoint = target.alternatives[0].item;
-    expect(target.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
-    expect(target.alternatives).toContainEqual(
-        expect.objectContaining({ kind: "production", id: "make-shaper" }),
-    );
-    target.choice = { mode: "pinned", alternativeId: "make-shaper" };
-    const source = graph.nodes.find((node) => node.id === `${nodeId}-influence-base`);
-    if (source?.kind !== "acquire" || source.alternatives[0]?.kind !== "purchase")
-        throw new Error("Missing uninfluenced base purchase.");
-    expect(source.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
-    expect(source.alternatives[0].item).toEqual({ ...checkpoint, influences: [] });
-    expect(source.alternatives[0].sourcePreparation).toEqual({ kind: "influence-ready-v1" });
-    source.alternatives[0].price = quote(10);
-    graph.entry = target.id;
-    graph.outcomes = [{ ...graph.outcomes[0]!, query: target.output }];
-    graph.prices[transmute] = quote(1);
-    graph.prices[regal] = quote(2);
-    graph.prices[shaper] = quote(3);
-    graph.prices[scour] = quote(4);
-    expect(discoverGraphCraftingCosts(engine, graph).map((cost) => cost.id)).toContain(shaper);
-    const result = runGraphTrial(graph, seededRandom(42));
-    expect(result).toMatchObject({
-        success: true,
-        purchases: 1,
-        actions: 4,
-        cost: 20,
-        missingPrices: [],
-        item: checkpoint,
-    });
-    expect(result.item).toEqual(checkpoint);
-    expect(result.spending).toMatchObject({ [transmute]: 1, [regal]: 1, [shaper]: 1, [scour]: 1 });
-});
+it.each(cases)(
+    "%s can pay to add Shaper influence and return its exact unrolled base checkpoint",
+    (presetId, nodeId) => {
+        const graph = projectFromPreset(engine, ruleset, presetId);
+        const target = graph.nodes.find((node) => node.id === nodeId);
+        if (target?.kind !== "acquire" || target.alternatives[0]?.kind !== "purchase")
+            throw new Error("Missing influenced base purchase.");
+        const checkpoint = target.alternatives[0].item;
+        expect(target.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+        expect(target.alternatives).toContainEqual(
+            expect.objectContaining({ kind: "production", id: "make-shaper" }),
+        );
+        target.choice = { mode: "pinned", alternativeId: "make-shaper" };
+        const source = graph.nodes.find((node) => node.id === `${nodeId}-influence-base`);
+        if (source?.kind !== "acquire" || source.alternatives[0]?.kind !== "purchase")
+            throw new Error("Missing uninfluenced base purchase.");
+        expect(source.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+        expect(source.alternatives[0].item).toEqual({ ...checkpoint, influences: [] });
+        expect(source.alternatives[0].sourcePreparation).toEqual({ kind: "influence-ready-v1" });
+        source.alternatives[0].price = quote(10);
+        graph.entry = target.id;
+        graph.outcomes = [{ ...graph.outcomes[0]!, query: target.output }];
+        graph.prices[transmute] = quote(1);
+        graph.prices[regal] = quote(2);
+        graph.prices[shaper] = quote(3);
+        graph.prices[scour] = quote(4);
+        expect(discoverGraphCraftingCosts(engine, graph).map((cost) => cost.id)).toContain(shaper);
+        const result = runGraphTrial(graph, seededRandom(42));
+        expect(result).toMatchObject({
+            success: true,
+            purchases: 1,
+            actions: 4,
+            cost: 20,
+            missingPrices: [],
+            item: checkpoint,
+        });
+        expect(result.item).toEqual(checkpoint);
+        expect(result.spending).toMatchObject({
+            [transmute]: 1,
+            [regal]: 1,
+            [shaper]: 1,
+            [scour]: 1,
+        });
+    },
+);
 
 it.each(cases)("%s charges every source cleanup before adding influence", (presetId, nodeId) => {
     for (const [alternativeId, crafted, enchanted] of [

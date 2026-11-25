@@ -401,50 +401,53 @@ it("keeps the fixed input and path when a closer-tier quote appears, and refresh
     );
 });
 
-it.each([
-    "missing",
-    "zero",
-])("marks a %s latest ingredient hour unavailable and restores it after a later quote", async (latest) => {
-    capture();
-    if (latest === "zero")
-        capture({
-            hour: vendorHour + 3600,
-            volumeTraded: { [vendorInputId]: 0, "Metadata/Items/Currency/CurrencyRerollRare": 0 },
-        });
-    const bound = bindCraftingSourcePrice(exchangeGraph(), engine, vendorOutputId, vendorQuote);
-    const result = await findCraftingSourcePrices(bound, engine, options, db);
-    expect(result.quotes).toEqual({});
-    expect(result.missing[vendorOutputId]).toBeTruthy();
-    const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
-    expect(refreshed.graph.prices[vendorOutputId]?.amount).toBe(
-        bound.prices[vendorOutputId]?.amount,
-    );
-    expect(refreshed.graph.prices[vendorOutputId]?.cohortId).not.toBe(
-        bound.prices[vendorOutputId]?.cohortId,
-    );
-    expect(
-        decodeCraftingSourceReference(refreshed.graph.prices[vendorOutputId]?.cohortId),
-    ).toMatchObject({ source: "vendor-upgrade", path: vendorQuote.path });
-    expect(() => assertCraftingSourcePrices(refreshed.graph)).toThrow(
-        "vendor ingredient exchange price is unavailable",
-    );
-    expect(refreshed.issues).toHaveLength(1);
-    const history = await craftingMarketSnapshots(db, bound, engine, [
-        vendorHour,
-        vendorHour + 3600,
-    ]);
-    expect(history.points[0]?.graph?.prices[vendorOutputId]?.amount).toBe(18);
-    expect(history.points[1]?.graph).toBeNull();
-    sqlite
-        .prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_currency_hourly WHERE hour = ?`)
-        .run(vendorHour + 3600);
-    capture({ hour: vendorHour + 3600 });
-    const restored = await refreshCraftingMarketPrices(db, refreshed.graph, engine);
-    expect(restored.issues).toEqual([]);
-    expect(restored.graph.prices[vendorOutputId]?.amount).toBe(18);
-    expect(restored.graph.prices[vendorOutputId]?.cohortId).not.toContain("unavailable");
-    expect(() => assertCraftingSourcePrices(restored.graph)).not.toThrow();
-});
+it.each(["missing", "zero"])(
+    "marks a %s latest ingredient hour unavailable and restores it after a later quote",
+    async (latest) => {
+        capture();
+        if (latest === "zero")
+            capture({
+                hour: vendorHour + 3600,
+                volumeTraded: {
+                    [vendorInputId]: 0,
+                    "Metadata/Items/Currency/CurrencyRerollRare": 0,
+                },
+            });
+        const bound = bindCraftingSourcePrice(exchangeGraph(), engine, vendorOutputId, vendorQuote);
+        const result = await findCraftingSourcePrices(bound, engine, options, db);
+        expect(result.quotes).toEqual({});
+        expect(result.missing[vendorOutputId]).toBeTruthy();
+        const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
+        expect(refreshed.graph.prices[vendorOutputId]?.amount).toBe(
+            bound.prices[vendorOutputId]?.amount,
+        );
+        expect(refreshed.graph.prices[vendorOutputId]?.cohortId).not.toBe(
+            bound.prices[vendorOutputId]?.cohortId,
+        );
+        expect(
+            decodeCraftingSourceReference(refreshed.graph.prices[vendorOutputId]?.cohortId),
+        ).toMatchObject({ source: "vendor-upgrade", path: vendorQuote.path });
+        expect(() => assertCraftingSourcePrices(refreshed.graph)).toThrow(
+            "vendor ingredient exchange price is unavailable",
+        );
+        expect(refreshed.issues).toHaveLength(1);
+        const history = await craftingMarketSnapshots(db, bound, engine, [
+            vendorHour,
+            vendorHour + 3600,
+        ]);
+        expect(history.points[0]?.graph?.prices[vendorOutputId]?.amount).toBe(18);
+        expect(history.points[1]?.graph).toBeNull();
+        sqlite
+            .prepare(`DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_currency_hourly WHERE hour = ?`)
+            .run(vendorHour + 3600);
+        capture({ hour: vendorHour + 3600 });
+        const restored = await refreshCraftingMarketPrices(db, refreshed.graph, engine);
+        expect(restored.issues).toEqual([]);
+        expect(restored.graph.prices[vendorOutputId]?.amount).toBe(18);
+        expect(restored.graph.prices[vendorOutputId]?.cohortId).not.toContain("unavailable");
+        expect(() => assertCraftingSourcePrices(restored.graph)).not.toThrow();
+    },
+);
 
 it("returns explicit refusal for unsupported requests without using a different source", async () => {
     for (const request of [

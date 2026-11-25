@@ -8,13 +8,14 @@ import {
 import { MARKET_ORDERS, type MarketOrder, marketFiltersSchema, marketLink } from "~/schemas/market";
 
 describe("market table state", () => {
-    it.each(
-        Object.keys(MARKET_ORDERS) as MarketOrder[],
-    )("maps the %s order to one sorted header and back", (order) => {
-        const sorting = marketTableSorting(order);
-        expect(sorting).toHaveLength(1);
-        expect(marketTableOrder(sorting)).toBe(order);
-    });
+    it.each(Object.keys(MARKET_ORDERS) as MarketOrder[])(
+        "maps the %s order to one sorted header and back",
+        (order) => {
+            const sorting = marketTableSorting(order);
+            expect(sorting).toHaveLength(1);
+            expect(marketTableOrder(sorting)).toBe(order);
+        },
+    );
 
     it("sorts by likely sales when no header is sorted", () => {
         expect(marketTableOrder([])).toBe("sales");
@@ -87,11 +88,10 @@ describe("market table state", () => {
         });
     });
 
-    it.each([
-        { priceMin: "-1" },
-        { listingsMax: "1e13" },
-        { sellersMin: "many" },
-    ])("rejects invalid range bounds %j", (input) => {
-        expect(marketFiltersSchema.safeParse(input).success).toBe(false);
-    });
+    it.each([{ priceMin: "-1" }, { listingsMax: "1e13" }, { sellersMin: "many" }])(
+        "rejects invalid range bounds %j",
+        (input) => {
+            expect(marketFiltersSchema.safeParse(input).success).toBe(false);
+        },
+    );
 });

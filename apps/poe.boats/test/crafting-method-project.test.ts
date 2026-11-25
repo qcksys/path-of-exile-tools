@@ -10,43 +10,47 @@ import { historyIndex } from "./crafting-history-fixtures";
 import { workbenchCatalog, workbenchProject } from "./crafting-workbench-fixtures";
 
 describe("selected craft handoff", () => {
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("preserves %s state and prices in a runnable single-input graph", (game) => {
-        const project = workbenchProject(game);
-        const ruleset = historyIndex.revisions.find(
-            (entry) => entry.game === game && entry.revision === "r19",
-        )!;
-        const input = projectFromMethodInputSchema.parse({
-            game,
-            ruleset: rulesetReference(ruleset),
-            name: "Transmutation",
-            item: { ...project.item, quality: 20 },
-            method: project.method,
-            price: quote(10),
-            prices: Object.fromEntries(
-                Object.entries(project.prices).map(([id, amount]) => [id, quote(amount)]),
-            ),
-        });
-        const before = structuredClone(input);
-        const graph = projectFromMethod(new CraftingEngine(workbenchCatalog(game)), ruleset, input);
-        const result = calculateCraftingGraph(
-            workbenchCatalog(game),
-            { ...graph, iterations: 2 },
-            { estimateIterations: 1, workLimit: 1000 },
-        );
-        expect(result).toMatchObject({
-            complete: true,
-            meanCost: 12,
-            meanActions: 1,
-            probability: 1,
-        });
-        expect(graph.nodes[0]).toMatchObject({
-            alternatives: [{ item: input.item, price: quote(10) }],
-        });
-        expect(input).toEqual(before);
-    });
+    it.each(["poe1", "poe2"] as const)(
+        "preserves %s state and prices in a runnable single-input graph",
+        (game) => {
+            const project = workbenchProject(game);
+            const ruleset = historyIndex.revisions.find(
+                (entry) => entry.game === game && entry.revision === "r19",
+            )!;
+            const input = projectFromMethodInputSchema.parse({
+                game,
+                ruleset: rulesetReference(ruleset),
+                name: "Transmutation",
+                item: { ...project.item, quality: 20 },
+                method: project.method,
+                price: quote(10),
+                prices: Object.fromEntries(
+                    Object.entries(project.prices).map(([id, amount]) => [id, quote(amount)]),
+                ),
+            });
+            const before = structuredClone(input);
+            const graph = projectFromMethod(
+                new CraftingEngine(workbenchCatalog(game)),
+                ruleset,
+                input,
+            );
+            const result = calculateCraftingGraph(
+                workbenchCatalog(game),
+                { ...graph, iterations: 2 },
+                { estimateIterations: 1, workLimit: 1000 },
+            );
+            expect(result).toMatchObject({
+                complete: true,
+                meanCost: 12,
+                meanActions: 1,
+                probability: 1,
+            });
+            expect(graph.nodes[0]).toMatchObject({
+                alternatives: [{ item: input.item, price: quote(10) }],
+            });
+            expect(input).toEqual(before);
+        },
+    );
 
     it("charges each full recombination donor exactly once and keeps the original rolls", () => {
         const ruleset = historyIndex.revisions.find(

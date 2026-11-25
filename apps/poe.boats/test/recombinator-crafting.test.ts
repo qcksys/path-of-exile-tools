@@ -39,82 +39,84 @@ function fixture() {
     });
 }
 describe("recombinator input materialization", () => {
-    it.each([
-        "minimum",
-        "maximum",
-        "stale",
-        "custom",
-    ] as const)("shares %s input conversion and refusals through HTTP and MCP", async (scenario) => {
-        vi.spyOn(crypto, "randomUUID").mockReturnValue("00000000-0000-4000-8000-000000000001");
-        const context: OperationContext = {
-            db: createDbConnection("mysql://test:test@localhost/poe_test"),
-            loadCatalog: async () => recombinator,
-            loadWorkbenchCatalog: async () => catalog,
-            loadCraftingRulesets: async () => historyIndex,
-            loadCraftingRevision: retainedRevision,
-            origin: "https://poe.boats",
-            caller: null,
-        };
-        const input = fixture();
-        if (scenario === "maximum") input.rolls = "maximum";
-        if (scenario === "stale") input.source.manifestSha256 = "0".repeat(64);
-        if (scenario === "custom") input.selection.prefixes = "Unresolved custom modifier";
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/items/from-recombinator",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime: async () => context },
-        );
-        const rpc = await handleMcpRequest(
-            new Request("https://poe.boats/mcp", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    accept: "application/json, text/event-stream",
+    it.each(["minimum", "maximum", "stale", "custom"] as const)(
+        "shares %s input conversion and refusals through HTTP and MCP",
+        async (scenario) => {
+            vi.spyOn(crypto, "randomUUID").mockReturnValue("00000000-0000-4000-8000-000000000001");
+            const context: OperationContext = {
+                db: createDbConnection("mysql://test:test@localhost/poe_test"),
+                loadCatalog: async () => recombinator,
+                loadWorkbenchCatalog: async () => catalog,
+                loadCraftingRulesets: async () => historyIndex,
+                loadCraftingRevision: retainedRevision,
+                origin: "https://poe.boats",
+                caller: null,
+            };
+            const input = fixture();
+            if (scenario === "maximum") input.rolls = "maximum";
+            if (scenario === "stale") input.source.manifestSha256 = "0".repeat(64);
+            if (scenario === "custom") input.selection.prefixes = "Unresolved custom modifier";
+            const response = await api.request(
+                "https://poe.boats/api/v1/crafting/items/from-recombinator",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
                 },
-                body: JSON.stringify({
-                    jsonrpc: "2.0",
-                    id: 1,
-                    method: "tools/call",
-                    params: {
-                        name: "create_crafting_graph_from_recombinator_input",
-                        arguments: input,
+                { runtime: async () => context },
+            );
+            const rpc = await handleMcpRequest(
+                new Request("https://poe.boats/mcp", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        accept: "application/json, text/event-stream",
                     },
-                }),
-            }),
-            async () => context,
-        );
-        const result = CallToolResultSchema.parse(
-            z.object({ result: z.unknown() }).parse(await rpc.json()).result,
-        );
-        if (scenario === "stale" || scenario === "custom") {
-            expect(response.status).toBe(400);
-            expect(result.isError).toBe(true);
-        } else {
-            expect(response.status).toBe(200);
-            expect(result.isError).not.toBe(true);
-            const data = await response.json();
-            expect(result.structuredContent).toEqual(data);
-            expect(data).toMatchObject({
-                graph: {
-                    nodes: [
-                        {
-                            choice: { mode: "pinned" },
-                            alternatives: [
-                                {
-                                    price: null,
-                                    item: materializeRecombinatorInput(engine, recombinator, input),
-                                },
-                            ],
+                    body: JSON.stringify({
+                        jsonrpc: "2.0",
+                        id: 1,
+                        method: "tools/call",
+                        params: {
+                            name: "create_crafting_graph_from_recombinator_input",
+                            arguments: input,
                         },
-                    ],
-                },
-            });
-        }
-    });
+                    }),
+                }),
+                async () => context,
+            );
+            const result = CallToolResultSchema.parse(
+                z.object({ result: z.unknown() }).parse(await rpc.json()).result,
+            );
+            if (scenario === "stale" || scenario === "custom") {
+                expect(response.status).toBe(400);
+                expect(result.isError).toBe(true);
+            } else {
+                expect(response.status).toBe(200);
+                expect(result.isError).not.toBe(true);
+                const data = await response.json();
+                expect(result.structuredContent).toEqual(data);
+                expect(data).toMatchObject({
+                    graph: {
+                        nodes: [
+                            {
+                                choice: { mode: "pinned" },
+                                alternatives: [
+                                    {
+                                        price: null,
+                                        item: materializeRecombinatorInput(
+                                            engine,
+                                            recombinator,
+                                            input,
+                                        ),
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                });
+            }
+        },
+    );
     it("requires a concrete base and preserves canonical modifiers with explicit roll assumptions", () => {
         const input = fixture();
         const before = structuredClone(input);

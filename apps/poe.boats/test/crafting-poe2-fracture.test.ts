@@ -45,30 +45,33 @@ describe("PoE 2 crafted fractures", () => {
         ["Ring", "essence"],
         ["Body Armour", "essence"],
         ["Jewel", "emotion"],
-    ] as const)("fractures a %s %s modifier without changing its values or crafted status", (itemClass, source) => {
-        const item = prepared(itemClass, source);
-        const original = structuredClone(item);
-        const result = engine.apply(item, fracture, first);
-        expect(item).toEqual(original);
-        expect(result.item).toEqual({
-            ...item,
-            mods: [{ ...item.mods[0], fractured: true }, ...item.mods.slice(1)],
-        });
-        expect(result.item.mods[0]!.crafted).toBe(true);
-        expect(result.cost).toEqual([{ id: fracture.id, name: "Fracturing Orb", amount: 1 }]);
-        expect(engine.validateItem(result.item)).toEqual(result.item);
-        for (const mod of item.mods)
-            expect(
-                calculateExact(
-                    engine,
-                    item,
-                    fracture,
-                    engine.validateTarget({
-                        groups: [{ mods: [mod.id], fractured: true }],
-                    }),
-                ).probability,
-            ).toBe(0.25);
-    });
+    ] as const)(
+        "fractures a %s %s modifier without changing its values or crafted status",
+        (itemClass, source) => {
+            const item = prepared(itemClass, source);
+            const original = structuredClone(item);
+            const result = engine.apply(item, fracture, first);
+            expect(item).toEqual(original);
+            expect(result.item).toEqual({
+                ...item,
+                mods: [{ ...item.mods[0], fractured: true }, ...item.mods.slice(1)],
+            });
+            expect(result.item.mods[0]!.crafted).toBe(true);
+            expect(result.cost).toEqual([{ id: fracture.id, name: "Fracturing Orb", amount: 1 }]);
+            expect(engine.validateItem(result.item)).toEqual(result.item);
+            for (const mod of item.mods)
+                expect(
+                    calculateExact(
+                        engine,
+                        item,
+                        fracture,
+                        engine.validateTarget({
+                            groups: [{ mods: [mod.id], fractured: true }],
+                        }),
+                    ).probability,
+                ).toBe(0.25);
+        },
+    );
 
     it("preserves fractured crafts during annulment, Chaos and Divine and keeps the crafted slot occupied", () => {
         const item = engine.apply(prepared(), fracture, first).item;

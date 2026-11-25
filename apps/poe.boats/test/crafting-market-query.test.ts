@@ -501,19 +501,22 @@ describe("equipment market lookup", () => {
         });
         expect(correction.candidates[0]?.exchange).toBeUndefined();
     });
-    it.each([
-        "divine",
-        "chrome",
-    ])("does not convert %s using another hour, realm or league", async (currency) => {
-        capture(completed, currency);
-        exchange(completed - 3600, "pc", "Standard", currency);
-        exchange(completed, "sony", "Standard", currency);
-        exchange(completed, "pc", "Other", currency);
-        const result = await findCraftingMarketPrices(db, { ...input, conversion: "exchange-v1" });
-        expect(result.candidates[0]?.covered).toBe(false);
-        expect(result.candidates[0]?.exchange).toBeUndefined();
-        expect(result.candidates[0]?.reasons.join(" ")).toContain("matching-hour");
-    });
+    it.each(["divine", "chrome"])(
+        "does not convert %s using another hour, realm or league",
+        async (currency) => {
+            capture(completed, currency);
+            exchange(completed - 3600, "pc", "Standard", currency);
+            exchange(completed, "sony", "Standard", currency);
+            exchange(completed, "pc", "Other", currency);
+            const result = await findCraftingMarketPrices(db, {
+                ...input,
+                conversion: "exchange-v1",
+            });
+            expect(result.candidates[0]?.covered).toBe(false);
+            expect(result.candidates[0]?.exchange).toBeUndefined();
+            expect(result.candidates[0]?.reasons.join(" ")).toContain("matching-hour");
+        },
+    );
     it("does not replace a current zero-volume chrome pair with the older positive rate", async () => {
         capture(completed, "chrome");
         exchange(completed - 3600, "pc", "Standard", "chrome");

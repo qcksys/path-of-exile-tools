@@ -670,34 +670,37 @@ it.each([
     ["rarity-helmet", "donor-0-0", false],
     ["energy-shield-chest", "donor-1", true],
     ["strength-helical-ring", "base", false],
-] as const)("classifies raw %s/%s listings without supplied canonical facts", (preset, id, metadata) => {
-    const { node, item } = purchases.find(
-        (entry) => entry.preset === preset && entry.node.id === id,
-    )!;
-    const cohort = cohorts.find(
-        (cohort) => cohortPriceCoverage(cohort, queries.record(item), node.output).covered,
-    )!;
-    const raw = rawItem(item, metadata);
-    expect(classifier.classify(normalizeApiItem("poe1", "stash", raw)).matches).toContain(
-        cohort.id,
-    );
-    for (const invalid of [
-        { ...raw, ilvl: 85 },
-        { ...raw, baseType: "Wrong Base" },
-        { ...raw, corrupted: true },
-        { ...raw, extended: { ...raw.extended, suffixes: raw.extended.suffixes + 1 } },
-        { ...raw, influences: { ...raw.influences, elder: true } },
-    ])
-        expect(
-            classifier.classify(normalizeApiItem("poe1", "stash", invalid)).matches,
-        ).not.toContain(cohort.id);
-    if (item.mods.length) {
-        expect(
-            classifier.classify(normalizeApiItem("poe1", "stash", { ...raw, explicitMods: [] }))
-                .matches,
-        ).not.toContain(cohort.id);
-    }
-});
+] as const)(
+    "classifies raw %s/%s listings without supplied canonical facts",
+    (preset, id, metadata) => {
+        const { node, item } = purchases.find(
+            (entry) => entry.preset === preset && entry.node.id === id,
+        )!;
+        const cohort = cohorts.find(
+            (cohort) => cohortPriceCoverage(cohort, queries.record(item), node.output).covered,
+        )!;
+        const raw = rawItem(item, metadata);
+        expect(classifier.classify(normalizeApiItem("poe1", "stash", raw)).matches).toContain(
+            cohort.id,
+        );
+        for (const invalid of [
+            { ...raw, ilvl: 85 },
+            { ...raw, baseType: "Wrong Base" },
+            { ...raw, corrupted: true },
+            { ...raw, extended: { ...raw.extended, suffixes: raw.extended.suffixes + 1 } },
+            { ...raw, influences: { ...raw.influences, elder: true } },
+        ])
+            expect(
+                classifier.classify(normalizeApiItem("poe1", "stash", invalid)).matches,
+            ).not.toContain(cohort.id);
+        if (item.mods.length) {
+            expect(
+                classifier.classify(normalizeApiItem("poe1", "stash", { ...raw, explicitMods: [] }))
+                    .matches,
+            ).not.toContain(cohort.id);
+        }
+    },
+);
 
 it("does not price ambiguous elemental modifier identities from names, tiers or numeric rolls", () => {
     for (const { node, item } of purchases.filter(
@@ -806,21 +809,24 @@ it.each([
     ["es-block-shield", "flat-block", "RecoverEnergyShieldPercentOnBlockUber1"],
     ["tailwind-boots", "onslaught-base", "OnslaughtOnKillInfluence2_"],
     ["energy-shield-chest", "donor-1", "LocalIncreasedEvasionRating8"],
-])("classifies %s/%s when only the ambiguous affix supplies identity metadata", (preset, nodeId, knownId) => {
-    const { node, item } = purchases.find(
-        (entry) => entry.preset === preset && entry.node.id === nodeId,
-    )!;
-    const cohort = cohorts.find(
-        (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
-    )!;
-    const raw = rawItem(item, true);
-    const name = engine.mod(knownId).name;
-    raw.explicitMods = raw.explicitMods.map((row) =>
-        row.mods?.[0]?.name === name ? row : { description: row.description },
-    );
-    expect(raw.explicitMods.some((row) => row.mods?.length)).toBe(true);
-    expect(raw.explicitMods.some((row) => !row.mods?.length)).toBe(true);
-    expect(classifier.classify(normalizeApiItem("poe1", "stash", raw)).matches).toContain(
-        cohort.id,
-    );
-});
+])(
+    "classifies %s/%s when only the ambiguous affix supplies identity metadata",
+    (preset, nodeId, knownId) => {
+        const { node, item } = purchases.find(
+            (entry) => entry.preset === preset && entry.node.id === nodeId,
+        )!;
+        const cohort = cohorts.find(
+            (entry) => cohortPriceCoverage(entry, queries.record(item), node.output).covered,
+        )!;
+        const raw = rawItem(item, true);
+        const name = engine.mod(knownId).name;
+        raw.explicitMods = raw.explicitMods.map((row) =>
+            row.mods?.[0]?.name === name ? row : { description: row.description },
+        );
+        expect(raw.explicitMods.some((row) => row.mods?.length)).toBe(true);
+        expect(raw.explicitMods.some((row) => !row.mods?.length)).toBe(true);
+        expect(classifier.classify(normalizeApiItem("poe1", "stash", raw)).matches).toContain(
+            cohort.id,
+        );
+    },
+);

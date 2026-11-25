@@ -113,49 +113,52 @@ it("rolls back metadata, earlier chunks, page and tracking rows when a later chu
         expect(await queryAll(db.conn, `SELECT * FROM ${table}`)).toEqual([]);
 });
 
-it.each([
-    "legacy",
-    "chunked",
-] as const)("rejects wrong-key indexed %s hits for reads and deduplication", async (format) => {
-    const wrong = page("different archived body");
-    const existing = page("existing requested body");
-    const missing = page("new requested body");
-    for (const value of [wrong, existing]) {
-        if (format === "chunked") await archivePage(db.conn, value, scope, () => true);
-        else {
-            const json = JSON.stringify(value);
-            await db.conn.run("INSERT INTO ps_capture_payload VALUES ($1, from_base64($2), $3)", [
-                responseHash(value),
-                gzipSync(json).toString("base64"),
-                Buffer.byteLength(json),
-            ]);
+it.each(["legacy", "chunked"] as const)(
+    "rejects wrong-key indexed %s hits for reads and deduplication",
+    async (format) => {
+        const wrong = page("different archived body");
+        const existing = page("existing requested body");
+        const missing = page("new requested body");
+        for (const value of [wrong, existing]) {
+            if (format === "chunked") await archivePage(db.conn, value, scope, () => true);
+            else {
+                const json = JSON.stringify(value);
+                await db.conn.run(
+                    "INSERT INTO ps_capture_payload VALUES ($1, from_base64($2), $3)",
+                    [
+                        responseHash(value),
+                        gzipSync(json).toString("base64"),
+                        Buffer.byteLength(json),
+                    ],
+                );
+            }
         }
-    }
-    const table = format === "legacy" ? "ps_capture_payload" : "ps_capture_payload_meta";
-    const read = db.conn.runAndReadAll.bind(db.conn);
-    const indexedRead = vi
-        .spyOn(db.conn, "runAndReadAll")
-        .mockImplementation((sql, ...args) =>
-            sql.includes(`FROM ${table} WHERE response_hash = $1`)
-                ? read(sql, [responseHash(wrong)])
-                : read(sql, ...args),
-        );
-    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
-    try {
-        expect(await readArchivedPage(db.conn, responseHash(existing))).toEqual(existing);
-        await expect(readArchivedPage(db.conn, responseHash(missing))).rejects.toThrow(
-            "The archived payload is missing.",
-        );
-        expect(await hasArchivedPayload(db.conn, responseHash(missing))).toBe(false);
-        await archivePage(db.conn, missing, scope, () => true);
-        expect(await readArchivedPage(db.conn, responseHash(missing))).toEqual(missing);
-        expect(await readArchivedPage(db.conn, responseHash(wrong))).toEqual(wrong);
-        expect(await captureArchiveStatus(db.conn)).toMatchObject({ payloads: 3 });
-        expect(warning).toHaveBeenCalled();
-        for (const call of warning.mock.calls)
-            expect(call).toEqual(["Archived payload found by sequential fallback."]);
-    } finally {
-        indexedRead.mockRestore();
-        warning.mockRestore();
-    }
-});
+        const table = format === "legacy" ? "ps_capture_payload" : "ps_capture_payload_meta";
+        const read = db.conn.runAndReadAll.bind(db.conn);
+        const indexedRead = vi
+            .spyOn(db.conn, "runAndReadAll")
+            .mockImplementation((sql, ...args) =>
+                sql.includes(`FROM ${table} WHERE response_hash = $1`)
+                    ? read(sql, [responseHash(wrong)])
+                    : read(sql, ...args),
+            );
+        const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+        try {
+            expect(await readArchivedPage(db.conn, responseHash(existing))).toEqual(existing);
+            await expect(readArchivedPage(db.conn, responseHash(missing))).rejects.toThrow(
+                "The archived payload is missing.",
+            );
+            expect(await hasArchivedPayload(db.conn, responseHash(missing))).toBe(false);
+            await archivePage(db.conn, missing, scope, () => true);
+            expect(await readArchivedPage(db.conn, responseHash(missing))).toEqual(missing);
+            expect(await readArchivedPage(db.conn, responseHash(wrong))).toEqual(wrong);
+            expect(await captureArchiveStatus(db.conn)).toMatchObject({ payloads: 3 });
+            expect(warning).toHaveBeenCalled();
+            for (const call of warning.mock.calls)
+                expect(call).toEqual(["Archived payload found by sequential fallback."]);
+        } finally {
+            indexedRead.mockRestore();
+            warning.mockRestore();
+        }
+    },
+);

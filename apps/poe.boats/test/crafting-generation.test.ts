@@ -59,34 +59,34 @@ for (const game of ["poe1", "poe2"] as const) {
         });
 
     describe(`${game} fresh item generation`, () => {
-        it.each([
-            "normal",
-            "magic",
-            "rare",
-        ] as const)("generates %s items using the ordinary extracted pool and currency count model", (rarity) => {
-            const currency = catalog.crafting.currencies.find(
-                (entry) =>
-                    entry.action ===
-                    (rarity === "magic" ? "transmute_to_magic" : "transmute_to_rare"),
-            )!;
-            for (let seed = 0; seed < 20; seed++) {
-                const random = seededRandom(seed);
-                const fresh = engine.apply(blank(), generate("normal"), random).item;
-                const expected =
-                    rarity === "normal"
-                        ? fresh
-                        : engine.apply(fresh, { kind: "currency", id: currency.id }, random).item;
-                const result = engine.apply(blank(), generate(rarity), seededRandom(seed));
-                expect(result.item).toEqual(expected);
-                expect(result.item.rarity).toBe(rarity);
-                expect(result.item.mods.length).toBeGreaterThanOrEqual(
-                    rarity === "normal" ? 0 : rarity === "magic" ? 1 : 4,
-                );
-                expect(result.cost).toEqual([
-                    { id: `generated:${rarity}`, name: `Generated ${rarity} item`, amount: 1 },
-                ]);
-            }
-        });
+        it.each(["normal", "magic", "rare"] as const)(
+            "generates %s items using the ordinary extracted pool and currency count model",
+            (rarity) => {
+                const currency = catalog.crafting.currencies.find(
+                    (entry) =>
+                        entry.action ===
+                        (rarity === "magic" ? "transmute_to_magic" : "transmute_to_rare"),
+                )!;
+                for (let seed = 0; seed < 20; seed++) {
+                    const random = seededRandom(seed);
+                    const fresh = engine.apply(blank(), generate("normal"), random).item;
+                    const expected =
+                        rarity === "normal"
+                            ? fresh
+                            : engine.apply(fresh, { kind: "currency", id: currency.id }, random)
+                                  .item;
+                    const result = engine.apply(blank(), generate(rarity), seededRandom(seed));
+                    expect(result.item).toEqual(expected);
+                    expect(result.item.rarity).toBe(rarity);
+                    expect(result.item.mods.length).toBeGreaterThanOrEqual(
+                        rarity === "normal" ? 0 : rarity === "magic" ? 1 : 4,
+                    );
+                    expect(result.cost).toEqual([
+                        { id: `generated:${rarity}`, name: `Generated ${rarity} item`, amount: 1 },
+                    ]);
+                }
+            },
+        );
 
         it("replaces protected and destroyed states without retaining rolls or mutating the input", () => {
             const starting = engine.addStartingMod(blank(), "IncreasedLife1", seededRandom(1));

@@ -30,65 +30,67 @@ function bench(item: CraftingItem, stat: string) {
 }
 
 describe("Harvest influence randomisation", () => {
-    it.each([
-        0, 1, 2, 3, 4, 5,
-    ])("changes influence %s using the other extracted influence types before reforging", (influence) => {
-        const item = prepared(influence);
-        item.quality = 20;
-        const influenced = engine.pool(item, { influence })[0]!;
-        item.mods = [engine.rollMod(influenced.id, seededRandom(1))];
-        const before = structuredClone(item);
-        const random = seededRandom(5);
-        const pick = vi.spyOn(random, "pick");
-        const result = engine.apply(item, method, random);
-        expect(engine.harvestSupported(method.id)).toBe(true);
-        expect(pick.mock.calls[0]![0]).toEqual(
-            catalog.crafting.influences
-                .filter(
-                    (entry) => entry.itemClass === "Body Armour" && entry.influence !== influence,
-                )
-                .map((entry) => ({ value: entry.influence, weight: 1 })),
-        );
-        expect(result.item.influences).toHaveLength(1);
-        expect(result.item.influences).not.toContain(influence);
-        expect(result.item.mods.some((entry) => entry.id === influenced.id)).toBe(false);
-        const empty = { ...result.item, mods: [] };
-        expect(pick.mock.calls[2]![0]).toEqual(
-            engine.pool(empty).map((entry) => ({ value: entry.id, weight: entry.weight })),
-        );
-        expect(result.item.mods.length).toBeGreaterThanOrEqual(4);
-        expect(result.item.quality).toBe(20);
-        expect(result.item.implicits).toEqual(item.implicits);
-        expect(item).toEqual(before);
-        expect(result.cost).toEqual(recipe.cost);
-    });
+    it.each([0, 1, 2, 3, 4, 5])(
+        "changes influence %s using the other extracted influence types before reforging",
+        (influence) => {
+            const item = prepared(influence);
+            item.quality = 20;
+            const influenced = engine.pool(item, { influence })[0]!;
+            item.mods = [engine.rollMod(influenced.id, seededRandom(1))];
+            const before = structuredClone(item);
+            const random = seededRandom(5);
+            const pick = vi.spyOn(random, "pick");
+            const result = engine.apply(item, method, random);
+            expect(engine.harvestSupported(method.id)).toBe(true);
+            expect(pick.mock.calls[0]![0]).toEqual(
+                catalog.crafting.influences
+                    .filter(
+                        (entry) =>
+                            entry.itemClass === "Body Armour" && entry.influence !== influence,
+                    )
+                    .map((entry) => ({ value: entry.influence, weight: 1 })),
+            );
+            expect(result.item.influences).toHaveLength(1);
+            expect(result.item.influences).not.toContain(influence);
+            expect(result.item.mods.some((entry) => entry.id === influenced.id)).toBe(false);
+            const empty = { ...result.item, mods: [] };
+            expect(pick.mock.calls[2]![0]).toEqual(
+                engine.pool(empty).map((entry) => ({ value: entry.id, weight: entry.weight })),
+            );
+            expect(result.item.mods.length).toBeGreaterThanOrEqual(4);
+            expect(result.item.quality).toBe(20);
+            expect(result.item.implicits).toEqual(item.implicits);
+            expect(item).toEqual(before);
+            expect(result.cost).toEqual(recipe.cost);
+        },
+    );
 
-    it.each([
-        "prefix",
-        "suffix",
-    ] as const)("preserves ordinary locked %ses but rejects locked influenced modifiers before randomness", (side) => {
-        let item = prepared();
-        item = engine.addStartingMod(
-            item,
-            side === "prefix" ? "IncreasedLife1" : "ColdResist1",
-            seededRandom(1),
-        );
-        item = bench(item, `item_generation_cannot_change_${side}es`);
-        const kept = item.mods.find((entry) => engine.mod(entry.id).generation_type === side)!;
-        const result = engine.apply(item, method, seededRandom(3)).item;
-        expect(result.mods).toContainEqual(kept);
-        expect(result.influences).not.toEqual(item.influences);
-        let invalid = prepared();
-        const influenced = engine.pool(invalid, { influence: 0, side })[0]!;
-        invalid = engine.addStartingMod(invalid, influenced.id, seededRandom(1));
-        invalid = bench(invalid, `item_generation_cannot_change_${side}es`);
-        const random = seededRandom(1);
-        const pick = vi.spyOn(random, "pick");
-        expect(() => engine.apply(invalid, method, random)).toThrow(
-            "influenced modifier is protected",
-        );
-        expect(pick).not.toHaveBeenCalled();
-    });
+    it.each(["prefix", "suffix"] as const)(
+        "preserves ordinary locked %ses but rejects locked influenced modifiers before randomness",
+        (side) => {
+            let item = prepared();
+            item = engine.addStartingMod(
+                item,
+                side === "prefix" ? "IncreasedLife1" : "ColdResist1",
+                seededRandom(1),
+            );
+            item = bench(item, `item_generation_cannot_change_${side}es`);
+            const kept = item.mods.find((entry) => engine.mod(entry.id).generation_type === side)!;
+            const result = engine.apply(item, method, seededRandom(3)).item;
+            expect(result.mods).toContainEqual(kept);
+            expect(result.influences).not.toEqual(item.influences);
+            let invalid = prepared();
+            const influenced = engine.pool(invalid, { influence: 0, side })[0]!;
+            invalid = engine.addStartingMod(invalid, influenced.id, seededRandom(1));
+            invalid = bench(invalid, `item_generation_cannot_change_${side}es`);
+            const random = seededRandom(1);
+            const pick = vi.spyOn(random, "pick");
+            expect(() => engine.apply(invalid, method, random)).toThrow(
+                "influenced modifier is protected",
+            );
+            expect(pick).not.toHaveBeenCalled();
+        },
+    );
 
     it("enforces extracted classes and rejects unverified rarity and dual-influence states", () => {
         const item = prepared();

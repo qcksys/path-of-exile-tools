@@ -37,34 +37,32 @@ it("keeps rare route probabilities visible and distinguishes missing prices from
     ).toContain("0 visits · 0 chaos / attempt");
 });
 
-it.each([
-    "stop",
-    "error",
-    "worker-error",
-    "route-edit",
-])("discards uncommitted routes and stale messages after %s", (reason) => {
-    const { engine, project, mount } = fixture();
-    mount();
-    const card = screen.getByRole("region", { name: "Current item" });
-    const before = card.textContent;
-    fireEvent.click(button("Apply process"));
-    const worker = CraftingWorker.instances[0]!;
-    const process = new CraftingProcess(engine, project, seededRandom(project.seed));
-    process.advance();
-    act(() => worker.onmessage?.({ data: { type: "emulating", result: process.result() } }));
-    expect(screen.getByRole("region", { name: "Process route results" })).toBeDefined();
-    if (reason === "stop") fireEvent.click(button("Stop process"));
-    else if (reason === "route-edit")
-        changeControl(screen.getAllByLabelText("Condition failed")[0]!, {
-            target: { value: "failure" },
-        });
-    else if (reason === "error")
-        act(() => worker.onmessage?.({ data: { type: "error", message: "Worker failed" } }));
-    else act(() => worker.onerror?.({ message: "Worker failed" }));
-    expect(worker.terminate).toHaveBeenCalled();
-    act(() => worker.onmessage?.({ data: { type: "emulated", result: process.result() } }));
-    expect(screen.queryByRole("region", { name: "Process route results" })).toBeNull();
-    expect(card.textContent).toBe(before);
-    expect(screen.queryByText("Emulator spending")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Stop process" })).toBeNull();
-});
+it.each(["stop", "error", "worker-error", "route-edit"])(
+    "discards uncommitted routes and stale messages after %s",
+    (reason) => {
+        const { engine, project, mount } = fixture();
+        mount();
+        const card = screen.getByRole("region", { name: "Current item" });
+        const before = card.textContent;
+        fireEvent.click(button("Apply process"));
+        const worker = CraftingWorker.instances[0]!;
+        const process = new CraftingProcess(engine, project, seededRandom(project.seed));
+        process.advance();
+        act(() => worker.onmessage?.({ data: { type: "emulating", result: process.result() } }));
+        expect(screen.getByRole("region", { name: "Process route results" })).toBeDefined();
+        if (reason === "stop") fireEvent.click(button("Stop process"));
+        else if (reason === "route-edit")
+            changeControl(screen.getAllByLabelText("Condition failed")[0]!, {
+                target: { value: "failure" },
+            });
+        else if (reason === "error")
+            act(() => worker.onmessage?.({ data: { type: "error", message: "Worker failed" } }));
+        else act(() => worker.onerror?.({ message: "Worker failed" }));
+        expect(worker.terminate).toHaveBeenCalled();
+        act(() => worker.onmessage?.({ data: { type: "emulated", result: process.result() } }));
+        expect(screen.queryByRole("region", { name: "Process route results" })).toBeNull();
+        expect(card.textContent).toBe(before);
+        expect(screen.queryByText("Emulator spending")).toBeNull();
+        expect(screen.queryByRole("button", { name: "Stop process" })).toBeNull();
+    },
+);

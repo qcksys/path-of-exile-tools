@@ -18,29 +18,30 @@ describe.each(["poe1", "poe2"] as const)("%s PoB crafting blueprints", (game) =>
         `Rarity: Rare\nTest\n${catalog.bases[baseId]!.name}\nCrafted: true\n${records}\nItem Level: 86\nImplicits: 0\n${summary}`;
     const life = game === "poe1" ? 17 : 15;
 
-    it.each([
-        "before",
-        "after",
-    ])("imports blueprint records %s Item Level, including empty slots and fractures", (position) => {
-        const records = "Prefix: {fractured}{range:0.5}IncreasedLife1\nPrefix: None\nSuffix: None";
-        const input =
-            position === "before"
-                ? text(records)
-                : text("").replace("Implicits: 0", `Implicits: 0\n${records}`);
-        const result = importCraftingItemText(engine, input);
-        expect(result).toHaveLength(1);
-        expect(result[0]!.item.mods).toEqual([
-            { id: "IncreasedLife1", values: [life], crafted: false, fractured: true },
-        ]);
-        expect(result[0]!.warnings).toEqual([]);
-        expect(engine.validateItem(JSON.parse(JSON.stringify(result[0]!.item)))).toEqual(
-            result[0]!.item,
-        );
-        expect(
-            importCraftingItemText(engine, exportCraftingItemText(engine, result[0]!.item))[0]!
-                .item,
-        ).toEqual(result[0]!.item);
-    });
+    it.each(["before", "after"])(
+        "imports blueprint records %s Item Level, including empty slots and fractures",
+        (position) => {
+            const records =
+                "Prefix: {fractured}{range:0.5}IncreasedLife1\nPrefix: None\nSuffix: None";
+            const input =
+                position === "before"
+                    ? text(records)
+                    : text("").replace("Implicits: 0", `Implicits: 0\n${records}`);
+            const result = importCraftingItemText(engine, input);
+            expect(result).toHaveLength(1);
+            expect(result[0]!.item.mods).toEqual([
+                { id: "IncreasedLife1", values: [life], crafted: false, fractured: true },
+            ]);
+            expect(result[0]!.warnings).toEqual([]);
+            expect(engine.validateItem(JSON.parse(JSON.stringify(result[0]!.item)))).toEqual(
+                result[0]!.item,
+            );
+            expect(
+                importCraftingItemText(engine, exportCraftingItemText(engine, result[0]!.item))[0]!
+                    .item,
+            ).toEqual(result[0]!.item);
+        },
+    );
 
     it("reconciles rendered summaries without adding the same affixes twice", () => {
         const result = importCraftingItemText(
@@ -246,19 +247,20 @@ describe.each(["poe1", "poe2"] as const)("%s PoB crafting blueprints", (game) =>
             expect(result[0]!.item.mods[0]!.crafted).toBe(true);
         });
 
-    it.each([
-        "{fractured}",
-        "{suffix}",
-        "{modGroup:IncreasedLife2}",
-        "{desecrated}",
-    ])("rejects conflicting summary annotation %s instead of dropping it", (annotation) => {
-        expect(() =>
-            importCraftingItemText(
-                engine,
-                text("Prefix: {range:0.5}IncreasedLife1", `${annotation}+${life} to maximum Life`),
-            ),
-        ).toThrow("annotations do not match");
-    });
+    it.each(["{fractured}", "{suffix}", "{modGroup:IncreasedLife2}", "{desecrated}"])(
+        "rejects conflicting summary annotation %s instead of dropping it",
+        (annotation) => {
+            expect(() =>
+                importCraftingItemText(
+                    engine,
+                    text(
+                        "Prefix: {range:0.5}IncreasedLife1",
+                        `${annotation}+${life} to maximum Life`,
+                    ),
+                ),
+            ).toThrow("annotations do not match");
+        },
+    );
 
     it("retains additional crafted modifier lines alongside ordinary blueprint affixes", () => {
         const item = { ...engine.createItem(base), rarity: "rare" as const };

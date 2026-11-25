@@ -60,38 +60,36 @@ describe("Jewels in converted equipment sockets", () => {
         }
     });
 
-    it.each([
-        "ordinary",
-        "corrupted",
-        "mirrored",
-        "sanctified",
-    ])("allows free socketing and removal on %s equipment without changing rolls or input snapshots", (state) => {
-        const host: CraftingItem = { ...converted(), rarity: "rare" };
-        if (state === "corrupted") host.corrupted = true;
-        if (state === "mirrored") host.mirrored = true;
-        if (state === "sanctified") host.sanctified = true;
-        const child = jewel();
-        child.mods[0]!.fractured = true;
-        const method = socket(child);
-        const original = structuredClone({ host, method });
-        const random = seededRandom(42);
-        const pick = vi.spyOn(random, "pick");
-        const integer = vi.spyOn(random, "integer");
-        const result = engine.apply(host, method, random);
-        expect(result.item).toEqual({ ...host, socketedJewel: child });
-        expect(result.item.socketedJewel).not.toBe(child);
-        expect(engine.statTotals(result.item)).toEqual(engine.statTotals(host));
-        expect(
-            engine.matches(
-                result.item,
-                engine.validateTarget({ groups: [{ mods: [child.mods[0]!.id] }] }),
-            ),
-        ).toBe(false);
-        expect(engine.apply(result.item, remove, random)).toEqual({ item: host, cost: [] });
-        expect({ host, method }).toEqual(original);
-        expect(pick).not.toHaveBeenCalled();
-        expect(integer).not.toHaveBeenCalled();
-    });
+    it.each(["ordinary", "corrupted", "mirrored", "sanctified"])(
+        "allows free socketing and removal on %s equipment without changing rolls or input snapshots",
+        (state) => {
+            const host: CraftingItem = { ...converted(), rarity: "rare" };
+            if (state === "corrupted") host.corrupted = true;
+            if (state === "mirrored") host.mirrored = true;
+            if (state === "sanctified") host.sanctified = true;
+            const child = jewel();
+            child.mods[0]!.fractured = true;
+            const method = socket(child);
+            const original = structuredClone({ host, method });
+            const random = seededRandom(42);
+            const pick = vi.spyOn(random, "pick");
+            const integer = vi.spyOn(random, "integer");
+            const result = engine.apply(host, method, random);
+            expect(result.item).toEqual({ ...host, socketedJewel: child });
+            expect(result.item.socketedJewel).not.toBe(child);
+            expect(engine.statTotals(result.item)).toEqual(engine.statTotals(host));
+            expect(
+                engine.matches(
+                    result.item,
+                    engine.validateTarget({ groups: [{ mods: [child.mods[0]!.id] }] }),
+                ),
+            ).toBe(false);
+            expect(engine.apply(result.item, remove, random)).toEqual({ item: host, cost: [] });
+            expect({ host, method }).toEqual(original);
+            expect(pick).not.toHaveBeenCalled();
+            expect(integer).not.toHaveBeenCalled();
+        },
+    );
 
     it("rejects invalid operations before consuming randomness or changing either item", () => {
         const random = seededRandom(42);
