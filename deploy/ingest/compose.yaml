@@ -119,7 +119,9 @@ services:
       # second of commits on a host crash, and point-in-time recovery, for write speed.
       - --skip-log-bin
       - --innodb-flush-log-at-trx-commit=2
-      - --innodb-buffer-pool-size=4G
+      # With a 4G pool the server used 5.45 GiB once the dev data was loaded; 3G leaves it room
+      # under mem_limit without raising a limit the workers' limits already overcommit.
+      - --innodb-buffer-pool-size=3G
       - --innodb-redo-log-capacity=2G
       - --skip-name-resolve
     environment:
