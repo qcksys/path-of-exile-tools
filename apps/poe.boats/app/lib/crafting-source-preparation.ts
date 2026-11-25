@@ -48,6 +48,7 @@ export function validateSourcePreparationRevision(
                 "crafting-graph-17",
                 "crafting-graph-18",
                 "crafting-graph-19",
+                "crafting-graph-20",
             ].includes(engine) ||
             !influenceReadyBases.has(baseId) ||
             (baseId === "Metadata/Items/Armours/Shields/ShieldStrE3" &&
@@ -56,6 +57,7 @@ export function validateSourcePreparationRevision(
                     "crafting-graph-17",
                     "crafting-graph-18",
                     "crafting-graph-19",
+                    "crafting-graph-20",
                 ].includes(engine))
         )
             throw new Error(
@@ -71,6 +73,7 @@ export function validateSourcePreparationRevision(
                 "crafting-graph-17",
                 "crafting-graph-18",
                 "crafting-graph-19",
+                "crafting-graph-20",
             ].includes(engine)
         )
             throw new Error("Scouring Vaal Regalia sources requires crafting engine 16 or 17.");
@@ -84,6 +87,7 @@ export function validateSourcePreparationRevision(
                 "crafting-graph-17",
                 "crafting-graph-18",
                 "crafting-graph-19",
+                "crafting-graph-20",
             ].includes(engine)
         )
             throw new Error(
@@ -99,6 +103,7 @@ export function validateSourcePreparationRevision(
                 "crafting-graph-17",
                 "crafting-graph-18",
                 "crafting-graph-19",
+                "crafting-graph-20",
             ].includes(engine)
         )
             throw new Error(
@@ -115,6 +120,7 @@ export function validateSourcePreparationRevision(
             "crafting-graph-17",
             "crafting-graph-18",
             "crafting-graph-19",
+            "crafting-graph-20",
         ].includes(engine)
     )
         throw new Error(

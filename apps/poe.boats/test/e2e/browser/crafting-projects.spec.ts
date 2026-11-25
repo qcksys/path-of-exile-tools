@@ -1789,7 +1789,7 @@ test("prepared essence gloves pass from the workbench into a saved current proje
     await page.getByRole("button", { name: "Use item in new project", exact: true }).click();
     await expect(page).toHaveURL(/\/1\/crafting\/projects$/);
     const project = (await stored(page)).projects[0]!;
-    expect(project.graph.ruleset.revision).toBe("r19");
+    expect(project.graph.ruleset.revision).toBe("r20");
     const node = project.graph.nodes[0]!;
     expect(node.kind).toBe("acquire");
     if (node.kind === "acquire" && node.alternatives[0]?.kind === "purchase")

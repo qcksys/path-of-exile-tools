@@ -24,7 +24,7 @@ const current = {
     catalog,
     engine,
     ruleset: historyIndex.revisions.find(
-        (entry) => entry.game === "poe1" && entry.revision === "r19",
+        (entry) => entry.game === "poe1" && entry.revision === "r20",
     )!,
 };
 // 3.30 removed the Temple glove suffixes, so their purchases are built from 3.29 rules.

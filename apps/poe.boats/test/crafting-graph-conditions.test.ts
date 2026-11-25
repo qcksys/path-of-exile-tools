@@ -112,7 +112,7 @@ describe("conditional graph steps", () => {
         (game) => {
             const data = workbenchCatalog(game);
             const ruleset = historyIndex.revisions.find(
-                (entry) => entry.game === game && entry.revision === "r19",
+                (entry) => entry.game === game && entry.revision === "r20",
             )!;
             const graph = retainedTransmuteGraph(
                 { ...ruleset, engine: CRAFTING_GRAPH_ENGINE, revision: "r5" },
