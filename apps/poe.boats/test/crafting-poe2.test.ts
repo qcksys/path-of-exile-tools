@@ -343,29 +343,29 @@ describe("PoE 2 crafting rules", () => {
         }
     });
 
-    it.each([
-        "Expansive Alloy",
-        "Essence of Hysteria",
-    ])("%s removes a modifier from a rare item using its extracted instructions", (name) => {
-        const essence = catalog.crafting.poe2Essences.find((entry) => entry.name === name)!;
-        const item = {
-            ...engine.createItem(base),
-            rarity: "rare" as const,
-            mods: [
-                engine.rollMod("Strength2", seededRandom(1)),
-                engine.rollMod("IncreasedLife3", seededRandom(1)),
-            ],
-        };
-        const method = { kind: "essence" as const, id: essence.id };
-        const result = engine.apply(item, method, seededRandom(17));
-        expect(result.item.mods).toHaveLength(2);
-        expect(result.item.mods.filter((entry) => entry.crafted)).toHaveLength(1);
-        expect(result.cost[0]!.id).toBe(essence.id);
-        expect(() => engine.apply({ ...item, rarity: "magic" }, method, seededRandom(17))).toThrow(
-            "rare item",
-        );
-        expect(availableOmens(catalog, method).length).toBe(name.includes("Alloy") ? 0 : 2);
-    });
+    it.each(["Expansive Alloy", "Essence of Hysteria"])(
+        "%s removes a modifier from a rare item using its extracted instructions",
+        (name) => {
+            const essence = catalog.crafting.poe2Essences.find((entry) => entry.name === name)!;
+            const item = {
+                ...engine.createItem(base),
+                rarity: "rare" as const,
+                mods: [
+                    engine.rollMod("Strength2", seededRandom(1)),
+                    engine.rollMod("IncreasedLife3", seededRandom(1)),
+                ],
+            };
+            const method = { kind: "essence" as const, id: essence.id };
+            const result = engine.apply(item, method, seededRandom(17));
+            expect(result.item.mods).toHaveLength(2);
+            expect(result.item.mods.filter((entry) => entry.crafted)).toHaveLength(1);
+            expect(result.cost[0]!.id).toBe(essence.id);
+            expect(() =>
+                engine.apply({ ...item, rarity: "magic" }, method, seededRandom(17)),
+            ).toThrow("rare item");
+            expect(availableOmens(catalog, method).length).toBe(name.includes("Alloy") ? 0 : 2);
+        },
+    );
 
     it("automatically removes a prefix when the essence guarantee needs a full prefix side", () => {
         let item: CraftingItem = { ...engine.createItem(base), rarity: "rare" };

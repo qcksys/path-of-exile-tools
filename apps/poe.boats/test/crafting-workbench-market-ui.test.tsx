@@ -115,40 +115,42 @@ it("does not copy a quote after the exchange hour changes", async () => {
     expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("123");
 });
 
-it.each([
-    "poe1",
-    "poe2",
-] as const)("copies %s quotes only on explicit selection and keeps subsequent manual edits", async (game) => {
-    const fetcher = mockPrices(game === "poe2" ? "poe2" : "pc");
-    mount(game);
-    await lookup();
-    expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("123");
-    expect(
-        screen
-            .getByRole("button", { name: "Use exchange estimates for automatic prices" })
-            .hasAttribute("disabled"),
-    ).toBe(true);
-    const request = JSON.parse(
-        fetcher.mock.calls.find(([url]) => url === "/api/v1/crafting/market/exchange")![1].body,
-    );
-    expect(request).toMatchObject({
-        game,
-        realm: game === "poe2" ? "poe2" : "pc",
-        currency: "chaos",
-        league: "Standard",
-        conversion: "two-leg-exchange-v1",
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Use exchange estimate" }));
-    expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("2");
-    fireEvent.change(screen.getByLabelText("Manual input price"), { target: { value: "7" } });
-    expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("7");
-    expect(screen.queryByText(/Selecting a price enables refresh/)).toBeNull();
-    fireEvent.change(screen.getByLabelText("Price lookup league"), { target: { value: "Other" } });
-    await waitFor(() =>
-        expect(screen.queryByRole("button", { name: "Use exchange estimate" })).toBeNull(),
-    );
-    expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("7");
-});
+it.each(["poe1", "poe2"] as const)(
+    "copies %s quotes only on explicit selection and keeps subsequent manual edits",
+    async (game) => {
+        const fetcher = mockPrices(game === "poe2" ? "poe2" : "pc");
+        mount(game);
+        await lookup();
+        expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("123");
+        expect(
+            screen
+                .getByRole("button", { name: "Use exchange estimates for automatic prices" })
+                .hasAttribute("disabled"),
+        ).toBe(true);
+        const request = JSON.parse(
+            fetcher.mock.calls.find(([url]) => url === "/api/v1/crafting/market/exchange")![1].body,
+        );
+        expect(request).toMatchObject({
+            game,
+            realm: game === "poe2" ? "poe2" : "pc",
+            currency: "chaos",
+            league: "Standard",
+            conversion: "two-leg-exchange-v1",
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Use exchange estimate" }));
+        expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("2");
+        fireEvent.change(screen.getByLabelText("Manual input price"), { target: { value: "7" } });
+        expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("7");
+        expect(screen.queryByText(/Selecting a price enables refresh/)).toBeNull();
+        fireEvent.change(screen.getByLabelText("Price lookup league"), {
+            target: { value: "Other" },
+        });
+        await waitFor(() =>
+            expect(screen.queryByRole("button", { name: "Use exchange estimate" })).toBeNull(),
+        );
+        expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("7");
+    },
+);
 
 it("copies a full beast recipe through the same source picker", async () => {
     const id = "EinharMasterCraftMorrigan7";
@@ -205,75 +207,78 @@ it("copies a full beast recipe through the same source picker", async () => {
     expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("607");
 });
 
-it.each([
-    commodityQuote,
-    convertedCommodityQuote,
-])("copies captured essence asks at $amount only after selection and preserves subsequent manual edits", async (quote) => {
-    const fetcher = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
-        if (url === "/api/v1/crafting/market/sources/bind") {
-            const request = JSON.parse(String(init?.body));
+it.each([commodityQuote, convertedCommodityQuote])(
+    "copies captured essence asks at $amount only after selection and preserves subsequent manual edits",
+    async (quote) => {
+        const fetcher = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+            if (url === "/api/v1/crafting/market/sources/bind") {
+                const request = JSON.parse(String(init?.body));
+                return Promise.resolve(
+                    new Response(
+                        JSON.stringify({
+                            graph: bindCraftingSourcePrice(
+                                request.graph,
+                                engine,
+                                request.id,
+                                request.quote,
+                            ),
+                        }),
+                    ),
+                );
+            }
             return Promise.resolve(
                 new Response(
-                    JSON.stringify({
-                        graph: bindCraftingSourcePrice(
-                            request.graph,
-                            engine,
-                            request.id,
-                            request.quote,
-                        ),
-                    }),
+                    JSON.stringify(
+                        url.includes("index.json")
+                            ? historyIndex
+                            : { quotes: { [essenceId]: quote }, missing: {} },
+                    ),
                 ),
             );
-        }
-        return Promise.resolve(
-            new Response(
-                JSON.stringify(
-                    url.includes("index.json")
-                        ? historyIndex
-                        : { quotes: { [essenceId]: quote }, missing: {} },
-                ),
-            ),
+        });
+        vi.stubGlobal("fetch", fetcher);
+        mount("poe1", essenceId);
+        fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
+        fireEvent.change(await screen.findByLabelText("Price lookup league"), {
+            target: { value: "Standard" },
+        });
+        fireEvent.click(screen.getByText("Currency asking prices"));
+        if (quote.conversion)
+            fireEvent.click(
+                screen.getByRole("checkbox", {
+                    name: "Convert currency asks using matching-hour exchange rates",
+                }),
+            );
+        fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
+        await screen.findByText(byText(new RegExp(`${quote.amount} chaos per item`)));
+        const amount = screen.getByLabelText("Manual input price") as HTMLInputElement;
+        expect(amount.value).toBe("123");
+        expect(
+            screen
+                .getByRole("button", { name: "Use source estimates for unpriced inputs" })
+                .hasAttribute("disabled"),
+        ).toBe(true);
+        fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
+        await waitFor(() => expect(amount.value).toBe(String(quote.amount)));
+        const request = JSON.parse(
+            fetcher.mock.calls.find(([url]) => url === "/api/v1/crafting/market/sources/bind")![1]
+                .body,
         );
-    });
-    vi.stubGlobal("fetch", fetcher);
-    mount("poe1", essenceId);
-    fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
-    fireEvent.change(await screen.findByLabelText("Price lookup league"), {
-        target: { value: "Standard" },
-    });
-    fireEvent.click(screen.getByText("Currency asking prices"));
-    if (quote.conversion)
-        fireEvent.click(
-            screen.getByRole("checkbox", {
-                name: "Convert currency asks using matching-hour exchange rates",
-            }),
+        expect(request).toMatchObject({
+            graph: { game: "poe1", league: "Standard", currency: "chaos" },
+            id: essenceId,
+            quote,
+        });
+        fireEvent.change(amount, { target: { value: "7" } });
+        fireEvent.change(screen.getByLabelText("Price lookup league"), {
+            target: { value: "Other" },
+        });
+        await waitFor(() =>
+            expect(screen.queryByRole("button", { name: "Use source estimate" })).toBeNull(),
         );
-    fireEvent.click(screen.getByRole("button", { name: "Find asking prices" }));
-    await screen.findByText(byText(new RegExp(`${quote.amount} chaos per item`)));
-    const amount = screen.getByLabelText("Manual input price") as HTMLInputElement;
-    expect(amount.value).toBe("123");
-    expect(
-        screen
-            .getByRole("button", { name: "Use source estimates for unpriced inputs" })
-            .hasAttribute("disabled"),
-    ).toBe(true);
-    fireEvent.click(screen.getByRole("button", { name: "Use source estimate" }));
-    await waitFor(() => expect(amount.value).toBe(String(quote.amount)));
-    const request = JSON.parse(
-        fetcher.mock.calls.find(([url]) => url === "/api/v1/crafting/market/sources/bind")![1].body,
-    );
-    expect(request).toMatchObject({
-        graph: { game: "poe1", league: "Standard", currency: "chaos" },
-        id: essenceId,
-        quote,
-    });
-    fireEvent.change(amount, { target: { value: "7" } });
-    fireEvent.change(screen.getByLabelText("Price lookup league"), { target: { value: "Other" } });
-    await waitFor(() =>
-        expect(screen.queryByRole("button", { name: "Use source estimate" })).toBeNull(),
-    );
-    expect(amount.value).toBe("7");
-});
+        expect(amount.value).toBe("7");
+    },
+);
 
 it("synchronizes both league controls without copying or changing prices", async () => {
     mockPrices();
@@ -354,37 +359,39 @@ it("copies the explicit vendor ingredient estimate without overwriting prior or 
     expect(amount.value).toBe("7");
 });
 
-it.each([
-    "Price lookup league",
-    "Exchange league",
-])("discards an exchange lookup still pending when %s changes", async (control) => {
-    let resolve: (response: Response) => void = () => {};
-    const fetcher = vi.fn().mockImplementation((url: string) =>
-        url.includes("index.json")
-            ? Promise.resolve(new Response(JSON.stringify(historyIndex)))
-            : new Promise<Response>((done) => {
-                  resolve = done;
-              }),
-    );
-    vi.stubGlobal("fetch", fetcher);
-    mount();
-    fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
-    fireEvent.change(await screen.findByLabelText("Price lookup league"), {
-        target: { value: "Standard" },
-    });
-    fireEvent.click(screen.getByText("Currency & essence exchange prices"));
-    fireEvent.click(screen.getByRole("button", { name: "Find exchange prices" }));
-    const request = fetcher.mock.calls.find(([url]) => url === "/api/v1/crafting/market/exchange")!;
-    fireEvent.change(screen.getByLabelText(control), { target: { value: "Other" } });
-    expect(request[1].signal.aborted).toBe(true);
-    resolve(
-        new Response(JSON.stringify({ quotes: { [transmuteId]: exchangeQuote }, missing: {} })),
-    );
-    await waitFor(() =>
-        expect(screen.queryByRole("button", { name: "Use exchange estimate" })).toBeNull(),
-    );
-    expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("123");
-});
+it.each(["Price lookup league", "Exchange league"])(
+    "discards an exchange lookup still pending when %s changes",
+    async (control) => {
+        let resolve: (response: Response) => void = () => {};
+        const fetcher = vi.fn().mockImplementation((url: string) =>
+            url.includes("index.json")
+                ? Promise.resolve(new Response(JSON.stringify(historyIndex)))
+                : new Promise<Response>((done) => {
+                      resolve = done;
+                  }),
+        );
+        vi.stubGlobal("fetch", fetcher);
+        mount();
+        fireEvent.click(screen.getByRole("button", { name: "Find market prices" }));
+        fireEvent.change(await screen.findByLabelText("Price lookup league"), {
+            target: { value: "Standard" },
+        });
+        fireEvent.click(screen.getByText("Currency & essence exchange prices"));
+        fireEvent.click(screen.getByRole("button", { name: "Find exchange prices" }));
+        const request = fetcher.mock.calls.find(
+            ([url]) => url === "/api/v1/crafting/market/exchange",
+        )!;
+        fireEvent.change(screen.getByLabelText(control), { target: { value: "Other" } });
+        expect(request[1].signal.aborted).toBe(true);
+        resolve(
+            new Response(JSON.stringify({ quotes: { [transmuteId]: exchangeQuote }, missing: {} })),
+        );
+        await waitFor(() =>
+            expect(screen.queryByRole("button", { name: "Use exchange estimate" })).toBeNull(),
+        );
+        expect((screen.getByLabelText("Manual input price") as HTMLInputElement).value).toBe("123");
+    },
+);
 
 it("cancels a pending beast lookup when the exchange league control changes", async () => {
     let resolve: (response: Response) => void = () => {};

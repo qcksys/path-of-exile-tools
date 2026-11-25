@@ -8,7 +8,7 @@ The [research report](../../docs/research/poe-game-data-extraction.md) explains 
 
 ## Run it
 
-Install [Vite+](https://viteplus.dev/guide/) and the Node version in `.node-version` (Node 24). From the repository root:
+Install [Vite+](https://viteplus.dev/guide/) and the Node version in `.node-version` (Node 26). From the repository root:
 
 ```sh
 vp install --frozen-lockfile

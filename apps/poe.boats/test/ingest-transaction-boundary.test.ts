@@ -46,88 +46,27 @@ vi.mock("../../../packages/poe-stash-ingest/src/ps/equipment-rollup.ts", () => (
 const stages = ["capture", "exchange", "reclassify", "checkpoints", "rollup"];
 it.each(
     stages.flatMap((stage) => [false, true].map((statusFailure) => ({ stage, statusFailure }))),
-)("stops immediately when $stage cannot roll back, with status failure $statusFailure", async ({
-    stage,
-    statusFailure,
-}) => {
-    const db = await openDb(":memory:");
-    const failure = new TransactionRollbackError(
-        new Error("Failed to commit: Out of Memory"),
-        new Error("Cannot rollback: no transaction is active"),
-    );
-    fixture.events.length = 0;
-    fixture.failedStage = stage;
-    fixture.error = failure;
-    const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    const status = vi.fn(async (patch: { state?: string }) => {
-        if (statusFailure && patch.state === "error") throw new Error("Status unavailable");
-    });
-    try {
-        await db.conn.run(
-            "INSERT INTO ps_equipment_cohort_hour VALUES ('fixture', 'Allflame', 3600, 'fixture', current_timestamp)",
+)(
+    "stops immediately when $stage cannot roll back, with status failure $statusFailure",
+    async ({ stage, statusFailure }) => {
+        const db = await openDb(":memory:");
+        const failure = new TransactionRollbackError(
+            new Error("Failed to commit: Out of Memory"),
+            new Error("Cannot rollback: no transaction is active"),
         );
-        const stop = new AbortController();
-        const cycle = vi.fn(async () => {
-            await runPipeline(
-                db.conn,
-                createClient({ userAgent: "pipeline-test", token: "inert" }),
-                {
-                    pages: 1,
-                    league: "Allflame",
-                    onStatus: status,
-                },
-            );
+        fixture.events.length = 0;
+        fixture.failedStage = stage;
+        fixture.error = failure;
+        const log = vi.spyOn(console, "error").mockImplementation(() => {});
+        const status = vi.fn(async (patch: { state?: string }) => {
+            if (statusFailure && patch.state === "error") throw new Error("Status unavailable");
         });
-        await expect(watchCycles(cycle, { signal: stop.signal })).rejects.toBe(failure);
-        expect(cycle).toHaveBeenCalledOnce();
-        expect(fixture.events).toEqual(stages.slice(0, stages.indexOf(stage) + 1));
-        const failedStage =
-            stage === "exchange"
-                ? "currency"
-                : stage === "capture" || stage === "reclassify"
-                  ? "stash"
-                  : "delivery";
-        expect(status).toHaveBeenLastCalledWith(
-            expect.objectContaining({ state: "error", failedStages: [failedStage] }),
-        );
-        const output = log.mock.calls.flat().join(" ");
-        expect(output).toContain("stopping before further processing");
-        expect(output).toContain("Failed to commit: Out of Memory");
-        expect(output).toContain("Cannot rollback: no transaction is active");
-    } finally {
-        log.mockRestore();
-        await db.close();
-    }
-});
-
-it.each([
-    ["capture", "Live stash capture", "stash"],
-    ["exchange", "Currency capture", "currency"],
-    ["reclassify", "Archived equipment replay", "stash"],
-    ["checkpoints", "Checkpoint delivery", "delivery"],
-    ["rollup", "Rollup delivery", "delivery"],
-])("logs the %s operation and native cause while retrying ordinary failures", async (stage, operation, failedStage) => {
-    const db = await openDb(":memory:");
-    const nativeMessage = "Out of Memory Error: failed to pin block of size 256.0 KiB";
-    fixture.events.length = 0;
-    fixture.failedStage = stage;
-    fixture.error = Object.assign(new Error(nativeMessage), {
-        request: { authorization: "Bearer fixture-private-token" },
-    });
-    const status = vi.fn(async () => {});
-    const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    const stop = new AbortController();
-    let cycles = 0;
-    try {
-        await db.conn.run(
-            "INSERT INTO ps_equipment_cohort_hour VALUES ('fixture', 'Allflame', 3600, 'fixture', current_timestamp)",
-        );
-        await watchCycles(
-            async () => {
-                if (++cycles === 2) {
-                    fixture.failedStage = "";
-                    stop.abort();
-                }
+        try {
+            await db.conn.run(
+                "INSERT INTO ps_equipment_cohort_hour VALUES ('fixture', 'Allflame', 3600, 'fixture', current_timestamp)",
+            );
+            const stop = new AbortController();
+            const cycle = vi.fn(async () => {
                 await runPipeline(
                     db.conn,
                     createClient({ userAgent: "pipeline-test", token: "inert" }),
@@ -137,35 +76,100 @@ it.each([
                         onStatus: status,
                     },
                 );
-            },
-            { signal: stop.signal, intervalMs: 1 },
-        );
-        expect(cycles).toBe(2);
-        expect(fixture.events).toEqual([...stages, ...stages]);
-        expect(status).toHaveBeenCalledWith(
-            expect.objectContaining({ state: "error", failedStages: [failedStage] }),
-        );
-        expect(status).toHaveBeenLastCalledWith(
-            expect.objectContaining({ state: "idle", failedStages: [] }),
-        );
-        // The memory failure logs what held DuckDB's memory; the cycle's error follows.
-        expect(log).toHaveBeenCalledTimes(2);
-        expect(String(log.mock.calls[0]?.[0])).toMatch(
-            new RegExp(`^${operation} ran out of memory; DuckDB memory [\\d.]+ of `),
-        );
-        expect(log.mock.calls.flat().every((value) => typeof value === "string")).toBe(true);
-        const output = log.mock.calls.flat().join(" ");
-        expect(output).toContain(`${operation} failed`);
-        expect(output).toContain(nativeMessage);
-        if (stage === "rollup") expect(output).toContain("equipment rollup for hour 3600 failed");
-        expect(output).not.toContain("fixture-private");
-        expect(output).not.toContain("authorization");
-    } finally {
-        stop.abort();
-        log.mockRestore();
-        await db.close();
-    }
-});
+            });
+            await expect(watchCycles(cycle, { signal: stop.signal })).rejects.toBe(failure);
+            expect(cycle).toHaveBeenCalledOnce();
+            expect(fixture.events).toEqual(stages.slice(0, stages.indexOf(stage) + 1));
+            const failedStage =
+                stage === "exchange"
+                    ? "currency"
+                    : stage === "capture" || stage === "reclassify"
+                      ? "stash"
+                      : "delivery";
+            expect(status).toHaveBeenLastCalledWith(
+                expect.objectContaining({ state: "error", failedStages: [failedStage] }),
+            );
+            const output = log.mock.calls.flat().join(" ");
+            expect(output).toContain("stopping before further processing");
+            expect(output).toContain("Failed to commit: Out of Memory");
+            expect(output).toContain("Cannot rollback: no transaction is active");
+        } finally {
+            log.mockRestore();
+            await db.close();
+        }
+    },
+);
+
+it.each([
+    ["capture", "Live stash capture", "stash"],
+    ["exchange", "Currency capture", "currency"],
+    ["reclassify", "Archived equipment replay", "stash"],
+    ["checkpoints", "Checkpoint delivery", "delivery"],
+    ["rollup", "Rollup delivery", "delivery"],
+])(
+    "logs the %s operation and native cause while retrying ordinary failures",
+    async (stage, operation, failedStage) => {
+        const db = await openDb(":memory:");
+        const nativeMessage = "Out of Memory Error: failed to pin block of size 256.0 KiB";
+        fixture.events.length = 0;
+        fixture.failedStage = stage;
+        fixture.error = Object.assign(new Error(nativeMessage), {
+            request: { authorization: "Bearer fixture-private-token" },
+        });
+        const status = vi.fn(async () => {});
+        const log = vi.spyOn(console, "error").mockImplementation(() => {});
+        const stop = new AbortController();
+        let cycles = 0;
+        try {
+            await db.conn.run(
+                "INSERT INTO ps_equipment_cohort_hour VALUES ('fixture', 'Allflame', 3600, 'fixture', current_timestamp)",
+            );
+            await watchCycles(
+                async () => {
+                    if (++cycles === 2) {
+                        fixture.failedStage = "";
+                        stop.abort();
+                    }
+                    await runPipeline(
+                        db.conn,
+                        createClient({ userAgent: "pipeline-test", token: "inert" }),
+                        {
+                            pages: 1,
+                            league: "Allflame",
+                            onStatus: status,
+                        },
+                    );
+                },
+                { signal: stop.signal, intervalMs: 1 },
+            );
+            expect(cycles).toBe(2);
+            expect(fixture.events).toEqual([...stages, ...stages]);
+            expect(status).toHaveBeenCalledWith(
+                expect.objectContaining({ state: "error", failedStages: [failedStage] }),
+            );
+            expect(status).toHaveBeenLastCalledWith(
+                expect.objectContaining({ state: "idle", failedStages: [] }),
+            );
+            // The memory failure logs what held DuckDB's memory; the cycle's error follows.
+            expect(log).toHaveBeenCalledTimes(2);
+            expect(String(log.mock.calls[0]?.[0])).toMatch(
+                new RegExp(`^${operation} ran out of memory; DuckDB memory [\\d.]+ of `),
+            );
+            expect(log.mock.calls.flat().every((value) => typeof value === "string")).toBe(true);
+            const output = log.mock.calls.flat().join(" ");
+            expect(output).toContain(`${operation} failed`);
+            expect(output).toContain(nativeMessage);
+            if (stage === "rollup")
+                expect(output).toContain("equipment rollup for hour 3600 failed");
+            expect(output).not.toContain("fixture-private");
+            expect(output).not.toContain("authorization");
+        } finally {
+            stop.abort();
+            log.mockRestore();
+            await db.close();
+        }
+    },
+);
 
 it("identifies pending rollup discovery in the safe native database failure log", async () => {
     const db = await openDb(":memory:");

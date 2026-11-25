@@ -66,87 +66,87 @@ it("enumerates unique combinations up to the chosen socket count", () => {
     ]);
 });
 
-it.each([
-    "normal",
-    "rare",
-] as const)("uses exact stackable resonator IDs for new %s candidates", (rarity) => {
-    const item = { ...engine.createItem(baseId), rarity };
-    const fossils = engine
-        .availableFossils(item)
-        .slice(0, 2)
-        .map((entry) => entry.id);
-    const optimizer = new FossilOptimizer(
-        engine,
-        item,
-        engine.validateTarget({ groups: [] }),
-        {},
-        1,
-        {
-            fossils,
+it.each(["normal", "rare"] as const)(
+    "uses exact stackable resonator IDs for new %s candidates",
+    (rarity) => {
+        const item = { ...engine.createItem(baseId), rarity };
+        const fossils = engine
+            .availableFossils(item)
+            .slice(0, 2)
+            .map((entry) => entry.id);
+        const optimizer = new FossilOptimizer(
+            engine,
+            item,
+            engine.validateTarget({ groups: [] }),
+            {},
+            1,
+            {
+                fossils,
+                maxSockets: 2,
+                trials: 100,
+                logic: "additive",
+            },
+        );
+        expect(optimizer.methods.length).toBe(3);
+        for (const method of optimizer.methods)
+            expect(method.resonator).toBe(
+                `Metadata/Items/Delve/DelveStackableSocketableCurrency${rarity === "normal" ? "Upgrade" : "Reroll"}${method.ids.length}`,
+            );
+    },
+);
+
+it.each([false, true])(
+    "preserves seeded candidates and rankings across partitions (Allflame: %s)",
+    (allflame) => {
+        const item = engine.createItem(baseId);
+        const fossils = engine
+            .availableFossils(item)
+            .filter((entry) =>
+                ["Scorched Fossil", "Frigid Fossil", "Pristine Fossil", "Tangled Fossil"].includes(
+                    entry.name,
+                ),
+            );
+        const options = {
+            fossils: fossils.map((entry) => entry.id),
             maxSockets: 2,
             trials: 100,
-            logic: "additive",
-        },
-    );
-    expect(optimizer.methods.length).toBe(3);
-    for (const method of optimizer.methods)
-        expect(method.resonator).toBe(
-            `Metadata/Items/Delve/DelveStackableSocketableCurrency${rarity === "normal" ? "Upgrade" : "Reroll"}${method.ids.length}`,
-        );
-});
-
-it.each([
-    false,
-    true,
-])("preserves seeded candidates and rankings across partitions (Allflame: %s)", (allflame) => {
-    const item = engine.createItem(baseId);
-    const fossils = engine
-        .availableFossils(item)
-        .filter((entry) =>
-            ["Scorched Fossil", "Frigid Fossil", "Pristine Fossil", "Tangled Fossil"].includes(
-                entry.name,
-            ),
-        );
-    const options = {
-        fossils: fossils.map((entry) => entry.id),
-        maxSockets: 2,
-        trials: 100,
-        logic: "additive" as const,
-        allflame: allflame ? (true as const) : undefined,
-        tangled: fossils.find((entry) => entry.randomOutcomes.length)!.randomOutcomes[0],
-    };
-    const target = engine.validateTarget({
-        groups: [
-            {
-                mods: engine
-                    .pool({ ...item, rarity: "rare" })
-                    .filter((entry) => entry.mod.implicit_tags.includes("cold"))
-                    .map((entry) => entry.id),
-            },
-        ],
-    });
-    const prices = Object.fromEntries(
-        [...fossils, ...catalog.crafting.currencies].map((entry) => [entry.id, 1]),
-    );
-    const run = (partition?: { index: number; count: number }) => {
-        const optimizer = new FossilOptimizer(engine, item, target, prices, 37, {
-            ...options,
-            partition,
+            logic: "additive" as const,
+            allflame: allflame ? (true as const) : undefined,
+            tangled: fossils.find((entry) => entry.randomOutcomes.length)!.randomOutcomes[0],
+        };
+        const target = engine.validateTarget({
+            groups: [
+                {
+                    mods: engine
+                        .pool({ ...item, rarity: "rare" })
+                        .filter((entry) => entry.mod.implicit_tags.includes("cold"))
+                        .map((entry) => entry.id),
+                },
+            ],
         });
-        while (!optimizer.runBatch(79)) {}
-        return optimizer.result();
-    };
-    const single = run();
-    const parts = [2, 0, 1].map((index) => run({ index, count: 3 }));
-    expect(parts.map((result) => result.total)).toEqual([3, 4, 3]);
-    expect(
-        new Set(parts.flatMap((result) => result.byAttempts.map((entry) => entry.index))).size,
-    ).toBe(10);
-    const before = structuredClone(parts);
-    expect(mergeFossilOptimizations(parts)).toEqual(single);
-    expect(parts).toEqual(before);
-    expect(single.failed).toBe(0);
-});
+        const prices = Object.fromEntries(
+            [...fossils, ...catalog.crafting.currencies].map((entry) => [entry.id, 1]),
+        );
+        const run = (partition?: { index: number; count: number }) => {
+            const optimizer = new FossilOptimizer(engine, item, target, prices, 37, {
+                ...options,
+                partition,
+            });
+            while (!optimizer.runBatch(79)) {}
+            return optimizer.result();
+        };
+        const single = run();
+        const parts = [2, 0, 1].map((index) => run({ index, count: 3 }));
+        expect(parts.map((result) => result.total)).toEqual([3, 4, 3]);
+        expect(
+            new Set(parts.flatMap((result) => result.byAttempts.map((entry) => entry.index))).size,
+        ).toBe(10);
+        const before = structuredClone(parts);
+        expect(mergeFossilOptimizations(parts)).toEqual(single);
+        expect(parts).toEqual(before);
+        expect(single.failed).toBe(0);
+    },
+);
 
 it("retains the global top twenty with deterministic ties and unpriced combinations", () => {
     const item = engine.createItem(baseId);
@@ -420,61 +420,65 @@ it("rejects invalid fossils and excludes failed combinations from rankings", () 
     expect(failed.errors).toHaveLength(1);
 });
 
-it.each([
-    "normal",
-    "rare",
-] as const)("ranks Allflame fossils on %s items using eligible resonators, target selection and full sulphur costs", (rarity) => {
-    const item = { ...engine.createItem(baseId, 86), rarity };
-    const fossil = engine.availableFossils(item).find((entry) => entry.name === "Pristine Fossil")!;
-    const options = {
-        fossils: [fossil.id],
-        maxSockets: 1,
-        trials: 200,
-        logic: "additive" as const,
-        allflame: true as const,
-    };
-    const prices = Object.fromEntries(
-        [...catalog.crafting.currencies, fossil].map((entry) => [entry.id, 1]),
-    );
-    const sulphur = catalog.crafting.allflame!.sulphur;
-    prices[sulphur] = 0.01;
-    const setup = new FossilOptimizer(
-        engine,
-        item,
-        engine.validateTarget({ groups: [] }),
-        prices,
-        7,
-        options,
-    );
-    const craft = setup.methods[0]!;
-    const bracket = allflameBracket(catalog, craft)!;
-    const target = engine.validateTarget({
-        groups: [],
-        intangibility: { min: bracket.intangibility.max, max: 100 },
-    });
-    const run = (start = item, costs = prices) => {
-        const optimizer = new FossilOptimizer(engine, start, target, costs, 7, options);
-        while (!optimizer.runBatch(50)) {
-            /* finish each bounded batch */
-        }
-        expect(optimizer.result().failed).toBe(0);
-        return optimizer.result();
-    };
-    const result = run();
-    const candidate = result.byAttempts[0]!;
-    const singleProbability = 1 / (bracket.intangibility.max - bracket.intangibility.min + 1);
-    const expectedProbability = 1 - (1 - singleProbability) ** bracket.outcomes.max;
-    expect(candidate.method.allflame).toBe(true);
-    expect(candidate.probability).toBeGreaterThan(singleProbability + 0.1);
-    expect(Math.abs(candidate.probability - expectedProbability)).toBeLessThan(0.12);
-    expect(candidate.cost).toBe(2 + allflameQuote(catalog, item, craft)!.amount * 0.01);
-    expect(candidate.cost).toBeGreaterThan(10);
-    expect(result.byCost[0]!.costPerSuccess).toBeCloseTo(candidate.cost! / candidate.probability);
-    const low = run({ ...item, level: 1 });
-    expect(low.byAttempts[0]!.cost).toBeLessThan(candidate.cost!);
-    const missingSulphur = { ...prices };
-    delete missingSulphur[sulphur];
-    const unpriced = run(item, missingSulphur);
-    expect(unpriced.byAttempts[0]!.cost).toBeNull();
-    expect(unpriced.byCost).toEqual([]);
-});
+it.each(["normal", "rare"] as const)(
+    "ranks Allflame fossils on %s items using eligible resonators, target selection and full sulphur costs",
+    (rarity) => {
+        const item = { ...engine.createItem(baseId, 86), rarity };
+        const fossil = engine
+            .availableFossils(item)
+            .find((entry) => entry.name === "Pristine Fossil")!;
+        const options = {
+            fossils: [fossil.id],
+            maxSockets: 1,
+            trials: 200,
+            logic: "additive" as const,
+            allflame: true as const,
+        };
+        const prices = Object.fromEntries(
+            [...catalog.crafting.currencies, fossil].map((entry) => [entry.id, 1]),
+        );
+        const sulphur = catalog.crafting.allflame!.sulphur;
+        prices[sulphur] = 0.01;
+        const setup = new FossilOptimizer(
+            engine,
+            item,
+            engine.validateTarget({ groups: [] }),
+            prices,
+            7,
+            options,
+        );
+        const craft = setup.methods[0]!;
+        const bracket = allflameBracket(catalog, craft)!;
+        const target = engine.validateTarget({
+            groups: [],
+            intangibility: { min: bracket.intangibility.max, max: 100 },
+        });
+        const run = (start = item, costs = prices) => {
+            const optimizer = new FossilOptimizer(engine, start, target, costs, 7, options);
+            while (!optimizer.runBatch(50)) {
+                /* finish each bounded batch */
+            }
+            expect(optimizer.result().failed).toBe(0);
+            return optimizer.result();
+        };
+        const result = run();
+        const candidate = result.byAttempts[0]!;
+        const singleProbability = 1 / (bracket.intangibility.max - bracket.intangibility.min + 1);
+        const expectedProbability = 1 - (1 - singleProbability) ** bracket.outcomes.max;
+        expect(candidate.method.allflame).toBe(true);
+        expect(candidate.probability).toBeGreaterThan(singleProbability + 0.1);
+        expect(Math.abs(candidate.probability - expectedProbability)).toBeLessThan(0.12);
+        expect(candidate.cost).toBe(2 + allflameQuote(catalog, item, craft)!.amount * 0.01);
+        expect(candidate.cost).toBeGreaterThan(10);
+        expect(result.byCost[0]!.costPerSuccess).toBeCloseTo(
+            candidate.cost! / candidate.probability,
+        );
+        const low = run({ ...item, level: 1 });
+        expect(low.byAttempts[0]!.cost).toBeLessThan(candidate.cost!);
+        const missingSulphur = { ...prices };
+        delete missingSulphur[sulphur];
+        const unpriced = run(item, missingSulphur);
+        expect(unpriced.byAttempts[0]!.cost).toBeNull();
+        expect(unpriced.byCost).toEqual([]);
+    },
+);

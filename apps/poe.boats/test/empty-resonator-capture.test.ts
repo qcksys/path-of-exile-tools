@@ -53,15 +53,16 @@ describe("explicitly empty Prime Chaotic Resonator signature", () => {
         ["stack", { stackSize: 3, maxStackSize: 10 }],
         ["current currency", { frameType: undefined, rarity: "Currency" }],
         ["consistent currency representations", { rarity: "Currency" }],
-    ] satisfies Array<
-        [string, Partial<Item>]
-    >)("accepts %s only with explicit socket proof", (_label, fields) => {
-        const item = resonator(fields);
-        const original = structuredClone(item);
-        expect(extractModSignature(item)).toEqual(signature);
-        expect(signatureValue(extractModSignature(item))).toBe("reroll:4");
-        expect(item).toEqual(original);
-    });
+    ] satisfies Array<[string, Partial<Item>]>)(
+        "accepts %s only with explicit socket proof",
+        (_label, fields) => {
+            const item = resonator(fields);
+            const original = structuredClone(item);
+            expect(extractModSignature(item)).toEqual(signature);
+            expect(signatureValue(extractModSignature(item))).toBe("reroll:4");
+            expect(item).toEqual(original);
+        },
+    );
 
     it.each([
         ["missing contents", { socketedItems: undefined }],

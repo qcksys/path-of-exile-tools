@@ -14,47 +14,51 @@ const recipes = catalog.crafting.beasts.filter((entry) => entry.aspectMod && ent
 const spider = { kind: "beast", id: "EinharMasterCraftMorrigan3" } as const;
 
 describe("Aspect beastcrafting", () => {
-    it.each(
-        recipes,
-    )("adds the extracted outcome for $description without consuming the bench slot", (recipe) => {
-        const item = engine.createItem(baseId, 1);
-        const before = structuredClone(item);
-        const method = { kind: "beast", id: recipe.id } as const;
-        expect(engine.beastOperation(recipe.id)).toBe("aspect");
-        expect(engine.beastRequiresLevel(recipe.id)).toBe(false);
-        const result = engine.apply(item, method, seededRandom(1));
-        expect(item).toEqual(before);
-        expect(result.item.level).toBe(1);
-        expect(result.item.rarity).toBe("magic");
-        expect(result.item.mods).toHaveLength(1);
-        expect(result.item.mods[0]).toMatchObject({
-            id: recipe.aspectMod,
-            crafted: false,
-            fractured: false,
-        });
-        expect(rolledModText(catalog, result.item.mods[0]!, result.item)).toBe(
-            engine.mod(recipe.aspectMod!).text,
-        );
-        // 3.30 takes the level from the granted skill; the display stat is 0.
-        expect(engine.mod(recipe.aspectMod!).text).toMatch(
-            new RegExp(`^Grants Level ${recipe.description.startsWith("Level 30") ? 30 : 20} `),
-        );
-        expect(result.item.mods[0]!.values).toEqual([0]);
-        expect(result.cost).toEqual([
-            {
-                id: recipe.id,
-                name: `Beastcraft · ${recipe.category}: ${recipe.description}`,
-                amount: 1,
-            },
-        ]);
-        expect(engine.costName(recipe.id)).toBe(result.cost[0]!.name);
-        expect(
-            engine.validateItem(craftingItemSchema.parse(JSON.parse(JSON.stringify(result.item)))),
-        ).toEqual(result.item);
-        expect(
-            importCraftingItemText(engine, exportCraftingItemText(engine, result.item))[0]!.item,
-        ).toEqual(result.item);
-    });
+    it.each(recipes)(
+        "adds the extracted outcome for $description without consuming the bench slot",
+        (recipe) => {
+            const item = engine.createItem(baseId, 1);
+            const before = structuredClone(item);
+            const method = { kind: "beast", id: recipe.id } as const;
+            expect(engine.beastOperation(recipe.id)).toBe("aspect");
+            expect(engine.beastRequiresLevel(recipe.id)).toBe(false);
+            const result = engine.apply(item, method, seededRandom(1));
+            expect(item).toEqual(before);
+            expect(result.item.level).toBe(1);
+            expect(result.item.rarity).toBe("magic");
+            expect(result.item.mods).toHaveLength(1);
+            expect(result.item.mods[0]).toMatchObject({
+                id: recipe.aspectMod,
+                crafted: false,
+                fractured: false,
+            });
+            expect(rolledModText(catalog, result.item.mods[0]!, result.item)).toBe(
+                engine.mod(recipe.aspectMod!).text,
+            );
+            // 3.30 takes the level from the granted skill; the display stat is 0.
+            expect(engine.mod(recipe.aspectMod!).text).toMatch(
+                new RegExp(`^Grants Level ${recipe.description.startsWith("Level 30") ? 30 : 20} `),
+            );
+            expect(result.item.mods[0]!.values).toEqual([0]);
+            expect(result.cost).toEqual([
+                {
+                    id: recipe.id,
+                    name: `Beastcraft · ${recipe.category}: ${recipe.description}`,
+                    amount: 1,
+                },
+            ]);
+            expect(engine.costName(recipe.id)).toBe(result.cost[0]!.name);
+            expect(
+                engine.validateItem(
+                    craftingItemSchema.parse(JSON.parse(JSON.stringify(result.item))),
+                ),
+            ).toEqual(result.item);
+            expect(
+                importCraftingItemText(engine, exportCraftingItemText(engine, result.item))[0]!
+                    .item,
+            ).toEqual(result.item);
+        },
+    );
 
     it("preserves existing crafted modifiers, fractures and values", () => {
         let item = engine.addStartingMod(engine.createItem(baseId), "ColdResist1", seededRandom(2));

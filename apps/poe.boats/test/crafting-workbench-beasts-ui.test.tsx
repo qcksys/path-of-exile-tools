@@ -10,75 +10,76 @@ import { baseId, catalog, currency, engine } from "./crafting-fixtures";
 import { button, CraftingWorker, mount } from "./crafting-workbench-ui-fixtures";
 
 describe("crafting workbench", () => {
-    it.each([
-        8, 9,
-    ])("uses bench reroll action %i in calculation, simulation and saved history", async (action) => {
-        const recipe = catalog.crafting.bench.find((entry) => entry.action === action)!;
-        let item: CraftingItem = { ...engine.createItem(baseId), rarity: "rare" };
-        while (item.mods.length < 6)
-            item = engine.addStartingMod(item, engine.pool(item)[0]!.id, seededRandom(1));
-        for (const entry of item.mods.slice(0, 5)) entry.fractured = true;
-        const initial = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe1",
-            patch: catalog.patch,
-            item,
-            method: currency("reroll"),
-            target: { groups: [], affixCount: { min: 6, max: 6 } },
-            steps: [],
-            prices: { [recipe.cost[0]!.id]: 2 },
-            seed: 42,
-            iterations: 100,
-            maxActions: 1,
-        });
-        const key = `poe-boats:crafting:poe1:${catalog.patch}`;
-        localStorage.setItem(key, JSON.stringify({ bench: initial }));
-        mount("calculate");
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "bench" } });
-        fireEvent.click(button("Load project"));
-        const card = screen.getByRole("region", { name: "Current item" });
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: recipe.name } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        fireEvent.click(await screen.findByRole("option", { name: `Bench · ${recipe.name}` }));
-        expect(screen.getByRole("note", { name: "Bench reroll model" }).textContent).toContain(
-            "after each removal",
-        );
-        fireEvent.click(button("Calculate odds"));
-        const worker = CraftingWorker.instances[0]!;
-        const request = worker.postMessage.mock.calls[0]![0].project;
-        expect(request.method).toEqual({ kind: "bench", id: recipe.id });
-        expect(
-            calculateExact(engine, request.item, request.method, request.target).probability,
-        ).toBeCloseTo(1);
-        const simulation = new CraftingSimulation(catalog, request, false);
-        for (let trial = 0; trial < 100; trial++) simulation.runTrial();
-        expect(simulation.result().errors).toEqual({});
-        expect(simulation.result().meanCost).toBe(recipe.cost[0]!.amount * 2);
-        act(() => worker.onmessage?.({ data: { type: "done", result: simulation.result() } }));
-        const before = card.textContent;
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        const after = card.textContent;
-        expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
-            `Chaos Orb${recipe.cost[0]!.amount}`,
-        );
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).toBe(before);
-        fireEvent.click(button("Redo"));
-        expect(card.textContent).toBe(after);
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.method).toEqual(request.method);
-        expect(saved.item.mods.slice(0, 5)).toEqual(item.mods.slice(0, 5));
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "My crafting project" },
-        });
-        fireEvent.click(button("Load project"));
-        expect(card.textContent).toBe(after);
-        expect(screen.getByRole("note", { name: "Bench reroll model" })).toBeDefined();
-    });
+    it.each([8, 9])(
+        "uses bench reroll action %i in calculation, simulation and saved history",
+        async (action) => {
+            const recipe = catalog.crafting.bench.find((entry) => entry.action === action)!;
+            let item: CraftingItem = { ...engine.createItem(baseId), rarity: "rare" };
+            while (item.mods.length < 6)
+                item = engine.addStartingMod(item, engine.pool(item)[0]!.id, seededRandom(1));
+            for (const entry of item.mods.slice(0, 5)) entry.fractured = true;
+            const initial = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe1",
+                patch: catalog.patch,
+                item,
+                method: currency("reroll"),
+                target: { groups: [], affixCount: { min: 6, max: 6 } },
+                steps: [],
+                prices: { [recipe.cost[0]!.id]: 2 },
+                seed: 42,
+                iterations: 100,
+                maxActions: 1,
+            });
+            const key = `poe-boats:crafting:poe1:${catalog.patch}`;
+            localStorage.setItem(key, JSON.stringify({ bench: initial }));
+            mount("calculate");
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "bench" } });
+            fireEvent.click(button("Load project"));
+            const card = screen.getByRole("region", { name: "Current item" });
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: recipe.name } });
+            fireEvent.keyDown(picker, { key: "ArrowDown" });
+            fireEvent.click(await screen.findByRole("option", { name: `Bench · ${recipe.name}` }));
+            expect(screen.getByRole("note", { name: "Bench reroll model" }).textContent).toContain(
+                "after each removal",
+            );
+            fireEvent.click(button("Calculate odds"));
+            const worker = CraftingWorker.instances[0]!;
+            const request = worker.postMessage.mock.calls[0]![0].project;
+            expect(request.method).toEqual({ kind: "bench", id: recipe.id });
+            expect(
+                calculateExact(engine, request.item, request.method, request.target).probability,
+            ).toBeCloseTo(1);
+            const simulation = new CraftingSimulation(catalog, request, false);
+            for (let trial = 0; trial < 100; trial++) simulation.runTrial();
+            expect(simulation.result().errors).toEqual({});
+            expect(simulation.result().meanCost).toBe(recipe.cost[0]!.amount * 2);
+            act(() => worker.onmessage?.({ data: { type: "done", result: simulation.result() } }));
+            const before = card.textContent;
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            const after = card.textContent;
+            expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
+                `Chaos Orb${recipe.cost[0]!.amount}`,
+            );
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).toBe(before);
+            fireEvent.click(button("Redo"));
+            expect(card.textContent).toBe(after);
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.method).toEqual(request.method);
+            expect(saved.item.mods.slice(0, 5)).toEqual(item.mods.slice(0, 5));
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "My crafting project" },
+            });
+            fireEvent.click(button("Load project"));
+            expect(card.textContent).toBe(after);
+            expect(screen.getByRole("note", { name: "Bench reroll model" })).toBeDefined();
+        },
+    );
 
     it("selects the metamod beastcraft, guarantees suffix protection and preserves it through saves", async () => {
         let item: CraftingItem = {
@@ -181,73 +182,71 @@ describe("crafting workbench", () => {
             // The seeded 3.30 map modifier is a prefix.
             affixes: "1/3 prefixes · 0/3 suffixes",
         },
-    ])("selects $recipe and retains its result through history and project saves", async ({
-        base,
-        influences,
-        recipe,
-        affixes,
-    }) => {
-        const item = { ...engine.createItem(base), rarity: "rare" as const, influences };
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: catalog.game,
-            patch: catalog.patch,
-            item,
-            method: currency("add_mod_to_rare"),
-            target: { groups: [], affixCount: { min: 1, max: 1 } },
-            steps: [],
-            prices: { [recipe]: 5 },
-            seed: 42,
-            iterations: 100,
-            maxActions: 1,
-        });
-        const key = `poe-boats:crafting:poe1:${catalog.patch}`;
-        localStorage.setItem(key, JSON.stringify({ beast: project }));
-        mount("calculate");
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "beast" } });
-        fireEvent.click(button("Load project"));
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: "Add a Mod to" } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        const extracted = catalog.crafting.beasts.find((entry) => entry.id === recipe)!;
-        fireEvent.click(
-            await screen.findByRole("option", {
-                name: `Beastcraft · ${extracted.category}: ${extracted.description}`,
-            }),
-        );
-        expect(
-            screen.getByRole("note", { name: "Augmentation beastcraft model" }).textContent,
-        ).toContain("item's level");
-        expect(screen.queryByLabelText("Beast level")).toBeNull();
-        fireEvent.click(button("Calculate odds"));
-        const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
-        expect(sent.method).toEqual({ kind: "beast", id: recipe });
-        expect(sent.prices[recipe]).toBe(5);
-        fireEvent.click(button("Stop simulation"));
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        const card = screen.getByRole("region", { name: "Current item" });
-        const result = card.textContent;
-        expect(result).toContain(affixes);
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.item.mods).toHaveLength(1);
-        expect(saved.method).toEqual({ kind: "beast", id: recipe });
-        fireEvent.click(screen.getByText("Emulator spending"));
-        expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
-            `${extracted.description}1`,
-        );
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).not.toBe(result);
-        fireEvent.click(button("Redo"));
-        expect(card.textContent).toBe(result);
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "My crafting project" },
-        });
-        fireEvent.click(button("Load project"));
-        expect(card.textContent).toBe(result);
-    });
+    ])(
+        "selects $recipe and retains its result through history and project saves",
+        async ({ base, influences, recipe, affixes }) => {
+            const item = { ...engine.createItem(base), rarity: "rare" as const, influences };
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: catalog.game,
+                patch: catalog.patch,
+                item,
+                method: currency("add_mod_to_rare"),
+                target: { groups: [], affixCount: { min: 1, max: 1 } },
+                steps: [],
+                prices: { [recipe]: 5 },
+                seed: 42,
+                iterations: 100,
+                maxActions: 1,
+            });
+            const key = `poe-boats:crafting:poe1:${catalog.patch}`;
+            localStorage.setItem(key, JSON.stringify({ beast: project }));
+            mount("calculate");
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "beast" } });
+            fireEvent.click(button("Load project"));
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: "Add a Mod to" } });
+            fireEvent.keyDown(picker, { key: "ArrowDown" });
+            const extracted = catalog.crafting.beasts.find((entry) => entry.id === recipe)!;
+            fireEvent.click(
+                await screen.findByRole("option", {
+                    name: `Beastcraft · ${extracted.category}: ${extracted.description}`,
+                }),
+            );
+            expect(
+                screen.getByRole("note", { name: "Augmentation beastcraft model" }).textContent,
+            ).toContain("item's level");
+            expect(screen.queryByLabelText("Beast level")).toBeNull();
+            fireEvent.click(button("Calculate odds"));
+            const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
+            expect(sent.method).toEqual({ kind: "beast", id: recipe });
+            expect(sent.prices[recipe]).toBe(5);
+            fireEvent.click(button("Stop simulation"));
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            const card = screen.getByRole("region", { name: "Current item" });
+            const result = card.textContent;
+            expect(result).toContain(affixes);
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.item.mods).toHaveLength(1);
+            expect(saved.method).toEqual({ kind: "beast", id: recipe });
+            fireEvent.click(screen.getByText("Emulator spending"));
+            expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
+                `${extracted.description}1`,
+            );
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).not.toBe(result);
+            fireEvent.click(button("Redo"));
+            expect(card.textContent).toBe(result);
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "My crafting project" },
+            });
+            fireEvent.click(button("Load project"));
+            expect(card.textContent).toBe(result);
+        },
+    );
 
     it("selects Talisman recipes, restores strand checkpoints and retains double fractures", async () => {
         let item: CraftingItem = {

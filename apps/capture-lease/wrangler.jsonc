@@ -1,0 +1,48 @@
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    "name": "poe-capture-lease-dev",
+    "account_id": "923e3a86a572d6d6d05230ccadbbbe34",
+    "compatibility_date": "2026-11-20",
+    "main": "./src/index.ts",
+    "observability": {
+        "enabled": true
+    },
+    "vars": {
+        "POE_BOATS_INGEST_URL": "https://dev.poe.boats/api/stash-ingest",
+        "INGEST_WORKER_ID": "cloudflare-dev-pc-fallback"
+    },
+    "containers": [
+        {
+            "class_name": "CaptureLease",
+            // The Durable Object picks the image and instance size when it starts the fallback.
+            "scheduling_policy": "durable_object",
+            "images": {
+                // The ingest image; the fallback runs its `capture` command.
+                "capture": {
+                    "dockerfile": "../../packages/poe-stash-ingest/Dockerfile",
+                    "build_context": "../.."
+                }
+            }
+        }
+    ],
+    "durable_objects": {
+        "bindings": [
+            {
+                "name": "CAPTURE_LEASE",
+                "class_name": "CaptureLease"
+            }
+        ]
+    },
+    "exports": {
+        "CaptureLease": {
+            "type": "durable-object",
+            "storage": "sqlite"
+        }
+    },
+    "r2_buckets": [
+        {
+            "binding": "SEGMENTS",
+            "bucket_name": "poe-capture-fallback-dev"
+        }
+    ]
+}

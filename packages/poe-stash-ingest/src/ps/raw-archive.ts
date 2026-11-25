@@ -13,6 +13,7 @@ import {
     writeFile,
 } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 import { promisify } from "node:util";
@@ -180,19 +181,84 @@ export function appendExchangeDigest(
     return appendRecord(dir, entry.capturedAt, String(entry.hour), entry.digest);
 }
 
-async function appendRecord(dir: string, capturedAt: number, cursor: string | null, page: object) {
+/** One archive line, without its newline. */
+export function rawLine(capturedAt: number, cursor: string | null, page: object) {
     const pageJson = JSON.stringify(page);
     const header = JSON.stringify({ capturedAt, cursor, sha256: digest("sha256", pageJson) });
+    return `${header.slice(0, -1)}${PAGE_FIELD}${pageJson}}`;
+}
+
+async function appendRecord(dir: string, capturedAt: number, cursor: string | null, page: object) {
     const path = join(dir, SPOOL, `${hourKey(capturedAt)}.ndjson`);
     await mkdir(dirname(path), { recursive: true });
     await trimPartialLine(path);
     const fh = await open(path, "a");
     try {
-        await fh.write(`${header.slice(0, -1)}${PAGE_FIELD}${pageJson}}\n`);
+        await fh.write(`${rawLine(capturedAt, cursor, page)}\n`);
         await fh.datasync();
     } finally {
         await fh.close();
     }
+}
+
+/**
+ * Appends archive lines that another capture process wrote (a fallback's segment) to the spool,
+ * checking each page. The pages must not go back past what is already archived, so a reader that
+ * has moved to a later hour cannot miss them, and an hour already sealed cannot be added to.
+ */
+export async function appendRawLines(dir: string, lines: AsyncIterable<string>) {
+    let floor = (await rawHours(dir)).at(-1) ?? "";
+    let hour: string | undefined;
+    let fh: FileHandle | undefined;
+    let pages = 0;
+    const finish = async () => {
+        if (!fh) return;
+        const done = fh;
+        fh = undefined;
+        try {
+            await done.datasync();
+        } finally {
+            await done.close();
+        }
+    };
+    try {
+        for await (const line of lines) {
+            const { header } = parseRawLine("an imported segment", line, pages + 1);
+            const lineHour = hourKey(header.capturedAt);
+            if (lineHour !== hour) {
+                if (lineHour < floor)
+                    throw new RawArchiveError(
+                        `An imported page from ${lineHour} is older than the archived ${floor}.`,
+                    );
+                await finish();
+                if (await stat(`${sealedPath(dir, lineHour)}.json`).catch(() => undefined))
+                    throw new RawArchiveError(
+                        `${lineHour} is already sealed; its imported pages cannot be added.`,
+                    );
+                const path = join(dir, SPOOL, `${lineHour}.ndjson`);
+                await mkdir(dirname(path), { recursive: true });
+                await trimPartialLine(path);
+                fh = await open(path, "a");
+                hour = lineHour;
+                floor = lineHour;
+            }
+            await fh!.write(`${line}\n`);
+            pages++;
+        }
+    } finally {
+        await finish();
+    }
+    return pages;
+}
+
+/** The lines of zstd-compressed archive data, such as a fallback's segment. */
+export const zstdLines = (compressed: AsyncIterable<Buffer> | Iterable<Buffer>) =>
+    streamLines(Readable.from(compressed).pipe(createZstdDecompress()));
+
+/** How many hours have a spool, that is, are not sealed yet. */
+export async function spooledHourCount(dir: string) {
+    const names = await readdir(join(dir, SPOOL)).catch(() => [] as string[]);
+    return names.filter((name) => name.endsWith(".ndjson")).length;
 }
 
 async function fileDigests(path: string) {
@@ -359,18 +425,24 @@ async function sealHour(dir: string, hour: string, threads: number): Promise<Raw
     return sealed;
 }
 
-/** Seals every spooled hour before the current UTC hour; see `RawArchiveOptions.sealThreads`. */
+/**
+ * Seals every spooled hour before the current UTC hour; see `RawArchiveOptions.sealThreads`.
+ * With `keepLatest`, the latest spooled hour stays open too: another capture process's pages may
+ * still be added to it.
+ */
 export async function sealRawHours(
     dir: string,
     now = Date.now(),
     threads = 1,
+    options: { keepLatest?: boolean } = {},
 ): Promise<RawManifest[]> {
     const current = hourKey(now);
-    const hours = (await readdir(join(dir, SPOOL)).catch(() => [] as string[]))
+    const spooled = (await readdir(join(dir, SPOOL)).catch(() => [] as string[]))
         .filter((name) => name.endsWith(".ndjson"))
         .map((name) => name.slice(0, -".ndjson".length))
-        .filter((hour) => hour < current)
         .sort();
+    if (options.keepLatest) spooled.pop();
+    const hours = spooled.filter((hour) => hour < current);
     const sealed: RawManifest[] = [];
     for (const hour of hours) sealed.push(await sealHour(dir, hour, threads));
     return sealed;
@@ -706,8 +778,12 @@ export async function uploadRawHours(
 }
 
 /** Seals finished hours, then uploads any sealed hour without a B2 copy. */
-export async function maintainRawArchive(opts: RawArchiveOptions, now = Date.now()) {
-    const sealed = await sealRawHours(opts.dir, now, opts.sealThreads);
+export async function maintainRawArchive(
+    opts: RawArchiveOptions,
+    now = Date.now(),
+    options: { keepLatest?: boolean } = {},
+) {
+    const sealed = await sealRawHours(opts.dir, now, opts.sealThreads, options);
     const uploaded = opts.b2 ? await uploadRawHours(opts.dir, opts.b2) : 0;
     return { sealed: sealed.map((m) => m.hour), uploaded };
 }

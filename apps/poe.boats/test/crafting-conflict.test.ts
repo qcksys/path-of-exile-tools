@@ -27,30 +27,36 @@ const start = (exarchTier: number, eaterTier: number) => ({
 });
 
 describe("PoE 1 Orb of Conflict", () => {
-    it.each(
-        [1, 2, 3, 4, 5, 6].flatMap((a) => [1, 2, 3, 4, 5, 6].map((b) => [a, b])),
-    )("moves each direction of strength %i/%i within the original families", (a, b) => {
-        const input = { ...start(a!, b!), level: 1, quality: 20, memoryStrands: 82 };
-        for (const direction of [0, 1]) {
-            const random = seededRandom(42);
-            const pick = vi
-                .spyOn(random, "pick")
-                .mockImplementation((choices) => choices[direction]!.value);
-            const result = engine.apply(input, method, random);
-            const tiers =
-                direction === 0 ? [Math.min(6, a! + 1), b! - 1] : [a! - 1, Math.min(6, b! + 1)];
-            expect(result.item.implicits.map((entry) => entry.id)).toEqual(
-                tiers.flatMap((tier, index) => (tier ? [`${index ? eater : exarch}${tier}`] : [])),
-            );
-            expect(result.item).toEqual({ ...input, implicits: result.item.implicits });
-            expect(result.cost).toEqual([{ id: costId, name: "Orb of Conflict", amount: 1 }]);
-            expect(pick).toHaveBeenCalledExactlyOnceWith([
-                { value: 0, weight: 1 },
-                { value: 1, weight: 1 },
+    it.each([1, 2, 3, 4, 5, 6].flatMap((a) => [1, 2, 3, 4, 5, 6].map((b) => [a, b])))(
+        "moves each direction of strength %i/%i within the original families",
+        (a, b) => {
+            const input = { ...start(a!, b!), level: 1, quality: 20, memoryStrands: 82 };
+            for (const direction of [0, 1]) {
+                const random = seededRandom(42);
+                const pick = vi
+                    .spyOn(random, "pick")
+                    .mockImplementation((choices) => choices[direction]!.value);
+                const result = engine.apply(input, method, random);
+                const tiers =
+                    direction === 0 ? [Math.min(6, a! + 1), b! - 1] : [a! - 1, Math.min(6, b! + 1)];
+                expect(result.item.implicits.map((entry) => entry.id)).toEqual(
+                    tiers.flatMap((tier, index) =>
+                        tier ? [`${index ? eater : exarch}${tier}`] : [],
+                    ),
+                );
+                expect(result.item).toEqual({ ...input, implicits: result.item.implicits });
+                expect(result.cost).toEqual([{ id: costId, name: "Orb of Conflict", amount: 1 }]);
+                expect(pick).toHaveBeenCalledExactlyOnceWith([
+                    { value: 0, weight: 1 },
+                    { value: 1, weight: 1 },
+                ]);
+            }
+            expect(input.implicits.map((entry) => entry.id)).toEqual([
+                `${exarch}${a}`,
+                `${eater}${b}`,
             ]);
-        }
-        expect(input.implicits.map((entry) => entry.id)).toEqual([`${exarch}${a}`, `${eater}${b}`]);
-    });
+        },
+    );
 
     it("preserves raw rolls on a capped Perfect implicit and explicit modifiers", () => {
         const perfect = engine

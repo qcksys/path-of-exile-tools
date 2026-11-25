@@ -37,33 +37,35 @@ const layouts = [
 ] as const;
 
 describe("client passive graph membership", () => {
-    it.each(
-        layouts,
-    )("reads format %s orbits, roots, group headers and connected nodes with %s-byte entries from a byte slice", (format, width) => {
-        const bytes = fixture([10, 20], format, width);
-        const buffer = Buffer.concat([Buffer.alloc(11), bytes, Buffer.alloc(7)]);
-        expect(passiveGraphNodes(buffer.subarray(11, 11 + bytes.length))).toEqual(
-            new Set([10, 20]),
-        );
-    });
+    it.each(layouts)(
+        "reads format %s orbits, roots, group headers and connected nodes with %s-byte entries from a byte slice",
+        (format, width) => {
+            const bytes = fixture([10, 20], format, width);
+            const buffer = Buffer.concat([Buffer.alloc(11), bytes, Buffer.alloc(7)]);
+            expect(passiveGraphNodes(buffer.subarray(11, 11 + bytes.length))).toEqual(
+                new Set([10, 20]),
+            );
+        },
+    );
 
-    it.each(
-        layouts,
-    )("rejects incomplete, unsupported, duplicate and trailing format %s data with %s-byte entries", (format, width) => {
-        const bytes = fixture([10, 20], format, width);
-        for (let end = 0; end < bytes.length; end++)
-            expect(() => passiveGraphNodes(bytes.subarray(0, end))).toThrow();
-        expect(() => passiveGraphNodes(fixture([10, 10], format, width))).toThrow("Duplicate");
-        expect(() => passiveGraphNodes(Buffer.concat([bytes, Buffer.from([0])]))).toThrow(
-            "Trailing",
-        );
-        for (const index of [0, 1]) {
-            const changed = Buffer.from(bytes);
-            changed[index] = 9;
-            expect(() => passiveGraphNodes(changed)).toThrow("Unsupported");
-        }
-        const oversized = Buffer.from(bytes);
-        oversized.writeUInt32LE(0xffffffff, 5);
-        expect(() => passiveGraphNodes(oversized)).toThrow("Truncated");
-    });
+    it.each(layouts)(
+        "rejects incomplete, unsupported, duplicate and trailing format %s data with %s-byte entries",
+        (format, width) => {
+            const bytes = fixture([10, 20], format, width);
+            for (let end = 0; end < bytes.length; end++)
+                expect(() => passiveGraphNodes(bytes.subarray(0, end))).toThrow();
+            expect(() => passiveGraphNodes(fixture([10, 10], format, width))).toThrow("Duplicate");
+            expect(() => passiveGraphNodes(Buffer.concat([bytes, Buffer.from([0])]))).toThrow(
+                "Trailing",
+            );
+            for (const index of [0, 1]) {
+                const changed = Buffer.from(bytes);
+                changed[index] = 9;
+                expect(() => passiveGraphNodes(changed)).toThrow("Unsupported");
+            }
+            const oversized = Buffer.from(bytes);
+            oversized.writeUInt32LE(0xffffffff, 5);
+            expect(() => passiveGraphNodes(oversized)).toThrow("Truncated");
+        },
+    );
 });

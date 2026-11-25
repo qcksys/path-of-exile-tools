@@ -103,25 +103,23 @@ describe("legacy planner redirects", () => {
         "/idol-planner/share/example?lang=de",
         "/idol-planner/api/prices/scarabs?league=Legacy%20of%20Phrecia",
     ])("permanently redirects %s while preserving its path and query", (path) => {
-        const response = loader({ request: new Request(`https://poe.boats${path}`) });
+        const response = loader({ url: new URL(`https://poe.boats${path}`) });
 
         expect(response.status).toBe(308);
         expect(response.headers.get("Location")).toBe(`/1${path}`);
     });
 
-    it.each([
-        "POST",
-        "PUT",
-        "PATCH",
-        "DELETE",
-    ])("uses a method-preserving redirect for %s requests", (method) => {
-        const response = action({
-            request: new Request("https://poe.boats/idol-planner/api/sets/example", { method }),
-        });
+    it.each(["POST", "PUT", "PATCH", "DELETE"])(
+        "uses a method-preserving redirect for %s requests",
+        (_method) => {
+            const response = action({
+                url: new URL("https://poe.boats/idol-planner/api/sets/example"),
+            });
 
-        expect(response.status).toBe(308);
-        expect(response.headers.get("Location")).toBe("/1/idol-planner/api/sets/example");
-    });
+            expect(response.status).toBe(308);
+            expect(response.headers.get("Location")).toBe("/1/idol-planner/api/sets/example");
+        },
+    );
 });
 
 describe("not found route", () => {

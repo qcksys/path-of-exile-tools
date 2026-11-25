@@ -58,7 +58,7 @@ builds drop those origins.
 ## Building from source (AMO reviewers)
 
 The sources zip contains this extension, the shared `packages/poe-trade-bridge` package and the
-workspace files. With Node 24 and pnpm 10.32.1:
+workspace files. With Node 26 and pnpm 10.32.1:
 
 ```bash
 pnpm install --ignore-scripts --filter "@poe-tools/browser-extension..."

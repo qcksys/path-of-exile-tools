@@ -98,92 +98,96 @@ describe("market cohorts", () => {
         ["Two-Toned Boots", "Metadata/Items/Armours/Boots/BootsAtlas1"],
         ["Zodiac Leather", "Metadata/Items/Armours/BodyArmours/BodyDex16"],
         ["Royal Burgonet", "Metadata/Items/Armours/Helmets/HelmetStr10"],
-    ])("resolves raw %s identity before assigning its generated Scouring partition", (baseType, baseId) => {
-        const sources = generated.cohorts.filter(
-            (cohort) =>
-                cohort.query.sourcePreparation?.kind === "scour-v1" &&
-                cohort.query.groups.some((group) =>
-                    group.filters.some(
-                        (filter) =>
-                            filter.kind === "base" &&
-                            ((filter.field === "baseId" && filter.values.includes(baseId)) ||
-                                (filter.field === "baseType" && filter.values.includes(baseType))),
+    ])(
+        "resolves raw %s identity before assigning its generated Scouring partition",
+        (baseType, baseId) => {
+            const sources = generated.cohorts.filter(
+                (cohort) =>
+                    cohort.query.sourcePreparation?.kind === "scour-v1" &&
+                    cohort.query.groups.some((group) =>
+                        group.filters.some(
+                            (filter) =>
+                                filter.kind === "base" &&
+                                ((filter.field === "baseId" && filter.values.includes(baseId)) ||
+                                    (filter.field === "baseType" &&
+                                        filter.values.includes(baseType))),
+                        ),
                     ),
-                ),
-        );
-        expect(sources).toHaveLength(4);
-        if (baseType === "Royal Burgonet")
-            expect(
-                generated.sourcePreparationModel!.bases.find((base) => base.id === baseId),
-            ).toMatchObject({ scourImplicits: { ids: [], texts: [[]] } });
-        const sourceIds = new Set(sources.map((source) => source.id));
-        const nativeRolls =
-            baseType === "Two-Toned Boots"
-                ? [16, 17, 18, 19, 20].map((roll) => [
-                      `+${roll}% to Cold and Lightning Resistances`,
-                  ])
-                : [[]];
-        for (const source of sources) {
-            const profile = source.query.sourcePreparation!;
-            for (const implicitMods of nativeRolls) {
+            );
+            expect(sources).toHaveLength(4);
+            if (baseType === "Royal Burgonet")
+                expect(
+                    generated.sourcePreparationModel!.bases.find((base) => base.id === baseId),
+                ).toMatchObject({ scourImplicits: { ids: [], texts: [[]] } });
+            const sourceIds = new Set(sources.map((source) => source.id));
+            const nativeRolls =
+                baseType === "Two-Toned Boots"
+                    ? [16, 17, 18, 19, 20].map((roll) => [
+                          `+${roll}% to Cold and Lightning Resistances`,
+                      ])
+                    : [[]];
+            for (const source of sources) {
+                const profile = source.query.sourcePreparation!;
+                for (const implicitMods of nativeRolls) {
+                    const record = normalizeApiItem("poe1", "stash", {
+                        baseType,
+                        typeLine: baseType,
+                        identified: true,
+                        rarity: "Rare",
+                        ilvl: 86,
+                        influences: {},
+                        implicitMods,
+                        explicitMods: ["An unresolved disposable explicit modifier"],
+                        craftedMods: profile.crafted ? ["Suffixes Cannot Be Changed"] : [],
+                        enchantMods: profile.enchanted ? ["An existing removable enchantment"] : [],
+                    });
+                    expect(record.facts.baseId).toBeUndefined();
+                    const original = structuredClone(record);
+                    const result = classifier.classify(record);
+                    expect(result.matches.filter((id) => sourceIds.has(id))).toEqual([source.id]);
+                    expect(result.unknown.filter((id) => sourceIds.has(id))).toEqual([]);
+                    expect(record).toEqual(original);
+                }
+            }
+            for (const implicitMods of baseType === "Two-Toned Boots"
+                ? [
+                      ["+18% to Fire and Cold Resistances"],
+                      ["+18% to Fire and Lightning Resistances"],
+                      ["+15% to Cold and Lightning Resistances"],
+                      ["+21% to Cold and Lightning Resistances"],
+                      [],
+                  ]
+                : [["An extra persistent implicit"]]) {
                 const record = normalizeApiItem("poe1", "stash", {
                     baseType,
-                    typeLine: baseType,
                     identified: true,
-                    rarity: "Rare",
+                    rarity: "Magic",
                     ilvl: 86,
                     influences: {},
                     implicitMods,
                     explicitMods: ["An unresolved disposable explicit modifier"],
-                    craftedMods: profile.crafted ? ["Suffixes Cannot Be Changed"] : [],
-                    enchantMods: profile.enchanted ? ["An existing removable enchantment"] : [],
                 });
                 expect(record.facts.baseId).toBeUndefined();
-                const original = structuredClone(record);
-                const result = classifier.classify(record);
-                expect(result.matches.filter((id) => sourceIds.has(id))).toEqual([source.id]);
-                expect(result.unknown.filter((id) => sourceIds.has(id))).toEqual([]);
-                expect(record).toEqual(original);
+                expect(
+                    classifier.classify(record).matches.filter((id) => sourceIds.has(id)),
+                ).toEqual([]);
             }
-        }
-        for (const implicitMods of baseType === "Two-Toned Boots"
-            ? [
-                  ["+18% to Fire and Cold Resistances"],
-                  ["+18% to Fire and Lightning Resistances"],
-                  ["+15% to Cold and Lightning Resistances"],
-                  ["+21% to Cold and Lightning Resistances"],
-                  [],
-              ]
-            : [["An extra persistent implicit"]]) {
-            const record = normalizeApiItem("poe1", "stash", {
-                baseType,
-                identified: true,
-                rarity: "Magic",
-                ilvl: 86,
-                influences: {},
-                implicitMods,
-                explicitMods: ["An unresolved disposable explicit modifier"],
-            });
-            expect(record.facts.baseId).toBeUndefined();
-            expect(classifier.classify(record).matches.filter((id) => sourceIds.has(id))).toEqual(
-                [],
-            );
-        }
-        for (const influences of [{ elder: true }, { shaper: true, elder: true }]) {
-            const record = normalizeApiItem("poe1", "stash", {
-                baseType,
-                identified: true,
-                rarity: "Rare",
-                ilvl: 86,
-                influences,
-                implicitMods: nativeRolls[0],
-                explicitMods: ["An unresolved disposable explicit modifier"],
-            });
-            const result = classifier.classify(record);
-            expect(result.matches.filter((id) => sourceIds.has(id))).toEqual([]);
-            expect(result.unknown.filter((id) => sourceIds.has(id))).toEqual([]);
-        }
-    });
+            for (const influences of [{ elder: true }, { shaper: true, elder: true }]) {
+                const record = normalizeApiItem("poe1", "stash", {
+                    baseType,
+                    identified: true,
+                    rarity: "Rare",
+                    ilvl: 86,
+                    influences,
+                    implicitMods: nativeRolls[0],
+                    explicitMods: ["An unresolved disposable explicit modifier"],
+                });
+                const result = classifier.classify(record);
+                expect(result.matches.filter((id) => sourceIds.has(id))).toEqual([]);
+                expect(result.unknown.filter((id) => sourceIds.has(id))).toEqual([]);
+            }
+        },
+    );
 
     it("resolves supported facts from the captured catalyst context without forcing ambiguous fractures", () => {
         const source = JSON.parse(
@@ -227,34 +231,42 @@ describe("market cohorts", () => {
         ["Focused Amulet", 103],
         ["Helical Ring", 79],
         ["Manifold Ring", 56],
-    ] as const)("classifies a scaled T1 fracture on %s only with verified native implicit text", (baseType, resistance) => {
-        const base = generated.modifierTextModel!.bases.find((base) => base.baseType === baseType)!;
-        const source = {
-            baseType,
-            rarity: "Rare",
-            identified: true,
-            fractured: true,
-            ilvl: 85,
-            properties: [
-                { name: "Quality (Resistance Modifiers)", type: 6, values: [["+20%", 1]] },
-            ],
-            implicitMods: base.magnitude!.texts.map((description) => ({ description })),
-            explicitMods: [
-                { description: `+${resistance}% to Cold Resistance`, flags: { fractured: true } },
-            ],
-            extended: { prefixes: 0, suffixes: 1 },
-        };
-        const cohort = generated.cohorts.find(
-            (entry) => entry.name === `${baseType}, T1 of Haast, fractured, ilvl 84–85`,
-        )!;
-        expect(cohort).toBeDefined();
-        expect(classifier.classify(normalizeApiItem("poe1", "stash", source)).matches).toContain(
-            cohort.id,
-        );
-        const incomplete = normalizeApiItem("poe1", "stash", { ...source, implicitMods: [] });
-        expect(classifier.classify(incomplete).matches).not.toContain(cohort.id);
-        expect(classifier.classify(incomplete).unknown).toContain(cohort.id);
-    });
+    ] as const)(
+        "classifies a scaled T1 fracture on %s only with verified native implicit text",
+        (baseType, resistance) => {
+            const base = generated.modifierTextModel!.bases.find(
+                (base) => base.baseType === baseType,
+            )!;
+            const source = {
+                baseType,
+                rarity: "Rare",
+                identified: true,
+                fractured: true,
+                ilvl: 85,
+                properties: [
+                    { name: "Quality (Resistance Modifiers)", type: 6, values: [["+20%", 1]] },
+                ],
+                implicitMods: base.magnitude!.texts.map((description) => ({ description })),
+                explicitMods: [
+                    {
+                        description: `+${resistance}% to Cold Resistance`,
+                        flags: { fractured: true },
+                    },
+                ],
+                extended: { prefixes: 0, suffixes: 1 },
+            };
+            const cohort = generated.cohorts.find(
+                (entry) => entry.name === `${baseType}, T1 of Haast, fractured, ilvl 84–85`,
+            )!;
+            expect(cohort).toBeDefined();
+            expect(
+                classifier.classify(normalizeApiItem("poe1", "stash", source)).matches,
+            ).toContain(cohort.id);
+            const incomplete = normalizeApiItem("poe1", "stash", { ...source, implicitMods: [] });
+            expect(classifier.classify(incomplete).matches).not.toContain(cohort.id);
+            expect(classifier.classify(incomplete).unknown).toContain(cohort.id);
+        },
+    );
 
     it("prices an unscaled jewellery fracture but not the same displayed value with catalyst quality", () => {
         const item = {
@@ -299,71 +311,74 @@ describe("market cohorts", () => {
             ["Critical Strike Chance is increased by Overcapped Lightning Resistance"],
             true,
         ],
-    ] as const)("preserves description-only donor certainty on %s", (baseType, id, descriptions, resolved) => {
-        const record = normalizeApiItem("poe1", "stash", {
-            baseType,
-            rarity: "Rare",
-            identified: true,
-            ilvl: 86,
-            explicitMods: descriptions.map((description) => ({ description })),
-            extended: { prefixes: 0, suffixes: 1 },
-        });
-        const matches = classifier
-            .classify(record)
-            .matches.map((key) => classifier.definition(key)!);
-        expect(
-            matches.some(
-                (cohort) =>
-                    cohort.purpose === "isolated-modifier" &&
-                    cohort.query.groups.some((group) =>
-                        group.filters.some(
-                            (filter) =>
-                                filter.kind === "mod" &&
-                                filter.ids?.length === 1 &&
-                                filter.ids.includes(id),
-                        ),
-                    ),
-            ),
-        ).toBe(resolved);
-        if (!resolved) {
+    ] as const)(
+        "preserves description-only donor certainty on %s",
+        (baseType, id, descriptions, resolved) => {
+            const record = normalizeApiItem("poe1", "stash", {
+                baseType,
+                rarity: "Rare",
+                identified: true,
+                ilvl: 86,
+                explicitMods: descriptions.map((description) => ({ description })),
+                extended: { prefixes: 0, suffixes: 1 },
+            });
+            const matches = classifier
+                .classify(record)
+                .matches.map((key) => classifier.definition(key)!);
             expect(
                 matches.some(
                     (cohort) =>
-                        cohort.id.startsWith("donor-family:") &&
-                        cohort.purpose === "isolated-modifier",
+                        cohort.purpose === "isolated-modifier" &&
+                        cohort.query.groups.some((group) =>
+                            group.filters.some(
+                                (filter) =>
+                                    filter.kind === "mod" &&
+                                    filter.ids?.length === 1 &&
+                                    filter.ids.includes(id),
+                            ),
+                        ),
                 ),
-            ).toBe(true);
+            ).toBe(resolved);
+            if (!resolved) {
+                expect(
+                    matches.some(
+                        (cohort) =>
+                            cohort.id.startsWith("donor-family:") &&
+                            cohort.purpose === "isolated-modifier",
+                    ),
+                ).toBe(true);
+                expect(
+                    classifier
+                        .classify(record)
+                        .unknown.some((key) =>
+                            classifier
+                                .definition(key)
+                                ?.query.groups.some((group) =>
+                                    group.filters.some(
+                                        (filter) =>
+                                            filter.kind === "mod" &&
+                                            filter.ids?.length === 1 &&
+                                            filter.ids.includes(id),
+                                    ),
+                                ),
+                        ),
+                ).toBe(true);
+            }
+            const incomplete = normalizeApiItem("poe1", "stash", {
+                ...record.item,
+                extended: { prefixes: 0 },
+            });
+            expect(classifier.classify(incomplete)).toEqual(classifier.classify(record));
+            expect(
+                legacy.classify(incomplete).matches.map((key) => legacy.definition(key)!.purpose),
+            ).not.toContain("isolated-modifier");
             expect(
                 classifier
-                    .classify(record)
-                    .unknown.some((key) =>
-                        classifier
-                            .definition(key)
-                            ?.query.groups.some((group) =>
-                                group.filters.some(
-                                    (filter) =>
-                                        filter.kind === "mod" &&
-                                        filter.ids?.length === 1 &&
-                                        filter.ids.includes(id),
-                                ),
-                            ),
-                    ),
-            ).toBe(true);
-        }
-        const incomplete = normalizeApiItem("poe1", "stash", {
-            ...record.item,
-            extended: { prefixes: 0 },
-        });
-        expect(classifier.classify(incomplete)).toEqual(classifier.classify(record));
-        expect(
-            legacy.classify(incomplete).matches.map((key) => legacy.definition(key)!.purpose),
-        ).not.toContain("isolated-modifier");
-        expect(
-            classifier
-                .classify(normalizeApiItem("poe1", "stash", { ...record.item, extended: {} }))
-                .matches.map((key) => classifier.definition(key)!.purpose),
-        ).not.toContain("isolated-modifier");
-    });
+                    .classify(normalizeApiItem("poe1", "stash", { ...record.item, extended: {} }))
+                    .matches.map((key) => classifier.definition(key)!.purpose),
+            ).not.toContain("isolated-modifier");
+        },
+    );
 
     it("resolves captured stash fractures from descriptions and counts without trade metadata", () => {
         const fixture = JSON.parse(

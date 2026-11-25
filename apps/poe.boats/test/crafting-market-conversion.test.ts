@@ -72,49 +72,55 @@ describe("equipment asking-price conversion", () => {
             expect(exchangeCurrencyId(token)).toBeNull();
         }
     });
-    it.each([
-        "divine",
-        "chrome",
-    ] as const)("binds an explicitly converted %s median and retains both observation sources", (currency) => {
-        const candidate = convertedCandidate(currency);
-        const selected = selectCraftingMarketPrice(candidate, "chaos");
-        expect(selected).toMatchObject({ min: 1000, median: 2000, max: 3000, hours: 1, count: 10 });
-        const bound = bindCohortPurchasePrice(marketGraph(), engine, "base", "buy", candidate);
-        const price = livePurchasePrices(bound)[0]!.alternative.price!;
-        expect(price).toMatchObject({ amount: 2000, currency: "chaos", confidence: null });
-        expect(decodeCohortPriceReference(price.cohortId)).toMatchObject({
-            conversion: "exchange-v1",
-            exchange: candidate.exchange,
-        });
-    });
-
-    it.each([
-        "divine",
-        "chrome",
-    ] as const)("requires explicit %s conversion, the same hour, realm, league and currency pair", (currency) => {
-        for (const change of [
-            "policy",
-            "hour",
-            "realm",
-            "league",
-            "itemId",
-            "quoteId",
-            "window",
-        ] as const) {
+    it.each(["divine", "chrome"] as const)(
+        "binds an explicitly converted %s median and retains both observation sources",
+        (currency) => {
             const candidate = convertedCandidate(currency);
-            if (change === "policy") delete candidate.conversion;
-            else if (change === "hour") candidate.exchange!.quote.hour! -= 3600;
-            else if (change === "realm") candidate.exchange!.quote.realm = "sony";
-            else if (change === "league") candidate.exchange!.quote.league = "Other";
-            else if (change === "window")
-                candidate.exchange!.quote.windowStart = candidate.latest.hour - 3600;
-            else candidate.exchange!.quote[change] = exchangeCurrencyId("exalted")!;
-            expect(selectCraftingMarketPrice(candidate, "chaos"), change).toBeNull();
-            expect(() =>
-                bindCohortPurchasePrice(marketGraph(), engine, "base", "buy", candidate),
-            ).toThrow("No asking price");
-        }
-    });
+            const selected = selectCraftingMarketPrice(candidate, "chaos");
+            expect(selected).toMatchObject({
+                min: 1000,
+                median: 2000,
+                max: 3000,
+                hours: 1,
+                count: 10,
+            });
+            const bound = bindCohortPurchasePrice(marketGraph(), engine, "base", "buy", candidate);
+            const price = livePurchasePrices(bound)[0]!.alternative.price!;
+            expect(price).toMatchObject({ amount: 2000, currency: "chaos", confidence: null });
+            expect(decodeCohortPriceReference(price.cohortId)).toMatchObject({
+                conversion: "exchange-v1",
+                exchange: candidate.exchange,
+            });
+        },
+    );
+
+    it.each(["divine", "chrome"] as const)(
+        "requires explicit %s conversion, the same hour, realm, league and currency pair",
+        (currency) => {
+            for (const change of [
+                "policy",
+                "hour",
+                "realm",
+                "league",
+                "itemId",
+                "quoteId",
+                "window",
+            ] as const) {
+                const candidate = convertedCandidate(currency);
+                if (change === "policy") delete candidate.conversion;
+                else if (change === "hour") candidate.exchange!.quote.hour! -= 3600;
+                else if (change === "realm") candidate.exchange!.quote.realm = "sony";
+                else if (change === "league") candidate.exchange!.quote.league = "Other";
+                else if (change === "window")
+                    candidate.exchange!.quote.windowStart = candidate.latest.hour - 3600;
+                else candidate.exchange!.quote[change] = exchangeCurrencyId("exalted")!;
+                expect(selectCraftingMarketPrice(candidate, "chaos"), change).toBeNull();
+                expect(() =>
+                    bindCohortPurchasePrice(marketGraph(), engine, "base", "buy", candidate),
+                ).toThrow("No asking price");
+            }
+        },
+    );
 
     it("uses native prices first and never applies one-hour exchange rates to wider listing windows", () => {
         const candidate = convertedCandidate();

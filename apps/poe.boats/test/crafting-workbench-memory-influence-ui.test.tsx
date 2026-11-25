@@ -89,71 +89,71 @@ describe("crafting workbench", () => {
         expect(saved.target.groups).toEqual(dispatched.target.groups);
     });
 
-    it.each([
-        "apply_zana_influence",
-        "mutated_add_mod_to_magic",
-    ])("selects %s, explains strand probabilities and preserves spending through undo", async (action) => {
-        const rem = action === "apply_zana_influence";
-        const item = {
-            ...engine.createItem("Metadata/Items/Amulets/Amulet8"),
-            rarity: rem ? "normal" : "magic",
-            memoryStrands: rem ? 100 : 22,
-        };
-        const method = currency(action);
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: catalog.game,
-            patch: catalog.patch,
-            item,
-            method,
-            target: { groups: [], memoryStrands: { min: 0, max: 100 } },
-            steps: [],
-            prices: {},
-            seed: 42,
-            iterations: 100,
-            maxActions: 1,
-        });
-        const key = `poe-boats:crafting:poe1:${catalog.patch}`;
-        localStorage.setItem(key, JSON.stringify({ memory: project }));
-        mount();
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "memory" } });
-        fireEvent.click(button("Load project"));
-        const name = engine.costName(method.kind === "currency" ? method.id : "");
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: name } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        fireEvent.click(await screen.findByRole("option", { name }));
-        expect(
-            screen.getByRole("region", {
-                name: rem ? "Remembrance model" : "Memory strand consumption",
-            }).textContent,
-        ).toContain(rem ? "2,255 observations" : "0–32 strand cost");
-        fireEvent.click(button("Calculate odds"));
-        expect(CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project.method).toEqual(
-            method,
-        );
-        fireEvent.click(button("Stop simulation"));
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        const strands = screen.getByRole("spinbutton", {
-            name: "Memory strands",
-        }) as HTMLInputElement;
-        const remaining = Number(strands.value);
-        expect(remaining).toBeGreaterThanOrEqual(rem ? 10 : 0);
-        expect(remaining).toBeLessThan(rem ? 100 : 22);
-        expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
-            `${name}1`,
-        );
-        fireEvent.click(button("Undo"));
-        expect(strands.value).toBe(String(item.memoryStrands));
-        expect(screen.queryByText("Emulator spending")).toBeNull();
-        fireEvent.click(button("Redo"));
-        expect(strands.value).toBe(String(remaining));
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.item.memoryStrands ?? 0).toBe(remaining);
-    });
+    it.each(["apply_zana_influence", "mutated_add_mod_to_magic"])(
+        "selects %s, explains strand probabilities and preserves spending through undo",
+        async (action) => {
+            const rem = action === "apply_zana_influence";
+            const item = {
+                ...engine.createItem("Metadata/Items/Amulets/Amulet8"),
+                rarity: rem ? "normal" : "magic",
+                memoryStrands: rem ? 100 : 22,
+            };
+            const method = currency(action);
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: catalog.game,
+                patch: catalog.patch,
+                item,
+                method,
+                target: { groups: [], memoryStrands: { min: 0, max: 100 } },
+                steps: [],
+                prices: {},
+                seed: 42,
+                iterations: 100,
+                maxActions: 1,
+            });
+            const key = `poe-boats:crafting:poe1:${catalog.patch}`;
+            localStorage.setItem(key, JSON.stringify({ memory: project }));
+            mount();
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "memory" } });
+            fireEvent.click(button("Load project"));
+            const name = engine.costName(method.kind === "currency" ? method.id : "");
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: name } });
+            fireEvent.keyDown(picker, { key: "ArrowDown" });
+            fireEvent.click(await screen.findByRole("option", { name }));
+            expect(
+                screen.getByRole("region", {
+                    name: rem ? "Remembrance model" : "Memory strand consumption",
+                }).textContent,
+            ).toContain(rem ? "2,255 observations" : "0–32 strand cost");
+            fireEvent.click(button("Calculate odds"));
+            expect(
+                CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project.method,
+            ).toEqual(method);
+            fireEvent.click(button("Stop simulation"));
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            const strands = screen.getByRole("spinbutton", {
+                name: "Memory strands",
+            }) as HTMLInputElement;
+            const remaining = Number(strands.value);
+            expect(remaining).toBeGreaterThanOrEqual(rem ? 10 : 0);
+            expect(remaining).toBeLessThan(rem ? 100 : 22);
+            expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
+                `${name}1`,
+            );
+            fireEvent.click(button("Undo"));
+            expect(strands.value).toBe(String(item.memoryStrands));
+            expect(screen.queryByText("Emulator spending")).toBeNull();
+            fireEvent.click(button("Redo"));
+            expect(strands.value).toBe(String(remaining));
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.item.memoryStrands ?? 0).toBe(remaining);
+        },
+    );
 
     it("edits memory strands and requirements, calculates Unravelling, and preserves history and saves", async () => {
         const item = {

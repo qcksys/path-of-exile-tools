@@ -187,7 +187,8 @@ export function CraftingTree({
     const layout = useMemo(() => layoutRecombinatorTree(draft), [draft]);
     const topology = JSON.stringify(layout.nodes.map(({ id, x, y, height }) => [id, x, y, height]));
     useEffect(() => {
-        if (topology && instance) void instance.fitView({ padding: 0.12, maxZoom: 1 });
+        // A plain number is pixels since React Flow 13; 5% matches the old 0.12.
+        if (topology && instance) void instance.fitView({ padding: "5%", maxZoom: 1 });
     }, [instance, topology]);
     const nodes: CraftNode[] = layout.nodes.map((node) => {
         const outcomes = results?.find((result) => result.id === node.id)?.outcomes;
@@ -259,10 +260,12 @@ export function CraftingTree({
                     elementsSelectable={false}
                     edgesReconnectable={false}
                     deleteKeyCode={null}
+                    // React Flow 13 follows the page's dark class; the canvas stays light as before.
+                    forceColorMode="light"
                     minZoom={0.15}
                     maxZoom={1.5}
                     fitView
-                    fitViewOptions={{ padding: 0.12, maxZoom: 1 }}
+                    fitViewOptions={{ padding: "5%", maxZoom: 1 }}
                     preventScrolling={false}
                     isValidConnection={(connection) =>
                         isValidTreeConnection(draft, {
@@ -294,7 +297,7 @@ export function CraftingTree({
                             variant="outline"
                             size="icon-sm"
                             aria-label="Fit crafting tree"
-                            onClick={() => void instance?.fitView({ padding: 0.12, maxZoom: 1 })}
+                            onClick={() => void instance?.fitView({ padding: "5%", maxZoom: 1 })}
                         >
                             <Maximize />
                         </Button>

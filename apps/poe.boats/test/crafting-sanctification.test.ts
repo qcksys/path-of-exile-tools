@@ -41,34 +41,36 @@ function prepared() {
 }
 
 describe("PoE 2 Sanctification", () => {
-    it.each([
-        "min",
-        "max",
-    ] as const)("uses the extracted %s multiplier after Divine rolls, preserving fractures and implicits", (bound) => {
-        const item = prepared();
-        item.mods.push(engine.rollMod("ColdResist1", seededRandom(1), { fractured: true }));
-        const before = structuredClone(item);
-        const random = seededRandom(1);
-        vi.spyOn(random, "integer").mockImplementation((min, max) => (bound === "min" ? min : max));
-        const result = engine.apply(item, method, random);
-        const factor = catalog.crafting.sanctification![bound];
-        expect(result.item.sanctified).toBe(true);
-        expect(result.item.mods[0]).toMatchObject({
-            values: [catalog.mods.IncreasedLife1!.stats[0]![bound]],
-            sanctification: factor,
-        });
-        expect(rolledModText(catalog, result.item.mods[0]!, result.item)).toBe(
-            bound === "min" ? "+8 to maximum Life" : "+23 to maximum Life",
-        );
-        expect(result.item.mods[1]).toEqual(item.mods[1]);
-        expect(result.item.implicits).toEqual(item.implicits);
-        expect(item).toEqual(before);
-        expect(result.cost.map((entry) => [entry.id, entry.amount])).toEqual([
-            [divine.id, 1],
-            [omen.id, 1],
-        ]);
-        expect(availableOmens(catalog, divine)).toContainEqual(omen);
-    });
+    it.each(["min", "max"] as const)(
+        "uses the extracted %s multiplier after Divine rolls, preserving fractures and implicits",
+        (bound) => {
+            const item = prepared();
+            item.mods.push(engine.rollMod("ColdResist1", seededRandom(1), { fractured: true }));
+            const before = structuredClone(item);
+            const random = seededRandom(1);
+            vi.spyOn(random, "integer").mockImplementation((min, max) =>
+                bound === "min" ? min : max,
+            );
+            const result = engine.apply(item, method, random);
+            const factor = catalog.crafting.sanctification![bound];
+            expect(result.item.sanctified).toBe(true);
+            expect(result.item.mods[0]).toMatchObject({
+                values: [catalog.mods.IncreasedLife1!.stats[0]![bound]],
+                sanctification: factor,
+            });
+            expect(rolledModText(catalog, result.item.mods[0]!, result.item)).toBe(
+                bound === "min" ? "+8 to maximum Life" : "+23 to maximum Life",
+            );
+            expect(result.item.mods[1]).toEqual(item.mods[1]);
+            expect(result.item.implicits).toEqual(item.implicits);
+            expect(item).toEqual(before);
+            expect(result.cost.map((entry) => [entry.id, entry.amount])).toEqual([
+                [divine.id, 1],
+                [omen.id, 1],
+            ]);
+            expect(availableOmens(catalog, divine)).toContainEqual(omen);
+        },
+    );
 
     it("uses one shared multiplier for hybrid stats and applies catalyst effects afterwards", () => {
         let item = prepared();

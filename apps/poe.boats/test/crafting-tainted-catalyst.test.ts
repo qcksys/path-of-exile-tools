@@ -45,49 +45,53 @@ describe("Tainted Catalyst", () => {
         );
     });
 
-    it.each([
-        "normal",
-        "magic",
-        "rare",
-    ] as const)("replaces quality on %s corrupted jewellery and preserves affixes and flags", (rarity) => {
-        for (const itemClass of recipe.itemClasses) {
-            const id = Object.entries(catalog.bases).find(
-                ([, base]) => base.item_class === itemClass && !base.corrupted,
-            )![0];
-            let item = { ...engine.createItem(id), rarity };
-            if (rarity !== "normal")
-                item = engine.addStartingMod(item, "IncreasedLife1", seededRandom(1));
-            item = {
-                ...item,
-                corrupted: true,
-                memoryStrands: 32,
-                catalyst: { id: fertile.id, quality: 20 },
-            };
-            if (item.mods.length) item.mods[0]!.fractured = true;
-            const original = structuredClone(item);
-            const random = seededRandom(1);
-            const pick = vi
-                .spyOn(random, "pick")
-                .mockImplementation(
-                    (choices) =>
-                        choices.find(
-                            (entry) =>
-                                typeof entry.value === "object" &&
-                                entry.value !== null &&
-                                "id" in entry.value &&
-                                entry.value.id === fertile.id &&
-                                "quality" in entry.value &&
-                                entry.value.quality === 1,
-                        )!.value,
-                );
-            const result = engine.apply(item, method, random);
-            expect(result.item.catalyst).toEqual({ id: fertile.id, quality: 1 });
-            expect(result.item).toEqual({ ...original, catalyst: { id: fertile.id, quality: 1 } });
-            expect(result.cost).toEqual([{ id: recipe.id, name: "Tainted Catalyst", amount: 1 }]);
-            expect(item).toEqual(original);
-            expect(pick).toHaveBeenCalledTimes(1);
-        }
-    });
+    it.each(["normal", "magic", "rare"] as const)(
+        "replaces quality on %s corrupted jewellery and preserves affixes and flags",
+        (rarity) => {
+            for (const itemClass of recipe.itemClasses) {
+                const id = Object.entries(catalog.bases).find(
+                    ([, base]) => base.item_class === itemClass && !base.corrupted,
+                )![0];
+                let item = { ...engine.createItem(id), rarity };
+                if (rarity !== "normal")
+                    item = engine.addStartingMod(item, "IncreasedLife1", seededRandom(1));
+                item = {
+                    ...item,
+                    corrupted: true,
+                    memoryStrands: 32,
+                    catalyst: { id: fertile.id, quality: 20 },
+                };
+                if (item.mods.length) item.mods[0]!.fractured = true;
+                const original = structuredClone(item);
+                const random = seededRandom(1);
+                const pick = vi
+                    .spyOn(random, "pick")
+                    .mockImplementation(
+                        (choices) =>
+                            choices.find(
+                                (entry) =>
+                                    typeof entry.value === "object" &&
+                                    entry.value !== null &&
+                                    "id" in entry.value &&
+                                    entry.value.id === fertile.id &&
+                                    "quality" in entry.value &&
+                                    entry.value.quality === 1,
+                            )!.value,
+                    );
+                const result = engine.apply(item, method, random);
+                expect(result.item.catalyst).toEqual({ id: fertile.id, quality: 1 });
+                expect(result.item).toEqual({
+                    ...original,
+                    catalyst: { id: fertile.id, quality: 1 },
+                });
+                expect(result.cost).toEqual([
+                    { id: recipe.id, name: "Tainted Catalyst", amount: 1 },
+                ]);
+                expect(item).toEqual(original);
+                expect(pick).toHaveBeenCalledTimes(1);
+            }
+        },
+    );
 
     it("enumerates typed and untyped quality conditions and scaled stat requirements exactly", () => {
         for (const [condition, probability] of [

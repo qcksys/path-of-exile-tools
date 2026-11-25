@@ -42,13 +42,14 @@ it("keeps the original Rare purchase, target and self-service price unchanged", 
     expect({ ...graph, id: original.id, ruleset: original.ruleset }).toEqual(original);
 });
 
-it.each(
-    craftingPresets.filter(({ id }) => !["rarity-helmet", "sushi-rf-helmet"].includes(id)),
-)("leaves $id unchanged by the Janus purchase alternative", ({ id }) => {
-    const original = projectFromPreset(engine, prior, id);
-    const graph = projectFromPreset(engine, ruleset, id);
-    expect({ ...graph, id: original.id, ruleset: original.ruleset }).toEqual(original);
-});
+it.each(craftingPresets.filter(({ id }) => !["rarity-helmet", "sushi-rf-helmet"].includes(id)))(
+    "leaves $id unchanged by the Janus purchase alternative",
+    ({ id }) => {
+        const original = projectFromPreset(engine, prior, id);
+        const graph = projectFromPreset(engine, ruleset, id);
+        expect({ ...graph, id: original.id, ruleset: original.ruleset }).toEqual(original);
+    },
+);
 
 it("captures only the exact Magic Janus state in its distinct purchase cohort", () => {
     const graph = projectFromPreset(engine, ruleset, "rarity-helmet");
@@ -70,31 +71,31 @@ it("captures only the exact Magic Janus state in its distinct purchase cohort", 
         expect(matchItem(invalid, cohorts[0]!.query)).toBe("no-match");
 });
 
-it.each([
-    true,
-    false,
-])("charges the Magic purchase without converting its rarity, priced=%s", (priced) => {
-    const graph = projectFromPreset(engine, ruleset, "rarity-helmet");
-    const { node, alternative } = purchase(graph, donorId, "buy-magic");
-    node.choice = { mode: "pinned", alternativeId: alternative.id };
-    if (priced) alternative.price = quote(11);
-    const trial = new CraftingGraphTrial(engine, graph, seededRandom(42), {
-        entry: donorId,
-        classify: false,
-    });
-    while (!trial.done) trial.advance();
-    expect(trial.result()).toMatchObject({
-        status: "returned",
-        error: null,
-        item: alternative.item,
-        cost: priced ? 11 : null,
-        missingPrices: priced ? [] : [`purchase:${donorId}:buy-magic`],
-        purchases: 1,
-        actions: 0,
-        spending: { [`purchase:${donorId}:buy-magic`]: 1 },
-    });
-    expect(trial.result().item!.rarity).toBe("magic");
-});
+it.each([true, false])(
+    "charges the Magic purchase without converting its rarity, priced=%s",
+    (priced) => {
+        const graph = projectFromPreset(engine, ruleset, "rarity-helmet");
+        const { node, alternative } = purchase(graph, donorId, "buy-magic");
+        node.choice = { mode: "pinned", alternativeId: alternative.id };
+        if (priced) alternative.price = quote(11);
+        const trial = new CraftingGraphTrial(engine, graph, seededRandom(42), {
+            entry: donorId,
+            classify: false,
+        });
+        while (!trial.done) trial.advance();
+        expect(trial.result()).toMatchObject({
+            status: "returned",
+            error: null,
+            item: alternative.item,
+            cost: priced ? 11 : null,
+            missingPrices: priced ? [] : [`purchase:${donorId}:buy-magic`],
+            purchases: 1,
+            actions: 0,
+            spending: { [`purchase:${donorId}:buy-magic`]: 1 },
+        });
+        expect(trial.result().item!.rarity).toBe("magic");
+    },
+);
 
 it("preserves every immediate outcome and the full seeded craft when using Magic Janus", () => {
     const graph = projectFromPreset(engine, current, "rarity-helmet");

@@ -182,76 +182,68 @@ it("keeps only completed partial results on stop and ignores messages from a pre
     expect(button("Stop optimizer")).toBeDefined();
 });
 
-it.each([
-    "workers",
-    "sockets",
-    "trials",
-    "fossils",
-    "target",
-    "prices",
-    "seed",
-    "unmount",
-])("terminates all workers when %s changes", (change) => {
-    const view = mount();
-    fireEvent.click(button("Compare fossils"));
-    const prior = [...OptimizerWorker.instances];
-    if (change === "workers")
-        changeControl(screen.getByLabelText("Optimizer workers"), { target: { value: "3" } });
-    if (change === "sockets")
-        changeControl(screen.getByLabelText("Maximum resonator sockets"), {
-            target: { value: "1" },
-        });
-    if (change === "trials")
-        changeControl(screen.getByLabelText("Trials per combination"), {
-            target: { value: "200" },
-        });
-    if (change === "fossils")
-        fireEvent.click(screen.getByRole("checkbox", { name: "Pristine Fossil" }));
-    if (change === "target")
-        view.update({
-            ...view.input,
-            target: engine.validateTarget({ groups: [], openPrefixes: 1 }),
-        });
-    if (change === "prices") view.update({ ...view.input, prices: {} });
-    if (change === "seed") view.update({ ...view.input, seed: 18 });
-    if (change === "unmount") view.unmount();
-    for (const worker of prior) {
-        expect(worker.terminate).toHaveBeenCalledOnce();
-        const runner = optimizer(worker);
-        runner.runBatch(100);
-        send(worker, runner.result());
-    }
-    expect(screen.queryByRole("status")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Stop optimizer" })).toBeNull();
-});
+it.each(["workers", "sockets", "trials", "fossils", "target", "prices", "seed", "unmount"])(
+    "terminates all workers when %s changes",
+    (change) => {
+        const view = mount();
+        fireEvent.click(button("Compare fossils"));
+        const prior = [...OptimizerWorker.instances];
+        if (change === "workers")
+            changeControl(screen.getByLabelText("Optimizer workers"), { target: { value: "3" } });
+        if (change === "sockets")
+            changeControl(screen.getByLabelText("Maximum resonator sockets"), {
+                target: { value: "1" },
+            });
+        if (change === "trials")
+            changeControl(screen.getByLabelText("Trials per combination"), {
+                target: { value: "200" },
+            });
+        if (change === "fossils")
+            fireEvent.click(screen.getByRole("checkbox", { name: "Pristine Fossil" }));
+        if (change === "target")
+            view.update({
+                ...view.input,
+                target: engine.validateTarget({ groups: [], openPrefixes: 1 }),
+            });
+        if (change === "prices") view.update({ ...view.input, prices: {} });
+        if (change === "seed") view.update({ ...view.input, seed: 18 });
+        if (change === "unmount") view.unmount();
+        for (const worker of prior) {
+            expect(worker.terminate).toHaveBeenCalledOnce();
+            const runner = optimizer(worker);
+            runner.runBatch(100);
+            send(worker, runner.result());
+        }
+        expect(screen.queryByRole("status")).toBeNull();
+        expect(screen.queryByRole("button", { name: "Stop optimizer" })).toBeNull();
+    },
+);
 
-it.each([
-    "message",
-    "event",
-    "constructor",
-    "postMessage",
-])("stops all workers and recovers from a %s error", (kind) => {
-    mount();
-    OptimizerWorker.failConstruct = kind === "constructor";
-    OptimizerWorker.failPost = kind === "postMessage";
-    fireEvent.click(button("Compare fossils"));
-    const prior = [...OptimizerWorker.instances];
-    if (kind === "message")
-        act(() =>
-            prior[0]!.onmessage?.({
-                data: { type: "error", message: "Worker rejected the search" },
-            }),
-        );
-    if (kind === "event") act(() => prior[0]!.onerror?.({ message: "Worker crashed" }));
-    expect(screen.getByRole("alert").textContent).toMatch(/Could not|Worker/);
-    expect(button("Compare fossils")).toHaveProperty("disabled", false);
-    expect(screen.queryByRole("button", { name: "Stop optimizer" })).toBeNull();
-    for (const worker of prior) expect(worker.terminate).toHaveBeenCalledOnce();
-    act(() => prior[0]!.onmessage?.({ data: { type: "error", message: "stale error" } }));
-    expect(screen.queryByText("stale error")).toBeNull();
-    OptimizerWorker.failConstruct = false;
-    OptimizerWorker.failPost = false;
-    fireEvent.click(button("Compare fossils"));
-    expect(screen.queryByRole("alert")).toBeNull();
-    expect(button("Stop optimizer")).toBeDefined();
-});
+it.each(["message", "event", "constructor", "postMessage"])(
+    "stops all workers and recovers from a %s error",
+    (kind) => {
+        mount();
+        OptimizerWorker.failConstruct = kind === "constructor";
+        OptimizerWorker.failPost = kind === "postMessage";
+        fireEvent.click(button("Compare fossils"));
+        const prior = [...OptimizerWorker.instances];
+        if (kind === "message")
+            act(() =>
+                prior[0]!.onmessage?.({
+                    data: { type: "error", message: "Worker rejected the search" },
+                }),
+            );
+        if (kind === "event") act(() => prior[0]!.onerror?.({ message: "Worker crashed" }));
+        expect(screen.getByRole("alert").textContent).toMatch(/Could not|Worker/);
+        expect(button("Compare fossils")).toHaveProperty("disabled", false);
+        expect(screen.queryByRole("button", { name: "Stop optimizer" })).toBeNull();
+        for (const worker of prior) expect(worker.terminate).toHaveBeenCalledOnce();
+        act(() => prior[0]!.onmessage?.({ data: { type: "error", message: "stale error" } }));
+        expect(screen.queryByText("stale error")).toBeNull();
+        OptimizerWorker.failConstruct = false;
+        OptimizerWorker.failPost = false;
+        fireEvent.click(button("Compare fossils"));
+        expect(screen.queryByRole("alert")).toBeNull();
+        expect(button("Stop optimizer")).toBeDefined();
+    },
+);

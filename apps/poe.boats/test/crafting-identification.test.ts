@@ -38,32 +38,37 @@ for (const game of ["poe1", "poe2"] as const) {
     });
 
     describe(`${game} ordinary equipment identification`, () => {
-        it.each([
-            "magic",
-            "rare",
-        ] as const)("identifies %s equipment without changing its known properties", (rarity) => {
-            const input = {
-                ...blank(),
-                rarity,
-                corrupted: true,
-                mirrored: true,
-                quality: 20,
-                sockets: 2,
-                influences: game === "poe1" ? [0] : [],
-                baseDefences: Object.fromEntries(
-                    baseDefenceEntries(catalog, blank()).map(({ key, range }) => [key, range.max]),
-                ),
-            };
-            const before = structuredClone(input);
-            for (let seed = 0; seed < 10; seed++) {
-                const result = engine.apply(input, method, seededRandom(seed));
-                expect(result.item.unidentified).toBeUndefined();
-                expect(result.item.mods.length).toBeGreaterThanOrEqual(rarity === "magic" ? 1 : 4);
-                expect({ ...result.item, mods: [], unidentified: true }).toEqual(input);
-                expect(result.cost).toEqual([{ id: wisdom.id, name: wisdom.name, amount: 1 }]);
-            }
-            expect(input).toEqual(before);
-        });
+        it.each(["magic", "rare"] as const)(
+            "identifies %s equipment without changing its known properties",
+            (rarity) => {
+                const input = {
+                    ...blank(),
+                    rarity,
+                    corrupted: true,
+                    mirrored: true,
+                    quality: 20,
+                    sockets: 2,
+                    influences: game === "poe1" ? [0] : [],
+                    baseDefences: Object.fromEntries(
+                        baseDefenceEntries(catalog, blank()).map(({ key, range }) => [
+                            key,
+                            range.max,
+                        ]),
+                    ),
+                };
+                const before = structuredClone(input);
+                for (let seed = 0; seed < 10; seed++) {
+                    const result = engine.apply(input, method, seededRandom(seed));
+                    expect(result.item.unidentified).toBeUndefined();
+                    expect(result.item.mods.length).toBeGreaterThanOrEqual(
+                        rarity === "magic" ? 1 : 4,
+                    );
+                    expect({ ...result.item, mods: [], unidentified: true }).toEqual(input);
+                    expect(result.cost).toEqual([{ id: wisdom.id, name: wisdom.name, amount: 1 }]);
+                }
+                expect(input).toEqual(before);
+            },
+        );
 
         it("rejects other crafts and known modifiers before consuming randomness", () => {
             const random = seededRandom(42);

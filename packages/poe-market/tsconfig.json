@@ -10,7 +10,8 @@
         "resolveJsonModule": true,
         "strict": true,
         "skipLibCheck": true,
-        "noUncheckedIndexedAccess": true
+        "noUncheckedIndexedAccess": true,
+        "types": ["node"]
     },
     "include": ["src/**/*"]
 }

@@ -94,43 +94,45 @@ describe("ingest worker lifecycle", () => {
         }
     });
 
-    it.each([
-        false,
-        true,
-    ])("stops after a failed rollback even with health-file failure %s", async (fileFailure) => {
-        const directory = await mkdtemp(join(tmpdir(), "ingest-watch-fatal-"));
-        const statusFile = fileFailure ? directory : join(directory, "status.json");
-        const stop = new AbortController();
-        const timeout = setTimeout(() => stop.abort(), 1000);
-        const log = vi.spyOn(console, "error").mockImplementation(() => {});
-        const failure = new TransactionRollbackError(
-            Object.assign(new Error("Failed to commit: Out of Memory"), {
-                password: "fixture-private-password",
-            }),
-            new Error("Cannot rollback: no transaction is active"),
-        );
-        const cycle = vi.fn(async () => {
-            throw failure;
-        });
-        try {
-            await expect(
-                watchCycles(cycle, { signal: stop.signal, intervalMs: 10, statusFile }),
-            ).rejects.toBe(failure);
-            expect(cycle).toHaveBeenCalledOnce();
-            if (!fileFailure)
-                expect(JSON.parse(await readFile(statusFile, "utf8"))).toMatchObject({ ok: false });
-            const output = log.mock.calls.flat().join(" ");
-            expect(output).toContain("stopping before further processing");
-            expect(output).toContain("Out of Memory");
-            expect(output).toContain("no transaction is active");
-            expect(output).not.toContain("fixture-private");
-        } finally {
-            clearTimeout(timeout);
-            stop.abort();
-            log.mockRestore();
-            await rm(directory, { recursive: true, force: true });
-        }
-    });
+    it.each([false, true])(
+        "stops after a failed rollback even with health-file failure %s",
+        async (fileFailure) => {
+            const directory = await mkdtemp(join(tmpdir(), "ingest-watch-fatal-"));
+            const statusFile = fileFailure ? directory : join(directory, "status.json");
+            const stop = new AbortController();
+            const timeout = setTimeout(() => stop.abort(), 1000);
+            const log = vi.spyOn(console, "error").mockImplementation(() => {});
+            const failure = new TransactionRollbackError(
+                Object.assign(new Error("Failed to commit: Out of Memory"), {
+                    password: "fixture-private-password",
+                }),
+                new Error("Cannot rollback: no transaction is active"),
+            );
+            const cycle = vi.fn(async () => {
+                throw failure;
+            });
+            try {
+                await expect(
+                    watchCycles(cycle, { signal: stop.signal, intervalMs: 10, statusFile }),
+                ).rejects.toBe(failure);
+                expect(cycle).toHaveBeenCalledOnce();
+                if (!fileFailure)
+                    expect(JSON.parse(await readFile(statusFile, "utf8"))).toMatchObject({
+                        ok: false,
+                    });
+                const output = log.mock.calls.flat().join(" ");
+                expect(output).toContain("stopping before further processing");
+                expect(output).toContain("Out of Memory");
+                expect(output).toContain("no transaction is active");
+                expect(output).not.toContain("fixture-private");
+            } finally {
+                clearTimeout(timeout);
+                stop.abort();
+                log.mockRestore();
+                await rm(directory, { recursive: true, force: true });
+            }
+        },
+    );
 
     it("does not inspect unknown thrown values", async () => {
         const stop = new AbortController();

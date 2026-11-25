@@ -45,40 +45,39 @@ describe("Memory Influenced Maps and Orb of Intention", () => {
         );
     });
 
-    it.each([
-        "normal",
-        "magic",
-        "rare",
-    ] as const)("applies exactly three deterministic enchantment increments to %s maps without changing affixes", (rarity) => {
-        let item: CraftingItem = { ...memory, rarity };
-        if (rarity !== "normal")
-            item = engine.addStartingMod(item, engine.pool(item)[0]!.id, seededRandom(1));
-        const original = structuredClone(item);
-        const random = seededRandom(1);
-        const pick = vi.spyOn(random, "pick");
-        for (let uses = 1; uses <= rule.maximumUses; uses++) {
-            const result = engine.apply(item, method, random);
-            expect(result.item.memoryMap).toEqual({ intentions: uses });
-            expect(result.item.mods).toEqual(original.mods);
-            expect(result.item.implicits).toEqual(original.implicits);
-            expect(result.item.rarity).toBe(rarity);
-            expect(result.item.memoryStrands).toBeUndefined();
-            expect(result.cost).toEqual([
-                { id: rule.currency, name: "Orb of Intention", amount: 1 },
-            ]);
-            const text = memoryMapModifiers(catalog, result.item)
-                .map((entry) => entry.text)
-                .join("\n");
-            expect(text).toContain("Area is Influenced by the Originator's Memories");
-            expect(text).toContain(`${uses * 20}% less Quantity of Items found`);
-            expect(text).toContain(`+${uses * 12} Memory Strands`);
-            expect(item.memoryMap!.intentions).toBe(uses - 1);
-            item = result.item;
-        }
-        expect(() => engine.apply(item, method, random)).toThrow("Intention limit");
-        expect(pick).not.toHaveBeenCalled();
-        expect(original.memoryMap!.intentions).toBe(0);
-    });
+    it.each(["normal", "magic", "rare"] as const)(
+        "applies exactly three deterministic enchantment increments to %s maps without changing affixes",
+        (rarity) => {
+            let item: CraftingItem = { ...memory, rarity };
+            if (rarity !== "normal")
+                item = engine.addStartingMod(item, engine.pool(item)[0]!.id, seededRandom(1));
+            const original = structuredClone(item);
+            const random = seededRandom(1);
+            const pick = vi.spyOn(random, "pick");
+            for (let uses = 1; uses <= rule.maximumUses; uses++) {
+                const result = engine.apply(item, method, random);
+                expect(result.item.memoryMap).toEqual({ intentions: uses });
+                expect(result.item.mods).toEqual(original.mods);
+                expect(result.item.implicits).toEqual(original.implicits);
+                expect(result.item.rarity).toBe(rarity);
+                expect(result.item.memoryStrands).toBeUndefined();
+                expect(result.cost).toEqual([
+                    { id: rule.currency, name: "Orb of Intention", amount: 1 },
+                ]);
+                const text = memoryMapModifiers(catalog, result.item)
+                    .map((entry) => entry.text)
+                    .join("\n");
+                expect(text).toContain("Area is Influenced by the Originator's Memories");
+                expect(text).toContain(`${uses * 20}% less Quantity of Items found`);
+                expect(text).toContain(`+${uses * 12} Memory Strands`);
+                expect(item.memoryMap!.intentions).toBe(uses - 1);
+                item = result.item;
+            }
+            expect(() => engine.apply(item, method, random)).toThrow("Intention limit");
+            expect(pick).not.toHaveBeenCalled();
+            expect(original.memoryMap!.intentions).toBe(0);
+        },
+    );
 
     it("rejects invalid state and unavailable crafts before random selection", () => {
         for (const count of [-1, 0.5, 4])
@@ -115,29 +114,32 @@ describe("Memory Influenced Maps and Orb of Intention", () => {
         ).toThrow("PoE 1 map");
     });
 
-    it.each([
-        0, 1, 2, 3,
-    ])("round-trips %s uses through item text and rejects incomplete or conflicting values", (intentions) => {
-        const item = { ...memory, memoryMap: { intentions } };
-        const text = exportCraftingItemText(engine, item);
-        expect(importCraftingItemText(engine, text)[0]!.item).toEqual(item);
-        const plain = text.replace(/\{[^}]+\}/g, "").replace(/^Implicits:.*\n/m, "");
-        expect(importCraftingItemText(engine, plain)[0]!.item).toEqual(item);
-        const influence = memoryMapModifiers(catalog, item)[0]!.text;
-        expect(() => importCraftingItemText(engine, `${plain}\n${influence}`)).toThrow();
-        if (intentions) {
-            expect(() => importCraftingItemText(engine, plain.replace(influence, ""))).toThrow();
-            expect(() =>
-                importCraftingItemText(
-                    engine,
-                    plain.replace(`${intentions * 12} Memory Strands`, "99 Memory Strands"),
-                ),
-            ).toThrow();
-            expect(() =>
-                importCraftingItemText(engine, plain.replace(/^.*less Quantity.*\n/m, "")),
-            ).toThrow();
-        }
-    });
+    it.each([0, 1, 2, 3])(
+        "round-trips %s uses through item text and rejects incomplete or conflicting values",
+        (intentions) => {
+            const item = { ...memory, memoryMap: { intentions } };
+            const text = exportCraftingItemText(engine, item);
+            expect(importCraftingItemText(engine, text)[0]!.item).toEqual(item);
+            const plain = text.replace(/\{[^}]+\}/g, "").replace(/^Implicits:.*\n/m, "");
+            expect(importCraftingItemText(engine, plain)[0]!.item).toEqual(item);
+            const influence = memoryMapModifiers(catalog, item)[0]!.text;
+            expect(() => importCraftingItemText(engine, `${plain}\n${influence}`)).toThrow();
+            if (intentions) {
+                expect(() =>
+                    importCraftingItemText(engine, plain.replace(influence, "")),
+                ).toThrow();
+                expect(() =>
+                    importCraftingItemText(
+                        engine,
+                        plain.replace(`${intentions * 12} Memory Strands`, "99 Memory Strands"),
+                    ),
+                ).toThrow();
+                expect(() =>
+                    importCraftingItemText(engine, plain.replace(/^.*less Quantity.*\n/m, "")),
+                ).toThrow();
+            }
+        },
+    );
 
     it("preserves memory map state through ordinary crafts, imprints and project JSON", () => {
         const item = { ...memory, memoryMap: { intentions: 2 } };

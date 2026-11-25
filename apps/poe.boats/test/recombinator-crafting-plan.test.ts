@@ -53,66 +53,66 @@ function fixture() {
     });
 }
 describe("connected recombinator plan handoff", () => {
-    it.each([
-        false,
-        true,
-    ])("shares graph creation and missing-input refusal through HTTP/MCP (invalid=%s)", async (invalid) => {
-        vi.spyOn(crypto, "randomUUID").mockReturnValue("00000000-0000-4000-8000-000000000001");
-        const context: OperationContext = {
-            db: createDbConnection("mysql://test:test@localhost/poe_test"),
-            loadCatalog: async () => recombinator,
-            loadWorkbenchCatalog: async () => catalog,
-            loadCraftingRulesets: async () => historyIndex,
-            loadCraftingRevision: retainedRevision,
-            origin: "https://poe.boats",
-            caller: null,
-        };
-        const input = fixture();
-        if (invalid) delete input.inputs[input.draft.items[0]!.id];
-        const response = await api.request(
-            "https://poe.boats/api/v1/crafting/graph/from-recombinator",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-            },
-            { runtime: async () => context },
-        );
-        const rpc = await handleMcpRequest(
-            new Request("https://poe.boats/mcp", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    accept: "application/json, text/event-stream",
-                },
-                body: JSON.stringify({
-                    jsonrpc: "2.0",
-                    id: 1,
-                    method: "tools/call",
-                    params: {
-                        name: "create_crafting_graph_from_recombinator_plan",
-                        arguments: input,
-                    },
-                }),
-            }),
-            async () => context,
-        );
-        const result = CallToolResultSchema.parse(
-            z.object({ result: z.unknown() }).parse(await rpc.json()).result,
-        );
-        if (invalid) {
-            expect(response.status).toBe(400);
-            expect(result.isError).toBe(true);
-        } else {
-            expect(response.status).toBe(200);
-            expect(result.isError).not.toBe(true);
-            const expected = {
-                graph: projectFromRecombinatorPlan(engine, recombinator, ruleset, input),
+    it.each([false, true])(
+        "shares graph creation and missing-input refusal through HTTP/MCP (invalid=%s)",
+        async (invalid) => {
+            vi.spyOn(crypto, "randomUUID").mockReturnValue("00000000-0000-4000-8000-000000000001");
+            const context: OperationContext = {
+                db: createDbConnection("mysql://test:test@localhost/poe_test"),
+                loadCatalog: async () => recombinator,
+                loadWorkbenchCatalog: async () => catalog,
+                loadCraftingRulesets: async () => historyIndex,
+                loadCraftingRevision: retainedRevision,
+                origin: "https://poe.boats",
+                caller: null,
             };
-            expect(await response.json()).toEqual(expected);
-            expect(result.structuredContent).toEqual(expected);
-        }
-    });
+            const input = fixture();
+            if (invalid) delete input.inputs[input.draft.items[0]!.id];
+            const response = await api.request(
+                "https://poe.boats/api/v1/crafting/graph/from-recombinator",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(input),
+                },
+                { runtime: async () => context },
+            );
+            const rpc = await handleMcpRequest(
+                new Request("https://poe.boats/mcp", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        accept: "application/json, text/event-stream",
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: "2.0",
+                        id: 1,
+                        method: "tools/call",
+                        params: {
+                            name: "create_crafting_graph_from_recombinator_plan",
+                            arguments: input,
+                        },
+                    }),
+                }),
+                async () => context,
+            );
+            const result = CallToolResultSchema.parse(
+                z.object({ result: z.unknown() }).parse(await rpc.json()).result,
+            );
+            if (invalid) {
+                expect(response.status).toBe(400);
+                expect(result.isError).toBe(true);
+            } else {
+                expect(response.status).toBe(200);
+                expect(result.isError).not.toBe(true);
+                const expected = {
+                    graph: projectFromRecombinatorPlan(engine, recombinator, ruleset, input),
+                };
+                expect(await response.json()).toEqual(expected);
+                expect(result.structuredContent).toEqual(expected);
+            }
+        },
+    );
     it("preserves connected inputs and charges four purchases and three crafts exactly once", () => {
         const input = fixture();
         const before = structuredClone(input);

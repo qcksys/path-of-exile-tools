@@ -76,44 +76,44 @@ async function archiveFixture() {
 }
 
 describe("retained crafting rulesets", () => {
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("preserves old %s behavior and supports conditional preparation only in r5", async (game) => {
-        const graph = conditionalTransmuteGraph(game);
-        const old = historyIndex.revisions.find(
-            (entry) => entry.game === game && entry.revision === "r4",
-        )!;
-        expect(() => adoptRuleset(graph, old)).toThrow("conditional crafting steps");
-        const previous = await retainedRevision(old);
-        expect(() =>
-            previous.runtime.createSimulation(previous.catalog, {
-                ...graph,
-                ruleset: rulesetReference(old),
-            }),
-        ).toThrow();
-        const latest = historyIndex.revisions.find(
-            (entry) => entry.game === game && entry.revision === "r5",
-        )!;
-        const loaded = await retainedRevision(latest);
-        const simulation = loaded.runtime.createSimulation(
-            loaded.catalog,
-            { ...graph, ruleset: rulesetReference(latest) },
-            {
-                estimateIterations: 1,
-            },
-        );
-        while (!simulation.runBatch()) {
-            /* Run the published implementation. */
-        }
-        expect(simulation.result()).toMatchObject({
-            complete: true,
-            meanCost: 10,
-            meanActions: 0,
-            probability: 1,
-            visits: { transmute: { skipped: 3 } },
-        });
-    });
+    it.each(["poe1", "poe2"] as const)(
+        "preserves old %s behavior and supports conditional preparation only in r5",
+        async (game) => {
+            const graph = conditionalTransmuteGraph(game);
+            const old = historyIndex.revisions.find(
+                (entry) => entry.game === game && entry.revision === "r4",
+            )!;
+            expect(() => adoptRuleset(graph, old)).toThrow("conditional crafting steps");
+            const previous = await retainedRevision(old);
+            expect(() =>
+                previous.runtime.createSimulation(previous.catalog, {
+                    ...graph,
+                    ruleset: rulesetReference(old),
+                }),
+            ).toThrow();
+            const latest = historyIndex.revisions.find(
+                (entry) => entry.game === game && entry.revision === "r5",
+            )!;
+            const loaded = await retainedRevision(latest);
+            const simulation = loaded.runtime.createSimulation(
+                loaded.catalog,
+                { ...graph, ruleset: rulesetReference(latest) },
+                {
+                    estimateIterations: 1,
+                },
+            );
+            while (!simulation.runBatch()) {
+                /* Run the published implementation. */
+            }
+            expect(simulation.result()).toMatchObject({
+                complete: true,
+                meanCost: 10,
+                meanActions: 0,
+                probability: 1,
+                visits: { transmute: { skipped: 3 } },
+            });
+        },
+    );
     it("adds NNN support in r3 while the retained r2 calculation still refuses it", async () => {
         for (const revision of ["r2", "r3"]) {
             const ruleset = historyIndex.revisions.find(
@@ -143,24 +143,25 @@ describe("retained crafting rulesets", () => {
             }
         }
     });
-    it.each(
-        historyIndex.revisions,
-    )("executes a complete $game craft with retained $revision/$engine", async (ruleset) => {
-        const loaded = await retainedRevision(ruleset);
-        const graph = retainedTransmuteGraph(ruleset, loaded.catalog);
-        const simulation = loaded.runtime.createSimulation(loaded.catalog, graph, {
-            estimateIterations: 2,
-        });
-        while (!simulation.runBatch()) {
-            /* Execute the retained implementation. */
-        }
-        expect(simulation.result()).toMatchObject({
-            complete: true,
-            meanCost: 11,
-            meanActions: 1,
-            probability: 1,
-        });
-    });
+    it.each(historyIndex.revisions)(
+        "executes a complete $game craft with retained $revision/$engine",
+        async (ruleset) => {
+            const loaded = await retainedRevision(ruleset);
+            const graph = retainedTransmuteGraph(ruleset, loaded.catalog);
+            const simulation = loaded.runtime.createSimulation(loaded.catalog, graph, {
+                estimateIterations: 2,
+            });
+            while (!simulation.runBatch()) {
+                /* Execute the retained implementation. */
+            }
+            expect(simulation.result()).toMatchObject({
+                complete: true,
+                meanCost: 11,
+                meanActions: 1,
+                probability: 1,
+            });
+        },
+    );
 
     it("executes a retained self-contained engine and catalog with the same graph result", async () => {
         const loaded = await retainedRevision(current);

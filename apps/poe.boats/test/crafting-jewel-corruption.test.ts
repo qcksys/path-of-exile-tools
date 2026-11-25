@@ -81,30 +81,30 @@ describe("PoE 2 jewel Vaal Orbs", () => {
         }
     });
 
-    it.each([
-        "min",
-        "max",
-    ] as const)("rerolls raw values at the %s boundary, keeping extracted ranges and protected modifiers", (bound) => {
-        let item = prepared();
-        const suffix = engine.pool(item, { side: "suffix" })[0]!;
-        item = engine.addStartingMod(item, suffix.id, seededRandom(1));
-        item.mods[1]!.fractured = true;
-        const original = structuredClone(item);
-        const result = engine.apply(item, vaal, force("values", bound)).item;
-        expect(result.mods[0]).toMatchObject({
-            values: [bound === "min" ? 10 : 20],
-            corruptionScale: bound === "min" ? 78 : 122,
-        });
-        expect(rolledModText(catalog, result.mods[0]!, result)).toBe(
-            `${bound === "min" ? 8 : 24}% increased [Armour]`,
-        );
-        expect(result.mods[1]).toEqual(item.mods[1]);
-        expect(result.implicits).toEqual(item.implicits);
-        expect(result.corrupted).toBe(true);
-        expect(result.rarity).toBe(item.rarity);
-        expect(item).toEqual(original);
-        expect(catalog.mods.JewelArmour!.stats[0]).toMatchObject({ min: 10, max: 20 });
-    });
+    it.each(["min", "max"] as const)(
+        "rerolls raw values at the %s boundary, keeping extracted ranges and protected modifiers",
+        (bound) => {
+            let item = prepared();
+            const suffix = engine.pool(item, { side: "suffix" })[0]!;
+            item = engine.addStartingMod(item, suffix.id, seededRandom(1));
+            item.mods[1]!.fractured = true;
+            const original = structuredClone(item);
+            const result = engine.apply(item, vaal, force("values", bound)).item;
+            expect(result.mods[0]).toMatchObject({
+                values: [bound === "min" ? 10 : 20],
+                corruptionScale: bound === "min" ? 78 : 122,
+            });
+            expect(rolledModText(catalog, result.mods[0]!, result)).toBe(
+                `${bound === "min" ? 8 : 24}% increased [Armour]`,
+            );
+            expect(result.mods[1]).toEqual(item.mods[1]);
+            expect(result.implicits).toEqual(item.implicits);
+            expect(result.corrupted).toBe(true);
+            expect(result.rarity).toBe(item.rarity);
+            expect(item).toEqual(original);
+            expect(catalog.mods.JewelArmour!.stats[0]).toMatchObject({ min: 10, max: 20 });
+        },
+    );
 
     it("shares one multiplier across hybrid stats and applies refined catalyst quality afterwards", () => {
         const radius = engine.addStartingMod(

@@ -71,40 +71,40 @@ describe("Genesis equipment modifier calculation", () => {
         }
     });
 
-    it.each([
-        false,
-        true,
-    ])("creates a fresh four-affix item from protected state (fractured: %s)", (fractured) => {
-        const base = {
-            ...item(),
-            quality: 20,
-            memoryStrands: 100,
-            influences: fractured ? [] : [0],
-            corrupted: true,
-        };
-        base.mods = [engine.rollMod("IncreasedLife1", seededRandom(1), { fractured })];
-        const snapshot = structuredClone(base);
-        const selected = method(["EquipmentNode9", "EquipmentNode2"]);
-        expect(engine.genesisModifiers(base, selected.nodes)).toEqual(
-            engine.genesisModifiers(item(), selected.nodes),
-        );
-        for (let seed = 0; seed < 8; seed++) {
-            const result = engine.apply(base, selected, seededRandom(seed));
-            expect(result.item.mods).toHaveLength(4);
-            expect(result.item.mods.every((entry) => !entry.fractured && !entry.crafted)).toBe(
-                true,
+    it.each([false, true])(
+        "creates a fresh four-affix item from protected state (fractured: %s)",
+        (fractured) => {
+            const base = {
+                ...item(),
+                quality: 20,
+                memoryStrands: 100,
+                influences: fractured ? [] : [0],
+                corrupted: true,
+            };
+            base.mods = [engine.rollMod("IncreasedLife1", seededRandom(1), { fractured })];
+            const snapshot = structuredClone(base);
+            const selected = method(["EquipmentNode9", "EquipmentNode2"]);
+            expect(engine.genesisModifiers(base, selected.nodes)).toEqual(
+                engine.genesisModifiers(item(), selected.nodes),
             );
-            expect(result.item.quality ?? 0).toBe(0);
-            expect(result.item.memoryStrands ?? 0).toBe(0);
-            expect(result.item.influences ?? []).toEqual([]);
-            expect(result.item.corrupted).toBe(false);
-            expect(result.cost).toEqual([
-                { id: "generated:genesis", name: "Genesis equipment item", amount: 1 },
-            ]);
-            expect(engine.validateItem(result.item)).toEqual(result.item);
-        }
-        expect(base).toEqual(snapshot);
-    });
+            for (let seed = 0; seed < 8; seed++) {
+                const result = engine.apply(base, selected, seededRandom(seed));
+                expect(result.item.mods).toHaveLength(4);
+                expect(result.item.mods.every((entry) => !entry.fractured && !entry.crafted)).toBe(
+                    true,
+                );
+                expect(result.item.quality ?? 0).toBe(0);
+                expect(result.item.memoryStrands ?? 0).toBe(0);
+                expect(result.item.influences ?? []).toEqual([]);
+                expect(result.item.corrupted).toBe(false);
+                expect(result.cost).toEqual([
+                    { id: "generated:genesis", name: "Genesis equipment item", amount: 1 },
+                ]);
+                expect(engine.validateItem(result.item)).toEqual(result.item);
+            }
+            expect(base).toEqual(snapshot);
+        },
+    );
 
     it("preserves native implicits and respects each equipment class and special affix limits", () => {
         const bases = catalog.crafting.genesis!.itemClasses.map(

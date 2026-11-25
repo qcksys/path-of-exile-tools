@@ -120,39 +120,42 @@ describe("extracted special fossils", () => {
         ).toBe(true);
     });
 
-    it.each([
-        false,
-        true,
-    ])("rerolls then fractures one uniformly selected modifier (normal=%s)", (normal) => {
-        const item = normal ? engine.createItem(baseId) : blank();
-        const before = structuredClone(item);
-        const selected = method([opulent.id, fractured.id], normal);
-        const random = seededRandom(42);
-        const pick = vi.spyOn(random, "pick");
-        const result = engine.apply(item, selected, random);
-        expect(item).toEqual(before);
-        expect(result.item.rarity).toBe("rare");
-        expect(result.item.mods.filter((entry) => entry.fractured)).toHaveLength(1);
-        expect(result.item.mods.every((entry) => engine.mod(entry.id).implicit_tags.length)).toBe(
-            true,
-        );
-        const last = pick.mock.calls.at(-1)![0];
-        expect(last).toHaveLength(result.item.mods.length);
-        expect(last.every((choice) => choice.weight === 1)).toBe(true);
-        expect(result.cost.map((entry) => entry.id)).toEqual([...selected.ids, selected.resonator]);
-        expect(engine.validateItem(result.item)).toEqual(result.item);
-        const imported = importCraftingItemText(
-            engine,
-            exportCraftingItemText(engine, result.item),
-        )[0]!.item;
-        expect(imported.mods.map(({ id, fractured }) => ({ id, fractured }))).toEqual(
-            result.item.mods.map(({ id, fractured }) => ({ id, fractured })),
-        );
-        const retained = result.item.mods.find((entry) => entry.fractured)!;
-        expect(
-            engine.apply(result.item, currency("reroll"), seededRandom(5)).item.mods,
-        ).toContainEqual(retained);
-    });
+    it.each([false, true])(
+        "rerolls then fractures one uniformly selected modifier (normal=%s)",
+        (normal) => {
+            const item = normal ? engine.createItem(baseId) : blank();
+            const before = structuredClone(item);
+            const selected = method([opulent.id, fractured.id], normal);
+            const random = seededRandom(42);
+            const pick = vi.spyOn(random, "pick");
+            const result = engine.apply(item, selected, random);
+            expect(item).toEqual(before);
+            expect(result.item.rarity).toBe("rare");
+            expect(result.item.mods.filter((entry) => entry.fractured)).toHaveLength(1);
+            expect(
+                result.item.mods.every((entry) => engine.mod(entry.id).implicit_tags.length),
+            ).toBe(true);
+            const last = pick.mock.calls.at(-1)![0];
+            expect(last).toHaveLength(result.item.mods.length);
+            expect(last.every((choice) => choice.weight === 1)).toBe(true);
+            expect(result.cost.map((entry) => entry.id)).toEqual([
+                ...selected.ids,
+                selected.resonator,
+            ]);
+            expect(engine.validateItem(result.item)).toEqual(result.item);
+            const imported = importCraftingItemText(
+                engine,
+                exportCraftingItemText(engine, result.item),
+            )[0]!.item;
+            expect(imported.mods.map(({ id, fractured }) => ({ id, fractured }))).toEqual(
+                result.item.mods.map(({ id, fractured }) => ({ id, fractured })),
+            );
+            const retained = result.item.mods.find((entry) => entry.fractured)!;
+            expect(
+                engine.apply(result.item, currency("reroll"), seededRandom(5)).item.mods,
+            ).toContainEqual(retained);
+        },
+    );
 
     it("rejects existing fractures, added and innate influences, and non-fracturable classes before rolling", () => {
         const already = blank();

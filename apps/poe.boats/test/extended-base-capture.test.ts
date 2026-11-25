@@ -112,120 +112,127 @@ function fixture(source: Source, alternativeId: string) {
     return { graph, node, purchase, profile, definition, raw, candidate };
 }
 
-it.each(cases)("captures and binds the exact published source for $label", ({
-    source,
-    alternativeId,
-}) => {
-    const { graph, node, purchase, profile, definition, raw, candidate } = fixture(
-        source,
-        alternativeId,
-    );
-    expect(manifest.sourcePreparationModel?.format).toBe(6);
-    expect(purchase.item).toMatchObject({
-        baseId: source.baseId,
-        level: 86,
-        quality: 0,
-        rarity: "normal",
-        influences: [],
-        mods: [],
-    });
-    expect(purchase.item.implicits.map((mod) => mod.id)).toEqual(source.nativeIds);
-    expect(raw.implicitMods).toEqual(source.nativeTexts);
-    for (const rarity of profile.kind === "scour-v1" ? ["Magic", "Rare"] : ["Normal"]) {
-        const item = {
-            ...raw,
-            rarity,
-            frameType: rarity === "Magic" ? 1 : rarity === "Rare" ? 2 : 0,
-        };
-        const beforeItem = structuredClone(item);
-        const record = normalizeApiItem("poe1", "stash", item);
-        const beforeRecord = structuredClone(record);
-        const result = classifier.classify(record);
-        expect(result.matches).toContain(definition.id);
-        expect(result.unknown).not.toContain(definition.id);
-        expect(record).toEqual(beforeRecord);
-        expect(item).toEqual(beforeItem);
-    }
-    const beforeGraph = structuredClone(graph);
-    const bound = bindCohortPurchasePrice(graph, engine, node.id, purchase.id, candidate);
-    expect(graph).toEqual(beforeGraph);
-    const boundNode = bound.nodes.find((entry) => entry.id === node.id);
-    const boundPurchase =
-        boundNode?.kind === "acquire"
-            ? boundNode.alternatives.find((entry) => entry.id === purchase.id)
-            : undefined;
-    if (boundNode?.kind !== "acquire" || boundPurchase?.kind !== "purchase")
-        throw new Error("Missing bound source purchase.");
-    expect(boundPurchase.price).toMatchObject({ amount: 20, currency: "chaos", source: "market" });
-    bound.prices = {};
-    if (profile.kind === "influence-ready-v1") {
-        expect(estimateSourcePurchase(engine, bound, boundNode, boundPurchase)).toMatchObject({
-            expectedCost: 20,
-            expectedActions: 0,
-            missingPrices: [],
-        });
-    } else {
-        if (profile.kind !== "scour-v1") throw new Error("Expected paid Scouring profile.");
-        expect(estimateSourcePurchase(engine, bound, boundNode, boundPurchase)).toMatchObject({
-            expectedCost: null,
-            missingPrices: [scour],
-        });
-        bound.prices[scour] = quote(2);
-        expect(estimateSourcePurchase(engine, bound, boundNode, boundPurchase)).toMatchObject({
-            expectedCost: 20 + 2 * (1 + Number(profile.crafted) + 3 * Number(profile.enchanted)),
-            expectedActions: 1 + Number(profile.crafted) + Number(profile.enchanted),
-            missingPrices: [],
-        });
-    }
-});
-
-it.each(cases)("refuses incompatible captured state and mismatched prices for $label", ({
-    source,
-    alternativeId,
-}) => {
-    const { graph, node, purchase, profile, definition, raw, candidate } = fixture(
-        source,
-        alternativeId,
-    );
-    for (const change of [
-        { influences: { shaper: true } },
-        { influences: { hunter: true } },
-        { implicitMods: ["Unknown persistent implicit"] },
-        { implicitMods: [...raw.implicitMods, "Extra implicit"] },
-        ...(source.nativeIds.length ? [{ implicitMods: [] }] : []),
-        { fractured: true, fracturedMods: ["+70 to maximum Life"] },
-        { corrupted: true },
-        { duplicated: true },
-        { synthesised: true },
-        { searing: true },
-        { tangled: true },
-        { memoryItem: true },
-        { unknownPersistentFlag: true },
-        { intangibility: 84 },
-        { properties: [{ name: "Intangibility", type: 110, values: [["84%", 0]] }] },
-        { ilvl: raw.ilvl - 1 },
-        { ilvl: raw.ilvl + 1 },
-        { identified: false },
-        { craftedMods: raw.craftedMods.length ? [] : ["Prefix Modifiers cannot be changed"] },
-        { enchantMods: raw.enchantMods.length ? [] : ["Unremoved enchantment"] },
-    ]) {
-        const result = classifier.classify(
-            normalizeApiItem("poe1", "stash", { ...raw, ...change }),
+it.each(cases)(
+    "captures and binds the exact published source for $label",
+    ({ source, alternativeId }) => {
+        const { graph, node, purchase, profile, definition, raw, candidate } = fixture(
+            source,
+            alternativeId,
         );
-        expect(result.matches, JSON.stringify(change)).not.toContain(definition.id);
-    }
-    const unguarded = structuredClone(candidate);
-    delete unguarded.definition.query.sourcePreparation;
-    expect(() => bindCohortPurchasePrice(graph, engine, node.id, purchase.id, unguarded)).toThrow();
-    const mismatched = structuredClone(candidate);
-    mismatched.sourcePreparation =
-        profile.kind === "scour-v1"
-            ? { ...profile, crafted: !profile.crafted }
-            : { kind: "scour-v1", crafted: false, enchanted: false };
-    expect(() => bindCohortPurchasePrice(graph, engine, node.id, purchase.id, mismatched)).toThrow(
-        "different source preparation",
-    );
-});
+        expect(manifest.sourcePreparationModel?.format).toBe(6);
+        expect(purchase.item).toMatchObject({
+            baseId: source.baseId,
+            level: 86,
+            quality: 0,
+            rarity: "normal",
+            influences: [],
+            mods: [],
+        });
+        expect(purchase.item.implicits.map((mod) => mod.id)).toEqual(source.nativeIds);
+        expect(raw.implicitMods).toEqual(source.nativeTexts);
+        for (const rarity of profile.kind === "scour-v1" ? ["Magic", "Rare"] : ["Normal"]) {
+            const item = {
+                ...raw,
+                rarity,
+                frameType: rarity === "Magic" ? 1 : rarity === "Rare" ? 2 : 0,
+            };
+            const beforeItem = structuredClone(item);
+            const record = normalizeApiItem("poe1", "stash", item);
+            const beforeRecord = structuredClone(record);
+            const result = classifier.classify(record);
+            expect(result.matches).toContain(definition.id);
+            expect(result.unknown).not.toContain(definition.id);
+            expect(record).toEqual(beforeRecord);
+            expect(item).toEqual(beforeItem);
+        }
+        const beforeGraph = structuredClone(graph);
+        const bound = bindCohortPurchasePrice(graph, engine, node.id, purchase.id, candidate);
+        expect(graph).toEqual(beforeGraph);
+        const boundNode = bound.nodes.find((entry) => entry.id === node.id);
+        const boundPurchase =
+            boundNode?.kind === "acquire"
+                ? boundNode.alternatives.find((entry) => entry.id === purchase.id)
+                : undefined;
+        if (boundNode?.kind !== "acquire" || boundPurchase?.kind !== "purchase")
+            throw new Error("Missing bound source purchase.");
+        expect(boundPurchase.price).toMatchObject({
+            amount: 20,
+            currency: "chaos",
+            source: "market",
+        });
+        bound.prices = {};
+        if (profile.kind === "influence-ready-v1") {
+            expect(estimateSourcePurchase(engine, bound, boundNode, boundPurchase)).toMatchObject({
+                expectedCost: 20,
+                expectedActions: 0,
+                missingPrices: [],
+            });
+        } else {
+            if (profile.kind !== "scour-v1") throw new Error("Expected paid Scouring profile.");
+            expect(estimateSourcePurchase(engine, bound, boundNode, boundPurchase)).toMatchObject({
+                expectedCost: null,
+                missingPrices: [scour],
+            });
+            bound.prices[scour] = quote(2);
+            expect(estimateSourcePurchase(engine, bound, boundNode, boundPurchase)).toMatchObject({
+                expectedCost:
+                    20 + 2 * (1 + Number(profile.crafted) + 3 * Number(profile.enchanted)),
+                expectedActions: 1 + Number(profile.crafted) + Number(profile.enchanted),
+                missingPrices: [],
+            });
+        }
+    },
+);
+
+it.each(cases)(
+    "refuses incompatible captured state and mismatched prices for $label",
+    ({ source, alternativeId }) => {
+        const { graph, node, purchase, profile, definition, raw, candidate } = fixture(
+            source,
+            alternativeId,
+        );
+        for (const change of [
+            { influences: { shaper: true } },
+            { influences: { hunter: true } },
+            { implicitMods: ["Unknown persistent implicit"] },
+            { implicitMods: [...raw.implicitMods, "Extra implicit"] },
+            ...(source.nativeIds.length ? [{ implicitMods: [] }] : []),
+            { fractured: true, fracturedMods: ["+70 to maximum Life"] },
+            { corrupted: true },
+            { duplicated: true },
+            { synthesised: true },
+            { searing: true },
+            { tangled: true },
+            { memoryItem: true },
+            { unknownPersistentFlag: true },
+            { intangibility: 84 },
+            { properties: [{ name: "Intangibility", type: 110, values: [["84%", 0]] }] },
+            { ilvl: raw.ilvl - 1 },
+            { ilvl: raw.ilvl + 1 },
+            { identified: false },
+            { craftedMods: raw.craftedMods.length ? [] : ["Prefix Modifiers cannot be changed"] },
+            { enchantMods: raw.enchantMods.length ? [] : ["Unremoved enchantment"] },
+        ]) {
+            const result = classifier.classify(
+                normalizeApiItem("poe1", "stash", { ...raw, ...change }),
+            );
+            expect(result.matches, JSON.stringify(change)).not.toContain(definition.id);
+        }
+        const unguarded = structuredClone(candidate);
+        delete unguarded.definition.query.sourcePreparation;
+        expect(() =>
+            bindCohortPurchasePrice(graph, engine, node.id, purchase.id, unguarded),
+        ).toThrow();
+        const mismatched = structuredClone(candidate);
+        mismatched.sourcePreparation =
+            profile.kind === "scour-v1"
+                ? { ...profile, crafted: !profile.crafted }
+                : { kind: "scour-v1", crafted: false, enchanted: false };
+        expect(() =>
+            bindCohortPurchasePrice(graph, engine, node.id, purchase.id, mismatched),
+        ).toThrow("different source preparation");
+    },
+);
 
 it("requires source model 6 for the clean Heat-attuned source", () => {
     const { raw, definition } = fixture(sources[0], "buy");

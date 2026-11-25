@@ -124,27 +124,26 @@ it.each([
     health: string;
     overrides: Partial<IngestStatus>;
     receivedAt: number;
-}>)("returns actual $health worker state without any coverage tables or reads", async ({
-    health,
-    overrides,
-    receivedAt,
-}) => {
-    const report = worker(overrides, receivedAt);
-    worker({ workerId: "other-league", league: "Other" });
-    worker({ workerId: "other-realm", realm: "poe2" });
-    const result = await getServerStatus(
-        db,
-        serverStatusFilters.parse({ realm: "pc", league: "Allflame", view: "workers" }),
-    );
-    expect(result).toEqual({
-        checkedAt: now,
-        coverageCheckedAt: null,
-        workers: [{ ...report, receivedAt, health }],
-        coverage: [],
-    });
-    expect(reads).toHaveLength(1);
-    expect(reads[0]).toContain(`${DB_TABLE_PREFIX}ingest_worker`);
-});
+}>)(
+    "returns actual $health worker state without any coverage tables or reads",
+    async ({ health, overrides, receivedAt }) => {
+        const report = worker(overrides, receivedAt);
+        worker({ workerId: "other-league", league: "Other" });
+        worker({ workerId: "other-realm", realm: "poe2" });
+        const result = await getServerStatus(
+            db,
+            serverStatusFilters.parse({ realm: "pc", league: "Allflame", view: "workers" }),
+        );
+        expect(result).toEqual({
+            checkedAt: now,
+            coverageCheckedAt: null,
+            workers: [{ ...report, receivedAt, health }],
+            coverage: [],
+        });
+        expect(reads).toHaveLength(1);
+        expect(reads[0]).toContain(`${DB_TABLE_PREFIX}ingest_worker`);
+    },
+);
 
 it.each([undefined, "full"])("retains full coverage when view is %s", async (view) => {
     worker();

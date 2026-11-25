@@ -229,164 +229,178 @@ describe("crafting workbench", () => {
         ["poe1", "Body Armour", false],
         ["poe2", "Wand", false],
         ["poe1", "Body Armour", true],
-    ] as const)("applies %s %s base quality (tainted=%s), edits targets and preserves history", async (game, itemClass, corrupted) => {
-        const data = game === "poe1" ? catalog : getCatalog("poe2");
-        const model = new CraftingEngine(data);
-        const base = Object.entries(data.bases).find(
-            ([, entry]) => entry.item_class === itemClass && !entry.corrupted,
-        )![0];
-        const recipe = data.crafting.baseQuality.find(
-            (entry) => entry.corrupted === corrupted && entry.itemClasses.includes(itemClass),
-        )!;
-        const method = { kind: "currency" as const, id: recipe.id };
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game,
-            patch: data.patch,
-            item: { ...model.createItem(base), corrupted, level: 86, quality: corrupted ? 30 : 18 },
-            method,
-            target: { groups: [] },
-            steps: [],
-            prices: {},
-            seed: 42,
-            iterations: 100,
-            maxActions: 2,
-        });
-        const key = `poe-boats:crafting:${game}:${data.patch}`;
-        localStorage.setItem(key, JSON.stringify({ quality: project }));
-        mount("emulate", data);
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "quality" } });
-        fireEvent.click(button("Load project"));
-        const name = model.costName(recipe.id);
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: name } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        fireEvent.click(await screen.findByRole("option", { name }));
-        expect(screen.getByRole("region", { name: "Base quality model" }).textContent).toContain(
-            corrupted ? "uniformly modeled" : "Rarity does not change",
-        );
-        fireEvent.click(screen.getByText("Base quality requirement"));
-        fireEvent.click(button("Add quality requirement"));
-        changeControl(screen.getByRole("spinbutton", { name: "Maximum base quality (%)" }), {
-            target: { value: "20" },
-        });
-        fireEvent.click(button("Calculate odds"));
-        const dispatched = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
-        expect(dispatched.method).toEqual(method);
-        expect(dispatched.target.quality).toEqual({ min: 20, max: 20 });
-        fireEvent.click(button("Stop simulation"));
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        const quality = screen.getByRole("spinbutton", {
-            name: "Base quality (%)",
-        }) as HTMLInputElement;
-        const rolled = Number(quality.value);
-        expect(rolled).toBeGreaterThanOrEqual(corrupted ? 0 : 19);
-        expect(rolled).toBeLessThanOrEqual(20);
-        expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
-            `${name}1`,
-        );
-        fireEvent.click(button("Undo"));
-        expect(quality.value).toBe(String(project.item.quality));
-        expect(screen.queryByText("Emulator spending")).toBeNull();
-        fireEvent.click(button("Redo"));
-        expect(quality.value).toBe(String(rolled));
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.item.quality).toBe(rolled);
-        expect(saved.item.corrupted).toBe(corrupted);
-        expect(saved.target.quality).toEqual({ min: 20, max: 20 });
-    });
+    ] as const)(
+        "applies %s %s base quality (tainted=%s), edits targets and preserves history",
+        async (game, itemClass, corrupted) => {
+            const data = game === "poe1" ? catalog : getCatalog("poe2");
+            const model = new CraftingEngine(data);
+            const base = Object.entries(data.bases).find(
+                ([, entry]) => entry.item_class === itemClass && !entry.corrupted,
+            )![0];
+            const recipe = data.crafting.baseQuality.find(
+                (entry) => entry.corrupted === corrupted && entry.itemClasses.includes(itemClass),
+            )!;
+            const method = { kind: "currency" as const, id: recipe.id };
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game,
+                patch: data.patch,
+                item: {
+                    ...model.createItem(base),
+                    corrupted,
+                    level: 86,
+                    quality: corrupted ? 30 : 18,
+                },
+                method,
+                target: { groups: [] },
+                steps: [],
+                prices: {},
+                seed: 42,
+                iterations: 100,
+                maxActions: 2,
+            });
+            const key = `poe-boats:crafting:${game}:${data.patch}`;
+            localStorage.setItem(key, JSON.stringify({ quality: project }));
+            mount("emulate", data);
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "quality" } });
+            fireEvent.click(button("Load project"));
+            const name = model.costName(recipe.id);
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: name } });
+            fireEvent.keyDown(picker, { key: "ArrowDown" });
+            fireEvent.click(await screen.findByRole("option", { name }));
+            expect(
+                screen.getByRole("region", { name: "Base quality model" }).textContent,
+            ).toContain(corrupted ? "uniformly modeled" : "Rarity does not change");
+            fireEvent.click(screen.getByText("Base quality requirement"));
+            fireEvent.click(button("Add quality requirement"));
+            changeControl(screen.getByRole("spinbutton", { name: "Maximum base quality (%)" }), {
+                target: { value: "20" },
+            });
+            fireEvent.click(button("Calculate odds"));
+            const dispatched = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
+            expect(dispatched.method).toEqual(method);
+            expect(dispatched.target.quality).toEqual({ min: 20, max: 20 });
+            fireEvent.click(button("Stop simulation"));
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            const quality = screen.getByRole("spinbutton", {
+                name: "Base quality (%)",
+            }) as HTMLInputElement;
+            const rolled = Number(quality.value);
+            expect(rolled).toBeGreaterThanOrEqual(corrupted ? 0 : 19);
+            expect(rolled).toBeLessThanOrEqual(20);
+            expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
+                `${name}1`,
+            );
+            fireEvent.click(button("Undo"));
+            expect(quality.value).toBe(String(project.item.quality));
+            expect(screen.queryByText("Emulator spending")).toBeNull();
+            fireEvent.click(button("Redo"));
+            expect(quality.value).toBe(String(rolled));
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.item.quality).toBe(rolled);
+            expect(saved.item.corrupted).toBe(corrupted);
+            expect(saved.target.quality).toEqual({ min: 20, max: 20 });
+        },
+    );
 
     it.each([
         ["poe1", "Ring"],
         ["poe2", "Ring"],
         ["poe2", "Jewel"],
-    ] as const)("applies %s %s catalysts, edits quality requirements and preserves spending and history", async (game, itemClass) => {
-        const data = game === "poe1" ? catalog : getCatalog("poe2");
-        const crafting = new CraftingEngine(data);
-        const selected = data.crafting.catalysts.find((entry) =>
-            entry.itemClasses.includes(itemClass),
-        )!;
-        const name = crafting.costName(selected.id);
-        const method = { kind: "currency" as const, id: selected.id };
-        const base = Object.entries(data.bases).find(
-            ([, entry]) => entry.item_class === itemClass && !entry.corrupted,
-        )![0];
-        const item = {
-            ...crafting.createItem(base),
-            level: 84,
-            catalyst: { id: selected.id, quality: 18 },
-        };
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game,
-            patch: data.patch,
-            item,
-            method,
-            target: { groups: [] },
-            steps: [],
-            prices: { [selected.id]: 3 },
-            seed: 42,
-            iterations: 100,
-            maxActions: 2,
-        });
-        const key = `poe-boats:crafting:${game}:${data.patch}`;
-        localStorage.setItem(key, JSON.stringify({ catalysts: project }));
-        mount("emulate", data);
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "catalysts" },
-        });
-        fireEvent.click(button("Load project"));
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: name } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        fireEvent.click(await screen.findByRole("option", { name }));
-        expect(screen.getByRole("region", { name: "Catalyst application" }).textContent).toContain(
-            "One use adds 2% quality",
-        );
-        fireEvent.click(screen.getByText("Catalyst quality requirement"));
-        const targetPicker = screen.getByRole("combobox", { name: "Required catalyst" });
-        changeControl(targetPicker, { target: { value: name } });
-        fireEvent.keyDown(targetPicker, { key: "ArrowDown" });
-        fireEvent.click(await screen.findByRole("option", { name }));
-        changeControl(screen.getByRole("spinbutton", { name: "Maximum catalyst quality (%)" }), {
-            target: { value: "20" },
-        });
-        fireEvent.click(button("Calculate odds"));
-        const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
-        expect(sent.target.catalyst).toEqual({ id: selected.id, min: 20, max: 20 });
-        expect(sent.method).toEqual(method);
-        fireEvent.click(button("Stop simulation"));
-        const card = screen.getByRole("region", { name: "Current item" });
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        expect(card.textContent).toContain(`${selected.description}: +20%`);
-        expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
-            `${name}1`,
-        );
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).toContain(`${selected.description}: +18%`);
-        expect(screen.queryByText("Emulator spending")).toBeNull();
-        fireEvent.click(button("Redo"));
-        expect(card.textContent).toContain(`${selected.description}: +20%`);
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.item.catalyst).toEqual({ id: selected.id, quality: 20 });
-        expect(saved.target.catalyst).toEqual(sent.target.catalyst);
-        fireEvent.click(button("Undo"));
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "My crafting project" },
-        });
-        fireEvent.click(button("Load project"));
-        expect(card.textContent).toContain(`${selected.description}: +20%`);
-        fireEvent.click(button("Clear catalyst requirement"));
-        expect(
-            screen.queryByRole("spinbutton", { name: "Maximum catalyst quality (%)" }),
-        ).toBeNull();
-    });
+    ] as const)(
+        "applies %s %s catalysts, edits quality requirements and preserves spending and history",
+        async (game, itemClass) => {
+            const data = game === "poe1" ? catalog : getCatalog("poe2");
+            const crafting = new CraftingEngine(data);
+            const selected = data.crafting.catalysts.find((entry) =>
+                entry.itemClasses.includes(itemClass),
+            )!;
+            const name = crafting.costName(selected.id);
+            const method = { kind: "currency" as const, id: selected.id };
+            const base = Object.entries(data.bases).find(
+                ([, entry]) => entry.item_class === itemClass && !entry.corrupted,
+            )![0];
+            const item = {
+                ...crafting.createItem(base),
+                level: 84,
+                catalyst: { id: selected.id, quality: 18 },
+            };
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game,
+                patch: data.patch,
+                item,
+                method,
+                target: { groups: [] },
+                steps: [],
+                prices: { [selected.id]: 3 },
+                seed: 42,
+                iterations: 100,
+                maxActions: 2,
+            });
+            const key = `poe-boats:crafting:${game}:${data.patch}`;
+            localStorage.setItem(key, JSON.stringify({ catalysts: project }));
+            mount("emulate", data);
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "catalysts" },
+            });
+            fireEvent.click(button("Load project"));
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: name } });
+            fireEvent.keyDown(picker, { key: "ArrowDown" });
+            fireEvent.click(await screen.findByRole("option", { name }));
+            expect(
+                screen.getByRole("region", { name: "Catalyst application" }).textContent,
+            ).toContain("One use adds 2% quality");
+            fireEvent.click(screen.getByText("Catalyst quality requirement"));
+            const targetPicker = screen.getByRole("combobox", { name: "Required catalyst" });
+            changeControl(targetPicker, { target: { value: name } });
+            fireEvent.keyDown(targetPicker, { key: "ArrowDown" });
+            fireEvent.click(await screen.findByRole("option", { name }));
+            changeControl(
+                screen.getByRole("spinbutton", { name: "Maximum catalyst quality (%)" }),
+                {
+                    target: { value: "20" },
+                },
+            );
+            fireEvent.click(button("Calculate odds"));
+            const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
+            expect(sent.target.catalyst).toEqual({ id: selected.id, min: 20, max: 20 });
+            expect(sent.method).toEqual(method);
+            fireEvent.click(button("Stop simulation"));
+            const card = screen.getByRole("region", { name: "Current item" });
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            expect(card.textContent).toContain(`${selected.description}: +20%`);
+            expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
+                `${name}1`,
+            );
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).toContain(`${selected.description}: +18%`);
+            expect(screen.queryByText("Emulator spending")).toBeNull();
+            fireEvent.click(button("Redo"));
+            expect(card.textContent).toContain(`${selected.description}: +20%`);
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.item.catalyst).toEqual({ id: selected.id, quality: 20 });
+            expect(saved.target.catalyst).toEqual(sent.target.catalyst);
+            fireEvent.click(button("Undo"));
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "My crafting project" },
+            });
+            fireEvent.click(button("Load project"));
+            expect(card.textContent).toContain(`${selected.description}: +20%`);
+            fireEvent.click(button("Clear catalyst requirement"));
+            expect(
+                screen.queryByRole("spinbutton", { name: "Maximum catalyst quality (%)" }),
+            ).toBeNull();
+        },
+    );
 
     it("selects Sanctification, dispatches stat targets and preserves state and costs through undo and save/load", () => {
         const data = getCatalog("poe2");
@@ -563,73 +577,74 @@ describe("crafting workbench", () => {
         expect(card.textContent).not.toContain("+20% to Maximum Quality");
     });
 
-    it.each([
-        "poe1",
-        "poe2",
-    ] as const)("edits %s catalyst quality and preserves it through undo and save/load", (game) => {
-        const data = game === "poe1" ? catalog : getCatalog("poe2");
-        const crafting = new CraftingEngine(data);
-        const base = Object.entries(data.bases).find(
-            ([, base]) => base.item_class === "Ring" && !base.corrupted,
-        )![0];
-        const item = crafting.addStartingMod(
-            crafting.createItem(base),
-            "IncreasedLife1",
-            seededRandom(1),
-        );
-        item.mods[0]!.values = [15];
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game,
-            patch: data.patch,
-            item,
-            method: {
-                kind: "currency",
-                id: data.crafting.currencies.find((entry) => entry.action === "reroll_mod_values")!
-                    .id,
-            },
-            target: { groups: [] },
-            steps: [],
-            prices: {},
-            seed: 42,
-            iterations: 100,
-            maxActions: 10,
-        });
-        const key = `poe-boats:crafting:${game}:${data.patch}`;
-        localStorage.setItem(key, JSON.stringify({ quality: project }));
-        mount("emulate", data);
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "quality" } });
-        fireEvent.click(button("Load project"));
-        const catalyst = data.crafting.catalysts.find((entry) =>
-            entry.tags.includes(game === "poe1" ? "resource" : "life"),
-        )!;
-        changeControl(screen.getByRole("combobox", { name: "Catalyst" }), {
-            target: { value: catalyst.id },
-        });
-        const card = screen.getByRole("region", { name: "Current item" });
-        expect(card.textContent).toContain("+18 to maximum Life");
-        changeControl(screen.getByRole("spinbutton", { name: /Catalyst quality/ }), {
-            target: { value: "10" },
-        });
-        expect(card.textContent).toContain("+16 to maximum Life");
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).toContain("+18 to maximum Life");
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.item.catalyst).toEqual({ id: catalyst.id, quality: 20 });
-        expect(saved.item.mods[0].values).toEqual([15]);
-        changeControl(screen.getByRole("combobox", { name: "Catalyst" }), {
-            target: { value: "" },
-        });
-        expect(card.textContent).toContain("+15 to maximum Life");
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "My crafting project" },
-        });
-        fireEvent.click(button("Load project"));
-        expect(card.textContent).toContain("+18 to maximum Life");
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        expect(card.textContent).toContain("+20%");
-    });
+    it.each(["poe1", "poe2"] as const)(
+        "edits %s catalyst quality and preserves it through undo and save/load",
+        (game) => {
+            const data = game === "poe1" ? catalog : getCatalog("poe2");
+            const crafting = new CraftingEngine(data);
+            const base = Object.entries(data.bases).find(
+                ([, base]) => base.item_class === "Ring" && !base.corrupted,
+            )![0];
+            const item = crafting.addStartingMod(
+                crafting.createItem(base),
+                "IncreasedLife1",
+                seededRandom(1),
+            );
+            item.mods[0]!.values = [15];
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game,
+                patch: data.patch,
+                item,
+                method: {
+                    kind: "currency",
+                    id: data.crafting.currencies.find(
+                        (entry) => entry.action === "reroll_mod_values",
+                    )!.id,
+                },
+                target: { groups: [] },
+                steps: [],
+                prices: {},
+                seed: 42,
+                iterations: 100,
+                maxActions: 10,
+            });
+            const key = `poe-boats:crafting:${game}:${data.patch}`;
+            localStorage.setItem(key, JSON.stringify({ quality: project }));
+            mount("emulate", data);
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "quality" } });
+            fireEvent.click(button("Load project"));
+            const catalyst = data.crafting.catalysts.find((entry) =>
+                entry.tags.includes(game === "poe1" ? "resource" : "life"),
+            )!;
+            changeControl(screen.getByRole("combobox", { name: "Catalyst" }), {
+                target: { value: catalyst.id },
+            });
+            const card = screen.getByRole("region", { name: "Current item" });
+            expect(card.textContent).toContain("+18 to maximum Life");
+            changeControl(screen.getByRole("spinbutton", { name: /Catalyst quality/ }), {
+                target: { value: "10" },
+            });
+            expect(card.textContent).toContain("+16 to maximum Life");
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).toContain("+18 to maximum Life");
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.item.catalyst).toEqual({ id: catalyst.id, quality: 20 });
+            expect(saved.item.mods[0].values).toEqual([15]);
+            changeControl(screen.getByRole("combobox", { name: "Catalyst" }), {
+                target: { value: "" },
+            });
+            expect(card.textContent).toContain("+15 to maximum Life");
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "My crafting project" },
+            });
+            fireEvent.click(button("Load project"));
+            expect(card.textContent).toContain("+18 to maximum Life");
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            expect(card.textContent).toContain("+20%");
+        },
+    );
 });

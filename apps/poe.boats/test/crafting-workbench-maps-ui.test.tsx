@@ -246,172 +246,180 @@ describe("crafting workbench", () => {
         { label: "Locus of Corruption", seed: 7, destroyed: false },
         { label: "Locus of Corruption", seed: 4, destroyed: true },
         { label: "Vaal Orb", seed: 1, destroyed: false },
-    ])("preserves PoE 1 jewel $label results at seed $seed through dispatch, history and saves", async ({
-        label,
-        seed,
-        destroyed,
-    }) => {
-        const locus = label === "Locus of Corruption";
-        const method = locus
-            ? { kind: "locus" as const, id: catalog.crafting.locus!.id }
-            : {
-                  kind: "currency" as const,
-                  id: catalog.crafting.currencies.find((entry) => entry.action === "corrupt_item")!
-                      .id,
-              };
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe1",
-            patch: catalog.patch,
-            item: engine.createItem("Metadata/Items/Jewels/JewelInt", 86),
-            method: currency("transmute_to_rare"),
-            target: { groups: [], corrupted: true },
-            steps: [],
-            prices: { [method.id]: 7 },
-            seed,
-            iterations: 1000,
-            maxActions: 1,
-        });
-        const key = `poe-boats:crafting:poe1:${catalog.patch}`;
-        localStorage.setItem(key, JSON.stringify({ jewel: project }));
-        mount("calculate");
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "jewel" } });
-        fireEvent.click(button("Load project"));
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: label } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        fireEvent.click(await screen.findByRole("option", { name: label }));
-        expect(screen.getByRole("region", { name: `${label} model` }).textContent).toContain(
-            locus ? "destroyed outcomes still spend" : "unique-jewel",
-        );
-        fireEvent.click(button("Calculate odds"));
-        expect(CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project).toMatchObject({
-            method,
-            target: project.target,
-            prices: project.prices,
-        });
-        fireEvent.click(button("Stop simulation"));
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        const card = screen.getByRole("region", { name: "Current item" });
-        expect(card.textContent).toContain(destroyed ? "Destroyed" : "Corrupted");
-        expect(card.textContent).not.toContain("Twice Corrupted");
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).not.toContain("Corrupted");
-        expect(card.textContent).not.toContain("Destroyed");
-        fireEvent.click(button("Redo"));
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.item).toEqual(engine.apply(project.item, method, seededRandom(seed)).item);
-        expect(saved.target).toEqual(project.target);
-        expect(saved.method).toEqual(method);
-        if (locus && !destroyed) expect(saved.item.implicits).toHaveLength(2);
-        fireEvent.click(button("Undo"));
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "My crafting project" },
-        });
-        fireEvent.click(button("Load project"));
-        expect(card.textContent).toContain(destroyed ? "Destroyed" : "Corrupted");
-    });
+    ])(
+        "preserves PoE 1 jewel $label results at seed $seed through dispatch, history and saves",
+        async ({ label, seed, destroyed }) => {
+            const locus = label === "Locus of Corruption";
+            const method = locus
+                ? { kind: "locus" as const, id: catalog.crafting.locus!.id }
+                : {
+                      kind: "currency" as const,
+                      id: catalog.crafting.currencies.find(
+                          (entry) => entry.action === "corrupt_item",
+                      )!.id,
+                  };
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe1",
+                patch: catalog.patch,
+                item: engine.createItem("Metadata/Items/Jewels/JewelInt", 86),
+                method: currency("transmute_to_rare"),
+                target: { groups: [], corrupted: true },
+                steps: [],
+                prices: { [method.id]: 7 },
+                seed,
+                iterations: 1000,
+                maxActions: 1,
+            });
+            const key = `poe-boats:crafting:poe1:${catalog.patch}`;
+            localStorage.setItem(key, JSON.stringify({ jewel: project }));
+            mount("calculate");
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "jewel" } });
+            fireEvent.click(button("Load project"));
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: label } });
+            fireEvent.keyDown(picker, { key: "ArrowDown" });
+            fireEvent.click(await screen.findByRole("option", { name: label }));
+            expect(screen.getByRole("region", { name: `${label} model` }).textContent).toContain(
+                locus ? "destroyed outcomes still spend" : "unique-jewel",
+            );
+            fireEvent.click(button("Calculate odds"));
+            expect(
+                CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project,
+            ).toMatchObject({
+                method,
+                target: project.target,
+                prices: project.prices,
+            });
+            fireEvent.click(button("Stop simulation"));
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            const card = screen.getByRole("region", { name: "Current item" });
+            expect(card.textContent).toContain(destroyed ? "Destroyed" : "Corrupted");
+            expect(card.textContent).not.toContain("Twice Corrupted");
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).not.toContain("Corrupted");
+            expect(card.textContent).not.toContain("Destroyed");
+            fireEvent.click(button("Redo"));
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.item).toEqual(engine.apply(project.item, method, seededRandom(seed)).item);
+            expect(saved.target).toEqual(project.target);
+            expect(saved.method).toEqual(method);
+            if (locus && !destroyed) expect(saved.item.implicits).toHaveLength(2);
+            fireEvent.click(button("Undo"));
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "My crafting project" },
+            });
+            fireEvent.click(button("Load project"));
+            expect(card.textContent).toContain(destroyed ? "Destroyed" : "Corrupted");
+        },
+    );
 
-    it.each([
-        false,
-        true,
-    ])("selects map corruption, edits tier and affix requirements, and preserves results (twice: %s)", async (twice) => {
-        const recipe = catalog.crafting.beasts.find((entry) => entry.mapCorruption === "twice")!;
-        const method = twice
-            ? { kind: "beast" as const, id: recipe.id }
-            : {
-                  kind: "currency" as const,
-                  id: catalog.crafting.currencies.find((entry) => entry.action === "corrupt_item")!
-                      .id,
-              };
-        const label = twice ? `Beastcraft · ${recipe.category}: ${recipe.description}` : "Vaal Orb";
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe1",
-            patch: catalog.patch,
-            item: engine.createItem("Metadata/Items/Maps/MapAtlasBeach", 86),
-            method: currency("transmute_to_rare"),
-            target: { groups: [] },
-            steps: [],
-            prices: { [method.id]: 7 },
-            seed: twice ? 7 : 1,
-            iterations: 1000,
-            maxActions: 1,
-        });
-        const key = `poe-boats:crafting:poe1:${catalog.patch}`;
-        localStorage.setItem(key, JSON.stringify({ map: project }));
-        mount("calculate");
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "map" } });
-        fireEvent.click(button("Load project"));
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: twice ? "Corrupt a Map" : "Vaal Orb" } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        fireEvent.click(await screen.findByRole("option", { name: label }));
-        expect(screen.queryByLabelText("Beast level")).toBeNull();
-        expect(
-            screen.getByRole("region", { name: twice ? "Double map corruption" : "Vaal Orb model" })
-                .textContent,
-        ).toContain(twice ? "two different Vaal outcomes" : "eight explicit modifiers");
-        const card = screen.getByRole("region", { name: "Current item" });
-        expect(card.textContent).toContain("Map tier 2 · Area level 69");
-        fireEvent.click(screen.getByText("Map tier requirement", { exact: true }));
-        fireEvent.click(button("Add tier requirement"));
-        expect((screen.getByLabelText("Minimum Map tier") as HTMLInputElement).value).toBe("3");
-        expect((screen.getByLabelText("Maximum Map tier") as HTMLInputElement).max).toBe("17");
-        changeControl(screen.getByLabelText("Maximum Map tier"), { target: { value: "3" } });
-        if (!twice) {
-            fireEvent.click(button("Clear tier requirement"));
-            fireEvent.click(screen.getByText("Item conditions", { exact: true }));
-            expect((screen.getByLabelText("Maximum total affixes") as HTMLInputElement).max).toBe(
-                "8",
+    it.each([false, true])(
+        "selects map corruption, edits tier and affix requirements, and preserves results (twice: %s)",
+        async (twice) => {
+            const recipe = catalog.crafting.beasts.find(
+                (entry) => entry.mapCorruption === "twice",
+            )!;
+            const method = twice
+                ? { kind: "beast" as const, id: recipe.id }
+                : {
+                      kind: "currency" as const,
+                      id: catalog.crafting.currencies.find(
+                          (entry) => entry.action === "corrupt_item",
+                      )!.id,
+                  };
+            const label = twice
+                ? `Beastcraft · ${recipe.category}: ${recipe.description}`
+                : "Vaal Orb";
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe1",
+                patch: catalog.patch,
+                item: engine.createItem("Metadata/Items/Maps/MapAtlasBeach", 86),
+                method: currency("transmute_to_rare"),
+                target: { groups: [] },
+                steps: [],
+                prices: { [method.id]: 7 },
+                seed: twice ? 7 : 1,
+                iterations: 1000,
+                maxActions: 1,
+            });
+            const key = `poe-boats:crafting:poe1:${catalog.patch}`;
+            localStorage.setItem(key, JSON.stringify({ map: project }));
+            mount("calculate");
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "map" } });
+            fireEvent.click(button("Load project"));
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: twice ? "Corrupt a Map" : "Vaal Orb" } });
+            fireEvent.keyDown(picker, { key: "ArrowDown" });
+            fireEvent.click(await screen.findByRole("option", { name: label }));
+            expect(screen.queryByLabelText("Beast level")).toBeNull();
+            expect(
+                screen.getByRole("region", {
+                    name: twice ? "Double map corruption" : "Vaal Orb model",
+                }).textContent,
+            ).toContain(twice ? "two different Vaal outcomes" : "eight explicit modifiers");
+            const card = screen.getByRole("region", { name: "Current item" });
+            expect(card.textContent).toContain("Map tier 2 · Area level 69");
+            fireEvent.click(screen.getByText("Map tier requirement", { exact: true }));
+            fireEvent.click(button("Add tier requirement"));
+            expect((screen.getByLabelText("Minimum Map tier") as HTMLInputElement).value).toBe("3");
+            expect((screen.getByLabelText("Maximum Map tier") as HTMLInputElement).max).toBe("17");
+            changeControl(screen.getByLabelText("Maximum Map tier"), { target: { value: "3" } });
+            if (!twice) {
+                fireEvent.click(button("Clear tier requirement"));
+                fireEvent.click(screen.getByText("Item conditions", { exact: true }));
+                expect(
+                    (screen.getByLabelText("Maximum total affixes") as HTMLInputElement).max,
+                ).toBe("8");
+                for (const bound of ["Minimum", "Maximum"])
+                    changeControl(screen.getByLabelText(`${bound} total affixes`), {
+                        target: { value: "8" },
+                    });
+            }
+            fireEvent.click(button("Calculate odds"));
+            const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
+            expect(sent.method).toEqual(method);
+            expect(sent.target).toMatchObject(
+                twice ? { mapTier: { min: 3, max: 3 } } : { affixCount: { min: 8, max: 8 } },
             );
-            for (const bound of ["Minimum", "Maximum"])
-                changeControl(screen.getByLabelText(`${bound} total affixes`), {
-                    target: { value: "8" },
-                });
-        }
-        fireEvent.click(button("Calculate odds"));
-        const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
-        expect(sent.method).toEqual(method);
-        expect(sent.target).toMatchObject(
-            twice ? { mapTier: { min: 3, max: 3 } } : { affixCount: { min: 8, max: 8 } },
-        );
-        fireEvent.click(button("Stop simulation"));
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        expect(card.textContent).toContain(twice ? "Vaal Pyramid Map" : "4/3 prefixes");
-        expect(card.textContent).toContain(
-            twice ? "Map tier 3 · Area level 70" : "Map tier 2 · Area level 69",
-        );
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).toContain("Map tier 2 · Area level 69");
-        expect(card.textContent).not.toContain("Corrupted");
-        fireEvent.click(button("Redo"));
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.item).toEqual(
-            engine.apply(project.item, method, seededRandom(project.seed)).item,
-        );
-        expect(saved.target).toEqual(sent.target);
-        fireEvent.click(button("Undo"));
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "My crafting project" },
-        });
-        fireEvent.click(button("Load project"));
-        expect(card.textContent).toContain("Corrupted");
-        if (twice) {
-            fireEvent.click(screen.getByRole("checkbox", { name: "Combine crafting steps" }));
-            fireEvent.click(button("Add crafting step"));
-            fireEvent.click(button("Use current requirements"));
-            expect(screen.getByRole("region", { name: "Crafting process" }).textContent).toContain(
-                "Map tier 3–3",
+            fireEvent.click(button("Stop simulation"));
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            expect(card.textContent).toContain(twice ? "Vaal Pyramid Map" : "4/3 prefixes");
+            expect(card.textContent).toContain(
+                twice ? "Map tier 3 · Area level 70" : "Map tier 2 · Area level 69",
             );
-        }
-    });
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).toContain("Map tier 2 · Area level 69");
+            expect(card.textContent).not.toContain("Corrupted");
+            fireEvent.click(button("Redo"));
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.item).toEqual(
+                engine.apply(project.item, method, seededRandom(project.seed)).item,
+            );
+            expect(saved.target).toEqual(sent.target);
+            fireEvent.click(button("Undo"));
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "My crafting project" },
+            });
+            fireEvent.click(button("Load project"));
+            expect(card.textContent).toContain("Corrupted");
+            if (twice) {
+                fireEvent.click(screen.getByRole("checkbox", { name: "Combine crafting steps" }));
+                fireEvent.click(button("Add crafting step"));
+                fireEvent.click(button("Use current requirements"));
+                expect(
+                    screen.getByRole("region", { name: "Crafting process" }).textContent,
+                ).toContain("Map tier 3–3");
+            }
+        },
+    );
 
     it("selects the build-derived map corruption recipe and retains its result, requirements and cost", async () => {
         const recipe = catalog.crafting.beasts.find((entry) => entry.mapCorruption === "implicit")!;

@@ -200,30 +200,34 @@ describe("memory strands", () => {
         ["mutated_add_mod_to_magic", "magic", "FireResist6"],
         ["mutated_upgrade_magic_to_rare", "magic", "FireResist6"],
         ["mutated_add_mod_to_rare", "rare", "FireResist6"],
-    ] as const)("%s filters using starting strands then consumes once", (action, rarity, expected) => {
-        const item = { ...normal, rarity, memoryStrands: 22 };
-        const random = seededRandom(1);
-        const pick = vi
-            .spyOn(random, "pick")
-            .mockImplementation(
-                (choices) =>
-                    choices.find(
-                        (entry) =>
-                            typeof entry.value === "string" && /^FireResist\d$/.test(entry.value),
-                    )?.value ?? choices.at(-1)!.value,
+    ] as const)(
+        "%s filters using starting strands then consumes once",
+        (action, rarity, expected) => {
+            const item = { ...normal, rarity, memoryStrands: 22 };
+            const random = seededRandom(1);
+            const pick = vi
+                .spyOn(random, "pick")
+                .mockImplementation(
+                    (choices) =>
+                        choices.find(
+                            (entry) =>
+                                typeof entry.value === "string" &&
+                                /^FireResist\d$/.test(entry.value),
+                        )?.value ?? choices.at(-1)!.value,
+                );
+            const result = engine.apply(item, currency(action), random);
+            expect(result.item.mods.some((entry) => entry.id === expected)).toBe(true);
+            const maximum = memoryConsumption(catalog, item, currency(action))!.maximum;
+            expect(result.item.memoryStrands ?? 0).toBe(Math.max(0, 22 - maximum));
+            const consumptionCalls = pick.mock.calls.filter(
+                ([choices]) =>
+                    choices.every((entry) => typeof entry.value === "number") &&
+                    choices.some((entry) => entry.value === 22),
             );
-        const result = engine.apply(item, currency(action), random);
-        expect(result.item.mods.some((entry) => entry.id === expected)).toBe(true);
-        const maximum = memoryConsumption(catalog, item, currency(action))!.maximum;
-        expect(result.item.memoryStrands ?? 0).toBe(Math.max(0, 22 - maximum));
-        const consumptionCalls = pick.mock.calls.filter(
-            ([choices]) =>
-                choices.every((entry) => typeof entry.value === "number") &&
-                choices.some((entry) => entry.value === 22),
-        );
-        expect(consumptionCalls).toHaveLength(1);
-        expect(item.memoryStrands).toBe(22);
-    });
+            expect(consumptionCalls).toHaveLength(1);
+            expect(item.memoryStrands).toBe(22);
+        },
+    );
 
     it("enumerates strand spending even without stat-roll conditions", () => {
         const item = { ...normal, rarity: "magic" as const, memoryStrands: 1 };
@@ -237,36 +241,39 @@ describe("memory strands", () => {
         ).toBeCloseTo(32 / 33, 12);
     });
 
-    it.each([
-        "add_mod_to_rare_eldritch",
-        "reroll_rare_eldritch",
-        "reroll_rare_veiled",
-    ])("%s applies strand filtering to the ordinary pool", (action) => {
-        let item = engine.validateItem({
-            ...engine.createItem("Metadata/Items/Armours/BodyArmours/BodyStr1"),
-            rarity: "rare",
-        });
-        if (action.includes("eldritch"))
-            item = engine.apply(
-                item,
-                currency("add_great_tangle_implicit_2"),
-                seededRandom(1),
-            ).item;
-        item = { ...item, memoryStrands: 82 };
-        const random = seededRandom(1);
-        vi.spyOn(random, "pick").mockImplementation(
-            (choices) =>
-                choices.find(
-                    (entry) =>
-                        typeof entry.value === "string" && /^FireResist\d$/.test(entry.value),
-                )?.value ?? choices.at(-1)!.value,
-        );
-        const result = engine.apply(item, currency(action), random);
-        expect(result.item.mods.some((entry) => entry.id === "FireResist7")).toBe(true);
-        expect(result.item.memoryStrands).toBe(
-            action === "add_mod_to_rare_eldritch" ? 66 : action === "reroll_rare_eldritch" ? 22 : 2,
-        );
-    });
+    it.each(["add_mod_to_rare_eldritch", "reroll_rare_eldritch", "reroll_rare_veiled"])(
+        "%s applies strand filtering to the ordinary pool",
+        (action) => {
+            let item = engine.validateItem({
+                ...engine.createItem("Metadata/Items/Armours/BodyArmours/BodyStr1"),
+                rarity: "rare",
+            });
+            if (action.includes("eldritch"))
+                item = engine.apply(
+                    item,
+                    currency("add_great_tangle_implicit_2"),
+                    seededRandom(1),
+                ).item;
+            item = { ...item, memoryStrands: 82 };
+            const random = seededRandom(1);
+            vi.spyOn(random, "pick").mockImplementation(
+                (choices) =>
+                    choices.find(
+                        (entry) =>
+                            typeof entry.value === "string" && /^FireResist\d$/.test(entry.value),
+                    )?.value ?? choices.at(-1)!.value,
+            );
+            const result = engine.apply(item, currency(action), random);
+            expect(result.item.mods.some((entry) => entry.id === "FireResist7")).toBe(true);
+            expect(result.item.memoryStrands).toBe(
+                action === "add_mod_to_rare_eldritch"
+                    ? 66
+                    : action === "reroll_rare_eldritch"
+                      ? 22
+                      : 2,
+            );
+        },
+    );
 
     it("reproduces every supplied tier breakpoint and its preceding strand count", () => {
         const rows = [

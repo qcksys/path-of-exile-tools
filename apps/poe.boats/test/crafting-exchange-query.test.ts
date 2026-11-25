@@ -174,24 +174,24 @@ describe("captured crafting exchange prices", () => {
         });
     });
 
-    it.each([
-        undefined,
-        "adaptive-v1",
-    ] as const)("leaves an absent cutoff-hour observation unknown with window %s", async (window) => {
-        snapshot(item, chaos, completedHour - 3600, 3);
-        const result = await findCraftingExchangePrices(db, { ...input, window });
-        expect(result.quotes[item]).toBeUndefined();
-        expect(result.missing[item]).toBeTruthy();
-        expect(
-            (
-                await findCraftingExchangePrices(db, {
-                    ...input,
-                    window,
-                    at: completedHour - 3600,
-                })
-            ).quotes[item],
-        ).toMatchObject({ amount: 3, hour: completedHour - 3600 });
-    });
+    it.each([undefined, "adaptive-v1"] as const)(
+        "leaves an absent cutoff-hour observation unknown with window %s",
+        async (window) => {
+            snapshot(item, chaos, completedHour - 3600, 3);
+            const result = await findCraftingExchangePrices(db, { ...input, window });
+            expect(result.quotes[item]).toBeUndefined();
+            expect(result.missing[item]).toBeTruthy();
+            expect(
+                (
+                    await findCraftingExchangePrices(db, {
+                        ...input,
+                        window,
+                        at: completedHour - 3600,
+                    })
+                ).quotes[item],
+            ).toMatchObject({ amount: 3, hour: completedHour - 3600 });
+        },
+    );
 
     it("uses the same adaptive window for both conversion legs", async () => {
         for (let offset = 0; offset < 24; offset++) {

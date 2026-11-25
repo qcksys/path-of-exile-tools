@@ -80,109 +80,116 @@ describe("PoE 2 reveal source distribution", () => {
     const small = narrow([...exclusive, ...ordinary]);
     const hidden = small.apply(empty, bone, seededRandom(1)).item;
 
-    it.each([
-        1, 2, 3,
-    ])("offers %s exclusive choices before filling with ordinary modifiers", (count) => {
-        const before = structuredClone(hidden);
-        const item = small.revealChoices(hidden, revealRandom(count));
-        expect(hidden).toEqual(before);
-        const choices = item.reveal!.choices;
-        expect(choices).toHaveLength(3);
-        expect(choices.slice(0, count).every((id) => small.mod(id).domain === "desecrated")).toBe(
-            true,
-        );
-        expect(choices.slice(count).every((id) => small.mod(id).domain !== "desecrated")).toBe(
-            true,
-        );
-        expect(new Set(choices.flatMap((id) => small.mod(id).groups)).size).toBe(3);
-        expect(small.validateItem(JSON.parse(JSON.stringify(item)))).toEqual(item);
-    });
+    it.each([1, 2, 3])(
+        "offers %s exclusive choices before filling with ordinary modifiers",
+        (count) => {
+            const before = structuredClone(hidden);
+            const item = small.revealChoices(hidden, revealRandom(count));
+            expect(hidden).toEqual(before);
+            const choices = item.reveal!.choices;
+            expect(choices).toHaveLength(3);
+            expect(
+                choices.slice(0, count).every((id) => small.mod(id).domain === "desecrated"),
+            ).toBe(true);
+            expect(choices.slice(count).every((id) => small.mod(id).domain !== "desecrated")).toBe(
+                true,
+            );
+            expect(new Set(choices.flatMap((id) => small.mod(id).groups)).size).toBe(3);
+            expect(small.validateItem(JSON.parse(JSON.stringify(item)))).toEqual(item);
+        },
+    );
 
     it.each([
         [ordinary[0]!.id, 7 / 12],
         [exclusive[0]!.id, 5 / 12],
-    ] as const)("enumerates the reference distribution using extracted weights for %s", (id, probability) => {
-        const method = { kind: "reveal" as const, preferred: [id] };
-        const target = small.validateTarget({ groups: [{ mods: [id] }] });
-        expect(calculateExact(small, hidden, method, target).probability).toBeCloseTo(probability);
-        expect(small.revealProbabilities(hidden).get(id)).toBeCloseTo(probability, 12);
-        const withEchoes = { ...method, omens: [echoes] };
-        expect(calculateExact(small, hidden, withEchoes, target, 20000).probability).toBeCloseTo(
-            1 - (1 - probability) ** 2,
-        );
-        expect(small.revealPool(hidden).map(({ id, weight }) => ({ id, weight }))).toEqual(
-            [...exclusive, ...ordinary].map(({ id, weight }) => ({ id, weight })),
-        );
-    });
-
-    it.each([
-        "exact",
-        "sampled",
-    ] as const)("applies the same distribution and one Echoes cost in %s processes", (mode) => {
-        const id = ordinary[0]!.id;
-        const target = small.validateTarget({ groups: [{ mods: [id] }] });
-        const reveal = { kind: "reveal" as const, preferred: [id], omens: [echoes] };
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe2",
-            patch: catalog.patch,
-            item: empty,
-            method: bone,
-            target,
-            steps: [
-                { id: "bone", method: bone, condition: { groups: [] }, onSuccess: "reveal" },
-                { id: "reveal", method: reveal, condition: target },
-            ],
-            prices: { [bone.id]: 2, [bone.omens[0]!]: 3, [echoes]: 7 },
-            seed: 42,
-            iterations: 2000,
-            maxActions: 2,
-        });
-        if (mode === "exact") {
-            const exact = calculateProcessExact(small, project, 20000);
-            expect(exact.probability).toBeCloseTo(119 / 144);
-            expect(exact.meanCost).toBeCloseTo(12);
-            expect(exact.totalActions).toBeCloseTo(2);
-            expect(exact.spending[echoes]).toBeCloseTo(1);
-            return;
-        }
-        const simulation = new CraftingSimulation(small.catalog, project, true);
-        for (let index = 0; index < project.iterations; index++) simulation.runTrial();
-        expect(simulation.result().probability).toBeCloseTo(119 / 144, 1);
-        expect(simulation.result().meanCost).toBe(12);
-        expect(simulation.result().errors).toEqual({});
-    });
-
-    it.each([
-        1, 2, 3,
-    ])("includes the guaranteed Lich choice in the %s exclusive choices", (count) => {
-        const lich = engine.pool(empty, {
-            domain: "desecrated",
-            side: "prefix",
-            tag: "ulaman_mod",
-        })[0]!;
-        const hidden = engine.apply(
-            empty,
-            { ...bone, omens: [...bone.omens, currency("OmenOnAbyssGuarenteeLichTypeMod1")] },
-            seededRandom(1),
-        ).item;
-        expect(engine.revealPool(hidden).some((entry) => entry.id === lich.id)).toBe(true);
-        const prepared = engine.prepareReveal(
-            hidden,
-            { kind: "reveal", preferred: [], omens: [echoes] },
-            revealRandom(count),
-        );
-        for (const item of [
-            prepared.item,
-            engine.rerollReveal(prepared.item, revealRandom(count)),
-        ]) {
-            expect(engine.mod(item.reveal!.choices[0]!).implicit_tags).toContain("ulaman_mod");
+    ] as const)(
+        "enumerates the reference distribution using extracted weights for %s",
+        (id, probability) => {
+            const method = { kind: "reveal" as const, preferred: [id] };
+            const target = small.validateTarget({ groups: [{ mods: [id] }] });
+            expect(calculateExact(small, hidden, method, target).probability).toBeCloseTo(
+                probability,
+            );
+            expect(small.revealProbabilities(hidden).get(id)).toBeCloseTo(probability, 12);
+            const withEchoes = { ...method, omens: [echoes] };
             expect(
-                item.reveal!.choices.filter((id) => engine.mod(id).domain === "desecrated"),
-            ).toHaveLength(count);
-        }
-        expect(prepared.cost.map((entry) => entry.id)).toEqual([echoes]);
-    });
+                calculateExact(small, hidden, withEchoes, target, 20000).probability,
+            ).toBeCloseTo(1 - (1 - probability) ** 2);
+            expect(small.revealPool(hidden).map(({ id, weight }) => ({ id, weight }))).toEqual(
+                [...exclusive, ...ordinary].map(({ id, weight }) => ({ id, weight })),
+            );
+        },
+    );
+
+    it.each(["exact", "sampled"] as const)(
+        "applies the same distribution and one Echoes cost in %s processes",
+        (mode) => {
+            const id = ordinary[0]!.id;
+            const target = small.validateTarget({ groups: [{ mods: [id] }] });
+            const reveal = { kind: "reveal" as const, preferred: [id], omens: [echoes] };
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe2",
+                patch: catalog.patch,
+                item: empty,
+                method: bone,
+                target,
+                steps: [
+                    { id: "bone", method: bone, condition: { groups: [] }, onSuccess: "reveal" },
+                    { id: "reveal", method: reveal, condition: target },
+                ],
+                prices: { [bone.id]: 2, [bone.omens[0]!]: 3, [echoes]: 7 },
+                seed: 42,
+                iterations: 2000,
+                maxActions: 2,
+            });
+            if (mode === "exact") {
+                const exact = calculateProcessExact(small, project, 20000);
+                expect(exact.probability).toBeCloseTo(119 / 144);
+                expect(exact.meanCost).toBeCloseTo(12);
+                expect(exact.totalActions).toBeCloseTo(2);
+                expect(exact.spending[echoes]).toBeCloseTo(1);
+                return;
+            }
+            const simulation = new CraftingSimulation(small.catalog, project, true);
+            for (let index = 0; index < project.iterations; index++) simulation.runTrial();
+            expect(simulation.result().probability).toBeCloseTo(119 / 144, 1);
+            expect(simulation.result().meanCost).toBe(12);
+            expect(simulation.result().errors).toEqual({});
+        },
+    );
+
+    it.each([1, 2, 3])(
+        "includes the guaranteed Lich choice in the %s exclusive choices",
+        (count) => {
+            const lich = engine.pool(empty, {
+                domain: "desecrated",
+                side: "prefix",
+                tag: "ulaman_mod",
+            })[0]!;
+            const hidden = engine.apply(
+                empty,
+                { ...bone, omens: [...bone.omens, currency("OmenOnAbyssGuarenteeLichTypeMod1")] },
+                seededRandom(1),
+            ).item;
+            expect(engine.revealPool(hidden).some((entry) => entry.id === lich.id)).toBe(true);
+            const prepared = engine.prepareReveal(
+                hidden,
+                { kind: "reveal", preferred: [], omens: [echoes] },
+                revealRandom(count),
+            );
+            for (const item of [
+                prepared.item,
+                engine.rerollReveal(prepared.item, revealRandom(count)),
+            ]) {
+                expect(engine.mod(item.reveal!.choices[0]!).implicit_tags).toContain("ulaman_mod");
+                expect(
+                    item.reveal!.choices.filter((id) => engine.mod(id).domain === "desecrated"),
+                ).toHaveLength(count);
+            }
+            expect(prepared.cost.map((entry) => entry.id)).toEqual([echoes]);
+        },
+    );
 
     it("fills unavailable exclusive choices with ordinary options and permits shorter offers", () => {
         for (const count of [1, 2, 3]) {
@@ -204,49 +211,50 @@ describe("PoE 2 reveal source distribution", () => {
         ]);
     });
 
-    it.each([
-        false,
-        true,
-    ])("falls back from an unavailable Lich tag with other exclusive choices: %s", (includeExclusive) => {
-        const remaining = distinct(
-            engine
-                .pool(empty, { domain: "desecrated", side: "prefix" })
-                .filter((entry) => !entry.mod.implicit_tags.includes("ulaman_mod")),
-            3,
-            ordinary.flatMap((entry) => entry.mod.groups),
-        );
-        const model = narrow([...ordinary, ...(includeExclusive ? remaining : [])]);
-        const lich = currency("OmenOnAbyssGuarenteeLichTypeMod1");
-        const method = { ...bone, omens: [...bone.omens, lich] };
-        const result = model.apply(empty, method, seededRandom(1));
-        expect(result.cost.map((entry) => entry.id)).toContain(lich);
-        for (const count of [1, 2, 3]) {
-            const prepared = model.prepareReveal(
-                result.item,
-                {
-                    kind: "reveal",
-                    preferred: [],
-                    omens: [echoes],
-                },
-                revealRandom(count),
-            ).item;
-            for (const offer of [prepared, model.rerollReveal(prepared, revealRandom(count))]) {
-                expect(offer.reveal!.choices).toHaveLength(3);
-                expect(
-                    offer.reveal!.choices.every(
-                        (id) => !model.mod(id).implicit_tags.includes("ulaman_mod"),
-                    ),
-                ).toBe(true);
-                expect(
-                    offer.reveal!.choices.filter((id) => model.mod(id).domain === "desecrated"),
-                ).toHaveLength(includeExclusive ? count : 0);
-                expect(model.validateItem(JSON.parse(JSON.stringify(offer)))).toEqual(offer);
-                expect(
-                    model.chooseRevealed(offer, offer.reveal!.choices[0]!, seededRandom(1)).reveal,
-                ).toBeUndefined();
+    it.each([false, true])(
+        "falls back from an unavailable Lich tag with other exclusive choices: %s",
+        (includeExclusive) => {
+            const remaining = distinct(
+                engine
+                    .pool(empty, { domain: "desecrated", side: "prefix" })
+                    .filter((entry) => !entry.mod.implicit_tags.includes("ulaman_mod")),
+                3,
+                ordinary.flatMap((entry) => entry.mod.groups),
+            );
+            const model = narrow([...ordinary, ...(includeExclusive ? remaining : [])]);
+            const lich = currency("OmenOnAbyssGuarenteeLichTypeMod1");
+            const method = { ...bone, omens: [...bone.omens, lich] };
+            const result = model.apply(empty, method, seededRandom(1));
+            expect(result.cost.map((entry) => entry.id)).toContain(lich);
+            for (const count of [1, 2, 3]) {
+                const prepared = model.prepareReveal(
+                    result.item,
+                    {
+                        kind: "reveal",
+                        preferred: [],
+                        omens: [echoes],
+                    },
+                    revealRandom(count),
+                ).item;
+                for (const offer of [prepared, model.rerollReveal(prepared, revealRandom(count))]) {
+                    expect(offer.reveal!.choices).toHaveLength(3);
+                    expect(
+                        offer.reveal!.choices.every(
+                            (id) => !model.mod(id).implicit_tags.includes("ulaman_mod"),
+                        ),
+                    ).toBe(true);
+                    expect(
+                        offer.reveal!.choices.filter((id) => model.mod(id).domain === "desecrated"),
+                    ).toHaveLength(includeExclusive ? count : 0);
+                    expect(model.validateItem(JSON.parse(JSON.stringify(offer)))).toEqual(offer);
+                    expect(
+                        model.chooseRevealed(offer, offer.reveal!.choices[0]!, seededRandom(1))
+                            .reveal,
+                    ).toBeUndefined();
+                }
             }
-        }
-    });
+        },
+    );
 
     it("draws Breach-only modifiers from the ordinary fill pool", () => {
         const allExclusive = new Set(

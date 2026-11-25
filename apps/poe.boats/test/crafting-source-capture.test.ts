@@ -31,56 +31,57 @@ const manifest = marketCohortManifestSchema.parse({
 });
 const classifier = compileMarketCohorts(manifest);
 
-it.each([
-    false,
-    true,
-])("captures replaceable Eldritch source state with separate fracture array=%s", (separate) => {
-    const fracture = rolledModText(catalog, template.mods[0]!, template)!;
-    // Synthetic disposable text tests the source contract without inventing canonical affix identities.
-    const raw = {
-        baseType: "Conquest Lamellar",
-        rarity: "Rare",
-        ilvl: 86,
-        identified: true,
-        fractured: true,
-        extended: { prefixes: 3, suffixes: 3 },
-        explicitMods: [
-            { description: "Unresolved disposable prefix" },
-            { description: "Unresolved disposable suffix" },
-            { description: "Crafted disposable line", flags: { crafted: true } },
-            ...(separate ? [] : [{ description: fracture, flags: { fractured: true } }]),
-        ],
-        fracturedMods: separate ? [fracture] : [],
-        enchantMods: [
-            "Quality does not increase Defences",
-            "Grants +1% to Lightning Resistance per 2% Quality",
-        ],
-        implicitMods: [
-            "While a Unique Enemy is in your Presence, Haste has 39% increased Aura Effect",
-            "While a Unique Enemy is in your Presence, Gain a Frenzy Charge every 10 seconds",
-        ],
-    };
-    const record = normalizeApiItem("poe1", "stash", raw);
-    const original = structuredClone(record);
-    const expected = cohorts.find(
-        (cohort) =>
-            cohort.query.sourcePreparation?.kind === "fractured-fossil-v1" &&
-            cohort.query.sourcePreparation.crafted &&
-            cohort.query.sourcePreparation.enchanted,
-    )!;
-    expect(classifier.classify(record)).toEqual({ matches: [expected.id], unknown: [] });
-    expect(record).toEqual(original);
-    for (const invalid of [
-        { corrupted: true },
-        { influences: { hunter: true } },
-        { ilvl: 85 },
-        { fractured: false },
-        { synthesised: true },
-    ])
-        expect(
-            classifier.classify(normalizeApiItem("poe1", "stash", { ...raw, ...invalid })).matches,
-        ).toEqual([]);
-});
+it.each([false, true])(
+    "captures replaceable Eldritch source state with separate fracture array=%s",
+    (separate) => {
+        const fracture = rolledModText(catalog, template.mods[0]!, template)!;
+        // Synthetic disposable text tests the source contract without inventing canonical affix identities.
+        const raw = {
+            baseType: "Conquest Lamellar",
+            rarity: "Rare",
+            ilvl: 86,
+            identified: true,
+            fractured: true,
+            extended: { prefixes: 3, suffixes: 3 },
+            explicitMods: [
+                { description: "Unresolved disposable prefix" },
+                { description: "Unresolved disposable suffix" },
+                { description: "Crafted disposable line", flags: { crafted: true } },
+                ...(separate ? [] : [{ description: fracture, flags: { fractured: true } }]),
+            ],
+            fracturedMods: separate ? [fracture] : [],
+            enchantMods: [
+                "Quality does not increase Defences",
+                "Grants +1% to Lightning Resistance per 2% Quality",
+            ],
+            implicitMods: [
+                "While a Unique Enemy is in your Presence, Haste has 39% increased Aura Effect",
+                "While a Unique Enemy is in your Presence, Gain a Frenzy Charge every 10 seconds",
+            ],
+        };
+        const record = normalizeApiItem("poe1", "stash", raw);
+        const original = structuredClone(record);
+        const expected = cohorts.find(
+            (cohort) =>
+                cohort.query.sourcePreparation?.kind === "fractured-fossil-v1" &&
+                cohort.query.sourcePreparation.crafted &&
+                cohort.query.sourcePreparation.enchanted,
+        )!;
+        expect(classifier.classify(record)).toEqual({ matches: [expected.id], unknown: [] });
+        expect(record).toEqual(original);
+        for (const invalid of [
+            { corrupted: true },
+            { influences: { hunter: true } },
+            { ilvl: 85 },
+            { fractured: false },
+            { synthesised: true },
+        ])
+            expect(
+                classifier.classify(normalizeApiItem("poe1", "stash", { ...raw, ...invalid }))
+                    .matches,
+            ).toEqual([]);
+    },
+);
 
 it("does not price source policy cohorts without the proof model", () => {
     const unsupported = compileMarketCohorts({ ...manifest, sourcePreparationModel: undefined });

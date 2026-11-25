@@ -196,61 +196,64 @@ describe("crafting workbench", () => {
             text: "14% of Damage as Extra Fire Damage",
             corrupted: true,
         },
-    ])("applies $name interactions and preserves their displayed effects through history and saves", async (scenario) => {
-        const data = getCatalog("poe2");
-        const current = new CraftingEngine(data);
-        const base = Object.entries(data.bases).find(
-            ([, base]) => base.item_class === scenario.itemClass && !base.implicits.length,
-        )![0];
-        const augment = data.crafting.augments.find((entry) => entry.name === scenario.name)!;
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe2",
-            patch: data.patch,
-            item: {
-                ...current.createItem(base),
-                sockets: 2,
-                corrupted: scenario.corrupted,
-                augments: [`Metadata/Items/SoulCores/${scenario.existing}`],
-            },
-            method: { kind: "augment", id: augment.id },
-            target: { groups: [], stats: [{ id: scenario.stat, min: scenario.min }] },
-            steps: [],
-            prices: { [augment.id]: 3 },
-            seed: 42,
-            iterations: 1000,
-            maxActions: 1,
-        });
-        const key = `poe-boats:crafting:poe2:${data.patch}`;
-        localStorage.setItem(key, JSON.stringify({ interaction: project }));
-        mount("calculate", data);
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "interaction" },
-        });
-        fireEvent.click(button("Load project"));
-        fireEvent.click(button("Calculate odds"));
-        const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
-        expect(sent.method).toEqual(project.method);
-        expect(sent.target).toEqual(project.target);
-        fireEvent.click(button("Stop simulation"));
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        const card = screen.getByRole("region", { name: "Current item" });
-        expect(card.textContent).toContain(scenario.name);
-        expect(card.textContent).toContain(scenario.text);
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).not.toContain(scenario.text);
-        fireEvent.click(button("Redo"));
-        expect(card.textContent).toContain(scenario.text);
-        changeControl(screen.getByLabelText("Project name"), { target: { value: "result" } });
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!).result;
-        expect(current.statTotals(current.validateItem(saved.item)).get(scenario.stat)).toBe(
-            scenario.min,
-        );
-        expect(saved.item.augments).toEqual([...project.item.augments!, augment.id]);
-    });
+    ])(
+        "applies $name interactions and preserves their displayed effects through history and saves",
+        async (scenario) => {
+            const data = getCatalog("poe2");
+            const current = new CraftingEngine(data);
+            const base = Object.entries(data.bases).find(
+                ([, base]) => base.item_class === scenario.itemClass && !base.implicits.length,
+            )![0];
+            const augment = data.crafting.augments.find((entry) => entry.name === scenario.name)!;
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe2",
+                patch: data.patch,
+                item: {
+                    ...current.createItem(base),
+                    sockets: 2,
+                    corrupted: scenario.corrupted,
+                    augments: [`Metadata/Items/SoulCores/${scenario.existing}`],
+                },
+                method: { kind: "augment", id: augment.id },
+                target: { groups: [], stats: [{ id: scenario.stat, min: scenario.min }] },
+                steps: [],
+                prices: { [augment.id]: 3 },
+                seed: 42,
+                iterations: 1000,
+                maxActions: 1,
+            });
+            const key = `poe-boats:crafting:poe2:${data.patch}`;
+            localStorage.setItem(key, JSON.stringify({ interaction: project }));
+            mount("calculate", data);
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "interaction" },
+            });
+            fireEvent.click(button("Load project"));
+            fireEvent.click(button("Calculate odds"));
+            const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
+            expect(sent.method).toEqual(project.method);
+            expect(sent.target).toEqual(project.target);
+            fireEvent.click(button("Stop simulation"));
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            const card = screen.getByRole("region", { name: "Current item" });
+            expect(card.textContent).toContain(scenario.name);
+            expect(card.textContent).toContain(scenario.text);
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).not.toContain(scenario.text);
+            fireEvent.click(button("Redo"));
+            expect(card.textContent).toContain(scenario.text);
+            changeControl(screen.getByLabelText("Project name"), { target: { value: "result" } });
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!).result;
+            expect(current.statTotals(current.validateItem(saved.item)).get(scenario.stat)).toBe(
+                scenario.min,
+            );
+            expect(saved.item.augments).toEqual([...project.item.augments!, augment.id]);
+        },
+    );
 
     it("explains an Atziri core's corruption odds and dispatches its socketed state", async () => {
         const data = getCatalog("poe2");
@@ -375,94 +378,96 @@ describe("crafting workbench", () => {
         expect(current.validateItem(saved.item)).toEqual(saved.item);
     });
 
-    it.each([
-        "Metadata/Items/Armours/BodyArmours/FourBodyStr1",
-        "Metadata/Items/Rings/FourRingB6",
-    ])("sockets Serle's Triumph on %s, calculates a seventh affix and preserves history and saves", async (base) => {
-        const data = getCatalog("poe2");
-        const current = new CraftingEngine(data);
-        let item: CraftingItem = {
-            ...current.createItem(base, 86),
-            sockets: 1,
-            rarity: "rare",
-        };
-        for (const side of ["prefix", "prefix", "prefix", "suffix", "suffix", "suffix"])
-            item = current.addStartingMod(
+    it.each(["Metadata/Items/Armours/BodyArmours/FourBodyStr1", "Metadata/Items/Rings/FourRingB6"])(
+        "sockets Serle's Triumph on %s, calculates a seventh affix and preserves history and saves",
+        async (base) => {
+            const data = getCatalog("poe2");
+            const current = new CraftingEngine(data);
+            let item: CraftingItem = {
+                ...current.createItem(base, 86),
+                sockets: 1,
+                rarity: "rare",
+            };
+            for (const side of ["prefix", "prefix", "prefix", "suffix", "suffix", "suffix"])
+                item = current.addStartingMod(
+                    item,
+                    current.pool(item, { side })[0]!.id,
+                    seededRandom(1),
+                );
+            const rune = data.crafting.augments.find((entry) => entry.name === "Serle's Triumph")!;
+            const exalt = data.crafting.currencies.find((entry) => entry.name === "Exalted Orb")!;
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe2",
+                patch: data.patch,
                 item,
-                current.pool(item, { side })[0]!.id,
-                seededRandom(1),
-            );
-        const rune = data.crafting.augments.find((entry) => entry.name === "Serle's Triumph")!;
-        const exalt = data.crafting.currencies.find((entry) => entry.name === "Exalted Orb")!;
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe2",
-            patch: data.patch,
-            item,
-            method: { kind: "augment", id: rune.id },
-            target: { groups: [], affixCount: { min: 7, max: 7 } },
-            steps: [],
-            prices: { [rune.id]: 8, [exalt.id]: 2 },
-            seed: 42,
-            iterations: 1000,
-            maxActions: 2,
-        });
-        const key = `poe-boats:crafting:poe2:${data.patch}`;
-        localStorage.setItem(key, JSON.stringify({ serle: project }));
-        mount("calculate", data);
-        if (data.bases[base]!.initialSockets) {
-            const picker = screen.getByRole("combobox", { name: "Item base" });
-            changeControl(picker, { target: { value: "Grasping Ring" } });
+                method: { kind: "augment", id: rune.id },
+                target: { groups: [], affixCount: { min: 7, max: 7 } },
+                steps: [],
+                prices: { [rune.id]: 8, [exalt.id]: 2 },
+                seed: 42,
+                iterations: 1000,
+                maxActions: 2,
+            });
+            const key = `poe-boats:crafting:poe2:${data.patch}`;
+            localStorage.setItem(key, JSON.stringify({ serle: project }));
+            mount("calculate", data);
+            if (data.bases[base]!.initialSockets) {
+                const picker = screen.getByRole("combobox", { name: "Item base" });
+                changeControl(picker, { target: { value: "Grasping Ring" } });
+                fireEvent.keyDown(picker, { key: "ArrowDown" });
+                fireEvent.click(await screen.findByRole("option", { name: /Grasping Ring/ }));
+                const sockets = screen.getByRole("spinbutton", {
+                    name: "Augment sockets",
+                }) as HTMLInputElement;
+                expect(sockets.value).toBe("1");
+                expect(sockets.min).toBe("1");
+                expect(sockets.max).toBe("1");
+            }
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "serle" } });
+            fireEvent.click(button("Load project"));
+            fireEvent.click(button("Apply craft"));
+            const card = screen.getByRole("region", { name: "Current item" });
+            expect(screen.queryByRole("alert")).toBeNull();
+            expect(card.textContent).toContain("3/4 suffixes");
+            expect(card.textContent).toContain("Socket 1 · Serle's Triumph");
+            fireEvent.click(screen.getByText("Item conditions"));
+            expect(screen.getByLabelText("Maximum total affixes").getAttribute("max")).toBe("7");
+            const openAffixes = screen.getByRole("combobox", {
+                name: "Open affixes of either type",
+            });
+            fireEvent.click(openAffixes);
+            const affixMenu = document.getElementById(openAffixes.getAttribute("aria-controls")!)!;
+            expect(within(affixMenu).getByRole("option", { name: "At least 7" })).toBeDefined();
+            fireEvent.keyDown(affixMenu, { key: "Escape" });
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: "Exalted Orb" } });
             fireEvent.keyDown(picker, { key: "ArrowDown" });
-            fireEvent.click(await screen.findByRole("option", { name: /Grasping Ring/ }));
-            const sockets = screen.getByRole("spinbutton", {
-                name: "Augment sockets",
-            }) as HTMLInputElement;
-            expect(sockets.value).toBe("1");
-            expect(sockets.min).toBe("1");
-            expect(sockets.max).toBe("1");
-        }
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "serle" } });
-        fireEvent.click(button("Load project"));
-        fireEvent.click(button("Apply craft"));
-        const card = screen.getByRole("region", { name: "Current item" });
-        expect(screen.queryByRole("alert")).toBeNull();
-        expect(card.textContent).toContain("3/4 suffixes");
-        expect(card.textContent).toContain("Socket 1 · Serle's Triumph");
-        fireEvent.click(screen.getByText("Item conditions"));
-        expect(screen.getByLabelText("Maximum total affixes").getAttribute("max")).toBe("7");
-        const openAffixes = screen.getByRole("combobox", { name: "Open affixes of either type" });
-        fireEvent.click(openAffixes);
-        const affixMenu = document.getElementById(openAffixes.getAttribute("aria-controls")!)!;
-        expect(within(affixMenu).getByRole("option", { name: "At least 7" })).toBeDefined();
-        fireEvent.keyDown(affixMenu, { key: "Escape" });
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: "Exalted Orb" } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        fireEvent.click(await screen.findByRole("option", { name: "Exalted Orb" }));
-        fireEvent.click(button("Calculate odds"));
-        const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
-        expect(sent.item.augments).toEqual([rune.id]);
-        expect(sent.target.affixCount).toEqual({ min: 7, max: 7 });
-        fireEvent.click(button("Stop simulation"));
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        expect(card.textContent).toContain("4/4 suffixes");
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).toContain("3/4 suffixes");
-        fireEvent.click(button("Redo"));
-        expect(card.textContent).toContain("4/4 suffixes");
-        changeControl(screen.getByLabelText("Project name"), {
-            target: { value: "seven affixes" },
-        });
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["seven affixes"];
-        expect(saved.item.baseId).toBe(base);
-        expect(saved.item.sockets).toBe(1);
-        expect(saved.item.mods).toHaveLength(7);
-        expect(saved.item.augments).toEqual([rune.id]);
-    });
+            fireEvent.click(await screen.findByRole("option", { name: "Exalted Orb" }));
+            fireEvent.click(button("Calculate odds"));
+            const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
+            expect(sent.item.augments).toEqual([rune.id]);
+            expect(sent.target.affixCount).toEqual({ min: 7, max: 7 });
+            fireEvent.click(button("Stop simulation"));
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            expect(card.textContent).toContain("4/4 suffixes");
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).toContain("3/4 suffixes");
+            fireEvent.click(button("Redo"));
+            expect(card.textContent).toContain("4/4 suffixes");
+            changeControl(screen.getByLabelText("Project name"), {
+                target: { value: "seven affixes" },
+            });
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["seven affixes"];
+            expect(saved.item.baseId).toBe(base);
+            expect(saved.item.sockets).toBe(1);
+            expect(saved.item.mods).toHaveLength(7);
+            expect(saved.item.augments).toEqual([rune.id]);
+        },
+    );
 
     it("selects socketable augments, calculates, replaces and preserves spending and history", async () => {
         const data = getCatalog("poe2");

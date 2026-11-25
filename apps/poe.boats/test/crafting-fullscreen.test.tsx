@@ -72,41 +72,41 @@ describe.each(catalogs)("$game fullscreen crafting", (data) => {
         expect(terminate).toHaveBeenCalledTimes(1);
     });
 
-    it.each([
-        "calculate",
-        "simulate",
-        "emulate",
-    ])("preserves the %s item, history and mounted controls while changing layout", async (mode) => {
-        vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(data)));
-        render(page(data.game, mode));
-        await screen.findByRole("heading", { name: "Crafting workbench" });
-        chooseStartingItem(data);
-        const item = screen.getByRole("region", { name: "Current item" });
-        const initial = item.textContent;
-        if (mode === "simulate") fireEvent.click(screen.getByRole("link", { name: "Emulate" }));
-        fireEvent.click(screen.getByRole("button", { name: "Apply craft" }));
-        if (mode === "simulate") fireEvent.click(screen.getByRole("link", { name: "Simulate" }));
-        const crafted = item.textContent;
-        expect(crafted).not.toBe(initial);
-        const method = screen.getByRole("combobox", { name: "Crafting method" });
-        fireEvent.click(toggle());
-        expect(toggle().getAttribute("aria-pressed")).toBe("true");
-        expect(screen.queryByRole("banner")).toBeNull();
-        expect(screen.queryByRole("contentinfo")).toBeNull();
-        expect(screen.getByRole("main").className).toContain("max-w-none");
-        expect(screen.getByRole("region", { name: "Current item" })).toBe(item);
-        expect(screen.getByRole("combobox", { name: "Crafting method" })).toBe(method);
-        expect(localStorage.getItem(storageKey)).toBe("true");
-        fireEvent.click(toggle());
-        expect(item.textContent).toBe(crafted);
-        expect(screen.getByRole("banner")).toBeDefined();
-        expect(screen.getByRole("contentinfo")).toBeDefined();
-        expect(screen.getByRole("main").className).toContain("max-w-[1600px]");
-        if (mode === "simulate") fireEvent.click(screen.getByRole("link", { name: "Emulate" }));
-        fireEvent.click(screen.getByRole("button", { name: "Undo" }));
-        expect(item.textContent).toBe(initial);
-        expect(localStorage.getItem(storageKey)).toBe("false");
-    });
+    it.each(["calculate", "simulate", "emulate"])(
+        "preserves the %s item, history and mounted controls while changing layout",
+        async (mode) => {
+            vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(data)));
+            render(page(data.game, mode));
+            await screen.findByRole("heading", { name: "Crafting workbench" });
+            chooseStartingItem(data);
+            const item = screen.getByRole("region", { name: "Current item" });
+            const initial = item.textContent;
+            if (mode === "simulate") fireEvent.click(screen.getByRole("link", { name: "Emulate" }));
+            fireEvent.click(screen.getByRole("button", { name: "Apply craft" }));
+            if (mode === "simulate")
+                fireEvent.click(screen.getByRole("link", { name: "Simulate" }));
+            const crafted = item.textContent;
+            expect(crafted).not.toBe(initial);
+            const method = screen.getByRole("combobox", { name: "Crafting method" });
+            fireEvent.click(toggle());
+            expect(toggle().getAttribute("aria-pressed")).toBe("true");
+            expect(screen.queryByRole("banner")).toBeNull();
+            expect(screen.queryByRole("contentinfo")).toBeNull();
+            expect(screen.getByRole("main").className).toContain("max-w-none");
+            expect(screen.getByRole("region", { name: "Current item" })).toBe(item);
+            expect(screen.getByRole("combobox", { name: "Crafting method" })).toBe(method);
+            expect(localStorage.getItem(storageKey)).toBe("true");
+            fireEvent.click(toggle());
+            expect(item.textContent).toBe(crafted);
+            expect(screen.getByRole("banner")).toBeDefined();
+            expect(screen.getByRole("contentinfo")).toBeDefined();
+            expect(screen.getByRole("main").className).toContain("max-w-[1600px]");
+            if (mode === "simulate") fireEvent.click(screen.getByRole("link", { name: "Emulate" }));
+            fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+            expect(item.textContent).toBe(initial);
+            expect(localStorage.getItem(storageKey)).toBe("false");
+        },
+    );
 
     it("keeps searchable picker portals usable and lets them handle Escape before leaving fullscreen", async () => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(data)));

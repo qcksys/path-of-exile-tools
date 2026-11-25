@@ -48,27 +48,28 @@ const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(valu
 
 // Each revision is projected with the catalog it was published with, so the hashes check current
 // preset code rather than the current build's data.
-it.each(
-    Object.entries(historicalHashes),
-)("preserves every %s preset projection", async (revision, expected) => {
-    const retained = historyIndex.revisions.find(
-        (entry) => entry.game === "poe1" && entry.revision === revision,
-    )!;
-    const published = await retainedEngine(retained);
-    const projections = craftingPresets.map(({ id: presetId }) => {
-        try {
-            const graph = projectFromPreset(published, retained, presetId);
-            return { revision, presetId, sha256: hash({ ...graph, id: "" }) };
-        } catch (error) {
-            return {
-                revision,
-                presetId,
-                error: error instanceof Error ? error.message : String(error),
-            };
-        }
-    });
-    expect(hash(projections)).toBe(expected);
-});
+it.each(Object.entries(historicalHashes))(
+    "preserves every %s preset projection",
+    async (revision, expected) => {
+        const retained = historyIndex.revisions.find(
+            (entry) => entry.game === "poe1" && entry.revision === revision,
+        )!;
+        const published = await retainedEngine(retained);
+        const projections = craftingPresets.map(({ id: presetId }) => {
+            try {
+                const graph = projectFromPreset(published, retained, presetId);
+                return { revision, presetId, sha256: hash({ ...graph, id: "" }) };
+            } catch (error) {
+                return {
+                    revision,
+                    presetId,
+                    error: error instanceof Error ? error.message : String(error),
+                };
+            }
+        });
+        expect(hash(projections)).toBe(expected);
+    },
+);
 
 it.each(craftingPresets)("changes only the two intended source families in $id", ({ id }) => {
     const before = projectFromPreset(engine, prior, id);
@@ -146,26 +147,24 @@ it.each(targetIds)("constructs the exact %s checkpoint from one clean source", (
 
 it.each(
     targetIds.flatMap((targetId) => partitions.map((partition) => ({ targetId, ...partition }))),
-)("pays every $id cleanup before constructing $targetId", ({
-    targetId,
-    id,
-    crafted,
-    enchanted,
-}) => {
-    const { graph, purchase, checkpoint } = heatFixture(targetId, id);
-    expect(purchase.sourcePreparation).toEqual({ kind: "scour-v1", crafted, enchanted });
-    const scours = 2 + Number(crafted) + 3 * Number(enchanted);
-    const result = runGraphTrial(graph, seededRandom(42));
-    expect(result).toMatchObject({
-        success: true,
-        purchases: 1,
-        actions: 5 + Number(crafted) + Number(enchanted),
-        cost: 16 + 4 * scours,
-        missingPrices: [],
-    });
-    expect(result.item).toEqual(checkpoint);
-    expect(result.spending[scour]).toBe(scours);
-});
+)(
+    "pays every $id cleanup before constructing $targetId",
+    ({ targetId, id, crafted, enchanted }) => {
+        const { graph, purchase, checkpoint } = heatFixture(targetId, id);
+        expect(purchase.sourcePreparation).toEqual({ kind: "scour-v1", crafted, enchanted });
+        const scours = 2 + Number(crafted) + 3 * Number(enchanted);
+        const result = runGraphTrial(graph, seededRandom(42));
+        expect(result).toMatchObject({
+            success: true,
+            purchases: 1,
+            actions: 5 + Number(crafted) + Number(enchanted),
+            cost: 16 + 4 * scours,
+            missingPrices: [],
+        });
+        expect(result.item).toEqual(checkpoint);
+        expect(result.spending[scour]).toBe(scours);
+    },
+);
 
 function vaalFixture(alternativeId = "buy-scour-crafted-enchanted") {
     const graph = projectFromPreset(engine, ruleset, "energy-shield-chest");
@@ -181,32 +180,31 @@ function vaalFixture(alternativeId = "buy-scour-crafted-enchanted") {
     return { graph, node, purchase };
 }
 
-it.each(partitions)("prepares the exact Vaal Regalia checkpoint with $id and all cleanup costs", ({
-    id,
-    crafted,
-    enchanted,
-}) => {
-    const { graph, node, purchase } = vaalFixture(id);
-    expect(purchase.sourcePreparation).toEqual({ kind: "scour-v1", crafted, enchanted });
-    const scours = 1 + Number(crafted) + 3 * Number(enchanted);
-    expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
-        expectedCost: 11 + 2 * scours,
-        expectedActions: 1 + Number(crafted) + Number(enchanted),
-        missingPrices: [],
-    });
-    const result = runGraphTrial(graph, seededRandom(42));
-    expect(result).toMatchObject({
-        success: true,
-        purchases: 1,
-        actions: 1 + Number(crafted) + Number(enchanted),
-        cost: 11 + 2 * scours,
-        missingPrices: [],
-    });
-    expect(result.item).toEqual(
-        engine.createItem("Metadata/Items/Armours/BodyArmours/BodyInt17", 86),
-    );
-    expect(result.spending[scour]).toBe(scours);
-});
+it.each(partitions)(
+    "prepares the exact Vaal Regalia checkpoint with $id and all cleanup costs",
+    ({ id, crafted, enchanted }) => {
+        const { graph, node, purchase } = vaalFixture(id);
+        expect(purchase.sourcePreparation).toEqual({ kind: "scour-v1", crafted, enchanted });
+        const scours = 1 + Number(crafted) + 3 * Number(enchanted);
+        expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
+            expectedCost: 11 + 2 * scours,
+            expectedActions: 1 + Number(crafted) + Number(enchanted),
+            missingPrices: [],
+        });
+        const result = runGraphTrial(graph, seededRandom(42));
+        expect(result).toMatchObject({
+            success: true,
+            purchases: 1,
+            actions: 1 + Number(crafted) + Number(enchanted),
+            cost: 11 + 2 * scours,
+            missingPrices: [],
+        });
+        expect(result.item).toEqual(
+            engine.createItem("Metadata/Items/Armours/BodyArmours/BodyInt17", 86),
+        );
+        expect(result.spending[scour]).toBe(scours);
+    },
+);
 
 it.each([shaper, scour])("keeps the Heat-attuned route cost unknown without %s", (missing) => {
     const { graph } = heatFixture(targetIds[0], "buy-scour-crafted-enchanted");

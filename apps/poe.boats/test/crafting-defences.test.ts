@@ -119,36 +119,35 @@ describe("extracted base defences and Sacred Orbs", () => {
         expect(hybrid).toBeGreaterThan(0);
     });
 
-    it.each([
-        "normal",
-        "magic",
-        "rare",
-    ] as const)("preserves %s affixes, quality, strands and other item state", (rarity) => {
-        let item: CraftingItem = {
-            ...rolled(),
-            rarity,
-            quality: 30,
-            memoryStrands: 82,
-            sockets: 6,
-        };
-        if (rarity !== "normal")
-            item = engine.addStartingMod(item, "IncreasedLife1", seededRandom(1));
-        if (rarity === "rare") item.mods[0]!.fractured = true;
-        const original = structuredClone(item);
-        const output = engine.apply(item, sacred, seededRandom(5)).item;
-        expect({ ...output, baseDefences: item.baseDefences }).toEqual(item);
-        expect(engine.statTotals(output)).toEqual(engine.statTotals(item));
-        expect(item).toEqual(original);
-        const action =
-            rarity === "normal"
-                ? "transmute_to_rare"
-                : rarity === "magic"
-                  ? "upgrade_magic_to_rare"
-                  : "reroll";
-        expect(engine.apply(output, currency(action), seededRandom(1)).item.baseDefences).toEqual(
-            output.baseDefences,
-        );
-    });
+    it.each(["normal", "magic", "rare"] as const)(
+        "preserves %s affixes, quality, strands and other item state",
+        (rarity) => {
+            let item: CraftingItem = {
+                ...rolled(),
+                rarity,
+                quality: 30,
+                memoryStrands: 82,
+                sockets: 6,
+            };
+            if (rarity !== "normal")
+                item = engine.addStartingMod(item, "IncreasedLife1", seededRandom(1));
+            if (rarity === "rare") item.mods[0]!.fractured = true;
+            const original = structuredClone(item);
+            const output = engine.apply(item, sacred, seededRandom(5)).item;
+            expect({ ...output, baseDefences: item.baseDefences }).toEqual(item);
+            expect(engine.statTotals(output)).toEqual(engine.statTotals(item));
+            expect(item).toEqual(original);
+            const action =
+                rarity === "normal"
+                    ? "transmute_to_rare"
+                    : rarity === "magic"
+                      ? "upgrade_magic_to_rare"
+                      : "reroll";
+            expect(
+                engine.apply(output, currency(action), seededRandom(1)).item.baseDefences,
+            ).toEqual(output.baseDefences);
+        },
+    );
 
     it("validates raw rolls, rejects unavailable items and does not guess unspecified variable values", () => {
         expect(engine.validateItem(base).baseDefences).toBeUndefined();

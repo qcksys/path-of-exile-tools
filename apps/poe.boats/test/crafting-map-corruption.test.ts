@@ -59,44 +59,43 @@ describe("PoE 1 map Vaal and double corruption", () => {
         expect(new CraftingEngine(changed).beastOperation(recipe.id)).toBeUndefined();
     });
 
-    it.each([
-        "normal",
-        "magic",
-        "rare",
-    ] as const)("supports all four outcomes on %s maps", (rarity) => {
-        const item = prepared(rarity);
-        const before = structuredClone(item);
-        for (const outcome of outcomes) {
-            const { random } = force(outcome, false);
-            const result = engine.apply(item, vaal, random);
-            expect(result.item.corrupted).toBe(true);
-            expect(result.item.quality).toBe(20);
-            expect(result.item.level).toBe(86);
-            expect(result.cost.map(({ id, amount }) => [id, amount])).toEqual([[vaal.id, 1]]);
-            expect(engine.validateItem(result.item)).toEqual(result.item);
-            if (outcome === "none") expect(result.item).toEqual({ ...item, corrupted: true });
-            if (outcome === "implicit") {
-                expect(result.item.mods).toEqual(item.mods);
-                expect(result.item.rarity).toBe(rarity);
-                expect(result.item.implicits).toHaveLength(1);
+    it.each(["normal", "magic", "rare"] as const)(
+        "supports all four outcomes on %s maps",
+        (rarity) => {
+            const item = prepared(rarity);
+            const before = structuredClone(item);
+            for (const outcome of outcomes) {
+                const { random } = force(outcome, false);
+                const result = engine.apply(item, vaal, random);
+                expect(result.item.corrupted).toBe(true);
+                expect(result.item.quality).toBe(20);
+                expect(result.item.level).toBe(86);
+                expect(result.cost.map(({ id, amount }) => [id, amount])).toEqual([[vaal.id, 1]]);
+                expect(engine.validateItem(result.item)).toEqual(result.item);
+                if (outcome === "none") expect(result.item).toEqual({ ...item, corrupted: true });
+                if (outcome === "implicit") {
+                    expect(result.item.mods).toEqual(item.mods);
+                    expect(result.item.rarity).toBe(rarity);
+                    expect(result.item.implicits).toHaveLength(1);
+                }
+                if (outcome === "reroll-eight") {
+                    expect(result.item.rarity).toBe("rare");
+                    expect(result.item.mods).toHaveLength(8);
+                    expect(engine.counts(result.item)).toEqual({ prefixes: 4, suffixes: 4 });
+                    expect(() => engine.validateItem({ ...result.item, corrupted: false })).toThrow(
+                        "affix limits",
+                    );
+                }
+                if (outcome === "transform") {
+                    expect(result.item.baseId).toBe(item.baseId);
+                    expect(result.item.rarity).toBe("rare");
+                    expect(result.item.mods.length).toBeGreaterThanOrEqual(4);
+                    expect(result.item.mods.length).toBeLessThanOrEqual(6);
+                }
             }
-            if (outcome === "reroll-eight") {
-                expect(result.item.rarity).toBe("rare");
-                expect(result.item.mods).toHaveLength(8);
-                expect(engine.counts(result.item)).toEqual({ prefixes: 4, suffixes: 4 });
-                expect(() => engine.validateItem({ ...result.item, corrupted: false })).toThrow(
-                    "affix limits",
-                );
-            }
-            if (outcome === "transform") {
-                expect(result.item.baseId).toBe(item.baseId);
-                expect(result.item.rarity).toBe("rare");
-                expect(result.item.mods.length).toBeGreaterThanOrEqual(4);
-                expect(result.item.mods.length).toBeLessThanOrEqual(6);
-            }
-        }
-        expect(item).toEqual(before);
-    });
+            expect(item).toEqual(before);
+        },
+    );
 
     it.each([
         ["MapAtlasBeach", "MapAtlasVaalPyramid"],

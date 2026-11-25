@@ -227,28 +227,26 @@ describe("API-shaped item queries", () => {
         ).toBe("match");
     });
 
-    it.each([
-        "and",
-        "or",
-        "not",
-        "count",
-    ])("keeps missing canonical metadata unknown in %s groups", (type) => {
-        const record = normalizeApiItem("poe1", "stash", {
-            ...base,
-            explicitMods: ["179% increased Physical Damage"],
-        });
-        const target = itemQuerySchema.parse({
-            game: "poe1",
-            groups: [
-                {
-                    type,
-                    filters: [{ kind: "mod", ids: ["percent-physical"] }],
-                    ...(type === "count" ? { value: { min: 1 } } : {}),
-                },
-            ],
-        });
-        expect(matchItem(record, target)).toBe("unknown");
-    });
+    it.each(["and", "or", "not", "count"])(
+        "keeps missing canonical metadata unknown in %s groups",
+        (type) => {
+            const record = normalizeApiItem("poe1", "stash", {
+                ...base,
+                explicitMods: ["179% increased Physical Damage"],
+            });
+            const target = itemQuerySchema.parse({
+                game: "poe1",
+                groups: [
+                    {
+                        type,
+                        filters: [{ kind: "mod", ids: ["percent-physical"] }],
+                        ...(type === "count" ? { value: { min: 1 } } : {}),
+                    },
+                ],
+            });
+            expect(matchItem(record, target)).toBe("unknown");
+        },
+    );
 
     it("can establish a count lower bound even if further modifiers are unknown", () => {
         const record = normalizeApiItem("poe1", "stash", base, {

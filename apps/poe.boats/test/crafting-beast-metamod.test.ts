@@ -83,34 +83,34 @@ describe("random metamod beastcraft", () => {
         }
     });
 
-    it.each([
-        "magic",
-        "rare",
-    ] as const)("guarantees suffix protection on a %s item with full suffixes", (rarity) => {
-        const item = fillSide(blank(rarity), "suffix");
-        expect(engine.beastMetamodPool(item, method.id).map((entry) => entry.id)).toEqual([
-            suffixLock,
-        ]);
-        const result = engine.apply(item, method, seededRandom(42)).item;
-        expect(result.mods.slice(0, -1)).toEqual(item.mods);
-        expect(result.mods.at(-1)!.id).toBe(suffixLock);
-        expect(
-            calculateExact(
-                engine,
-                item,
-                method,
-                engine.validateTarget({ groups: [{ mods: [suffixLock] }] }),
-            ).probability,
-        ).toBe(1);
-        const text = exportCraftingItemText(engine, result);
-        expect(text).toContain("Suffix Modifiers cannot be changed");
-        const imported = importCraftingItemText(engine, text)[0]!.item;
-        expect(imported.mods.map((entry) => entry.id)).toEqual(
-            result.mods.map((entry) => entry.id),
-        );
-        expect(imported.mods.at(-1)).toEqual(result.mods.at(-1));
-        expect(engine.validateItem(JSON.parse(JSON.stringify(result)))).toEqual(result);
-    });
+    it.each(["magic", "rare"] as const)(
+        "guarantees suffix protection on a %s item with full suffixes",
+        (rarity) => {
+            const item = fillSide(blank(rarity), "suffix");
+            expect(engine.beastMetamodPool(item, method.id).map((entry) => entry.id)).toEqual([
+                suffixLock,
+            ]);
+            const result = engine.apply(item, method, seededRandom(42)).item;
+            expect(result.mods.slice(0, -1)).toEqual(item.mods);
+            expect(result.mods.at(-1)!.id).toBe(suffixLock);
+            expect(
+                calculateExact(
+                    engine,
+                    item,
+                    method,
+                    engine.validateTarget({ groups: [{ mods: [suffixLock] }] }),
+                ).probability,
+            ).toBe(1);
+            const text = exportCraftingItemText(engine, result);
+            expect(text).toContain("Suffix Modifiers cannot be changed");
+            const imported = importCraftingItemText(engine, text)[0]!.item;
+            expect(imported.mods.map((entry) => entry.id)).toEqual(
+                result.mods.map((entry) => entry.id),
+            );
+            expect(imported.mods.at(-1)).toEqual(result.mods.at(-1));
+            expect(engine.validateItem(JSON.parse(JSON.stringify(result)))).toEqual(result);
+        },
+    );
 
     it("uses four suffix outcomes with full prefixes and excludes an existing multimod", () => {
         const fullPrefixes = fillSide(blank(), "prefix");

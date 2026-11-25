@@ -76,26 +76,30 @@ describe("Talisman beastcrafting", () => {
     it.each([
         [fracture, 4, 1],
         [double, 6, 2],
-    ] as const)("fractures with %j without replacing rolls or consuming strands", (method, minimum, count) => {
-        const item = talisman(minimum);
-        const before = structuredClone(item);
-        const result = engine.apply(item, method, seededRandom(42));
-        expect(result.item.mods.filter((entry) => entry.fractured)).toHaveLength(count);
-        expect({
-            ...result.item,
-            mods: result.item.mods.map((entry) => ({ ...entry, fractured: false })),
-        }).toEqual(before);
-        expect(result.cost).toEqual([
-            { id: method.id, name: `Beastcraft · ${engine.methodName(method)}`, amount: 1 },
-        ]);
-        expect(item).toEqual(before);
-        const scoured = engine.apply(result.item, currency("reroll"), seededRandom(1)).item;
-        for (const mod of result.item.mods.filter((entry) => entry.fractured))
-            expect(scoured.mods).toContainEqual(mod);
-        expect(
-            importCraftingItemText(engine, exportCraftingItemText(engine, result.item))[0]!.item,
-        ).toEqual(result.item);
-    });
+    ] as const)(
+        "fractures with %j without replacing rolls or consuming strands",
+        (method, minimum, count) => {
+            const item = talisman(minimum);
+            const before = structuredClone(item);
+            const result = engine.apply(item, method, seededRandom(42));
+            expect(result.item.mods.filter((entry) => entry.fractured)).toHaveLength(count);
+            expect({
+                ...result.item,
+                mods: result.item.mods.map((entry) => ({ ...entry, fractured: false })),
+            }).toEqual(before);
+            expect(result.cost).toEqual([
+                { id: method.id, name: `Beastcraft · ${engine.methodName(method)}`, amount: 1 },
+            ]);
+            expect(item).toEqual(before);
+            const scoured = engine.apply(result.item, currency("reroll"), seededRandom(1)).item;
+            for (const mod of result.item.mods.filter((entry) => entry.fractured))
+                expect(scoured.mods).toContainEqual(mod);
+            expect(
+                importCraftingItemText(engine, exportCraftingItemText(engine, result.item))[0]!
+                    .item,
+            ).toEqual(result.item);
+        },
+    );
 
     it("chooses distinct modifiers uniformly and includes crafted modifiers despite affix locks", () => {
         const item = talisman(2);

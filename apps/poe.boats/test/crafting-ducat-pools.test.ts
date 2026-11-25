@@ -142,43 +142,43 @@ describe("extracted Ducat modifier pools", () => {
         }
     });
 
-    it.each([
-        rotmother,
-        brinehook,
-    ])("adds exactly one %s modifier without spending a bench slot or changing existing rolls", (action) => {
-        let item = start(action === rotmother ? belt : baseId);
-        item = engine.addStartingMod(item, "IncreasedLife1", first);
-        item.mods[0]!.fractured = true;
-        const bench = catalog.crafting.bench.find(
-            (entry) =>
-                entry.mod &&
-                entry.itemClasses.includes(engine.base(item).item_class) &&
-                engine
-                    .mod(entry.mod)
-                    .stats.some((stat) => stat.id === "base_fire_damage_resistance_%"),
-        )!;
-        item = engine.apply(item, { kind: "bench", id: bench.id }, first).item;
-        const before = structuredClone(item);
-        const result = engine.apply(item, ducat(action), first);
-        expect(item).toEqual(before);
-        expect(result.item.mods.slice(0, 2)).toEqual(item.mods);
-        expect(result.item.mods).toHaveLength(3);
-        expect(result.item.mods[2]).toMatchObject({ crafted: false, fractured: false });
-        expect(result.cost).toEqual(engine.costs(ducat(action), item));
-        expect(result.item.implicits).toEqual(item.implicits);
-        expect(engine.validateItem(result.item)).toEqual(result.item);
-        expect(() => engine.apply(result.item, ducat(action), first)).toThrow(
-            "no eligible modifier",
-        );
-        if (action === brinehook)
-            expect(() =>
-                engine.apply(
-                    result.item,
-                    { kind: "beast", id: "EinharMasterCraftMorrigan3" },
-                    first,
-                ),
-            ).toThrow();
-    });
+    it.each([rotmother, brinehook])(
+        "adds exactly one %s modifier without spending a bench slot or changing existing rolls",
+        (action) => {
+            let item = start(action === rotmother ? belt : baseId);
+            item = engine.addStartingMod(item, "IncreasedLife1", first);
+            item.mods[0]!.fractured = true;
+            const bench = catalog.crafting.bench.find(
+                (entry) =>
+                    entry.mod &&
+                    entry.itemClasses.includes(engine.base(item).item_class) &&
+                    engine
+                        .mod(entry.mod)
+                        .stats.some((stat) => stat.id === "base_fire_damage_resistance_%"),
+            )!;
+            item = engine.apply(item, { kind: "bench", id: bench.id }, first).item;
+            const before = structuredClone(item);
+            const result = engine.apply(item, ducat(action), first);
+            expect(item).toEqual(before);
+            expect(result.item.mods.slice(0, 2)).toEqual(item.mods);
+            expect(result.item.mods).toHaveLength(3);
+            expect(result.item.mods[2]).toMatchObject({ crafted: false, fractured: false });
+            expect(result.cost).toEqual(engine.costs(ducat(action), item));
+            expect(result.item.implicits).toEqual(item.implicits);
+            expect(engine.validateItem(result.item)).toEqual(result.item);
+            expect(() => engine.apply(result.item, ducat(action), first)).toThrow(
+                "no eligible modifier",
+            );
+            if (action === brinehook)
+                expect(() =>
+                    engine.apply(
+                        result.item,
+                        { kind: "beast", id: "EinharMasterCraftMorrigan3" },
+                        first,
+                    ),
+                ).toThrow();
+        },
+    );
 
     it("reforges Cyaxan copies with one Infamous modifier, ordinary remaining rolls and retained fractures, locks and strands", () => {
         const item = start();
@@ -260,7 +260,8 @@ describe("extracted Ducat modifier pools", () => {
             ],
         });
         expect(calculateProcessExact(engine, process).probability).toBe(0.25);
-    });
+        // The exact calculations take 4-6 s on a desktop, near the 5 s default.
+    }, 30_000);
 
     it("retains Cyaxan's attack/caster blockers for new rolls and guarantees an Infamous modifier on influenced items", () => {
         const helmet = Object.entries(catalog.bases).find(
@@ -316,29 +317,30 @@ describe("extracted Ducat modifier pools", () => {
         expect(scoured.rarity).toBe("magic");
     });
 
-    it.each(
-        actions,
-    )("supports %s starting modifiers, targets and text/JSON while rejecting off-base and low-level states", (action) => {
-        const item = start(action === rotmother ? belt : baseId);
-        const id = engine.ducatPool(item, action)[0]!.id;
-        const added = engine.addStartingMod(item, id, first);
-        expect(engine.matches(added, target(id))).toBe(true);
-        expect(
-            importCraftingItemText(engine, exportCraftingItemText(engine, added))[0]!.item,
-        ).toEqual(added);
-        const saved = project(added, action, id);
-        expect(validateProject(catalog, JSON.parse(JSON.stringify(saved))).item).toEqual(added);
-        const result = engine.apply(item, ducat(action), first).item;
-        expect(
-            importCraftingItemText(engine, exportCraftingItemText(engine, result))[0]!.item,
-        ).toEqual(result);
-        if (engine.mod(id).required_level > 1)
-            expect(() =>
-                engine.validateItem({ ...added, level: engine.mod(id).required_level - 1 }),
-            ).toThrow();
-        if (action === rotmother)
-            expect(() => engine.addStartingMod(start(), id, first)).toThrow("not available");
-    });
+    it.each(actions)(
+        "supports %s starting modifiers, targets and text/JSON while rejecting off-base and low-level states",
+        (action) => {
+            const item = start(action === rotmother ? belt : baseId);
+            const id = engine.ducatPool(item, action)[0]!.id;
+            const added = engine.addStartingMod(item, id, first);
+            expect(engine.matches(added, target(id))).toBe(true);
+            expect(
+                importCraftingItemText(engine, exportCraftingItemText(engine, added))[0]!.item,
+            ).toEqual(added);
+            const saved = project(added, action, id);
+            expect(validateProject(catalog, JSON.parse(JSON.stringify(saved))).item).toEqual(added);
+            const result = engine.apply(item, ducat(action), first).item;
+            expect(
+                importCraftingItemText(engine, exportCraftingItemText(engine, result))[0]!.item,
+            ).toEqual(result);
+            if (engine.mod(id).required_level > 1)
+                expect(() =>
+                    engine.validateItem({ ...added, level: engine.mod(id).required_level - 1 }),
+                ).toThrow();
+            if (action === rotmother)
+                expect(() => engine.addStartingMod(start(), id, first)).toThrow("not available");
+        },
+    );
 
     it("does not enable Ducat methods or pools in PoE 2", () => {
         const data = craftingCatalogSchema.parse(

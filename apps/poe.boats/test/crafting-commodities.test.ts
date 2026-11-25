@@ -505,69 +505,81 @@ it.each([
     expect(Object.keys(result.missing)).toEqual([...emptyResonator.ids]);
 });
 
-it.each([
-    5, -1,
-])("selects exact signature pairs with resonator frame %s and preserves newest-bucket refresh and historical cutoffs", async (frameType) => {
-    const taggedRow = { ...resonatorRow, frameType };
-    capture();
-    capture({
-        ...taggedRow,
-        hour: hour - 3600,
-        prices: { chaos: { count: 1, min: 8, median: 8, max: 8 } },
-    });
-    capture(taggedRow);
-    capture({
-        ...taggedRow,
-        signatureKind: "",
-        signatureValue: "",
-        prices: { chaos: { count: 1, min: 1, median: 1, max: 1 } },
-    });
-    capture({
-        signatureKind: emptyResonator.variant,
-        signatureValue: emptyResonator.signatureValue,
-        prices: { chaos: { count: 1, min: 99, median: 99, max: 99 } },
-    });
-    const options = { ids: [essenceId, ...emptyResonator.ids], realm: "pc" as const };
-    const result = await findCraftingSourcePrices(graph, engine, options, db);
-    expect(result.missing).toEqual({});
-    const commodityQuery = statements.find((statement) => statement.includes("`signatureKind`"));
-    expect(commodityQuery?.match(/`signatureKind` = \?/g)).toHaveLength(2);
-    expect(commodityQuery?.match(/`itemKey` in \(/g)).toHaveLength(2);
-    expect(result.quotes[essenceId]).toEqual(commodityQuote);
-    for (const id of emptyResonator.ids)
-        expect(result.quotes[id]).toEqual({ ...emptyResonatorQuote, id });
-    const id = emptyResonator.ids[1];
-    const manual = { amount: 123, currency: "chaos", source: "manual" as const, confidence: null };
-    const bound = bindCraftingSourcePrice(
-        { ...graph, prices: { [essenceId]: manual } },
-        engine,
-        id,
-        { ...emptyResonatorQuote, id, hour: hour - 3600 },
-    );
-    const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
-    expect(refreshed.issues).toEqual([]);
-    expect(refreshed.graph.prices[essenceId]).toEqual(manual);
-    expect(decodeCraftingSourceReference(refreshed.graph.prices[id]?.cohortId)).toMatchObject({
-        id,
-        variant: emptyResonator.variant,
-    });
-    const snapshots = await craftingMarketSnapshots(db, refreshed.graph, engine, [
-        hour - 3600,
-        hour,
-    ]);
-    expect(snapshots.points.map((point) => point.graph?.prices[id]?.amount)).toEqual([8, 16.5]);
-    sqlite
-        .prepare(
-            `DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_unique_hourly WHERE hour=? AND itemKey=? AND signatureKind=?`,
-        )
-        .run(hour, emptyResonator.baseType, emptyResonator.variant);
-    capture({ ...taggedRow, prices: {} });
-    expect((await findCraftingSourcePrices(graph, engine, options, db)).quotes[id]).toBeUndefined();
-    expect((await refreshCraftingMarketPrices(db, refreshed.graph, engine)).issues).toHaveLength(1);
-    expect(
-        (await craftingMarketSnapshots(db, refreshed.graph, engine, [hour])).points[0]?.graph,
-    ).toBeNull();
-});
+it.each([5, -1])(
+    "selects exact signature pairs with resonator frame %s and preserves newest-bucket refresh and historical cutoffs",
+    async (frameType) => {
+        const taggedRow = { ...resonatorRow, frameType };
+        capture();
+        capture({
+            ...taggedRow,
+            hour: hour - 3600,
+            prices: { chaos: { count: 1, min: 8, median: 8, max: 8 } },
+        });
+        capture(taggedRow);
+        capture({
+            ...taggedRow,
+            signatureKind: "",
+            signatureValue: "",
+            prices: { chaos: { count: 1, min: 1, median: 1, max: 1 } },
+        });
+        capture({
+            signatureKind: emptyResonator.variant,
+            signatureValue: emptyResonator.signatureValue,
+            prices: { chaos: { count: 1, min: 99, median: 99, max: 99 } },
+        });
+        const options = { ids: [essenceId, ...emptyResonator.ids], realm: "pc" as const };
+        const result = await findCraftingSourcePrices(graph, engine, options, db);
+        expect(result.missing).toEqual({});
+        const commodityQuery = statements.find((statement) =>
+            statement.includes("`signatureKind`"),
+        );
+        expect(commodityQuery?.match(/`signatureKind` = \?/g)).toHaveLength(2);
+        expect(commodityQuery?.match(/`itemKey` in \(/g)).toHaveLength(2);
+        expect(result.quotes[essenceId]).toEqual(commodityQuote);
+        for (const id of emptyResonator.ids)
+            expect(result.quotes[id]).toEqual({ ...emptyResonatorQuote, id });
+        const id = emptyResonator.ids[1];
+        const manual = {
+            amount: 123,
+            currency: "chaos",
+            source: "manual" as const,
+            confidence: null,
+        };
+        const bound = bindCraftingSourcePrice(
+            { ...graph, prices: { [essenceId]: manual } },
+            engine,
+            id,
+            { ...emptyResonatorQuote, id, hour: hour - 3600 },
+        );
+        const refreshed = await refreshCraftingMarketPrices(db, bound, engine);
+        expect(refreshed.issues).toEqual([]);
+        expect(refreshed.graph.prices[essenceId]).toEqual(manual);
+        expect(decodeCraftingSourceReference(refreshed.graph.prices[id]?.cohortId)).toMatchObject({
+            id,
+            variant: emptyResonator.variant,
+        });
+        const snapshots = await craftingMarketSnapshots(db, refreshed.graph, engine, [
+            hour - 3600,
+            hour,
+        ]);
+        expect(snapshots.points.map((point) => point.graph?.prices[id]?.amount)).toEqual([8, 16.5]);
+        sqlite
+            .prepare(
+                `DELETE FROM ${DB_TABLE_PREFIX}stash_poe1_unique_hourly WHERE hour=? AND itemKey=? AND signatureKind=?`,
+            )
+            .run(hour, emptyResonator.baseType, emptyResonator.variant);
+        capture({ ...taggedRow, prices: {} });
+        expect(
+            (await findCraftingSourcePrices(graph, engine, options, db)).quotes[id],
+        ).toBeUndefined();
+        expect(
+            (await refreshCraftingMarketPrices(db, refreshed.graph, engine)).issues,
+        ).toHaveLength(1);
+        expect(
+            (await craftingMarketSnapshots(db, refreshed.graph, engine, [hour])).points[0]?.graph,
+        ).toBeNull();
+    },
+);
 
 it("requires explicit conversion and the resonator bucket's own exchange hour", async () => {
     capture({ ...resonatorRow, prices: { divine: { count: 1, min: 2, median: 2, max: 2 } } });

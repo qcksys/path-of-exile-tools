@@ -60,32 +60,35 @@ describe("non-native natural essence recombination", () => {
     it.each([
         ["Zodiac Leather", 1],
         ["Triumphant Lamellar", 0.8325],
-    ] as const)("preserves suppression from %s with base-dependent Strength eligibility", (name, expected) => {
-        const left = suppress(name);
-        const right = donor();
-        const outcomes = recombinationOutcomes(engine, left, right);
-        const suppression = left.mods[0]!.id;
-        expect(outcomes.reduce((sum, outcome) => sum + outcome.weight, 0)).toBeCloseTo(1);
-        expect(
-            outcomes
-                .filter(({ value }) => value.mods.some((mod) => mod.id === suppression))
-                .reduce((sum, outcome) => sum + outcome.weight, 0),
-        ).toBeCloseTo(expected);
-        expect(
-            outcomes
-                .filter(
-                    ({ value }) =>
-                        value.baseId === right.baseId &&
-                        value.mods.some((mod) => mod.id === suppression),
-                )
-                .reduce((sum, outcome) => sum + outcome.weight, 0),
-        ).toBeCloseTo(0.5);
-        for (const { value } of outcomes) {
-            expect(engine.validateItem(value)).toEqual(value);
-            if (value.baseId === right.baseId)
-                expect(value.mods.some((mod) => mod.id === strength)).toBe(false);
-        }
-    });
+    ] as const)(
+        "preserves suppression from %s with base-dependent Strength eligibility",
+        (name, expected) => {
+            const left = suppress(name);
+            const right = donor();
+            const outcomes = recombinationOutcomes(engine, left, right);
+            const suppression = left.mods[0]!.id;
+            expect(outcomes.reduce((sum, outcome) => sum + outcome.weight, 0)).toBeCloseTo(1);
+            expect(
+                outcomes
+                    .filter(({ value }) => value.mods.some((mod) => mod.id === suppression))
+                    .reduce((sum, outcome) => sum + outcome.weight, 0),
+            ).toBeCloseTo(expected);
+            expect(
+                outcomes
+                    .filter(
+                        ({ value }) =>
+                            value.baseId === right.baseId &&
+                            value.mods.some((mod) => mod.id === suppression),
+                    )
+                    .reduce((sum, outcome) => sum + outcome.weight, 0),
+            ).toBeCloseTo(0.5);
+            for (const { value } of outcomes) {
+                expect(engine.validateItem(value)).toEqual(value);
+                if (value.baseId === right.baseId)
+                    expect(value.mods.some((mod) => mod.id === strength)).toBe(false);
+            }
+        },
+    );
     it("lists NNN essence recipes and identifies those that are natural on the other base", () => {
         expect(
             nonNativeEssenceSources(engine, base("Necrotic Armour"), base("Zodiac Leather")),

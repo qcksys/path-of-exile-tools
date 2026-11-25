@@ -149,73 +149,81 @@ describe("PoE 2 mixed reveal pool and desecrated status", () => {
         expect(engine.validateItem(JSON.parse(JSON.stringify(natural)))).toEqual(natural);
     });
 
-    it.each([
-        false,
-        true,
-    ])("enumerates and simulates the weighted mixed pool (Lich guarantee: %s)", (lich) => {
-        const exclusive = engine.pool(empty, {
-            domain: "desecrated",
-            side: "prefix",
-            tag: "ulaman_mod",
-        })[0]!;
-        const groups = new Set(exclusive.mod.groups);
-        const ordinary = engine.pool(empty, { side: "prefix" }).filter((entry) => {
-            if (groups.size >= 4 || entry.mod.groups.some((group) => groups.has(group)))
-                return false;
-            for (const group of entry.mod.groups) groups.add(group);
-            return true;
-        });
-        expect(ordinary).toHaveLength(3);
-        const reduced = structuredClone(catalog);
-        const selected = [exclusive, ...ordinary];
-        const keep = new Set([
-            "VeiledPrefix",
-            ...empty.implicits.map((entry) => entry.id),
-            ...selected.map((entry) => entry.id),
-        ]);
-        reduced.mods = Object.fromEntries(
-            Object.entries(reduced.mods).filter(([id]) => keep.has(id)),
-        );
-        for (const entry of selected)
-            reduced.mods[entry.id]!.spawn_weights = [
-                { tag: engine.base(empty).tags[0]!, weight: entry.id === ordinary[0]!.id ? 4 : 1 },
-            ];
-        const small = new CraftingEngine(reduced);
-        const method = {
-            ...bone,
-            omens: [...bone.omens, ...(lich ? [omen("OmenOnAbyssGuarenteeLichTypeMod1")] : [])],
-        };
-        const target = small.validateTarget({ groups: [{ mods: [ordinary[0]!.id] }] });
-        const reveal = { kind: "reveal" as const, preferred: [ordinary[0]!.id] };
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe2",
-            patch: catalog.patch,
-            item: empty,
-            target,
-            method,
-            steps: [
-                { id: "bone", method, condition: { groups: [] }, onSuccess: "reveal" },
-                { id: "reveal", method: reveal, condition: target },
-            ],
-            prices: Object.fromEntries(small.costs(method).map((cost) => [cost.id, 2])),
-            seed: 15,
-            iterations: 400,
-            maxActions: 2,
-        });
-        const expected = 14 / 15;
-        const hidden = small.apply(empty, method, seededRandom(1)).item;
-        expect(small.revealProbabilities(hidden).get(ordinary[0]!.id)).toBeCloseTo(expected, 12);
-        const exact = calculateProcessExact(small, project);
-        expect(exact.probability).toBeCloseTo(expected);
-        expect(exact.meanCost).toBeCloseTo(lich ? 6 : 4);
-        const simulation = new CraftingSimulation(reduced, project, true);
-        for (let i = 0; i < project.iterations; i++) simulation.runTrial();
-        const result = simulation.result();
-        expect(result.errors).toEqual({});
-        expect(result.probability).toBeCloseTo(expected, 1);
-        expect(result.meanCost).toBe(lich ? 6 : 4);
-        for (const sample of result.samples)
-            expect(sample.item.mods.filter((entry) => small.isDesecrated(entry))).toHaveLength(1);
-    });
+    it.each([false, true])(
+        "enumerates and simulates the weighted mixed pool (Lich guarantee: %s)",
+        (lich) => {
+            const exclusive = engine.pool(empty, {
+                domain: "desecrated",
+                side: "prefix",
+                tag: "ulaman_mod",
+            })[0]!;
+            const groups = new Set(exclusive.mod.groups);
+            const ordinary = engine.pool(empty, { side: "prefix" }).filter((entry) => {
+                if (groups.size >= 4 || entry.mod.groups.some((group) => groups.has(group)))
+                    return false;
+                for (const group of entry.mod.groups) groups.add(group);
+                return true;
+            });
+            expect(ordinary).toHaveLength(3);
+            const reduced = structuredClone(catalog);
+            const selected = [exclusive, ...ordinary];
+            const keep = new Set([
+                "VeiledPrefix",
+                ...empty.implicits.map((entry) => entry.id),
+                ...selected.map((entry) => entry.id),
+            ]);
+            reduced.mods = Object.fromEntries(
+                Object.entries(reduced.mods).filter(([id]) => keep.has(id)),
+            );
+            for (const entry of selected)
+                reduced.mods[entry.id]!.spawn_weights = [
+                    {
+                        tag: engine.base(empty).tags[0]!,
+                        weight: entry.id === ordinary[0]!.id ? 4 : 1,
+                    },
+                ];
+            const small = new CraftingEngine(reduced);
+            const method = {
+                ...bone,
+                omens: [...bone.omens, ...(lich ? [omen("OmenOnAbyssGuarenteeLichTypeMod1")] : [])],
+            };
+            const target = small.validateTarget({ groups: [{ mods: [ordinary[0]!.id] }] });
+            const reveal = { kind: "reveal" as const, preferred: [ordinary[0]!.id] };
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe2",
+                patch: catalog.patch,
+                item: empty,
+                target,
+                method,
+                steps: [
+                    { id: "bone", method, condition: { groups: [] }, onSuccess: "reveal" },
+                    { id: "reveal", method: reveal, condition: target },
+                ],
+                prices: Object.fromEntries(small.costs(method).map((cost) => [cost.id, 2])),
+                seed: 15,
+                iterations: 400,
+                maxActions: 2,
+            });
+            const expected = 14 / 15;
+            const hidden = small.apply(empty, method, seededRandom(1)).item;
+            expect(small.revealProbabilities(hidden).get(ordinary[0]!.id)).toBeCloseTo(
+                expected,
+                12,
+            );
+            const exact = calculateProcessExact(small, project);
+            expect(exact.probability).toBeCloseTo(expected);
+            expect(exact.meanCost).toBeCloseTo(lich ? 6 : 4);
+            const simulation = new CraftingSimulation(reduced, project, true);
+            for (let i = 0; i < project.iterations; i++) simulation.runTrial();
+            const result = simulation.result();
+            expect(result.errors).toEqual({});
+            expect(result.probability).toBeCloseTo(expected, 1);
+            expect(result.meanCost).toBe(lich ? 6 : 4);
+            for (const sample of result.samples)
+                expect(sample.item.mods.filter((entry) => small.isDesecrated(entry))).toHaveLength(
+                    1,
+                );
+        },
+    );
 });

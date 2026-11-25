@@ -43,60 +43,67 @@ const prepared = () =>
     );
 
 describe("PoE 2 Strongbox tiered currencies and omens", () => {
-    it.each(
-        catalog.crafting.tieredCurrency,
-    )("applies extracted tier $tier and its highest-family fallback for $id", (tier) => {
-        const action = catalog.crafting.currencies.find((entry) => entry.id === tier.id)!.action;
-        const method = { kind: "currency" as const, id: tier.id };
-        expect(strongboxMethod(catalog, method)).toBe(true);
-        for (const base of [baseId, "Metadata/Chests/StrongBoxes/BasicStrongboxLow"]) {
-            const normal = engine.createItem(base);
-            const starting =
-                action === "transmute_to_magic"
-                    ? normal
-                    : action === "add_mod_to_magic" || action === "upgrade_magic_to_rare"
-                      ? engine.apply(normal, currency("transmute_to_magic"), seededRandom(1)).item
-                      : engine.apply(normal, currency("transmute_to_rare"), seededRandom(1)).item;
-            const before = structuredClone(starting);
-            for (let seed = 0; seed < 8; seed++) {
-                const random = seededRandom(seed);
-                const picks = vi.spyOn(random, "pick");
-                const result = engine.apply(starting, method, random);
-                const added = picks.mock.results
-                    .filter((entry) => entry.type === "return" && typeof entry.value === "string")
-                    .map((entry) => result.item.mods.find((mod) => mod.id === entry.value)!);
-                expect(added.length).toBeGreaterThan(0);
-                for (const entry of added) {
-                    expect(entry).toBeDefined();
-                    const others = result.item.mods.filter((mod) => mod !== entry);
-                    const eligible = engine.pool(
-                        { ...result.item, mods: others },
-                        { minimumLevel: tier.minimumModLevel },
-                    );
-                    expect(eligible.some((mod) => mod.id === entry.id)).toBe(true);
-                    const mod = engine.mod(entry.id);
-                    if (mod.required_level < tier.minimumModLevel) {
-                        expect(
-                            engine
-                                .pool({ ...result.item, mods: others })
-                                .some(
-                                    (other) =>
-                                        other.mod.type === mod.type &&
-                                        other.mod.groups.join("|") === mod.groups.join("|") &&
-                                        other.mod.generation_type === mod.generation_type &&
-                                        other.mod.required_level > mod.required_level,
-                                ),
-                        ).toBe(false);
+    it.each(catalog.crafting.tieredCurrency)(
+        "applies extracted tier $tier and its highest-family fallback for $id",
+        (tier) => {
+            const action = catalog.crafting.currencies.find(
+                (entry) => entry.id === tier.id,
+            )!.action;
+            const method = { kind: "currency" as const, id: tier.id };
+            expect(strongboxMethod(catalog, method)).toBe(true);
+            for (const base of [baseId, "Metadata/Chests/StrongBoxes/BasicStrongboxLow"]) {
+                const normal = engine.createItem(base);
+                const starting =
+                    action === "transmute_to_magic"
+                        ? normal
+                        : action === "add_mod_to_magic" || action === "upgrade_magic_to_rare"
+                          ? engine.apply(normal, currency("transmute_to_magic"), seededRandom(1))
+                                .item
+                          : engine.apply(normal, currency("transmute_to_rare"), seededRandom(1))
+                                .item;
+                const before = structuredClone(starting);
+                for (let seed = 0; seed < 8; seed++) {
+                    const random = seededRandom(seed);
+                    const picks = vi.spyOn(random, "pick");
+                    const result = engine.apply(starting, method, random);
+                    const added = picks.mock.results
+                        .filter(
+                            (entry) => entry.type === "return" && typeof entry.value === "string",
+                        )
+                        .map((entry) => result.item.mods.find((mod) => mod.id === entry.value)!);
+                    expect(added.length).toBeGreaterThan(0);
+                    for (const entry of added) {
+                        expect(entry).toBeDefined();
+                        const others = result.item.mods.filter((mod) => mod !== entry);
+                        const eligible = engine.pool(
+                            { ...result.item, mods: others },
+                            { minimumLevel: tier.minimumModLevel },
+                        );
+                        expect(eligible.some((mod) => mod.id === entry.id)).toBe(true);
+                        const mod = engine.mod(entry.id);
+                        if (mod.required_level < tier.minimumModLevel) {
+                            expect(
+                                engine
+                                    .pool({ ...result.item, mods: others })
+                                    .some(
+                                        (other) =>
+                                            other.mod.type === mod.type &&
+                                            other.mod.groups.join("|") === mod.groups.join("|") &&
+                                            other.mod.generation_type === mod.generation_type &&
+                                            other.mod.required_level > mod.required_level,
+                                    ),
+                            ).toBe(false);
+                        }
                     }
+                    expect(result.cost.map((entry) => [entry.id, entry.amount])).toEqual([
+                        [tier.id, 1],
+                    ]);
+                    expect(engine.validateItem(result.item)).toEqual(result.item);
                 }
-                expect(result.cost.map((entry) => [entry.id, entry.amount])).toEqual([
-                    [tier.id, 1],
-                ]);
-                expect(engine.validateItem(result.item)).toEqual(result.item);
+                expect(starting).toEqual(before);
             }
-            expect(starting).toEqual(before);
-        }
-    });
+        },
+    );
 
     it("combines directional and two-modifier omens with tiered Exalted Orbs without touching encounter properties", () => {
         const tier = catalog.crafting.tieredCurrency.find((entry) =>

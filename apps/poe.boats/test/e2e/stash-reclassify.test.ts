@@ -548,156 +548,171 @@ it("replays a paid Scouring source with native implicit proof at its original pr
     expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
 });
 
-it.each([
-    false,
-    true,
-])("reclassifies an archived named Magic source at its original priced hour (missing body: %s)", async (missingBody) => {
-    const shield = {
-        ...item,
-        typeLine: "Heat-attuned Tower Shield of the Leviathan",
-        baseType: "Heat-attuned Tower Shield",
-        frameType: 1,
-        influences: { shaper: true },
-        explicitMods: [{ description: "+38 to Strength" }],
-        implicitMods: [{ description: "Scorch Enemies when you Block their Damage" }],
-        extended: { suffixes: 1 },
-        note: "~price 4 divine",
-    };
-    const manifest: MarketCohortManifest = {
-        format: 1,
-        game: "poe1",
-        revision: "magic-name-v3",
-        catalogHash: "a".repeat(64),
-        modifierTextModel: marketModifierTextModel(engine, new Set([shield.baseType])),
-        cohorts: [
-            {
-                id: "preset:shaper-heat-strength",
-                name: "Magic Shaper Heat-attuned Tower Shield, Strength7 only",
-                purpose: "isolated-modifier",
-                query: {
-                    format: 1,
-                    game: "poe1",
-                    groups: [
-                        {
-                            type: "and",
-                            filters: [
-                                { kind: "base", field: "baseType", values: [shield.baseType] },
-                                { kind: "rarity", values: ["Magic"] },
-                                { kind: "range", field: "ilvl", value: { min: 86, max: 86 } },
-                                { kind: "range", field: "prefixes", value: { min: 0, max: 0 } },
-                                { kind: "range", field: "suffixes", value: { min: 1, max: 1 } },
-                                { kind: "flag", field: "identified", value: true },
-                                { kind: "flag", field: "corrupted", value: false },
-                                { kind: "flag", field: "mirrored", value: false },
-                                { kind: "flag", field: "fractured", value: false },
-                                { kind: "flag", field: "synthesised", value: false },
-                                { kind: "influence", values: ["shaper"] },
-                                {
-                                    kind: "mod",
-                                    ids: ["Strength7"],
-                                    fractured: false,
-                                    crafted: false,
-                                    count: { min: 1 },
-                                },
-                            ],
-                        },
-                        {
-                            type: "not",
-                            filters: [
-                                {
-                                    kind: "influence",
-                                    values: ["elder", "crusader", "redeemer", "hunter", "warlord"],
-                                },
-                            ],
-                        },
-                    ],
+it.each([false, true])(
+    "reclassifies an archived named Magic source at its original priced hour (missing body: %s)",
+    async (missingBody) => {
+        const shield = {
+            ...item,
+            typeLine: "Heat-attuned Tower Shield of the Leviathan",
+            baseType: "Heat-attuned Tower Shield",
+            frameType: 1,
+            influences: { shaper: true },
+            explicitMods: [{ description: "+38 to Strength" }],
+            implicitMods: [{ description: "Scorch Enemies when you Block their Damage" }],
+            extended: { suffixes: 1 },
+            note: "~price 4 divine",
+        };
+        const manifest: MarketCohortManifest = {
+            format: 1,
+            game: "poe1",
+            revision: "magic-name-v3",
+            catalogHash: "a".repeat(64),
+            modifierTextModel: marketModifierTextModel(engine, new Set([shield.baseType])),
+            cohorts: [
+                {
+                    id: "preset:shaper-heat-strength",
+                    name: "Magic Shaper Heat-attuned Tower Shield, Strength7 only",
+                    purpose: "isolated-modifier",
+                    query: {
+                        format: 1,
+                        game: "poe1",
+                        groups: [
+                            {
+                                type: "and",
+                                filters: [
+                                    { kind: "base", field: "baseType", values: [shield.baseType] },
+                                    { kind: "rarity", values: ["Magic"] },
+                                    { kind: "range", field: "ilvl", value: { min: 86, max: 86 } },
+                                    { kind: "range", field: "prefixes", value: { min: 0, max: 0 } },
+                                    { kind: "range", field: "suffixes", value: { min: 1, max: 1 } },
+                                    { kind: "flag", field: "identified", value: true },
+                                    { kind: "flag", field: "corrupted", value: false },
+                                    { kind: "flag", field: "mirrored", value: false },
+                                    { kind: "flag", field: "fractured", value: false },
+                                    { kind: "flag", field: "synthesised", value: false },
+                                    { kind: "influence", values: ["shaper"] },
+                                    {
+                                        kind: "mod",
+                                        ids: ["Strength7"],
+                                        fractured: false,
+                                        crafted: false,
+                                        count: { min: 1 },
+                                    },
+                                ],
+                            },
+                            {
+                                type: "not",
+                                filters: [
+                                    {
+                                        kind: "influence",
+                                        values: [
+                                            "elder",
+                                            "crusader",
+                                            "redeemer",
+                                            "hunter",
+                                            "warlord",
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
                 },
+            ],
+        };
+        const current = compileMarketCohorts(manifest);
+        const older = compileMarketCohorts({
+            ...manifest,
+            revision: "magic-name-v2",
+            modifierTextModel: { ...manifest.modifierTextModel!, format: 2 },
+        });
+        const accepts = compileCraftingCapture(manifest, {
+            equipmentBaseTypes: [shield.baseType],
+            jewelBaseTypes: [],
+            specialModifiers: [],
+            distinctiveModifierLines: [],
+        });
+        const change = { ...stash, items: [shield] };
+        const observedAt = HOUR + 17;
+        const record = normalizeApiItem("poe1", "stash", shield);
+        expect(accepts(shield)).toBe(true);
+        expect(older.classify(record)).toEqual({ matches: [], unknown: [manifest.cohorts[0]!.id] });
+        expect(current.classify(record)).toEqual({
+            matches: [manifest.cohorts[0]!.id],
+            unknown: [],
+        });
+        const page = await archivePage(
+            local.conn,
+            { next_change_id: "magic-page", stashes: [change] },
+            { realm: "pc", league: "Standard", capturedAt: observedAt * 1000 },
+            accepts,
+        );
+        await local.conn.run(
+            "UPDATE ps_capture_page SET processed_at = current_timestamp, equipment_revision = $2 WHERE id = $1",
+            [page, older.manifest.revision],
+        );
+        const [saved] = await queryAll<{ hash: string }>(
+            local.conn,
+            "SELECT response_hash AS hash FROM ps_capture_page WHERE id = $1",
+            [page],
+        );
+        expect((await readArchivedPage(local.conn, saved!.hash)).stashes[0]!.items[0]).toEqual(
+            shield,
+        );
+        await captureEquipment(local.conn, change, older, new Date(observedAt * 1000));
+        const before = await equipmentHourly(local.conn, HOUR, "Standard");
+        expect(before).toMatchObject([
+            {
+                revision: older.manifest.revision,
+                hour: HOUR,
+                listingCount: 0,
+                unknownCount: 1,
+                prices: {},
             },
-        ],
-    };
-    const current = compileMarketCohorts(manifest);
-    const older = compileMarketCohorts({
-        ...manifest,
-        revision: "magic-name-v2",
-        modifierTextModel: { ...manifest.modifierTextModel!, format: 2 },
-    });
-    const accepts = compileCraftingCapture(manifest, {
-        equipmentBaseTypes: [shield.baseType],
-        jewelBaseTypes: [],
-        specialModifiers: [],
-        distinctiveModifierLines: [],
-    });
-    const change = { ...stash, items: [shield] };
-    const observedAt = HOUR + 17;
-    const record = normalizeApiItem("poe1", "stash", shield);
-    expect(accepts(shield)).toBe(true);
-    expect(older.classify(record)).toEqual({ matches: [], unknown: [manifest.cohorts[0]!.id] });
-    expect(current.classify(record)).toEqual({ matches: [manifest.cohorts[0]!.id], unknown: [] });
-    const page = await archivePage(
-        local.conn,
-        { next_change_id: "magic-page", stashes: [change] },
-        { realm: "pc", league: "Standard", capturedAt: observedAt * 1000 },
-        accepts,
-    );
-    await local.conn.run(
-        "UPDATE ps_capture_page SET processed_at = current_timestamp, equipment_revision = $2 WHERE id = $1",
-        [page, older.manifest.revision],
-    );
-    const [saved] = await queryAll<{ hash: string }>(
-        local.conn,
-        "SELECT response_hash AS hash FROM ps_capture_page WHERE id = $1",
-        [page],
-    );
-    expect((await readArchivedPage(local.conn, saved!.hash)).stashes[0]!.items[0]).toEqual(shield);
-    await captureEquipment(local.conn, change, older, new Date(observedAt * 1000));
-    const before = await equipmentHourly(local.conn, HOUR, "Standard");
-    expect(before).toMatchObject([
-        {
-            revision: older.manifest.revision,
-            hour: HOUR,
-            listingCount: 0,
-            unknownCount: 1,
-            prices: {},
-        },
-    ]);
-    await setCursor(local.conn, "psapi", "live-cursor");
-    const live = await queryAll(local.conn, "SELECT * FROM ps_equipment_listing");
-    if (missingBody) {
-        await local.conn.run("DELETE FROM ps_capture_payload_chunk");
-        await local.conn.run("DELETE FROM ps_capture_payload_meta");
-    }
-    const replay = () =>
-        reclassifyArchivedEquipment(local.conn, {
-            realm: "pc",
-            league: "Standard",
-            classifier: current,
-            completedBefore: HOUR + 3600,
-            limitPages: 1,
-        });
-    if (missingBody) {
-        await expect(replay()).rejects.toThrow("The archived payload is missing.");
-        expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual(before);
-        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify")).toEqual([]);
-    } else {
-        expect(await replay()).toMatchObject({ pages: 1, completedHours: [HOUR], pending: false });
-        const rows = await equipmentHourly(local.conn, HOUR, "Standard");
-        const result = rows.find((row) => row.revision === current.manifest.revision);
-        expect(result).toMatchObject({
-            hour: HOUR,
-            listingCount: 1,
-            uniqueSellers: 1,
-            unknownCount: 0,
-            prices: { divine: { median: 4, min: 4, max: 4, count: 1 } },
-        });
-        expect(Date.parse(`${result!.firstSeenAt}Z`)).toBe(observedAt * 1000);
-        expect(Date.parse(`${result!.lastSeenAt}Z`)).toBe(observedAt * 1000);
-        expect(rows.find((row) => row.revision === older.manifest.revision)).toEqual(before[0]);
-        expect(await replay()).toMatchObject({ pages: 0, hours: 0, pending: false });
-    }
-    expect(await equipmentHourly(local.conn, HOUR + 3600, "Standard")).toEqual([]);
-    expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_listing")).toEqual(live);
-    expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
-});
+        ]);
+        await setCursor(local.conn, "psapi", "live-cursor");
+        const live = await queryAll(local.conn, "SELECT * FROM ps_equipment_listing");
+        if (missingBody) {
+            await local.conn.run("DELETE FROM ps_capture_payload_chunk");
+            await local.conn.run("DELETE FROM ps_capture_payload_meta");
+        }
+        const replay = () =>
+            reclassifyArchivedEquipment(local.conn, {
+                realm: "pc",
+                league: "Standard",
+                classifier: current,
+                completedBefore: HOUR + 3600,
+                limitPages: 1,
+            });
+        if (missingBody) {
+            await expect(replay()).rejects.toThrow("The archived payload is missing.");
+            expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual(before);
+            expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify")).toEqual([]);
+        } else {
+            expect(await replay()).toMatchObject({
+                pages: 1,
+                completedHours: [HOUR],
+                pending: false,
+            });
+            const rows = await equipmentHourly(local.conn, HOUR, "Standard");
+            const result = rows.find((row) => row.revision === current.manifest.revision);
+            expect(result).toMatchObject({
+                hour: HOUR,
+                listingCount: 1,
+                uniqueSellers: 1,
+                unknownCount: 0,
+                prices: { divine: { median: 4, min: 4, max: 4, count: 1 } },
+            });
+            expect(Date.parse(`${result!.firstSeenAt}Z`)).toBe(observedAt * 1000);
+            expect(Date.parse(`${result!.lastSeenAt}Z`)).toBe(observedAt * 1000);
+            expect(rows.find((row) => row.revision === older.manifest.revision)).toEqual(before[0]);
+            expect(await replay()).toMatchObject({ pages: 0, hours: 0, pending: false });
+        }
+        expect(await equipmentHourly(local.conn, HOUR + 3600, "Standard")).toEqual([]);
+        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_listing")).toEqual(live);
+        expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
+    },
+);
 
 it("resumes persisted staging after the owning connection closes and reopens", async () => {
     await local.close();
@@ -746,144 +761,147 @@ it("replays a verified archived body hidden from its index without changing the 
     }
 });
 
-it.each([
-    "missing",
-    "wrong-key-index",
-    "wrong-hash",
-] as const)("does not advance staged progress or publish prices when the next archived body is %s", async (failure) => {
-    await archive(HOUR + 1);
-    await archive(HOUR + 2, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
-    await legacyBodies();
-    await setCursor(local.conn, "psapi", "live-cursor");
-    expect(await project()).toMatchObject({ pages: 1, hours: 0, pending: true });
-    const progress = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify");
-    const staging = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour");
-    const pages = await queryAll<{ hash: string }>(
-        local.conn,
-        "SELECT response_hash AS hash FROM ps_capture_page ORDER BY captured_at",
-    );
-    if (failure !== "wrong-hash") {
-        await local.conn.run("DELETE FROM ps_capture_payload WHERE response_hash=$1", [
-            pages[1]!.hash,
-        ]);
-    } else {
-        await local.conn.run(
-            `UPDATE ps_capture_payload SET response_gzip =
+it.each(["missing", "wrong-key-index", "wrong-hash"] as const)(
+    "does not advance staged progress or publish prices when the next archived body is %s",
+    async (failure) => {
+        await archive(HOUR + 1);
+        await archive(HOUR + 2, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
+        await legacyBodies();
+        await setCursor(local.conn, "psapi", "live-cursor");
+        expect(await project()).toMatchObject({ pages: 1, hours: 0, pending: true });
+        const progress = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify");
+        const staging = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour");
+        const pages = await queryAll<{ hash: string }>(
+            local.conn,
+            "SELECT response_hash AS hash FROM ps_capture_page ORDER BY captured_at",
+        );
+        if (failure !== "wrong-hash") {
+            await local.conn.run("DELETE FROM ps_capture_payload WHERE response_hash=$1", [
+                pages[1]!.hash,
+            ]);
+        } else {
+            await local.conn.run(
+                `UPDATE ps_capture_payload SET response_gzip =
                 (SELECT response_gzip FROM ps_capture_payload WHERE response_hash=$1)
                 WHERE response_hash=$2`,
-            [pages[0]!.hash, pages[1]!.hash],
-        );
-    }
-    const classify = vi.spyOn(classifier, "classify");
-    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const read = local.conn.runAndReadAll.bind(local.conn);
-    const indexedRead = vi
-        .spyOn(local.conn, "runAndReadAll")
-        .mockImplementation((sql, ...args) =>
-            failure === "wrong-key-index" &&
-            sql.includes("FROM ps_capture_payload WHERE response_hash = $1")
-                ? read(sql, [pages[0]!.hash])
-                : read(sql, ...args),
-        );
-    try {
-        await expect(project()).rejects.toThrow(
-            failure !== "wrong-hash"
-                ? "The archived payload is missing."
-                : "The archived payload does not match its recorded hash.",
-        );
-        expect(classify).not.toHaveBeenCalled();
-        expect(warning).not.toHaveBeenCalled();
-        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify")).toEqual(
-            progress,
-        );
-        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour")).toEqual(
-            staging,
-        );
-        expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([]);
-        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_cohort_hour")).toEqual([]);
-        expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
-    } finally {
-        indexedRead.mockRestore();
-        classify.mockRestore();
-        warning.mockRestore();
-    }
-});
+                [pages[0]!.hash, pages[1]!.hash],
+            );
+        }
+        const classify = vi.spyOn(classifier, "classify");
+        const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const read = local.conn.runAndReadAll.bind(local.conn);
+        const indexedRead = vi
+            .spyOn(local.conn, "runAndReadAll")
+            .mockImplementation((sql, ...args) =>
+                failure === "wrong-key-index" &&
+                sql.includes("FROM ps_capture_payload WHERE response_hash = $1")
+                    ? read(sql, [pages[0]!.hash])
+                    : read(sql, ...args),
+            );
+        try {
+            await expect(project()).rejects.toThrow(
+                failure !== "wrong-hash"
+                    ? "The archived payload is missing."
+                    : "The archived payload does not match its recorded hash.",
+            );
+            expect(classify).not.toHaveBeenCalled();
+            expect(warning).not.toHaveBeenCalled();
+            expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify")).toEqual(
+                progress,
+            );
+            expect(
+                await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour"),
+            ).toEqual(staging);
+            expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([]);
+            expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_cohort_hour")).toEqual(
+                [],
+            );
+            expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
+        } finally {
+            indexedRead.mockRestore();
+            classify.mockRestore();
+            warning.mockRestore();
+        }
+    },
+);
 
-it.each([
-    "missing",
-    "out-of-order",
-    "wrong-size",
-    "wrong-hash",
-] as const)("rejects %s chunk data without advancing replay or publishing a staged hour", async (failure) => {
-    await archive(HOUR + 1);
-    await archive(HOUR + 2, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
-    await setCursor(local.conn, "psapi", "live-cursor");
-    expect(await project()).toMatchObject({ pages: 1, hours: 0, pending: true });
-    const progress = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify");
-    const staging = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour");
-    const pages = await queryAll<{ hash: string }>(
-        local.conn,
-        "SELECT response_hash AS hash FROM ps_capture_page ORDER BY captured_at",
-    );
-    const hash = pages[1]!.hash;
-    if (failure === "missing")
-        await local.conn.run("DELETE FROM ps_capture_payload_chunk WHERE response_hash=$1", [hash]);
-    if (failure === "out-of-order")
-        await local.conn.run(
-            "UPDATE ps_capture_payload_chunk SET chunk_index=1 WHERE response_hash=$1",
-            [hash],
+it.each(["missing", "out-of-order", "wrong-size", "wrong-hash"] as const)(
+    "rejects %s chunk data without advancing replay or publishing a staged hour",
+    async (failure) => {
+        await archive(HOUR + 1);
+        await archive(HOUR + 2, [{ ...stash, items: [{ ...item, note: "~price 25 chaos" }] }]);
+        await setCursor(local.conn, "psapi", "live-cursor");
+        expect(await project()).toMatchObject({ pages: 1, hours: 0, pending: true });
+        const progress = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify");
+        const staging = await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour");
+        const pages = await queryAll<{ hash: string }>(
+            local.conn,
+            "SELECT response_hash AS hash FROM ps_capture_page ORDER BY captured_at",
         );
-    if (failure === "wrong-size")
-        await local.conn.run(
-            "UPDATE ps_capture_payload_chunk SET response_gzip=response_gzip || 'x'::BLOB WHERE response_hash=$1",
-            [hash],
-        );
-    if (failure === "wrong-hash") {
-        await local.conn.run(
-            `UPDATE ps_capture_payload_chunk SET response_gzip =
+        const hash = pages[1]!.hash;
+        if (failure === "missing")
+            await local.conn.run("DELETE FROM ps_capture_payload_chunk WHERE response_hash=$1", [
+                hash,
+            ]);
+        if (failure === "out-of-order")
+            await local.conn.run(
+                "UPDATE ps_capture_payload_chunk SET chunk_index=1 WHERE response_hash=$1",
+                [hash],
+            );
+        if (failure === "wrong-size")
+            await local.conn.run(
+                "UPDATE ps_capture_payload_chunk SET response_gzip=response_gzip || 'x'::BLOB WHERE response_hash=$1",
+                [hash],
+            );
+        if (failure === "wrong-hash") {
+            await local.conn.run(
+                `UPDATE ps_capture_payload_chunk SET response_gzip =
             (SELECT response_gzip FROM ps_capture_payload_chunk WHERE response_hash=$1)
             WHERE response_hash=$2`,
-            [pages[0]!.hash, hash],
-        );
-        await local.conn.run(
-            `UPDATE ps_capture_payload_meta SET compressed_bytes =
+                [pages[0]!.hash, hash],
+            );
+            await local.conn.run(
+                `UPDATE ps_capture_payload_meta SET compressed_bytes =
             (SELECT compressed_bytes FROM ps_capture_payload_meta WHERE response_hash=$1)
             WHERE response_hash=$2`,
-            [pages[0]!.hash, hash],
-        );
-    }
-    const classify = vi.spyOn(classifier, "classify");
-    const equipmentDiagnostics = { collect: vi.fn(() => null), flush: vi.fn(async () => {}) };
-    try {
-        await expect(
-            reclassifyArchivedEquipment(local.conn, {
-                realm: "pc",
-                league: "Standard",
-                classifier,
-                completedBefore: HOUR + 2 * 3600,
-                equipmentDiagnostics,
-            }),
-        ).rejects.toThrow(
-            failure === "wrong-hash"
-                ? "The archived payload does not match its recorded hash."
-                : "The archived payload chunks are incomplete or invalid.",
-        );
-        expect(classify).not.toHaveBeenCalled();
-        expect(equipmentDiagnostics.collect).not.toHaveBeenCalled();
-        expect(equipmentDiagnostics.flush).not.toHaveBeenCalled();
-        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify")).toEqual(
-            progress,
-        );
-        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour")).toEqual(
-            staging,
-        );
-        expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([]);
-        expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_cohort_hour")).toEqual([]);
-        expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
-    } finally {
-        classify.mockRestore();
-    }
-});
+                [pages[0]!.hash, hash],
+            );
+        }
+        const classify = vi.spyOn(classifier, "classify");
+        const equipmentDiagnostics = { collect: vi.fn(() => null), flush: vi.fn(async () => {}) };
+        try {
+            await expect(
+                reclassifyArchivedEquipment(local.conn, {
+                    realm: "pc",
+                    league: "Standard",
+                    classifier,
+                    completedBefore: HOUR + 2 * 3600,
+                    equipmentDiagnostics,
+                }),
+            ).rejects.toThrow(
+                failure === "wrong-hash"
+                    ? "The archived payload does not match its recorded hash."
+                    : "The archived payload chunks are incomplete or invalid.",
+            );
+            expect(classify).not.toHaveBeenCalled();
+            expect(equipmentDiagnostics.collect).not.toHaveBeenCalled();
+            expect(equipmentDiagnostics.flush).not.toHaveBeenCalled();
+            expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify")).toEqual(
+                progress,
+            );
+            expect(
+                await queryAll(local.conn, "SELECT * FROM ps_equipment_reclassify_hour"),
+            ).toEqual(staging);
+            expect(await equipmentHourly(local.conn, HOUR, "Standard")).toEqual([]);
+            expect(await queryAll(local.conn, "SELECT * FROM ps_equipment_cohort_hour")).toEqual(
+                [],
+            );
+            expect(await getCursor(local.conn, "psapi")).toBe("live-cursor");
+        } finally {
+            classify.mockRestore();
+        }
+    },
+);
 
 it("resumes bounded archived pages, publishes a complete original hour and never changes live state", async () => {
     await archive(HOUR + 1);

@@ -33,13 +33,9 @@
       },
       "inherits_from": {
         "default": null,
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "item_class": {
@@ -191,24 +187,16 @@
           },
           "description": {
             "default": null,
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "directions": {
             "default": null,
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "stack_size": {
@@ -239,13 +227,9 @@
           },
           "full_stack_turns_into": {
             "default": null,
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "charges_max": {
@@ -419,35 +403,23 @@
           },
           "monster_id": {
             "default": null,
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "monster_ability_text": {
             "default": null,
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "monster_category": {
             "default": null,
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           }
         },

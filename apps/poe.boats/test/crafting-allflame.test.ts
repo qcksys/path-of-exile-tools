@@ -48,72 +48,74 @@ const project = (item: CraftingItem, craft: CraftingMethod, patch = {}) =>
     });
 
 describe("Allflame crafting", () => {
-    it.each([
-        "essence",
-        "fossils",
-    ] as const)("offers %s outcomes with the same extracted guarantees and one set of ingredients", (kind) => {
-        const essence = catalog.crafting.essences.find(
-            (entry) =>
-                entry.level >= 5 &&
-                entry.mods["Body Armour"] &&
-                allflameBracket(catalog, { kind: "essence", id: entry.id }),
-        )!;
-        const fossil = engine
-            .availableFossils(blank())
-            .find((entry) => entry.name === "Pristine Fossil")!;
-        const resonator = catalog.crafting.currencies.find(
-            (entry) =>
-                entry.action === "delve_currency_reroll" &&
-                entry.id.endsWith("1") &&
-                catalog.crafting.allflame!.currencies.some(
-                    (bracket) => bracket.currency === entry.id,
-                ),
-        )!;
-        const craft: CraftingMethod =
-            kind === "essence"
-                ? { kind, id: essence.id, allflame: true }
-                : {
-                      kind,
-                      ids: [fossil.id],
-                      resonator: resonator.id,
-                      logic: "additive",
-                      allflame: true,
-                  };
-        const result = engine.prepareAllflame(blank(), craft, seededRandom(9));
-        expect(result.item.allflameCopies).toHaveLength(
-            allflameBracket(catalog, craft)!.outcomes.max,
-        );
-        for (const copy of result.item.allflameCopies!) {
-            expect(copy.rarity).toBe("rare");
-            expect(copy.mods.length).toBeGreaterThanOrEqual(4);
-            if (kind === "essence")
-                expect(copy.mods.some((mod) => mod.id === essence.mods["Body Armour"])).toBe(true);
-        }
-        expect(
-            result.cost
-                .filter((entry) => entry.id !== sulphur)
-                .every((entry) => entry.amount === 1),
-        ).toBe(true);
-        expect(result.cost).toHaveLength(kind === "essence" ? 2 : 3);
-        if (kind === "fossils") {
-            const corrupting = catalog.crafting.fossils.find((entry) =>
-                entry.effects.includes("CorruptedImplicit"),
+    it.each(["essence", "fossils"] as const)(
+        "offers %s outcomes with the same extracted guarantees and one set of ingredients",
+        (kind) => {
+            const essence = catalog.crafting.essences.find(
+                (entry) =>
+                    entry.level >= 5 &&
+                    entry.mods["Body Armour"] &&
+                    allflameBracket(catalog, { kind: "essence", id: entry.id }),
             )!;
-            expect(() =>
-                engine.prepareAllflame(
-                    blank(),
-                    {
-                        ...craft,
-                        kind,
-                        ids: [corrupting.id],
-                        resonator: resonator.id,
-                        logic: "additive",
-                    },
-                    seededRandom(1),
-                ),
-            ).toThrow("corrupts");
-        }
-    });
+            const fossil = engine
+                .availableFossils(blank())
+                .find((entry) => entry.name === "Pristine Fossil")!;
+            const resonator = catalog.crafting.currencies.find(
+                (entry) =>
+                    entry.action === "delve_currency_reroll" &&
+                    entry.id.endsWith("1") &&
+                    catalog.crafting.allflame!.currencies.some(
+                        (bracket) => bracket.currency === entry.id,
+                    ),
+            )!;
+            const craft: CraftingMethod =
+                kind === "essence"
+                    ? { kind, id: essence.id, allflame: true }
+                    : {
+                          kind,
+                          ids: [fossil.id],
+                          resonator: resonator.id,
+                          logic: "additive",
+                          allflame: true,
+                      };
+            const result = engine.prepareAllflame(blank(), craft, seededRandom(9));
+            expect(result.item.allflameCopies).toHaveLength(
+                allflameBracket(catalog, craft)!.outcomes.max,
+            );
+            for (const copy of result.item.allflameCopies!) {
+                expect(copy.rarity).toBe("rare");
+                expect(copy.mods.length).toBeGreaterThanOrEqual(4);
+                if (kind === "essence")
+                    expect(copy.mods.some((mod) => mod.id === essence.mods["Body Armour"])).toBe(
+                        true,
+                    );
+            }
+            expect(
+                result.cost
+                    .filter((entry) => entry.id !== sulphur)
+                    .every((entry) => entry.amount === 1),
+            ).toBe(true);
+            expect(result.cost).toHaveLength(kind === "essence" ? 2 : 3);
+            if (kind === "fossils") {
+                const corrupting = catalog.crafting.fossils.find((entry) =>
+                    entry.effects.includes("CorruptedImplicit"),
+                )!;
+                expect(() =>
+                    engine.prepareAllflame(
+                        blank(),
+                        {
+                            ...craft,
+                            kind,
+                            ids: [corrupting.id],
+                            resonator: resonator.id,
+                            logic: "additive",
+                        },
+                        seededRandom(1),
+                    ),
+                ).toThrow("corrupts");
+            }
+        },
+    );
 
     it("prices the highest extracted bracket using class and level factors", () => {
         const craft = method("add_mod_to_rare");

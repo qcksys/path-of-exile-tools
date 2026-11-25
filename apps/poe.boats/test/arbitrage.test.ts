@@ -81,20 +81,17 @@ describe("arbitrage calculations", () => {
         });
         expect(result.opportunities[0].profit).toBeCloseTo(-0.6);
     });
-    it.each([
-        0,
-        -1,
-        Number.NaN,
-        Number.POSITIVE_INFINITY,
-        undefined,
-    ])("excludes missing or invalid input prices (%s)", (value) => {
-        const quotes = { ...snapshot.quotes };
-        if (value === undefined) delete quotes[oil.input.id];
-        else quotes[oil.input.id] = { value };
-        const result = findArbitrage([oil], { ...snapshot, quotes }, DEFAULT_ARBITRAGE_OPTIONS);
-        expect(result.opportunities).toEqual([]);
-        expect(result.missingPrices).toEqual([oil]);
-    });
+    it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, undefined])(
+        "excludes missing or invalid input prices (%s)",
+        (value) => {
+            const quotes = { ...snapshot.quotes };
+            if (value === undefined) delete quotes[oil.input.id];
+            else quotes[oil.input.id] = { value };
+            const result = findArbitrage([oil], { ...snapshot, quotes }, DEFAULT_ARBITRAGE_OPTIONS);
+            expect(result.opportunities).toEqual([]);
+            expect(result.missingPrices).toEqual([oil]);
+        },
+    );
     it("excludes missing outputs and prices from other games or categories", () => {
         expect(
             findArbitrage([oil], { ...snapshot, quotes: {} }, DEFAULT_ARBITRAGE_OPTIONS)
@@ -108,16 +105,14 @@ describe("arbitrage calculations", () => {
                 .pricedCount,
         ).toBe(0);
     });
-    it.each([
-        -1,
-        100,
-        Number.NaN,
-        Number.POSITIVE_INFINITY,
-    ])("rejects an invalid buffer (%s)", (buffer) => {
-        expect(() =>
-            findArbitrage([oil], snapshot, { ...DEFAULT_ARBITRAGE_OPTIONS, buffer }),
-        ).toThrow();
-    });
+    it.each([-1, 100, Number.NaN, Number.POSITIVE_INFINITY])(
+        "rejects an invalid buffer (%s)",
+        (buffer) => {
+            expect(() =>
+                findArbitrage([oil], snapshot, { ...DEFAULT_ARBITRAGE_OPTIONS, buffer }),
+            ).toThrow();
+        },
+    );
     it("prices PoE 2 emotion upgrades", () => {
         const recipe = getVendorRecipes("2")[0];
         const market = {

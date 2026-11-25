@@ -88,37 +88,42 @@ describe("crafting workbench recombination", () => {
         expect(right.memoryStrands).toBe(22);
     });
 
-    it.each([
-        0, 1, 2, 3, 4, 5,
-    ])("uses extracted tags for influence %s without transferring the influence itself", (influence) => {
-        const influenced = { ...empty(), rarity: "rare" as const, influences: [influence] };
-        const prefix = engine
-            .pool(influenced, { influence })
-            .find((entry) => entry.mod.generation_type === "prefix")!.id;
-        const left = withMod(prefix, influenced);
-        const right = withMod(resist);
-        const requirement = craftingTargetSchema.parse({
-            groups: [{ mods: [prefix] }, { mods: [resist] }],
-        });
-        const outcomes = recombinationOutcomes(engine, left, right);
-        expect(
-            outcomes
-                .filter(({ value }) => value.influences.length)
-                .reduce((sum, entry) => sum + entry.weight, 0),
-        ).toBeCloseTo(0.5);
-        for (const { value } of outcomes) {
-            if (value.mods.some((mod) => mod.id === prefix))
-                expect(value.influences).toEqual([influence]);
-            expect(engine.validateItem(value)).toEqual(value);
-        }
-        expect(calculateExact(engine, left, method(right), requirement).probability).toBeCloseTo(
-            1 / 6,
-        );
-        expect(
-            calculateExact(engine, left, method({ ...right, influences: [influence] }), requirement)
-                .probability,
-        ).toBeCloseTo(1 / 3);
-    });
+    it.each([0, 1, 2, 3, 4, 5])(
+        "uses extracted tags for influence %s without transferring the influence itself",
+        (influence) => {
+            const influenced = { ...empty(), rarity: "rare" as const, influences: [influence] };
+            const prefix = engine
+                .pool(influenced, { influence })
+                .find((entry) => entry.mod.generation_type === "prefix")!.id;
+            const left = withMod(prefix, influenced);
+            const right = withMod(resist);
+            const requirement = craftingTargetSchema.parse({
+                groups: [{ mods: [prefix] }, { mods: [resist] }],
+            });
+            const outcomes = recombinationOutcomes(engine, left, right);
+            expect(
+                outcomes
+                    .filter(({ value }) => value.influences.length)
+                    .reduce((sum, entry) => sum + entry.weight, 0),
+            ).toBeCloseTo(0.5);
+            for (const { value } of outcomes) {
+                if (value.mods.some((mod) => mod.id === prefix))
+                    expect(value.influences).toEqual([influence]);
+                expect(engine.validateItem(value)).toEqual(value);
+            }
+            expect(
+                calculateExact(engine, left, method(right), requirement).probability,
+            ).toBeCloseTo(1 / 6);
+            expect(
+                calculateExact(
+                    engine,
+                    left,
+                    method({ ...right, influences: [influence] }),
+                    requirement,
+                ).probability,
+            ).toBeCloseTo(1 / 3);
+        },
+    );
 
     it("retains the chosen influence set and converts Awakener provenance for a single-influence output", () => {
         const dual = { ...empty(), rarity: "rare" as const, influences: [0, 1] };
