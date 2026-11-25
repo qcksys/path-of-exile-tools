@@ -518,9 +518,11 @@ program
         }
     });
 
+// `compact` only copies a database, so it runs without the worker's credentials and settings.
 for (const command of program.commands)
-    command.hook("preAction", async () => {
-        await import("varlock/auto-load");
-    });
+    if (command.name() !== "compact")
+        command.hook("preAction", async () => {
+            await import("varlock/auto-load");
+        });
 
 process.exitCode = await runCli(program);
