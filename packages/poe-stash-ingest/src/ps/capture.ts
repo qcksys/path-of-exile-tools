@@ -5,6 +5,7 @@ import type { DuckDBConnection } from "@duckdb/node-api";
 import {
     isRateLimited,
     type PoeApiClient,
+    type PublicStashPage,
     type RateLimitInfo,
     type Realm,
 } from "@poe-tools/api-client";
@@ -37,6 +38,7 @@ const REQUEST_SPACING_MS = 1500;
 // The share of any rate-limit rule's hits capture may spend is 1 / RULE_HEADROOM.
 const RULE_HEADROOM = 1.5;
 const HEAD_POLL_MS = 60_000;
+const LEASE_POLL_MS = 1000;
 const MAINTENANCE_INTERVAL_MS = 60_000;
 const STATUS_INTERVAL_MS = 30_000;
 const MAX_ERROR_DELAY_MS = 60_000;
@@ -115,6 +117,30 @@ export async function openCaptureSource(
     return new RawPageReader(dir, position);
 }
 
+/** Who may fetch: capture fetches only while `holding`; see `ps/capture-lease.ts`. */
+export interface CaptureLeaseHooks {
+    holding(): boolean;
+    /** The lease cannot be reached, so nobody may be capturing: reported as a failed stage. */
+    failing?(): boolean;
+    /** A cursor to continue from, once, after another holder handed the stream over. */
+    takeHandover(): string | null | undefined;
+    /** The cursor after the latest page `store` made durable. */
+    synced(cursor: string | null): void;
+}
+
+export interface CapturedPage {
+    capturedAt: number;
+    cursor: string | undefined;
+    page: PublicStashPage;
+}
+
+/** Appends a page to the hourly spool, then saves the cursor after it. */
+async function spoolPage(dir: string, { capturedAt, cursor, page }: CapturedPage) {
+    await appendRawPage(dir, { capturedAt, cursor, page });
+    // Written after the page: a crash between the two fetches it again, never skips it.
+    await writeCaptureState(dir, { cursor: page.next_change_id });
+}
+
 export async function runCapture(
     client: PoeApiClient,
     opts: {
@@ -127,7 +153,11 @@ export async function runCapture(
         rateLimit?: () => RateLimitInfo | undefined;
         headPollMs?: number;
         errorDelayMs?: number;
+        leasePollMs?: number;
         maintain?: typeof maintainRawArchive;
+        lease?: CaptureLeaseHooks;
+        /** Where a fetched page goes; the hourly spool unless a fallback writes segments. */
+        store?: (page: CapturedPage) => Promise<void>;
     },
 ) {
     const { dir } = opts.archive;
@@ -137,6 +167,8 @@ export async function runCapture(
             : undefined;
     const spacing = opts.requestSpacingMs ?? REQUEST_SPACING_MS;
     const maintain = opts.maintain ?? maintainRawArchive;
+    const store = opts.store ?? ((page: CapturedPage) => spoolPage(dir, page));
+    const { lease } = opts;
 
     let lastReport = 0;
     // A status failure must never cost a page.
@@ -152,7 +184,10 @@ export async function runCapture(
     const startMaintenance = () => {
         if (maintenanceRunning || Date.now() - maintainedAt < MAINTENANCE_INTERVAL_MS) return;
         maintainedAt = Date.now();
-        maintenanceRunning = maintain(opts.archive)
+        // Without the lease, another holder's pages may still be imported into the latest hour.
+        maintenanceRunning = maintain(opts.archive, Date.now(), {
+            keepLatest: lease ? !lease.holding() : false,
+        })
             .then((result) => {
                 maintenanceFailed = false;
                 if (result.sealed.length || result.uploaded)
@@ -176,11 +211,28 @@ export async function runCapture(
         state = await readCaptureState(dir);
     }
     let cursor = state?.cursor ?? undefined;
+    lease?.synced(cursor ?? null);
     let pages = 0;
     let failures = 0;
     let requestedAt = 0;
     let loggedRules = "";
     while (!opts.signal.aborted) {
+        if (lease) {
+            const handover = lease.takeHandover();
+            if (handover !== undefined) cursor = handover ?? undefined;
+            if (!lease.holding()) {
+                const failing = lease.failing?.() ?? false;
+                report({
+                    state: failing ? "error" : "idle",
+                    stage: null,
+                    failedStages: failing ? ["stash"] : [],
+                    progressAt: Date.now(),
+                });
+                startMaintenance();
+                await pause(opts.leasePollMs ?? LEASE_POLL_MS);
+                continue;
+            }
+        }
         const limits = opts.rateLimit?.();
         const rules = limits ? describeRules(limits) : "";
         if (rules && rules !== loggedRules) {
@@ -189,6 +241,8 @@ export async function runCapture(
         }
         await pause(requestedAt + Math.max(spacing, rateLimitSpacingMs(limits)) - Date.now());
         if (opts.signal.aborted) break;
+        // The lease may have lapsed during a long rate-limit wait.
+        if (lease && !lease.holding()) continue;
         requestedAt = Date.now();
         let delay = 0;
         try {
@@ -196,9 +250,8 @@ export async function runCapture(
                 cursor ? { realm: opts.realm, id: cursor } : { realm: opts.realm },
             );
             const capturedAt = Date.now();
-            await appendRawPage(dir, { capturedAt, cursor, page });
-            // Written after the page: a crash between the two fetches it again, never skips it.
-            await writeCaptureState(dir, { cursor: page.next_change_id });
+            await store({ capturedAt, cursor, page });
+            lease?.synced(page.next_change_id);
             const caughtUp = cursor !== undefined && page.next_change_id === cursor;
             cursor = page.next_change_id;
             pages++;

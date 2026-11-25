@@ -79,6 +79,10 @@ services:
       PS_RAW_ARCHIVE_DIR: /backups/raw
       INGEST_STATUS_FILE: /backups/raw/capture-status.json
       PS_RAW_SEAL_THREADS: "8"
+      # With CAPTURE_LEASE_URL in pc.env, this fetches only while it holds the capture lease and a
+      # Cloudflare Container captures while it is away (apps/capture-lease). Off without the URL.
+      CAPTURE_LEASE_ROLE: home
+      CAPTURE_LEASE_TOKEN_FILE: /run/secrets/capture_lease_token
     volumes:
       - ./backups/pc:/backups
     secrets:
@@ -88,6 +92,8 @@ services:
         target: poe_boats_ingest_token
       - source: pc_b2_application_key
         target: b2_application_key
+      - source: pc_capture_lease_token
+        target: capture_lease_token
   poe2:
     <<: *worker
     cpus: 1.0
@@ -162,6 +168,8 @@ secrets:
     file: ./secrets/pc_ingest_token
   pc_b2_application_key:
     file: ./secrets/pc_b2_application_key
+  pc_capture_lease_token:
+    file: ./secrets/pc_capture_lease_token
   poe2_client_secret:
     file: ./secrets/poe2_client_secret
   poe2_ingest_token:

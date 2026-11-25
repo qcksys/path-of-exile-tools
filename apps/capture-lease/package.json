@@ -1,0 +1,19 @@
+{
+    "name": "@poe-tools/capture-lease",
+    "version": "0.0.0",
+    "private": true,
+    "description": "Cloudflare Worker that decides whether home or a fallback Container captures the public stash stream, and holds the fallback's segments.",
+    "type": "module",
+    "scripts": {
+        "types:cf": "wrangler types",
+        "typecheck": "tsc --noEmit",
+        "deploy:dev": "wrangler deploy"
+    },
+    "devDependencies": {
+        "typescript": "catalog:",
+        "wrangler": "catalog:"
+    },
+    "dependencies": {
+        "@poe-tools/market": "workspace:*"
+    }
+}
