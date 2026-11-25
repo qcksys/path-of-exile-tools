@@ -448,7 +448,7 @@ period. It logs the rules whenever they change.
 Each 429 lowers that 90% for a while. A 429 weighs 1 when it happens, and its weight halves every
 6 hours; capture's share falls in proportion to the total weight, down to a third of the limit at a
 weight of 3. Three 429s in a row therefore put capture back at a third of the limit, the pace it ran
-at before. Six hours later it is at 62%, and a day later at 87%. The times of the 429s are kept in
+at before. Six hours later it is at 62%, and a day later at 86%. The times of the 429s are kept in
 `capture-rate-limited.json` beside the cursor, so a restart keeps the backoff. Every 429, and every
 5-point change in the share as it recovers, is logged and appended to `capture-pacing.ndjson` in the
 same folder for review. At busy hours every page is cut off at the API's size
