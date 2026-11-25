@@ -1,15 +1,20 @@
 // biome-ignore-all lint/style/useNamingConvention: Fixtures preserve upstream field names.
-import { appendFile, mkdtemp, rm } from "node:fs/promises";
+import { appendFile, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
+// The built entry that capture's `@poe-tools/api-client` import resolves to, so that its
+// rate-limit check recognises this error as its own class.
+import { PoeApiError } from "../../../packages/poe-api-client/dist/index.mjs";
 import { createClient, type PoeApiClient } from "../../../packages/poe-api-client/src/client";
 import type { RateLimitInfo, RateLimitRule } from "../../../packages/poe-api-client/src/rate-limit";
 import { flushRollups } from "../../../packages/poe-stash-ingest/src/pipeline";
 import {
+    captureTarget,
     openCaptureSource,
     rateLimitSpacingMs,
     readCaptureState,
+    readRateLimited,
     runCapture,
     writeCaptureState,
 } from "../../../packages/poe-stash-ingest/src/ps/capture";
@@ -408,6 +413,71 @@ it("spends 90% of the strictest rate-limit rule, less other clients' hits", () =
     // 20 of the 30 hits in the minute are another client's; capture keeps to the remaining 20.5.
     const minute = Array.from({ length: 10 }, (_, i) => now - 1000 - i * 5000);
     expect(rateLimitSpacingMs({ rules: [rule(45, 60, 30)] }, minute, now)).toBe(2927);
+    // At a third of the limit, the pace before the target was raised.
+    expect(rateLimitSpacingMs({ rules: [rule(2, 1)] }, own, now, 1 / 3)).toBe(1500);
+});
+
+it("slows to a third of the limit after three recent 429s and speeds back up as they age", () => {
+    const now = Date.UTC(2026, 10, 25, 12);
+    const hours = (n: number) => n * 3_600_000;
+    expect(captureTarget([], now)).toBe(0.9);
+    expect(captureTarget([now], now)).toBeCloseTo(0.711, 3);
+    expect(captureTarget([now, now], now)).toBeCloseTo(0.522, 3);
+    const threeInARow = [now - 120_000, now - 60_000, now];
+    expect(captureTarget(threeInARow, now)).toBeCloseTo(1 / 3, 2);
+    expect(captureTarget([...threeInARow, now], now)).toBeCloseTo(1 / 3, 5);
+    // Each 429's weight halves every 6 hours.
+    expect(captureTarget(threeInARow, now + hours(6))).toBeCloseTo(0.617, 2);
+    expect(captureTarget(threeInARow, now + hours(24))).toBeCloseTo(0.865, 2);
+    // A recent 429 counts for more than an old one.
+    expect(captureTarget([now - hours(12)], now)).toBeGreaterThan(captureTarget([now], now));
+});
+
+it("records each 429, slows the next requests and keeps the backoff across a restart", async () => {
+    await writeCaptureState(dir, { cursor: "a" });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const failed = vi.spyOn(console, "error").mockImplementation(() => {});
+    const tooMany = () =>
+        new PoeApiError({
+            status: 429,
+            statusText: "Too Many Requests",
+            response: new Response(null, { status: 429 }),
+            body: undefined,
+            rateLimit: { rules: [rule(15, 1)], retryAfterSeconds: 0 },
+        });
+    const limits = { rules: [rule(15, 1)] };
+    const run = capture([tooMany(), page("b"), page("c")], {
+        rateLimits: [limits, limits, limits],
+    });
+    await run.done;
+    const [, second = 0, third = 0] = run.startedAt;
+    // 15 hits per second at 71% is 94 ms apart, where 90% would be 75 ms.
+    expect(third - second).toBeGreaterThanOrEqual(93);
+    expect(await readRateLimited(dir)).toHaveLength(1);
+    const lines = log.mock.calls.map(([line]) => String(line));
+    expect(lines).toContain("psapi 429: capture pacing: 71% of each rate-limit rule");
+    const events = (await readFile(join(dir, "capture-pacing.ndjson"), "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line));
+    expect(events).toEqual([
+        expect.objectContaining({
+            event: "429",
+            target: 0.711,
+            weight: 1,
+            rateLimitedLastDay: 1,
+            retryAfterSeconds: 0,
+            rules: "ip 15:1:60",
+        }),
+    ]);
+
+    // A restart reads the 429 back, so it starts at the slower pace.
+    const again = capture([page("d"), page("e")], { rateLimits: [limits, limits] });
+    await again.done;
+    const [first = 0, next = 0] = again.startedAt;
+    expect(next - first).toBeGreaterThanOrEqual(93);
+    log.mockRestore();
+    failed.mockRestore();
 });
 
 it("spaces requests as the rate-limit headers allow, and logs each new set of rules", async () => {

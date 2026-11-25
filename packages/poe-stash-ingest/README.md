@@ -443,7 +443,15 @@ seals and uploads finished hours. Its first request waits 1.5 s; from then on th
 headers set the pace. Capture aims at 90% of every rule's hits, a request every 556 ms on psapi's
 rule of 2 hits per second. Hits beyond its own requests in a rule's period belong to another client
 on the same IP: they come off capture's share, and once such a rule is full capture waits out its
-period. It logs the rules whenever they change. At busy hours every page is cut off at the API's size
+period. It logs the rules whenever they change.
+
+Each 429 lowers that 90% for a while. A 429 weighs 1 when it happens, and its weight halves every
+6 hours; capture's share falls in proportion to the total weight, down to a third of the limit at a
+weight of 3. Three 429s in a row therefore put capture back at a third of the limit, the pace it ran
+at before. Six hours later it is at 62%, and a day later at 87%. The times of the 429s are kept in
+`capture-rate-limited.json` beside the cursor, so a restart keeps the backoff. Every 429, and every
+5-point change in the share as it recovers, is logged and appended to `capture-pacing.ndjson` in the
+same folder for review. At busy hours every page is cut off at the API's size
 limit, so this request rate sets how far capture falls behind. It polls every minute at the stream's
 head, waits as a rate limit asks, and otherwise retries the same cursor with a growing delay.
 It reports status as `<INGEST_WORKER_ID>-capture`.
