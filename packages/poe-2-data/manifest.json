@@ -3,11 +3,11 @@
   "game": "poe2",
   "version": "0.5.5-build.10",
   "client_build": "0.5.5.10",
-  "source_manifest_sha256": "70ce40cd019bbf310eb719c53b2338a4960ac1f3d1dc45da6255e1f7ae9b352f",
-  "dat_schema_sha256": "25e17f0463e56a4ed0dcc13a841aeb811012debb23daa9111053aa8157bd7b60",
-  "extractor_sha256": "2a6f3013a28578ef64ab14fe41bbe28832f738faac98b7d31bcf8dc5ab1d0a8c",
+  "source_manifest_sha256": "3dc11232cacf987e734b251690db70eb0073a8bb96b46fd6129819ce797e9c6f",
+  "dat_schema_sha256": "5d598f4c57fae1ae3d92be9046fe3f7702ee77180eb6c1e2e518efc79d29c137",
+  "extractor_sha256": "b852ab5d2b5f11d65959df055329c1e53dbfb7e8fc19efd79622dd06ba4bd578",
   "zod_schema_sha256": "a02f8ec2a774de489b1c9990bedea17e8e9a82d9edceff56d3fb68a676d28a60",
-  "crafting_data_sha256": "7cb441856d0b5cbf3ab0447f33b3099166e52f70e2970ab5874b5126c6d9aa0a",
+  "crafting_data_sha256": "6964c71286ec53ba246d999c2af50a2e5cb5abb860dec5d5ee675f6b34b889ea",
   "weight_provenance": "client-extracted; PoE 2 values are not Craft of Exile empirical weights",
   "files": {
     "Metadata/Items/Amulets/AbstractAmulet.json": {
