@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CurrencyLabel } from "~/components/currency-label";
+import { LocalTime } from "~/components/local-time";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
@@ -236,9 +237,7 @@ export function SourcePricePicker({
                                                             ? "converted asking median"
                                                             : "asking median"}{" "}
                                                         · observed{" "}
-                                                        {new Date(
-                                                            quote.hour * 1000,
-                                                        ).toLocaleString()}
+                                                        <LocalTime at={quote.hour * 1000} />
                                                     </p>
                                                     <p>
                                                         {quote.low.toLocaleString(undefined, {
@@ -322,9 +321,7 @@ export function SourcePricePicker({
                                                             game={graph.game}
                                                         />{" "}
                                                         per recipe · newest observed hour{" "}
-                                                        {new Date(
-                                                            quote.hour * 1000,
-                                                        ).toLocaleString()}
+                                                        <LocalTime at={quote.hour * 1000} />
                                                     </p>
                                                     <ul>
                                                         {quote.components.map((component) => (

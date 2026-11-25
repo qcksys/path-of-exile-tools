@@ -10,9 +10,6 @@ import {
     marketLink,
 } from "~/schemas/market";
 
-export const marketUtc = (hour: number) =>
-    `${new Date(hour * 1000).toISOString().slice(0, 16).replace("T", " ")} UTC`;
-
 /** A category list's filters, as its settings ask for. */
 export function MarketFiltersForm({
     filters: input,

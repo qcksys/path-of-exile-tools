@@ -484,7 +484,12 @@ for (const game of ["poe1", "poe2"] as const) {
         let requested: Promise<void> | undefined;
         await page.route("**/api/v1/crafting/market/snapshots", async (route) => {
             const { graph: input, hours } = route.request().postDataJSON();
-            expect(hours).toEqual([1790899200, 1792713600]);
+            // The browser shares this process's time zone and samples from local midnights.
+            expect(hours).toEqual(
+                [new Date(2026, 9, 2), new Date(2026, 9, 23)].map(
+                    (day) => Math.floor(day.getTime() / 3_600_000) * 3600,
+                ),
+            );
             if (requested) await requested;
             await route.fulfill({
                 json: {
@@ -514,8 +519,8 @@ for (const game of ["poe1", "poe2"] as const) {
             (project) => project.graph.name === graph.name,
         )!.graph;
         await page.getByText("Process cost history", { exact: true }).click();
-        await page.getByLabel("History start (UTC)").fill("2026-10-02");
-        await page.getByLabel("History end (UTC)").fill("2026-10-23");
+        await page.getByLabel("History start").fill("2026-10-02");
+        await page.getByLabel("History end").fill("2026-10-23");
         await selectValue(page.getByLabel("History samples"), "2");
         const previousWorkers = workers;
         await page.getByRole("button", { name: "Calculate cost history", exact: true }).click();

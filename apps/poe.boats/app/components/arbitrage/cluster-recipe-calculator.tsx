@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Form, useNavigation } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogItemArt } from "~/components/item-art";
+import { LocalTime } from "~/components/local-time";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -275,9 +276,7 @@ export function ClusterRecipeCalculator({ data }: { data: ClusterRecipeMarketDat
                         ))}
                         <p className="text-xs text-muted-foreground">
                             Item level band {bandLabel(band)} · Newest ask:{" "}
-                            <time dateTime={snapshot!.fetchedAt!}>
-                                {snapshot!.fetchedAt!.replace("T", " ").replace(/\.\d+Z$/, " UTC")}
-                            </time>
+                            <LocalTime at={Date.parse(snapshot!.fetchedAt!)} seconds />
                         </p>
                     </>
                 ) : null}

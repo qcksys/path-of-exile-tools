@@ -9,6 +9,7 @@ import {
     useMarketDisplay,
 } from "~/components/market-exchange";
 import type { ChartOption } from "~/lib/echarts";
+import { browserTimeZone, formatTime } from "~/lib/local-time";
 import { MARKET_IQR_MIN_COUNT } from "~/lib/market-exchange";
 import { marketCompactNumber, marketNumber } from "~/lib/market-number";
 import { MARKET_PRICE_CURRENCIES, type MarketPriceRates } from "~/lib/market-price-currencies";
@@ -246,7 +247,7 @@ export function marketPriceChartOption(
     const counts = { xAxisIndex: 1, yAxisIndex: 1 } as const;
     const byHour = new Map(points.map((point) => [point.hour * 1000, point]));
     const hourTooltip = (at: number) => {
-        const time = `${new Date(at).toISOString().slice(0, 16).replace("T", " ")} UTC`;
+        const time = formatTime(at, browserTimeZone());
         const point = byHour.get(at);
         const body = point
             ? `${hourPrices(point, game, display)}${tooltipTable([
@@ -296,7 +297,6 @@ export function marketPriceChartOption(
             !point || (point.soldAgeSeconds !== null && point.soldAgeSeconds !== undefined),
     );
     return {
-        useUTC: true,
         grid: hasAge
             ? [
                   { ...sides, top: LEGEND_HEIGHT, bottom: "50%" },

@@ -56,7 +56,6 @@ export function marketExchangeChartOption(
     } as const;
     const hasIqr = points.some((point) => point.p25 !== null && point.p75 !== null);
     return {
-        useUTC: true,
         grid: { left: 8, right: 8, top: 32, bottom: 40, outerBoundsMode: "same" },
         legend: {
             data: [

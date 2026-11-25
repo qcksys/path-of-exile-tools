@@ -18,9 +18,9 @@ import { Link, type ShouldRevalidateFunctionArgs, useSearchParams } from "react-
 import { CurrencyLabel } from "~/components/currency-label";
 import { DataTable, dataTableColumns } from "~/components/data-table";
 import { ItemArt } from "~/components/item-art";
+import { LocalTime, useTimeZone } from "~/components/local-time";
 import { MarketAxisToggles } from "~/components/market-axis-filters";
 import { MarketPriceTrends } from "~/components/market-exchange";
-import { marketUtc } from "~/components/market-filters";
 import { FlagToggle, MarketDetailFilters } from "~/components/market-form";
 import { MarketHistory, MarketHistoryPrice } from "~/components/market-history";
 import { MarketListingPrice } from "~/components/market-listing-price";
@@ -30,6 +30,7 @@ import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
 import { forbiddenJewelGroup } from "~/lib/forbidden-jewels";
 import { marketItemArtUrl } from "~/lib/item-presentation";
+import { formatTime } from "~/lib/local-time";
 import { MARKET_BASE_NOTE } from "~/lib/market-bases";
 import { MARKET_MAP_AXES } from "~/lib/market-kinds";
 import { marketListingPrices, marketMostListedPrice } from "~/lib/market-listing-prices";
@@ -457,18 +458,24 @@ function sameMarket(a: VariantRow, b: VariantRow) {
 const column = dataTableColumns<HistoryRow>();
 
 function HourlyTable({ rows, game }: { rows: HistoryRow[]; game: "poe1" | "poe2" }) {
+    const timeZone = useTimeZone();
     const columns = useMemo(() => {
         const price = (value: number | undefined, row: HistoryRow) => (
             <MarketHistoryPrice value={value} rates={row.priceRates} game={game} />
         );
         const count = { sortDescFirst: true, meta: { filter: "range" } } as const;
         return column.columns([
-            column.accessor((row) => marketUtc(row.hour), {
-                id: "hour",
-                header: "Hour (UTC)",
-                sortDescFirst: true,
-                meta: { filter: "text", className: "whitespace-nowrap" },
-            }),
+            // Filtered by the shown text; before hydration the epoch seconds keep the same order.
+            column.accessor(
+                (row) => (timeZone ? formatTime(row.hour * 1000, timeZone) : String(row.hour)),
+                {
+                    id: "hour",
+                    header: "Hour",
+                    sortDescFirst: true,
+                    meta: { filter: "text", className: "whitespace-nowrap" },
+                    cell: ({ row }) => <LocalTime at={row.original.hour * 1000} />,
+                },
+            ),
             column.accessor((row) => row.merged?.median, {
                 id: "ask",
                 header: "Median ask",
@@ -499,7 +506,7 @@ function HourlyTable({ rows, game }: { rows: HistoryRow[]; game: "poe1" | "poe2"
                 cell: ({ getValue }) => number(getValue()),
             }),
         ]);
-    }, [game]);
+    }, [game, timeZone]);
     return (
         <DataTable
             label="Hourly observations"

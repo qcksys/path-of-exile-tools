@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from "react";
 import { Link } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
+import { LocalTime } from "~/components/local-time";
 import {
     EXCHANGE_UNIT_NAMES,
     ExchangeDisplayPicker,
@@ -11,7 +12,6 @@ import {
     MarketPriceTrends,
 } from "~/components/market-exchange";
 import { MarketExchangeChart } from "~/components/market-exchange-chart";
-import { marketUtc } from "~/components/market-filters";
 import { MarketDetailFilters } from "~/components/market-form";
 import { Button } from "~/components/ui/button";
 import type { getMarketExchangeItem } from "~/db/queries/market.queries";
@@ -90,7 +90,7 @@ export function MarketExchangeItem({
                     </h2>
                     <p className="text-sm text-muted-foreground">
                         {categoryLabel} · {league} · Currency exchange · Data through{" "}
-                        {marketUtc(latestHour)}
+                        <LocalTime at={latestHour * 1000} />
                     </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -106,11 +106,14 @@ export function MarketExchangeItem({
                             <ExchangePrice price={item.price} rates={priceRates} game={game} />
                         ),
                         <>
-                            {item.price === null
-                                ? null
-                                : item.current
-                                  ? "Traded in the latest hour"
-                                  : `Last traded ${item.hour === null ? "—" : marketUtc(item.hour)}`}
+                            {item.price === null ? null : item.current ? (
+                                "Traded in the latest hour"
+                            ) : (
+                                <>
+                                    Last traded{" "}
+                                    {item.hour === null ? "—" : <LocalTime at={item.hour * 1000} />}
+                                </>
+                            )}
                             {item.via && item.via.itemId !== marketExchangeUnitId(unit)
                                 ? ` · via ${item.via.name}`
                                 : ""}
@@ -229,7 +232,7 @@ export function MarketExchangeItem({
                                                 )}
                                             </td>
                                             <td className="py-2 text-right text-xs whitespace-nowrap text-muted-foreground">
-                                                {marketUtc(newest.hour)}
+                                                <LocalTime at={newest.hour * 1000} />
                                             </td>
                                         </tr>
                                     );
