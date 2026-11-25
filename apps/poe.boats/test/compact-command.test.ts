@@ -30,12 +30,13 @@ it("runs compact without the worker's environment", async () => {
                 cwd: resolve(import.meta.dirname, "../../../packages/poe-stash-ingest"),
                 encoding: "utf8",
                 timeout: 60_000,
-                // Only what a process needs to start; nothing the worker's configuration reads.
+                // Only what a process needs to start; nothing the worker's configuration reads,
+                // which the app's ProcessEnv declares as always set.
                 env: Object.fromEntries(
                     ["PATH", "Path", "SystemRoot", "HOME", "USERPROFILE", "TEMP", "TMP", "TMPDIR"]
                         .filter((name) => process.env[name] !== undefined)
                         .map((name) => [name, process.env[name]]),
-                ),
+                ) as NodeJS.ProcessEnv,
             },
         );
         expect(run.status, run.stderr).toBe(0);
