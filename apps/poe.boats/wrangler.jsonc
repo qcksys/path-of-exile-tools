@@ -63,6 +63,12 @@
                 "URL": "dev.poe.boats",
                 "ENVIRONMENT": "dev"
             },
+            "hyperdrive": [
+                {
+                    "binding": "HYPERDRIVE",
+                    "id": "e10fa42b93a646b7acc6e27d199e2c75"
+                }
+            ],
             "routes": [
                 {
                     "pattern": "dev.poe.boats",

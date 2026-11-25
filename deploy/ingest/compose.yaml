@@ -12,7 +12,7 @@ x-worker: &worker
     timeout: 5s
     start_period: 5m
     retries: 3
-  logging:
+  logging: &logging
     driver: json-file
     options:
       max-size: 10m
@@ -107,6 +107,53 @@ services:
       # One key per environment's bucket; B2_PREFIX in poe2.env keeps the realms apart.
       - source: pc_b2_application_key
         target: b2_application_key
+  # The dev receiver's database. Its Worker reaches it through Hyperdrive and mysql-tunnel.
+  mysql:
+    image: mysql:8.4
+    user: "1000:1000"
+    restart: unless-stopped
+    stop_grace_period: 2m
+    mem_limit: 6g
+    command:
+      # The market rows can be delivered again from the workers' archives, so this trades the last
+      # second of commits on a host crash, and point-in-time recovery, for write speed.
+      - --skip-log-bin
+      - --innodb-flush-log-at-trx-commit=2
+      - --innodb-buffer-pool-size=4G
+      - --innodb-redo-log-capacity=2G
+      - --skip-name-resolve
+    environment:
+      MYSQL_DATABASE: poeboats
+      MYSQL_USER: poeboats
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_poeboats_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+    # For maintenance from the host; nothing else connects except through the tunnel.
+    ports:
+      - 127.0.0.1:3306:3306
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    secrets:
+      - mysql_root_password
+      - mysql_poeboats_password
+    healthcheck:
+      test: [CMD, mysqladmin, ping, --host=127.0.0.1, --silent]
+      interval: 30s
+      timeout: 5s
+      start_period: 5m
+      retries: 3
+    logging: *logging
+  # Routes the database hostname, which Cloudflare Access limits to the Hyperdrive and CI service
+  # tokens, to mysql:3306.
+  mysql-tunnel:
+    image: cloudflare/cloudflared:2026.10.5
+    user: "1000:1000"
+    command: [tunnel, --no-autoupdate, run]
+    restart: unless-stopped
+    environment:
+      TUNNEL_TOKEN_FILE: /run/secrets/mysql_tunnel_token
+    secrets:
+      - mysql_tunnel_token
+    logging: *logging
 
 secrets:
   pc_client_secret:
@@ -119,3 +166,9 @@ secrets:
     file: ./secrets/poe2_client_secret
   poe2_ingest_token:
     file: ./secrets/poe2_ingest_token
+  mysql_root_password:
+    file: ./secrets/mysql_root_password
+  mysql_poeboats_password:
+    file: ./secrets/mysql_poeboats_password
+  mysql_tunnel_token:
+    file: ./secrets/mysql_tunnel_token

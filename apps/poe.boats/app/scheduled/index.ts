@@ -1,4 +1,4 @@
-import { openDatabase } from "~/db/client";
+import { openWorkerDatabase } from "~/db/client";
 import { updateCurrencyExchange } from "~/scheduled/currency-exchange";
 import { logger } from "~/services/logger";
 
@@ -8,7 +8,7 @@ export async function handleScheduled(
     controller: ScheduledController,
     env: CloudflareBindings,
 ): Promise<void> {
-    const database = await openDatabase(env.DATABASE_URL, env.DATABASE_DRIVER);
+    const database = await openWorkerDatabase(env);
     try {
         switch (controller.cron) {
             case CRON_CURRENCY_EXCHANGE: {

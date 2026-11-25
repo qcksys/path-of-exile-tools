@@ -12,7 +12,7 @@ vi.mock("react-router", async (importOriginal) => ({
     ...(await importOriginal<typeof import("react-router")>()),
     createRequestHandler: () => mocks.handle,
 }));
-vi.mock("~/db/client.ts", () => ({ openDatabase: mocks.open }));
+vi.mock("~/db/client.ts", () => ({ openWorkerDatabase: mocks.open }));
 vi.mock("~/scheduled/index.ts", () => ({ handleScheduled: vi.fn() }));
 
 afterEach(() => vi.restoreAllMocks());

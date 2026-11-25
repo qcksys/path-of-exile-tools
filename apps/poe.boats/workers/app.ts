@@ -1,6 +1,6 @@
 import { createRequestHandler, RouterContextProvider } from "react-router";
 import { dbContext, envContext, exeContext, localeContext, serverTimingContext } from "~/context";
-import { openDatabase } from "~/db/client.ts";
+import { openWorkerDatabase } from "~/db/client.ts";
 import { detectLocale } from "~/lib/locale.server.ts";
 import { handleScheduled } from "~/scheduled/index.ts";
 import { ServerTiming } from "~/services/server-timing.server.ts";
@@ -21,7 +21,7 @@ export default {
 
         const context = new RouterContextProvider();
 
-        const database = await openDatabase(env.DATABASE_URL, env.DATABASE_DRIVER);
+        const database = await openWorkerDatabase(env);
         const db = database.db;
 
         context.set(envContext, env);
