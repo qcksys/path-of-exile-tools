@@ -323,7 +323,12 @@ it("does not move past a page that fails, and leaves the position unchanged", as
 
 function capture(
     responses: (Page | Error)[],
-    options: { onStatus?: () => Promise<void>; rateLimits?: RateLimitInfo[] } = {},
+    options: {
+        onStatus?: () => Promise<void>;
+        rateLimits?: RateLimitInfo[];
+        /** How long each response takes to arrive. */
+        latencyMs?: number;
+    } = {},
 ) {
     const stop = new AbortController();
     const requested: (string | undefined)[] = [];
@@ -338,6 +343,7 @@ function capture(
                 requested.push(request.id);
                 const next = responses.shift();
                 if (!responses.length) stop.abort();
+                if (options.latencyMs) await new Promise((r) => setTimeout(r, options.latencyMs));
                 if (next instanceof Error) throw next;
                 return next ?? empty("end");
             },
@@ -498,6 +504,26 @@ it("spaces requests as the rate-limit headers allow, and logs each new set of ru
         "psapi rate limits: ip 15:1:60, ip 60:5:60",
     ]);
     expect(await readCaptureState(dir)).toEqual({ cursor: "d" });
+});
+
+it("counts its own hits from when its requests started, however slow the responses", async () => {
+    await writeCaptureState(dir, { cursor: "a" });
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    // Each response takes 700 ms. The API counted the previous request and this one in the second
+    // before this one arrived: both hits are capture's, so it may send the next one at once.
+    const run = capture([page("b"), page("c"), page("d"), page("e")], {
+        rateLimits: [
+            { rules: [rule(2, 1, 1)] },
+            { rules: [rule(2, 1, 2)] },
+            { rules: [rule(2, 1, 2)] },
+        ],
+        latencyMs: 700,
+    });
+    await run.done;
+    const [, second = 0, third = 0] = run.startedAt;
+    // Counting back from the response, the previous request (700 ms before this one started) looks
+    // like another client's and the spacing becomes 1,250 ms.
+    expect(third - second).toBeLessThan(1000);
 });
 
 it("keeps capturing when status reports fail", async () => {

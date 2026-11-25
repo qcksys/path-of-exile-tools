@@ -71,21 +71,22 @@ export function captureTarget(rateLimitedAt: readonly number[], now: number) {
 
 /**
  * The request spacing that keeps capture at `target` of every rule in the latest rate-limit
- * headers, received at `respondedAt`. Hits beyond capture's own requests in a rule's period are
- * another client's on the same IP: they come off capture's share, and once such a rule is full
- * capture waits out its period.
+ * headers. The API counts a request's hit when the request arrives, so the headers' hits are
+ * compared with capture's own requests in the rule's period before `countedAt`, the start of the
+ * request that returned them. Hits beyond those are another client's on the same IP: they come off
+ * capture's share, and once such a rule is full capture waits out its period.
  */
 export function rateLimitSpacingMs(
     info: RateLimitInfo | undefined,
     ownRequests: readonly number[] = [],
-    respondedAt = Date.now(),
+    countedAt = Date.now(),
     target = RULE_TARGET,
 ) {
     let ms = 0;
     for (const rule of info?.rules ?? []) {
         if (rule.maxHits <= 0) continue;
         const periodMs = rule.periodSeconds * 1000;
-        const own = ownRequests.filter((at) => at > respondedAt - periodMs).length;
+        const own = ownRequests.filter((at) => at > countedAt - periodMs && at <= countedAt).length;
         const others = Math.max(0, rule.currentHits - own);
         const share = rule.maxHits * target - others;
         ms = Math.max(ms, share > 0 ? periodMs / share : periodMs);
@@ -292,7 +293,6 @@ export async function runCapture(
     let pages = 0;
     let failures = 0;
     let requestedAt = 0;
-    let respondedAt = 0;
     // When capture's recent requests started, to tell its own hits from other clients'.
     const ownRequests: number[] = [];
     let loggedRules = "";
@@ -330,10 +330,11 @@ export async function runCapture(
             await logPacing(dir, pacing(rateLimitedAt, target, "target"), pacingMessage(target));
         }
         const periods = (limits?.rules ?? []).map((rule) => rule.periodSeconds * 1000);
-        const horizon = respondedAt - Math.max(60_000, ...periods);
+        const horizon = requestedAt - Math.max(60_000, ...periods);
         while (ownRequests.length > 0 && (ownRequests[0] ?? 0) <= horizon) ownRequests.shift();
+        // The latest headers came back from the request started at requestedAt.
         const wait = limits?.rules.length
-            ? rateLimitSpacingMs(limits, ownRequests, respondedAt, target)
+            ? rateLimitSpacingMs(limits, ownRequests, requestedAt, target)
             : spacing;
         await pause(requestedAt + wait - Date.now());
         if (opts.signal.aborted) break;
@@ -347,7 +348,6 @@ export async function runCapture(
                 cursor ? { realm: opts.realm, id: cursor } : { realm: opts.realm },
             );
             const capturedAt = Date.now();
-            respondedAt = capturedAt;
             await store({ capturedAt, cursor, page });
             lease?.synced(page.next_change_id);
             const caughtUp = cursor !== undefined && page.next_change_id === cursor;
@@ -371,7 +371,7 @@ export async function runCapture(
                 recovered || pages === 1,
             );
         } catch (error) {
-            respondedAt = Date.now();
+            const failedAt = Date.now();
             failures++;
             delay = isRateLimited(error)
                 ? (error.rateLimit.retryAfterSeconds ?? RATE_LIMIT_DELAY_SECONDS) * 1000
@@ -381,13 +381,13 @@ export async function runCapture(
             );
             if (isRateLimited(error)) {
                 rateLimitedAt = [
-                    ...rateLimitedAt.filter((at) => at > respondedAt - BACKOFF_MEMORY_MS),
-                    respondedAt,
+                    ...rateLimitedAt.filter((at) => at > failedAt - BACKOFF_MEMORY_MS),
+                    failedAt,
                 ];
                 await writeRateLimited(dir, rateLimitedAt).catch((writeError: unknown) =>
                     console.error(`Could not save the 429: ${failureMessage(writeError)}`),
                 );
-                const slowed = captureTarget(rateLimitedAt, respondedAt);
+                const slowed = captureTarget(rateLimitedAt, failedAt);
                 loggedTarget = Math.round(slowed * 20);
                 await logPacing(
                     dir,
